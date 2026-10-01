@@ -114,6 +114,13 @@ export const APPS: readonly AppDef[] = [
     tier: "pass",
     genre: "writing",
   },
+  {
+    slug: "apply",
+    name: "Apply",
+    blurb: "Rewrite your resume for each role, then open that search on LinkedIn to submit it.",
+    tier: "pass",
+    genre: "work",
+  },
 ];
 
 export function getApp(slug: string): AppDef | undefined {

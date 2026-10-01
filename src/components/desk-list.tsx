@@ -28,7 +28,7 @@ export function DeskList() {
   const { isAdmin, ready: roleReady } = useRole();
   const known = !!user && !isPending && !loading && roleReady;
   const [added, setAdded] = useState<PublishedApp[]>([]);
-  const [view, setView] = useState<DeskView>("list");
+  const [view, setView] = useState<DeskView>("grid");
 
   useEffect(() => {
     const stored = localStorage.getItem(VIEW_KEY);

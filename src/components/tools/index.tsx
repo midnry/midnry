@@ -11,6 +11,7 @@ import { ContrastTool } from "@/components/tools/contrast";
 import { CompressorTool } from "@/components/tools/compressor";
 import { ChatTool } from "@/components/tools/chat";
 import { PlannerTool } from "@/components/tools/planner";
+import { ApplyTool } from "@/components/tools/apply";
 
 const TOOLS: Record<string, () => ReactElement> = {
   scratch: ScratchTool,
@@ -25,6 +26,7 @@ const TOOLS: Record<string, () => ReactElement> = {
   compressor: CompressorTool,
   chat: ChatTool,
   planner: PlannerTool,
+  apply: ApplyTool,
 };
 
 export function ToolView({ slug }: { slug: string }) {
