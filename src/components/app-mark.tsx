@@ -13,6 +13,7 @@ const KINDS = {
   contrast: "contrast",
   compressor: "film",
   chat: "chat",
+  planner: "calendar",
 } as const;
 
 type Kind = (typeof KINDS)[keyof typeof KINDS] | "letter";
@@ -63,6 +64,7 @@ export function AppMark({
       {kind === "contrast" ? <Contrast fill={fill} /> : null}
       {kind === "film" ? <Film fill={fill} /> : null}
       {kind === "chat" ? <Chat fill={fill} /> : null}
+      {kind === "calendar" ? <Calendar fill={fill} /> : null}
       {kind === "letter" ? (
         <text
           x="32"
@@ -186,4 +188,13 @@ function Film({ fill }: { fill: string }) {
 
 function Chat({ fill }: { fill: string }) {
   return <path d="M20 24a4 4 0 0 1 4-4h16a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H30l-7 6v-6h-1a4 4 0 0 1-2-3.5z" fill={fill} />;
+}
+
+function Calendar({ fill }: { fill: string }) {
+  return (
+    <g fill="none" stroke={fill} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="21" y="24" width="22" height="18" rx="2.5" />
+      <path d="M21 30h22M27 21v6M37 21v6" />
+    </g>
+  );
 }

@@ -107,6 +107,13 @@ export const APPS: readonly AppDef[] = [
     tier: "pass",
     genre: "writing",
   },
+  {
+    slug: "planner",
+    name: "Planner",
+    blurb: "A year of posts for one brand, using the holidays people keep where they are.",
+    tier: "pass",
+    genre: "writing",
+  },
 ];
 
 export function getApp(slug: string): AppDef | undefined {

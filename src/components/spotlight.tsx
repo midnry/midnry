@@ -4,7 +4,7 @@ import { genreLabel, tierLabel } from "@/lib/catalog";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { listTrending, type SpotApp, type TrendingApp } from "@/lib/spotlight.functions";
 import { useFavorites } from "@/components/favorites";
-import { Skeleton } from "@/components/ui";
+import { Skeleton, cn } from "@/components/ui";
 import { AppMark } from "@/components/app-mark";
 import { toast } from "sonner";
 
@@ -109,14 +109,27 @@ export function SaveButton({ slug }: { slug: string }) {
     <button
       type="button"
       aria-pressed={on}
-      className="min-h-11 shrink-0 self-center px-1 text-sm text-muted hover:text-ink"
+      aria-label={on ? "Saved" : "Save"}
+      title={on ? "Saved" : "Save"}
+      className={cn(
+        "grid size-11 shrink-0 place-items-center self-center",
+        on ? "text-pine" : "text-muted hover:text-ink",
+      )}
       onClick={() => {
         void toggle(slug).catch(() => {
           toast.error("Could not update favorites.");
         });
       }}
     >
-      {on ? "Saved" : "Save"}
+      <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
+        <path
+          d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-3.2L6 20V5.5a1 1 0 0 1 1-1z"
+          fill={on ? "currentColor" : "none"}
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+      </svg>
     </button>
   );
 }
