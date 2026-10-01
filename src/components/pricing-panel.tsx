@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { APPS } from "@/lib/catalog";
+import { APPS, includedNames } from "@/lib/catalog";
 import { PASS_PRICE_LABEL } from "@/lib/access";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
@@ -18,7 +18,7 @@ export function PricingPanel() {
         <p className="text-sm text-muted">Account</p>
         <h2 className="mt-3 font-display text-4xl tracking-tight text-balance">The three defaults</h2>
         <p className="mt-4 font-display text-5xl tabular-nums">$0</p>
-        <p className="mt-1 text-sm text-muted">Scratch, Pulse, and Split. No card.</p>
+        <p className="mt-1 text-sm text-muted">{includedNames()}. No card.</p>
         <ul className="mt-6 space-y-2 text-sm">
           {included.map((app) => (
             <li key={app.slug}>{app.name}</li>
@@ -52,7 +52,7 @@ export function PricingPanel() {
         </p>
         <p className="mt-1 text-sm text-paper/70">The whole desk. Cancel anytime.</p>
         <ul className="mt-6 space-y-2 text-sm">
-          <li>Scratch, Pulse, and Split</li>
+          <li>{includedNames()}</li>
           {paid.map((app) => (
             <li key={app.slug}>{app.name}</li>
           ))}

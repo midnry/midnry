@@ -41,14 +41,14 @@ export const APPS: readonly AppDef[] = [
     slug: "pulse",
     name: "Pulse",
     blurb: "A focus timer. Twenty-five minutes on, five off. The count stays.",
-    tier: "free",
+    tier: "pass",
     genre: "focus",
   },
   {
     slug: "split",
     name: "Split",
     blurb: "Split a bill. Amount, people, tip. The per-person figure is the point.",
-    tier: "free",
+    tier: "pass",
     genre: "money",
   },
   {
@@ -111,17 +111,23 @@ export const APPS: readonly AppDef[] = [
     slug: "planner",
     name: "Planner",
     blurb: "A year of posts for one brand, using the holidays people keep where they are.",
-    tier: "pass",
+    tier: "free",
     genre: "writing",
   },
   {
     slug: "apply",
     name: "Apply",
     blurb: "Rewrite your resume for each role, then open that search on LinkedIn to submit it.",
-    tier: "pass",
+    tier: "free",
     genre: "work",
   },
 ];
+
+export function includedNames(): string {
+  const names = APPS.filter((app) => app.tier === "free").map((app) => app.name);
+  if (names.length <= 1) return names.join("");
+  return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+}
 
 export function getApp(slug: string): AppDef | undefined {
   return APPS.find((app) => app.slug === slug);

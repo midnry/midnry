@@ -7,7 +7,7 @@ import { SaveButton } from "@/components/spotlight";
 import { AppMark } from "@/components/app-mark";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { PASS_PRICE_LABEL } from "@/lib/access";
-import { genreLabel } from "@/lib/catalog";
+import { genreLabel, includedNames } from "@/lib/catalog";
 import { openApp, peekApp, type OpenResult, type PublishedApp } from "@/lib/community.functions";
 
 export function CommunityPage({ slug }: { slug: string }) {
@@ -104,7 +104,7 @@ export function CommunityPage({ slug }: { slug: string }) {
       ) : opened?.state === "locked" ? (
         <div className="mt-6 max-w-xl">
           <p>
-            Your account includes Scratch, Pulse, and Split. {name} opens with Midnry Pass — {PASS_PRICE_LABEL} a month.
+            Your account includes {includedNames()}. {name} opens with Midnry Pass — {PASS_PRICE_LABEL} a month.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link to="/billing" className={buttonClass({ tone: "primary" })}>

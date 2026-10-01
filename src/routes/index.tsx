@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PASS_PRICE_LABEL } from "@/lib/access";
+import { includedNames } from "@/lib/catalog";
 import { Shell } from "@/components/shell";
 import { DeskList } from "@/components/desk-list";
 import { Spotlight } from "@/components/spotlight";
@@ -20,7 +21,7 @@ function Home() {
           Your desk of tools, grouped by genre. Three come with your account.
         </h1>
         <p className="mt-5 max-w-xl text-pretty text-lg text-muted">
-          Midnry hosts a small desk of tools. Register once and Scratch, Pulse, and Split stay open.
+          Midnry hosts a small desk of tools. Register once and {includedNames()} stay open.
           The rest is Midnry Pass — {PASS_PRICE_LABEL} a month — including apps people add after review.
         </p>
         <HeroActions />
@@ -54,7 +55,7 @@ function Home() {
             <p className="font-display text-muted">02</p>
             <h3 className="mt-2 font-medium">Use the three</h3>
             <p className="mt-1 text-sm text-pretty text-muted">
-              Scratch, Pulse, and Split are included with every account.
+              {includedNames()} are included with every account.
             </p>
           </li>
           <li>

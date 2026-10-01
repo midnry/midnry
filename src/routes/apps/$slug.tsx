@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { getApp, tierLabel } from "@/lib/catalog";
+import { getApp, includedNames, tierLabel } from "@/lib/catalog";
 import { canOpenApp, PASS_PRICE_LABEL } from "@/lib/access";
 import { Shell } from "@/components/shell";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -113,7 +113,7 @@ function LockedGate({ name, blurb, slug }: { name: string; blurb: string; slug: 
       </div>
       <p className="mt-3 text-pretty text-muted">{blurb}</p>
       <p className="mt-4 text-pretty">
-        Your account includes Scratch, Pulse, and Split. {name} opens with Midnry Pass —{" "}
+        Your account includes {includedNames()}. {name} opens with Midnry Pass —{" "}
         {PASS_PRICE_LABEL} a month, charged to your card.
       </p>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">

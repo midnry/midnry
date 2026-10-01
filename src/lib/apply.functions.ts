@@ -1,7 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { readAccount } from "@/lib/account.server";
-import { readIsAdmin } from "@/lib/community.functions";
 import { env } from "@/lib/env.server";
 
 type TailorResult =
@@ -19,12 +17,6 @@ function parseKey(value: unknown): string | undefined {
     throw new Error("That key does not look right.");
   }
   return value;
-}
-
-async function allowed(userId: string): Promise<boolean> {
-  if (await readIsAdmin(userId)) return true;
-  const account = await readAccount(userId);
-  return account.hasPass;
 }
 
 function readJson(text: string): { note: string; resume: string } {
@@ -79,10 +71,7 @@ export const tailorRole = createServerFn({ method: "POST" })
     if (resume.length < 40) throw new Error("Add a resume first.");
     return { role, resume, apiKey: parseKey(row.apiKey) };
   })
-  .handler(async ({ context, data }): Promise<TailorResult> => {
-    if (!(await allowed(context.userId))) {
-      return { ok: false, error: "Midnry Pass is required to tailor a resume." };
-    }
+  .handler(async ({ data }): Promise<TailorResult> => {
     const apiKey = data.apiKey || env("XAI_API_KEY");
     if (!apiKey) return { ok: false, error: "Paste an xAI key, or set XAI_API_KEY on the server." };
     const model = env("XAI_MODEL") || "grok-3";

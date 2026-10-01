@@ -6,6 +6,7 @@ import { RedirectToSignIn } from "@/lib/auth/gates";
 import { captureBearer } from "@/lib/capture-bearer";
 import { Shell } from "@/components/shell";
 import { Button, Field, TextInput } from "@/components/ui";
+import { includedNames } from "@/lib/catalog";
 
 type LoginSearch = { next: string; intent: "register" | "sign-in" };
 
@@ -154,7 +155,7 @@ function LoginPage() {
             : step === "backup"
               ? "Enter one backup code. Each code works once."
               : mode === "register"
-                ? "Scratch, Pulse, and Split open as soon as the account exists."
+                ? `${includedNames()} open as soon as the account exists.`
                 : "Welcome back. Included tools are waiting."}
         </p>
 

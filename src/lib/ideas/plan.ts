@@ -1,7 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { readAccount } from "@/lib/account.server";
-import { readIsAdmin } from "@/lib/community.functions";
 import { env } from "@/lib/env.server";
 import {
   countryName,
@@ -136,12 +134,7 @@ export const planIdeaHalf = createServerFn({ method: "POST" })
     if (!Number.isInteger(part) || part < 0 || part > 3) throw new Error("Couldn’t plan that part of the year.");
     return { brand, about, country, year, part, apiKey: parseKey(row.apiKey) };
   })
-  .handler(async ({ context, data }): Promise<PlanResult> => {
-    const admin = await readIsAdmin(context.userId);
-    if (!admin) {
-      const account = await readAccount(context.userId);
-      if (!account.hasPass) return { ok: false, error: "Midnry Pass is required to plan a year." };
-    }
+  .handler(async ({ data }): Promise<PlanResult> => {
     const apiKey = data.apiKey || env("XAI_API_KEY");
     if (!apiKey) return { ok: false, error: "Paste an xAI key, or set XAI_API_KEY on the server." };
     try {
