@@ -15,7 +15,9 @@ import { Route as EarningsRouteImport } from './routes/earnings'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ReviewRouteImport } from './routes/review'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SecurityRouteImport } from './routes/security'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as AppsIndexRouteImport } from './routes/apps/index'
 import { Route as AppsSlugRouteImport } from './routes/apps/$slug'
@@ -52,9 +54,19 @@ const ReviewRoute = ReviewRouteImport.update({
   path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SecurityRoute = SecurityRouteImport.update({
   id: '/security',
   path: '/security',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SubmitRoute = SubmitRouteImport.update({
@@ -90,7 +102,9 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/review': typeof ReviewRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/security': typeof SecurityRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/apps/': typeof AppsIndexRoute
@@ -104,7 +118,9 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/review': typeof ReviewRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/security': typeof SecurityRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/apps': typeof AppsIndexRoute
@@ -119,7 +135,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/review': typeof ReviewRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/security': typeof SecurityRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/apps/': typeof AppsIndexRoute
@@ -135,7 +153,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/review'
+    | '/robots.txt'
     | '/security'
+    | '/sitemap.xml'
     | '/submit'
     | '/apps/$slug'
     | '/apps/'
@@ -149,7 +169,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/review'
+    | '/robots.txt'
     | '/security'
+    | '/sitemap.xml'
     | '/submit'
     | '/apps/$slug'
     | '/apps'
@@ -163,7 +185,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/review'
+    | '/robots.txt'
     | '/security'
+    | '/sitemap.xml'
     | '/submit'
     | '/apps/$slug'
     | '/apps/'
@@ -178,7 +202,9 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
   ReviewRoute: typeof ReviewRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
   SecurityRoute: typeof SecurityRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SubmitRoute: typeof SubmitRoute
   AppsSlugRoute: typeof AppsSlugRoute
   AppsIndexRoute: typeof AppsIndexRoute
@@ -230,11 +256,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/security': {
       id: '/security'
       path: '/security'
       fullPath: '/security'
       preLoaderRoute: typeof SecurityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/submit': {
@@ -282,7 +322,9 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
   ReviewRoute: ReviewRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
   SecurityRoute: SecurityRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   SubmitRoute: SubmitRoute,
   AppsSlugRoute: AppsSlugRoute,
   AppsIndexRoute: AppsIndexRoute,

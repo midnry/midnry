@@ -21,7 +21,7 @@ function Home() {
           Your desk of tools, grouped by genre. Three come with your account.
         </h1>
         <p className="mt-5 max-w-xl text-pretty text-lg text-muted">
-          Midnry hosts a small desk of tools. Register once and {includedNames()} stay open.
+          Midnry is a desk of web apps. Register once and {includedNames()} stay open.
           The rest is Midnry Pass — {PASS_PRICE_LABEL} a month — including apps people add after review.
         </p>
         <HeroActions />

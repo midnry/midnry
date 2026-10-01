@@ -5,7 +5,7 @@ import { AccountProvider } from "@/components/account";
 import { FavoritesProvider } from "@/components/favorites";
 import { RoleProvider } from "@/components/role";
 import { Shell } from "@/components/shell";
-import { APP_NAME } from "@/lib/catalog";
+import { APP_NAME, SITE_DESCRIPTION } from "@/lib/catalog";
 import { ToasterMount } from "@/components/toaster";
 import { Link } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
@@ -15,12 +15,17 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: APP_NAME },
-      {
-        name: "description",
-        content:
-          "Midnry hosts a desk of web apps. Register and three are included. The rest are $5 a month.",
-      },
+      { title: `${APP_NAME} — a desk of web apps` },
+      { name: "description", content: SITE_DESCRIPTION },
+      { name: "robots", content: "index, follow" },
+      { property: "og:title", content: `${APP_NAME} — a desk of web apps` },
+      { property: "og:description", content: SITE_DESCRIPTION },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: "/og.jpg" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: `${APP_NAME} — a desk of web apps` },
+      { name: "twitter:description", content: SITE_DESCRIPTION },
+      { name: "twitter:image", content: "/og.jpg" },
       { name: "theme-color", content: "#f4f7fb" },
     ],
     links: [
@@ -45,6 +50,27 @@ function RootComponent() {
     <html lang="en" className="antialiased" suppressHydrationWarning>
       <head>
         <HeadContent />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  name: APP_NAME,
+                  description: SITE_DESCRIPTION,
+                },
+                {
+                  "@type": "WebSite",
+                  name: APP_NAME,
+                  description: SITE_DESCRIPTION,
+                  inLanguage: "en",
+                },
+              ],
+            }),
+          }}
+        />
       </head>
       <body>
         <PreviewHostBridge />

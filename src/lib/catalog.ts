@@ -1,5 +1,8 @@
 export const APP_NAME = "Midnry";
 
+export const SITE_DESCRIPTION =
+  "Midnry is a desk of web apps. Scratch, Planner, and Apply come with a free account. The rest is $5 a month.";
+
 export type AppTier = "free" | "pass";
 
 export const GENRES = [
