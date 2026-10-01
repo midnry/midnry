@@ -3,6 +3,7 @@ import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getApp } from "@/lib/catalog";
 import { readAccount } from "@/lib/account.server";
+import { readIsAdmin } from "@/lib/community.functions";
 import type { AccountState } from "@/lib/access";
 
 async function gate(
@@ -12,6 +13,7 @@ async function gate(
   const app = getApp(slug);
   if (!app) throw new Error("Unknown app");
   if (app.tier === "free") return { ok: true };
+  if (await readIsAdmin(userId)) return { ok: true };
   const account = await readAccount(userId);
   if (!account.hasPass) return { ok: false, error: "locked" };
   return { ok: true };

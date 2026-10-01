@@ -32,6 +32,6 @@ export function passIsOpen(
   return !Number.isNaN(end) && end > now;
 }
 
-export function canOpenApp(app: AppDef, hasPass: boolean): boolean {
-  return app.tier === "free" || hasPass;
+export function canOpenApp(app: AppDef, hasPass: boolean, isAdmin = false): boolean {
+  return isAdmin || app.tier === "free" || hasPass;
 }

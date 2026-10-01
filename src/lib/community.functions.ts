@@ -82,7 +82,7 @@ function todayUTC(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function readIsAdmin(userId: string): Promise<boolean> {
+export async function readIsAdmin(userId: string): Promise<boolean> {
   const sql = await getSql();
   const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   if (adminEmail) {

@@ -4,6 +4,7 @@ import { canOpenApp, PASS_PRICE_LABEL } from "@/lib/access";
 import { Shell } from "@/components/shell";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
+import { useRole } from "@/components/role";
 import { buttonClass, Skeleton } from "@/components/ui";
 import { CommunityPage } from "@/components/community-app";
 import { ToolView } from "@/components/tools";
@@ -22,10 +23,11 @@ function AppPage() {
   const app = getApp(slug);
   const { user, isPending } = useCurrentUserState();
   const { account, loading } = useAccount();
+  const { isAdmin, ready: roleReady } = useRole();
 
   if (!app) return <CommunityPage slug={slug} />;
 
-  if (isPending || (user && loading && app.tier === "pass")) {
+  if (isPending || (user && app.tier === "pass" && (loading || !roleReady))) {
     return (
       <Shell>
         <Skeleton className="h-4 w-24" />
@@ -50,7 +52,7 @@ function AppPage() {
 
       {!user ? (
         <SignedOutGate name={app.name} blurb={app.blurb} tier={app.tier} slug={app.slug} />
-      ) : !canOpenApp(app, account?.hasPass ?? false) ? (
+      ) : !canOpenApp(app, account?.hasPass ?? false, isAdmin) ? (
         <LockedGate name={app.name} blurb={app.blurb} slug={app.slug} />
       ) : (
         <ToolView slug={app.slug} />

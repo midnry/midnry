@@ -4,6 +4,7 @@ import { APPS, GENRES, genreLabel, tierLabel, type GenreId } from "@/lib/catalog
 import { canOpenApp } from "@/lib/access";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
+import { useRole } from "@/components/role";
 import { listPublished, type PublishedApp } from "@/lib/community.functions";
 import { SaveButton } from "@/components/spotlight";
 import { AppMark } from "@/components/app-mark";
@@ -19,7 +20,8 @@ type DeskItem = {
 export function DeskList() {
   const { user, isPending } = useCurrentUserState();
   const { account, loading } = useAccount();
-  const known = !!user && !isPending && !loading;
+  const { isAdmin, ready: roleReady } = useRole();
+  const known = !!user && !isPending && !loading && roleReady;
   const [added, setAdded] = useState<PublishedApp[]>([]);
 
   useEffect(() => {
@@ -63,8 +65,9 @@ export function DeskList() {
             <h3 className="font-display text-2xl tracking-tight">{genreLabel(genre.id)}</h3>
             <ol className="mt-2">
               {group.map((app, index) => {
-                const open = known && (app.tier === "free" || (account?.hasPass ?? false));
-                const locked = known && app.tier === "pass" && !canOpenApp({ ...app, genre: app.genre }, account?.hasPass ?? false);
+                const unlocked = canOpenApp({ ...app, genre: app.genre }, account?.hasPass ?? false, isAdmin);
+                const open = known && unlocked;
+                const locked = known && app.tier === "pass" && !unlocked;
                 return (
                   <li key={app.slug} className="flex items-stretch gap-2 border-t border-line last:border-b">
                     <Link
