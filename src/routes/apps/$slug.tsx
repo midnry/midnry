@@ -8,6 +8,7 @@ import { buttonClass, Skeleton } from "@/components/ui";
 import { CommunityPage } from "@/components/community-app";
 import { ToolView } from "@/components/tools";
 import { SaveButton } from "@/components/spotlight";
+import { AppMark } from "@/components/app-mark";
 
 export const Route = createFileRoute("/apps/$slug")({
   head: ({ params }) => ({
@@ -50,7 +51,7 @@ function AppPage() {
       {!user ? (
         <SignedOutGate name={app.name} blurb={app.blurb} tier={app.tier} slug={app.slug} />
       ) : !canOpenApp(app, account?.hasPass ?? false) ? (
-        <LockedGate name={app.name} blurb={app.blurb} />
+        <LockedGate name={app.name} blurb={app.blurb} slug={app.slug} />
       ) : (
         <ToolView slug={app.slug} />
       )}
@@ -71,7 +72,10 @@ function SignedOutGate({
 }) {
   return (
     <div className="mt-6 max-w-xl">
-      <h1 className="font-display text-5xl tracking-tight">{name}</h1>
+      <div className="flex items-center gap-4">
+        <AppMark slug={slug} name={name} className="size-14" />
+        <h1 className="font-display text-5xl tracking-tight">{name}</h1>
+      </div>
       <p className="mt-3 text-pretty text-muted">{blurb}</p>
       <p className="mt-4 text-pretty">
         {tier === "free"
@@ -98,10 +102,13 @@ function SignedOutGate({
   );
 }
 
-function LockedGate({ name, blurb }: { name: string; blurb: string }) {
+function LockedGate({ name, blurb, slug }: { name: string; blurb: string; slug: string }) {
   return (
     <div className="mt-6 max-w-xl">
-      <h1 className="font-display text-5xl tracking-tight">{name}</h1>
+      <div className="flex items-center gap-4">
+        <AppMark slug={slug} name={name} className="size-14" />
+        <h1 className="font-display text-5xl tracking-tight">{name}</h1>
+      </div>
       <p className="mt-3 text-pretty text-muted">{blurb}</p>
       <p className="mt-4 text-pretty">
         Your account includes Scratch, Pulse, and Split. {name} opens with Midnry Pass —{" "}

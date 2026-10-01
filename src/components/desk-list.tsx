@@ -6,6 +6,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
 import { listPublished, type PublishedApp } from "@/lib/community.functions";
 import { SaveButton } from "@/components/spotlight";
+import { AppMark } from "@/components/app-mark";
 
 type DeskItem = {
   slug: string;
@@ -75,7 +76,9 @@ export function DeskList() {
                       <span className="w-8 pt-0.5 font-display text-muted tabular-nums">
                         {String(index + 1).padStart(2, "0")}
                       </span>
-                      <span className="min-w-0 flex-1">
+                      <span className="flex min-w-0 flex-1 gap-3">
+                        <AppMark slug={app.slug} name={app.name} className="mt-0.5" />
+                        <span className="min-w-0 flex-1">
                         <span className="flex items-baseline justify-between gap-3">
                           <span className="font-medium group-hover:underline">{app.name}</span>
                           <span className={app.tier === "pass" ? "text-sm text-pine" : "text-sm text-muted"}>
@@ -85,6 +88,7 @@ export function DeskList() {
                           </span>
                         </span>
                         <span className="mt-1 block text-sm text-pretty text-muted">{app.blurb}</span>
+                        </span>
                       </span>
                     </Link>
                     <SaveButton slug={app.slug} />

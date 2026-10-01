@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { getApp } from "@/lib/catalog";
 import { Skeleton, cn } from "@/components/ui";
+import { AppMark } from "@/components/app-mark";
 import type { SaveState } from "@/components/use-app-doc";
 
 export function nid(): string {
@@ -22,9 +23,12 @@ export function ToolFrame({
   return (
     <div className="mt-4">
       <div className={cn("flex flex-wrap items-end justify-between gap-3", hideOnPrint && "no-print")}>
-        <div className="max-w-2xl">
-          <h1 className="font-display text-5xl tracking-tight">{app?.name}</h1>
-          <p className="mt-2 text-pretty text-muted">{app?.blurb}</p>
+        <div className="flex max-w-2xl items-center gap-4">
+          <AppMark slug={slug} name={app?.name} className="size-14" />
+          <div>
+            <h1 className="font-display text-5xl tracking-tight">{app?.name}</h1>
+            <p className="mt-2 text-pretty text-muted">{app?.blurb}</p>
+          </div>
         </div>
         <SaveMark state={saveState ?? "idle"} />
       </div>

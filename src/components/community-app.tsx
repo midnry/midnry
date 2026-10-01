@@ -4,6 +4,7 @@ import { Shell } from "@/components/shell";
 import { AppFrame } from "@/components/app-frame";
 import { buttonClass, Skeleton } from "@/components/ui";
 import { SaveButton } from "@/components/spotlight";
+import { AppMark } from "@/components/app-mark";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { PASS_PRICE_LABEL } from "@/lib/access";
 import { genreLabel } from "@/lib/catalog";
@@ -82,7 +83,10 @@ export function CommunityPage({ slug }: { slug: string }) {
         </p>
         {user && peek ? <SaveButton slug={slug} /> : null}
       </div>
-      <h1 className="mt-4 font-display text-5xl tracking-tight">{name}</h1>
+      <div className="mt-4 flex items-center gap-4">
+        <AppMark slug={slug} name={name} className="size-14" />
+        <h1 className="font-display text-5xl tracking-tight">{name}</h1>
+      </div>
       <p className="mt-3 max-w-xl text-pretty text-muted">{blurb}</p>
 
       {!user ? (
