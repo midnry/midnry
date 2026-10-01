@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { APP_NAME } from "@/lib/catalog";
 import { PASS_PRICE_LABEL } from "@/lib/access";
 import { Shell } from "@/components/shell";
 import { DeskList } from "@/components/desk-list";
@@ -17,9 +16,8 @@ function Home() {
   return (
     <Shell>
       <section className="max-w-3xl">
-        <p className="text-sm font-medium text-pine">{APP_NAME}</p>
-        <h1 className="mt-3 font-display text-5xl tracking-tight text-balance sm:text-6xl">
-          A desk of tools, grouped by genre. Three come with your account.
+        <h1 className="font-display text-5xl tracking-tight text-balance sm:text-6xl">
+          Your desk of tools, grouped by genre. Three come with your account.
         </h1>
         <p className="mt-5 max-w-xl text-pretty text-lg text-muted">
           Midnry hosts a small desk of tools. Register once and Scratch, Pulse, and Split stay open.

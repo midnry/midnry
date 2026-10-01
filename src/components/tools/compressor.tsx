@@ -1,189 +1,318 @@
-import { useEffect, useState } from "react";
-import { Button, fieldClass } from "@/components/ui";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Button, cn } from "@/components/ui";
 import { ToolFrame } from "@/components/tools/shared";
+import { probeMedia, runJob, type Probe } from "@/lib/media/engine";
+import { makePracticeClip } from "@/lib/media/practice";
+import { COMPRESS_PRESETS, fitKeep, type CompressPresetId } from "@/lib/media/profiles";
+import { codecName, formatBytes, formatDuration, savedPercent, stemName } from "@/lib/media/format";
 
-type Preset = "small" | "balanced" | "clear";
-
-const PRESETS: Record<Preset, { label: string; scale: number; maxEdge: number; bits: number }> = {
-  small: { label: "Small", scale: 0.5, maxEdge: 854, bits: 700_000 },
-  balanced: { label: "Balanced", scale: 0.72, maxEdge: 1280, bits: 1_400_000 },
-  clear: { label: "Clear", scale: 1, maxEdge: 1920, bits: 2_800_000 },
-};
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+type Clip = { file: File; probe: Probe };
 
 export function CompressorTool() {
-  const [file, setFile] = useState<File | null>(null);
-  const [preset, setPreset] = useState<Preset>("balanced");
-  const [progress, setProgress] = useState<number | null>(null);
-  const [result, setResult] = useState<{ url: string; size: number } | null>(null);
+  const [clip, setClip] = useState<Clip | null>(null);
+  const [presetId, setPresetId] = useState<CompressPresetId>("balanced");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [pickError, setPickError] = useState<string | null>(null);
+  const [status, setStatus] = useState<"idle" | "run" | "done" | "error">("idle");
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<File | null>(null);
+  const cancelRef = useRef<(() => Promise<void>) | null>(null);
+  const token = useRef(0);
+  const preset = COMPRESS_PRESETS.find((item) => item.id === presetId) ?? COMPRESS_PRESETS[1];
 
-  useEffect(() => {
-    return () => {
-      if (result) URL.revokeObjectURL(result.url);
-    };
-  }, [result]);
+  const estimate = useMemo(() => {
+    if (!clip?.probe.hasVideo || clip.probe.duration <= 0 || !preset) return null;
+    const audio = clip.probe.hasAudio ? preset.audioBps : 0;
+    return ((preset.videoBps + audio) * clip.probe.duration) / 8;
+  }, [clip, preset]);
+
+  async function take(file: File | undefined) {
+    if (!file) return;
+    setBusy("Reading the file…");
+    setPickError(null);
+    try {
+      const probe = await probeMedia(file);
+      if (!probe.hasVideo) throw new Error("That file has no picture. Choose a video.");
+      setClip({ file, probe });
+      token.current += 1;
+      void cancelRef.current?.();
+      setStatus("idle");
+      setResult(null);
+      setError(null);
+      setProgress(0);
+    } catch (caught) {
+      setPickError(caught instanceof Error ? caught.message : "Couldn’t read that file.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function practice() {
+    setBusy("Making a 2-second practice clip…");
+    setPickError(null);
+    try {
+      await take(await makePracticeClip());
+    } catch (caught) {
+      setPickError(caught instanceof Error ? caught.message : "Couldn’t make a practice clip.");
+      setBusy(null);
+    }
+  }
 
   async function compress() {
-    if (!file || busy) return;
-    setBusy(true);
-    setError(null);
+    if (!clip?.probe.hasVideo || !preset) return;
+    const my = ++token.current;
+    setStatus("run");
     setProgress(0);
-    if (result) URL.revokeObjectURL(result.url);
+    setError(null);
     setResult(null);
+    const size = fitKeep(clip.probe.width, clip.probe.height, preset.maxLong);
     try {
-      const blob = await squeeze(file, preset, setProgress);
-      setResult({ url: URL.createObjectURL(blob), size: blob.size });
-      setProgress(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not compress that video.");
-      setProgress(null);
-    } finally {
-      setBusy(false);
+      const file = await runJob({
+        file: clip.file,
+        kind: "mp4",
+        filename: `${stemName(clip.file.name)}.mp4`,
+        video: { ...size, bitrate: preset.videoBps, codec: "avc", keyFrameInterval: 2 },
+        audio: clip.probe.hasAudio ? { codec: "aac", bitrate: preset.audioBps } : undefined,
+        onProgress: (value) => {
+          if (token.current === my) setProgress(value);
+        },
+        registerCancel: (cancel) => {
+          cancelRef.current = cancel;
+        },
+      });
+      if (token.current !== my) return;
+      setResult(file);
+      setStatus("done");
+      setProgress(1);
+    } catch (caught) {
+      if (token.current !== my) return;
+      const message = caught instanceof Error ? caught.message : "Couldn’t process that file.";
+      if (message === "Canceled") {
+        setStatus("idle");
+        return;
+      }
+      setStatus("error");
+      setError(message);
     }
   }
 
   return (
     <ToolFrame slug="compressor">
-      <div className="max-w-xl space-y-4">
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">Video</span>
-          <input
-            type="file"
-            accept="video/*"
-            className={fieldClass}
-            onChange={(event) => {
-              const next = event.target.files?.[0] ?? null;
-              setFile(next);
-              setError(null);
-            }}
-          />
-        </label>
-        <label className="block">
-          <span className="mb-1.5 block text-sm font-medium">Size</span>
-          <select
-            className={fieldClass}
-            value={preset}
-            onChange={(event) => setPreset(event.target.value as Preset)}
-          >
-            {(Object.keys(PRESETS) as Preset[]).map((id) => (
-              <option key={id} value={id}>
-                {PRESETS[id].label}
-              </option>
-            ))}
-          </select>
-        </label>
-        {file ? (
-          <p className="text-sm text-muted">
-            {file.name} · {formatBytes(file.size)}
-          </p>
+      <div className="flex max-w-xl flex-col gap-4">
+        <ClipField clip={clip} busy={busy} error={pickError} onTake={take} onPractice={practice} />
+        <div className="grid grid-cols-2 gap-2">
+          {COMPRESS_PRESETS.map((item) => {
+            const active = item.id === presetId;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setPresetId(item.id)}
+                className={cn(
+                  "rounded-2xl px-3 py-3 text-left",
+                  active ? "bg-pine text-paper" : "bg-card text-ink shadow-line",
+                )}
+              >
+                <span className="block text-sm font-medium">{item.name}</span>
+                <span className={cn("mt-1 block text-sm", active ? "text-paper/75" : "text-muted")}>{item.note}</span>
+              </button>
+            );
+          })}
+        </div>
+        {estimate !== null ? (
+          <p className="text-sm tabular-nums text-muted">About {formatBytes(estimate)} after audio.</p>
         ) : null}
-        {progress !== null ? (
-          <p className="text-sm text-pine">Compressing… {Math.round(progress * 100)}%</p>
-        ) : null}
-        {error ? (
-          <p role="alert" className="text-sm text-fail">
-            {error}
-          </p>
-        ) : null}
-        <Button tone="primary" disabled={!file || busy} onClick={() => void compress()}>
-          {busy ? "Working…" : "Compress"}
+        <Button tone="primary" onClick={() => void compress()} disabled={!clip?.probe.hasVideo || status === "run"}>
+          Compress to MP4
         </Button>
-        {result && file ? (
-          <div className="rounded-2xl border border-line bg-card p-4">
-            <p className="text-sm">
-              {formatBytes(file.size)} → {formatBytes(result.size)}
-              {file.size > 0 ? ` · ${Math.round((1 - result.size / file.size) * 100)}% smaller` : ""}
-            </p>
-            <a
-              href={result.url}
-              download={file.name.replace(/\.[^.]+$/, "") + "-small.webm"}
-              className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-pine underline"
-            >
-              Download WebM
-            </a>
-          </div>
-        ) : null}
-        <p className="text-sm text-pretty text-muted">
-          It runs in this browser, so a long video takes about as long as it plays. The smaller file is WebM.
-        </p>
+        <Result
+          status={status}
+          progress={progress}
+          error={error}
+          result={result}
+          before={clip?.file.size}
+          onCancel={() => void cancelRef.current?.()}
+        />
       </div>
     </ToolFrame>
   );
 }
 
-function squeeze(file: File, preset: Preset, onProgress: (value: number) => void): Promise<Blob> {
-  const spec = PRESETS[preset];
-  return new Promise((resolve, reject) => {
-    const video = document.createElement("video");
-    const url = URL.createObjectURL(file);
-    video.preload = "auto";
-    video.playsInline = true;
-    video.muted = true;
-    video.src = url;
+function ClipField({
+  clip,
+  busy,
+  error,
+  onTake,
+  onPractice,
+}: {
+  clip: Clip | null;
+  busy: string | null;
+  error: string | null;
+  onTake: (file: File | undefined) => void;
+  onPractice: () => void;
+}) {
+  const [over, setOver] = useState(false);
+  const [url, setUrl] = useState<string | null>(null);
 
-    const fail = (message: string) => {
-      URL.revokeObjectURL(url);
-      reject(new Error(message));
-    };
+  useEffect(() => {
+    if (!clip) {
+      setUrl(null);
+      return;
+    }
+    const next = URL.createObjectURL(clip.file);
+    setUrl(next);
+    return () => URL.revokeObjectURL(next);
+  }, [clip]);
 
-    video.onerror = () => fail("This browser could not read that video.");
-    video.onloadedmetadata = () => {
-      const duration = video.duration;
-      if (!Number.isFinite(duration) || duration <= 0) {
-        fail("That video has no length to compress.");
-        return;
-      }
-      const ratio = Math.min(spec.scale, spec.maxEdge / Math.max(video.videoWidth, video.videoHeight, 1));
-      const width = Math.max(2, Math.round(video.videoWidth * ratio));
-      const height = Math.max(2, Math.round(video.videoHeight * ratio));
-      const canvas = document.createElement("canvas");
-      canvas.width = width - (width % 2);
-      canvas.height = height - (height % 2);
-      const ctx = canvas.getContext("2d");
-      const capture = canvas.captureStream(30);
-      if (!ctx || !capture) {
-        fail("This browser cannot re-encode video.");
-        return;
-      }
-      const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
-        ? "video/webm;codecs=vp9,opus"
-        : MediaRecorder.isTypeSupported("video/webm")
-          ? "video/webm"
-          : "";
-      if (!mime) {
-        fail("This browser cannot write a WebM file.");
-        return;
-      }
-      const recorder = new MediaRecorder(capture, { mimeType: mime, videoBitsPerSecond: spec.bits });
-      const chunks: Blob[] = [];
-      recorder.ondataavailable = (event) => {
-        if (event.data.size) chunks.push(event.data);
-      };
-      recorder.onerror = () => fail("Compression stopped.");
-      recorder.onstop = () => {
-        URL.revokeObjectURL(url);
-        resolve(new Blob(chunks, { type: mime }));
-      };
+  return (
+    <div className="flex flex-col gap-4">
+      <label
+        className={cn("block rounded-2xl bg-card p-4 shadow-line", over && "outline outline-2 outline-pine")}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setOver(true);
+        }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(event) => {
+          event.preventDefault();
+          setOver(false);
+          onTake(event.dataTransfer.files[0]);
+        }}
+      >
+        <input
+          className="sr-only"
+          type="file"
+          accept="video/*,.mkv,.mov,.mp4,.webm,.m4v"
+          onChange={(event) => {
+            onTake(event.target.files?.[0]);
+            event.target.value = "";
+          }}
+        />
+        <span className="block font-medium">{clip ? clip.file.name : "Choose a video"}</span>
+        <span className="mt-1 block text-sm text-muted">{busy ?? "Stays on this device. Nothing is uploaded."}</span>
+      </label>
+      <Button tone="quiet" onClick={onPractice} disabled={Boolean(busy)}>
+        Use a practice clip
+      </Button>
+      {error ? <p className="text-sm text-fail">{error}</p> : null}
+      {clip && url ? (
+        <>
+          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl bg-line">
+            {[
+              ["Length", formatDuration(clip.probe.duration)],
+              ["Size", formatBytes(clip.file.size)],
+              ["Frame", `${clip.probe.width}×${clip.probe.height}`],
+              ["Codec", [codecName(clip.probe.videoCodec), codecName(clip.probe.audioCodec)].filter(Boolean).join(" · ") || "—"],
+            ].map(([label, value]) => (
+              <div key={label} className="bg-card px-3 py-3">
+                <dt className="text-xs text-muted">{label}</dt>
+                <dd className="mt-1 truncate text-sm font-medium tabular-nums">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <video src={url} controls playsInline className="max-h-96 w-full rounded-2xl bg-card object-contain" />
+        </>
+      ) : null}
+    </div>
+  );
+}
 
-      const draw = () => {
-        if (video.ended || video.paused) return;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        onProgress(Math.min(0.99, video.currentTime / duration));
-        requestAnimationFrame(draw);
-      };
-      video.onended = () => {
-        onProgress(1);
-        if (recorder.state !== "inactive") recorder.stop();
-      };
-      recorder.start(250);
-      void video.play().then(draw).catch(() => fail("Playback was blocked."));
-    };
-  });
+function Result({
+  status,
+  progress,
+  error,
+  result,
+  before,
+  onCancel,
+}: {
+  status: "idle" | "run" | "done" | "error";
+  progress: number;
+  error: string | null;
+  result: File | null;
+  before?: number;
+  onCancel: () => void;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [canShare, setCanShare] = useState(false);
+  const [shareNote, setShareNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!result) {
+      setUrl(null);
+      setCanShare(false);
+      return;
+    }
+    const next = URL.createObjectURL(result);
+    setUrl(next);
+    setCanShare(typeof navigator.canShare === "function" && navigator.canShare({ files: [result] }));
+    return () => URL.revokeObjectURL(next);
+  }, [result]);
+
+  if (status === "idle") return null;
+  const percent = Math.round(progress * 100);
+  const saved = result && before ? savedPercent(before, result.size) : null;
+
+  function download() {
+    if (!result || !url) return;
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = result.name;
+    link.click();
+  }
+
+  async function share() {
+    if (!result) return;
+    setShareNote(null);
+    try {
+      await navigator.share({ files: [result], title: result.name });
+    } catch (caught) {
+      if (caught instanceof DOMException && caught.name === "AbortError") return;
+      setShareNote("Couldn’t open the share sheet. Download the file instead.");
+    }
+  }
+
+  return (
+    <section className="rounded-2xl bg-card p-4 shadow-line" aria-live="polite">
+      {status === "run" ? (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="text-sm font-medium">Working on this device</p>
+            <p className="text-sm tabular-nums text-muted">{percent}%</p>
+          </div>
+          <div className="h-1 overflow-hidden rounded-full bg-paper-2" role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}>
+            <div className="h-full bg-pine" style={{ width: `${percent}%` }} />
+          </div>
+          <Button tone="quiet" onClick={onCancel}>
+            Stop
+          </Button>
+        </div>
+      ) : null}
+      {status === "error" && error ? <p className="text-sm text-fail">{error}</p> : null}
+      {status === "done" && result ? (
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="text-sm font-medium">{result.name}</p>
+            <p className="mt-1 text-sm tabular-nums text-muted">
+              {before ? `${formatBytes(before)} → ${formatBytes(result.size)}` : formatBytes(result.size)}
+              {saved !== null ? ` · ${saved}% smaller` : ""}
+            </p>
+          </div>
+          {url ? <video src={url} controls playsInline className="max-h-96 w-full rounded-2xl bg-paper-2 object-contain" /> : null}
+          <div className="flex flex-wrap gap-2">
+            <Button tone="primary" onClick={download}>
+              Download
+            </Button>
+            {canShare ? (
+              <Button tone="quiet" onClick={() => void share()}>
+                Share
+              </Button>
+            ) : null}
+          </div>
+          {shareNote ? <p className="text-sm text-muted">{shareNote}</p> : null}
+        </div>
+      ) : null}
+    </section>
+  );
 }

@@ -96,7 +96,7 @@ export const APPS: readonly AppDef[] = [
   {
     slug: "compressor",
     name: "Compressor",
-    blurb: "Shrink a video in the browser, then download the smaller file.",
+    blurb: "Re-encode a video to MP4 on this device. The preset sets the bitrate.",
     tier: "pass",
     genre: "work",
   },
