@@ -1,0 +1,37 @@
+# Render Blueprint. In the Render dashboard: New → Blueprint, then pick this GitHub repo.
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: midnry
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    healthCheckPath: /
+    buildCommand: npm install && NITRO_PRESET=render npm run build:render
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NITRO_PRESET
+        value: render
+      - key: VITE_AUTH_ENABLED
+        value: "true"
+      - key: HOST
+        value: 0.0.0.0
+      - key: BETTER_AUTH_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: midnry-db
+          property: connectionString
+
+databases:
+  - name: midnry-db
+    plan: free
+    databaseName: midnry
+    user: midnry
