@@ -8,6 +8,8 @@ import { InvoiceTool } from "@/components/tools/invoice";
 import { GlyphTool } from "@/components/tools/glyph";
 import { HabitsTool } from "@/components/tools/habits";
 import { ContrastTool } from "@/components/tools/contrast";
+import { CompressorTool } from "@/components/tools/compressor";
+import { ChatTool } from "@/components/tools/chat";
 
 const TOOLS: Record<string, () => ReactElement> = {
   scratch: ScratchTool,
@@ -19,6 +21,8 @@ const TOOLS: Record<string, () => ReactElement> = {
   glyph: GlyphTool,
   habits: HabitsTool,
   contrast: ContrastTool,
+  compressor: CompressorTool,
+  chat: ChatTool,
 };
 
 export function ToolView({ slug }: { slug: string }) {

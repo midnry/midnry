@@ -93,6 +93,20 @@ export const APPS: readonly AppDef[] = [
     tier: "pass",
     genre: "design",
   },
+  {
+    slug: "compressor",
+    name: "Compressor",
+    blurb: "Shrink a video in the browser, then download the smaller file.",
+    tier: "pass",
+    genre: "work",
+  },
+  {
+    slug: "chat",
+    name: "Chat",
+    blurb: "A conversation with Grok. The thread stays on your account.",
+    tier: "pass",
+    genre: "writing",
+  },
 ];
 
 export function getApp(slug: string): AppDef | undefined {

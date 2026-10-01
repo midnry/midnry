@@ -17,10 +17,7 @@ function Home() {
   return (
     <Shell>
       <section className="max-w-3xl">
-        <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="" width={28} height={28} className="size-7" />
-          <p className="text-sm font-medium text-pine">{APP_NAME}</p>
-        </div>
+        <p className="text-sm font-medium text-pine">{APP_NAME}</p>
         <h1 className="mt-3 font-display text-5xl tracking-tight text-balance sm:text-6xl">
           A desk of tools, grouped by genre. Three come with your account.
         </h1>

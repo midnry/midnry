@@ -11,6 +11,8 @@ const KINDS = {
   glyph: "braces",
   habits: "check",
   contrast: "contrast",
+  compressor: "film",
+  chat: "chat",
 } as const;
 
 type Kind = (typeof KINDS)[keyof typeof KINDS] | "letter";
@@ -59,6 +61,8 @@ export function AppMark({
       {kind === "braces" ? <Braces fill={fill} /> : null}
       {kind === "check" ? <Check fill={fill} /> : null}
       {kind === "contrast" ? <Contrast fill={fill} /> : null}
+      {kind === "film" ? <Film fill={fill} /> : null}
+      {kind === "chat" ? <Chat fill={fill} /> : null}
       {kind === "letter" ? (
         <text
           x="32"
@@ -165,4 +169,21 @@ function Contrast({ fill }: { fill: string }) {
       <circle cx="36.5" cy="33" r="7.2" />
     </g>
   );
+}
+
+function Film({ fill }: { fill: string }) {
+  return (
+    <g fill={fill}>
+      <rect x="20" y="24" width="24" height="16" rx="2.5" />
+      <rect x="23" y="27.2" width="2.2" height="2.2" rx="0.4" fill="#f4f7fb" />
+      <rect x="23" y="34.6" width="2.2" height="2.2" rx="0.4" fill="#f4f7fb" />
+      <rect x="38.8" y="27.2" width="2.2" height="2.2" rx="0.4" fill="#f4f7fb" />
+      <rect x="38.8" y="34.6" width="2.2" height="2.2" rx="0.4" fill="#f4f7fb" />
+      <path d="M30 29.2v6.2l5.2-3.1z" fill="#f4f7fb" />
+    </g>
+  );
+}
+
+function Chat({ fill }: { fill: string }) {
+  return <path d="M20 24a4 4 0 0 1 4-4h16a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H30l-7 6v-6h-1a4 4 0 0 1-2-3.5z" fill={fill} />;
 }
