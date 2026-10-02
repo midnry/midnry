@@ -15,6 +15,7 @@ const KINDS = {
   chat: "chat",
   planner: "calendar",
   apply: "case",
+  tasks: "tasks",
 } as const;
 
 type Kind = (typeof KINDS)[keyof typeof KINDS] | "letter";
@@ -67,6 +68,7 @@ export function AppMark({
       {kind === "chat" ? <Chat fill={fill} /> : null}
       {kind === "calendar" ? <Calendar fill={fill} /> : null}
       {kind === "case" ? <Case fill={fill} /> : null}
+      {kind === "tasks" ? <Tasks fill={fill} /> : null}
       {kind === "letter" ? (
         <text
           x="32"
@@ -206,6 +208,15 @@ function Case({ fill }: { fill: string }) {
     <g fill="none" stroke={fill} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
       <rect x="18" y="27" width="28" height="16" rx="2.5" />
       <path d="M26 27v-3.5a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3V27M18 34h28" />
+    </g>
+  );
+}
+
+function Tasks({ fill }: { fill: string }) {
+  return (
+    <g fill="none" stroke={fill} strokeWidth="3" strokeLinecap="round">
+      <path d="M24 28h16M24 34h16M24 40h10" />
+      <path d="M20 28.2l1.4 1.4 2.4-2.8" />
     </g>
   );
 }

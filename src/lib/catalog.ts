@@ -124,6 +124,13 @@ export const APPS: readonly AppDef[] = [
     tier: "free",
     genre: "work",
   },
+  {
+    slug: "tasks",
+    name: "Tasks",
+    blurb: "Projects, due dates, priorities, and a today list. Personal, saved with your account.",
+    tier: "pass",
+    genre: "work",
+  },
 ];
 
 export function includedNames(): string {
