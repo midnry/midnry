@@ -1,8 +1,5 @@
 export const APP_NAME = "Midnry";
 
-export const SITE_DESCRIPTION =
-  "Midnry is a desk of web apps. Scratch, Planner, and Apply come with a free account. The rest is $5 a month.";
-
 export type AppTier = "free" | "pass";
 
 export const GENRES = [
@@ -40,7 +37,7 @@ export const APPS: readonly AppDef[] = [
     slug: "scratch",
     name: "Scratch",
     blurb: "A plain notepad. Several notes, saved with your account.",
-    tier: "free",
+    tier: "pass",
     genre: "writing",
     features: ["Several notes on one account", "A title and a body for each note", "Notes stay when you leave"],
     guide: ["Type a title and add the note.", "Select a note in the list to open it.", "Edit the title or the body. It saves on its own."],
@@ -178,7 +175,7 @@ export const APPS: readonly AppDef[] = [
     slug: "cycle",
     name: "Cycle",
     blurb: "A period log. Flow, symptoms, and an estimate of the next cycle. Not medical advice.",
-    tier: "pass",
+    tier: "free",
     genre: "health",
     features: [
       "Flow, symptoms, mood, discharge, and notes on any day",
@@ -202,6 +199,8 @@ export function includedNames(): string {
   if (names.length <= 1) return names.join("");
   return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
 }
+
+export const SITE_DESCRIPTION = `Midnry is a desk of web apps. ${includedNames()} come with a free account. The rest is $5 a month.`;
 
 export function getApp(slug: string): AppDef | undefined {
   return APPS.find((app) => app.slug === slug);
