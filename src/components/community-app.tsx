@@ -5,14 +5,15 @@ import { AppFrame } from "@/components/app-frame";
 import { buttonClass, Skeleton } from "@/components/ui";
 import { SaveButton } from "@/components/spotlight";
 import { AppMark } from "@/components/app-mark";
+import { AppGuide } from "@/components/app-guide";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { PASS_PRICE_LABEL } from "@/lib/access";
 import { genreLabel, includedNames } from "@/lib/catalog";
-import { openApp, peekApp, type OpenResult, type PublishedApp } from "@/lib/community.functions";
+import { peekApp, openApp, type OpenResult, type PublishedDetail } from "@/lib/community.functions";
 
 export function CommunityPage({ slug }: { slug: string }) {
   const { user, isPending } = useCurrentUserState();
-  const [peek, setPeek] = useState<PublishedApp | null | undefined>(undefined);
+  const [peek, setPeek] = useState<PublishedDetail | null | undefined>(undefined);
   const [opened, setOpened] = useState<OpenResult | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -70,6 +71,8 @@ export function CommunityPage({ slug }: { slug: string }) {
 
   const name = opened && opened.state !== "missing" ? opened.name : (peek?.name ?? "App");
   const blurb = opened && opened.state !== "missing" ? opened.blurb : (peek?.blurb ?? "");
+  const features = opened && opened.state !== "missing" ? opened.features : (peek?.features ?? []);
+  const guide = opened && opened.state !== "missing" ? opened.guide : (peek?.guide ?? []);
 
   return (
     <Shell>
@@ -88,6 +91,7 @@ export function CommunityPage({ slug }: { slug: string }) {
         <h1 className="font-display text-5xl tracking-tight">{name}</h1>
       </div>
       <p className="mt-3 max-w-xl text-pretty text-muted">{blurb}</p>
+      <AppGuide features={features} guide={guide} />
 
       {!user ? (
         <div className="mt-6 max-w-xl">

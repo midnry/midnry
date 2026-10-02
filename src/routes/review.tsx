@@ -212,6 +212,8 @@ function OwnAppForm() {
   const [blurb, setBlurb] = useState("");
   const [genre, setGenre] = useState<GenreId>("work");
   const [html, setHtml] = useState("");
+  const [features, setFeatures] = useState("");
+  const [guide, setGuide] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -241,6 +243,8 @@ function OwnAppForm() {
     setBlurb("");
     setGenre("work");
     setHtml("");
+    setFeatures("");
+    setGuide("");
     setError(null);
   }
 
@@ -260,7 +264,7 @@ function OwnAppForm() {
     setError(null);
     try {
       const result = await publishOwnApp({
-        data: { id: editing ?? undefined, name, blurb, genre, html },
+        data: { id: editing ?? undefined, name, blurb, genre, html, features, guide },
       });
       if (!result.ok) {
         setError(result.error);
@@ -296,6 +300,12 @@ function OwnAppForm() {
             className="min-h-24"
             required
           />
+        </Field>
+        <Field label="Features" hint="One feature per line. At least two. Shown on the app page.">
+          <TextArea value={features} onChange={(event) => setFeatures(event.target.value)} className="min-h-28" required />
+        </Field>
+        <Field label="How to use" hint="One step per line. At least two.">
+          <TextArea value={guide} onChange={(event) => setGuide(event.target.value)} className="min-h-28" required />
         </Field>
         <Field label="Genre">
           <select className={fieldClass} value={genre} onChange={(event) => setGenre(event.target.value as GenreId)}>
@@ -358,6 +368,8 @@ function OwnAppForm() {
                     setEditing(app.id);
                     setName(app.name);
                     setBlurb(app.blurb);
+                    setFeatures(app.features);
+                    setGuide(app.guide);
                     setGenre(app.genre);
                     setHtml(app.html);
                     setError(null);

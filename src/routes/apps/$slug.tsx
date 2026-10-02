@@ -10,6 +10,7 @@ import { CommunityPage } from "@/components/community-app";
 import { ToolView } from "@/components/tools";
 import { SaveButton } from "@/components/spotlight";
 import { AppMark } from "@/components/app-mark";
+import { AppGuide } from "@/components/app-guide";
 
 export const Route = createFileRoute("/apps/$slug")({
   head: ({ params }) => ({
@@ -51,9 +52,16 @@ function AppPage() {
       </div>
 
       {!user ? (
-        <SignedOutGate name={app.name} blurb={app.blurb} tier={app.tier} slug={app.slug} />
+        <SignedOutGate
+          name={app.name}
+          blurb={app.blurb}
+          tier={app.tier}
+          slug={app.slug}
+          features={app.features}
+          guide={app.guide}
+        />
       ) : !canOpenApp(app, account?.hasPass ?? false, isAdmin) ? (
-        <LockedGate name={app.name} blurb={app.blurb} slug={app.slug} />
+        <LockedGate name={app.name} blurb={app.blurb} slug={app.slug} features={app.features} guide={app.guide} />
       ) : (
         <ToolView slug={app.slug} />
       )}
@@ -66,19 +74,24 @@ function SignedOutGate({
   blurb,
   tier,
   slug,
+  features,
+  guide,
 }: {
   name: string;
   blurb: string;
   tier: "free" | "pass";
   slug: string;
+  features: readonly string[];
+  guide: readonly string[];
 }) {
   return (
-    <div className="mt-6 max-w-xl">
+    <div className="mt-6">
       <div className="flex items-center gap-4">
         <AppMark slug={slug} name={name} className="size-14" />
         <h1 className="font-display text-5xl tracking-tight">{name}</h1>
       </div>
       <p className="mt-3 text-pretty text-muted">{blurb}</p>
+      <AppGuide features={features} guide={guide} />
       <p className="mt-4 text-pretty">
         {tier === "free"
           ? "This one is included with every account. Sign in or register to open it."
@@ -104,14 +117,27 @@ function SignedOutGate({
   );
 }
 
-function LockedGate({ name, blurb, slug }: { name: string; blurb: string; slug: string }) {
+function LockedGate({
+  name,
+  blurb,
+  slug,
+  features,
+  guide,
+}: {
+  name: string;
+  blurb: string;
+  slug: string;
+  features: readonly string[];
+  guide: readonly string[];
+}) {
   return (
-    <div className="mt-6 max-w-xl">
+    <div className="mt-6">
       <div className="flex items-center gap-4">
         <AppMark slug={slug} name={name} className="size-14" />
         <h1 className="font-display text-5xl tracking-tight">{name}</h1>
       </div>
       <p className="mt-3 text-pretty text-muted">{blurb}</p>
+      <AppGuide features={features} guide={guide} />
       <p className="mt-4 text-pretty">
         Your account includes {includedNames()}. {name} opens with Midnry Pass —{" "}
         {PASS_PRICE_LABEL} a month, charged to your card.

@@ -12,6 +12,8 @@ export type PublishedApp = {
   genre: GenreId;
 };
 
+export type PublishedDetail = PublishedApp & { features: string[]; guide: string[] };
+
 export type MineApp = {
   id: string;
   slug: string;
@@ -19,6 +21,8 @@ export type MineApp = {
   blurb: string;
   genre: GenreId;
   html: string;
+  features: string;
+  guide: string;
   draftStatus: "pending" | "rejected" | "clean";
   reviewNote: string | null;
   live: boolean;
@@ -38,13 +42,15 @@ export type PendingApp = {
 
 export type OpenResult =
   | { state: "missing" }
-  | { state: "locked"; name: string; blurb: string }
+  | { state: "locked"; name: string; blurb: string; features: string[]; guide: string[] }
   | {
       state: "ready";
       name: string;
       blurb: string;
       genre: GenreId;
       html: string;
+      features: string[];
+      guide: string[];
       unpublished: boolean;
       pendingUpdate: boolean;
     };
@@ -57,12 +63,16 @@ type SubmissionRow = {
   blurb: string;
   genre: string;
   html: string;
+  features: string;
+  guide: string;
   draft_status: string;
   review_note: string | null;
   published_name: string | null;
   published_blurb: string | null;
   published_genre: string | null;
   published_html: string | null;
+  published_features: string | null;
+  published_guide: string | null;
 };
 
 function asIso(value: unknown): string | null {
@@ -148,7 +158,31 @@ async function uniqueSlug(name: string): Promise<string> {
   throw new Error("Could not name this app. Try a different title.");
 }
 
-function parseDraft(input: unknown): { id?: string; name: string; blurb: string; genre: GenreId; html: string } {
+function splitLines(value: string | null | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function takeLines(value: unknown, label: string): string[] {
+  if (typeof value !== "string") throw new Error(`Add ${label}, one per line.`);
+  const lines = splitLines(value).slice(0, 8);
+  if (lines.length < 2) throw new Error(`Add at least two lines for ${label}.`);
+  if (lines.some((line) => line.length > 140)) throw new Error("Keep each line under 140 characters.");
+  return lines;
+}
+
+function parseDraft(input: unknown): {
+  id?: string;
+  name: string;
+  blurb: string;
+  genre: GenreId;
+  html: string;
+  features: string;
+  guide: string;
+} {
   if (!input || typeof input !== "object") throw new Error("Invalid app");
   const raw = input as Record<string, unknown>;
   const name = typeof raw.name === "string" ? raw.name.trim() : "";
@@ -164,7 +198,15 @@ function parseDraft(input: unknown): { id?: string; name: string; blurb: string;
   }
   if (!html.includes("<") || html.includes("\0")) throw new Error("That file does not look like HTML.");
   if (id && !/^[0-9a-f-]{16,40}$/i.test(id)) throw new Error("Unknown app.");
-  return { id, name, blurb, genre, html };
+  return {
+    id,
+    name,
+    blurb,
+    genre,
+    html,
+    features: takeLines(raw.features, "the features").join("\n"),
+    guide: takeLines(raw.guide, "how to use it").join("\n"),
+  };
 }
 
 export const getRole = createServerFn({ method: "GET" })
@@ -189,16 +231,31 @@ export const peekApp = createServerFn({ method: "GET" })
     if (typeof slug !== "string" || slug.length > 64) throw new Error("Unknown app");
     return slug;
   })
-  .handler(async ({ data: slug }): Promise<PublishedApp | null> => {
+  .handler(async ({ data: slug }): Promise<PublishedDetail | null> => {
     const sql = await getSql();
-    const rows = await sql<{ slug: string; name: string; blurb: string; genre: string }>`
-      select slug, published_name as name, published_blurb as blurb, published_genre as genre
+    const rows = await sql<{
+      slug: string;
+      name: string;
+      blurb: string;
+      genre: string;
+      features: string | null;
+      guide: string | null;
+    }>`
+      select slug, published_name as name, published_blurb as blurb, published_genre as genre,
+             published_features as features, published_guide as guide
       from submissions
       where slug = ${slug} and published_html is not null
     `;
     const row = rows[0];
     if (!row || !isGenre(row.genre)) return null;
-    return { slug: row.slug, name: row.name, blurb: row.blurb, genre: row.genre };
+    return {
+      slug: row.slug,
+      name: row.name,
+      blurb: row.blurb,
+      genre: row.genre,
+      features: splitLines(row.features),
+      guide: splitLines(row.guide),
+    };
   });
 
 export const openApp = createServerFn({ method: "GET" })
@@ -210,8 +267,8 @@ export const openApp = createServerFn({ method: "GET" })
   .handler(async ({ context, data: slug }): Promise<OpenResult> => {
     const sql = await getSql();
     const rows = await sql<SubmissionRow>`
-      select id, owner_id, slug, name, blurb, genre, html, draft_status, review_note,
-             published_name, published_blurb, published_genre, published_html
+      select id, owner_id, slug, name, blurb, genre, html, features, guide, draft_status, review_note,
+             published_name, published_blurb, published_genre, published_html, published_features, published_guide
       from submissions
       where slug = ${slug}
     `;
@@ -223,7 +280,13 @@ export const openApp = createServerFn({ method: "GET" })
     if (!published && !isOwner && !isAdmin) return { state: "missing" };
     if (published && !isOwner && !isAdmin) {
       if (!(await viewerHasPass(context.userId))) {
-        return { state: "locked", name: row.published_name ?? row.name, blurb: row.published_blurb ?? row.blurb };
+        return {
+          state: "locked",
+          name: row.published_name ?? row.name,
+          blurb: row.published_blurb ?? row.blurb,
+          features: splitLines(row.published_features),
+          guide: splitLines(row.published_guide),
+        };
       }
       await sql`
         insert into app_uses (app_id, user_id, used_on)
@@ -236,6 +299,8 @@ export const openApp = createServerFn({ method: "GET" })
         blurb: row.published_blurb ?? row.blurb,
         genre: row.published_genre as GenreId,
         html: row.published_html ?? "",
+        features: splitLines(row.published_features),
+        guide: splitLines(row.published_guide),
         unpublished: false,
         pendingUpdate: false,
       };
@@ -249,6 +314,8 @@ export const openApp = createServerFn({ method: "GET" })
       blurb: showDraft ? row.blurb : (row.published_blurb ?? row.blurb),
       genre: rawGenre,
       html: showDraft ? row.html : (row.published_html ?? ""),
+      features: splitLines(showDraft ? row.features : row.published_features),
+      guide: splitLines(showDraft ? row.guide : row.published_guide),
       unpublished: !published,
       pendingUpdate: published && isOwner && row.draft_status === "pending",
     };
@@ -259,8 +326,8 @@ export const listMine = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<MineApp[]> => {
     const sql = await getSql();
     const rows = await sql<SubmissionRow>`
-      select id, owner_id, slug, name, blurb, genre, html, draft_status, review_note,
-             published_name, published_blurb, published_genre, published_html
+      select id, owner_id, slug, name, blurb, genre, html, features, guide, draft_status, review_note,
+             published_name, published_blurb, published_genre, published_html, published_features, published_guide
       from submissions
       where owner_id = ${context.userId}
       order by updated_at desc
@@ -274,6 +341,8 @@ export const listMine = createServerFn({ method: "GET" })
         blurb: row.blurb,
         genre: row.genre as GenreId,
         html: row.html,
+        features: row.features,
+        guide: row.guide,
         draftStatus: asStatus(row.draft_status),
         reviewNote: row.review_note,
         live: Boolean(row.published_html),
@@ -296,6 +365,8 @@ export const saveSubmission = createServerFn({ method: "POST" })
             blurb = ${data.blurb},
             genre = ${data.genre},
             html = ${data.html},
+            features = ${data.features},
+            guide = ${data.guide},
             draft_status = 'pending',
             review_note = null,
             updated_at = now()
@@ -312,8 +383,8 @@ export const saveSubmission = createServerFn({ method: "POST" })
     const id = crypto.randomUUID();
     const slug = await uniqueSlug(data.name);
     await sql`
-      insert into submissions (id, owner_id, slug, name, blurb, genre, html, draft_status, updated_at)
-      values (${id}, ${context.userId}, ${slug}, ${data.name}, ${data.blurb}, ${data.genre}, ${data.html}, 'pending', now())
+      insert into submissions (id, owner_id, slug, name, blurb, genre, html, features, guide, draft_status, updated_at)
+      values (${id}, ${context.userId}, ${slug}, ${data.name}, ${data.blurb}, ${data.genre}, ${data.html}, ${data.features}, ${data.guide}, 'pending', now())
     `;
     return { ok: true as const, id };
   });
@@ -333,10 +404,14 @@ export const publishOwnApp = createServerFn({ method: "POST" })
             blurb = ${data.blurb},
             genre = ${data.genre},
             html = ${data.html},
+            features = ${data.features},
+            guide = ${data.guide},
             published_name = ${data.name},
             published_blurb = ${data.blurb},
             published_genre = ${data.genre},
             published_html = ${data.html},
+            published_features = ${data.features},
+            published_guide = ${data.guide},
             draft_status = 'clean',
             review_note = null,
             updated_at = now()
@@ -356,11 +431,11 @@ export const publishOwnApp = createServerFn({ method: "POST" })
     const slug = await uniqueSlug(data.name);
     await sql`
       insert into submissions (
-        id, owner_id, slug, name, blurb, genre, html, draft_status,
-        published_name, published_blurb, published_genre, published_html, updated_at
+        id, owner_id, slug, name, blurb, genre, html, features, guide, draft_status,
+        published_name, published_blurb, published_genre, published_html, published_features, published_guide, updated_at
       ) values (
-        ${id}, ${context.userId}, ${slug}, ${data.name}, ${data.blurb}, ${data.genre}, ${data.html}, 'clean',
-        ${data.name}, ${data.blurb}, ${data.genre}, ${data.html}, now()
+        ${id}, ${context.userId}, ${slug}, ${data.name}, ${data.blurb}, ${data.genre}, ${data.html}, ${data.features}, ${data.guide}, 'clean',
+        ${data.name}, ${data.blurb}, ${data.genre}, ${data.html}, ${data.features}, ${data.guide}, now()
       )
     `;
     return { ok: true as const, id, slug };
@@ -483,6 +558,8 @@ export const decideSubmission = createServerFn({ method: "POST" })
             published_blurb = blurb,
             published_genre = genre,
             published_html = html,
+            published_features = features,
+            published_guide = guide,
             draft_status = 'clean',
             review_note = null,
             updated_at = now()

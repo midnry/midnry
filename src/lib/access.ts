@@ -1,4 +1,4 @@
-import type { AppDef } from "@/lib/catalog";
+import type { AppTier } from "@/lib/catalog";
 
 export const PASS_PRICE_CENTS = 500;
 export const PASS_PRICE_LABEL = "$5";
@@ -32,6 +32,6 @@ export function passIsOpen(
   return !Number.isNaN(end) && end > now;
 }
 
-export function canOpenApp(app: AppDef, hasPass: boolean, isAdmin = false): boolean {
+export function canOpenApp(app: { tier: AppTier }, hasPass: boolean, isAdmin = false): boolean {
   return isAdmin || app.tier === "free" || hasPass;
 }

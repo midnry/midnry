@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { getApp } from "@/lib/catalog";
 import { Skeleton, cn } from "@/components/ui";
 import { AppMark } from "@/components/app-mark";
+import { AppGuide } from "@/components/app-guide";
 import type { SaveState } from "@/components/use-app-doc";
 
 export function nid(): string {
@@ -32,6 +33,7 @@ export function ToolFrame({
         </div>
         <SaveMark state={saveState ?? "idle"} />
       </div>
+      <AppGuide features={app?.features ?? []} guide={app?.guide ?? []} className={hideOnPrint ? "no-print" : undefined} />
       <div className="mt-8">{children}</div>
     </div>
   );
