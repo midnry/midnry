@@ -12,6 +12,7 @@ export const GENRES = [
   { id: "work", label: "Work" },
   { id: "code", label: "Code" },
   { id: "design", label: "Design" },
+  { id: "health", label: "Health" },
 ] as const;
 
 export type GenreId = (typeof GENRES)[number]["id"];
@@ -171,6 +172,27 @@ export const APPS: readonly AppDef[] = [
       "Click a task to edit it, add a subtask, or delete it.",
       "Use Board to drag a task between sections, or Month to see due dates.",
       "Completing a repeating task schedules the next one.",
+    ],
+  },
+  {
+    slug: "cycle",
+    name: "Cycle",
+    blurb: "A period log. Flow, symptoms, and an estimate of the next cycle. Not medical advice.",
+    tier: "pass",
+    genre: "health",
+    features: [
+      "Flow, symptoms, mood, discharge, and notes on any day",
+      "A pill check",
+      "Next period, fertile window, and an estimated ovulation day",
+      "A month calendar colored by phase",
+      "Average cycle length and period length from your logs",
+    ],
+    guide: [
+      "Set the day your last period started, or mark flow on the days you bled.",
+      "Open any day to add symptoms, mood, discharge, or a note.",
+      "Read the next period and fertile window above the calendar.",
+      "After two cycles, the estimate uses your average instead of 28 days.",
+      "These dates are estimates, not medical advice and not birth control.",
     ],
   },
 ];

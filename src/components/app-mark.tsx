@@ -16,6 +16,7 @@ const KINDS = {
   planner: "calendar",
   apply: "case",
   tasks: "tasks",
+  cycle: "cycle",
 } as const;
 
 type Kind = (typeof KINDS)[keyof typeof KINDS] | "letter";
@@ -69,6 +70,7 @@ export function AppMark({
       {kind === "calendar" ? <Calendar fill={fill} /> : null}
       {kind === "case" ? <Case fill={fill} /> : null}
       {kind === "tasks" ? <Tasks fill={fill} /> : null}
+      {kind === "cycle" ? <CycleMark fill={fill} /> : null}
       {kind === "letter" ? (
         <text
           x="32"
@@ -217,6 +219,15 @@ function Tasks({ fill }: { fill: string }) {
     <g fill="none" stroke={fill} strokeWidth="3" strokeLinecap="round">
       <path d="M24 28h16M24 34h16M24 40h10" />
       <path d="M20 28.2l1.4 1.4 2.4-2.8" />
+    </g>
+  );
+}
+
+function CycleMark({ fill }: { fill: string }) {
+  return (
+    <g fill="none" stroke={fill} strokeWidth="3" strokeLinecap="round">
+      <circle cx="32" cy="34" r="9" />
+      <path d="M32 25v3M38.5 30.5l-2.2 1.6" />
     </g>
   );
 }

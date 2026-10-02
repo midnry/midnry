@@ -13,6 +13,7 @@ import { ChatTool } from "@/components/tools/chat";
 import { PlannerTool } from "@/components/tools/planner";
 import { ApplyTool } from "@/components/tools/apply";
 import { TasksTool } from "@/components/tools/tasks";
+import { CycleTool } from "@/components/tools/cycle";
 
 const TOOLS: Record<string, () => ReactElement> = {
   scratch: ScratchTool,
@@ -29,6 +30,7 @@ const TOOLS: Record<string, () => ReactElement> = {
   planner: PlannerTool,
   apply: ApplyTool,
   tasks: TasksTool,
+  cycle: CycleTool,
 };
 
 export function ToolView({ slug }: { slug: string }) {
