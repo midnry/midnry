@@ -126,6 +126,20 @@ const trustedOrigins: string[] = explicitBaseURL
       ...LOCAL_DEV_ORIGINS,
     ];
 if (renderOrigin && !trustedOrigins.includes(renderOrigin)) trustedOrigins.push(renderOrigin);
+// The custom domain is a different origin from RENDER_EXTERNAL_URL
+// (https://….onrender.com). Credentialed sign-in from that host is rejected
+// with "Invalid origin" until it is listed here. AUTH_TRUSTED_ORIGINS is an
+// optional comma-separated extra (no trailing slashes).
+const SITE_ORIGINS = ["https://midnry.com", "https://www.midnry.com"];
+for (const origin of [
+  ...SITE_ORIGINS,
+  ...(env("AUTH_TRUSTED_ORIGINS") ?? "")
+    .split(",")
+    .map((item) => item.trim().replace(/\/+$/, ""))
+    .filter((item) => /^https?:\/\//.test(item)),
+]) {
+  if (!trustedOrigins.includes(origin)) trustedOrigins.push(origin);
+}
 
 const databaseUrl = env("DATABASE_URL");
 
