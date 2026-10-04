@@ -14,6 +14,8 @@ import { PlannerTool } from "@/components/tools/planner";
 import { ApplyTool } from "@/components/tools/apply";
 import { TasksTool } from "@/components/tools/tasks";
 import { CycleTool } from "@/components/tools/cycle";
+import { KitTool } from "@/components/tools/kit";
+import { getKit } from "@/lib/kits";
 
 const TOOLS: Record<string, () => ReactElement> = {
   scratch: ScratchTool,
@@ -35,6 +37,7 @@ const TOOLS: Record<string, () => ReactElement> = {
 
 export function ToolView({ slug }: { slug: string }) {
   const Tool = TOOLS[slug];
-  if (!Tool) return null;
-  return <Tool />;
+  if (Tool) return <Tool />;
+  if (getKit(slug)) return <KitTool slug={slug} />;
+  return null;
 }

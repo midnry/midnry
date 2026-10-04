@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { genreLabel, isGenre } from "@/lib/catalog";
+import { genreLabel, isSection } from "@/lib/sections";
 import { Shell } from "@/components/shell";
 import { AppGroup, DeskViewToggle, useDesk } from "@/components/desk-list";
 
 export const Route = createFileRoute("/sections/$genre")({
   head: ({ params }) => ({
-    meta: [{ title: `${isGenre(params.genre) ? genreLabel(params.genre) : "Section"} — Midnry` }],
+    meta: [{ title: `${isSection(params.genre) ? genreLabel(params.genre) : "Section"} — Midnry` }],
   }),
   component: SectionPage,
 });
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/sections/$genre")({
 function SectionPage() {
   const { genre } = Route.useParams();
   const { items, view, choose, known, hasPass, isAdmin } = useDesk();
-  const knownGenre = isGenre(genre);
+  const knownGenre = isSection(genre);
   const group = knownGenre ? items.filter((item) => item.genre === genre) : [];
 
   return (

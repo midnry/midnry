@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { APPS, GENRES, genreLabel, tierLabel, type GenreId } from "@/lib/catalog";
+import { APPS, tierLabel } from "@/lib/catalog";
+import { AUDIENCES, sectionOf, sectionsIn, type GenreId } from "@/lib/sections";
 import { canOpenApp } from "@/lib/access";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
@@ -61,14 +62,14 @@ export function useDesk() {
       slug: app.slug,
       name: app.name,
       blurb: app.blurb,
-      genre: app.genre,
+      genre: sectionOf(app.genre) ?? app.genre,
       tier: app.tier,
     })),
     ...added.map((app) => ({
       slug: app.slug,
       name: app.name,
       blurb: app.blurb,
-      genre: app.genre,
+      genre: sectionOf(app.genre) ?? app.genre,
       tier: "pass" as const,
     })),
   ];
@@ -77,52 +78,28 @@ export function useDesk() {
 }
 
 export function DeskList() {
-  const { items, view, choose, known, hasPass, isAdmin } = useDesk();
-  const included = items.filter((item) => item.tier === "free");
-
   return (
-    <div className="space-y-10">
-      <div className="flex justify-end">
-        <DeskViewToggle view={view} onChange={choose} />
-      </div>
-
-      <section>
-        <h3 className="font-display text-2xl tracking-tight">Included</h3>
-        <p className="mt-1 text-sm text-muted">These three come with an account.</p>
-        <AppGroup apps={included} view={view} known={known} hasPass={hasPass} isAdmin={isAdmin} />
-      </section>
-
-      <section>
-        <h3 className="font-display text-2xl tracking-tight">Sections</h3>
-        <p className="mt-1 text-sm text-muted">Open a section to see the apps in it.</p>
-        <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {GENRES.map((genre) => {
-            const group = items.filter((item) => item.genre === genre.id);
-            if (group.length === 0) return null;
-            return (
-              <li key={genre.id}>
-                <Link
-                  to="/sections/$genre"
-                  params={{ genre: genre.id }}
-                  preload="intent"
-                  className="group flex h-full flex-col rounded-2xl bg-card p-5 shadow-line outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
-                >
-                  <span className="flex">
-                    {group.slice(0, 4).map((app) => (
-                      <AppMark key={app.slug} slug={app.slug} name={app.name} className="-ml-2 size-10 first:ml-0 ring-2 ring-card" />
-                    ))}
-                  </span>
-                  <span className="mt-5 font-display text-3xl tracking-tight group-hover:underline">{genreLabel(genre.id)}</span>
-                  <span className="mt-1 text-sm text-muted">
-                    {group.length} {group.length === 1 ? "app" : "apps"}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-    </div>
+    <ul className="grid gap-3 sm:grid-cols-2">
+      {AUDIENCES.map((audience) => {
+        const count = sectionsIn(audience.id).length;
+        return (
+          <li key={audience.id}>
+            <Link
+              to="/audiences/$audience"
+              params={{ audience: audience.id }}
+              preload="intent"
+              className="group flex h-full flex-col rounded-2xl bg-card p-5 shadow-line outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
+            >
+              <span className="font-display text-3xl tracking-tight group-hover:underline">{audience.label}</span>
+              <span className="mt-2 text-sm text-muted">{audience.blurb}</span>
+              <span className="mt-4 text-sm text-muted">
+                {count} sections · 3 included apps in each
+              </span>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 

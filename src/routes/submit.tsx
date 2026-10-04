@@ -28,7 +28,7 @@ function SubmitPage() {
   const [editing, setEditing] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [blurb, setBlurb] = useState("");
-  const [genre, setGenre] = useState<GenreId>("work");
+  const [genre, setGenre] = useState<GenreId>("freelance");
   const [html, setHtml] = useState("");
   const [features, setFeatures] = useState("");
   const [guide, setGuide] = useState("");

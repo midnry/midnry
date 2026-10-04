@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { APPS, GENRES } from "@/lib/catalog";
+import { APPS } from "@/lib/catalog";
+import { AUDIENCES, SECTIONS } from "@/lib/sections";
 
 const PAGES = [
   "/",
   "/apps",
   "/pricing",
   "/submit",
-  ...GENRES.map((genre) => `/sections/${genre.id}`),
+  ...AUDIENCES.map((audience) => `/audiences/${audience.id}`),
+  ...SECTIONS.map((section) => `/sections/${section.id}`),
   ...APPS.map((app) => `/apps/${app.slug}`),
 ];
 

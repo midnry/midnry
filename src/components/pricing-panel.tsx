@@ -9,20 +9,19 @@ export function PricingPanel() {
   const { user, isPending } = useCurrentUserState();
   const { account, loading } = useAccount();
   const waiting = isPending || (!!user && loading);
-  const included = APPS.filter((app) => app.tier === "free");
   const paid = APPS.filter((app) => app.tier === "pass");
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <article className="rounded-3xl bg-card p-6 shadow-line sm:p-8">
         <p className="text-sm text-muted">Account</p>
-        <h2 className="mt-3 font-display text-4xl tracking-tight text-balance">The three defaults</h2>
+        <h2 className="mt-3 font-display text-4xl tracking-tight text-balance">Three in every section</h2>
         <p className="mt-4 font-display text-5xl tabular-nums">$0</p>
         <p className="mt-1 text-sm text-muted">{includedNames()}. No card.</p>
         <ul className="mt-6 space-y-2 text-sm">
-          {included.map((app) => (
-            <li key={app.slug}>{app.name}</li>
-          ))}
+          <li>Students, professionals, owners, and seniors</li>
+          <li>Three apps in each section</li>
+          <li>No card</li>
         </ul>
         <div className="mt-8">
           {waiting ? (

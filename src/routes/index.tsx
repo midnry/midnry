@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PASS_PRICE_LABEL } from "@/lib/access";
-import { includedNames } from "@/lib/catalog";
 import { Shell } from "@/components/shell";
 import { DeskList } from "@/components/desk-list";
 import { Favorites, TrendingTicker } from "@/components/spotlight";
 import { PricingPanel } from "@/components/pricing-panel";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
+import { MatchQuiz } from "@/components/match-quiz";
 import { buttonClass, Skeleton } from "@/components/ui";
 
 export const Route = createFileRoute("/")({
@@ -18,14 +18,18 @@ function Home() {
     <Shell>
       <section className="max-w-3xl">
         <h1 className="font-display text-5xl tracking-tight text-balance sm:text-6xl">
-          Your desk of tools, grouped by genre. Three come with your account.
+          Your desk of tools, grouped for who you are.
         </h1>
         <p className="mt-5 max-w-xl text-pretty text-lg text-muted">
-          Midnry is a desk of web apps. Register once and {includedNames()} stay open.
-          The rest is Midnry Pass — {PASS_PRICE_LABEL} a month — including apps people add after review.
+          Students, professionals, business owners, and seniors. Each section includes three apps.
+          Midnry Pass — {PASS_PRICE_LABEL} a month — opens the rest, including apps people add after review.
         </p>
         <HeroActions />
       </section>
+
+      <div className="mt-10 empty:hidden">
+        <MatchQuiz />
+      </div>
 
       <section className="mt-14">
         <div className="mb-4 flex items-end justify-between gap-4">
@@ -57,9 +61,9 @@ function Home() {
           </li>
           <li>
             <p className="font-display text-muted">02</p>
-            <h3 className="mt-2 font-medium">Use the three</h3>
+            <h3 className="mt-2 font-medium">Three in each section</h3>
             <p className="mt-1 text-sm text-pretty text-muted">
-              {includedNames()} are included with every account.
+              Every section includes three apps with your account.
             </p>
           </li>
           <li>
@@ -88,7 +92,7 @@ function Home() {
         <PricingPanel />
         <p className="mt-4 max-w-2xl text-sm text-pretty text-muted">
           Midnry Pass is {PASS_PRICE_LABEL} a month, charged to a card through Paystack. Cancel anytime and
-          access stays through the date already paid. The three included tools stay open either way.
+          access stays through the date already paid. The three apps in each section stay open either way.
         </p>
       </section>
     </Shell>
