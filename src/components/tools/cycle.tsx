@@ -16,7 +16,8 @@ type DayLog = {
   pill: boolean;
   notes: string;
 };
-type Doc = { cycleLength: number; periodLength: number; logs: DayLog[] };
+type Doc = { cycleLength: number; periodLength: number; logs: DayLog[]; notes: PeriodNote[] };
+type PeriodNote = { start: string; body: string };
 
 const FLOWS: { id: Flow; label: string }[] = [
   { id: "", label: "No flow" },
@@ -40,7 +41,7 @@ const SEX: { id: Sex; label: string }[] = [
   { id: "protected", label: "Protected" },
   { id: "unprotected", label: "Unprotected" },
 ];
-const FALLBACK: Doc = { cycleLength: 28, periodLength: 5, logs: [] };
+const FALLBACK: Doc = { cycleLength: 28, periodLength: 5, logs: [], notes: [] };
 
 function isoOf(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -57,8 +58,8 @@ function addDays(iso: string, days: number): string {
 function diffDays(from: string, to: string): number {
   return Math.round((parseIso(to).getTime() - parseIso(from).getTime()) / 86400000);
 }
-function pretty(iso: string): string {
-  return parseIso(iso).toLocaleDateString("en", { month: "short", day: "numeric" });
+function prettyLong(iso: string): string {
+  return parseIso(iso).toLocaleDateString("en", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 }
 function clamp(value: number, min: number, max: number, fallback: number): number {
   return Number.isFinite(value) ? Math.min(max, Math.max(min, Math.round(value))) : fallback;
@@ -98,10 +99,20 @@ function asDoc(raw: Doc): Doc {
         .filter((item) => item.date)
         .slice(-500)
     : [];
+  const notes = Array.isArray(raw.notes)
+    ? raw.notes
+        .map((item) => ({
+          start: typeof item?.start === "string" && /^\d{4}-\d{2}-\d{2}$/.test(item.start) ? item.start : "",
+          body: typeof item?.body === "string" ? item.body.slice(0, 2000) : "",
+        }))
+        .filter((item) => item.start && item.body.trim())
+        .slice(-80)
+    : [];
   return {
     cycleLength: clamp(raw.cycleLength, 15, 60, 28),
     periodLength: clamp(raw.periodLength, 1, 12, 5),
     logs,
+    notes,
   };
 }
 
@@ -209,6 +220,16 @@ export function CycleTool() {
     return isoOf(date);
   });
   const periodSet = periodDays(doc.logs);
+  const starts = periodStarts(periodSet);
+  const noteFor = new Map(doc.notes.map((note) => [note.start, note.body]));
+
+  function saveNote(start: string, body: string) {
+    const trimmed = body.slice(0, 2000);
+    const notes = trimmed.trim()
+      ? [...doc.notes.filter((note) => note.start !== start), { start, body: trimmed }]
+      : doc.notes.filter((note) => note.start !== start);
+    commit({ ...doc, notes });
+  }
 
   return (
     <ToolFrame slug="cycle" saveState={saveState}>
@@ -216,22 +237,7 @@ export function CycleTool() {
         <p className="max-w-2xl text-sm text-pretty text-muted">
           Estimates come from your logs. They are not medical advice, and not a form of birth control.
         </p>
-        <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Cycle day" value={estimate.cycleDay ? String(estimate.cycleDay) : "—"} />
-          <Stat
-            label={estimate.late ? "Period late" : "Next period"}
-            value={estimate.next ? (estimate.late ? `${diffDays(estimate.next, today)} days` : pretty(estimate.next)) : "Log a period"}
-          />
-          <Stat label="Ovulation" value={estimate.ovulation ? pretty(estimate.ovulation) : "—"} />
-          <Stat
-            label="Fertile window"
-            value={estimate.fertileStart ? `${pretty(estimate.fertileStart)} – ${pretty(estimate.fertileEnd)}` : "—"}
-          />
-        </dl>
-        <p className="mt-3 text-sm text-muted">
-          Average cycle {estimate.cycle} days · average period {estimate.period} days
-          {estimate.logged < 2 ? " · using your typical lengths until two cycles are logged" : ""}
-        </p>
+        <NextPeriod estimate={estimate} today={today} />
 
         <div className="mt-4 flex flex-wrap items-end gap-2">
           <label className="text-sm">
@@ -392,10 +398,40 @@ export function CycleTool() {
           <TextArea
             value={active?.notes ?? ""}
             onChange={(event) => write(selected, { notes: event.target.value.slice(0, 240) })}
-            placeholder="Note"
+            placeholder="Note for this day"
             rows={3}
             className="mt-3 min-h-20"
           />
+        </section>
+
+        <section className="mt-6">
+          <h2 className="font-medium">Period notes</h2>
+          <p className="mt-1 text-sm text-muted">Saved on your account. Delete removes that note only.</p>
+          {starts.length === 0 ? (
+            <p className="mt-3 text-sm text-muted">Log a period first. Its note will stay here.</p>
+          ) : (
+            <ul className="mt-3 space-y-3">
+              {[...starts].reverse().map((start) => (
+                <li key={start} className="rounded-2xl bg-card p-4 shadow-line">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-medium">Period that started {prettyLong(start)}</p>
+                    {noteFor.get(start) ? (
+                      <button type="button" className="text-sm text-muted" onClick={() => saveNote(start, "")}>
+                        Delete note
+                      </button>
+                    ) : null}
+                  </div>
+                  <TextArea
+                    value={noteFor.get(start) ?? ""}
+                    onChange={(event) => saveNote(start, event.target.value)}
+                    placeholder="How that period was"
+                    rows={3}
+                    className="mt-3 min-h-20"
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </ToolStatus>
     </ToolFrame>
@@ -406,6 +442,43 @@ function shiftMonth(cursor: string, delta: number): string {
   const [year, month] = cursor.split("-").map(Number);
   const date = new Date(year, (month || 1) - 1 + delta, 1);
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function NextPeriod({ estimate, today }: { estimate: ReturnType<typeof predict>; today: string }) {
+  return (
+    <div className="mt-4">
+      {estimate.last && estimate.next ? (
+        <>
+          <p className="font-display text-3xl tracking-tight text-balance">
+            {estimate.late
+              ? `Your period was expected to start on ${prettyLong(estimate.next)}.`
+              : `Your next period starts on ${prettyLong(estimate.next)}.`}
+          </p>
+          <p className="mt-2 max-w-2xl text-pretty text-muted">
+            Your last period started on {prettyLong(estimate.last)}.
+            {estimate.late ? ` That was ${diffDays(estimate.next, today)} days ago.` : ""} This uses a {estimate.cycle}-day cycle
+            {estimate.logged < 2 ? ", your typical length until two periods are logged" : ", from the periods you have logged"}.
+          </p>
+        </>
+      ) : (
+        <p className="max-w-2xl text-pretty text-muted">
+          Put in the day your last period started. Cycle will say the date the next one is expected to start.
+        </p>
+      )}
+      <dl className="mt-4 grid gap-3 sm:grid-cols-3">
+        <Stat label="Cycle day" value={estimate.cycleDay ? String(estimate.cycleDay) : "—"} />
+        <Stat label="Ovulation" value={estimate.ovulation ? prettyLong(estimate.ovulation) : "—"} />
+        <Stat
+          label="Fertile window"
+          value={estimate.fertileStart && estimate.fertileEnd ? `${prettyLong(estimate.fertileStart)} – ${prettyLong(estimate.fertileEnd)}` : "—"}
+        />
+      </dl>
+    </div>
+  );
+}
+
+function pretty(iso: string): string {
+  return parseIso(iso).toLocaleDateString("en", { month: "short", day: "numeric" });
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
