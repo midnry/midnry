@@ -8,9 +8,27 @@ import { Skeleton, cn } from "@/components/ui";
 import { AppMark } from "@/components/app-mark";
 import { toast } from "sonner";
 
-export function Spotlight() {
+export function Favorites() {
   const { user, isPending } = useCurrentUserState();
   const { favorites } = useFavorites();
+  if (isPending || !user) return null;
+
+  return (
+    <section>
+      <h2 className="font-display text-3xl tracking-tight">Favorites</h2>
+      <p className="mt-1 text-sm text-muted">Only you see this list.</p>
+      {favorites === null ? (
+        <Skeleton className="mt-4 h-16 w-full" />
+      ) : favorites.length === 0 ? (
+        <p className="mt-4 text-sm text-pretty text-muted">Save an app from the desk and it stays here.</p>
+      ) : (
+        <AppRows items={favorites} />
+      )}
+    </section>
+  );
+}
+
+export function TrendingTicker() {
   const [trending, setTrending] = useState<TrendingApp[] | null>(null);
 
   useEffect(() => {
@@ -27,37 +45,55 @@ export function Spotlight() {
     };
   }, []);
 
-  return (
-    <div className="space-y-10">
-      {!isPending && user ? (
-        <section>
-          <h2 className="font-display text-3xl tracking-tight">Favorites</h2>
-          <p className="mt-1 text-sm text-muted">Only you see this list.</p>
-          {favorites === null ? (
-            <Skeleton className="mt-4 h-16 w-full" />
-          ) : favorites.length === 0 ? (
-            <p className="mt-4 text-sm text-pretty text-muted">
-              Save an app from the desk and it stays here.
-            </p>
-          ) : (
-            <AppRows items={favorites} />
-          )}
-        </section>
-      ) : null}
+  const loop = trending && trending.length > 0 ? fillTicker(trending) : [];
 
-      <section>
-        <h2 className="font-display text-3xl tracking-tight">Trending</h2>
-        <p className="mt-1 text-sm text-muted">Opened most in the last 30 days.</p>
-        {trending === null ? (
-          <Skeleton className="mt-4 h-16 w-full" />
-        ) : trending.length === 0 ? (
-          <p className="mt-4 text-sm text-pretty text-muted">
-            No app has been opened enough to trend yet.
-          </p>
-        ) : (
-          <AppRows items={trending} />
-        )}
-      </section>
+  return (
+    <section>
+      <h2 className="font-display text-3xl tracking-tight">Trending</h2>
+      <p className="mt-1 text-sm text-muted">Opened most in the last 30 days.</p>
+      {trending === null ? (
+        <Skeleton className="mt-4 h-16 w-full" />
+      ) : loop.length === 0 ? (
+        <p className="mt-4 text-sm text-pretty text-muted">No app has been opened enough to trend yet.</p>
+      ) : (
+        <div className="ticker mt-4">
+          <div className="ticker-track" style={{ animationDuration: `${Math.max(loop.length, 4) * 5}s` }}>
+            <TickerHalf items={loop} />
+            <TickerHalf items={loop} hidden />
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function fillTicker(items: TrendingApp[]): TrendingApp[] {
+  const loop = [...items];
+  while (loop.length < 8) loop.push(...items);
+  return loop.slice(0, Math.max(8, items.length));
+}
+
+function TickerHalf({ items, hidden }: { items: TrendingApp[]; hidden?: boolean }) {
+  return (
+    <div className="ticker-half" aria-hidden={hidden || undefined}>
+      {items.map((app, index) => (
+        <Link
+          key={`${app.slug}-${index}`}
+          to="/apps/$slug"
+          params={{ slug: app.slug }}
+          tabIndex={hidden ? -1 : undefined}
+          className="flex shrink-0 items-center gap-3 rounded-2xl bg-card px-4 py-3 shadow-line"
+        >
+          <AppMark slug={app.slug} name={app.name} />
+          <span>
+            <span className="block font-medium">{app.name}</span>
+            <span className="block text-sm text-muted">
+              {genreLabel(app.genre)}
+              {app.uses ? ` · ${app.uses} ${app.uses === 1 ? "open" : "opens"}` : ""}
+            </span>
+          </span>
+        </Link>
+      ))}
     </div>
   );
 }

@@ -60,11 +60,49 @@
     transform-origin: left center;
     transition: transform 250ms cubic-bezier(0.22, 1, 0.36, 1);
   }
+
+  .ticker {
+    overflow: hidden;
+  }
+
+  .ticker-track {
+    display: flex;
+    width: max-content;
+    animation: ticker 40s linear infinite;
+  }
+
+  .ticker:hover .ticker-track,
+  .ticker:focus-within .ticker-track {
+    animation-play-state: paused;
+  }
+
+  .ticker-half {
+    display: flex;
+    gap: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .timer-bar {
     transition: none;
+  }
+
+  .ticker {
+    overflow-x: auto;
+  }
+
+  .ticker-half[aria-hidden="true"] {
+    display: none;
   }
 
   *,

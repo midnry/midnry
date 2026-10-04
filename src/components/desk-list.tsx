@@ -20,9 +20,11 @@ type DeskItem = {
 
 type DeskView = "list" | "grid";
 
+export type { DeskItem };
+
 const VIEW_KEY = "midnry.desk.view";
 
-export function DeskList() {
+export function useDesk() {
   const { user, isPending } = useCurrentUserState();
   const { account, loading } = useAccount();
   const { isAdmin, ready: roleReady } = useRole();
@@ -71,21 +73,17 @@ export function DeskList() {
     })),
   ];
 
+  return { items, view, choose, known, hasPass: account?.hasPass ?? false, isAdmin };
+}
+
+export function DeskList() {
+  const { items, view, choose, known, hasPass, isAdmin } = useDesk();
   const included = items.filter((item) => item.tier === "free");
-  const [openGenre, setOpenGenre] = useState<GenreId | null>(null);
-  const hasPass = account?.hasPass ?? false;
 
   return (
     <div className="space-y-10">
       <div className="flex justify-end">
-        <div className="inline-flex rounded-full bg-card p-1 shadow-line" role="group" aria-label="Desk layout">
-          <ViewButton label="List" pressed={view === "list"} onClick={() => choose("list")}>
-            <ListIcon />
-          </ViewButton>
-          <ViewButton label="Grid" pressed={view === "grid"} onClick={() => choose("grid")}>
-            <GridIcon />
-          </ViewButton>
-        </div>
+        <DeskViewToggle view={view} onChange={choose} />
       </div>
 
       <section>
@@ -97,42 +95,51 @@ export function DeskList() {
       <section>
         <h3 className="font-display text-2xl tracking-tight">Sections</h3>
         <p className="mt-1 text-sm text-muted">Open a section to see the apps in it.</p>
-        <div className="mt-4">
+        <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {GENRES.map((genre) => {
             const group = items.filter((item) => item.genre === genre.id);
             if (group.length === 0) return null;
-            const open = openGenre === genre.id;
             return (
-              <div key={genre.id} className="border-t border-line last:border-b">
-                <button
-                  type="button"
-                  aria-expanded={open}
-                  onClick={() => setOpenGenre(open ? null : genre.id)}
-                  className="flex w-full items-center justify-between gap-4 py-4 text-left"
+              <li key={genre.id}>
+                <Link
+                  to="/sections/$genre"
+                  params={{ genre: genre.id }}
+                  preload="intent"
+                  className="group flex h-full flex-col rounded-2xl bg-card p-5 shadow-line outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
                 >
-                  <span className="font-display text-2xl tracking-tight">{genreLabel(genre.id)}</span>
-                  <span className="flex items-center gap-3 text-sm text-muted">
-                    <span>
-                      {group.length} {group.length === 1 ? "app" : "apps"}
-                    </span>
-                    <Chevron open={open} />
+                  <span className="flex">
+                    {group.slice(0, 4).map((app) => (
+                      <AppMark key={app.slug} slug={app.slug} name={app.name} className="-ml-2 size-10 first:ml-0 ring-2 ring-card" />
+                    ))}
                   </span>
-                </button>
-                {open ? (
-                  <div className="pb-6">
-                    <AppGroup apps={group} view={view} known={known} hasPass={hasPass} isAdmin={isAdmin} />
-                  </div>
-                ) : null}
-              </div>
+                  <span className="mt-5 font-display text-3xl tracking-tight group-hover:underline">{genreLabel(genre.id)}</span>
+                  <span className="mt-1 text-sm text-muted">
+                    {group.length} {group.length === 1 ? "app" : "apps"}
+                  </span>
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </section>
     </div>
   );
 }
 
-function AppGroup({
+export function DeskViewToggle({ view, onChange }: { view: DeskView; onChange: (next: DeskView) => void }) {
+  return (
+    <div className="inline-flex rounded-full bg-card p-1 shadow-line" role="group" aria-label="Desk layout">
+      <ViewButton label="List" pressed={view === "list"} onClick={() => onChange("list")}>
+        <ListIcon />
+      </ViewButton>
+      <ViewButton label="Grid" pressed={view === "grid"} onClick={() => onChange("grid")}>
+        <GridIcon />
+      </ViewButton>
+    </div>
+  );
+}
+
+export function AppGroup({
   apps,
   view,
   known,
@@ -257,13 +264,6 @@ function ViewButton({
   );
 }
 
-function Chevron({ open }: { open: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" className={cn("size-4 transition-transform", open && "rotate-180")} aria-hidden>
-      <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 function ListIcon() {
   return (
     <svg viewBox="0 0 24 24" className="size-4" aria-hidden>

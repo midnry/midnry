@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Shell } from "@/components/shell";
 import { DeskList } from "@/components/desk-list";
-import { Spotlight } from "@/components/spotlight";
+import { Favorites, TrendingTicker } from "@/components/spotlight";
 
 export const Route = createFileRoute("/apps/")({
   component: AppsPage,
@@ -15,8 +15,9 @@ function AppsPage() {
         Included tools open as soon as you register. The rest, grouped by genre, open with a $5 monthly subscription.
       </p>
       <div className="mt-10 space-y-14">
-        <Spotlight />
         <DeskList />
+        <TrendingTicker />
+        <Favorites />
       </div>
     </Shell>
   );

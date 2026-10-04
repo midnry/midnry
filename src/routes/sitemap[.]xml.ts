@@ -1,7 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { APPS } from "@/lib/catalog";
+import { APPS, GENRES } from "@/lib/catalog";
 
-const PAGES = ["/", "/apps", "/pricing", "/submit", ...APPS.map((app) => `/apps/${app.slug}`)];
+const PAGES = [
+  "/",
+  "/apps",
+  "/pricing",
+  "/submit",
+  ...GENRES.map((genre) => `/sections/${genre.id}`),
+  ...APPS.map((app) => `/apps/${app.slug}`),
+];
 
 function originOf(request: Request): string {
   const url = new URL(request.url);

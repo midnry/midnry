@@ -3,7 +3,7 @@ import { PASS_PRICE_LABEL } from "@/lib/access";
 import { includedNames } from "@/lib/catalog";
 import { Shell } from "@/components/shell";
 import { DeskList } from "@/components/desk-list";
-import { Spotlight } from "@/components/spotlight";
+import { Favorites, TrendingTicker } from "@/components/spotlight";
 import { PricingPanel } from "@/components/pricing-panel";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
@@ -28,10 +28,6 @@ function Home() {
       </section>
 
       <section className="mt-14">
-        <Spotlight />
-      </section>
-
-      <section className="mt-14">
         <div className="mb-4 flex items-end justify-between gap-4">
           <h2 className="font-display text-3xl tracking-tight">The desk</h2>
           <Link to="/apps" className="text-sm text-muted hover:text-ink">
@@ -39,6 +35,14 @@ function Home() {
           </Link>
         </div>
         <DeskList />
+      </section>
+
+      <section className="mt-14">
+        <TrendingTicker />
+      </section>
+
+      <section className="mt-14 empty:hidden">
+        <Favorites />
       </section>
 
       <section className="mt-16">

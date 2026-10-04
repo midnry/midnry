@@ -21,6 +21,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as AppsIndexRouteImport } from './routes/apps/index'
 import { Route as AppsSlugRouteImport } from './routes/apps/$slug'
+import { Route as SectionsGenreRouteImport } from './routes/sections/$genre'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiPaystackWebhookRouteImport } from './routes/api/paystack/webhook'
 
@@ -84,6 +85,11 @@ const AppsSlugRoute = AppsSlugRouteImport.update({
   path: '/apps/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SectionsGenreRoute = SectionsGenreRouteImport.update({
+  id: '/sections/$genre',
+  path: '/sections/$genre',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
+  '/sections/$genre': typeof SectionsGenreRoute
   '/apps/': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
@@ -123,6 +130,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
+  '/sections/$genre': typeof SectionsGenreRoute
   '/apps': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
+  '/sections/$genre': typeof SectionsGenreRoute
   '/apps/': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
@@ -158,6 +167,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/submit'
     | '/apps/$slug'
+    | '/sections/$genre'
     | '/apps/'
     | '/api/auth/$'
     | '/api/paystack/webhook'
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/submit'
     | '/apps/$slug'
+    | '/sections/$genre'
     | '/apps'
     | '/api/auth/$'
     | '/api/paystack/webhook'
@@ -190,6 +201,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/submit'
     | '/apps/$slug'
+    | '/sections/$genre'
     | '/apps/'
     | '/api/auth/$'
     | '/api/paystack/webhook'
@@ -207,6 +219,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SubmitRoute: typeof SubmitRoute
   AppsSlugRoute: typeof AppsSlugRoute
+  SectionsGenreRoute: typeof SectionsGenreRoute
   AppsIndexRoute: typeof AppsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiPaystackWebhookRoute: typeof ApiPaystackWebhookRoute
@@ -298,6 +311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sections/$genre': {
+      id: '/sections/$genre'
+      path: '/sections/$genre'
+      fullPath: '/sections/$genre'
+      preLoaderRoute: typeof SectionsGenreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -327,6 +347,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SubmitRoute: SubmitRoute,
   AppsSlugRoute: AppsSlugRoute,
+  SectionsGenreRoute: SectionsGenreRoute,
   AppsIndexRoute: AppsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiPaystackWebhookRoute: ApiPaystackWebhookRoute,
