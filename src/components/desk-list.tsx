@@ -71,6 +71,10 @@ export function DeskList() {
     })),
   ];
 
+  const included = items.filter((item) => item.tier === "free");
+  const [openGenre, setOpenGenre] = useState<GenreId | null>(null);
+  const hasPass = account?.hasPass ?? false;
+
   return (
     <div className="space-y-10">
       <div className="flex justify-end">
@@ -83,76 +87,127 @@ export function DeskList() {
           </ViewButton>
         </div>
       </div>
-      {GENRES.map((genre) => {
-        const group = items.filter((item) => item.genre === genre.id);
-        if (group.length === 0) return null;
+
+      <section>
+        <h3 className="font-display text-2xl tracking-tight">Included</h3>
+        <p className="mt-1 text-sm text-muted">These three come with an account.</p>
+        <AppGroup apps={included} view={view} known={known} hasPass={hasPass} isAdmin={isAdmin} />
+      </section>
+
+      <section>
+        <h3 className="font-display text-2xl tracking-tight">Sections</h3>
+        <p className="mt-1 text-sm text-muted">Open a section to see the apps in it.</p>
+        <div className="mt-4">
+          {GENRES.map((genre) => {
+            const group = items.filter((item) => item.genre === genre.id);
+            if (group.length === 0) return null;
+            const open = openGenre === genre.id;
+            return (
+              <div key={genre.id} className="border-t border-line last:border-b">
+                <button
+                  type="button"
+                  aria-expanded={open}
+                  onClick={() => setOpenGenre(open ? null : genre.id)}
+                  className="flex w-full items-center justify-between gap-4 py-4 text-left"
+                >
+                  <span className="font-display text-2xl tracking-tight">{genreLabel(genre.id)}</span>
+                  <span className="flex items-center gap-3 text-sm text-muted">
+                    <span>
+                      {group.length} {group.length === 1 ? "app" : "apps"}
+                    </span>
+                    <Chevron open={open} />
+                  </span>
+                </button>
+                {open ? (
+                  <div className="pb-6">
+                    <AppGroup apps={group} view={view} known={known} hasPass={hasPass} isAdmin={isAdmin} />
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function AppGroup({
+  apps,
+  view,
+  known,
+  hasPass,
+  isAdmin,
+}: {
+  apps: DeskItem[];
+  view: DeskView;
+  known: boolean;
+  hasPass: boolean;
+  isAdmin: boolean;
+}) {
+  if (view === "grid") {
+    return (
+      <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {apps.map((app) => {
+          const status = appStatus(app, known, hasPass, isAdmin);
+          return (
+            <li key={app.slug} className="flex rounded-2xl bg-card shadow-line">
+              <Link
+                to="/apps/$slug"
+                params={{ slug: app.slug }}
+                preload="intent"
+                className="group flex min-w-0 flex-1 flex-col gap-3 p-4 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
+              >
+                <span className="flex items-start justify-between gap-3">
+                  <AppMark slug={app.slug} name={app.name} className="size-12" />
+                  <Status app={app} status={status} />
+                </span>
+                <span>
+                  <span className="block font-medium group-hover:underline">{app.name}</span>
+                  <span className="mt-1 block text-sm text-pretty text-muted">{app.blurb}</span>
+                </span>
+              </Link>
+              <span className="pr-2 pt-2">
+                <SaveButton slug={app.slug} />
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+
+  return (
+    <ol className="mt-2">
+      {apps.map((app, index) => {
+        const status = appStatus(app, known, hasPass, isAdmin);
         return (
-          <section key={genre.id}>
-            <h3 className="font-display text-2xl tracking-tight">{genreLabel(genre.id)}</h3>
-            {view === "grid" ? (
-              <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {group.map((app) => {
-                  const status = appStatus(app, known, account?.hasPass ?? false, isAdmin);
-                  return (
-                    <li key={app.slug} className="flex rounded-2xl bg-card shadow-line">
-                      <Link
-                        to="/apps/$slug"
-                        params={{ slug: app.slug }}
-                        preload="intent"
-                        className="group flex min-w-0 flex-1 flex-col gap-3 p-4 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
-                      >
-                        <span className="flex items-start justify-between gap-3">
-                          <AppMark slug={app.slug} name={app.name} className="size-12" />
-                          <Status app={app} status={status} />
-                        </span>
-                        <span>
-                          <span className="block font-medium group-hover:underline">{app.name}</span>
-                          <span className="mt-1 block text-sm text-pretty text-muted">{app.blurb}</span>
-                        </span>
-                      </Link>
-                      <span className="pr-2 pt-2">
-                        <SaveButton slug={app.slug} />
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <ol className="mt-2">
-                {group.map((app, index) => {
-                  const status = appStatus(app, known, account?.hasPass ?? false, isAdmin);
-                  return (
-                    <li key={app.slug} className="flex items-stretch gap-2 border-t border-line last:border-b">
-                      <Link
-                        to="/apps/$slug"
-                        params={{ slug: app.slug }}
-                        preload="intent"
-                        className="group flex min-w-0 flex-1 gap-4 py-4 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
-                      >
-                        <span className="w-8 pt-0.5 font-display text-muted tabular-nums">
-                          {String(index + 1).padStart(2, "0")}
-                        </span>
-                        <span className="flex min-w-0 flex-1 gap-3">
-                          <AppMark slug={app.slug} name={app.name} className="mt-0.5" />
-                          <span className="min-w-0 flex-1">
-                            <span className="flex items-baseline justify-between gap-3">
-                              <span className="font-medium group-hover:underline">{app.name}</span>
-                              <Status app={app} status={status} />
-                            </span>
-                            <span className="mt-1 block text-sm text-pretty text-muted">{app.blurb}</span>
-                          </span>
-                        </span>
-                      </Link>
-                      <SaveButton slug={app.slug} />
-                    </li>
-                  );
-                })}
-              </ol>
-            )}
-          </section>
+          <li key={app.slug} className="flex items-stretch gap-2 border-t border-line last:border-b">
+            <Link
+              to="/apps/$slug"
+              params={{ slug: app.slug }}
+              preload="intent"
+              className="group flex min-w-0 flex-1 gap-4 py-4 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
+            >
+              <span className="w-8 pt-0.5 font-display text-muted tabular-nums">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <span className="flex min-w-0 flex-1 gap-3">
+                <AppMark slug={app.slug} name={app.name} className="mt-0.5" />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-baseline justify-between gap-3">
+                    <span className="font-medium group-hover:underline">{app.name}</span>
+                    <Status app={app} status={status} />
+                  </span>
+                  <span className="mt-1 block text-sm text-pretty text-muted">{app.blurb}</span>
+                </span>
+              </span>
+            </Link>
+            <SaveButton slug={app.slug} />
+          </li>
         );
       })}
-    </div>
+    </ol>
   );
 }
 
@@ -202,6 +257,13 @@ function ViewButton({
   );
 }
 
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className={cn("size-4 transition-transform", open && "rotate-180")} aria-hidden>
+      <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 function ListIcon() {
   return (
     <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
