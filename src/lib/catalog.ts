@@ -161,8 +161,8 @@ export const APPS: readonly AppDef[] = [
     slug: "cycle",
     name: "Cycle",
     blurb: "A period log. Flow, symptoms, and an estimate of the next cycle. Not medical advice.",
-    tier: "pass",
-    genre: "clinic",
+    tier: "free",
+    genre: "medicine",
     features: [
       "Flow, symptoms, mood, discharge, and notes on any day",
       "A pill check",

@@ -79,27 +79,40 @@ export function useDesk() {
 
 export function DeskList() {
   return (
-    <ul className="grid gap-3 sm:grid-cols-2">
-      {AUDIENCES.map((audience) => {
-        const count = sectionsIn(audience.id).length;
-        return (
-          <li key={audience.id}>
-            <Link
-              to="/audiences/$audience"
-              params={{ audience: audience.id }}
-              preload="intent"
-              className="group flex h-full flex-col rounded-2xl bg-card p-5 shadow-line outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
-            >
-              <span className="font-display text-3xl tracking-tight group-hover:underline">{audience.label}</span>
-              <span className="mt-2 text-sm text-muted">{audience.blurb}</span>
-              <span className="mt-4 text-sm text-muted">
-                {count} sections · 3 included apps in each
-              </span>
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
+    <div>
+      <ul className="grid gap-3 sm:grid-cols-2">
+        {AUDIENCES.map((audience) => {
+          const count = sectionsIn(audience.id).length;
+          return (
+            <li key={audience.id}>
+              <Link
+                to="/audiences/$audience"
+                params={{ audience: audience.id }}
+                preload="intent"
+                className="group flex h-full flex-col rounded-2xl bg-card p-5 shadow-line outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
+              >
+                <span className="font-display text-3xl tracking-tight group-hover:underline">{audience.label}</span>
+                <span className="mt-2 text-sm text-muted">{audience.blurb}</span>
+                <span className="mt-4 text-sm text-muted">
+                  {count} sections · 3 included apps in each
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+      <Link
+        to="/apps/$slug"
+        params={{ slug: "cycle" }}
+        className="mt-3 flex items-center justify-between gap-4 rounded-2xl bg-card p-5 shadow-line"
+      >
+        <span>
+          <span className="block font-medium">Cycle</span>
+          <span className="mt-1 block text-sm text-muted">Period tracker. Included with your account.</span>
+        </span>
+        <span className="text-sm text-muted">Open</span>
+      </Link>
+    </div>
   );
 }
 
