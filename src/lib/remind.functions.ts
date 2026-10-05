@@ -232,11 +232,26 @@ export const inviteMember = createServerFn({ method: "POST" })
       where lower(u.email) = ${data.email}
     `;
     if (already[0]) throw new Error("They're already in this project.");
-    await sql`
+    const added = await sql<{ email: string }>`
       insert into remind_invites (project_id, email, invited_by) values (${data.projectId}, ${data.email}, ${context.userId})
       on conflict do nothing
+      returning email
     `;
-    return { ok: true as const };
+    let emailed = false;
+    if (added[0]) {
+      const me = await userEmail(sql, context.userId);
+      const project = await sql<{ name: string }>`select name from remind_projects where id = ${data.projectId}`;
+      const account = await sql<{ id: string }>`select id from "user" where lower(email) = ${data.email}`;
+      const { sendInviteEmail } = await import("@/lib/remind/email.server");
+      const result = await sendInviteEmail({
+        to: data.email,
+        inviterName: me.name,
+        projectName: project[0]?.name ?? "a project",
+        hasAccount: Boolean(account[0]),
+      });
+      emailed = result.ok && !result.dryRun;
+    }
+    return { ok: true as const, emailed };
   });
 
 export const cancelInvite = createServerFn({ method: "POST" })
@@ -558,4 +573,67 @@ export const setFeed = createServerFn({ method: "POST" })
     `;
     const rows = await sql<{ token: string }>`select token from remind_feeds where user_id = ${context.userId}`;
     return { token: rows[0]?.token ?? token };
+  });
+
+// ── Email settings ───────────────────────────────────────────────────────────
+
+export type EmailPrefs = { digest: boolean; due: boolean; email: string; canDue: boolean; configured: boolean };
+
+async function prefsRow(sql: Sql, userId: string, tz?: string) {
+  await sql`
+    insert into remind_email_prefs (user_id, unsub_token, tz) values (${userId}, ${feedToken()}, ${tz ?? "UTC"})
+    on conflict (user_id) do nothing
+  `;
+  if (tz) await sql`update remind_email_prefs set tz = ${tz} where user_id = ${userId}`;
+  const rows = await sql<{ digest: boolean; due: boolean; unsub_token: string; last_test: unknown }>`
+    select digest, due, unsub_token, last_test from remind_email_prefs where user_id = ${userId}
+  `;
+  return rows[0];
+}
+
+export const getEmailPrefs = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<EmailPrefs> => {
+    const sql = await getSql();
+    const rows = await sql<{ digest: boolean; due: boolean }>`select digest, due from remind_email_prefs where user_id = ${context.userId}`;
+    const me = await userEmail(sql, context.userId);
+    const { emailConfigured } = await import("@/lib/email.server");
+    return {
+      digest: Boolean(rows[0]?.digest),
+      due: Boolean(rows[0]?.due),
+      email: me.email,
+      canDue: await canShare(context.userId),
+      configured: emailConfigured(),
+    };
+  });
+
+export const setEmailPrefs = createServerFn({ method: "POST" })
+  .validator((input: { digest: boolean; due: boolean; tz?: string }) => ({ digest: Boolean(input?.digest), due: Boolean(input?.due), tz: cleanZone(input?.tz) }))
+  .middleware([authMiddleware])
+  .handler(async ({ context, data }) => {
+    const sql = await getSql();
+    if (data.due) await requirePass(context.userId, "Reminder emails at the task's time");
+    const me = await userEmail(sql, context.userId);
+    if ((data.digest || data.due) && !me.email) throw new Error("Your account has no email address.");
+    await prefsRow(sql, context.userId, data.tz);
+    await sql`
+      update remind_email_prefs set digest = ${data.digest}, due = ${data.due}, updated_at = now() where user_id = ${context.userId}
+    `;
+    return { ok: true as const };
+  });
+
+export const sendTestEmail = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    const sql = await getSql();
+    const me = await userEmail(sql, context.userId);
+    if (!me.email) throw new Error("Your account has no email address.");
+    const row = await prefsRow(sql, context.userId);
+    const last = row?.last_test ? Date.parse(String(row.last_test instanceof Date ? row.last_test.toISOString() : row.last_test)) : 0;
+    if (last && Date.now() - last < 60_000) throw new Error("Wait a minute before sending another test.");
+    await sql`update remind_email_prefs set last_test = now() where user_id = ${context.userId}`;
+    const { sendTestEmail: send } = await import("@/lib/remind/email.server");
+    const result = await send(me.email, row.unsub_token);
+    if (!result.ok) throw new Error(`The email service said: ${result.error}`);
+    return { ok: true as const, dryRun: result.dryRun, to: me.email };
   });

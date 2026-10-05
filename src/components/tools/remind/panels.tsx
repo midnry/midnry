@@ -1,10 +1,14 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   cancelInvite,
   deleteShared,
+  getEmailPrefs,
   getFeed,
+  sendTestEmail,
+  setEmailPrefs,
+  type EmailPrefs,
   inviteMember,
   leaveShared,
   removeMember,
@@ -68,7 +72,15 @@ export function PeoplePanel({
     event.preventDefault();
     const value = email.trim();
     if (!value) return;
-    void run(() => inviteMember({ data: { projectId: project.id, email: value } }), `Invited ${value}.`, "Couldn't send the invite.").then(() => setEmail(""));
+    setBusy(true);
+    inviteMember({ data: { projectId: project.id, email: value } })
+      .then(async (result) => {
+        toast.success(result.emailed ? `Invited ${value}. We've emailed them.` : `Invited ${value}.`);
+        setEmail("");
+        await onChanged();
+      })
+      .catch((error: unknown) => toast.error(errorText(error, "Couldn't send the invite.")))
+      .finally(() => setBusy(false));
   }
 
   return (
@@ -105,7 +117,7 @@ export function PeoplePanel({
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm">{invited}</span>
-                <span className="block text-xs text-muted">Invited. They'll see it in Remind after signing in with this email.</span>
+                <span className="block text-xs text-muted">Invited. They'll see a Join button in Remind when they sign in with this email.</span>
               </span>
               <button
                 type="button"
@@ -410,5 +422,108 @@ export function FilterEditor({
         ) : null}
       </div>
     </form>
+  );
+}
+
+function Toggle({ on, disabled, onChange, label, detail }: { on: boolean; disabled?: boolean; onChange: (next: boolean) => void; label: string; detail: ReactNode }) {
+  return (
+    <label className={cn("flex items-start justify-between gap-4 py-3", disabled && "opacity-60")}>
+      <span>
+        <span className="block text-sm font-medium">{label}</span>
+        <span className="mt-0.5 block text-sm text-muted">{detail}</span>
+      </span>
+      <span className="relative mt-0.5 inline-flex shrink-0">
+        <input type="checkbox" role="switch" className="peer sr-only" checked={on} disabled={disabled} onChange={(event) => onChange(event.target.checked)} />
+        <span aria-hidden className="h-7 w-12 rounded-full bg-paper-2 transition-colors peer-checked:bg-pine peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ink" />
+        <span aria-hidden className="absolute left-1 top-1 size-5 rounded-full bg-card shadow-line transition-transform peer-checked:translate-x-5" />
+      </span>
+    </label>
+  );
+}
+
+export function EmailSettings() {
+  const [prefs, setPrefs] = useState<EmailPrefs | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancel = false;
+    getEmailPrefs()
+      .then((next) => {
+        if (!cancel) setPrefs(next);
+      })
+      .catch(() => {
+        if (!cancel) setPrefs(null);
+      });
+    return () => {
+      cancel = true;
+    };
+  }, []);
+
+  async function save(next: { digest: boolean; due: boolean }) {
+    if (!prefs) return;
+    const before = prefs;
+    setPrefs({ ...prefs, ...next });
+    try {
+      await setEmailPrefs({ data: { ...next, tz: Intl.DateTimeFormat().resolvedOptions().timeZone } });
+    } catch (error) {
+      setPrefs(before);
+      toast.error(errorText(error, "Couldn't save that."));
+    }
+  }
+
+  async function test() {
+    setBusy(true);
+    try {
+      const result = await sendTestEmail();
+      toast.success(result.dryRun ? "Email isn't connected on this copy of the site, so nothing was sent." : `Test email sent to ${result.to}. Check your inbox (and spam).`);
+    } catch (error) {
+      toast.error(errorText(error, "The test email didn't send."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl bg-card p-5 shadow-line">
+      <h3 className="font-medium">Email</h3>
+      {!prefs ? (
+        <p className="mt-2 text-sm text-muted">Loading…</p>
+      ) : (
+        <>
+          <p className="mt-1 text-sm text-muted">{prefs.email ? `Emails go to ${prefs.email}.` : "Your account has no email address."}</p>
+          <div className="mt-2 divide-y divide-line">
+            <Toggle
+              on={prefs.digest}
+              disabled={!prefs.email}
+              onChange={(digest) => void save({ digest, due: prefs.due })}
+              label="Morning summary"
+              detail="At about 7am, what's due today and anything overdue. Skipped on days with nothing due."
+            />
+            <Toggle
+              on={prefs.due}
+              disabled={!prefs.email || !prefs.canDue}
+              onChange={(due) => void save({ digest: prefs.digest, due })}
+              label="Reminder at the task's time"
+              detail={
+                prefs.canDue ? (
+                  "For tasks with a time, an email when they're due. Works even when Midnry is closed."
+                ) : (
+                  <>
+                    Comes with{" "}
+                    <Link to="/billing" className="text-ink underline underline-offset-4">
+                      Midnry Pass
+                    </Link>
+                    .
+                  </>
+                )
+              }
+            />
+          </div>
+          <Button tone="quiet" className="mt-3" disabled={busy || !prefs.email} onClick={() => void test()}>
+            {busy ? "Sending…" : "Send me a test email"}
+          </Button>
+        </>
+      )}
+    </section>
   );
 }

@@ -1,8 +1,7 @@
 import { getSql } from "@/lib/db";
-import { readAccount } from "@/lib/account.server";
-import { readIsAdmin } from "@/lib/community.functions";
 import { addDays } from "@/lib/remind/dates";
-import { cleanDoc, cleanSharedDoc, type Comment } from "@/lib/remind/model";
+import { hasPassAccess, openDatedTasks } from "@/lib/remind/collect.server";
+import type { Comment } from "@/lib/remind/model";
 import { toRRule } from "@/lib/remind/recur";
 
 type Event = { uid: string; title: string; notes: string; due: string; time: string; recur: string; where: string };
@@ -40,59 +39,17 @@ export async function buildCalendar(token: string, origin: string): Promise<stri
   const feeds = await sql<{ user_id: string; tz: string }>`select user_id, tz from remind_feeds where token = ${token}`;
   const feed = feeds[0];
   if (!feed) return null;
-  const allowed = (await readIsAdmin(feed.user_id)) || (await readAccount(feed.user_id)).hasPass;
-
-  const events: Event[] = [];
-  if (allowed) {
-    const docs = await sql<{ payload: string }>`
-      select payload from app_documents where user_id = ${feed.user_id} and app_id = 'tasks'
-    `;
-    let personal = cleanDoc({});
-    try {
-      personal = cleanDoc(docs[0] ? JSON.parse(docs[0].payload) : {});
-    } catch {
-      /* unreadable document: no personal events */
-    }
-    const projectName = new Map(personal.projects.map((project) => [project.id, project.name]));
-    for (const task of personal.tasks) {
-      if (task.done || !task.due) continue;
-      events.push({
-        uid: `${task.id}@midnry-remind`,
+  const events: Event[] = (await hasPassAccess(feed.user_id))
+    ? (await openDatedTasks(feed.user_id)).map((task) => ({
+        uid: task.uid,
         title: task.title,
         notes: task.notes + lastComment(task.comments),
         due: task.due,
         time: task.time,
         recur: task.recur,
-        where: projectName.get(task.projectId) ?? "Inbox",
-      });
-    }
-    const shared = await sql<{ id: string; name: string; doc: string }>`
-      select p.id, p.name, p.doc from remind_projects p
-      join remind_members m on m.project_id = p.id
-      where m.user_id = ${feed.user_id}
-    `;
-    for (const project of shared) {
-      let doc = cleanSharedDoc({});
-      try {
-        doc = cleanSharedDoc(JSON.parse(project.doc));
-      } catch {
-        continue;
-      }
-      for (const task of doc.tasks) {
-        if (task.done || !task.due) continue;
-        if (task.assigneeId && task.assigneeId !== feed.user_id) continue;
-        events.push({
-          uid: `${task.id}@midnry-remind`,
-          title: task.title,
-          notes: task.notes + lastComment(task.comments),
-          due: task.due,
-          time: task.time,
-          recur: task.recur,
-          where: project.name,
-        });
-      }
-    }
-  }
+        where: task.where,
+      }))
+    : [];
 
   const now = stamp();
   const lines = [

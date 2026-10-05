@@ -29,7 +29,9 @@ import { Route as SectionsGenreRouteImport } from './routes/sections/$genre'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAvatarIdRouteImport } from './routes/api/avatar/$id'
 import { Route as ApiPaystackWebhookRouteImport } from './routes/api/paystack/webhook'
+import { Route as ApiRemindTickRouteImport } from './routes/api/remind/tick'
 import { Route as ApiRemindCalendarTokenRouteImport } from './routes/api/remind/calendar/$token'
+import { Route as ApiRemindUnsubscribeTokenRouteImport } from './routes/api/remind/unsubscribe/$token'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -131,11 +133,22 @@ const ApiPaystackWebhookRoute = ApiPaystackWebhookRouteImport.update({
   path: '/api/paystack/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRemindTickRoute = ApiRemindTickRouteImport.update({
+  id: '/api/remind/tick',
+  path: '/api/remind/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRemindCalendarTokenRoute = ApiRemindCalendarTokenRouteImport.update({
   id: '/api/remind/calendar/$token',
   path: '/api/remind/calendar/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRemindUnsubscribeTokenRoute =
+  ApiRemindUnsubscribeTokenRouteImport.update({
+    id: '/api/remind/unsubscribe/$token',
+    path: '/api/remind/unsubscribe/$token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -158,7 +171,9 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
+  '/api/remind/tick': typeof ApiRemindTickRoute
   '/api/remind/calendar/$token': typeof ApiRemindCalendarTokenRoute
+  '/api/remind/unsubscribe/$token': typeof ApiRemindUnsubscribeTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -181,7 +196,9 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
+  '/api/remind/tick': typeof ApiRemindTickRoute
   '/api/remind/calendar/$token': typeof ApiRemindCalendarTokenRoute
+  '/api/remind/unsubscribe/$token': typeof ApiRemindUnsubscribeTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -205,7 +222,9 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
+  '/api/remind/tick': typeof ApiRemindTickRoute
   '/api/remind/calendar/$token': typeof ApiRemindCalendarTokenRoute
+  '/api/remind/unsubscribe/$token': typeof ApiRemindUnsubscribeTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -230,7 +249,9 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/avatar/$id'
     | '/api/paystack/webhook'
+    | '/api/remind/tick'
     | '/api/remind/calendar/$token'
+    | '/api/remind/unsubscribe/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -253,7 +274,9 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/avatar/$id'
     | '/api/paystack/webhook'
+    | '/api/remind/tick'
     | '/api/remind/calendar/$token'
+    | '/api/remind/unsubscribe/$token'
   id:
     | '__root__'
     | '/'
@@ -276,7 +299,9 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/avatar/$id'
     | '/api/paystack/webhook'
+    | '/api/remind/tick'
     | '/api/remind/calendar/$token'
+    | '/api/remind/unsubscribe/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -300,7 +325,9 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAvatarIdRoute: typeof ApiAvatarIdRoute
   ApiPaystackWebhookRoute: typeof ApiPaystackWebhookRoute
+  ApiRemindTickRoute: typeof ApiRemindTickRoute
   ApiRemindCalendarTokenRoute: typeof ApiRemindCalendarTokenRoute
+  ApiRemindUnsubscribeTokenRoute: typeof ApiRemindUnsubscribeTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -445,11 +472,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPaystackWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/remind/tick': {
+      id: '/api/remind/tick'
+      path: '/api/remind/tick'
+      fullPath: '/api/remind/tick'
+      preLoaderRoute: typeof ApiRemindTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/remind/calendar/$token': {
       id: '/api/remind/calendar/$token'
       path: '/api/remind/calendar/$token'
       fullPath: '/api/remind/calendar/$token'
       preLoaderRoute: typeof ApiRemindCalendarTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/remind/unsubscribe/$token': {
+      id: '/api/remind/unsubscribe/$token'
+      path: '/api/remind/unsubscribe/$token'
+      fullPath: '/api/remind/unsubscribe/$token'
+      preLoaderRoute: typeof ApiRemindUnsubscribeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -476,7 +517,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAvatarIdRoute: ApiAvatarIdRoute,
   ApiPaystackWebhookRoute: ApiPaystackWebhookRoute,
+  ApiRemindTickRoute: ApiRemindTickRoute,
   ApiRemindCalendarTokenRoute: ApiRemindCalendarTokenRoute,
+  ApiRemindUnsubscribeTokenRoute: ApiRemindUnsubscribeTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

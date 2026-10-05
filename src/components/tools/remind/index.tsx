@@ -29,7 +29,7 @@ import { byWhen, isMineToDo, matchesFilter, projectLabel, sameLabel, sharedKey, 
 import { QuickAdd } from "./quick-add";
 import { TaskRow, type RowActions, type RowContext } from "./task-row";
 import { Productivity } from "./productivity";
-import { CalendarLink, FilterEditor, PeoplePanel } from "./panels";
+import { CalendarLink, EmailSettings, FilterEditor, PeoplePanel } from "./panels";
 import { Board, Month } from "./layouts";
 
 type Layout = "list" | "board" | "month";
@@ -941,11 +941,12 @@ export function RemindTool() {
               />
             ) : view.kind === "settings" ? (
               <div className="mt-4 space-y-4">
+                <EmailSettings />
                 <CalendarLink />
                 <section className="rounded-2xl bg-card p-5 shadow-line">
                   <h3 className="font-medium">Alerts while Remind is open</h3>
                   <p className="mt-1 text-sm text-pretty text-muted">
-                    Get a pop-up when a task with a time is due, while this page is open in your browser. For alerts when Midnry is closed, use the calendar link above: your calendar app will remind you.
+                    Get a pop-up when a task with a time is due, while this page is open in your browser. For reminders when Midnry is closed, turn on email above or use the calendar link.
                   </p>
                   <Button
                     tone={doc.alerts ? "quiet" : "primary"}
