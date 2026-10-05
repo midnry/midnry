@@ -163,7 +163,7 @@ export const APPS: readonly AppDef[] = [
     ],
     guide: [
       "Under Log a period, pick the first day of your last period, and the last day if it has ended.",
-      "Read the date your next period should start at the top.",
+      "Read the date your next period should start, right under the form.",
       "Open a period to add a note. Edit or delete a note at any time.",
       "Delete period removes that period and its notes.",
       "These dates are estimates, not medical advice and not birth control.",

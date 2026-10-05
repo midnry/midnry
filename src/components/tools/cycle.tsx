@@ -138,13 +138,13 @@ export function CycleTool() {
   return (
     <ToolFrame slug="cycle" saveState={saveState}>
       <ToolStatus ready={ready} loadError={loadError} blocked={blocked}>
-        <NextPeriod estimate={estimate} />
-
         <LogForm
           today={today}
           periods={doc.periods}
           onLog={(period) => commit({ ...doc, periods: [...doc.periods, period].sort((a, b) => a.start.localeCompare(b.start)) })}
         />
+
+        <NextPeriod estimate={estimate} />
 
         <section className="mt-8">
           <div className="flex items-baseline justify-between gap-3">
@@ -202,10 +202,10 @@ export function CycleTool() {
 function NextPeriod({ estimate }: { estimate: ReturnType<typeof predict> }) {
   if (!estimate.next) {
     return (
-      <section className="rounded-3xl bg-card p-5 shadow-line">
+      <section className="mt-6 rounded-3xl bg-card p-5 shadow-line">
         <p className="text-sm text-muted">Next period</p>
         <p className="mt-1 font-display text-2xl tracking-tight text-balance">
-          Log when your last period started, and Cycle will tell you when the next one should start.
+          Log when your last period started, and your next date will show here.
         </p>
       </section>
     );
@@ -220,7 +220,7 @@ function NextPeriod({ estimate }: { estimate: ReturnType<typeof predict> }) {
           ? "today"
           : `${plural(-daysUntil, "day")} late`;
   return (
-    <section className="rounded-3xl bg-pine p-5 text-paper">
+    <section className="mt-6 rounded-3xl bg-pine p-5 text-paper">
       <p className="text-sm opacity-80">Your next period should start</p>
       <p className="mt-1 font-display text-3xl tracking-tight text-balance sm:text-4xl">{prettyLong(estimate.next)}</p>
       <p className="mt-2 text-lg font-medium">{when}</p>
@@ -258,7 +258,7 @@ function LogForm({ today, periods, onLog }: { today: string; periods: Period[]; 
   }
 
   return (
-    <section className="mt-6 rounded-3xl bg-card p-5 shadow-line">
+    <section className="rounded-3xl bg-card p-5 shadow-line">
       <h2 className="font-display text-2xl tracking-tight">Log a period</h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="text-sm">
