@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useAppDoc } from "@/components/use-app-doc";
 import { Button } from "@/components/ui";
 import { ToolFrame, ToolStatus } from "@/components/tools/shared";
@@ -53,6 +54,30 @@ function clock(total: number): string {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+function chime() {
+  try {
+    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    [660, 880].forEach((freq, index) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = freq;
+      osc.type = "sine";
+      const at = ctx.currentTime + index * 0.25;
+      gain.gain.setValueAtTime(0.0001, at);
+      gain.gain.exponentialRampToValueAtTime(0.25, at + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.6);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(at);
+      osc.stop(at + 0.65);
+    });
+    window.setTimeout(() => void ctx.close(), 1500);
+  } catch {
+    /* sound is optional */
+  }
+}
+
 export function PulseTool() {
   const { data, setData, ready, loadError, blocked, saveState } = useAppDoc("pulse", FALLBACK);
   const pulse = asPulse(data);
@@ -79,6 +104,8 @@ export function PulseTool() {
     if (completing.current) return;
     completing.current = true;
     const finishedFocus = current.mode === "focus";
+    chime();
+    toast.success(finishedFocus ? "Focus round done. Take a five-minute break." : "Break over. Ready for the next round?");
     const mode: PulseMode = finishedFocus ? "break" : "focus";
     setData({
       mode,
@@ -88,6 +115,15 @@ export function PulseTool() {
       rounds: current.rounds + (finishedFocus ? 1 : 0),
     });
   }, [ready, pulse.running, pulse.startedAt, pulse.secondsLeft, left, setData]);
+
+  useEffect(() => {
+    if (!pulse.running) return;
+    const before = document.title;
+    document.title = `${clock(left)} · ${pulse.mode === "focus" ? "Focus" : "Break"}`;
+    return () => {
+      document.title = before;
+    };
+  }, [left, pulse.running, pulse.mode]);
 
   const total = duration(pulse.mode);
   const scale = total === 0 ? 0 : left / total;

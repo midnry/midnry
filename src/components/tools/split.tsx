@@ -1,10 +1,10 @@
 import { toast } from "sonner";
 import { useAppDoc } from "@/components/use-app-doc";
 import { Button, Field, TextInput } from "@/components/ui";
-import { formatUsd } from "@/lib/format";
-import { parseCents, ToolFrame, ToolStatus } from "@/components/tools/shared";
+import { formatCents, guessCurrency, isCurrency, type CurrencyCode } from "@/lib/format";
+import { CurrencyPicker, parseCents, ToolFrame, ToolStatus } from "@/components/tools/shared";
 
-type SplitDoc = { amount: string; people: string; tip: string };
+type SplitDoc = { amount: string; people: string; tip: string; currency?: CurrencyCode };
 
 const FALLBACK: SplitDoc = { amount: "", people: "2", tip: "18" };
 
@@ -13,6 +13,7 @@ function asSplit(value: SplitDoc): SplitDoc {
     amount: typeof value.amount === "string" ? value.amount : "",
     people: typeof value.people === "string" ? value.people : "2",
     tip: typeof value.tip === "string" ? value.tip : "18",
+    currency: isCurrency(value.currency) ? value.currency : undefined,
   };
 }
 
@@ -33,6 +34,8 @@ function tipRate(raw: string): number | null {
 export function SplitTool() {
   const { data, setData, ready, loadError, blocked, saveState } = useAppDoc("split", FALLBACK);
   const split = asSplit(data);
+  const currency = split.currency ?? guessCurrency();
+  const formatUsd = (cents: number) => formatCents(cents, currency);
   const amount = parseCents(split.amount);
   const people = peopleCount(split.people);
   const tip = tipRate(split.tip);
@@ -78,6 +81,20 @@ export function SplitTool() {
                 aria-label="Tip percent"
               />
             </Field>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Quick tip">
+              {["0", "5", "10", "15", "20"].map((rate) => (
+                <button
+                  key={rate}
+                  type="button"
+                  aria-pressed={split.tip === rate}
+                  onClick={() => setData({ ...split, tip: rate })}
+                  className={`h-9 rounded-full px-3 text-sm ${split.tip === rate ? "bg-pine text-paper" : "bg-card shadow-line"}`}
+                >
+                  {rate === "0" ? "No tip" : `${rate}%`}
+                </button>
+              ))}
+            </div>
+            <CurrencyPicker value={currency} onChange={(code) => setData({ ...split, currency: code })} />
           </div>
           <div className="rounded-3xl bg-card p-6 shadow-line sm:p-8">
             <p className="text-sm text-muted">Each person</p>

@@ -136,7 +136,7 @@ export const planIdeaHalf = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<PlanResult> => {
     const apiKey = data.apiKey || env("XAI_API_KEY");
-    if (!apiKey) return { ok: false, error: "Paste an xAI key, or set XAI_API_KEY on the server." };
+    if (!apiKey) return { ok: false, error: "AI help is not switched on for this site yet. Paste your own xAI API key to use it now." };
     try {
       const slots = yearWeeks(data.year, data.country);
       const size = Math.ceil(slots.length / 4);

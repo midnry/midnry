@@ -1,7 +1,7 @@
 import { useAppDoc } from "@/components/use-app-doc";
 import { Button, Field, TextArea, TextInput } from "@/components/ui";
-import { formatDollars } from "@/lib/format";
-import { nid, todayISO, ToolFrame, ToolStatus } from "@/components/tools/shared";
+import { formatMoney, guessCurrency, isCurrency, type CurrencyCode } from "@/lib/format";
+import { CurrencyPicker, nid, todayISO, ToolFrame, ToolStatus } from "@/components/tools/shared";
 
 type Line = { id: string; description: string; qty: string; rate: string };
 type InvoiceDoc = {
@@ -9,6 +9,8 @@ type InvoiceDoc = {
   to: string;
   number: string;
   issued: string;
+  due: string;
+  currency?: CurrencyCode;
   notes: string;
   taxPercent: string;
   lines: Line[];
@@ -19,6 +21,7 @@ const FALLBACK: InvoiceDoc = {
   to: "",
   number: "0001",
   issued: todayISO(),
+  due: "",
   notes: "",
   taxPercent: "0",
   lines: [{ id: "line-1", description: "", qty: "1", rate: "" }],
@@ -42,16 +45,22 @@ function asInvoice(value: InvoiceDoc): InvoiceDoc {
     to: typeof value.to === "string" ? value.to : "",
     number: typeof value.number === "string" ? value.number : "0001",
     issued: typeof value.issued === "string" ? value.issued : todayISO(),
+    due: typeof value.due === "string" ? value.due : "",
+    currency: isCurrency(value.currency) ? value.currency : undefined,
     notes: typeof value.notes === "string" ? value.notes : "",
     taxPercent: typeof value.taxPercent === "string" ? value.taxPercent : "0",
     lines: lines.length > 0 ? lines : FALLBACK.lines,
   };
 }
 
+function plain(raw: string): string {
+  return raw.trim().replace(/[,\s]/g, "");
+}
+
 function lineTotal(line: Line): number | null {
-  if (!/^\d+(\.\d+)?$/.test(line.qty.trim()) || !/^\d+(\.\d{1,2})?$/.test(line.rate.trim())) return null;
-  const qty = Number(line.qty);
-  const rate = Number(line.rate);
+  if (!/^\d+(\.\d+)?$/.test(plain(line.qty)) || !/^\d+(\.\d{1,2})?$/.test(plain(line.rate))) return null;
+  const qty = Number(plain(line.qty));
+  const rate = Number(plain(line.rate));
   if (!Number.isFinite(qty) || !Number.isFinite(rate) || qty < 0 || rate < 0) return null;
   return qty * rate;
 }
@@ -69,6 +78,16 @@ export function InvoiceTool() {
   const safeTax = Number.isFinite(taxRate) && taxRate >= 0 && taxRate <= 100 ? taxRate : 0;
   const tax = subtotal * (safeTax / 100);
   const total = subtotal + tax;
+  const currency = invoice.currency ?? guessCurrency();
+  const fmt = (value: number) => formatMoney(value, currency);
+
+  function nextInvoice() {
+    const digits = invoice.number.match(/(\d+)(?!.*\d)/);
+    const number = digits
+      ? invoice.number.replace(/(\d+)(?!.*\d)/, String(Number(digits[1]) + 1).padStart(digits[1].length, "0"))
+      : invoice.number;
+    patch({ number, to: "", issued: todayISO(), due: "", notes: invoice.notes, lines: [{ id: nid(), description: "", qty: "1", rate: "" }] });
+  }
 
   return (
     <ToolFrame slug="invoice" saveState={saveState} hideOnPrint>
@@ -106,6 +125,10 @@ export function InvoiceTool() {
                   onChange={(event) => patch({ issued: event.target.value })}
                 />
               </Field>
+              <Field label="Due">
+                <TextInput type="date" value={invoice.due} min={invoice.issued || undefined} onChange={(event) => patch({ due: event.target.value })} />
+              </Field>
+              <CurrencyPicker value={currency} onChange={(code) => patch({ currency: code })} />
             </div>
             <Field label="Tax percent">
               <TextInput
@@ -186,9 +209,15 @@ export function InvoiceTool() {
                 maxLength={400}
               />
             </Field>
-            <Button tone="primary" onClick={() => window.print()}>
-              Print
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button tone="primary" onClick={() => window.print()}>
+                Print or save as PDF
+              </Button>
+              <Button tone="quiet" onClick={nextInvoice}>
+                Start the next invoice
+              </Button>
+            </div>
+            <p className="text-xs text-muted">In the print window, choose “Save as PDF” to send it by email or WhatsApp.</p>
           </form>
 
           <article className="invoice-sheet rounded-3xl bg-card p-6 shadow-line sm:p-8">
@@ -197,7 +226,10 @@ export function InvoiceTool() {
                 <p className="text-sm text-muted">Invoice</p>
                 <p className="font-display text-4xl tracking-tight">{invoice.number || "—"}</p>
               </div>
-              <p className="text-sm text-muted">{invoice.issued || "No date"}</p>
+              <div className="text-right text-sm text-muted">
+                <p>Issued {invoice.issued || "—"}</p>
+                {invoice.due ? <p className="font-medium text-ink">Due {invoice.due}</p> : null}
+              </div>
             </div>
             <div className="mt-6 grid gap-6 sm:grid-cols-2">
               <div>
@@ -226,10 +258,10 @@ export function InvoiceTool() {
                       <td className="py-2 pr-3">{line.description.trim() || "—"}</td>
                       <td className="py-2 text-right tabular-nums">{line.qty || "—"}</td>
                       <td className="py-2 text-right tabular-nums">
-                        {line.rate.trim() ? formatDollars(Number(line.rate)) : "—"}
+                        {plain(line.rate) && Number.isFinite(Number(plain(line.rate))) ? fmt(Number(plain(line.rate))) : "—"}
                       </td>
                       <td className="py-2 text-right tabular-nums">
-                        {amount == null ? "—" : formatDollars(amount)}
+                        {amount == null ? "—" : fmt(amount)}
                       </td>
                     </tr>
                   );
@@ -239,15 +271,15 @@ export function InvoiceTool() {
             <dl className="mt-4 ml-auto max-w-xs space-y-1 text-sm">
               <div className="flex justify-between gap-4">
                 <dt className="text-muted">Subtotal</dt>
-                <dd className="tabular-nums">{formatDollars(subtotal)}</dd>
+                <dd className="tabular-nums">{fmt(subtotal)}</dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-muted">Tax {safeTax}%</dt>
-                <dd className="tabular-nums">{formatDollars(tax)}</dd>
+                <dd className="tabular-nums">{fmt(tax)}</dd>
               </div>
               <div className="flex justify-between gap-4 pt-2 font-medium">
                 <dt>Total</dt>
-                <dd className="tabular-nums">{formatDollars(total)}</dd>
+                <dd className="tabular-nums">{fmt(total)}</dd>
               </div>
             </dl>
             {invoice.notes.trim() ? (

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import { useAppDoc } from "@/components/use-app-doc";
 import { Button, TextArea, TextInput } from "@/components/ui";
 import { nid, ToolFrame, ToolStatus } from "@/components/tools/shared";
@@ -38,6 +39,9 @@ export function ScratchTool() {
   const activeId = notes.some((note) => note.id === data.activeId) ? data.activeId : notes[0].id;
   const active = notes.find((note) => note.id === activeId) ?? notes[0];
   const [draftTitle, setDraftTitle] = useState("");
+  const [query, setQuery] = useState("");
+  const needle = query.trim().toLowerCase();
+  const shown = needle ? notes.filter((note) => `${note.title} ${note.body}`.toLowerCase().includes(needle)) : notes;
 
   function commit(nextNotes: Note[], nextActive = activeId) {
     setData({ notes: nextNotes, activeId: nextActive });
@@ -69,8 +73,12 @@ export function ScratchTool() {
                 Add
               </Button>
             </form>
+            {notes.length > 5 ? (
+              <TextInput className="mt-3" value={query} placeholder="Search notes" aria-label="Search notes" onChange={(event) => setQuery(event.target.value)} />
+            ) : null}
+            {needle && shown.length === 0 ? <p className="mt-3 text-sm text-muted">No notes match.</p> : null}
             <ul className="mt-3">
-              {notes.map((note) => {
+              {shown.map((note) => {
                 const on = note.id === activeId;
                 return (
                   <li key={note.id} className="border-t border-line last:border-b">
@@ -83,7 +91,10 @@ export function ScratchTool() {
                           : "flex min-h-11 w-full items-center text-left text-muted hover:text-ink"
                       }
                     >
-                      <span className="truncate">{note.title.trim() || "Untitled"}</span>
+                      <span className="min-w-0 py-1.5">
+                        <span className="block truncate">{note.title.trim() || "Untitled"}</span>
+                        {note.body.trim() ? <span className="block truncate text-xs font-normal text-muted">{note.body.trim().slice(0, 80)}</span> : null}
+                      </span>
                     </button>
                   </li>
                 );
@@ -121,16 +132,33 @@ export function ScratchTool() {
               <span>
                 {words(active.body)} {words(active.body) === 1 ? "word" : "words"}
               </span>
-              <Button
-                tone="quiet"
-                disabled={notes.length <= 1}
-                onClick={() => {
-                  const next = notes.filter((note) => note.id !== active.id);
-                  commit(next, next[0]?.id ?? active.id);
-                }}
-              >
-                Delete note
-              </Button>
+              <span className="flex flex-wrap gap-2">
+                <Button
+                  tone="quiet"
+                  disabled={!active.body.trim()}
+                  onClick={() => {
+                    void navigator.clipboard.writeText([active.title.trim(), active.body].filter(Boolean).join("\n\n")).then(
+                      () => toast.success("Note copied."),
+                      () => toast.error("Could not copy."),
+                    );
+                  }}
+                >
+                  Copy
+                </Button>
+                <Button
+                  tone="quiet"
+                  disabled={notes.length <= 1}
+                  onClick={() => {
+                    const before = notes;
+                    const beforeActive = active.id;
+                    const next = notes.filter((note) => note.id !== active.id);
+                    commit(next, next[0]?.id ?? active.id);
+                    toast("Note deleted", { action: { label: "Undo", onClick: () => commit(before, beforeActive) } });
+                  }}
+                >
+                  Delete note
+                </Button>
+              </span>
             </div>
           </div>
         </div>

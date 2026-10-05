@@ -73,7 +73,7 @@ export const tailorRole = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<TailorResult> => {
     const apiKey = data.apiKey || env("XAI_API_KEY");
-    if (!apiKey) return { ok: false, error: "Paste an xAI key, or set XAI_API_KEY on the server." };
+    if (!apiKey) return { ok: false, error: "AI help is not switched on for this site yet. Paste your own xAI API key to use it now." };
     const model = env("XAI_MODEL") || "grok-3";
     try {
       const response = await fetch("https://api.x.ai/v1/chat/completions", {

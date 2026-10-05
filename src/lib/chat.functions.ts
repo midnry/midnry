@@ -48,7 +48,7 @@ export const sendChat = createServerFn({ method: "POST" })
     if (!apiKey) {
       return {
         ok: false as const,
-        error: "Paste an xAI key, or set XAI_API_KEY on the server.",
+        error: "AI help is not switched on for this site yet. Paste your own xAI API key to use it now.",
       };
     }
     const model = env("XAI_MODEL") || "grok-3";
@@ -70,7 +70,7 @@ export const sendChat = createServerFn({ method: "POST" })
       return { ok: false as const, error: "Could not reach the model." };
     }
     if (!response.ok) {
-      return { ok: false as const, error: "The model refused that request. Check the key." };
+      return { ok: false as const, error: "The AI service turned that request down. If you pasted a key, check it and try again." };
     }
     const body = (await response.json()) as {
       choices?: Array<{ message?: { content?: string } }>;

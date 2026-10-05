@@ -16,7 +16,7 @@ export const draftText = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const apiKey = data.apiKey || env("XAI_API_KEY");
-    if (!apiKey) return { ok: false as const, error: "Paste an xAI key, or set XAI_API_KEY on the server." };
+    if (!apiKey) return { ok: false as const, error: "AI help is not switched on for this site yet. Paste your own xAI API key to use it now." };
     const model = env("XAI_MODEL") || "grok-3";
     try {
       const response = await fetch("https://api.x.ai/v1/chat/completions", {
@@ -31,7 +31,7 @@ export const draftText = createServerFn({ method: "POST" })
           ],
         }),
       });
-      if (!response.ok) return { ok: false as const, error: "The model refused that request. Check the key." };
+      if (!response.ok) return { ok: false as const, error: "The AI service turned that request down. If you pasted a key, check it and try again." };
       const body = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
       const text = body.choices?.[0]?.message?.content?.trim();
       if (!text) return { ok: false as const, error: "The model sent an empty reply." };

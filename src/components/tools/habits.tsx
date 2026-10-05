@@ -28,6 +28,18 @@ function asHabits(value: unknown): Habit[] {
     }));
 }
 
+function streak(done: string[], today: string): number {
+  const days = new Set(done);
+  let cursor = new Date(`${today}T12:00:00`);
+  if (!days.has(today)) cursor = addDays(cursor, -1);
+  let count = 0;
+  while (days.has(todayISO(cursor))) {
+    count += 1;
+    cursor = addDays(cursor, -1);
+  }
+  return count;
+}
+
 function weekStart(date: Date): Date {
   return startOfWeek(date, { weekStartsOn: 1 });
 }
@@ -104,6 +116,10 @@ export function HabitsTool() {
                           )
                         }
                       />
+                      <span className="mt-1 block text-xs text-muted">
+                        {days.filter((day) => habit.done.includes(todayISO(day))).length}/7 this week
+                        {streak(habit.done, today) > 1 ? ` · ${streak(habit.done, today)}-day streak` : ""}
+                      </span>
                     </td>
                     {days.map((day) => {
                       const iso = todayISO(day);

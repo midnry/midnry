@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import { useAppDoc } from "@/components/use-app-doc";
 import { Button, Field, fieldClass, TextInput } from "@/components/ui";
-import { formatUsd } from "@/lib/format";
-import { nid, parseCents, todayISO, ToolFrame, ToolStatus } from "@/components/tools/shared";
+import { formatCents, guessCurrency, isCurrency, type CurrencyCode } from "@/lib/format";
+import { CurrencyPicker, nid, parseCents, todayISO, ToolFrame, ToolStatus } from "@/components/tools/shared";
 
-const CATEGORIES = ["Food", "Transit", "Home", "Work", "Other"] as const;
+const CATEGORIES = ["Food", "Transit", "Home", "Bills", "Health", "Shopping", "Family", "Fun", "Work", "Other"] as const;
 
 type Entry = {
   id: string;
@@ -14,7 +15,7 @@ type Entry = {
   date: string;
 };
 
-type LedgerDoc = { entries: Entry[] };
+type LedgerDoc = { entries: Entry[]; currency?: CurrencyCode; budget?: string };
 
 const FALLBACK: LedgerDoc = { entries: [] };
 
@@ -37,13 +38,38 @@ function asEntries(value: unknown): Entry[] {
 export function LedgerTool() {
   const { data, setData, ready, loadError, blocked, saveState } = useAppDoc("ledger", FALLBACK);
   const entries = asEntries(data.entries);
+  const currency = isCurrency(data.currency) ? data.currency : guessCurrency();
+  const formatUsd = (cents: number) => formatCents(cents, currency);
+  const budgetCents = parseCents(data.budget ?? "");
+  const [month, setMonth] = useState(() => todayISO().slice(0, 7));
+  const [editing, setEditing] = useState<string | null>(null);
+
+  function save(next: Partial<LedgerDoc>) {
+    setData({ entries, currency: data.currency, budget: data.budget, ...next });
+  }
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
   const [date, setDate] = useState(() => todayISO());
   const [error, setError] = useState<string | null>(null);
 
-  const month = todayISO().slice(0, 7);
+  const monthLabel = new Date(`${month}-01T12:00:00`).toLocaleDateString("en", { month: "long", year: "numeric" });
+  const thisMonth = month === todayISO().slice(0, 7);
+  function shift(delta: number) {
+    const [y, m] = month.split("-").map(Number);
+    const date = new Date(y, m - 1 + delta, 1);
+    setMonth(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`);
+  }
+  function exportCsv() {
+    const rows = [["Date", "What", "Category", "Amount"], ...entries.map((entry) => [entry.date, entry.label, entry.category, (entry.cents / 100).toFixed(2)])];
+    const csv = rows.map((row) => row.map((cell) => (/[",\n]/.test(cell) ? `"${cell.replace(/"/g, '""')}"` : cell)).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "ledger.csv";
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
   const monthEntries = entries.filter((entry) => entry.date.startsWith(month));
   const monthTotal = monthEntries.reduce((sum, entry) => sum + entry.cents, 0);
   const bars = CATEGORIES.map((name) => ({
@@ -68,14 +94,15 @@ export function LedgerTool() {
       return;
     }
     setError(null);
-    setData({
-      entries: [
-        { id: nid(), label: label.trim(), cents, category, date },
-        ...entries,
-      ].slice(0, 500),
-    });
+    if (editing) {
+      save({ entries: entries.map((entry) => (entry.id === editing ? { ...entry, label: label.trim(), cents, category, date } : entry)) });
+      setEditing(null);
+    } else {
+      save({ entries: [{ id: nid(), label: label.trim(), cents, category, date }, ...entries].slice(0, 500) });
+    }
     setLabel("");
     setAmount("");
+    setMonth(date.slice(0, 7));
   }
 
   return (
@@ -115,16 +142,44 @@ export function LedgerTool() {
                     {error}
                   </p>
                 ) : null}
-                <Button type="submit" tone="primary">
-                  Add expense
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="submit" tone="primary">
+                    {editing ? "Save changes" : "Add expense"}
+                  </Button>
+                  {editing ? (
+                    <Button
+                      tone="quiet"
+                      onClick={() => {
+                        setEditing(null);
+                        setLabel("");
+                        setAmount("");
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  ) : null}
+                </div>
               </div>
             </form>
-            {entries.length === 0 ? (
-              <p className="mt-8 text-sm text-muted">Nothing logged yet.</p>
+            <div className="mt-8 flex flex-wrap items-center gap-2">
+              <Button tone="quiet" onClick={() => shift(-1)} aria-label="Previous month">
+                ←
+              </Button>
+              <p className="min-w-36 text-center font-medium">{monthLabel}</p>
+              <Button tone="quiet" onClick={() => shift(1)} disabled={thisMonth} aria-label="Next month">
+                →
+              </Button>
+              {entries.length > 0 ? (
+                <Button tone="quiet" className="ml-auto" onClick={exportCsv}>
+                  Export CSV
+                </Button>
+              ) : null}
+            </div>
+            {monthEntries.length === 0 ? (
+              <p className="mt-4 text-sm text-muted">{entries.length === 0 ? "Nothing logged yet. Add your first expense above." : `Nothing logged in ${monthLabel}.`}</p>
             ) : (
-              <ul className="mt-8">
-                {entries.map((entry) => (
+              <ul className="mt-4">
+                {[...monthEntries].sort((a, b) => b.date.localeCompare(a.date)).map((entry) => (
                   <li
                     key={entry.id}
                     className="flex items-center justify-between gap-3 border-t border-line py-3 last:border-b"
@@ -137,12 +192,30 @@ export function LedgerTool() {
                     </span>
                     <span className="flex items-center gap-3">
                       <span className="tabular-nums">{formatUsd(entry.cents)}</span>
-                      <Button
-                        tone="quiet"
-                        onClick={() => setData({ entries: entries.filter((item) => item.id !== entry.id) })}
+                      <button
+                        type="button"
+                        className="min-h-9 rounded-full px-2 text-sm text-muted hover:bg-paper-2"
+                        onClick={() => {
+                          setEditing(entry.id);
+                          setLabel(entry.label);
+                          setAmount((entry.cents / 100).toFixed(2));
+                          setCategory(entry.category);
+                          setDate(entry.date);
+                        }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="min-h-9 rounded-full px-2 text-sm text-fail hover:bg-paper-2"
+                        onClick={() => {
+                          const before = entries;
+                          save({ entries: entries.filter((item) => item.id !== entry.id) });
+                          toast("Expense removed", { action: { label: "Undo", onClick: () => save({ entries: before }) } });
+                        }}
                       >
                         Remove
-                      </Button>
+                      </button>
                     </span>
                   </li>
                 ))}
@@ -150,8 +223,23 @@ export function LedgerTool() {
             )}
           </div>
           <aside className="h-fit rounded-3xl bg-card p-6 shadow-line">
-            <p className="text-sm text-muted">This month</p>
+            <p className="text-sm text-muted">{thisMonth ? "This month" : monthLabel}</p>
             <p className="mt-2 font-display text-5xl tabular-nums tracking-tight">{formatUsd(monthTotal)}</p>
+            {budgetCents ? (
+              <div className="mt-4">
+                <div className="h-2 overflow-hidden rounded-full bg-paper-2">
+                  <div
+                    className={`h-full rounded-full ${monthTotal > budgetCents ? "bg-fail" : "bg-pine"}`}
+                    style={{ width: `${Math.min(100, (monthTotal / budgetCents) * 100)}%` }}
+                  />
+                </div>
+                <p className={`mt-2 text-sm ${monthTotal > budgetCents ? "font-medium text-fail" : "text-muted"}`}>
+                  {monthTotal > budgetCents
+                    ? `${formatUsd(monthTotal - budgetCents)} over your ${formatUsd(budgetCents)} budget`
+                    : `${formatUsd(budgetCents - monthTotal)} left of ${formatUsd(budgetCents)}`}
+                </p>
+              </div>
+            ) : null}
             {bars.length === 0 ? (
               <p className="mt-6 text-sm text-muted">Categories show up once this month has an expense.</p>
             ) : (
@@ -172,6 +260,12 @@ export function LedgerTool() {
                 ))}
               </ul>
             )}
+            <div className="mt-6 grid gap-3 border-t border-line pt-4">
+              <Field label="Monthly budget (optional)">
+                <TextInput inputMode="decimal" value={data.budget ?? ""} placeholder="e.g. 150000" onChange={(event) => save({ budget: event.target.value })} />
+              </Field>
+              <CurrencyPicker value={currency} onChange={(code) => save({ currency: code })} />
+            </div>
           </aside>
         </div>
       </ToolStatus>
