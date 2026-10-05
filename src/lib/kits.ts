@@ -375,8 +375,12 @@ export const KITS: readonly Kit[] = [
     name: "Outreach",
     section: "marketing",
     blurb: "A short email from who you are and why you are writing.",
-    features: ["A subject and a short body", "No fake familiarity", "Written for you instantly, then yours to edit"],
-    guide: ["Say who you are, who you are writing to, and what you want.", "Pick one of three emails.", "Edit it, then send it yourself."],
+    features: ["Three short emails with subject lines", "Plain, friendly wording with no fake familiarity", "Written for you instantly, then yours to edit"],
+    guide: [
+      "Add your name, what you do, and who you're writing to (for example: Ruth, event planner).",
+      "Say what you can do for them, and why them if you know. Short phrases are fine.",
+      "Pick one of three emails, or try another wording. Edit it, then send it yourself.",
+    ],
     kind: "write",
   },
   {

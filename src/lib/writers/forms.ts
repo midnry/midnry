@@ -1,5 +1,24 @@
 import type { Field } from "@/lib/kits";
 import { bullets, capital, clean, inline, items, list, longDate, pick, sentence, titleCase, topWords } from "./text.ts";
+import {
+  ask,
+  askQuestion,
+  contract,
+  fact,
+  introduce,
+  isClause,
+  learnerNext,
+  learnerStrength,
+  looksLikeNextStep,
+  midPhrase,
+  offer,
+  offerSentence,
+  person,
+  reason,
+  request,
+  stripLead,
+  withArticle,
+} from "./phrase.ts";
 
 export type Piece = { title: string; text: string };
 export type Values = Record<string, string>;
@@ -186,14 +205,14 @@ const remarks: Writer = {
   required: ["name", "strength", "next"],
   variants: true,
   run: (v, variant) => {
-    const name = clean(v.name).split(" ")[0] ?? "";
-    const strength = inline(v.strength);
-    const next = inline(v.next);
+    const name = capital(clean(v.name).split(" ")[0] ?? "");
+    const strength = learnerStrength(v.strength, name);
+    const next = learnerNext(v.next, name);
     const subject = clean(v.subject) ? ` in ${clean(v.subject)}` : "";
     const options = [
-      `${name} has worked well this term${subject} and ${strength}. The next step is to ${next}, which will help build on this good progress.`,
+      `${name} has worked well this term${subject} and ${strength}. The next step is to ${next}, which will build on this good progress.`,
       `It has been a pleasure to see ${name} grow${subject} this term; a real strength is that ${name} ${strength}. Going forward, ${name} should aim to ${next}.`,
-      `${name} ${strength}, and this has been clear in class${subject}. To keep improving, ${name} should focus on learning to ${next}.`,
+      `${name} ${strength}, and this has been clear in ${clean(v.subject) ? `${clean(v.subject)} lessons` : "class"}. To keep improving, ${name} should ${next}.`,
     ];
     return [0, 1, 2].map((offset) => ({ title: `Option ${offset + 1}`, text: pick(options, variant, offset) }));
   },
@@ -245,63 +264,84 @@ const readme: Writer = {
 
 const coldEmail: Writer = {
   fields: [
-    f("me", "Your name and what you do", "Tolu, I run a bakery supply business"),
-    f("them", "Who you are writing to", "Mrs Ade, owner of Crust & Co"),
-    f("why", "Why them, specifically", "your new branch in Lekki opened last month"),
-    f("ask", "What you want", "a 15-minute call to show our wholesale prices"),
-    f("proof", "One fact that earns trust, optional", "we supply 40 bakeries in Lagos"),
+    f("name", "Your name", "Eunice"),
+    f("role", "What you do", "videographer, or: I run a bakery supply business"),
+    f("them", "Who you're writing to", "Ruth, event planner"),
+    f("offer", "What you can do for them", "film and edit videos of your events"),
+    f("why", "Why them, optional", "you plan big weddings in Lagos"),
+    f("ask", "What should happen next, optional", "a quick call this week"),
+    f("proof", "One fact that earns trust, optional", "I've filmed over 50 weddings"),
   ],
-  required: ["me", "them", "ask"],
+  required: ["name", "them", "offer"],
   variants: true,
   run: (v, variant) => {
-    const meName = clean(v.me).split(/[,–-]/)[0]?.trim() ?? "";
-    const meRest = clean(v.me).includes(",") ? inline(clean(v.me).split(",").slice(1).join(",")) : "";
-    const them = clean(v.them);
-    const greetName = them.split(/[,–-]| owner| manager| at /i)[0]?.trim() || "there";
-    const ask = inline(v.ask);
-    const why = inline(v.why);
-    const proof = inline(v.proof);
-    const subjects = [`Quick question for ${greetName}`, `${meName}${meRest ? ` – ${meRest}` : ""}`.slice(0, 70), `Could we talk this week, ${greetName}?`];
+    // Older saved forms had one "me" box for name and role, and used "ask" for the offer.
+    const me = person(v.name || v.me, v.role);
+    const them = person(v.them);
+    const legacyOffer = !clean(v.offer) && clean(v.ask) && !looksLikeNextStep(v.ask);
+    const what = offer(legacyOffer ? v.ask : v.offer);
+    const next = ask(legacyOffer ? "" : v.ask) ?? { kind: "noun" as const, text: "a quick call this week" };
+    const why = reason(v.why);
+    const proof = fact(v.proof);
+    const greetName = them.name || "";
+    const theirRole = them.role && !them.roleIsClause ? withArticle(them.role) : "";
+    const context = why
+      ? `I'm getting in touch because ${why}.`
+      : theirRole
+        ? `I came across your work as ${theirRole} and wanted to introduce myself.`
+        : "";
+    const offerLine = (style: number) => (what ? offerSentence(what, style) : "");
+    const signOff = me.name || "";
+
+    const subjects = [
+      greetName ? `Quick question, ${greetName}` : "Quick question",
+      `Introduction: ${me.name}${me.role && !me.roleIsClause ? `, ${me.role}` : ""}`,
+      next.kind === "noun" ? `${next.text.charAt(0).toUpperCase()}${next.text.slice(1)}?` : `Could we ${next.text}?`,
+    ];
     const bodies = [
       [
-        `Hi ${greetName},`,
+        `Hi ${greetName || "there"},`,
         "",
-        `I'm ${meName}${meRest ? ` — ${meRest}` : ""}.${why ? ` I'm reaching out because ${why}.` : ""}`,
-        proof ? `${sentence(proof)}` : "",
+        [introduce(me, "im"), context].filter(Boolean).join(" "),
         "",
-        `Would you be open to ${ask}? If it's not a fit, a quick “no thanks” is completely fine.`,
+        [offerLine(0), proof].filter(Boolean).join(" "),
+        "",
+        `${askQuestion(next, 0)} If it's not a fit, a quick “no thanks” is completely fine.`,
         "",
         "Best,",
-        meName,
+        signOff,
       ],
       [
-        `Dear ${greetName},`,
+        `Dear ${greetName || "Sir or Madam"},`,
         "",
-        why ? `I noticed ${why}, and I thought this might be useful.` : "I'll keep this short.",
-        `My name is ${meName}${meRest ? ` and ${meRest}` : ""}.${proof ? ` ${sentence(proof)}` : ""}`,
+        [introduce(me, "name"), context].filter(Boolean).join(" "),
         "",
-        `Could we arrange ${ask}? I'm happy to work around your schedule.`,
+        [offerLine(1), proof].filter(Boolean).join(" "),
+        "",
+        `${askQuestion(next, 1)} I'm happy to work around your schedule.`,
         "",
         "Kind regards,",
-        meName,
+        signOff,
       ],
       [
-        `Hello ${greetName},`,
+        `Hello${greetName ? ` ${greetName}` : ""},`.replace(/^Hello,$/, "Hello,"),
         "",
-        `${meName} here${meRest ? ` — ${meRest}` : ""}.`,
-        `${why ? `Since ${why}, ` : ""}I'd like to ask for ${ask}.${proof ? ` For context, ${proof}.` : ""}`,
+        [introduce(me, "here"), why ? `Since ${why}, I thought this might be useful.` : context].filter(Boolean).join(" "),
         "",
-        "Does next week work? Reply with a time that suits you.",
+        [offerLine(2), proof ? `For context: ${/^I(?:\b|['’])/.test(proof) ? proof : proof.charAt(0).toLowerCase() + proof.slice(1)}` : ""].filter(Boolean).join(" "),
+        "",
+        `${askQuestion(next, 2)} Just reply with a time that suits you.`,
         "",
         "Thanks,",
-        meName,
+        signOff,
       ],
     ];
     return [0, 1, 2].map((offset) => ({
       title: `Email ${offset + 1}`,
-      text: [`Subject: ${pick(subjects, variant, offset)}`, "", ...pick(bodies, variant, offset).filter((line, index, all) => !(line === "" && all[index - 1] === ""))]
+      text: [`Subject: ${pick(subjects, variant, offset)}`, "", ...pick(bodies, variant, offset)]
         .join("\n")
-        .replace(/\n{3,}/g, "\n\n"),
+        .replace(/\n{3,}/g, "\n\n")
+        .trim(),
     }));
   },
 };
@@ -317,17 +357,29 @@ const adCopy: Writer = {
   required: ["product", "benefit"],
   variants: true,
   run: (v, variant) => {
-    const product = clean(v.product);
-    const audience = inline(v.audience);
-    const benefit = inline(v.benefit);
-    const offer = clean(v.offer);
-    const cta = clean(v.cta) || "Learn more";
+    const product = stripLead(clean(v.product), [
+      /^(?:i|we)\s+(?:sell|make|offer|provide|have|bake|cook|deliver|supply|do)\s+/i,
+      /^(?:my|our)\s+(?:business|shop|brand|company|store)\s+(?:sells|makes|offers|provides|supplies|does|is)\s+/i,
+    ]);
+    const words = product.split(/\s+/);
+    // Keep brand names capitalised ("Crust & Co"); lower-case ordinary phrases ("Same-day laundry").
+    const productMid = words.length > 1 && /^[A-Z&]/.test(words[1]) ? product : inline(product);
+    const productStart = capital(product);
+    const audience = inline(stripLead(clean(v.audience), [/^(?:it is |it's |this is )?for\s+/i]));
+    const rawBenefit = stripLead(clean(v.benefit), [/^(?:the (?:main )?benefit is(?: that)?|it is that)\s+/i]);
+    const benefitIsClause = /^(?:it|this|they|these|you|your|we)\b/i.test(rawBenefit) || /^\w+s\b/.test(rawBenefit) && /^(?:makes|helps|gives|saves|keeps|lets|brings|protects|removes|stops|turns|works|cleans|grows)\b/i.test(rawBenefit);
+    const benefitSentence = sentence(/^(?:makes|helps|gives|saves|keeps|lets|brings|protects|removes|stops|turns|works|cleans|grows)\b/i.test(rawBenefit) ? `It ${rawBenefit}` : rawBenefit);
+    const offerText = sentence(v.offer);
+    const cta = clean(v.cta).replace(/[.!]+$/, "") || "Send us a message";
+    const off = offerText ? ` ${offerText}` : "";
     const lines = [
-      `${sentence(benefit)} ${product} — made for ${audience || "you"}.${offer ? ` ${sentence(offer)}` : ""} ${cta}.`,
-      `${audience ? `${capital(audience)}: ` : ""}still putting it off? ${product} means ${benefit}.${offer ? ` ${sentence(offer)}` : ""} ${cta}.`,
-      `What if ${benefit} was the easy part? ${product}.${offer ? ` ${sentence(offer)}` : ""} ${cta}.`,
-      `${product}. ${sentence(benefit)}${offer ? ` ${sentence(offer)}` : ""} ${cta} today.`,
-      `Stop worrying about it. ${product} gives ${audience || "you"} ${benefit}. ${cta}.`,
+      `${productStart}${audience ? ` for ${audience}` : ""}. ${benefitSentence}${off} ${cta}.`,
+      `${audience ? `${capital(audience)}, meet` : "Meet"} ${productMid}. ${benefitSentence}${off} ${cta}.`,
+      `${offerText ? `${offerText} ` : ""}${benefitSentence} Try our ${productMid}${audience ? `, made for ${audience}` : ""}. ${cta}.`,
+      benefitIsClause
+        ? `Still thinking about it? ${benefitSentence} ${productStart}${audience ? ` for ${audience}` : ""}.${off} ${cta} today.`
+        : `What if ${inline(rawBenefit)} was the easy part? ${productStart}.${off} ${cta}.`,
+      `New: ${productMid}${audience ? ` for ${audience}` : ""}. ${benefitSentence}${off} ${cta} today.`,
     ].map((line) => line.replace(/\.\./g, ".").replace(/\s+/g, " ").trim());
     return [0, 1, 2].map((offset) => ({ title: `Ad ${offset + 1}`, text: pick(lines, variant, offset) }));
   },
@@ -353,7 +405,7 @@ const letters: Writer = {
       [`I am writing regarding ${inline(v.subject)}.`, `I write in connection with ${inline(v.subject)}.`, `This letter concerns ${inline(v.subject)}.`],
       variant,
     );
-    const ask = inline(v.request);
+    const ask = request(v.request);
     const lines = [
       from,
       "",
@@ -391,19 +443,24 @@ const captions: Writer = {
   required: ["product"],
   variants: true,
   run: (v, variant) => {
-    const product = clean(v.product);
+    const product = stripLead(clean(v.product), [/^(?:i|we)\s+(?:sell|make|have)\s+/i]);
+    const productStart = capital(product);
+    const productMid = midPhrase(product);
     const photo = inline(v.photo);
-    const feel = inline(v.feel);
-    const cta = clean(v.cta) || "Link in bio";
+    const rawFeel = clean(v.feel);
+    const clause = isClause(rawFeel);
+    const feel = inline(rawFeel);
+    const feelSentence = rawFeel ? sentence(contract(rawFeel)) : "";
+    const cta = clean(v.cta).replace(/[.!]+$/, "") || "Send us a DM to order";
     const own = clean(v.tags).split(/\s+/).filter((tag) => tag.startsWith("#"));
-    const auto = topWords(`${product} ${v.feel ?? ""}`, 3).map((word) => `#${word.replace(/[^a-z0-9]/g, "")}`);
+    const auto = topWords(product, 3).map((word) => `#${word.replace(/[^a-z0-9]/g, "")}`);
     const tags = [...new Set([...own, ...auto])].slice(0, 6).join(" ");
     const options = [
-      `${feel ? `${sentence(feel)} ` : ""}That's what ${product} is about ✨${photo ? `\nCaught ${photo}.` : ""}\n${cta} 👇`,
-      `Meet your new favourite: ${product}.${feel ? ` Made for ${feel}.` : ""}\n${cta}.`,
-      `${photo ? `${sentence(photo)} ` : ""}Simple, honest, and made to last — ${product}.\n${cta} 💬`,
-      `POV: you finally found ${product}${feel ? ` and ${feel} is your new normal` : ""}.\n${cta}.`,
-      `Small business, big care 🤍 ${product}${feel ? ` for ${feel}` : ""}.\n${cta}.`,
+      `${productStart} ✨${feelSentence ? ` ${feelSentence}` : ""}\n${cta} 👇`,
+      `Meet your new favourite: ${productMid}.${feel ? (clause ? ` ${feelSentence}` : ` Made for ${feel}.`) : ""}\n${cta}.`,
+      `${photo ? `${sentence(photo)} ` : ""}${productStart}, made with care.${clause ? ` ${feelSentence}` : ""}\n${cta} 💬`,
+      `POV: you just found ${productMid}.${feel ? (clause ? ` ${feelSentence}` : ` ${capital(feel)}, every day.`) : ""}\n${cta}.`,
+      `Small business, big care 🤍 ${productStart}${feel && !clause ? ` for ${feel}` : ""}.${clause ? ` ${feelSentence}` : ""}\n${cta}.`,
     ];
     return [0, 1, 2].map((offset) => ({ title: `Caption ${offset + 1}`, text: `${pick(options, variant, offset)}${tags ? `\n\n${tags}` : ""}` }));
   },
