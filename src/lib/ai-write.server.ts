@@ -67,7 +67,13 @@ export function aiConfigured(): boolean {
 
 let client: Anthropic | null = null;
 function anthropic(): Anthropic {
-  client ??= new Anthropic({ maxRetries: 1, timeout: 45_000 });
+  // Keys made at the organisation level (not inside a workspace) must name the workspace on every request.
+  const workspace = process.env.ANTHROPIC_WORKSPACE_ID?.trim();
+  client ??= new Anthropic({
+    maxRetries: 1,
+    timeout: 45_000,
+    defaultHeaders: workspace ? { "anthropic-workspace-id": workspace } : undefined,
+  });
   return client;
 }
 
