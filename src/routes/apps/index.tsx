@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Shell } from "@/components/shell";
-import { DeskList } from "@/components/desk-list";
+import { AppSearch, DeskList } from "@/components/desk-list";
 import { MatchQuiz } from "@/components/match-quiz";
 import { Favorites, TrendingTicker } from "@/components/spotlight";
 
@@ -15,13 +15,16 @@ function AppsPage() {
       <p className="mt-3 max-w-xl text-pretty text-muted">
         Pick who you are, or browse by subject. Most apps are free with an account.
       </p>
-      <div className="mt-8 empty:hidden">
+      <AppSearch className="mt-6 max-w-2xl" />
+      <div className="mt-10 empty:hidden">
+        <Favorites />
+      </div>
+      <div className="mt-10 empty:hidden">
         <MatchQuiz />
       </div>
       <div className="mt-10 space-y-14">
         <DeskList />
         <TrendingTicker />
-        <Favorites />
       </div>
     </Shell>
   );

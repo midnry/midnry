@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PASS_PRICE_LABEL } from "@/lib/access";
 import { Shell } from "@/components/shell";
-import { DeskList } from "@/components/desk-list";
+import { AppSearch, DeskList } from "@/components/desk-list";
 import { Favorites } from "@/components/spotlight";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
@@ -25,6 +25,12 @@ function Home() {
         <HeroActions />
       </section>
 
+      <AppSearch className="mt-8 max-w-2xl" />
+
+      <section className="mt-10 empty:hidden">
+        <Favorites />
+      </section>
+
       <div className="mt-10 empty:hidden">
         <MatchQuiz />
       </div>
@@ -34,9 +40,6 @@ function Home() {
         <DeskList />
       </section>
 
-      <section className="mt-12 empty:hidden">
-        <Favorites />
-      </section>
 
       <section className="mt-12 rounded-3xl bg-card p-6 shadow-line sm:p-8">
         <ul className="grid gap-4 text-sm sm:grid-cols-3">

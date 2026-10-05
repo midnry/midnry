@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { APPS, tierLabel } from "@/lib/catalog";
-import { AUDIENCES, SECTIONS, TAGS, defaultTagOf, sectionOf, sectionsIn, type GenreId, type TagId } from "@/lib/sections";
+import { APPS, genreLabel, tierLabel } from "@/lib/catalog";
+import { AUDIENCES, SECTIONS, TAGS, defaultTagOf, sectionOf, sectionsIn, tagLabel, type GenreId, type TagId } from "@/lib/sections";
 import { canOpenApp } from "@/lib/access";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
@@ -223,6 +223,74 @@ export function EverydayRow({ exclude }: { exclude: TagId }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+const FEATURES = new Map(APPS.map((app) => [app.slug, app.features.join(" ")]));
+
+/** How well an app matches: how many search words it contains, and a rank that favours names. */
+function score(item: DeskItem, words: string[]): { matched: number; points: number } {
+  const name = item.name.toLowerCase();
+  const rest = [item.blurb, genreLabel(item.genre), ...item.audiences.map(tagLabel), FEATURES.get(item.slug) ?? ""].join(" ").toLowerCase();
+  let matched = 0;
+  let points = 0;
+  for (const word of words) {
+    if (name === word) points += 100;
+    else if (name.startsWith(word)) points += 60;
+    else if (name.includes(word)) points += 40;
+    else if (rest.includes(word)) points += 10;
+    else continue;
+    matched += 1;
+  }
+  return { matched, points };
+}
+
+/** Search every app on the desk by name, description, section, audience, and features. */
+export function AppSearch({ className }: { className?: string }) {
+  const { items, known, hasPass, isAdmin } = useDesk();
+  const [query, setQuery] = useState("");
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const scored = words.length ? items.map((item) => ({ item, ...score(item, words) })).filter((entry) => entry.matched > 0) : [];
+  // Apps matching every word; if there are none, the closest matches instead.
+  const exact = scored.filter((entry) => entry.matched === words.length);
+  const partial = exact.length === 0 && scored.length > 0;
+  const results = (partial ? scored : exact)
+    .sort((a, b) => b.matched - a.matched || b.points - a.points || a.item.name.localeCompare(b.item.name))
+    .map((entry) => entry.item);
+  const shown = results.slice(0, 24);
+
+  return (
+    <div className={className}>
+      <div className="relative">
+        <svg aria-hidden viewBox="0 0 24 24" className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted" fill="none">
+          <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.8" />
+          <path d="M16 16l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        </svg>
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value.slice(0, 80))}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setQuery("");
+          }}
+          placeholder={`Search ${items.length} apps`}
+          aria-label="Search apps"
+          className="h-12 w-full rounded-full border border-line bg-card pl-12 pr-4 text-base text-ink shadow-line outline-none placeholder:text-muted focus-visible:border-pine"
+        />
+      </div>
+      {words.length ? (
+        <div className="mt-4" aria-live="polite">
+          <p className="text-sm text-muted">
+            {results.length === 0
+              ? `No apps match “${query.trim()}”. Try a simpler word.`
+              : partial
+                ? `Nothing matches every word. Closest ${results.length === 1 ? "match" : "matches"}:`
+                : `${results.length} ${results.length === 1 ? "app" : "apps"}${results.length > shown.length ? `, showing the best ${shown.length}` : ""}`}
+          </p>
+          {shown.length ? <AppGroup apps={shown} view="grid" known={known} hasPass={hasPass} isAdmin={isAdmin} /> : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
