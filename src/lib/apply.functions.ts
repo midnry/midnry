@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { env } from "@/lib/env.server";
+import { aiBlocked, aiKey, recordAiUse } from "@/lib/ai.server";
 
 type TailorResult =
   | { ok: true; note: string; resume: string }
@@ -9,14 +10,6 @@ type TailorResult =
 function clip(value: unknown, max: number): string {
   if (typeof value !== "string") return "";
   return value.replace(/\s+/g, " ").trim().slice(0, max);
-}
-
-function parseKey(value: unknown): string | undefined {
-  if (value == null || value === "") return undefined;
-  if (typeof value !== "string" || value.length < 16 || value.length > 200 || /\s/.test(value)) {
-    throw new Error("That key does not look right.");
-  }
-  return value;
 }
 
 function readJson(text: string): { note: string; resume: string } {
@@ -69,11 +62,12 @@ export const tailorRole = createServerFn({ method: "POST" })
     const resume = typeof row.resume === "string" ? row.resume.trim().slice(0, 18000) : "";
     if (role.length < 2) throw new Error("Add the role.");
     if (resume.length < 40) throw new Error("Add a resume first.");
-    return { role, resume, apiKey: parseKey(row.apiKey) };
+    return { role, resume };
   })
-  .handler(async ({ data }): Promise<TailorResult> => {
-    const apiKey = data.apiKey || env("XAI_API_KEY");
-    if (!apiKey) return { ok: false, error: "AI help is not switched on for this site yet. Paste your own xAI API key to use it now." };
+  .handler(async ({ context, data }): Promise<TailorResult> => {
+    const blocked = await aiBlocked(context.userId);
+    if (blocked) return { ok: false, error: blocked };
+    const apiKey = aiKey() as string;
     const model = env("XAI_MODEL") || "grok-3";
     try {
       const response = await fetch("https://api.x.ai/v1/chat/completions", {
@@ -96,10 +90,11 @@ export const tailorRole = createServerFn({ method: "POST" })
           ],
         }),
       });
-      if (!response.ok) return { ok: false, error: "The rewrite didn’t go through. Check the key and try again." };
+      if (!response.ok) return { ok: false, error: "The rewrite didn’t go through. Try again in a moment." };
       const body = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
       const text = body.choices?.[0]?.message?.content ?? "";
       const parsed = readJson(text);
+      await recordAiUse(context.userId);
       return { ok: true, note: parsed.note, resume: parsed.resume };
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Couldn’t tailor that resume.";

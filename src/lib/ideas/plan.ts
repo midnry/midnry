@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { env } from "@/lib/env.server";
+import { aiBlocked, aiKey, recordAiUse } from "@/lib/ai.server";
 import {
   countryName,
   isCountryId,
@@ -61,14 +62,6 @@ function readIdeas(text: string, expected: number[]): WeekIdeas[] {
   });
   if (ideas.length !== expected.length) throw new Error("The idea plan came back incomplete. Try again.");
   return ideas;
-}
-
-function parseKey(value: unknown): string | undefined {
-  if (value == null || value === "") return undefined;
-  if (typeof value !== "string" || value.length < 16 || value.length > 200 || /\s/.test(value)) {
-    throw new Error("That key does not look right.");
-  }
-  return value;
 }
 
 async function complete(prompt: string, apiKey: string): Promise<string> {
@@ -132,17 +125,20 @@ export const planIdeaHalf = createServerFn({ method: "POST" })
     if (!isCountryId(country)) throw new Error("Choose the brand's location, or Global.");
     if (!isPlanYear(year)) throw new Error("Choose 2026 or 2027.");
     if (!Number.isInteger(part) || part < 0 || part > 3) throw new Error("Couldn’t plan that part of the year.");
-    return { brand, about, country, year, part, apiKey: parseKey(row.apiKey) };
+    return { brand, about, country, year, part };
   })
-  .handler(async ({ data }): Promise<PlanResult> => {
-    const apiKey = data.apiKey || env("XAI_API_KEY");
-    if (!apiKey) return { ok: false, error: "AI help is not switched on for this site yet. Paste your own xAI API key to use it now." };
+  .handler(async ({ context, data }): Promise<PlanResult> => {
+    const blocked = await aiBlocked(context.userId);
+    if (blocked) return { ok: false, error: blocked };
+    const apiKey = aiKey() as string;
     try {
       const slots = yearWeeks(data.year, data.country);
       const size = Math.ceil(slots.length / 4);
       const slice = slots.slice(data.part * size, data.part * size + size);
       const text = await complete(brief(data.brand, data.about, data.country, data.year, slice), apiKey);
-      return { ok: true, ideas: readIdeas(text, slice.map((slot) => slot.week)) };
+      const ideas = readIdeas(text, slice.map((slot) => slot.week));
+      await recordAiUse(context.userId);
+      return { ok: true, ideas };
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Couldn’t plan that year.";
       return { ok: false, error: message };

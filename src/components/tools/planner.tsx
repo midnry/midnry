@@ -65,7 +65,6 @@ export function PlannerTool() {
   const doc = asDoc(data);
   const [form, setForm] = useState({ brand: "", about: "", country: "" as CountryId | "", year: 2026 as PlanYear });
   const [hydrated, setHydrated] = useState(false);
-  const [key, setKey] = useState("");
   const [month, setMonth] = useState<number | "all">("all");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -103,7 +102,7 @@ export function PlannerTool() {
         if (slice.every((slot) => done.has(slot.week))) continue;
         setBusy(`Planning ${weekLabel(slice[0]!.start, slice[slice.length - 1]!.end)}…`);
         const result = await planIdeaHalf({
-          data: { brand: form.brand, about: form.about, country: form.country, year: form.year, part, apiKey: key || undefined },
+          data: { brand: form.brand, about: form.about, country: form.country, year: form.year, part },
         });
         if (run.current !== token) return;
         if (!result.ok) {
@@ -221,17 +220,6 @@ export function PlannerTool() {
                 </select>
               </label>
             </div>
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium">xAI key</span>
-              <TextInput
-                type="password"
-                value={key}
-                autoComplete="off"
-                placeholder="Leave blank if the server already has one"
-                onChange={(event) => setKey(event.target.value)}
-              />
-              <span className="mt-1.5 block text-sm text-muted">Kept in this tab only. Not saved with the plan.</span>
-            </label>
             <p className="text-sm text-muted">
               A location plan uses holidays people there keep. Global marks the full set.
             </p>

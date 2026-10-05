@@ -118,7 +118,6 @@ export function ApplyTool() {
   const doc = asDoc(data);
   const [form, setForm] = useState({ rolesText: "", resume: "" });
   const [hydrated, setHydrated] = useState(false);
-  const [key, setKey] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -169,7 +168,7 @@ export function ApplyTool() {
     const packs: Pack[] = [];
     for (const role of roles) {
       setBusy(`Rewriting for ${role}…`);
-      const result = await tailorRole({ data: { role, resume: form.resume, apiKey: key || undefined } });
+      const result = await tailorRole({ data: { role, resume: form.resume } });
       if (!result.ok) {
         setError(result.error);
         if (packs.length) setData({ rolesText: form.rolesText, resume: form.resume, packs });
@@ -230,16 +229,6 @@ export function ApplyTool() {
               placeholder="Or paste the resume here."
               className="min-h-48"
             />
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium">xAI key</span>
-              <TextInput
-                type="password"
-                value={key}
-                autoComplete="off"
-                placeholder="Leave blank if the server already has one"
-                onChange={(event) => setKey(event.target.value)}
-              />
-            </label>
             <Button type="submit" tone="primary" disabled={busy !== null}>
               {busy ?? "Prepare applications"}
             </Button>

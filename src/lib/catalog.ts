@@ -116,7 +116,7 @@ export const APPS: readonly AppDef[] = [
     tier: "pass",
     genre: "marketing",
     features: ["One brand, one location, and one year", "A post idea for each week", "Holidays people keep in that place", "A PDF of the year"],
-    guide: ["Name the brand and say what it does.", "Choose where the audience is, and the year.", "Leave the key blank if the server already has one, then plan the year.", "Download the PDF when the list is complete."],
+    guide: ["Name the brand and say what it does.", "Choose where the audience is, and the year.", "Plan the year. It takes about a minute.", "Download the PDF when the list is complete."],
   },
   {
     slug: "apply",
@@ -125,7 +125,7 @@ export const APPS: readonly AppDef[] = [
     tier: "pass",
     genre: "freelance",
     features: ["One resume, several roles", "A rewrite for each role that does not invent jobs", "A PDF and a text file to download", "A link to that role’s search on LinkedIn"],
-    guide: ["Enter the roles, one per line.", "Upload a PDF or paste the resume.", "Prepare the applications. Leave the key blank if the server already has one.", "Download the file, open the LinkedIn search, and submit it yourself.", "Check “I submitted this” once you have."],
+    guide: ["Enter the roles, one per line.", "Upload a PDF or paste the resume.", "Prepare the applications.", "Download the file, open the LinkedIn search, and submit it yourself.", "Check “I submitted this” once you have."],
   },
   {
     slug: "tasks",

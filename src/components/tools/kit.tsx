@@ -650,41 +650,41 @@ function Quiz({ kit }: { kit: Extract<Kit, { kind: "quiz" }> }) {
 
 function Draft({ kit }: { kit: Extract<Kit, { kind: "draft" }> }) {
   const [prompt, setPrompt] = useState("");
-  const [apiKey, setApiKey] = useState("");
   const [text, setText] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [serverKey, setServerKey] = useState<boolean | null>(null);
-  const [ownKey, setOwnKey] = useState(false);
+  const [aiOn, setAiOn] = useState<boolean | null>(null);
 
   useEffect(() => {
     let cancel = false;
     draftReady()
-      .then((result) => !cancel && setServerKey(result.configured))
-      .catch(() => !cancel && setServerKey(false));
+      .then((result) => !cancel && setAiOn(result.configured))
+      .catch(() => !cancel && setAiOn(true));
     return () => {
       cancel = true;
     };
   }, []);
 
-  const needsKey = serverKey === false;
-  const canRun = prompt.trim() && !busy && (!needsKey || apiKey.trim());
+  const canRun = Boolean(prompt.trim()) && !busy && aiOn !== false;
 
   function run() {
     if (!canRun) return;
     setBusy(true);
     setError("");
-    void draftText({ data: { system: kit.system, prompt, apiKey: apiKey.trim() || undefined } })
+    void draftText({ data: { system: kit.system, prompt } })
       .then((result) => {
         if (result.ok) setText(result.text);
-        else setError(needsKey || apiKey ? result.error : "Writing help is unavailable right now. Try again in a moment.");
+        else setError(result.error);
       })
-      .catch(() => setError("Could not reach the writing service. Check your connection and try again."))
+      .catch(() => setError("Could not reach AI writing. Check your connection and try again."))
       .finally(() => setBusy(false));
   }
 
   return (
     <div>
+      {aiOn === false ? (
+        <p className="mb-3 rounded-2xl bg-paper-2 p-4 text-sm text-pretty">AI writing is still being set up on Midnry. Please check back soon.</p>
+      ) : null}
       <TextArea
         value={prompt}
         placeholder={kit.placeholder}
@@ -694,18 +694,6 @@ function Draft({ kit }: { kit: Extract<Kit, { kind: "draft" }> }) {
           if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) run();
         }}
       />
-      {needsKey || ownKey ? (
-        <label className="mt-3 block text-sm">
-          <span className="mb-1 block text-muted">
-            {needsKey ? "Writing help needs an xAI API key. It is used for this request only and is not saved." : "Your xAI API key"}
-          </span>
-          <TextInput type="password" autoComplete="off" value={apiKey} placeholder="xai-…" onChange={(event) => setApiKey(event.target.value)} />
-        </label>
-      ) : serverKey ? (
-        <button type="button" className="mt-2 text-xs text-muted underline" onClick={() => setOwnKey(true)}>
-          Use my own API key
-        </button>
-      ) : null}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Button tone="primary" disabled={!canRun} onClick={run}>
           {busy ? "Writing…" : text ? "Write again" : "Write it"}

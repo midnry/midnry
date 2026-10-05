@@ -1,32 +1,30 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { env } from "@/lib/env.server";
+import { aiBlocked, aiKey, recordAiUse } from "@/lib/ai.server";
 
-// Whether the server has its own xAI key, so the writing apps can hide the key field.
+// Whether AI writing is switched on for the site, so the apps can say so up front.
 export const draftReady = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .handler(async () => ({ configured: Boolean(env("XAI_API_KEY")) }));
+  .handler(async () => ({ configured: Boolean(aiKey()) }));
 
 export const draftText = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((input: { system?: string; prompt?: string; apiKey?: string }) => {
+  .validator((input: { system?: string; prompt?: string }) => {
     const system = typeof input?.system === "string" ? input.system.trim().slice(0, 2000) : "";
     const prompt = typeof input?.prompt === "string" ? input.prompt.trim().slice(0, 8000) : "";
-    const apiKey = typeof input?.apiKey === "string" ? input.apiKey.trim() : "";
     if (!system || !prompt) throw new Error("Write something first.");
-    if (apiKey && (apiKey.length < 16 || apiKey.length > 200 || /\s/.test(apiKey))) {
-      throw new Error("That key does not look right.");
-    }
-    return { system, prompt, apiKey: apiKey || undefined };
+    return { system, prompt };
   })
-  .handler(async ({ data }) => {
-    const apiKey = data.apiKey || env("XAI_API_KEY");
-    if (!apiKey) return { ok: false as const, error: "AI help is not switched on for this site yet. Paste your own xAI API key to use it now." };
+  .handler(async ({ context, data }) => {
+    const blocked = await aiBlocked(context.userId);
+    if (blocked) return { ok: false as const, error: blocked };
     const model = env("XAI_MODEL") || "grok-3";
     try {
       const response = await fetch("https://api.x.ai/v1/chat/completions", {
         method: "POST",
-        headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
+        signal: AbortSignal.timeout(70_000),
+        headers: { authorization: `Bearer ${aiKey()}`, "content-type": "application/json" },
         body: JSON.stringify({
           model,
           stream: false,
@@ -36,12 +34,13 @@ export const draftText = createServerFn({ method: "POST" })
           ],
         }),
       });
-      if (!response.ok) return { ok: false as const, error: "The AI service turned that request down. If you pasted a key, check it and try again." };
+      if (!response.ok) return { ok: false as const, error: "AI writing could not finish that just now. Try again in a moment." };
       const body = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
       const text = body.choices?.[0]?.message?.content?.trim();
-      if (!text) return { ok: false as const, error: "The model sent an empty reply." };
+      if (!text) return { ok: false as const, error: "AI writing sent back nothing. Try rewording it." };
+      await recordAiUse(context.userId);
       return { ok: true as const, text };
     } catch {
-      return { ok: false as const, error: "Could not reach the model." };
+      return { ok: false as const, error: "Could not reach AI writing. Check your connection and try again." };
     }
   });
