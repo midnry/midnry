@@ -105,8 +105,9 @@ function BillingPage() {
       } else {
         toast.error("Card checkout isn't connected yet.");
       }
-    } catch {
-      toast.error("Could not open checkout. Your card was not charged.");
+    } catch (error) {
+      const reason = error instanceof Error && error.message ? ` ${error.message}` : "";
+      toast.error(`Could not open checkout.${reason} Your card was not charged.`);
     } finally {
       setBusy(null);
     }

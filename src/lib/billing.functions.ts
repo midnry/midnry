@@ -20,7 +20,12 @@ export const beginCheckout = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<CheckoutStart> => {
     const billing = await import("./paystack.server");
-    return billing.beginCheckout(context.userId);
+    try {
+      return await billing.beginCheckout(context.userId);
+    } catch (error) {
+      console.error("paystack checkout failed:", error instanceof Error ? error.message : error);
+      throw error;
+    }
   });
 
 export const confirmCheckout = createServerFn({ method: "POST" })
@@ -33,7 +38,12 @@ export const confirmCheckout = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ context, data }): Promise<AccountState> => {
     const billing = await import("./paystack.server");
-    return billing.confirmCheckout(context.userId, data);
+    try {
+      return await billing.confirmCheckout(context.userId, data);
+    } catch (error) {
+      console.error("paystack confirm failed:", error instanceof Error ? error.message : error);
+      throw error;
+    }
   });
 
 export const cancelRenewal = createServerFn({ method: "POST" })
