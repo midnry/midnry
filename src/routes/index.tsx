@@ -59,6 +59,18 @@ function Home() {
           </li>
         </ul>
       </section>
+
+      <section className="mt-12 flex flex-col gap-4 rounded-3xl border border-dashed border-line p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+        <div className="max-w-lg">
+          <h2 className="font-display text-2xl tracking-tight">Made an app? Add it to Midnry.</h2>
+          <p className="mt-1 text-sm text-pretty text-muted">
+            Upload it, we review it, and once it's on the desk you earn a share of Midnry Pass.
+          </p>
+        </div>
+        <Link to="/submit" className={buttonClass({ tone: "quiet" })}>
+          Add your app
+        </Link>
+      </section>
     </Shell>
   );
 }

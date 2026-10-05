@@ -165,7 +165,7 @@ export function MatchQuiz() {
     setSaved(readSaved());
   }, []);
 
-  if (isPending || !user) return null;
+  if (isPending) return null;
 
   const called = (name.trim() || knownName || saved?.name || "").trim();
   const order: Step[] = knownName ? ["life", "tasks"] : ["name", "life", "tasks"];
@@ -260,7 +260,7 @@ export function MatchQuiz() {
             />
           ) : null}
 
-          {step === "result" ? <Result matches={matches} onRetry={() => setStep("tasks")} /> : null}
+          {step === "result" ? <Result matches={matches} signedIn={Boolean(user)} onRetry={() => setStep("tasks")} /> : null}
 
           <div className="mt-6 flex gap-4 text-sm text-muted">
             {step !== "result" ? (
@@ -405,7 +405,7 @@ function TaskStep({
   );
 }
 
-function Result({ matches, onRetry }: { matches: Match[]; onRetry: () => void }) {
+function Result({ matches, signedIn, onRetry }: { matches: Match[]; signedIn: boolean; onRetry: () => void }) {
   if (matches.length === 0) {
     return (
       <div className="mt-3 max-w-xl">
@@ -463,6 +463,19 @@ function Result({ matches, onRetry }: { matches: Match[]; onRetry: () => void })
           );
         })}
       </ol>
+      {!signedIn ? (
+        <div className="mt-5 rounded-2xl bg-pine/10 p-4">
+          <p className="font-medium">Ready to try them?</p>
+          <p className="mt-1 text-sm text-muted">Create a free account. Three apps in every section are free, no card needed.</p>
+          <Link
+            to="/login"
+            search={{ next: `/sections/${matches[0].section}`, intent: "register" }}
+            className="mt-3 inline-flex min-h-11 items-center rounded-full bg-pine px-5 text-sm font-medium text-paper"
+          >
+            Get started free
+          </Link>
+        </div>
+      ) : null}
       <div className="mt-4 flex flex-wrap gap-4 text-sm">
         <button type="button" className="min-h-11 underline" onClick={onRetry}>
           Change my answers
