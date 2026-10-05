@@ -25,8 +25,6 @@ function Home() {
         <HeroActions />
       </section>
 
-      <AppSearch className="mt-8 max-w-2xl" />
-
       <section className="mt-10 empty:hidden">
         <Favorites />
       </section>
@@ -37,9 +35,9 @@ function Home() {
 
       <section className="mt-12">
         <h2 className="mb-4 font-display text-3xl tracking-tight">Where do you fit?</h2>
+        <AppSearch className="mb-6 max-w-2xl" />
         <DeskList />
       </section>
-
 
       <section className="mt-12 rounded-3xl bg-card p-6 shadow-line sm:p-8">
         <ul className="grid gap-4 text-sm sm:grid-cols-3">
