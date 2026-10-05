@@ -3,7 +3,9 @@ import { useAppDoc } from "@/components/use-app-doc";
 import { Button, TextArea, TextInput, cn, fieldClass } from "@/components/ui";
 import { ToolFrame, ToolStatus } from "@/components/tools/shared";
 import { toast } from "sonner";
-import { WRITERS } from "@/lib/writers";
+import { WRITERS, type Piece } from "@/lib/writers";
+import { AI_WRITERS, aiWrite } from "@/lib/ai-write.functions";
+import { Link } from "@tanstack/react-router";
 import { getKit, type Field, type Kit, type Line } from "@/lib/kits";
 import type { SectionId } from "@/lib/sections";
 
@@ -648,35 +650,66 @@ function Quiz({ kit }: { kit: Extract<Kit, { kind: "quiz" }> }) {
   );
 }
 
+type AiState =
+  | { kind: "none" }
+  | { kind: "ai"; pieces: Piece[]; left: number | null }
+  | { kind: "fallback"; reason: "limit" | "busy" | "error" | "off"; limit?: number; hasPass?: boolean };
+
 function Write({ kit }: { kit: Extract<Kit, { kind: "write" }> }) {
   const writer = WRITERS[kit.slug];
   const { data, setData, ready, loadError, blocked, saveState } = useAppDoc(kit.slug, { values: {} as Record<string, string> });
   const [shown, setShown] = useState(false);
   const [variant, setVariant] = useState(0);
   const [missing, setMissing] = useState("");
+  const [ai, setAi] = useState<AiState>({ kind: "none" });
+  const [writing, setWriting] = useState(false);
   const values = data.values ?? {};
   if (!writer) return null;
-  const pieces = shown ? writer.run(values, variant) : [];
+  const usesAi = AI_WRITERS.has(kit.slug);
+  const pieces = !shown ? [] : ai.kind === "ai" ? ai.pieces : writer.run(values, variant);
   const all = pieces.map((piece) => (pieces.length > 1 ? `${piece.title}\n${piece.text}` : piece.text)).join("\n\n");
   const filled = writer.fields.some((field) => values[field.id]?.trim());
 
-  function write() {
+  async function write() {
     const empty = writer!.fields.filter((field) => writer!.required.includes(field.id) && !values[field.id]?.trim());
     if (empty.length) {
       setMissing(`Fill in: ${empty.map((field) => field.label.replace(/,? optional$/i, "")).join(", ")}.`);
       return;
     }
     setMissing("");
-    if (shown) setVariant((value) => value + 1);
-    setShown(true);
+    const nextVariant = shown ? variant + 1 : variant;
+    if (shown) setVariant(nextVariant);
+    if (!usesAi || ai.kind === "fallback" && (ai.reason === "limit" || ai.reason === "off")) {
+      setShown(true);
+      return;
+    }
+    setWriting(true);
+    try {
+      const result = await aiWrite({ data: { slug: kit.slug, values, variant: nextVariant } });
+      setAi(result.ok ? { kind: "ai", pieces: result.pieces, left: result.left } : { kind: "fallback", reason: result.reason, limit: result.limit, hasPass: result.hasPass });
+    } catch {
+      setAi({ kind: "fallback", reason: "error" });
+    } finally {
+      setWriting(false);
+      setShown(true);
+    }
   }
+
+  const note =
+    ai.kind === "ai"
+      ? `Written by AI${ai.left === null ? "" : ` · ${ai.left} AI ${ai.left === 1 ? "write" : "writes"} left today`}. Check names and facts before you send it.`
+      : ai.kind === "fallback" && ai.reason === "limit"
+        ? `You've used today's ${ai.limit} AI writes, so this is Midnry's quick writer. AI writing resets tomorrow.`
+        : ai.kind === "fallback" && (ai.reason === "busy" || ai.reason === "error")
+          ? "AI writing isn't available right now, so this is Midnry's quick writer. Try again in a minute."
+          : "Written on your device by Midnry. Check facts and figures before you use it.";
 
   return (
     <ToolStatus ready={ready} loadError={loadError} blocked={blocked}>
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          write();
+          void write();
         }}
       >
         <Fields fields={writer.fields} values={values} onChange={(next) => setData({ values: next })} />
@@ -686,8 +719,8 @@ function Write({ kit }: { kit: Extract<Kit, { kind: "write" }> }) {
           </p>
         ) : null}
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button tone="primary" type="submit">
-            {shown ? (writer.variants ? "Try another wording" : "Update") : "Write it"}
+          <Button tone="primary" type="submit" disabled={writing}>
+            {writing ? "Writing…" : shown ? (writer.variants ? "Try another wording" : "Update") : "Write it"}
           </Button>
           <ConfirmButton
             label="Clear"
@@ -697,6 +730,7 @@ function Write({ kit }: { kit: Extract<Kit, { kind: "write" }> }) {
               setData({ values: {} });
               setShown(false);
               setVariant(0);
+              setAi({ kind: "none" });
             }}
           />
           <span className="text-sm text-muted">{saveLabel(saveState)}</span>
@@ -721,7 +755,18 @@ function Write({ kit }: { kit: Extract<Kit, { kind: "write" }> }) {
               Print
             </Button>
           </div>
-          <p className="mt-3 text-xs text-muted">Written on your device by Midnry. Check facts and figures before you use it.</p>
+          <p className="mt-3 text-xs text-muted">
+            {note}
+            {ai.kind === "fallback" && ai.reason === "limit" && !ai.hasPass ? (
+              <>
+                {" "}
+                <Link to="/billing" className="underline underline-offset-2">
+                  Midnry Pass
+                </Link>{" "}
+                gives you 30 a day.
+              </>
+            ) : null}
+          </p>
         </section>
       ) : null}
     </ToolStatus>
