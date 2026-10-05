@@ -697,7 +697,7 @@ function Write({ kit }: { kit: Extract<Kit, { kind: "write" }> }) {
 
   const note =
     ai.kind === "ai"
-      ? `Written by AI${ai.left === null ? "" : ` · ${ai.left} AI ${ai.left === 1 ? "write" : "writes"} left today`}. Check names and facts before you send it.`
+      ? `Written by AI${ai.left === null ? "" : ` · ${ai.left} AI ${ai.left === 1 ? "write" : "writes"} left today`}. Check names, facts and figures before you use it.`
       : ai.kind === "fallback" && ai.reason === "limit"
         ? `You've used today's ${ai.limit} AI writes, so this is Midnry's quick writer. AI writing resets tomorrow.`
         : ai.kind === "fallback" && (ai.reason === "busy" || ai.reason === "error")

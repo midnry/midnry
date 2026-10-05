@@ -8,7 +8,23 @@ export type AiWriteResult =
   | { ok: false; reason: "off" | "error" | "busy" | "limit"; limit?: number; hasPass?: boolean };
 
 /** Writers that use AI when the site has a key. The page checks this before calling. */
-export const AI_WRITERS = new Set(["cold-email"]);
+export const AI_WRITERS = new Set([
+  "cold-email",
+  "ad-copy",
+  "captions",
+  "listing",
+  "letters",
+  "remarks",
+  "lesson",
+  "outliner",
+  "case-brief",
+  "soap-note",
+  "readme",
+  "digest",
+  "contract-scan",
+  "explainer",
+  "bug-scan",
+]);
 
 function dailyLimit(name: string, fallback: number): number {
   const value = Number(process.env[name]);
@@ -22,7 +38,7 @@ export const aiWrite = createServerFn({ method: "POST" })
     const values: Record<string, string> = {};
     if (input?.values && typeof input.values === "object") {
       for (const [key, value] of Object.entries(input.values).slice(0, 20)) {
-        if (typeof value === "string" && /^[a-z]{1,20}$/.test(key)) values[key] = value.slice(0, 600);
+        if (typeof value === "string" && /^[a-z]{1,20}$/.test(key)) values[key] = value.slice(0, 15_000);
       }
     }
     const variant = Number.isFinite(input?.variant) ? Math.max(0, Math.min(50, Math.floor(input.variant))) : 0;
