@@ -56,7 +56,7 @@ function Home() {
             <p className="font-display text-muted">01</p>
             <h3 className="mt-2 font-medium">Register</h3>
             <p className="mt-1 text-sm text-pretty text-muted">
-              An account is the door. Email, Google, or X.
+              An account is the door. Email or Google.
             </p>
           </li>
           <li>

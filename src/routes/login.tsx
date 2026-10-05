@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -7,6 +7,7 @@ import { captureBearer } from "@/lib/capture-bearer";
 import { Shell } from "@/components/shell";
 import { Button, Field, TextInput } from "@/components/ui";
 import { includedNames } from "@/lib/catalog";
+import { getSignInOptions } from "@/lib/sign-in-options.functions";
 
 type LoginSearch = { next: string; intent: "register" | "sign-in" };
 
@@ -17,11 +18,21 @@ export const Route = createFileRoute("/login")({
     const intent = search.intent === "sign-in" ? "sign-in" : "register";
     return { next, intent };
   },
+  loader: () => getSignInOptions(),
   component: LoginPage,
 });
 
 function LoginPage() {
   const { next, intent } = Route.useSearch();
+  const options = Route.useLoaderData();
+  // The Grok broker buttons only work inside the Grok live preview; the hosted
+  // site signs in with Google directly.
+  const [inGrokPreview, setInGrokPreview] = useState(false);
+  useEffect(() => {
+    setInGrokPreview(window.location.hostname.endsWith(".grok-sandbox.com"));
+  }, []);
+  const brokerProviders = inGrokPreview ? GROK_PROVIDERS : [];
+  const showGoogle = options.google && !inGrokPreview;
   const { user, isPending } = useCurrentUserState();
   const [mode, setMode] = useState<"register" | "sign-in">(intent);
   const [name, setName] = useState("");
@@ -255,13 +266,34 @@ function LoginPage() {
               {mode === "register" ? "Already have an account? Sign in" : "Need an account? Register"}
             </button>
 
-            <div className="my-6 flex items-center gap-3 text-sm text-muted">
-              <span className="h-px flex-1 bg-line" />
-              or
-              <span className="h-px flex-1 bg-line" />
-            </div>
+            {showGoogle || brokerProviders.length > 0 ? (
+              <div className="my-6 flex items-center gap-3 text-sm text-muted">
+                <span className="h-px flex-1 bg-line" />
+                or
+                <span className="h-px flex-1 bg-line" />
+              </div>
+            ) : null}
             <div className="space-y-2">
-              {GROK_PROVIDERS.map((provider) => (
+              {showGoogle ? (
+                <Button
+                  tone="quiet"
+                  className="w-full"
+                  onClick={() => {
+                    setError(null);
+                    void authClient.signIn
+                      .social({ provider: "google", callbackURL: next, errorCallbackURL: "/login" })
+                      .then((result) => {
+                        if (result.error) setError(result.error.message || "Google sign-in did not start. Try again.");
+                      })
+                      .catch((err: unknown) => {
+                        setError(err instanceof Error ? err.message : "Google sign-in did not start. Try again.");
+                      });
+                  }}
+                >
+                  Continue with Google
+                </Button>
+              ) : null}
+              {brokerProviders.map((provider) => (
                 <Button
                   key={provider.providerId}
                   tone="quiet"

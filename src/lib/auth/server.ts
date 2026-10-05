@@ -92,7 +92,11 @@ export const authConfigured =
 // preview allowlist, which makes the OAuth `redirect_uri` the concrete preview URL
 // the broker's preview client accepts.
 const renderOrigin = env("RENDER_EXTERNAL_URL");
-const explicitBaseURL = env("BETTER_AUTH_URL") ?? renderOrigin;
+const explicitBaseURL = env("BETTER_AUTH_URL");
+// The site's own domains. On Render the same server answers on these and on
+// RENDER_EXTERNAL_URL (https://….onrender.com).
+const SITE_HOSTS = ["midnry.com", "www.midnry.com"];
+const SITE_ORIGINS = SITE_HOSTS.map((host) => `https://${host}`);
 // Explicit `string[]` (not a readonly tuple) — Better Auth's DynamicBaseURLConfig
 // requires a mutable `allowedHosts: string[]`.
 const previewAllowedHosts: string[] = [...PREVIEW_ALLOWED_HOSTS];
@@ -104,7 +108,17 @@ const LOCAL_DEV_ORIGINS: string[] = [
   "http://127.0.0.1:8080",
   "http://[::1]:8080",
 ];
-const baseURL = explicitBaseURL ?? {
+// On Render, resolve the origin per request so OAuth callbacks (Google's
+// redirect_uri) return to the domain the visitor started on, which is where the
+// sign-in state cookie lives. Unlisted hosts fall back to the Render URL.
+const renderBaseURL = renderOrigin
+  ? {
+      allowedHosts: [...SITE_HOSTS, new URL(renderOrigin).host],
+      protocol: "https" as const,
+      fallback: renderOrigin,
+    }
+  : undefined;
+const baseURL = explicitBaseURL ?? renderBaseURL ?? {
   // Include loopback hosts so dynamic baseURL resolves for local email/password
   // (not only the preview wildcard).
   allowedHosts: [...previewAllowedHosts, "localhost", "127.0.0.1", "[::1]"],
@@ -118,6 +132,8 @@ const baseURL = explicitBaseURL ?? {
 // Missing entries here surface as FORBIDDEN "Invalid origin".
 const trustedOrigins: string[] = explicitBaseURL
   ? [explicitBaseURL, ...LOCAL_DEV_ORIGINS]
+  : renderOrigin
+  ? [renderOrigin, ...LOCAL_DEV_ORIGINS]
   : [
       // Host wildcards (matched against Origin's host)
       ...previewAllowedHosts,
@@ -130,7 +146,6 @@ if (renderOrigin && !trustedOrigins.includes(renderOrigin)) trustedOrigins.push(
 // (https://….onrender.com). Credentialed sign-in from that host is rejected
 // with "Invalid origin" until it is listed here. AUTH_TRUSTED_ORIGINS is an
 // optional comma-separated extra (no trailing slashes).
-const SITE_ORIGINS = ["https://midnry.com", "https://www.midnry.com"];
 for (const origin of [
   ...SITE_ORIGINS,
   ...(env("AUTH_TRUSTED_ORIGINS") ?? "")
@@ -193,6 +208,12 @@ const grokOAuthPlugin = authConfigured
     })
   : null;
 
+// Direct Google sign-in for the hosted site (Render + midnry.com), where the
+// broker's preview client is not accepted. Active only when both keys are set.
+const googleClientId = env("GOOGLE_CLIENT_ID");
+const googleClientSecret = env("GOOGLE_CLIENT_SECRET");
+const googleConfigured = !authDisabled && Boolean(googleClientId && googleClientSecret);
+
 export const auth = betterAuth({
   appName: "Midnry",
   baseURL,
@@ -218,6 +239,7 @@ export const auth = betterAuth({
       enabled: true,
       trustedProviders: [
         ...GROK_PROVIDERS.map((p) => p.providerId),
+        "google",
         GATE_PROVIDER_ID,
       ],
       // X's synthetic email is never "verified", so don't gate linking on the
@@ -231,6 +253,18 @@ export const auth = betterAuth({
   // window and reduces auth flicker. See the `auth` skill for the full
   // flicker-prevention guidance (gate on `isPending`; SSR the session).
   session: { cookieCache: { enabled: true, maxAge: 300 } },
+
+  ...(googleConfigured
+    ? {
+        socialProviders: {
+          google: {
+            clientId: googleClientId as string,
+            clientSecret: googleClientSecret as string,
+            prompt: "select_account" as const,
+          },
+        },
+      }
+    : {}),
 
   // Local email/password — toggled only via `./email-password` (not a plugin).
   ...(emailAndPasswordEnabled ? { emailAndPassword: { enabled: true } } : {}),
