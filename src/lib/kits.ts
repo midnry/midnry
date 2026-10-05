@@ -672,7 +672,7 @@ export const KITS: readonly Kit[] = [
   },
   {
     slug: "produce",
-    name: "Prices",
+    name: "Crop prices",
     section: "agro",
     blurb: "A log of what a crop sold for, and when.",
     features: ["Crop, price, and date", "Saved with your account", "Your own prices, not a market feed"],

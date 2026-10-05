@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as EarningsRouteImport } from './routes/earnings'
+import { Route as EverydayRouteImport } from './routes/everyday'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ReviewRouteImport } from './routes/review'
@@ -23,6 +24,7 @@ import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as AppsIndexRouteImport } from './routes/apps/index'
 import { Route as AppsSlugRouteImport } from './routes/apps/$slug'
 import { Route as AudiencesAudienceRouteImport } from './routes/audiences/$audience'
+import { Route as ForAudienceRouteImport } from './routes/for/$audience'
 import { Route as SectionsGenreRouteImport } from './routes/sections/$genre'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAvatarIdRouteImport } from './routes/api/avatar/$id'
@@ -46,6 +48,11 @@ const BillingRoute = BillingRouteImport.update({
 const EarningsRoute = EarningsRouteImport.update({
   id: '/earnings',
   path: '/earnings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EverydayRoute = EverydayRouteImport.update({
+  id: '/everyday',
+  path: '/everyday',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -98,6 +105,11 @@ const AudiencesAudienceRoute = AudiencesAudienceRouteImport.update({
   path: '/audiences/$audience',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForAudienceRoute = ForAudienceRouteImport.update({
+  id: '/for/$audience',
+  path: '/for/$audience',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SectionsGenreRoute = SectionsGenreRouteImport.update({
   id: '/sections/$genre',
   path: '/sections/$genre',
@@ -124,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/billing': typeof BillingRoute
   '/earnings': typeof EarningsRoute
+  '/everyday': typeof EverydayRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/review': typeof ReviewRoute
@@ -133,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
+  '/for/$audience': typeof ForAudienceRoute
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps/': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -144,6 +158,7 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/billing': typeof BillingRoute
   '/earnings': typeof EarningsRoute
+  '/everyday': typeof EverydayRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/review': typeof ReviewRoute
@@ -153,6 +168,7 @@ export interface FileRoutesByTo {
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
+  '/for/$audience': typeof ForAudienceRoute
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -165,6 +181,7 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/billing': typeof BillingRoute
   '/earnings': typeof EarningsRoute
+  '/everyday': typeof EverydayRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/review': typeof ReviewRoute
@@ -174,6 +191,7 @@ export interface FileRoutesById {
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
+  '/for/$audience': typeof ForAudienceRoute
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps/': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -187,6 +205,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/billing'
     | '/earnings'
+    | '/everyday'
     | '/login'
     | '/pricing'
     | '/review'
@@ -196,6 +215,7 @@ export interface FileRouteTypes {
     | '/submit'
     | '/apps/$slug'
     | '/audiences/$audience'
+    | '/for/$audience'
     | '/sections/$genre'
     | '/apps/'
     | '/api/auth/$'
@@ -207,6 +227,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/billing'
     | '/earnings'
+    | '/everyday'
     | '/login'
     | '/pricing'
     | '/review'
@@ -216,6 +237,7 @@ export interface FileRouteTypes {
     | '/submit'
     | '/apps/$slug'
     | '/audiences/$audience'
+    | '/for/$audience'
     | '/sections/$genre'
     | '/apps'
     | '/api/auth/$'
@@ -227,6 +249,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/billing'
     | '/earnings'
+    | '/everyday'
     | '/login'
     | '/pricing'
     | '/review'
@@ -236,6 +259,7 @@ export interface FileRouteTypes {
     | '/submit'
     | '/apps/$slug'
     | '/audiences/$audience'
+    | '/for/$audience'
     | '/sections/$genre'
     | '/apps/'
     | '/api/auth/$'
@@ -248,6 +272,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   BillingRoute: typeof BillingRoute
   EarningsRoute: typeof EarningsRoute
+  EverydayRoute: typeof EverydayRoute
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
   ReviewRoute: typeof ReviewRoute
@@ -257,6 +282,7 @@ export interface RootRouteChildren {
   SubmitRoute: typeof SubmitRoute
   AppsSlugRoute: typeof AppsSlugRoute
   AudiencesAudienceRoute: typeof AudiencesAudienceRoute
+  ForAudienceRoute: typeof ForAudienceRoute
   SectionsGenreRoute: typeof SectionsGenreRoute
   AppsIndexRoute: typeof AppsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -292,6 +318,13 @@ declare module '@tanstack/react-router' {
       path: '/earnings'
       fullPath: '/earnings'
       preLoaderRoute: typeof EarningsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/everyday': {
+      id: '/everyday'
+      path: '/everyday'
+      fullPath: '/everyday'
+      preLoaderRoute: typeof EverydayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -364,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AudiencesAudienceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/for/$audience': {
+      id: '/for/$audience'
+      path: '/for/$audience'
+      fullPath: '/for/$audience'
+      preLoaderRoute: typeof ForAudienceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sections/$genre': {
       id: '/sections/$genre'
       path: '/sections/$genre'
@@ -400,6 +440,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   BillingRoute: BillingRoute,
   EarningsRoute: EarningsRoute,
+  EverydayRoute: EverydayRoute,
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
   ReviewRoute: ReviewRoute,
@@ -409,6 +450,7 @@ const rootRouteChildren: RootRouteChildren = {
   SubmitRoute: SubmitRoute,
   AppsSlugRoute: AppsSlugRoute,
   AudiencesAudienceRoute: AudiencesAudienceRoute,
+  ForAudienceRoute: ForAudienceRoute,
   SectionsGenreRoute: SectionsGenreRoute,
   AppsIndexRoute: AppsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

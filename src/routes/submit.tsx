@@ -4,6 +4,8 @@ import { Shell } from "@/components/shell";
 import { RedirectToSignIn } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { GENRES, genreLabel, type GenreId } from "@/lib/catalog";
+import { AudiencePicker } from "@/components/audience-picker";
+import type { TagId } from "@/lib/sections";
 import { CREATOR_POOL_PERCENT, MAX_HTML_CHARS } from "@/lib/revenue";
 import { listMine, saveSubmission, type MineApp } from "@/lib/community.functions";
 import { Button, Field, Skeleton, TextArea, TextInput, fieldClass } from "@/components/ui";
@@ -29,6 +31,7 @@ function SubmitPage() {
   const [name, setName] = useState("");
   const [blurb, setBlurb] = useState("");
   const [genre, setGenre] = useState<GenreId>("freelance");
+  const [audiences, setAudiences] = useState<TagId[]>([]);
   const [html, setHtml] = useState("");
   const [features, setFeatures] = useState("");
   const [guide, setGuide] = useState("");
@@ -72,6 +75,7 @@ function SubmitPage() {
     setName("");
     setBlurb("");
     setGenre("work");
+    setAudiences([]);
     setHtml("");
     setFeatures("");
     setGuide("");
@@ -97,7 +101,7 @@ function SubmitPage() {
     setError(null);
     try {
       const result = await saveSubmission({
-        data: { id: editing ?? undefined, name, blurb, genre, html, features, guide },
+        data: { id: editing ?? undefined, name, blurb, genre, audiences, html, features, guide },
       });
       if (!result.ok) {
         setError(result.error);
@@ -149,6 +153,7 @@ function SubmitPage() {
             ))}
           </select>
         </Field>
+        <AudiencePicker value={audiences} onChange={setAudiences} />
         <Field label="HTML file" hint={fileName || "A single .html file. Scripts cannot leave the sandbox."}>
           <input
             type="file"
@@ -163,7 +168,7 @@ function SubmitPage() {
           </p>
         ) : null}
         <div className="flex flex-wrap gap-2">
-          <Button type="submit" tone="primary" disabled={busy || !html}>
+          <Button type="submit" tone="primary" disabled={busy || !html || audiences.length === 0}>
             {busy ? "Sending…" : editing ? "Send update" : "Submit for review"}
           </Button>
           {editing ? (
@@ -200,6 +205,7 @@ function SubmitPage() {
                       setFeatures(app.features);
                       setGuide(app.guide);
                       setGenre(app.genre);
+                      setAudiences(app.audiences);
                       setHtml(app.html);
                       setFileName("Current file kept until you replace it");
                       setError(null);

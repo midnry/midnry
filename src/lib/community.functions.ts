@@ -3,6 +3,7 @@ import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getApp, isGenre, type GenreId } from "@/lib/catalog";
 import { passIsOpen, PASS_PRICE_CENTS } from "@/lib/access";
+import { cleanTags, defaultTagOf, parseTags, type TagId } from "@/lib/sections";
 import { cutCents, MAX_APPS_PER_OWNER, MAX_HTML_CHARS, poolCents } from "@/lib/revenue";
 
 export type PublishedApp = {
@@ -10,6 +11,7 @@ export type PublishedApp = {
   name: string;
   blurb: string;
   genre: GenreId;
+  audiences: TagId[];
 };
 
 export type PublishedDetail = PublishedApp & { features: string[]; guide: string[] };
@@ -20,6 +22,7 @@ export type MineApp = {
   name: string;
   blurb: string;
   genre: GenreId;
+  audiences: TagId[];
   html: string;
   features: string;
   guide: string;
@@ -34,6 +37,7 @@ export type PendingApp = {
   name: string;
   blurb: string;
   genre: GenreId;
+  audiences: TagId[];
   live: boolean;
   ownerName: string;
   ownerEmail: string;
@@ -62,6 +66,7 @@ type SubmissionRow = {
   name: string;
   blurb: string;
   genre: string;
+  audiences: string;
   html: string;
   features: string;
   guide: string;
@@ -70,6 +75,7 @@ type SubmissionRow = {
   published_name: string | null;
   published_blurb: string | null;
   published_genre: string | null;
+  published_audiences: string | null;
   published_html: string | null;
   published_features: string | null;
   published_guide: string | null;
@@ -81,6 +87,20 @@ function asIso(value: unknown): string | null {
   const parsed = Date.parse(String(value));
   if (Number.isNaN(parsed)) return null;
   return new Date(parsed).toISOString();
+}
+
+/** Stored tags, or the genre's default tag for rows saved before tags existed. */
+function tagsOf(raw: string | null | undefined, genre: string): TagId[] {
+  const tags = parseTags(raw);
+  if (tags.length > 0) return tags;
+  const fallback = defaultTagOf(genre);
+  return fallback ? [fallback] : [];
+}
+
+function readTags(value: unknown): TagId[] {
+  const tags = Array.isArray(value) ? cleanTags(value) : [];
+  if (tags.length === 0) throw new Error("Pick who the app is for.");
+  return tags;
 }
 
 function asStatus(value: string): MineApp["draftStatus"] {
@@ -179,6 +199,7 @@ function parseDraft(input: unknown): {
   name: string;
   blurb: string;
   genre: GenreId;
+  audiences: string;
   html: string;
   features: string;
   guide: string;
@@ -193,6 +214,7 @@ function parseDraft(input: unknown): {
   if (name.length < 2 || name.length > 48) throw new Error("Give it a name, 2–48 characters.");
   if (blurb.length < 8 || blurb.length > 200) throw new Error("Add a one-sentence description.");
   if (!isGenre(genre)) throw new Error("Pick a genre.");
+  const audiences = readTags(raw.audiences).join(",");
   if (html.trim().length < 16 || html.length > MAX_HTML_CHARS) {
     throw new Error("Upload one HTML file, under 80KB.");
   }
@@ -203,6 +225,7 @@ function parseDraft(input: unknown): {
     name,
     blurb,
     genre,
+    audiences,
     html,
     features: takeLines(raw.features, "the features").join("\n"),
     guide: takeLines(raw.guide, "how to use it").join("\n"),
@@ -217,13 +240,22 @@ export const getRole = createServerFn({ method: "GET" })
 
 export const listPublished = createServerFn({ method: "GET" }).handler(async (): Promise<PublishedApp[]> => {
   const sql = await getSql();
-  const rows = await sql<{ slug: string; name: string; blurb: string; genre: string }>`
-    select slug, published_name as name, published_blurb as blurb, published_genre as genre
+  const rows = await sql<{ slug: string; name: string; blurb: string; genre: string; audiences: string | null }>`
+    select slug, published_name as name, published_blurb as blurb, published_genre as genre,
+           published_audiences as audiences
     from submissions
     where published_html is not null
     order by published_name
   `;
-  return rows.filter((row): row is PublishedApp => isGenre(row.genre));
+  return rows
+    .filter((row) => isGenre(row.genre))
+    .map((row) => ({
+      slug: row.slug,
+      name: row.name,
+      blurb: row.blurb,
+      genre: row.genre as GenreId,
+      audiences: tagsOf(row.audiences, row.genre),
+    }));
 });
 
 export const peekApp = createServerFn({ method: "GET" })
@@ -238,11 +270,12 @@ export const peekApp = createServerFn({ method: "GET" })
       name: string;
       blurb: string;
       genre: string;
+      audiences: string | null;
       features: string | null;
       guide: string | null;
     }>`
       select slug, published_name as name, published_blurb as blurb, published_genre as genre,
-             published_features as features, published_guide as guide
+             published_audiences as audiences, published_features as features, published_guide as guide
       from submissions
       where slug = ${slug} and published_html is not null
     `;
@@ -253,6 +286,7 @@ export const peekApp = createServerFn({ method: "GET" })
       name: row.name,
       blurb: row.blurb,
       genre: row.genre,
+      audiences: tagsOf(row.audiences, row.genre),
       features: splitLines(row.features),
       guide: splitLines(row.guide),
     };
@@ -267,8 +301,8 @@ export const openApp = createServerFn({ method: "GET" })
   .handler(async ({ context, data: slug }): Promise<OpenResult> => {
     const sql = await getSql();
     const rows = await sql<SubmissionRow>`
-      select id, owner_id, slug, name, blurb, genre, html, features, guide, draft_status, review_note,
-             published_name, published_blurb, published_genre, published_html, published_features, published_guide
+      select id, owner_id, slug, name, blurb, genre, audiences, html, features, guide, draft_status, review_note,
+             published_name, published_blurb, published_genre, published_audiences, published_html, published_features, published_guide
       from submissions
       where slug = ${slug}
     `;
@@ -326,8 +360,8 @@ export const listMine = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<MineApp[]> => {
     const sql = await getSql();
     const rows = await sql<SubmissionRow>`
-      select id, owner_id, slug, name, blurb, genre, html, features, guide, draft_status, review_note,
-             published_name, published_blurb, published_genre, published_html, published_features, published_guide
+      select id, owner_id, slug, name, blurb, genre, audiences, html, features, guide, draft_status, review_note,
+             published_name, published_blurb, published_genre, published_audiences, published_html, published_features, published_guide
       from submissions
       where owner_id = ${context.userId}
       order by updated_at desc
@@ -340,6 +374,7 @@ export const listMine = createServerFn({ method: "GET" })
         name: row.name,
         blurb: row.blurb,
         genre: row.genre as GenreId,
+        audiences: tagsOf(row.audiences, row.genre),
         html: row.html,
         features: row.features,
         guide: row.guide,
@@ -364,6 +399,7 @@ export const saveSubmission = createServerFn({ method: "POST" })
         set name = ${data.name},
             blurb = ${data.blurb},
             genre = ${data.genre},
+            audiences = ${data.audiences},
             html = ${data.html},
             features = ${data.features},
             guide = ${data.guide},
@@ -383,8 +419,8 @@ export const saveSubmission = createServerFn({ method: "POST" })
     const id = crypto.randomUUID();
     const slug = await uniqueSlug(data.name);
     await sql`
-      insert into submissions (id, owner_id, slug, name, blurb, genre, html, features, guide, draft_status, updated_at)
-      values (${id}, ${context.userId}, ${slug}, ${data.name}, ${data.blurb}, ${data.genre}, ${data.html}, ${data.features}, ${data.guide}, 'pending', now())
+      insert into submissions (id, owner_id, slug, name, blurb, genre, audiences, html, features, guide, draft_status, updated_at)
+      values (${id}, ${context.userId}, ${slug}, ${data.name}, ${data.blurb}, ${data.genre}, ${data.audiences}, ${data.html}, ${data.features}, ${data.guide}, 'pending', now())
     `;
     return { ok: true as const, id };
   });
@@ -403,12 +439,15 @@ export const publishOwnApp = createServerFn({ method: "POST" })
         set name = ${data.name},
             blurb = ${data.blurb},
             genre = ${data.genre},
+            audiences = ${data.audiences},
             html = ${data.html},
             features = ${data.features},
             guide = ${data.guide},
             published_name = ${data.name},
             published_blurb = ${data.blurb},
             published_genre = ${data.genre},
+            published_audiences = ${data.audiences},
+            published_fields = fields,
             published_html = ${data.html},
             published_features = ${data.features},
             published_guide = ${data.guide},
@@ -431,11 +470,13 @@ export const publishOwnApp = createServerFn({ method: "POST" })
     const slug = await uniqueSlug(data.name);
     await sql`
       insert into submissions (
-        id, owner_id, slug, name, blurb, genre, html, features, guide, draft_status,
-        published_name, published_blurb, published_genre, published_html, published_features, published_guide, updated_at
+        id, owner_id, slug, name, blurb, genre, audiences, html, features, guide, draft_status,
+        published_name, published_blurb, published_genre, published_audiences, published_fields,
+        published_html, published_features, published_guide, updated_at
       ) values (
-        ${id}, ${context.userId}, ${slug}, ${data.name}, ${data.blurb}, ${data.genre}, ${data.html}, ${data.features}, ${data.guide}, 'clean',
-        ${data.name}, ${data.blurb}, ${data.genre}, ${data.html}, ${data.features}, ${data.guide}, now()
+        ${id}, ${context.userId}, ${slug}, ${data.name}, ${data.blurb}, ${data.genre}, ${data.audiences}, ${data.html}, ${data.features}, ${data.guide}, 'clean',
+        ${data.name}, ${data.blurb}, ${data.genre}, ${data.audiences}, '',
+        ${data.html}, ${data.features}, ${data.guide}, now()
       )
     `;
     return { ok: true as const, id, slug };
@@ -493,12 +534,13 @@ export const listPending = createServerFn({ method: "GET" })
       name: string;
       blurb: string;
       genre: string;
+      audiences: string;
       live: boolean;
       owner_name: string | null;
       owner_email: string | null;
       updated_at: unknown;
     }>`
-      select s.id, s.slug, s.name, s.blurb, s.genre,
+      select s.id, s.slug, s.name, s.blurb, s.genre, s.audiences,
              (s.published_html is not null) as live,
              u.name as owner_name, u.email as owner_email, s.updated_at
       from submissions s
@@ -514,7 +556,8 @@ export const listPending = createServerFn({ method: "GET" })
         name: row.name,
         blurb: row.blurb,
         genre: row.genre as GenreId,
-      live: row.live === true,
+        audiences: tagsOf(row.audiences, row.genre),
+        live: row.live === true,
         ownerName: row.owner_name || "Member",
         ownerEmail: row.owner_email || "",
         updatedAt: asIso(row.updated_at) ?? "",
@@ -539,13 +582,14 @@ export const loadDraft = createServerFn({ method: "GET" })
   });
 
 export const decideSubmission = createServerFn({ method: "POST" })
-  .validator((input: { id: string; decision: "approve" | "reject"; note?: string }) => {
+  .validator((input: { id: string; decision: "approve" | "reject"; note?: string; audiences?: string[] }) => {
     if (!input || typeof input.id !== "string" || !/^[0-9a-f-]{16,40}$/i.test(input.id)) {
       throw new Error("Unknown app");
     }
     if (input.decision !== "approve" && input.decision !== "reject") throw new Error("Unknown decision");
     const note = typeof input.note === "string" ? input.note.trim().slice(0, 280) : "";
-    return { id: input.id, decision: input.decision, note };
+    const audiences = input.decision === "approve" && input.audiences !== undefined ? readTags(input.audiences).join(",") : null;
+    return { id: input.id, decision: input.decision, note, audiences };
   })
   .middleware([authMiddleware])
   .handler(async ({ context, data }) => {
@@ -554,9 +598,12 @@ export const decideSubmission = createServerFn({ method: "POST" })
     if (data.decision === "approve") {
       const rows = await sql<{ id: string }>`
         update submissions
-        set published_name = name,
+        set audiences = coalesce(${data.audiences}, audiences),
+            published_name = name,
             published_blurb = blurb,
             published_genre = genre,
+            published_audiences = coalesce(${data.audiences}, audiences),
+            published_fields = fields,
             published_html = html,
             published_features = features,
             published_guide = guide,

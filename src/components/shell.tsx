@@ -1,10 +1,46 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { APP_NAME } from "@/lib/catalog";
 import { useRole } from "@/components/role";
 import { cn } from "@/components/ui";
+import { TagLink } from "@/components/desk-list";
+import { TAGS } from "@/lib/sections";
+
+function BrowseMenu({ active }: { active: boolean }) {
+  const menu = useRef<HTMLDetailsElement>(null);
+  const close = () => {
+    if (menu.current) menu.current.open = false;
+  };
+  return (
+    <details ref={menu} className="group relative">
+      <summary className={cn(navClass(active), "cursor-pointer list-none gap-1 [&::-webkit-details-marker]:hidden")}>
+        Browse
+        <svg aria-hidden viewBox="0 0 20 20" className="size-4 transition-transform group-open:rotate-180" fill="none">
+          <path d="M5 8l5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </summary>
+      <div className="absolute left-0 z-20 mt-1 w-56 rounded-2xl bg-card p-2 shadow-line">
+        <p className="px-3 pb-1 pt-2 text-xs font-medium text-muted">By audience</p>
+        {TAGS.map((tag) => (
+          <TagLink
+            key={tag.id}
+            tag={tag.id}
+            onClick={close}
+            className="flex min-h-11 items-center rounded-xl px-3 text-sm hover:bg-paper"
+          >
+            {tag.label}
+          </TagLink>
+        ))}
+        <div className="my-1 h-px bg-line" />
+        <Link to="/apps" onClick={close} className="flex min-h-11 items-center rounded-xl px-3 text-sm text-muted hover:bg-paper">
+          Browse by subject
+        </Link>
+      </div>
+    </details>
+  );
+}
 
 function navClass(on: boolean) {
   return cn(
@@ -30,6 +66,7 @@ export function Shell({ children }: { children: ReactNode }) {
             <Link to="/apps" className={navClass(path.startsWith("/apps"))}>
               Desk
             </Link>
+            <BrowseMenu active={path.startsWith("/for/") || path === "/everyday"} />
             <Link to="/pricing" className={navClass(path.startsWith("/pricing"))}>
               Pricing
             </Link>

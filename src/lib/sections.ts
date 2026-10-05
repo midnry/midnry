@@ -79,3 +79,42 @@ export function sectionsIn(audience: AudienceId) {
 }
 
 export const GENRES = SECTIONS.map((item) => ({ id: item.id, label: item.label }));
+
+// Audience tags. Separate from AUDIENCES above, which group the genre
+// sections: an app can carry several tags, and "everyday" is shared by all.
+export const TAGS = [
+  { id: "business", label: "Business Owners", blurb: "Run the shop, the kitchen, or the client work." },
+  { id: "professionals", label: "Professionals", blurb: "Tools for the job you do." },
+  { id: "students", label: "Students", blurb: "Study, revise, and hand in." },
+  { id: "everyday", label: "Everyday", blurb: "Useful to anyone, any day." },
+] as const;
+
+export type TagId = (typeof TAGS)[number]["id"];
+
+export function isTag(value: string): value is TagId {
+  return TAGS.some((item) => item.id === value);
+}
+
+export function tagLabel(id: TagId): string {
+  return TAGS.find((item) => item.id === id)?.label ?? id;
+}
+
+/** Keeps known tags only, de-duplicated, in TAGS order. */
+export function cleanTags(values: readonly unknown[]): TagId[] {
+  return TAGS.map((item) => item.id).filter((id) => values.includes(id));
+}
+
+/** Tags stored in a text column as "a,b,c". */
+export function parseTags(raw: string | null | undefined): TagId[] {
+  return cleanTags((raw ?? "").split(",").map((item) => item.trim()));
+}
+
+/** The tag an app gets from its genre section when nothing else says otherwise. */
+export function defaultTagOf(genre: string): TagId | null {
+  const audience = audienceOf(sectionOf(genre) ?? "");
+  if (audience === "students") return "students";
+  if (audience === "professionals") return "professionals";
+  if (audience === "owners") return "business";
+  if (audience === "seniors") return "everyday";
+  return null;
+}

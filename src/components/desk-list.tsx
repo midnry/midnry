@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { APPS, tierLabel } from "@/lib/catalog";
-import { AUDIENCES, sectionOf, sectionsIn, type GenreId } from "@/lib/sections";
+import { AUDIENCES, SECTIONS, TAGS, defaultTagOf, sectionOf, sectionsIn, type GenreId, type TagId } from "@/lib/sections";
 import { canOpenApp } from "@/lib/access";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
@@ -16,6 +16,7 @@ type DeskItem = {
   name: string;
   blurb: string;
   genre: GenreId;
+  audiences: readonly TagId[];
   tier: "free" | "pass";
 };
 
@@ -63,6 +64,7 @@ export function useDesk() {
       name: app.name,
       blurb: app.blurb,
       genre: sectionOf(app.genre) ?? app.genre,
+      audiences: app.audiences,
       tier: app.tier,
     })),
     ...added.map((app) => ({
@@ -70,6 +72,7 @@ export function useDesk() {
       name: app.name,
       blurb: app.blurb,
       genre: sectionOf(app.genre) ?? app.genre,
+      audiences: app.audiences,
       tier: "pass" as const,
     })),
   ];
@@ -77,42 +80,149 @@ export function useDesk() {
   return { items, view, choose, known, hasPass: account?.hasPass ?? false, isAdmin };
 }
 
+const SUBJECT_TITLES: Record<string, string> = {
+  students: "Fields of study",
+  professionals: "Jobs and professions",
+  owners: "Kinds of business",
+  seniors: "For seniors",
+};
+
+function TagLink({ tag, className, children, onClick }: { tag: TagId; className?: string; children: ReactNode; onClick?: () => void }) {
+  return tag === "everyday" ? (
+    <Link to="/everyday" preload="intent" className={className} onClick={onClick}>
+      {children}
+    </Link>
+  ) : (
+    <Link to="/for/$audience" params={{ audience: tag }} preload="intent" className={className} onClick={onClick}>
+      {children}
+    </Link>
+  );
+}
+
+export { TagLink };
+
+const cardClass =
+  "group flex h-full flex-col rounded-2xl bg-card p-5 shadow-line outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink";
+
 export function DeskList() {
+  const { items } = useDesk();
   return (
     <div>
       <ul className="grid gap-3 sm:grid-cols-2">
-        {AUDIENCES.map((audience) => {
-          const count = sectionsIn(audience.id).length;
+        {TAGS.map((tag) => {
+          const count = items.filter((item) => item.audiences.includes(tag.id)).length;
           return (
-            <li key={audience.id}>
-              <Link
-                to="/audiences/$audience"
-                params={{ audience: audience.id }}
-                preload="intent"
-                className="group flex h-full flex-col rounded-2xl bg-card p-5 shadow-line outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
-              >
-                <span className="font-display text-3xl tracking-tight group-hover:underline">{audience.label}</span>
-                <span className="mt-2 text-sm text-muted">{audience.blurb}</span>
-                <span className="mt-4 text-sm text-muted">
-                  {count} sections · 3 included apps in each
+            <li key={tag.id}>
+              <TagLink tag={tag.id} className={cardClass}>
+                <span className="font-display text-3xl tracking-tight group-hover:underline">{tag.label}</span>
+                <span className="mt-2 text-sm text-muted">
+                  {tag.id === "everyday" ? "Cycle, converters, QR codes and more. Useful to anyone." : tag.blurb}
                 </span>
-              </Link>
+                <span className="mt-4 text-sm text-muted">{count} apps</span>
+              </TagLink>
             </li>
           );
         })}
       </ul>
-      <Link
-        to="/apps/$slug"
-        params={{ slug: "cycle" }}
-        className="mt-3 flex items-center justify-between gap-4 rounded-2xl bg-card p-5 shadow-line"
-      >
-        <span>
-          <span className="block font-medium">Cycle</span>
-          <span className="mt-1 block text-sm text-muted">Period tracker. Included with your account.</span>
-        </span>
-        <span className="text-sm text-muted">Open</span>
-      </Link>
+
+      <h2 className="mt-12 font-display text-2xl tracking-tight">Browse by subject</h2>
+      <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {AUDIENCES.map((audience) => (
+          <li key={audience.id}>
+            <Link
+              to="/audiences/$audience"
+              params={{ audience: audience.id }}
+              preload="intent"
+              className="group flex h-full items-center justify-between gap-3 rounded-2xl bg-card px-5 py-4 shadow-line"
+            >
+              <span>
+                <span className="block font-medium group-hover:underline">{SUBJECT_TITLES[audience.id]}</span>
+                <span className="mt-0.5 block text-sm text-muted">{sectionsIn(audience.id).length} sections</span>
+              </span>
+              <span aria-hidden className="text-muted">→</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
+  );
+}
+
+/** Apps tagged with one audience, grouped by their subject section. */
+export function TaggedApps({ tag, label }: { tag: TagId; label: string }) {
+  const { items, view, choose, known, hasPass, isAdmin } = useDesk();
+  const tagged = items.filter((item) => item.audiences.includes(tag));
+  const home = tagged.filter((item) => defaultTagOf(item.genre) === tag);
+  const more = tagged.filter((item) => defaultTagOf(item.genre) !== tag);
+  const groups: { id: string; label: string; apps: DeskItem[] }[] = SECTIONS.map((section) => ({
+    id: section.id,
+    label: section.label,
+    apps: home.filter((item) => item.genre === section.id),
+  })).filter((group) => group.apps.length > 0);
+  if (more.length > 0) groups.unshift({ id: "more", label: `Handy for ${label.toLowerCase()}`, apps: more });
+
+  return (
+    <>
+      <div className="mt-6 flex items-end justify-between gap-4">
+        <p className="text-sm text-muted">{tagged.length} apps</p>
+        <DeskViewToggle view={view} onChange={choose} />
+      </div>
+      {groups.length === 0 ? <p className="mt-8 text-sm text-muted">Nothing is here yet.</p> : null}
+      {groups.length > 1 ? (
+        <nav aria-label="Jump to a subject" className="-mx-5 mt-4 flex gap-2 overflow-x-auto px-5 pb-1">
+          {groups.map((group) => (
+            <a
+              key={group.id}
+              href={`#group-${group.id}`}
+              className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-card px-4 text-sm shadow-line hover:bg-paper-2"
+            >
+              {group.label}
+            </a>
+          ))}
+        </nav>
+      ) : null}
+      {groups.map((group) => (
+        <section key={group.id} id={`group-${group.id}`} className="mt-8 scroll-mt-4">
+          <h2 className="font-display text-2xl tracking-tight">{group.label}</h2>
+          <AppGroup apps={group.apps} view={view} known={known} hasPass={hasPass} isAdmin={isAdmin} />
+        </section>
+      ))}
+    </>
+  );
+}
+
+/** A sideways row of everyday apps not already listed above it. */
+export function EverydayRow({ exclude }: { exclude: TagId }) {
+  const { items } = useDesk();
+  const apps = items.filter((item) => item.audiences.includes("everyday") && !item.audiences.includes(exclude)).slice(0, 8);
+  if (apps.length === 0) return null;
+  return (
+    <section className="mt-14">
+      <div className="flex items-end justify-between gap-4">
+        <h2 className="font-display text-2xl tracking-tight">Everyday tools</h2>
+        <Link to="/everyday" className="inline-flex min-h-11 items-center text-sm text-muted hover:text-ink">
+          See all
+        </Link>
+      </div>
+      <ul className="-mx-5 mt-3 flex snap-x gap-3 overflow-x-auto px-5 pb-2">
+        {apps.map((app) => (
+          <li key={app.slug} className="w-44 shrink-0 snap-start">
+            <Link
+              to="/apps/$slug"
+              params={{ slug: app.slug }}
+              preload="intent"
+              className="group flex h-full flex-col gap-3 rounded-2xl bg-card p-4 shadow-line"
+            >
+              <AppMark slug={app.slug} name={app.name} className="size-10" />
+              <span>
+                <span className="block font-medium group-hover:underline">{app.name}</span>
+                <span className="mt-1 line-clamp-2 block text-sm text-muted">{app.blurb}</span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -144,24 +254,24 @@ export function AppGroup({
 }) {
   if (view === "grid") {
     return (
-      <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
         {apps.map((app) => {
           const status = appStatus(app, known, hasPass, isAdmin);
           return (
-            <li key={app.slug} className="flex rounded-2xl bg-card shadow-line">
+            <li key={app.slug} className="flex min-w-0 rounded-2xl bg-card shadow-line">
               <Link
                 to="/apps/$slug"
                 params={{ slug: app.slug }}
                 preload="intent"
                 className="group flex min-w-0 flex-1 flex-col gap-3 p-4 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
               >
-                <span className="flex items-start justify-between gap-3">
-                  <AppMark slug={app.slug} name={app.name} className="size-12" />
+                <span className="flex flex-wrap items-start justify-between gap-2">
+                  <AppMark slug={app.slug} name={app.name} className="size-10 sm:size-12" />
                   <Status app={app} status={status} />
                 </span>
-                <span>
+                <span className="min-w-0">
                   <span className="block font-medium group-hover:underline">{app.name}</span>
-                  <span className="mt-1 block text-sm text-pretty text-muted">{app.blurb}</span>
+                  <span className="mt-1 line-clamp-3 block text-sm text-pretty text-muted">{app.blurb}</span>
                 </span>
               </Link>
               <span className="pr-2 pt-2">

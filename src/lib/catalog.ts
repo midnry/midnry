@@ -1,5 +1,6 @@
 import { KITS } from "@/lib/kits";
-import { GENRES, genreLabel, isGenre, type GenreId } from "@/lib/sections";
+import { FIELD_TAGS, TAG_OVERRIDES } from "@/lib/audience-tags";
+import { GENRES, defaultTagOf, genreLabel, isGenre, type GenreId, type TagId } from "@/lib/sections";
 
 export { GENRES, genreLabel, isGenre };
 export type { GenreId };
@@ -14,11 +15,24 @@ export type AppDef = {
   blurb: string;
   tier: AppTier;
   genre: GenreId;
+  audiences: readonly TagId[];
+  fields: readonly string[];
   features: readonly string[];
   guide: readonly string[];
 };
 
-export const APPS: readonly AppDef[] = [
+type AppSource = Omit<AppDef, "audiences" | "fields">;
+
+function tagged(app: AppSource): AppDef {
+  const fallback = defaultTagOf(app.genre);
+  return {
+    ...app,
+    audiences: TAG_OVERRIDES[app.slug] ?? (fallback ? [fallback] : []),
+    fields: FIELD_TAGS[app.slug] ?? [],
+  };
+}
+
+const SOURCES: readonly AppSource[] = [
   {
     slug: "scratch",
     name: "Scratch",
@@ -179,6 +193,8 @@ export const APPS: readonly AppDef[] = [
     guide: kit.guide,
   })),
 ];
+
+export const APPS: readonly AppDef[] = SOURCES.map(tagged);
 
 export function includedNames(): string {
   return "three apps in every section";

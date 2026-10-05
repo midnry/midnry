@@ -6,6 +6,8 @@ import { RedirectToSignIn } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useRole } from "@/components/role";
 import { GENRES, genreLabel, type GenreId } from "@/lib/catalog";
+import { AudiencePicker } from "@/components/audience-picker";
+import { parseTags, type TagId } from "@/lib/sections";
 import { MAX_HTML_CHARS } from "@/lib/revenue";
 import {
   decideSubmission,
@@ -31,6 +33,7 @@ function ReviewPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ name: string; html: string } | null>(null);
   const [note, setNote] = useState("");
+  const [tags, setTags] = useState<TagId[]>([]);
   const [busy, setBusy] = useState<"approve" | "reject" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,6 +62,11 @@ function ReviewPage() {
       cancel = true;
     };
   }, [user?.id, ready, isAdmin]);
+
+  const selectedTags = queue?.find((item) => item.id === selected)?.audiences.join(",") ?? "";
+  useEffect(() => {
+    setTags(parseTags(selectedTags));
+  }, [selected, selectedTags]);
 
   useEffect(() => {
     if (!selected || !isAdmin) {
@@ -107,7 +115,9 @@ function ReviewPage() {
     setBusy(decision);
     setError(null);
     try {
-      const result = await decideSubmission({ data: { id: current.id, decision, note } });
+      const result = await decideSubmission({
+        data: decision === "approve" ? { id: current.id, decision, note, audiences: tags } : { id: current.id, decision, note },
+      });
       if (!result.ok) {
         setError(result.error);
         return;
@@ -180,6 +190,9 @@ function ReviewPage() {
                   <Skeleton className="h-[70vh] w-full" />
                 )}
               </div>
+              <div className="mt-6">
+                <AudiencePicker value={tags} onChange={setTags} label="Audiences (saved when you approve)" />
+              </div>
               <label className="mt-4 block">
                 <span className="mb-1.5 block text-sm font-medium">Note if you reject it</span>
                 <TextArea value={note} onChange={(event) => setNote(event.target.value)} maxLength={280} className="min-h-20" />
@@ -190,7 +203,7 @@ function ReviewPage() {
                 </p>
               ) : null}
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                <Button tone="primary" disabled={busy !== null || !draft} onClick={() => void decide("approve")}>
+                <Button tone="primary" disabled={busy !== null || !draft || tags.length === 0} onClick={() => void decide("approve")}>
                   {busy === "approve" ? "Approving…" : "Approve"}
                 </Button>
                 <Button tone="quiet" disabled={busy !== null} onClick={() => void decide("reject")}>
@@ -211,6 +224,7 @@ function OwnAppForm() {
   const [name, setName] = useState("");
   const [blurb, setBlurb] = useState("");
   const [genre, setGenre] = useState<GenreId>("freelance");
+  const [audiences, setAudiences] = useState<TagId[]>([]);
   const [html, setHtml] = useState("");
   const [features, setFeatures] = useState("");
   const [guide, setGuide] = useState("");
@@ -242,6 +256,7 @@ function OwnAppForm() {
     setName("");
     setBlurb("");
     setGenre("work");
+    setAudiences([]);
     setHtml("");
     setFeatures("");
     setGuide("");
@@ -264,7 +279,7 @@ function OwnAppForm() {
     setError(null);
     try {
       const result = await publishOwnApp({
-        data: { id: editing ?? undefined, name, blurb, genre, html, features, guide },
+        data: { id: editing ?? undefined, name, blurb, genre, audiences, html, features, guide },
       });
       if (!result.ok) {
         setError(result.error);
@@ -316,6 +331,7 @@ function OwnAppForm() {
             ))}
           </select>
         </Field>
+        <AudiencePicker value={audiences} onChange={setAudiences} />
         <Field label="HTML" hint="Paste a full page, or upload one .html file. 80KB max.">
           <TextArea
             value={html}
@@ -337,7 +353,7 @@ function OwnAppForm() {
           </p>
         ) : null}
         <div className="flex flex-wrap gap-2">
-          <Button type="submit" tone="primary" disabled={busy || !ready}>
+          <Button type="submit" tone="primary" disabled={busy || !ready || audiences.length === 0}>
             {busy ? "Publishing…" : editing ? "Replace the live app" : "Put it on the desk"}
           </Button>
           {editing ? (
@@ -371,6 +387,7 @@ function OwnAppForm() {
                     setFeatures(app.features);
                     setGuide(app.guide);
                     setGenre(app.genre);
+                    setAudiences(app.audiences);
                     setHtml(app.html);
                     setError(null);
                   }}
