@@ -48,11 +48,6 @@ export function Shell({ children }: { children: ReactNode }) {
                 Billing
               </Link>
             ) : null}
-            {user ? (
-              <Link to="/security" className={navClass(path.startsWith("/security"))}>
-                Security
-              </Link>
-            ) : null}
             {isAdmin ? (
               <Link to="/review" className={navClass(path.startsWith("/review"))}>
                 Review
@@ -90,7 +85,7 @@ export function Shell({ children }: { children: ReactNode }) {
       </main>
       <footer className="no-print border-t border-line">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-6 text-sm text-muted">
-          <p>Three tools with an account. The pass is $5 a month.</p>
+          <p>Free apps for everyone. Midnry Pass unlocks the rest for $5 a month.</p>
           <span className="flex gap-4">
             <Link to="/apps" className="hover:text-ink">
               Desk

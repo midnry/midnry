@@ -24,6 +24,35 @@ export const Route = createFileRoute("/billing")({
   component: BillingPage,
 });
 
+function checkoutError(error: unknown): string {
+  const message = error instanceof Error ? error.message : "";
+  if (/channel|currency|not configured|merchant/i.test(message)) {
+    return "Payments aren't available right now. Please try again later. You weren't charged.";
+  }
+  if (/email/i.test(message)) return "Add an email to your account before paying.";
+  return "Checkout didn't open. Please try again. You weren't charged.";
+}
+
+function Check() {
+  return (
+    <svg aria-hidden viewBox="0 0 20 20" className="mt-0.5 size-5 shrink-0 text-pine" fill="none">
+      <path d="M5 10.5l3 3 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function AppChips({ names }: { names: string[] }) {
+  return (
+    <ul className="mt-2 flex flex-wrap gap-1.5">
+      {names.map((name) => (
+        <li key={name} className="rounded-full bg-paper px-3 py-1 text-sm">
+          {name}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function BillingPage() {
   const { user, isPending } = useCurrentUserState();
   const { account, loading, apply, refresh } = useAccount();
@@ -55,7 +84,7 @@ function BillingPage() {
     handledReturn.current = true;
     window.history.replaceState({}, "", "/billing");
     if (checkout === "cancel") {
-      toast("Checkout canceled. Your card was not charged.");
+      toast("Checkout canceled. You weren't charged.");
       return;
     }
     if (!reference) return;
@@ -63,14 +92,14 @@ function BillingPage() {
       try {
         const next = await confirmCheckout({ data: reference });
         apply(next);
-        toast.success("Payment received. Midnry Pass is active.");
+        toast.success("You're in! Midnry Pass is active.");
       } catch {
         try {
           const next = await refresh();
-          if (next?.hasPass) toast.success("Payment received. Midnry Pass is active.");
-          else toast.error("The payment did not finish. The pass stays locked.");
+          if (next?.hasPass) toast.success("You're in! Midnry Pass is active.");
+          else toast.error("The payment didn't go through. You weren't charged.");
         } catch {
-          toast.error("The payment did not finish. The pass stays locked.");
+          toast.error("The payment didn't go through. You weren't charged.");
         }
       }
     })();
@@ -87,8 +116,8 @@ function BillingPage() {
   if (!user) return <RedirectToSignIn to="/login" />;
 
   const state = account;
-  const included = APPS.filter((app) => app.tier === "free").map((app) => app.name);
-  const paid = APPS.filter((app) => app.tier === "pass").map((app) => app.name);
+  const passApps = [...new Set(APPS.filter((app) => app.tier === "pass").map((app) => app.name))];
+  const freeApps = [...new Set(APPS.filter((app) => app.tier === "free").map((app) => app.name))];
 
   async function start() {
     setBusy("start");
@@ -103,11 +132,10 @@ function BillingPage() {
         if (next) apply(next);
         toast.success("Midnry Pass is already active.");
       } else {
-        toast.error("Card checkout isn't connected yet.");
+        toast.error("Payments aren't available right now. Please try again later.");
       }
     } catch (error) {
-      const reason = error instanceof Error && error.message ? ` ${error.message}` : "";
-      toast.error(`Could not open checkout.${reason} Your card was not charged.`);
+      toast.error(checkoutError(error));
     } finally {
       setBusy(null);
     }
@@ -119,9 +147,9 @@ function BillingPage() {
       const next = await cancelRenewal();
       apply(next);
       setConfirmCancel(false);
-      toast.success("Renewal canceled. Access stays through the end date.");
+      toast.success("Renewal canceled. You keep the pass until your end date.");
     } catch {
-      toast.error("Could not cancel.");
+      toast.error("Couldn't cancel. Try again.");
     } finally {
       setBusy(null);
     }
@@ -132,9 +160,9 @@ function BillingPage() {
     try {
       const next = await resumeRenewal();
       apply(next);
-      toast.success("Renewal is back on.");
+      toast.success("Your pass will renew again.");
     } catch {
-      toast.error("Could not resume renewal.");
+      toast.error("Couldn't turn renewal back on. Try again.");
     } finally {
       setBusy(null);
     }
@@ -146,111 +174,145 @@ function BillingPage() {
       const { url } = await openCardPortal();
       window.location.assign(url);
     } catch {
-      toast.error("Could not open the card page.");
+      toast.error("Couldn't open the card page. Try again.");
       setBusy(null);
     }
   }
 
+  const ending = state?.status === "canceled";
+  const endDate = state?.currentPeriodEnd ? formatWhen(state.currentPeriodEnd) : null;
+
   return (
     <Shell>
       <h1 className="font-display text-5xl tracking-tight">Billing</h1>
-      <p className="mt-3 max-w-xl text-pretty text-muted">
-        Signed in as {user.primaryEmail ?? user.displayName ?? "your account"}. Included tools stay
-        open without a pass.
-      </p>
 
-      <section className="mt-8 max-w-xl rounded-3xl bg-card p-6 shadow-line sm:p-8">
-        {!state || !state.hasPass ? (
-          <>
-            <p className="text-sm text-pine">Midnry Pass</p>
-            <p className="mt-3 font-display text-5xl tabular-nums">
-              {PASS_PRICE_LABEL}
-              <span className="ml-2 font-sans text-base text-muted">/ month</span>
-            </p>
-            <ul className="mt-6 space-y-2 text-sm">
-              <li>Charged as {formatUsd(500)} today, then every month</li>
-              <li>Opens {paid.join(", ")}</li>
-              <li>Keeps {included.join(", ")} either way</li>
-              <li>Cancel anytime. Access stays until the period ends.</li>
-            </ul>
-            <p className="mt-4 text-sm text-pretty text-muted">
-              {config?.mode === "test"
-                ? "Paystack is in test mode. A real card is not charged. Use 4084084084084081, any future date, CVV 408, PIN 0000, and OTP 123456."
-                : config?.ready
-                  ? "The card is entered on Paystack. Midnry never sees the card number. The pass opens only after the $5 charge succeeds."
-                  : "Card checkout isn't connected yet, so a pass can't be started. Nothing is charged."}
-            </p>
-            <Button
-              tone="primary"
-              className="mt-6"
-              disabled={busy !== null || !config?.ready}
-              onClick={() => void start()}
-            >
-              {busy === "start"
-                ? "Opening checkout…"
-                : !config
-                  ? "Checking…"
-                  : !config.ready
-                    ? "Card checkout unavailable"
-                    : `Continue to Paystack — ${PASS_PRICE_LABEL}`}
-            </Button>
-          </>
-        ) : (
-          <>
-            <p className="text-sm text-pine">
-              {state.status === "canceled" ? "Ends soon" : "Active"}
-            </p>
-            <p className="mt-3 font-display text-4xl tracking-tight text-balance">
-              {state.status === "canceled" ? "Access continues" : "Midnry Pass is on"}
-            </p>
-            <p className="mt-3 text-sm text-muted">
-              {formatUsd(state.priceCents)} / month
-              {state.currentPeriodEnd
-                ? state.status === "canceled"
-                  ? ` · ends ${formatWhen(state.currentPeriodEnd)}`
-                  : ` · renews ${formatWhen(state.currentPeriodEnd)}`
-                : null}
-            </p>
-            <p className="mt-4 text-sm text-pretty text-muted">
-              The whole desk is open
-              {state.currentPeriodEnd ? ` through ${formatWhen(state.currentPeriodEnd)}` : ""}, including
-              approved member apps. Paystack bills the card on file
-              {state.status === "canceled" ? " until you resume." : " each month until you cancel."}
-            </p>
-            <div className="mt-6 flex flex-col gap-2 sm:flex-row">
-              <Button tone="quiet" disabled={busy !== null || !config?.ready} onClick={() => void portal()}>
-                {busy === "portal" ? "Opening…" : "Update card"}
+      <div className="mt-8 max-w-xl space-y-6">
+        <section className="rounded-3xl bg-card p-6 shadow-line sm:p-8">
+          {!state || !state.hasPass ? (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-medium text-pine">Midnry Pass</p>
+                {config?.mode === "test" ? (
+                  <span className="rounded-full bg-paper-2 px-3 py-1 text-xs font-medium text-muted">
+                    Test mode
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-2 font-display text-5xl tabular-nums">
+                {PASS_PRICE_LABEL}
+                <span className="ml-2 font-sans text-base text-muted">/ month</span>
+              </p>
+              <ul className="mt-6 space-y-3 text-sm">
+                <li className="flex gap-2.5">
+                  <Check />
+                  Unlock all {passApps.length} Pass apps
+                </li>
+                <li className="flex gap-2.5">
+                  <Check />
+                  Cancel anytime. Keep access until the month ends.
+                </li>
+                <li className="flex gap-2.5">
+                  <Check />
+                  Secure card payment with Paystack
+                </li>
+              </ul>
+              <Button
+                tone="primary"
+                className="mt-7 w-full sm:w-auto"
+                disabled={busy !== null || !config?.ready}
+                onClick={() => void start()}
+              >
+                {busy === "start"
+                  ? "Opening checkout…"
+                  : !config
+                    ? "Loading…"
+                    : !config.ready
+                      ? "Payments unavailable"
+                      : `Get Midnry Pass · ${PASS_PRICE_LABEL}/month`}
               </Button>
-              {state.status === "active" ? (
-                confirmCancel ? (
-                  <>
-                    <Button tone="quiet" onClick={() => setConfirmCancel(false)} disabled={busy !== null}>
-                      Keep the pass
-                    </Button>
-                    <Button tone="primary" onClick={() => void cancel()} disabled={busy !== null}>
-                      {busy === "cancel" ? "Canceling…" : "Confirm cancel"}
-                    </Button>
-                  </>
-                ) : (
-                  <Button tone="quiet" onClick={() => setConfirmCancel(true)} disabled={busy !== null}>
-                    Cancel renewal
-                  </Button>
-                )
-              ) : (
-                <Button tone="primary" disabled={busy !== null || !config?.ready} onClick={() => void resume()}>
-                  {busy === "resume" ? "Resuming…" : "Resume renewal"}
-                </Button>
-              )}
-            </div>
-          </>
-        )}
-      </section>
+              {config && !config.ready ? (
+                <p className="mt-3 text-sm text-muted">Payments are paused for now. Please check back soon.</p>
+              ) : config?.mode === "test" ? (
+                <details className="mt-4 text-sm text-muted">
+                  <summary className="cursor-pointer">Test card details</summary>
+                  <p className="mt-2 font-mono">4084 0840 8408 4081 · any future date · CVV 408 · PIN 0000 · OTP 123456</p>
+                </details>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <span
+                className={
+                  ending
+                    ? "inline-flex rounded-full bg-paper-2 px-3 py-1 text-sm font-medium text-muted"
+                    : "inline-flex rounded-full bg-pine/10 px-3 py-1 text-sm font-medium text-pine"
+                }
+              >
+                {ending ? "Ending" : "Active"}
+              </span>
+              <p className="mt-4 font-display text-4xl tracking-tight text-balance">
+                {ending ? "Your pass is ending" : "Midnry Pass is on"}
+              </p>
+              <p className="mt-2 text-muted">
+                {endDate
+                  ? ending
+                    ? `You have full access until ${endDate}.`
+                    : `${formatUsd(state.priceCents)} a month · next payment ${endDate}`
+                  : `${formatUsd(state.priceCents)} a month`}
+              </p>
 
-      <p className="mt-6 text-sm text-muted">
-        <Link to="/apps" className="underline-offset-4 hover:underline">
-          Back to the desk
+              {confirmCancel ? (
+                <div className="mt-6 rounded-2xl bg-paper p-4">
+                  <p className="text-sm font-medium">Cancel renewal?</p>
+                  <p className="mt-1 text-sm text-muted">
+                    {endDate ? `You'll keep the pass until ${endDate}.` : "You'll keep the pass until the period ends."}
+                  </p>
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                    <Button tone="primary" onClick={() => void cancel()} disabled={busy !== null}>
+                      {busy === "cancel" ? "Canceling…" : "Yes, cancel"}
+                    </Button>
+                    <Button tone="quiet" onClick={() => setConfirmCancel(false)} disabled={busy !== null}>
+                      Keep my pass
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+                  {ending ? (
+                    <Button tone="primary" disabled={busy !== null || !config?.ready} onClick={() => void resume()}>
+                      {busy === "resume" ? "Turning on…" : "Keep my pass"}
+                    </Button>
+                  ) : null}
+                  <Button tone="quiet" disabled={busy !== null || !config?.ready} onClick={() => void portal()}>
+                    {busy === "portal" ? "Opening…" : "Update card"}
+                  </Button>
+                  {!ending ? (
+                    <Button tone="quiet" onClick={() => setConfirmCancel(true)} disabled={busy !== null}>
+                      Cancel renewal
+                    </Button>
+                  ) : null}
+                </div>
+              )}
+            </>
+          )}
+        </section>
+
+        <section className="rounded-3xl bg-card p-6 shadow-line sm:p-8">
+          <h2 className="font-display text-2xl tracking-tight">What's included</h2>
+          <p className="mt-4 text-sm font-medium">Unlocked with the pass</p>
+          <AppChips names={passApps} />
+          <p className="mt-5 text-sm text-muted">
+            Plus {freeApps.length} free apps for everyone, with or without the pass.{" "}
+            <Link to="/apps" className="text-ink underline underline-offset-4">
+              Browse the desk
+            </Link>
+          </p>
+        </section>
+
+        <Link to="/apps" className="inline-flex min-h-11 items-center text-sm text-muted hover:text-ink">
+          ← Back to the desk
         </Link>
-      </p>
+      </div>
     </Shell>
   );
 }

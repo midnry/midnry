@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as EarningsRouteImport } from './routes/earnings'
 import { Route as LoginRouteImport } from './routes/login'
@@ -24,11 +25,17 @@ import { Route as AppsSlugRouteImport } from './routes/apps/$slug'
 import { Route as AudiencesAudienceRouteImport } from './routes/audiences/$audience'
 import { Route as SectionsGenreRouteImport } from './routes/sections/$genre'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiAvatarIdRouteImport } from './routes/api/avatar/$id'
 import { Route as ApiPaystackWebhookRouteImport } from './routes/api/paystack/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BillingRoute = BillingRouteImport.update({
@@ -101,6 +108,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAvatarIdRoute = ApiAvatarIdRouteImport.update({
+  id: '/api/avatar/$id',
+  path: '/api/avatar/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPaystackWebhookRoute = ApiPaystackWebhookRouteImport.update({
   id: '/api/paystack/webhook',
   path: '/api/paystack/webhook',
@@ -109,6 +121,7 @@ const ApiPaystackWebhookRoute = ApiPaystackWebhookRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/billing': typeof BillingRoute
   '/earnings': typeof EarningsRoute
   '/login': typeof LoginRoute
@@ -123,10 +136,12 @@ export interface FileRoutesByFullPath {
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps/': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/billing': typeof BillingRoute
   '/earnings': typeof EarningsRoute
   '/login': typeof LoginRoute
@@ -141,11 +156,13 @@ export interface FileRoutesByTo {
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/billing': typeof BillingRoute
   '/earnings': typeof EarningsRoute
   '/login': typeof LoginRoute
@@ -160,12 +177,14 @@ export interface FileRoutesById {
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps/': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account'
     | '/billing'
     | '/earnings'
     | '/login'
@@ -180,10 +199,12 @@ export interface FileRouteTypes {
     | '/sections/$genre'
     | '/apps/'
     | '/api/auth/$'
+    | '/api/avatar/$id'
     | '/api/paystack/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account'
     | '/billing'
     | '/earnings'
     | '/login'
@@ -198,10 +219,12 @@ export interface FileRouteTypes {
     | '/sections/$genre'
     | '/apps'
     | '/api/auth/$'
+    | '/api/avatar/$id'
     | '/api/paystack/webhook'
   id:
     | '__root__'
     | '/'
+    | '/account'
     | '/billing'
     | '/earnings'
     | '/login'
@@ -216,11 +239,13 @@ export interface FileRouteTypes {
     | '/sections/$genre'
     | '/apps/'
     | '/api/auth/$'
+    | '/api/avatar/$id'
     | '/api/paystack/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   BillingRoute: typeof BillingRoute
   EarningsRoute: typeof EarningsRoute
   LoginRoute: typeof LoginRoute
@@ -235,6 +260,7 @@ export interface RootRouteChildren {
   SectionsGenreRoute: typeof SectionsGenreRoute
   AppsIndexRoute: typeof AppsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiAvatarIdRoute: typeof ApiAvatarIdRoute
   ApiPaystackWebhookRoute: typeof ApiPaystackWebhookRoute
 }
 
@@ -245,6 +271,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/billing': {
@@ -345,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/avatar/$id': {
+      id: '/api/avatar/$id'
+      path: '/api/avatar/$id'
+      fullPath: '/api/avatar/$id'
+      preLoaderRoute: typeof ApiAvatarIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/paystack/webhook': {
       id: '/api/paystack/webhook'
       path: '/api/paystack/webhook'
@@ -357,6 +397,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   BillingRoute: BillingRoute,
   EarningsRoute: EarningsRoute,
   LoginRoute: LoginRoute,
@@ -371,6 +412,7 @@ const rootRouteChildren: RootRouteChildren = {
   SectionsGenreRoute: SectionsGenreRoute,
   AppsIndexRoute: AppsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiAvatarIdRoute: ApiAvatarIdRoute,
   ApiPaystackWebhookRoute: ApiPaystackWebhookRoute,
 }
 export const routeTree = rootRouteImport
