@@ -1,8 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Button, TextArea, TextInput, fieldClass } from "@/components/ui";
+import { Button, TextArea, fieldClass } from "@/components/ui";
 import { ToolFrame, ToolStatus } from "@/components/tools/shared";
 import { useAppDoc } from "@/components/use-app-doc";
-import { extractResume, tailorRole } from "@/lib/apply.functions";
+import { extractResume } from "@/lib/apply.functions";
+import { tailorResume } from "@/lib/apply/tailor";
 
 type Pack = {
   role: string;
@@ -166,15 +167,12 @@ export function ApplyTool() {
     }
     setError(null);
     const packs: Pack[] = [];
+    if (form.resume.trim().length < 40) {
+      setError("Add your resume first: upload a PDF or paste it.");
+      return;
+    }
     for (const role of roles) {
-      setBusy(`Rewriting for ${role}…`);
-      const result = await tailorRole({ data: { role, resume: form.resume } });
-      if (!result.ok) {
-        setError(result.error);
-        if (packs.length) setData({ rolesText: form.rolesText, resume: form.resume, packs });
-        setBusy(null);
-        return;
-      }
+      const result = tailorResume(role, form.resume);
       packs.push({ role, note: result.note, resume: result.resume, submitted: false });
     }
     setData({ rolesText: form.rolesText, resume: form.resume, packs });
@@ -193,7 +191,7 @@ export function ApplyTool() {
       <ToolStatus ready={ready} loadError={loadError} blocked={blocked}>
         <div className="flex max-w-xl flex-col gap-6">
           <p className="text-sm text-pretty text-muted">
-            LinkedIn does not let another site sign in and send applications. Apply rewrites your resume for each
+            LinkedIn does not let another site sign in and send applications. Apply tailors your resume for each
             role, then opens that search so you can submit the file yourself.
           </p>
           <form className="flex flex-col gap-3" onSubmit={(event) => void prepare(event)}>

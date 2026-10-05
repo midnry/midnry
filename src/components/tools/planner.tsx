@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Button, TextArea, TextInput, cn, fieldClass } from "@/components/ui";
 import { ToolFrame, ToolStatus } from "@/components/tools/shared";
 import { useAppDoc } from "@/components/use-app-doc";
@@ -15,7 +15,7 @@ import {
   type PlanYear,
   type WeekSlot,
 } from "@/lib/ideas/calendar";
-import { planIdeaHalf, type WeekIdeas } from "@/lib/ideas/plan";
+import { planIdeas, type WeekIdeas } from "@/lib/ideas/plan";
 
 type WeekPlan = WeekSlot & WeekIdeas;
 
@@ -70,8 +70,6 @@ export function PlannerTool() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [savingPdf, setSavingPdf] = useState(false);
-  const cache = useRef<{ key: string; ideas: WeekIdeas[] } | null>(null);
-  const run = useRef(0);
 
   useEffect(() => {
     if (!ready || hydrated) return;
@@ -86,52 +84,29 @@ export function PlannerTool() {
       setError("Choose the brand's location, or Global.");
       return;
     }
-    const token = ++run.current;
-    const cacheKey = `${form.brand.trim()}|${form.about.trim()}|${form.country}|${form.year}`;
-    if (cache.current?.key !== cacheKey) cache.current = { key: cacheKey, ideas: [] };
-    const bucket = cache.current;
-    if (!bucket) return;
+    if (form.brand.trim().length < 2) {
+      setError("Add the brand name.");
+      return;
+    }
+    if (form.about.trim().length < 8) {
+      setError("Say what the brand does in a few words.");
+      return;
+    }
     setError(null);
+    setBusy("Planning the year…");
     try {
       const slots = yearWeeks(form.year, form.country);
-      const size = Math.ceil(slots.length / 4);
-      for (let part = 0; part < 4; part += 1) {
-        const slice = slots.slice(part * size, part * size + size);
-        if (slice.length === 0) continue;
-        const done = new Set<number>(bucket.ideas.map((item) => item.week));
-        if (slice.every((slot) => done.has(slot.week))) continue;
-        setBusy(`Planning ${weekLabel(slice[0]!.start, slice[slice.length - 1]!.end)}…`);
-        const result = await planIdeaHalf({
-          data: { brand: form.brand, about: form.about, country: form.country, year: form.year, part },
-        });
-        if (run.current !== token) return;
-        if (!result.ok) {
-          setError(result.error);
-          return;
-        }
-        bucket.ideas = [
-          ...bucket.ideas.filter((item) => !slice.some((slot) => slot.week === item.week)),
-          ...result.ideas,
-        ];
-        cache.current = bucket;
-      }
-      if (run.current !== token || !cache.current) return;
-      const ideas = new Map(cache.current.ideas.map((item) => [item.week, item]));
+      const ideas = new Map(planIdeas(form.brand, form.about, slots).map((item) => [item.week, item]));
       const weeks = slots.flatMap((slot) => {
         const idea = ideas.get(slot.week);
         return idea ? [{ ...slot, ...idea }] : [];
       });
-      if (weeks.length !== slots.length) {
-        setError("The idea plan came back incomplete. Try again.");
-        return;
-      }
       setData({ ...form, brand: form.brand.trim(), about: form.about.trim(), weeks });
       setMonth(form.year === 2026 ? 9 : "all");
     } catch (caught) {
-      if (run.current !== token) return;
       setError(caught instanceof Error ? caught.message : "Couldn’t plan that year.");
     } finally {
-      if (run.current === token) setBusy(null);
+      setBusy(null);
     }
   }
 

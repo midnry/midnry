@@ -3,7 +3,7 @@ import { useAppDoc } from "@/components/use-app-doc";
 import { Button, TextArea, TextInput, cn, fieldClass } from "@/components/ui";
 import { ToolFrame, ToolStatus } from "@/components/tools/shared";
 import { toast } from "sonner";
-import { draftReady, draftText } from "@/lib/draft.functions";
+import { WRITERS } from "@/lib/writers";
 import { getKit, type Field, type Kit, type Line } from "@/lib/kits";
 import type { SectionId } from "@/lib/sections";
 
@@ -35,8 +35,8 @@ function KitBody({ kit }: { kit: Kit }) {
       return <Cards kit={kit} />;
     case "quiz":
       return <Quiz kit={kit} />;
-    case "draft":
-      return <Draft kit={kit} />;
+    case "write":
+      return <Write kit={kit} />;
     case "cite":
       return <Cite mode={kit.mode} />;
     case "list":
@@ -648,88 +648,83 @@ function Quiz({ kit }: { kit: Extract<Kit, { kind: "quiz" }> }) {
   );
 }
 
-function Draft({ kit }: { kit: Extract<Kit, { kind: "draft" }> }) {
-  const [prompt, setPrompt] = useState("");
-  const [text, setText] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [aiOn, setAiOn] = useState<boolean | null>(null);
+function Write({ kit }: { kit: Extract<Kit, { kind: "write" }> }) {
+  const writer = WRITERS[kit.slug];
+  const { data, setData, ready, loadError, blocked, saveState } = useAppDoc(kit.slug, { values: {} as Record<string, string> });
+  const [shown, setShown] = useState(false);
+  const [variant, setVariant] = useState(0);
+  const [missing, setMissing] = useState("");
+  const values = data.values ?? {};
+  if (!writer) return null;
+  const pieces = shown ? writer.run(values, variant) : [];
+  const all = pieces.map((piece) => (pieces.length > 1 ? `${piece.title}\n${piece.text}` : piece.text)).join("\n\n");
+  const filled = writer.fields.some((field) => values[field.id]?.trim());
 
-  useEffect(() => {
-    let cancel = false;
-    draftReady()
-      .then((result) => !cancel && setAiOn(result.configured))
-      .catch(() => !cancel && setAiOn(true));
-    return () => {
-      cancel = true;
-    };
-  }, []);
-
-  const canRun = Boolean(prompt.trim()) && !busy && aiOn !== false;
-
-  function run() {
-    if (!canRun) return;
-    setBusy(true);
-    setError("");
-    void draftText({ data: { system: kit.system, prompt } })
-      .then((result) => {
-        if (result.ok) setText(result.text);
-        else setError(result.error);
-      })
-      .catch(() => setError("Could not reach AI writing. Check your connection and try again."))
-      .finally(() => setBusy(false));
+  function write() {
+    const empty = writer!.fields.filter((field) => writer!.required.includes(field.id) && !values[field.id]?.trim());
+    if (empty.length) {
+      setMissing(`Fill in: ${empty.map((field) => field.label.replace(/,? optional$/i, "")).join(", ")}.`);
+      return;
+    }
+    setMissing("");
+    if (shown) setVariant((value) => value + 1);
+    setShown(true);
   }
 
   return (
-    <div>
-      {aiOn === false ? (
-        <p className="mb-3 rounded-2xl bg-paper-2 p-4 text-sm text-pretty">AI writing is still being set up on Midnry. Please check back soon.</p>
-      ) : null}
-      <TextArea
-        value={prompt}
-        placeholder={kit.placeholder}
-        rows={6}
-        onChange={(event) => setPrompt(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) run();
+    <ToolStatus ready={ready} loadError={loadError} blocked={blocked}>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          write();
         }}
-      />
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Button tone="primary" disabled={!canRun} onClick={run}>
-          {busy ? "Writing…" : text ? "Write again" : "Write it"}
-        </Button>
-        {prompt ? (
-          <Button
-            tone="quiet"
-            onClick={() => {
-              setPrompt("");
-              setText("");
-              setError("");
-            }}
-          >
-            Start over
-          </Button>
+      >
+        <Fields fields={writer.fields} values={values} onChange={(next) => setData({ values: next })} />
+        {missing ? (
+          <p role="alert" className="mt-3 text-sm text-fail">
+            {missing}
+          </p>
         ) : null}
-      </div>
-      {error ? (
-        <p role="alert" className="mt-3 text-sm text-fail">
-          {error}
-        </p>
-      ) : null}
-      {busy && !text ? <div className="mt-4 h-32 animate-pulse rounded-2xl bg-paper-2" /> : null}
-      {text ? (
-        <div className={cn("mt-4", busy && "opacity-60")}>
-          <TextArea value={text} rows={Math.min(18, Math.max(6, text.split("\n").length + 1))} onChange={(event) => setText(event.target.value)} />
-          <p className="mt-1 text-xs text-muted">You can edit this before copying. Check facts and figures before you use it.</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <CopyButton text={text} />
-            <Button tone="quiet" onClick={() => printText(kit.name, text)}>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Button tone="primary" type="submit">
+            {shown ? (writer.variants ? "Try another wording" : "Update") : "Write it"}
+          </Button>
+          <ConfirmButton
+            label="Clear"
+            question="Clear every field?"
+            disabled={!filled}
+            onConfirm={() => {
+              setData({ values: {} });
+              setShown(false);
+              setVariant(0);
+            }}
+          />
+          <span className="text-sm text-muted">{saveLabel(saveState)}</span>
+        </div>
+      </form>
+      {pieces.length > 0 ? (
+        <section className="mt-6" aria-live="polite">
+          <div className="space-y-3">
+            {pieces.map((piece) => (
+              <article key={piece.title} className="rounded-2xl bg-card p-4 shadow-line">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="font-medium">{piece.title}</h2>
+                  <CopyButton text={piece.text} />
+                </div>
+                <pre className="mt-3 font-sans text-sm leading-relaxed whitespace-pre-wrap text-pretty break-words">{piece.text}</pre>
+              </article>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {pieces.length > 1 ? <CopyButton text={all} label="Copy all" /> : null}
+            <Button tone="quiet" onClick={() => printText(kit.name, all)}>
               Print
             </Button>
           </div>
-        </div>
+          <p className="mt-3 text-xs text-muted">Written on your device by Midnry. Check facts and figures before you use it.</p>
+        </section>
       ) : null}
-    </div>
+    </ToolStatus>
   );
 }
 
