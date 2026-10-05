@@ -29,6 +29,7 @@ import { Route as SectionsGenreRouteImport } from './routes/sections/$genre'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAvatarIdRouteImport } from './routes/api/avatar/$id'
 import { Route as ApiPaystackWebhookRouteImport } from './routes/api/paystack/webhook'
+import { Route as ApiRemindCalendarTokenRouteImport } from './routes/api/remind/calendar/$token'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -130,6 +131,11 @@ const ApiPaystackWebhookRoute = ApiPaystackWebhookRouteImport.update({
   path: '/api/paystack/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRemindCalendarTokenRoute = ApiRemindCalendarTokenRouteImport.update({
+  id: '/api/remind/calendar/$token',
+  path: '/api/remind/calendar/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
+  '/api/remind/calendar/$token': typeof ApiRemindCalendarTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
+  '/api/remind/calendar/$token': typeof ApiRemindCalendarTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
+  '/api/remind/calendar/$token': typeof ApiRemindCalendarTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -221,6 +230,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/avatar/$id'
     | '/api/paystack/webhook'
+    | '/api/remind/calendar/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/avatar/$id'
     | '/api/paystack/webhook'
+    | '/api/remind/calendar/$token'
   id:
     | '__root__'
     | '/'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/avatar/$id'
     | '/api/paystack/webhook'
+    | '/api/remind/calendar/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -288,6 +300,7 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAvatarIdRoute: typeof ApiAvatarIdRoute
   ApiPaystackWebhookRoute: typeof ApiPaystackWebhookRoute
+  ApiRemindCalendarTokenRoute: typeof ApiRemindCalendarTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -432,6 +445,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPaystackWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/remind/calendar/$token': {
+      id: '/api/remind/calendar/$token'
+      path: '/api/remind/calendar/$token'
+      fullPath: '/api/remind/calendar/$token'
+      preLoaderRoute: typeof ApiRemindCalendarTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -456,6 +476,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAvatarIdRoute: ApiAvatarIdRoute,
   ApiPaystackWebhookRoute: ApiPaystackWebhookRoute,
+  ApiRemindCalendarTokenRoute: ApiRemindCalendarTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

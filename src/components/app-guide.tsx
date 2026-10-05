@@ -4,12 +4,28 @@ export function AppGuide({
   features,
   guide,
   className,
+  collapsed,
 }: {
   features: readonly string[];
   guide: readonly string[];
   className?: string;
+  /** Show as a closed "Features and how to use" panel, for when the app is open below it. */
+  collapsed?: boolean;
 }) {
   if (features.length === 0 && guide.length === 0) return null;
+  if (collapsed) {
+    return (
+      <details className={cn("group mt-4 rounded-2xl bg-card shadow-line", className)}>
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-5 text-sm font-medium [&::-webkit-details-marker]:hidden">
+          Features and how to use
+          <span aria-hidden className="text-muted transition-transform group-open:rotate-180">
+            ▾
+          </span>
+        </summary>
+        <AppGuide features={features} guide={guide} className="mt-0 px-5 pb-5 [&>section]:bg-paper [&>section]:shadow-none" />
+      </details>
+    );
+  }
   return (
     <div className={cn("mt-6 grid gap-4 md:grid-cols-2", className)}>
       {features.length > 0 ? (

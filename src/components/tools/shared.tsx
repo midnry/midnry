@@ -35,7 +35,7 @@ export function ToolFrame({
         </div>
         {saveState ? <SaveMark state={saveState} /> : null}
       </div>
-      <AppGuide features={app?.features ?? []} guide={app?.guide ?? []} className={hideOnPrint ? "no-print" : undefined} />
+      <AppGuide features={app?.features ?? []} guide={app?.guide ?? []} className={hideOnPrint ? "no-print" : undefined} collapsed />
       <div className="mt-8">{children}</div>
     </div>
   );

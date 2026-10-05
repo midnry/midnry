@@ -11,7 +11,7 @@ import { ContrastTool } from "@/components/tools/contrast";
 import { CompressorTool } from "@/components/tools/compressor";
 import { PlannerTool } from "@/components/tools/planner";
 import { ApplyTool } from "@/components/tools/apply";
-import { TasksTool } from "@/components/tools/tasks";
+import { RemindTool } from "@/components/tools/remind";
 import { CycleTool } from "@/components/tools/cycle";
 import { KitTool } from "@/components/tools/kit";
 import { getKit } from "@/lib/kits";
@@ -29,7 +29,7 @@ const TOOLS: Record<string, () => ReactElement> = {
   compressor: CompressorTool,
   planner: PlannerTool,
   apply: ApplyTool,
-  tasks: TasksTool,
+  tasks: RemindTool,
   cycle: CycleTool,
 };
 

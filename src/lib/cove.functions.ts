@@ -54,7 +54,9 @@ export const saveDoc = createServerFn({ method: "POST" })
       throw new Error("Invalid document");
     }
     if (!getApp(input.slug)) throw new Error("Unknown app");
-    if (input.payload.length > 100_000) throw new Error("Document is too large");
+    // Remind keeps up to 500 tasks with comments, so it gets more room.
+    const limit = input.slug === "tasks" ? 600_000 : 100_000;
+    if (input.payload.length > limit) throw new Error("Document is too large");
     try {
       JSON.parse(input.payload);
     } catch {
