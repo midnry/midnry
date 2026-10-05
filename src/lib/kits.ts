@@ -220,7 +220,7 @@ export const KITS: readonly Kit[] = [
     section: "computing",
     blurb: "Says what a snippet does, in plain language.",
     features: ["A line-by-line reading of code you paste", "No rewrite unless you ask", "Uses a model when a key is set"],
-    guide: ["Paste a short snippet.", "Ask for an explanation.", "If nothing is configured, paste an xAI key on the Chat app first, or set the server key."],
+    guide: ["Paste a short snippet.", "Ask for an explanation.", "Copy the explanation, or edit it before you use it."],
     kind: "draft",
     placeholder: "Paste code.",
     system: "Explain the user's code in plain language for a student. Do not invent libraries that are not in the snippet. Keep it under 350 words. Use short paragraphs, not a lecture.",

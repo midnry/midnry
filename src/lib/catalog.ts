@@ -110,15 +110,6 @@ export const APPS: readonly AppDef[] = [
     guide: ["Choose a video file.", "Pick a quality preset.", "Start the encode, then download the MP4."],
   },
   {
-    slug: "chat",
-    name: "Chat",
-    blurb: "A conversation with Grok. The thread stays on your account.",
-    tier: "pass",
-    genre: "computing",
-    features: ["A conversation with Grok", "The thread stays on your account", "Your own xAI key, if the server does not have one"],
-    guide: ["Type a message and send it.", "If the server has no key, paste an xAI key. It stays in this browser.", "Keep going in the same thread. It is saved with your account."],
-  },
-  {
     slug: "planner",
     name: "Planner",
     blurb: "A year of posts for one brand, using the holidays people keep where they are.",

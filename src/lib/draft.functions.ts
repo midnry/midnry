@@ -2,6 +2,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { env } from "@/lib/env.server";
 
+// Whether the server has its own xAI key, so the writing apps can hide the key field.
+export const draftReady = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async () => ({ configured: Boolean(env("XAI_API_KEY")) }));
+
 export const draftText = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((input: { system?: string; prompt?: string; apiKey?: string }) => {

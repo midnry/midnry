@@ -9,7 +9,6 @@ import { GlyphTool } from "@/components/tools/glyph";
 import { HabitsTool } from "@/components/tools/habits";
 import { ContrastTool } from "@/components/tools/contrast";
 import { CompressorTool } from "@/components/tools/compressor";
-import { ChatTool } from "@/components/tools/chat";
 import { PlannerTool } from "@/components/tools/planner";
 import { ApplyTool } from "@/components/tools/apply";
 import { TasksTool } from "@/components/tools/tasks";
@@ -28,7 +27,6 @@ const TOOLS: Record<string, () => ReactElement> = {
   habits: HabitsTool,
   contrast: ContrastTool,
   compressor: CompressorTool,
-  chat: ChatTool,
   planner: PlannerTool,
   apply: ApplyTool,
   tasks: TasksTool,

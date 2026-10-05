@@ -3,8 +3,7 @@ import { useAppDoc } from "@/components/use-app-doc";
 import { Button, TextArea, TextInput, cn, fieldClass } from "@/components/ui";
 import { ToolFrame, ToolStatus } from "@/components/tools/shared";
 import { toast } from "sonner";
-import { draftText } from "@/lib/draft.functions";
-import { chatReady } from "@/lib/chat.functions";
+import { draftReady, draftText } from "@/lib/draft.functions";
 import { getKit, type Field, type Kit, type Line } from "@/lib/kits";
 import type { SectionId } from "@/lib/sections";
 
@@ -660,7 +659,7 @@ function Draft({ kit }: { kit: Extract<Kit, { kind: "draft" }> }) {
 
   useEffect(() => {
     let cancel = false;
-    chatReady()
+    draftReady()
       .then((result) => !cancel && setServerKey(result.configured))
       .catch(() => !cancel && setServerKey(false));
     return () => {

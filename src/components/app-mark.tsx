@@ -12,7 +12,6 @@ const KINDS = {
   habits: "check",
   contrast: "contrast",
   compressor: "film",
-  chat: "chat",
   planner: "calendar",
   apply: "case",
   tasks: "tasks",
@@ -66,7 +65,6 @@ export function AppMark({
       {kind === "check" ? <Check fill={fill} /> : null}
       {kind === "contrast" ? <Contrast fill={fill} /> : null}
       {kind === "film" ? <Film fill={fill} /> : null}
-      {kind === "chat" ? <Chat fill={fill} /> : null}
       {kind === "calendar" ? <Calendar fill={fill} /> : null}
       {kind === "case" ? <Case fill={fill} /> : null}
       {kind === "tasks" ? <Tasks fill={fill} /> : null}
@@ -190,10 +188,6 @@ function Film({ fill }: { fill: string }) {
       <path d="M30 29.2v6.2l5.2-3.1z" fill="#f4f7fb" />
     </g>
   );
-}
-
-function Chat({ fill }: { fill: string }) {
-  return <path d="M20 24a4 4 0 0 1 4-4h16a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H30l-7 6v-6h-1a4 4 0 0 1-2-3.5z" fill={fill} />;
 }
 
 function Calendar({ fill }: { fill: string }) {
