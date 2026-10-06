@@ -141,7 +141,7 @@
   ],
   "places": [
     {
-      "id": "home_nyanya",
+      "id": "home_nyanya", "icon": "🏠",
       "name": "Your room (Nyanya)",
       "district": "nyanya",
       "x": 1900,
@@ -204,7 +204,7 @@
       ]
     },
     {
-      "id": "home_gwarinpa",
+      "id": "home_gwarinpa", "icon": "🏠",
       "name": "Your flat (Gwarinpa)",
       "district": "gwarinpa",
       "x": 760,
@@ -267,7 +267,7 @@
       ]
     },
     {
-      "id": "pos_junction",
+      "id": "pos_junction", "icon": "💳",
       "name": "POS Junction",
       "district": "nyanya",
       "x": 2120,
@@ -355,7 +355,7 @@
       ]
     },
     {
-      "id": "wuse_market",
+      "id": "wuse_market", "icon": "🛒",
       "name": "Wuse Market",
       "district": "wuse",
       "x": 1080,
@@ -421,7 +421,7 @@
       ]
     },
     {
-      "id": "quickkash",
+      "id": "quickkash", "icon": "💸",
       "name": "QuickKash Microfinance",
       "district": "wuse",
       "x": 1340,
@@ -441,7 +441,7 @@
       ]
     },
     {
-      "id": "tech_hub",
+      "id": "tech_hub", "icon": "💻",
       "name": "Wuse Tech Hub",
       "district": "wuse",
       "x": 930,
@@ -520,7 +520,7 @@
       ]
     },
     {
-      "id": "okafor_office",
+      "id": "okafor_office", "icon": "📚",
       "name": "Mrs. Okafor's consultancy",
       "district": "wuse",
       "x": 1380,
@@ -552,7 +552,7 @@
       ]
     },
     {
-      "id": "garki_hub",
+      "id": "garki_hub", "icon": "📦",
       "name": "Garki Delivery Hub",
       "district": "garki",
       "x": 1000,
@@ -597,7 +597,7 @@
       ]
     },
     {
-      "id": "hospital",
+      "id": "hospital", "icon": "🏥",
       "name": "Garki General Hospital",
       "district": "garki",
       "x": 1320,
@@ -626,7 +626,7 @@
       ]
     },
     {
-      "id": "motor_park",
+      "id": "motor_park", "icon": "🚌",
       "name": "Area 1 Motor Park",
       "district": "garki",
       "x": 1100,
@@ -688,7 +688,7 @@
       ]
     },
     {
-      "id": "cbd_bank",
+      "id": "cbd_bank", "icon": "🏦",
       "name": "Union Capital Bank HQ",
       "district": "cbd",
       "x": 1700,
@@ -728,7 +728,7 @@
       ]
     },
     {
-      "id": "cbd_tower",
+      "id": "cbd_tower", "icon": "🏢",
       "name": "Zenith Heights Tower",
       "district": "cbd",
       "x": 2000,
@@ -759,7 +759,7 @@
       ]
     },
     {
-      "id": "ministry",
+      "id": "ministry", "icon": "🏛️",
       "name": "Federal Ministry of Contracts",
       "district": "cbd",
       "x": 2220,
@@ -790,7 +790,7 @@
       ]
     },
     {
-      "id": "visa_agent",
+      "id": "visa_agent", "icon": "✈️",
       "name": "Visa & Travel Consultants",
       "district": "cbd",
       "x": 1660,
@@ -815,7 +815,7 @@
       ]
     },
     {
-      "id": "jabi_mall",
+      "id": "jabi_mall", "icon": "🛍️",
       "name": "Jabi Lake Mall",
       "district": "jabi",
       "x": 420,
@@ -907,7 +907,7 @@
       ]
     },
     {
-      "id": "tunde_place",
+      "id": "tunde_place", "icon": "🍲",
       "name": "Tunde's place (Kubwa)",
       "district": "kubwa",
       "x": 260,
@@ -1061,7 +1061,7 @@
       ]
     },
     {
-      "id": "kubwa_market",
+      "id": "kubwa_market", "icon": "🧺",
       "name": "Kubwa Village Market",
       "district": "kubwa",
       "x": 360,
@@ -1107,7 +1107,7 @@
       ]
     },
     {
-      "id": "slim_lab",
+      "id": "slim_lab", "icon": "💡",
       "name": "Slim's 'office' (Lugbe)",
       "district": "lugbe",
       "x": 420,
@@ -1224,7 +1224,7 @@
       ]
     },
     {
-      "id": "bolaji_house",
+      "id": "bolaji_house", "icon": "🏰",
       "name": "Bolaji's mansion",
       "district": "maitama",
       "x": 1300,
@@ -1295,7 +1295,7 @@
       ]
     },
     {
-      "id": "oil_hq",
+      "id": "oil_hq", "icon": "⛽",
       "name": "Delta Crest Oil & Gas",
       "district": "maitama",
       "x": 1140,
@@ -1326,7 +1326,7 @@
       ]
     },
     {
-      "id": "asokoro_owambe",
+      "id": "asokoro_owambe", "icon": "🎉",
       "name": "Asokoro Owambe Hall",
       "district": "asokoro",
       "x": 2000,

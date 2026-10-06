@@ -1,43 +1,82 @@
 import * as Phaser from "phaser";
 import { DISTRICTS, MAPS, PLACES, WORLD, districtAt } from "../systems/data";
-import { HAIR_COLOR } from "../systems/art";
-import { ROADS, blocked, sizeOf, solidsFor } from "../systems/citymap";
+import { LAKE, ROADS, blocked, sizeOf, solidsFor } from "../systems/citymap";
 import { bump, checkpoint, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
 import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
 import type { MapRect } from "../systems/types";
+import { INK, animateWalk, building, figure, makeArt, rand, signpost, tileKey, type Figure } from "./art";
 
 const SPEED = 230;
 const NEAR = 105;
 const RADIUS = 14;
 const color = (hex: string) => Phaser.Display.Color.HexStringToColor(hex).color;
-const label = (scene: Phaser.Scene, x: number, y: number, text: string, size = 14, fill = "#fafaf9") =>
+const LINE = 4;
+const title = (scene: Phaser.Scene, x: number, y: number, text: string, size = 14, fill = "#ffffff") =>
   scene.add
-    .text(x, y, text, { fontFamily: "system-ui, sans-serif", fontSize: `${size}px`, color: fill, backgroundColor: "#000000aa", padding: { x: 5, y: 2 } })
+    .text(x, y, text, { fontFamily: "system-ui, sans-serif", fontSize: `${size}px`, fontStyle: "bold", color: fill, stroke: "#141414", strokeThickness: Math.max(4, size / 4) })
     .setOrigin(0.5, 0);
+const seedOf = (id: string) => [...id].reduce((n, ch) => n * 31 + ch.charCodeAt(0), 7) >>> 0;
+
+/** Ground texture for each district of the city. */
+const DISTRICT_TILE: Record<string, string> = {
+  kubwa: "dirt",
+  gwarinpa: "grass",
+  maitama: "lawn",
+  asokoro: "lawn",
+  jabi: "grass",
+  wuse: "pavement",
+  cbd: "plaza",
+  garki: "pavement",
+  lugbe: "dirt",
+  nyanya: "dirt",
+};
+
+/** Ground texture for a chapter zone, from its name. */
+function zoneTile(name: string): string {
+  if (/pitch|field|sports/i.test(name)) return "grass";
+  if (/parade/i.test(name)) return "sand";
+  if (/market|street|corner|junction/i.test(name)) return "dirt";
+  if (/hall|clinic|gate/i.test(name)) return "plaza";
+  if (/home|hostel/i.test(name)) return "lawn";
+  if (/school|faculty/i.test(name)) return "pavement";
+  return "grass";
+}
+
+/** Which props grow on which ground. */
+const PROPS_ON: Record<string, string[]> = {
+  grass: ["tree", "tree", "palm", "bush", "flowers"],
+  lawn: ["tree", "palm", "bush", "flowers", "flowers"],
+  dirt: ["palm", "kiosk", "generator", "bush", "tree"],
+  sand: ["palm", "bush", "kiosk"],
+  pavement: ["bush", "flowers", "palm", "kiosk", "generator"],
+  plaza: ["flowers", "bush", "palm"],
+};
 
 type Near = { kind: "place" | "person" | "beat"; id: string; label: string };
 type Interactable = Near & { x: number; y: number };
 
 /**
  * The walkable world: the city of Abuja in adulthood, or a small map for each
- * story chapter. All visuals are placeholder shapes, so sprites can replace
- * them later without touching game logic.
+ * story chapter. Art comes from ./art (cartoon textures drawn in code), so
+ * real sprites can replace it later without touching game logic.
  */
 export class WorldScene extends Phaser.Scene {
   private mapId = "city";
   private solids: MapRect[] = [];
-  private player!: Phaser.GameObjects.Container;
+  private player!: Figure;
   private keys!: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d" | "e" | "space", Phaser.Input.Keyboard.Key>;
   private target: Phaser.Math.Vector2 | null = null;
   private near: Near | null = null;
   private lastSave = 0;
   private lastBlocked = 0;
   private placeMarkers: { id: string; marker: Phaser.GameObjects.Container }[] = [];
-  private people: (Interactable & { body: Phaser.GameObjects.Container; home: { x: number; y: number }; vx: number; vy: number })[] = [];
-  private walkers: { sprite: Phaser.GameObjects.Arc; axis: "x" | "y"; speed: number }[] = [];
-  private cars: { body: Phaser.GameObjects.Rectangle; axis: "x" | "y"; speed: number }[] = [];
-  private police: { officer: Phaser.GameObjects.Container; barrier: Phaser.GameObjects.Rectangle; x: number; y: number }[] = [];
+  private people: (Interactable & { body: Figure; home: { x: number; y: number }; vx: number; vy: number })[] = [];
+  private walkers: { sprite: Figure; axis: "x" | "y"; speed: number }[] = [];
+  private cars: { body: Phaser.GameObjects.Image; axis: "x" | "y"; speed: number }[] = [];
+  private police: { officer: Figure; barrier: Phaser.GameObjects.Image; x: number; y: number }[] = [];
+  private glows: Phaser.GameObjects.Image[] = [];
+  private boat: Phaser.GameObjects.Image | null = null;
   private beatMarker!: Phaser.GameObjects.Container;
   private taskMarker!: Phaser.GameObjects.Container;
   private arrow!: Phaser.GameObjects.Triangle;
@@ -52,18 +91,22 @@ export class WorldScene extends Phaser.Scene {
   create() {
     const state = getState();
     this.mapId = state ? mapIdFor(state) : "city";
-    this.solids = solidsFor(this.mapId);
+    makeArt(this);
+    // A copy: trees and stalls add their own small solids for this scene only.
+    this.solids = [...solidsFor(this.mapId)];
     this.placeMarkers = [];
     this.people = [];
     this.walkers = [];
     this.cars = [];
     this.police = [];
+    this.glows = [];
+    this.boat = null;
     const { width, height } = sizeOf(this.mapId);
     this.cameras.main.setBackgroundColor(this.mapId === "city" ? "#1b1712" : "#1d1a14");
 
+    this.drawPeople();
     if (this.mapId === "city") this.drawCity();
     else this.drawChapterMap();
-    this.drawPeople();
 
     const start = this.startPoint();
     this.player = this.makePlayer(start.x, start.y);
@@ -131,80 +174,155 @@ export class WorldScene extends Phaser.Scene {
   // ── Drawing ─────────────────────────────────────────────────────────────────
 
   private drawCity() {
-    const g = this.add.graphics();
+    // Paving under everything, so corners between districts aren't bare.
+    this.add.tileSprite(0, 0, WORLD.width, WORLD.height, tileKey("pavement")).setOrigin(0);
     for (const d of DISTRICTS) {
-      g.fillStyle(color(d.color), d.gate ? 0.3 : 0.2).fillRect(d.x, d.y, d.w, d.h);
-      g.lineStyle(2, color(d.color), 0.6).strokeRect(d.x + 1, d.y + 1, d.w - 2, d.h - 2);
-      label(this, d.x + 90, d.y + 10, `${d.name}${d.gate ? " 🔒" : ""}`, 20, "#fde68a").setAlpha(0.9);
+      this.add.tileSprite(d.x, d.y, d.w, d.h, tileKey(DISTRICT_TILE[d.id] ?? "grass")).setOrigin(0);
+      const g = this.add.graphics();
+      if (d.gate) g.fillStyle(color(d.color), 0.14).fillRect(d.x, d.y, d.w, d.h);
+      g.lineStyle(4, color(d.color), 0.55).strokeRect(d.x + 2, d.y + 2, d.w - 4, d.h - 4);
     }
-    this.drawRoads(g);
-    this.drawSolids(g);
+    this.drawLake();
+    this.drawRoads();
+    this.drawSolids();
     this.drawPlaces();
+    this.drawProps(260);
+    this.drawLamps();
     this.spawnTraffic();
+    // District names sit above the scenery.
+    for (const d of DISTRICTS) title(this, d.x + 18, d.y + 12, `${d.name}${d.gate ? " 🔒" : ""}`, 22).setOrigin(0, 0).setDepth(3);
   }
 
-  private drawRoads(g: Phaser.GameObjects.Graphics) {
-    g.fillStyle(0x3a352f, 1);
-    ROADS.xs.forEach((x) => g.fillRect(x - 22, 0, 44, WORLD.height));
-    ROADS.ys.forEach((y) => g.fillRect(0, y - 22, WORLD.width, 44));
-    g.fillStyle(0xfacc15, 0.55);
+  private drawLake() {
+    const g = this.add.graphics();
+    g.fillStyle(0xe2c48a, 1).fillEllipse(LAKE.x, LAKE.y, LAKE.rx * 2 + 44, LAKE.ry * 2 + 40);
+    g.lineStyle(3, INK, 0.5).strokeEllipse(LAKE.x, LAKE.y, LAKE.rx * 2 + 44, LAKE.ry * 2 + 40);
+    g.fillStyle(0x3a8fd1, 1).fillEllipse(LAKE.x, LAKE.y, LAKE.rx * 2, LAKE.ry * 2);
+    g.fillStyle(0x5aa7e0, 1).fillEllipse(LAKE.x - 20, LAKE.y - 14, LAKE.rx * 1.4, LAKE.ry * 1.2);
+    g.lineStyle(LINE, INK, 1).strokeEllipse(LAKE.x, LAKE.y, LAKE.rx * 2, LAKE.ry * 2);
+    g.lineStyle(2, 0xd6ecfa, 0.8);
+    const r = rand(77);
+    for (let i = 0; i < 9; i += 1) {
+      const x = LAKE.x - LAKE.rx * 0.6 + r() * LAKE.rx * 1.1;
+      const y = LAKE.y - LAKE.ry * 0.5 + r() * LAKE.ry;
+      g.beginPath().moveTo(x, y).lineTo(x + 8, y - 3).lineTo(x + 16, y).strokePath();
+    }
+    this.boat = this.add.image(LAKE.x, LAKE.y, "boat").setDepth(2);
+    title(this, LAKE.x, LAKE.y + LAKE.ry + 26, "Jabi Lake", 15).setDepth(3);
+  }
+
+  private drawRoads() {
+    const { width, height } = WORLD;
+    const g = this.add.graphics();
+    // Sidewalks with a dark kerb line.
+    g.fillStyle(0xd6d0c4, 1);
+    ROADS.xs.forEach((x) => g.fillRect(x - 36, 0, 72, height));
+    ROADS.ys.forEach((y) => g.fillRect(0, y - 36, width, 72));
+    ROADS.xs.forEach((x) => this.add.tileSprite(x - 24, 0, 48, height, tileKey("asphalt")).setOrigin(0));
+    ROADS.ys.forEach((y) => this.add.tileSprite(0, y - 24, width, 48, tileKey("asphalt")).setOrigin(0));
+    const m = this.add.graphics();
+    m.lineStyle(3, INK, 0.7);
     ROADS.xs.forEach((x) => {
-      for (let y = 0; y < WORLD.height; y += 40) g.fillRect(x - 1, y, 2, 20);
+      m.beginPath().moveTo(x - 24, 0).lineTo(x - 24, height).strokePath();
+      m.beginPath().moveTo(x + 24, 0).lineTo(x + 24, height).strokePath();
     });
     ROADS.ys.forEach((y) => {
-      for (let x = 0; x < WORLD.width; x += 40) g.fillRect(x, y - 1, 20, 2);
+      m.beginPath().moveTo(0, y - 24).lineTo(width, y - 24).strokePath();
+      m.beginPath().moveTo(0, y + 24).lineTo(width, y + 24).strokePath();
     });
+    // Re-pave the junctions so kerb lines don't cross them.
+    for (const x of ROADS.xs) for (const y of ROADS.ys) this.add.tileSprite(x - 23, y - 23, 46, 46, tileKey("asphalt")).setOrigin(0);
+    const near = (v: number, list: number[]) => list.some((c) => Math.abs(v - c) < 50);
+    const lines = this.add.graphics();
+    lines.fillStyle(0xf5f5f4, 0.85);
+    ROADS.xs.forEach((x) => {
+      for (let y = 0; y < height; y += 44) if (!near(y + 11, ROADS.ys)) lines.fillRect(x - 1.5, y, 3, 22);
+    });
+    ROADS.ys.forEach((y) => {
+      for (let x = 0; x < width; x += 44) if (!near(x + 11, ROADS.xs)) lines.fillRect(x, y - 1.5, 22, 3);
+    });
+    // Zebra crossings on every side of each junction.
+    lines.fillStyle(0xffffff, 0.9);
+    for (const x of ROADS.xs) {
+      for (const y of ROADS.ys) {
+        for (let i = -20; i <= 16; i += 8) {
+          lines.fillRect(x + i, y - 44, 5, 14).fillRect(x + i, y + 30, 5, 14);
+          lines.fillRect(x - 44, y + i, 14, 5).fillRect(x + 30, y + i, 14, 5);
+        }
+      }
+    }
   }
 
-  private drawSolids(g: Phaser.GameObjects.Graphics) {
-    for (const s of this.solids) {
-      const base = color(s.color ?? "#57534e");
-      g.fillStyle(0x000000, 0.35).fillRoundedRect(s.x + 5, s.y + 7, s.w, s.h, Math.min(6, s.h / 2));
-      g.fillStyle(base, 0.95).fillRoundedRect(s.x, s.y, s.w, s.h, Math.min(6, s.h / 2));
-      if (s.h > 30 && s.w > 30) {
-        g.fillStyle(0xffffff, 0.12).fillRoundedRect(s.x + 4, s.y + 4, s.w - 8, Math.min(14, s.h / 3), 4);
-        g.fillStyle(0xfef3c7, 0.35);
-        for (let wx = s.x + 12; wx < s.x + s.w - 12; wx += 22) g.fillRect(wx, s.y + s.h - 22, 10, 10);
-      }
-      if (s.label) label(this, s.x + s.w / 2, s.y + s.h / 2 - 9, s.label, 14);
-    }
+  private drawSolids() {
+    this.solids.forEach((s, i) => {
+      if (s.kind !== "water") building(this, s, i * 31 + Math.round(s.x));
+    });
   }
 
   private drawChapterMap() {
     const map = MAPS[this.mapId]!;
-    const g = this.add.graphics();
     for (const z of map.zones) {
-      g.fillStyle(color(z.color), 0.28).fillRect(z.x, z.y, z.w, z.h);
-      g.lineStyle(2, color(z.color), 0.6).strokeRect(z.x + 1, z.y + 1, z.w - 2, z.h - 2);
-      label(this, z.x + 100, z.y + 10, z.name, 20, "#fde68a").setAlpha(0.9);
+      this.add.tileSprite(z.x, z.y, z.w, z.h, tileKey(zoneTile(z.name))).setOrigin(0);
+      this.add.graphics().lineStyle(4, color(z.color), 0.6).strokeRect(z.x + 2, z.y + 2, z.w - 4, z.h - 4);
     }
-    g.fillStyle(0x6b5b45, 0.5);
-    g.fillRect(0, map.height / 2 - 20, map.width, 40);
-    g.fillRect(map.width / 2 - 20, 0, 40, map.height);
-    this.drawSolids(g);
-    for (const spot of Object.values(map.spots)) label(this, spot.x, spot.y + 26, spot.label, 13, "#e7e5e4").setAlpha(0.7);
+    // Footpaths crossing the map.
+    this.add.tileSprite(0, map.height / 2 - 22, map.width, 44, tileKey("sand")).setOrigin(0);
+    this.add.tileSprite(map.width / 2 - 22, 0, 44, map.height, tileKey("sand")).setOrigin(0);
+    const g = this.add.graphics().lineStyle(3, INK, 0.45);
+    g.strokeRect(-4, map.height / 2 - 22, map.width + 8, 44).strokeRect(map.width / 2 - 22, -4, 44, map.height + 8);
+    this.drawSolids();
+    this.drawProps(70);
+    for (const z of map.zones) title(this, z.x + 18, z.y + 12, z.name, 20).setOrigin(0, 0).setDepth(3);
+    for (const spot of Object.values(map.spots)) title(this, spot.x, spot.y + 30, spot.label, 13).setAlpha(0.85).setDepth(3);
+  }
+
+  /** Trees, bushes, stalls and generators, scattered the same way every visit. */
+  private drawProps(count: number) {
+    const { width, height } = sizeOf(this.mapId);
+    const r = rand(this.mapId.length * 1013 + count);
+    const city = this.mapId === "city";
+    const map = MAPS[this.mapId];
+    const keep: { x: number; y: number }[] = city
+      ? [...PLACES.map((p) => ({ x: p.x, y: p.y + 20 })), ...this.people.map((p) => p.home)]
+      : [...Object.values(map!.spots), map!.spawn, ...this.people.map((p) => p.home)];
+    let placed = 0;
+    for (let i = 0; i < count * 4 && placed < count; i += 1) {
+      const x = 40 + r() * (width - 80);
+      const y = 50 + r() * (height - 90);
+      const pick = r();
+      if (blocked(x, y, 40, this.solids)) continue;
+      if (city) {
+        if (ROADS.xs.some((rx) => Math.abs(x - rx) < 70) || ROADS.ys.some((ry) => Math.abs(y - ry) < 70)) continue;
+        if (Math.hypot((x - LAKE.x) / (LAKE.rx + 50), (y - LAKE.y) / (LAKE.ry + 50)) < 1) continue;
+      } else if (Math.abs(x - width / 2) < 60 || Math.abs(y - height / 2) < 60) continue;
+      if (keep.some((k) => Math.hypot(k.x - x, k.y - y) < 120)) continue;
+      const ground = city ? DISTRICT_TILE[districtAt(x, y)?.id ?? ""] ?? "grass" : zoneTile(map!.zones.find((z) => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)?.name ?? "");
+      const options = PROPS_ON[ground] ?? PROPS_ON.grass!;
+      const key = options[Math.floor(pick * options.length)]!;
+      const img = this.add.image(x, y, key).setOrigin(0.5, 0.9).setDepth(5 + y / 10000);
+      if (key === "tree" || key === "palm") img.setScale(0.8 + r() * 0.35);
+      // Big things are solid at their base, so you walk around them.
+      if (key === "tree" || key === "palm" || key === "kiosk") this.solids.push({ x: x - 9, y: y - 10, w: 18, h: 12 });
+      placed += 1;
+    }
+  }
+
+  private drawLamps() {
+    const lamp = (x: number, y: number) => {
+      if (blocked(x, y, 12, this.solids)) return;
+      this.add.image(x, y, "lamp").setOrigin(0.5, 0.95).setDepth(5 + y / 10000);
+      this.glows.push(this.add.image(x, y - 58, "glow").setDepth(31).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0));
+    };
+    const clear = (v: number, list: number[]) => list.every((c) => Math.abs(v - c) > 70);
+    for (const x of ROADS.xs) for (let y = 80; y < WORLD.height; y += 340) if (clear(y, ROADS.ys)) lamp(x + 32, y);
+    for (const y of ROADS.ys) for (let x = 120; x < WORLD.width; x += 380) if (clear(x, ROADS.xs)) lamp(x, y - 30);
   }
 
   private drawPlaces() {
     for (const p of PLACES) {
-      const c = color(p.color);
-      const ring = this.add.circle(0, 0, 30, c, 0.18).setStrokeStyle(2, c, 0.9);
-      const dot = this.add.circle(0, 0, 14, c, 1);
-      const text = label(this, 0, 36, p.name, 15);
-      const marker = this.add.container(p.x, p.y, [ring, dot, text]);
-      this.tweens.add({ targets: ring, scale: 1.25, alpha: 0.4, duration: 1100, yoyo: true, repeat: -1 });
+      const marker = signpost(this, p.x, p.y, p.name, p.icon ?? "📍", color(p.color));
       this.placeMarkers.push({ id: p.id, marker });
     }
-  }
-
-  private figure(x: number, y: number, body: number, name?: string, nameColor = "#fafaf9") {
-    const parts: Phaser.GameObjects.GameObject[] = [
-      this.add.ellipse(0, 16, 26, 8, 0x000000, 0.35),
-      this.add.circle(0, 6, 12, body),
-      this.add.circle(0, -10, 8, 0x8d5524),
-    ];
-    if (name) parts.push(label(this, 0, -38, name, 12, nameColor));
-    return this.add.container(x, y, parts).setDepth(8);
   }
 
   private drawPeople() {
@@ -212,56 +330,59 @@ export class WorldScene extends Phaser.Scene {
     if (!state) return;
     for (const p of peopleOn(state, this.mapId)) {
       const at = personAt(p);
-      const body = this.figure(at.x, at.y, color(p.color), p.name);
-      const bubble = this.add.text(12, -30, "💬", { fontSize: "16px" });
+      const body = figure(this, at.x, at.y, { outfit: color(p.color), seed: seedOf(p.id), name: p.name });
+      body.setDepth(5 + at.y / 10000);
+      const bubble = this.add.text(26, -58, "💬", { fontSize: "20px" });
       body.add(bubble);
-      this.tweens.add({ targets: bubble, y: -36, duration: 800, yoyo: true, repeat: -1 });
+      this.tweens.add({ targets: bubble, y: -66, duration: 800, yoyo: true, repeat: -1 });
       this.people.push({ kind: "person", id: personKey(p), label: p.name, x: at.x, y: at.y, body, home: at, vx: 0, vy: 0 });
     }
   }
 
   private spawnTraffic() {
-    const tones = [0xf59e0b, 0x22c55e, 0x60a5fa, 0xf472b6, 0xa78bfa, 0xe5e7eb];
+    const outfits = [0xf59e0b, 0x22c55e, 0x60a5fa, 0xf472b6, 0xa78bfa, 0xe5e7eb, 0xef4444, 0x14b8a6];
     for (let i = 0; i < 26; i += 1) {
       const axis = i % 2 ? "x" : "y";
-      const line = axis === "x" ? ROADS.ys[i % ROADS.ys.length]! + 30 : ROADS.xs[i % ROADS.xs.length]! + 30;
+      const side = i % 4 < 2 ? 1 : -1;
+      const line = (axis === "x" ? ROADS.ys[i % ROADS.ys.length]! : ROADS.xs[i % ROADS.xs.length]!) + side * 31;
       const pos = Math.random() * (axis === "x" ? WORLD.width : WORLD.height);
-      const sprite = this.add.circle(axis === "x" ? pos : line, axis === "x" ? line : pos, 7, tones[i % tones.length]!, 0.9).setDepth(5);
+      const sprite = figure(this, axis === "x" ? pos : line, axis === "x" ? line : pos, { outfit: outfits[i % outfits.length]!, seed: i * 37 + 5, scale: 0.42 });
       this.walkers.push({ sprite, axis, speed: (Math.random() < 0.5 ? -1 : 1) * (25 + Math.random() * 25) });
     }
-    const vehicles = [
-      { w: 40, h: 20, c: 0xe11d48 },
-      { w: 40, h: 20, c: 0x2563eb },
-      { w: 26, h: 18, c: 0xfacc15 }, // keke
-      { w: 44, h: 22, c: 0xf59e0b }, // danfo
-      { w: 20, h: 12, c: 0x111827 }, // okada
-    ];
+    const paints = [0xe11d48, 0x2563eb, 0xf8fafc, 0x16a34a, 0x0f172a, 0x9ca3af];
+    const kinds = ["car", "danfo", "car", "keke", "okada", "car"];
     for (let i = 0; i < 18; i += 1) {
       const axis = i % 2 ? "x" : "y";
-      const v = vehicles[i % vehicles.length]!;
-      const lane = (i % 4 < 2 ? -1 : 1) * 10;
+      const key = kinds[i % kinds.length]!;
+      const lane = (i % 4 < 2 ? -1 : 1) * 11;
       const roadLine = axis === "x" ? ROADS.ys[i % ROADS.ys.length]! : ROADS.xs[i % ROADS.xs.length]!;
       const pos = Math.random() * (axis === "x" ? WORLD.width : WORLD.height);
+      const speed = (lane < 0 ? -1 : 1) * (110 + Math.random() * 90);
       const body = this.add
-        .rectangle(axis === "x" ? pos : roadLine + lane, axis === "x" ? roadLine + lane : pos, axis === "x" ? v.w : v.h, axis === "x" ? v.h : v.w, v.c)
-        .setStrokeStyle(2, 0x000000, 0.4)
+        .image(axis === "x" ? pos : roadLine + lane, axis === "x" ? roadLine + lane : pos, key)
+        .setScale(key === "okada" ? 0.75 : 0.68)
+        .setRotation(axis === "x" ? (speed > 0 ? 0 : Math.PI) : speed > 0 ? Math.PI / 2 : -Math.PI / 2)
         .setDepth(6);
-      this.cars.push({ body, axis, speed: (lane < 0 ? -1 : 1) * (110 + Math.random() * 90) });
+      if (key === "car") body.setTint(paints[i % paints.length]!);
+      this.cars.push({ body, axis, speed });
     }
   }
 
   private makePlayer(x: number, y: number) {
     const state = getState();
-    const halo = this.add.circle(0, 0, 30, 0xfbbf24, 0.16).setStrokeStyle(3, 0xfbbf24, 0.9);
-    const shadow = this.add.ellipse(0, 20, 34, 10, 0x000000, 0.35);
-    const body = this.add.circle(0, 8, 16, color(state?.looks.outfit ?? "#1d4ed8"));
-    const head = this.add.circle(0, -12, 11, color(state?.looks.skin ?? "#8d5524"));
-    const hair = this.add.arc(0, -15, 11, 180, 360, false, color(HAIR_COLOR));
-    const me = this.add
-      .text(0, -48, "YOU", { fontFamily: "system-ui", fontSize: "13px", fontStyle: "bold", color: "#14110f", backgroundColor: "#fbbf24", padding: { x: 5, y: 2 } })
-      .setOrigin(0.5);
-    this.tweens.add({ targets: halo, scale: 1.15, duration: 700, yoyo: true, repeat: -1 });
-    return this.add.container(x, y, [halo, shadow, body, head, hair, me]).setDepth(10).setScale(1.2);
+    const looks = state?.looks;
+    const me = figure(this, x, y, {
+      outfit: color(looks?.outfit ?? "#1d4ed8"),
+      skin: looks ? color(looks.skin) : undefined,
+      hair: looks?.hair,
+      name: "YOU",
+      nameColor: "#fbbf24",
+      scale: 0.8,
+    });
+    const halo = this.add.ellipse(0, 36, 70, 24, 0xfbbf24, 0.25).setStrokeStyle(3, 0xfbbf24, 0.95);
+    me.addAt(halo, 0);
+    this.tweens.add({ targets: halo, scaleX: 1.15, scaleY: 1.15, alpha: 0.6, duration: 700, yoyo: true, repeat: -1 });
+    return me;
   }
 
   private makeMarker(tint: number, glyph: string) {
@@ -299,8 +420,9 @@ export class WorldScene extends Phaser.Scene {
         [800, 500],
         [1600, 1100],
       ] as const) {
-        const barrier = this.add.rectangle(x, y, 44, 10, 0xef4444).setStrokeStyle(2, 0xffffff).setDepth(7);
-        const officer = this.figure(x + 30, y - 30, 0x1e3a8a, "POLICE", "#93c5fd");
+        const barrier = this.add.image(x, y, "barrier").setDepth(7);
+        const officer = figure(this, x + 34, y - 34, { outfit: 0x1e3a8a, seed: x + y, name: "POLICE", nameColor: "#93c5fd" });
+        officer.setDepth(5 + (y - 34) / 10000);
         this.police.push({ officer, barrier, x, y });
       }
     }
@@ -313,15 +435,20 @@ export class WorldScene extends Phaser.Scene {
     }
     const alpha = this.mapId !== "city" ? 0 : [0, 0.06, 0.2, 0.42][Math.min(state.slot, 3)]!;
     this.night.setFillStyle(state.slot === 2 ? 0x7c2d12 : 0x0b1330, alpha);
+    const glow = this.mapId !== "city" ? 0 : [0, 0, 0.25, 0.5][Math.min(state.slot, 3)]!;
+    this.glows.forEach((g) => g.setAlpha(glow));
   }
 
   update(time: number, deltaMs: number) {
     const dt = Math.min(0.05, deltaMs / 1000);
     const state = getState();
     if (!state) return;
-    this.moveTraffic(dt);
+    this.moveTraffic(dt, time);
     const paused = state.event || state.ending || state.task?.haggle || (state.chapter && (state.result || !currentBeat(state)));
-    if (paused) return;
+    if (paused) {
+      animateWalk(this.player, time, false, 0);
+      return;
+    }
 
     let vx = input.x;
     let vy = input.y;
@@ -346,7 +473,12 @@ export class WorldScene extends Phaser.Scene {
       vx /= len;
       vy /= len;
     }
+    const fromX = this.player.x;
+    const fromY = this.player.y;
     if (vx || vy) this.move(vx * SPEED * dt, vy * SPEED * dt, time);
+    const moved = this.player.x !== fromX || this.player.y !== fromY;
+    animateWalk(this.player, time, moved, this.player.x - fromX);
+    this.player.setDepth(5 + this.player.y / 10000 + 0.5);
 
     this.checkNear();
     if (Phaser.Input.Keyboard.JustDown(k.e) || Phaser.Input.Keyboard.JustDown(k.space) || input.interact) {
@@ -457,13 +589,20 @@ export class WorldScene extends Phaser.Scene {
     this.arrow.setFillStyle(step ? 0x22d3ee : 0xfbbf24);
   }
 
-  private moveTraffic(dt: number) {
+  private moveTraffic(dt: number, time: number) {
+    if (this.boat) {
+      const t = time / 9000;
+      this.boat.setPosition(LAKE.x + Math.cos(t) * LAKE.rx * 0.55, LAKE.y + Math.sin(t) * LAKE.ry * 0.5);
+      this.boat.setFlipX(Math.sin(t) > 0);
+    }
     for (const w of this.walkers) {
       const max = w.axis === "x" ? WORLD.width : WORLD.height;
       const next = (w.axis === "x" ? w.sprite.x : w.sprite.y) + w.speed * dt;
       const wrapped = next < 0 ? max : next > max ? 0 : next;
       if (w.axis === "x") w.sprite.x = wrapped;
       else w.sprite.y = wrapped;
+      w.sprite.setDepth(5 + w.sprite.y / 10000);
+      animateWalk(w.sprite, time, true, w.axis === "x" ? w.speed : 0);
     }
     for (const car of this.cars) {
       const max = (car.axis === "x" ? WORLD.width : WORLD.height) + 60;
@@ -479,7 +618,10 @@ export class WorldScene extends Phaser.Scene {
       }
       const nx = p.body.x + p.vx * dt;
       const ny = p.body.y + p.vy * dt;
-      if (Math.hypot(nx - p.home.x, ny - p.home.y) < 40 && !blocked(nx, ny, 10, this.solids)) p.body.setPosition(nx, ny);
+      const ok = Math.hypot(nx - p.home.x, ny - p.home.y) < 40 && !blocked(nx, ny, 10, this.solids);
+      if (ok) p.body.setPosition(nx, ny);
+      p.body.setDepth(5 + p.body.y / 10000);
+      animateWalk(p.body, time + p.home.x, ok, p.vx);
     }
   }
 }

@@ -114,7 +114,7 @@ export type Effect = {
   time?: number;
 };
 
-export type MapRect = { x: number; y: number; w: number; h: number; label?: string; color?: string; gapFrom?: number; gapTo?: number };
+export type MapRect = { x: number; y: number; w: number; h: number; label?: string; color?: string; gapFrom?: number; gapTo?: number; kind?: "water" };
 
 export type ChapterMap = {
   width: number;
@@ -237,6 +237,8 @@ export type PlaceDef = {
   x: number;
   y: number;
   color: string;
+  /** Emoji on the signpost. */
+  icon?: string;
   blurb: string;
   /** Only shown when this holds, such as the right home for the background. */
   if?: Cond;

@@ -7,6 +7,10 @@ import type { MapRect } from "./types";
 export const ROADS = { xs: [500, 800, 1000, 1500, 1600], ys: [500, 600, 1000, 1100] };
 const ROAD_CLEAR = 46;
 
+/** Jabi Lake: drawn as an ellipse, walled off by a slightly smaller box. */
+export const LAKE = { x: 210, y: 800, rx: 160, ry: 115 };
+const LAKE_SOLID: MapRect = { x: LAKE.x - 140, y: LAKE.y - 92, w: 280, h: 184, kind: "water" };
+
 function near(x: number, y: number, px: number, py: number, r: number): boolean {
   return Math.abs(x - px) < r && Math.abs(y - py) < r;
 }
@@ -28,11 +32,13 @@ export function citySolids(): MapRect[] {
         if (ROADS.ys.some((y) => Math.abs(cy - y) < 35 + ROAD_CLEAR)) continue;
         if (PLACES.some((p) => near(cx, cy, p.x, p.y + 40, 160))) continue;
         if (homes.some((p) => near(cx, cy, p.x, p.y + 95, 170))) continue;
+        if (near(cx, cy, LAKE.x, LAKE.y, LAKE.rx + 70)) continue;
         if ((n * 7 + d.x) % 5 === 0) continue; // open plots and courtyards
         out.push({ x: bx, y: by, w: 80, h: 70, color: d.color });
       }
     }
   }
+  out.push(LAKE_SOLID);
   cache = out;
   return out;
 }
