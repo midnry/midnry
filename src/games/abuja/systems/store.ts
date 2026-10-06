@@ -196,16 +196,15 @@ export const input = {
 export type Controls = "joystick" | "tap";
 const CONTROLS_KEY = "abuja-hustle.controls";
 
-/** Your saved choice, or the joystick on touch screens and tapping on computers. */
+/** Your saved choice; the joystick until you pick otherwise. */
 export function loadControls(): Controls {
   try {
     const saved = localStorage.getItem(CONTROLS_KEY);
     if (saved === "joystick" || saved === "tap") return saved;
   } catch {
-    /* storage blocked: fall back to the device default */
+    /* storage blocked: use the joystick */
   }
-  const touch = window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window || navigator.maxTouchPoints > 0;
-  return touch ? "joystick" : "tap";
+  return "joystick";
 }
 
 export function saveControls(controls: Controls): void {
