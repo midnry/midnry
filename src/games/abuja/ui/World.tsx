@@ -106,7 +106,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const showEnter = near && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#051a10] text-white select-none">
+    <div className="fixed inset-0 overflow-hidden bg-paper text-ink select-none">
       <div ref={host} className="absolute inset-0" />
       {inStory ? <ChapterHud state={state} /> : <Hud state={state} onOpen={setPhone} />}
 
@@ -114,13 +114,13 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         <button
           type="button"
           onClick={() => bus.emit("goto", null)}
-          className={`${panel} absolute top-24 left-1/2 z-10 max-w-[64vw] -translate-x-1/2 px-4 py-2 text-left text-sm shadow-xl hover:bg-[#123524] sm:top-20`}
+          className={`${panel} absolute top-24 left-1/2 z-10 max-w-[64vw] -translate-x-1/2 px-4 py-2 text-left text-sm shadow-xl hover:bg-paper sm:top-20`}
           aria-label={`Walk to ${beat.spot.label}`}
         >
           <span className="block truncate">
-            📍 Go to: <span className="font-semibold text-green-300">{beat.spot.label}</span>
+            📍 Go to: <span className="font-semibold text-pine">{beat.spot.label}</span>
           </span>
-          <span className="block text-[11px] text-emerald-100/65">Tap to walk there</span>
+          <span className="block text-[11px] text-muted">Tap to walk there</span>
         </button>
       ) : null}
 
@@ -158,12 +158,12 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       <button
         type="button"
         onClick={() => setPaused(true)}
-        className="absolute top-24 left-3 z-10 flex size-11 items-center justify-center rounded-xl border border-white/15 bg-[#0a2618]/90 text-xl font-bold shadow-xl hover:bg-[#123524] sm:top-20 lg:top-3"
+        className="absolute top-24 left-3 z-10 flex size-11 items-center justify-center rounded-xl border border-line bg-card/90 text-xl font-bold shadow-xl hover:bg-paper sm:top-20 lg:top-3"
         aria-label="Pause"
       >
         <span className="flex gap-1" aria-hidden>
-          <span className="h-4 w-1.5 rounded-sm bg-white" />
-          <span className="h-4 w-1.5 rounded-sm bg-white" />
+          <span className="h-4 w-1.5 rounded-sm bg-ink" />
+          <span className="h-4 w-1.5 rounded-sm bg-ink" />
         </span>
       </button>
       {paused ? (
@@ -177,7 +177,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         />
       ) : null}
       {wardrobe ? (
-        <div className="absolute inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4" role="dialog" aria-label="Wardrobe">
+        <div className="absolute inset-0 z-50 flex items-end justify-center bg-ink/60 sm:items-center sm:p-4" role="dialog" aria-label="Wardrobe">
           <div className={`${panel} max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-b-none p-4 sm:rounded-b-2xl sm:p-6`}>
             <p className="mb-3 font-display text-2xl">👕 Wardrobe</p>
             <WardrobePanel state={state} onDone={() => setWardrobe(false)} />
@@ -188,7 +188,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         <button
           type="button"
           onClick={() => setPhone("home")}
-          className="absolute right-4 bottom-6 z-10 flex size-16 flex-col items-center justify-center rounded-2xl border border-white/15 bg-[#0a2618]/90 text-xs font-semibold shadow-xl"
+          className="absolute right-4 bottom-6 z-10 flex size-16 flex-col items-center justify-center rounded-2xl border border-line bg-card/90 text-xs font-semibold shadow-xl"
           aria-label="Open your phone"
         >
           <span className="text-2xl" aria-hidden>
@@ -201,11 +201,11 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       {phone && !inStory ? <Phone state={state} app={phone} onApp={setPhone} onClose={() => setPhone(null)} /> : null}
       {state.event ? <EventModal state={state} /> : null}
       {story ? (
-        <div className="absolute inset-0 z-40 overflow-y-auto bg-black/55 px-3 py-6 backdrop-blur-[2px] sm:py-12">
+        <div className="absolute inset-0 z-40 overflow-y-auto bg-ink/55 px-3 py-6 backdrop-blur-[2px] sm:py-12">
           <StoryPanel state={state} />
         </div>
       ) : null}
-      <p className="pointer-events-none absolute bottom-2 left-1/2 hidden -translate-x-1/2 text-xs text-emerald-100/65 sm:block">
+      <p className="pointer-events-none absolute bottom-2 left-1/2 hidden -translate-x-1/2 text-xs text-muted sm:block">
         WASD or arrows to move · click to walk · E to interact
       </p>
     </div>
@@ -214,10 +214,10 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
 
 function PauseMenu({ onResume, onWardrobe, onQuit }: { onResume: () => void; onWardrobe: () => void; onQuit: () => void }) {
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-[2px]" role="dialog" aria-label="Paused">
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-ink/60 p-4 backdrop-blur-[2px]" role="dialog" aria-label="Paused">
       <div className={`${panel} w-full max-w-sm p-5`}>
         <p className="font-display text-2xl">Paused</p>
-        <p className="mt-1 text-sm text-emerald-100/65">Your progress is saved automatically.</p>
+        <p className="mt-1 text-sm text-muted">Your progress is saved automatically.</p>
         <div className="mt-4 grid gap-2">
           <button type="button" className={btnPrimary} onClick={onResume}>
             ▶ Resume
@@ -229,8 +229,8 @@ function PauseMenu({ onResume, onWardrobe, onQuit }: { onResume: () => void; onW
             Save and exit to title
           </button>
         </div>
-        <div className="mt-5 rounded-xl bg-white/5 p-3 text-xs text-emerald-50/80">
-          <p className="font-semibold text-green-50">How to play</p>
+        <div className="mt-5 rounded-xl bg-ink/5 p-3 text-xs text-ink-soft">
+          <p className="font-semibold text-ink">How to play</p>
           <ul className="mt-1 list-disc space-y-1 pl-4">
             <li>Move with the joystick, WASD or the arrow keys, or tap/click where you want to go.</li>
             <li>Tap the “Go to” banner (or “Go” on a job) to walk to your goal automatically.</li>
@@ -248,12 +248,12 @@ function ChapterHud({ state }: { state: GameState }) {
   return (
     <div className={`${panel} absolute top-3 left-1/2 z-10 flex w-[min(96vw,36rem)] -translate-x-1/2 items-center justify-between gap-3 px-4 py-2`}>
       <div className="min-w-0">
-        <p className="truncate text-xs font-semibold tracking-widest text-green-400 uppercase">{def?.title}</p>
-        <p className="text-[11px] text-emerald-100/65">
+        <p className="truncate text-xs font-semibold tracking-widest text-pine uppercase">{def?.title}</p>
+        <p className="text-[11px] text-muted">
           {state.name} · age {Math.floor(state.age)}
         </p>
       </div>
-      <p className="font-bold tabular-nums text-emerald-400">{naira(state.stats.money)}</p>
+      <p className="font-bold tabular-nums text-emerald-600">{naira(state.stats.money)}</p>
     </div>
   );
 }
@@ -261,11 +261,11 @@ function ChapterHud({ state }: { state: GameState }) {
 function Bar({ label, value, tone }: { label: string; value: number; tone: string }) {
   return (
     <div className="min-w-0">
-      <div className="flex justify-between gap-1 text-[10px] text-emerald-100/65 uppercase">
+      <div className="flex justify-between gap-1 text-[10px] text-muted uppercase">
         <span>{label}</span>
         <span>{Math.round(value)}</span>
       </div>
-      <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+      <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-ink/10">
         <div className={`h-full rounded-full ${tone}`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
       </div>
     </div>
@@ -282,8 +282,8 @@ function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => v
       aria-label="Your stats"
     >
       <div className="row-span-2">
-        <p className="text-lg font-bold tabular-nums text-emerald-400">{naira(state.stats.money)}</p>
-        <p className="text-[11px] text-emerald-100/65">
+        <p className="text-lg font-bold tabular-nums text-emerald-600">{naira(state.stats.money)}</p>
+        <p className="text-[11px] text-muted">
           Day {state.day} · {SLOTS[Math.min(state.slot, 3)]} · Age {Math.floor(state.age)}
           {owed ? <span className="text-red-400"> · owes {naira(owed)}</span> : null}
         </p>
@@ -318,13 +318,13 @@ function PlacePanel({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-display text-xl">{p.name}</p>
-          <p className="mt-1 text-sm text-emerald-100/65 text-pretty">{p.blurb}</p>
+          <p className="mt-1 text-sm text-muted text-pretty">{p.blurb}</p>
         </div>
         <div className="flex shrink-0 gap-1">
-          <button type="button" onClick={onPhone} className="min-h-11 rounded-xl px-3 text-lg hover:bg-white/10" aria-label="Phone">
+          <button type="button" onClick={onPhone} className="min-h-11 rounded-xl px-3 text-lg hover:bg-ink/10" aria-label="Phone">
             📱
           </button>
-          <button type="button" onClick={onClose} className="min-h-11 rounded-xl px-3 text-sm text-emerald-50/80 hover:bg-white/10" aria-label="Leave this place">
+          <button type="button" onClick={onClose} className="min-h-11 rounded-xl px-3 text-sm text-ink-soft hover:bg-ink/10" aria-label="Leave this place">
             ✕
           </button>
         </div>
@@ -343,10 +343,10 @@ function PlacePanel({
               onClick={() => {
                 if (doAction(p.id, a.id) === "loans") onLoans();
               }}
-              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left transition hover:border-green-400/60 hover:bg-white/10 disabled:opacity-45"
+              className="rounded-xl border border-line bg-ink/5 px-3 py-2.5 text-left transition hover:border-pine/60 hover:bg-ink/10 disabled:opacity-45"
             >
               <span className="block text-sm font-semibold">{fill(state, a.label)}</span>
-              <span className="block text-xs text-emerald-100/65">{ok ? meta : `🔒 ${a.lockedText ?? "Not available yet"}`}</span>
+              <span className="block text-xs text-muted">{ok ? meta : `🔒 ${a.lockedText ?? "Not available yet"}`}</span>
             </button>
           );
         })}
@@ -359,13 +359,13 @@ function EventModal({ state }: { state: GameState }) {
   const ev = EVENTS.find((item) => item.id === state.event);
   if (!ev) return null;
   return (
-    <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/60 p-3 sm:items-center">
+    <div className="absolute inset-0 z-40 flex items-end justify-center bg-ink/60 p-3 sm:items-center">
       <div className={`${panel} w-full max-w-lg p-5`} role="dialog" aria-modal="true" aria-labelledby="event-title">
-        <p className="text-xs font-semibold tracking-widest text-green-400 uppercase">Day {state.day}</p>
+        <p className="text-xs font-semibold tracking-widest text-pine uppercase">Day {state.day}</p>
         <h2 id="event-title" className="mt-1 font-display text-2xl">
           {ev.title}
         </h2>
-        <p className="mt-3 text-pretty text-green-50">{fill(state, ev.text)}</p>
+        <p className="mt-3 text-pretty text-ink">{fill(state, ev.text)}</p>
         <div className="mt-5 grid gap-2">
           {ev.choices.map((item) => {
             const reason = lockReason(state, item);
@@ -376,10 +376,10 @@ function EventModal({ state }: { state: GameState }) {
                 type="button"
                 disabled={!ok}
                 onClick={() => resolveEvent(item)}
-                className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:border-green-400/60 hover:bg-white/10 disabled:opacity-45"
+                className="rounded-xl border border-line bg-ink/5 px-4 py-3 text-left transition hover:border-pine/60 hover:bg-ink/10 disabled:opacity-45"
               >
                 <span className="font-medium">{item.text}</span>
-                {!ok ? <span className="mt-0.5 block text-xs text-emerald-100/65">🔒 {reason}</span> : null}
+                {!ok ? <span className="mt-0.5 block text-xs text-muted">🔒 {reason}</span> : null}
               </button>
             );
           })}
@@ -428,7 +428,7 @@ function Joystick() {
   return (
     <div
       ref={base}
-      className="absolute bottom-6 left-4 z-10 size-32 touch-none rounded-full border border-white/15 bg-white/5 backdrop-blur"
+      className="absolute bottom-6 left-4 z-10 size-32 touch-none rounded-full border border-line bg-ink/5 backdrop-blur"
       onPointerDown={(event) => {
         active.current = event.pointerId;
         (event.target as HTMLElement).setPointerCapture(event.pointerId);
@@ -443,7 +443,7 @@ function Joystick() {
       role="presentation"
     >
       <div
-        className="absolute top-1/2 left-1/2 size-14 rounded-full bg-green-400/80 shadow-lg"
+        className="absolute top-1/2 left-1/2 size-14 rounded-full bg-pine/80 shadow-lg"
         style={{ transform: `translate(calc(-50% + ${knob.x}px), calc(-50% + ${knob.y}px))` }}
       />
     </div>
@@ -460,14 +460,14 @@ function TalkModal({ state, personKey, onClose }: { state: GameState; personKey:
         <div className="flex items-center gap-3">
           <span className="size-10 shrink-0 rounded-full" style={{ background: person.color }} aria-hidden />
           <p className="flex-1 font-display text-xl">{person.name}</p>
-          <button type="button" onClick={onClose} className="min-h-11 rounded-xl px-3 text-sm text-emerald-50/80 hover:bg-white/10" aria-label="End conversation">
+          <button type="button" onClick={onClose} className="min-h-11 rounded-xl px-3 text-sm text-ink-soft hover:bg-ink/10" aria-label="End conversation">
             ✕
           </button>
         </div>
-        <p className="mt-3 text-pretty text-green-50">{lineFor(state, person)}</p>
+        <p className="mt-3 text-pretty text-ink">{lineFor(state, person)}</p>
         {offer ? (
-          <div className="mt-3 rounded-xl bg-black/30 p-3">
-            <p className="text-sm text-pretty text-green-50">{fill(state, offer.text)}</p>
+          <div className="mt-3 rounded-xl bg-paper p-3">
+            <p className="text-sm text-pretty text-ink">{fill(state, offer.text)}</p>
             <div className="mt-2 grid gap-2">
               {offer.choices.map((choice) => {
                 const reason = lockReason(state, choice);
@@ -476,14 +476,14 @@ function TalkModal({ state, personKey, onClose }: { state: GameState; personKey:
                     key={choice.text}
                     type="button"
                     disabled={Boolean(reason)}
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-sm transition hover:border-green-400/60 disabled:opacity-45"
+                    className="rounded-xl border border-line bg-ink/5 px-3 py-2.5 text-left text-sm transition hover:border-pine/60 disabled:opacity-45"
                     onClick={() => {
                       takeOffer(personKey, choice);
                       onClose();
                     }}
                   >
                     {fill(state, choice.text)}
-                    {reason ? <span className="mt-0.5 block text-xs text-emerald-100/65">🔒 {reason}</span> : null}
+                    {reason ? <span className="mt-0.5 block text-xs text-muted">🔒 {reason}</span> : null}
                   </button>
                 );
               })}
@@ -515,7 +515,7 @@ function TaskPanel({ state }: { state: GameState }) {
           {title} · {done}/{total} · {naira(task.earned)}
         </p>
         <p className="truncate font-semibold">★ {step.label}</p>
-        <p className={`text-xs tabular-nums ${left === 0 ? "text-red-400" : "text-emerald-50/80"}`}>
+        <p className={`text-xs tabular-nums ${left === 0 ? "text-red-400" : "text-ink-soft"}`}>
           {left === 0 ? "Running late!" : `${left}s to get there on time`}
         </p>
       </div>
@@ -532,13 +532,13 @@ function TaskPanel({ state }: { state: GameState }) {
 function HaggleModal({ state }: { state: GameState }) {
   const h = state.task!.haggle!;
   return (
-    <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/50 p-3 sm:items-center">
+    <div className="absolute inset-0 z-40 flex items-end justify-center bg-ink/50 p-3 sm:items-center">
       <div className={`${panel} w-full max-w-sm p-5`} role="dialog" aria-label="Fare offer">
         <p className="text-xs font-semibold tracking-widest text-cyan-300 uppercase">OwnPrice</p>
         <p className="mt-2 text-lg text-pretty">
-          {h.passenger} offers <span className="font-bold text-emerald-400">{naira(h.offer)}</span> for this trip.
+          {h.passenger} offers <span className="font-bold text-emerald-600">{naira(h.offer)}</span> for this trip.
         </p>
-        <p className="mt-1 text-xs text-emerald-100/65">Counter for {naira(Math.round((h.offer * 1.4) / 100) * 100)}? They might agree, or cancel.</p>
+        <p className="mt-1 text-xs text-muted">Counter for {naira(Math.round((h.offer * 1.4) / 100) * 100)}? They might agree, or cancel.</p>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <button type="button" className={btnPrimary} onClick={() => haggle(true)}>
             Accept

@@ -14,31 +14,31 @@ export function EndScreen({ state }: { state: GameState }) {
     <Screen>
       <div className={`${panel} mx-auto max-w-2xl overflow-hidden`}>
         <div className="p-6 sm:p-8" style={{ background: `linear-gradient(135deg, ${ending.color}55, transparent 70%)` }}>
-          <p className="text-xs font-semibold tracking-[0.3em] text-emerald-50/80 uppercase">The end of {state.name}'s story</p>
+          <p className="text-xs font-semibold tracking-[0.3em] text-ink-soft uppercase">The end of {state.name}'s story</p>
           <h1 className="mt-2 font-display text-5xl tracking-tight">{ending.title}</h1>
-          <p className="mt-4 text-lg text-pretty text-green-50">{ending.text}</p>
+          <p className="mt-4 text-lg text-pretty text-ink">{ending.text}</p>
         </div>
         <div className="grid gap-6 p-6 sm:grid-cols-[auto_1fr] sm:p-8">
           <Avatar looks={state.looks} size={110} />
           <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-            <dt className="text-emerald-100/65">Started as</dt>
+            <dt className="text-muted">Started as</dt>
             <dd>{state.background === "lapo" ? "Lapo Baby" : "Average family"}</dd>
-            <dt className="text-emerald-100/65">Age</dt>
+            <dt className="text-muted">Age</dt>
             <dd>{Math.floor(state.age)}</dd>
-            <dt className="text-emerald-100/65">Net worth</dt>
+            <dt className="text-muted">Net worth</dt>
             <dd className="font-semibold">{naira(netWorth(state))}</dd>
-            <dt className="text-emerald-100/65">Last job</dt>
+            <dt className="text-muted">Last job</dt>
             <dd>{job(state.job)?.title ?? "None"}</dd>
-            <dt className="text-emerald-100/65">Certificates</dt>
+            <dt className="text-muted">Certificates</dt>
             <dd>{certs}</dd>
-            <dt className="text-emerald-100/65">Network</dt>
+            <dt className="text-muted">Network</dt>
             <dd>{state.stats.network}</dd>
           </dl>
         </div>
         {Object.keys(state.partners).length || state.children.length ? (
-          <div className="border-t border-white/10 p-6 sm:p-8">
+          <div className="border-t border-line p-6 sm:p-8">
             <h2 className="font-display text-2xl">Family and love</h2>
-            <ul className="mt-3 space-y-1 text-sm text-emerald-50/80">
+            <ul className="mt-3 space-y-1 text-sm text-ink-soft">
               {Object.values(state.partners)
                 .filter((p) => p.status !== "met")
                 .map((p) => (
@@ -54,12 +54,12 @@ export function EndScreen({ state }: { state: GameState }) {
             </ul>
           </div>
         ) : null}
-        <div className="border-t border-white/10 p-6 sm:p-8">
+        <div className="border-t border-line p-6 sm:p-8">
           <h2 className="font-display text-2xl">The moments that decided it</h2>
-          <ol className="mt-3 space-y-2 text-sm text-emerald-50/80">
+          <ol className="mt-3 space-y-2 text-sm text-ink-soft">
             {state.log.map((item) => (
               <li key={item.text}>
-                <span className="text-emerald-100/45">Age {item.age} · </span>
+                <span className="text-muted/80">Age {item.age} · </span>
                 {item.text}
               </li>
             ))}

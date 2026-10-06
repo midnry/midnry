@@ -11,7 +11,7 @@ const STAGE_TINT: Record<string, string> = {
   secondary: "from-emerald-500/20",
   university: "from-violet-500/20",
   nysc: "from-lime-500/25",
-  adult: "from-green-500/20",
+  adult: "from-pine/20",
 };
 
 export function StoryView({ state }: { state: GameState }) {
@@ -36,8 +36,8 @@ export function StoryPanel({ state }: { state: GameState }) {
           <div className="flex items-center gap-3">
             <Avatar looks={state.looks} size={52} view="head" />
             <div className="min-w-0">
-              <p className="text-xs font-semibold tracking-widest text-green-400 uppercase">{def.title}</p>
-              <p className="text-sm text-emerald-100/65">
+              <p className="text-xs font-semibold tracking-widest text-pine uppercase">{def.title}</p>
+              <p className="text-sm text-muted">
                 {state.name} · age {Math.floor(state.age)} · {naira(state.stats.money)}
               </p>
             </div>
@@ -52,7 +52,7 @@ export function StoryPanel({ state }: { state: GameState }) {
             </div>
           ) : (
             <div className="mt-6">
-              {speaker ? <p className="mb-1 text-sm font-semibold text-green-300">{speaker}</p> : null}
+              {speaker ? <p className="mb-1 text-sm font-semibold text-pine">{speaker}</p> : null}
               <p className="text-lg leading-relaxed text-pretty">{fill(state, scene.text)}</p>
               {scene.special === "fixers" ? <Fixers state={state} /> : null}
               <div className="mt-6 grid gap-2">
@@ -65,11 +65,11 @@ export function StoryPanel({ state }: { state: GameState }) {
                       key={item.text}
                       type="button"
                       disabled={!ok}
-                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:border-green-400/60 hover:bg-white/10 disabled:opacity-45"
+                      className="rounded-xl border border-line bg-ink/5 px-4 py-3 text-left transition hover:border-pine/60 hover:bg-ink/10 disabled:opacity-45"
                       onClick={() => choose(item)}
                     >
                       <span className="font-medium">{fill(state, item.text)}</span>
-                      {!ok ? <span className="mt-0.5 block text-xs text-emerald-100/65">🔒 {reason}</span> : null}
+                      {!ok ? <span className="mt-0.5 block text-xs text-muted">🔒 {reason}</span> : null}
                     </button>
                   );
                 })}
@@ -86,16 +86,16 @@ function Fixers({ state }: { state: GameState }) {
   return (
     <div className="mt-5 grid gap-3 sm:grid-cols-2">
       {state.fixers.map((fixer, index) => (
-        <div key={fixer.name} className="rounded-2xl border border-white/10 bg-black/30 p-4">
-          <p className="text-lg tracking-widest text-green-400" aria-label={`${fixer.stars} out of 5 stars`}>
+        <div key={fixer.name} className="rounded-2xl border border-line bg-paper p-4">
+          <p className="text-lg tracking-widest text-pine" aria-label={`${fixer.stars} out of 5 stars`}>
             {"★".repeat(fixer.stars)}
-            <span className="text-emerald-100/30">{"★".repeat(5 - fixer.stars)}</span>
+            <span className="text-muted/60">{"★".repeat(5 - fixer.stars)}</span>
           </p>
           <div className="mt-2 flex items-center gap-2">
             <span className="size-8 rounded-full" style={{ background: fixer.color }} aria-hidden />
             <p className="font-semibold">{fixer.name}</p>
           </div>
-          <p className="mt-2 text-sm text-emerald-50/80 italic">“{fixer.line.replace("{price}", fixer.price.toLocaleString("en"))}”</p>
+          <p className="mt-2 text-sm text-ink-soft italic">“{fixer.line.replace("{price}", fixer.price.toLocaleString("en"))}”</p>
           <button
             type="button"
             className={`${btnGhost} mt-3 w-full`}
@@ -106,7 +106,7 @@ function Fixers({ state }: { state: GameState }) {
           </button>
         </div>
       ))}
-      <p className="text-xs text-emerald-100/45 sm:col-span-2">Paying a fixer is illegal. It adds a little Heat, whether it works or not.</p>
+      <p className="text-xs text-muted/80 sm:col-span-2">Paying a fixer is illegal. It adds a little Heat, whether it works or not.</p>
     </div>
   );
 }

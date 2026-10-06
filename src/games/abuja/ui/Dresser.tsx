@@ -38,7 +38,7 @@ export function Dresser({ look, onChange }: { look: Look; onChange: (look: Look)
             role="tab"
             aria-selected={tab === item.id}
             onClick={() => setTab(item.id)}
-            className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition ${tab === item.id ? "bg-green-600 text-white" : "bg-white/10 text-green-50 hover:bg-white/15"}`}
+            className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition ${tab === item.id ? "bg-pine text-white" : "bg-ink/10 text-ink hover:bg-ink/15"}`}
           >
             <span aria-hidden>{item.icon}</span>
             {item.label}
@@ -47,7 +47,7 @@ export function Dresser({ look, onChange }: { look: Look; onChange: (look: Look)
         <button
           type="button"
           onClick={() => onChange(randomLook(Math.floor(Math.random() * 1e9), { lashes: look.lashes, skin: look.skin }))}
-          className="ml-auto flex min-h-10 shrink-0 items-center gap-1 rounded-full bg-white/10 px-3 text-sm hover:bg-white/15"
+          className="ml-auto flex min-h-10 shrink-0 items-center gap-1 rounded-full bg-ink/10 px-3 text-sm hover:bg-ink/15"
           aria-label="Random outfit"
         >
           🎲 <span className="hidden sm:inline">Surprise me</span>
@@ -157,7 +157,7 @@ function Tile({ on, label, onClick, children }: { on: boolean; label: string; on
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 rounded-2xl border p-2 text-xs transition ${on ? "border-green-400 bg-green-400/15" : "border-white/10 bg-[#ffffff]/[0.06] hover:bg-white/10"}`}
+      className={`flex flex-col items-center gap-1 rounded-2xl border p-2 text-xs transition ${on ? "border-pine bg-pine/15" : "border-line bg-ink/[0.03] hover:bg-ink/10"}`}
     >
       <span className="flex h-16 items-center justify-center overflow-hidden">{children}</span>
       <span className="font-semibold">{label}</span>
@@ -168,7 +168,7 @@ function Tile({ on, label, onClick, children }: { on: boolean; label: string; on
 function Swatches({ label, colors, value, onPick, round }: { label: string; colors: string[]; value: string; onPick: (color: string) => void; round?: boolean }) {
   return (
     <div>
-      <p className="mb-1.5 text-xs text-emerald-100/65">{label}</p>
+      <p className="mb-1.5 text-xs text-muted">{label}</p>
       <div className="flex flex-wrap gap-2">
         {colors.map((c) => (
           <button
@@ -177,7 +177,7 @@ function Swatches({ label, colors, value, onPick, round }: { label: string; colo
             aria-label={`${label} ${c}`}
             aria-pressed={value === c}
             onClick={() => onPick(c)}
-            className={`size-9 border border-white/20 ring-offset-2 ring-offset-[#0a2618] ${round ? "rounded-full" : "rounded-lg"} ${value === c ? "ring-2 ring-green-400" : ""}`}
+            className={`size-9 border border-line ring-offset-2 ring-offset-white ${round ? "rounded-full" : "rounded-lg"} ${value === c ? "ring-2 ring-pine" : ""}`}
             style={{ background: c }}
           />
         ))}
@@ -192,7 +192,7 @@ function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; c
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`min-h-10 rounded-full border px-3 text-sm transition ${on ? "border-green-400 bg-green-400/15 text-green-200" : "border-white/15 bg-white/5 text-emerald-50/80 hover:bg-white/10"}`}
+      className={`min-h-10 rounded-full border px-3 text-sm transition ${on ? "border-pine bg-pine/15 text-pine" : "border-line bg-ink/5 text-ink-soft hover:bg-ink/10"}`}
     >
       {children}
     </button>

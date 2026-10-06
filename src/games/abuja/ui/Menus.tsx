@@ -12,12 +12,12 @@ export function AgeGate({ onPass }: { onPass: () => void }) {
       <div className={`${panel} mx-auto max-w-md p-6 text-center`}>
         <p className="text-5xl">🔞</p>
         <h1 className="mt-3 font-display text-3xl">Mature audiences only</h1>
-        <p className="mt-3 text-sm text-pretty text-emerald-50/80">
+        <p className="mt-3 text-sm text-pretty text-ink-soft">
           Abuja Hustle is satire for adults. It deals with money, debt, crime, relationships, pregnancy, death and violence. Nothing
           explicit, but it does not look away.
         </p>
         {refused ? (
-          <p className="mt-5 text-sm text-green-300">This game is for adults 18 and over. Come back when you're older.</p>
+          <p className="mt-5 text-sm text-pine">This game is for adults 18 and over. Come back when you're older.</p>
         ) : (
           <div className="mt-6 grid gap-2">
             <button type="button" className={btnPrimary} onClick={onPass}>
@@ -48,9 +48,9 @@ export function Title({
   return (
     <Screen>
       <div className="mx-auto max-w-lg text-center">
-        <p className="text-sm font-semibold tracking-[0.3em] text-green-400 uppercase">A life sim · Abuja, Nigeria</p>
+        <p className="text-sm font-semibold tracking-[0.3em] text-pine uppercase">A life sim · Abuja, Nigeria</p>
         <h1 className="mt-3 font-display text-6xl tracking-tight text-balance sm:text-7xl">Abuja Hustle</h1>
-        <p className="mx-auto mt-4 max-w-sm text-pretty text-emerald-50/80">
+        <p className="mx-auto mt-4 max-w-sm text-pretty text-ink-soft">
           No inheritance. No uncle in government. Just you, the city, and the dream of financial freedom.
         </p>
         <div className="mx-auto mt-8 grid max-w-xs gap-2">
@@ -69,23 +69,23 @@ export function Title({
             </button>
           )}
         </div>
-        <div className="mx-auto mt-6 max-w-xs rounded-2xl border border-white/10 bg-white/5 p-4 text-sm">
+        <div className="mx-auto mt-6 max-w-xs rounded-2xl border border-line bg-ink/5 p-4 text-sm">
           {signedInAs ? (
-            <p className="text-emerald-50/80">
-              ✓ Signed in as <span className="font-semibold text-white">{signedInAs}</span>. Your progress saves to your account and follows
+            <p className="text-ink-soft">
+              ✓ Signed in as <span className="font-semibold text-ink">{signedInAs}</span>. Your progress saves to your account and follows
               you to any device.
             </p>
           ) : (
             <>
-              <p className="text-emerald-50/80">Free to play. Sign in to save your progress to your account and continue on any device.</p>
+              <p className="text-ink-soft">Free to play. Sign in to save your progress to your account and continue on any device.</p>
               <a href="/login?intent=sign-in&next=/games/abuja-hustle" className={`${btnPrimary} mt-3 w-full`}>
                 Sign in to save progress
               </a>
-              <p className="mt-2 text-xs text-emerald-100/45">Playing without signing in keeps your progress on this device only.</p>
+              <p className="mt-2 text-xs text-muted/80">Playing without signing in keeps your progress on this device only.</p>
             </>
           )}
         </div>
-        <p className="mt-10 text-xs text-emerald-100/45">
+        <p className="mt-10 text-xs text-muted/80">
           All characters, parties, companies and lenders are fictional. Satire of systems, not of ordinary people.
         </p>
       </div>
@@ -113,20 +113,20 @@ export function Creator({
         <h1 className="font-display text-3xl tracking-tight">Who are you?</h1>
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-[180px_minmax(0,1fr)]">
           <div className="flex flex-col items-center gap-2">
-            <div className="rounded-3xl bg-gradient-to-b from-green-200/20 to-transparent p-3">
+            <div className="rounded-3xl bg-gradient-to-b from-pine/20 to-transparent p-3">
               <Avatar looks={look} size={150} side={side} />
             </div>
-            <button type="button" className="text-xs text-emerald-100/65 underline-offset-2 hover:underline" onClick={() => setSide(side === "front" ? "back" : "front")}>
+            <button type="button" className="text-xs text-muted underline-offset-2 hover:underline" onClick={() => setSide(side === "front" ? "back" : "front")}>
               ↻ {side === "front" ? "See the back" : "See the front"}
             </button>
             <p className="font-semibold">{name.trim() || "Your name"}</p>
-            <p className="text-xs text-emerald-100/65">{background === "lapo" ? "Lapo Baby" : "Average family"}</p>
+            <p className="text-xs text-muted">{background === "lapo" ? "Lapo Baby" : "Average family"}</p>
           </div>
           <div className="grid min-w-0 grid-cols-1 gap-5">
             <label className="block">
-              <span className="text-sm text-emerald-50/80">Name</span>
+              <span className="text-sm text-ink-soft">Name</span>
               <input
-                className="mt-1 h-11 w-full rounded-xl border border-white/15 bg-black/30 px-3 text-base outline-none focus:border-green-400"
+                className="mt-1 h-11 w-full rounded-xl border border-line bg-paper px-3 text-base outline-none focus:border-pine"
                 value={name}
                 maxLength={20}
                 placeholder="e.g. Chiamaka, Musa, Tobi"
@@ -157,7 +157,7 @@ export function Creator({
               ))}
             </Pick>
             <div>
-              <p className="mb-2 text-sm text-emerald-50/80">Style</p>
+              <p className="mb-2 text-sm text-ink-soft">Style</p>
               <Dresser
                 look={look}
                 onChange={(next) => {
@@ -184,7 +184,7 @@ export function Creator({
             lines={["Civil servant father, trader mother, a flat in Gwarinpa.", "Modest money, fewer hardships.", "Balanced stats."]}
           />
         </div>
-        <p className="mt-3 text-xs text-emerald-100/45">Nepo Baby is not an option. That's the point.</p>
+        <p className="mt-3 text-xs text-muted/80">Nepo Baby is not an option. That's the point.</p>
         <button
           type="button"
           className={`${btnPrimary} mt-6 w-full sm:w-auto`}
@@ -204,10 +204,10 @@ function BackgroundCard({ on, onClick, title, lines }: { on: boolean; onClick: (
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`rounded-2xl border p-4 text-left transition ${on ? "border-green-400 bg-green-400/10" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
+      className={`rounded-2xl border p-4 text-left transition ${on ? "border-pine bg-pine/10" : "border-line bg-ink/5 hover:bg-ink/10"}`}
     >
       <p className="font-display text-xl">{title}</p>
-      <ul className="mt-2 space-y-1 text-sm text-emerald-50/80">
+      <ul className="mt-2 space-y-1 text-sm text-ink-soft">
         {lines.map((line) => (
           <li key={line}>• {line}</li>
         ))}
@@ -219,7 +219,7 @@ function BackgroundCard({ on, onClick, title, lines }: { on: boolean; onClick: (
 function Pick({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-sm text-emerald-50/80">{label}</p>
+      <p className="text-sm text-ink-soft">{label}</p>
       <div className="mt-2 flex flex-wrap gap-2">{children}</div>
     </div>
   );
@@ -231,7 +231,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`h-10 rounded-full px-4 text-sm font-medium ${on ? "bg-green-600 text-white" : "bg-white/10 text-white hover:bg-white/15"}`}
+      className={`h-10 rounded-full px-4 text-sm font-medium ${on ? "bg-pine text-white" : "bg-ink/10 text-ink hover:bg-ink/15"}`}
     >
       {children}
     </button>
@@ -240,7 +240,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 
 export function Screen({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-[100dvh] overflow-y-auto bg-[radial-gradient(ellipse_at_top,#0f5132,#051a10_60%)] px-4 py-10 text-white sm:py-16">
+    <div className="min-h-[100dvh] overflow-y-auto bg-[radial-gradient(ellipse_at_top,#dbe7f7,#f4f7fb_60%)] px-4 py-10 text-ink sm:py-16">
       {children}
     </div>
   );

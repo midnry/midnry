@@ -14,8 +14,8 @@ const STATUS: Record<Partner["status"], string> = {
 };
 
 const TRAIT: Record<Partner["personality"], { label: string; tone: string }> = {
-  calm: { label: "Calm", tone: "bg-emerald-500/20 text-emerald-300" },
-  cunning: { label: "Cunning", tone: "bg-green-500/20 text-green-300" },
+  calm: { label: "Calm", tone: "bg-emerald-500/20 text-emerald-700" },
+  cunning: { label: "Cunning", tone: "bg-green-500/20 text-pine" },
   crazy: { label: "Crazy", tone: "bg-red-500/20 text-red-300" },
 };
 
@@ -34,17 +34,17 @@ export function Linkup({ state }: { state: GameState }) {
         <p className="text-sm opacity-90">Talk, date, commit. Everyone here is over 18.</p>
       </div>
       {state.pregnancy ? (
-        <p className="mt-3 rounded-xl bg-white/5 p-3 text-sm">
+        <p className="mt-3 rounded-xl bg-ink/5 p-3 text-sm">
           👶 {state.pregnancy.due ? `A baby is on the way, due around day ${state.pregnancy.due}.` : "Something big is about to happen."}
         </p>
       ) : null}
       {state.children.length ? (
-        <p className="mt-3 rounded-xl bg-white/5 p-3 text-sm">
+        <p className="mt-3 rounded-xl bg-ink/5 p-3 text-sm">
           Children: {state.children.map((child) => child.name).join(", ")} · {naira(state.children.length * ROMANCE.childWeeklyCost)} a week
         </p>
       ) : null}
       {people.length === 0 ? (
-        <p className="mt-4 text-sm text-emerald-100/65">
+        <p className="mt-4 text-sm text-muted">
           Nobody yet. Meet people at Jabi Lake Mall, the Wuse Tech Hub, Union Capital Bank, or Bolaji's mansion: choose “Talk to someone new”.
         </p>
       ) : (
@@ -64,23 +64,23 @@ function PartnerCard({ state, p, open, onToggle }: { state: GameState; p: Partne
   const known = revealed(p);
   const others = Object.values(state.partners).some((other) => other.id !== p.id && ["dating", "engaged", "married"].includes(other.status));
   return (
-    <div className={`rounded-xl border ${open ? "border-pink-400/60" : "border-white/10"} bg-white/5`}>
+    <div className={`rounded-xl border ${open ? "border-pink-400/60" : "border-line"} bg-ink/5`}>
       <button type="button" className="flex w-full items-center gap-3 p-3 text-left" onClick={onToggle} aria-expanded={open}>
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-pink-500 font-bold text-[#051a10]">{name.charAt(0)}</span>
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-pink-500 font-bold text-ink">{name.charAt(0)}</span>
         <span className="min-w-0 flex-1">
           <span className="block font-semibold">
-            {name} {p.nepo ? <span className="text-xs text-green-300">· Nepo Baby</span> : null}
+            {name} {p.nepo ? <span className="text-xs text-pine">· Nepo Baby</span> : null}
           </span>
-          <span className="block text-xs text-emerald-100/65">
+          <span className="block text-xs text-muted">
             {STATUS[p.status]} · {known ? TRAIT[p.personality].label : `Personality: ${p.hints.length}/3 clues`}
           </span>
         </span>
         <span className="text-xs tabular-nums text-pink-300">♥ {p.affection}</span>
       </button>
       {open ? (
-        <div className="border-t border-white/10 p-3 text-sm">
-          <p className="text-emerald-100/65">{person(p.id)?.blurb}</p>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+        <div className="border-t border-line p-3 text-sm">
+          <p className="text-muted">{person(p.id)?.blurb}</p>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-ink/10">
             <div className="h-full rounded-full bg-pink-400" style={{ width: `${p.affection}%` }} />
           </div>
           {known ? (
@@ -89,14 +89,14 @@ function PartnerCard({ state, p, open, onToggle }: { state: GameState; p: Partne
             </p>
           ) : null}
           {p.hints.length ? (
-            <ul className="mt-2 space-y-1 text-xs text-emerald-50/80">
+            <ul className="mt-2 space-y-1 text-xs text-ink-soft">
               {p.hints.map((hint) => (
                 <li key={hint}>🔎 {hint}</li>
               ))}
             </ul>
           ) : null}
           {p.status === "ex" ? (
-            <p className="mt-3 text-xs text-emerald-100/45">It's over.</p>
+            <p className="mt-3 text-xs text-muted/80">It's over.</p>
           ) : (
             <div className="mt-3 grid gap-2">
               <div className="grid grid-cols-2 gap-2">
@@ -107,12 +107,12 @@ function PartnerCard({ state, p, open, onToggle }: { state: GameState; p: Partne
                   🎁 Gift {naira(cost(state, p.id, ROMANCE.gift.cost))}
                 </button>
               </div>
-              <p className="text-xs text-emerald-100/65">Go on a date (1 time slot)</p>
+              <p className="text-xs text-muted">Go on a date (1 time slot)</p>
               <div className="grid gap-2">
                 {ROMANCE.dates.map((d) => (
-                  <button key={d.id} type="button" className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-4 text-left text-sm font-semibold bg-white/10 hover:bg-white/15" onClick={() => romance({ kind: "date", id: p.id, date: d.id })}>
+                  <button key={d.id} type="button" className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-4 text-left text-sm font-semibold bg-ink/10 hover:bg-ink/15" onClick={() => romance({ kind: "date", id: p.id, date: d.id })}>
                     <span>{d.name}</span>
-                    <span className="shrink-0 tabular-nums font-normal text-emerald-100/65">{naira(cost(state, p.id, d.cost))}</span>
+                    <span className="shrink-0 tabular-nums font-normal text-muted">{naira(cost(state, p.id, d.cost))}</span>
                   </button>
                 ))}
               </div>
@@ -128,15 +128,15 @@ function PartnerCard({ state, p, open, onToggle }: { state: GameState; p: Partne
               ) : null}
               {p.status === "engaged"
                 ? ROMANCE.weddings.map((w) => (
-                    <button key={w.id} type="button" className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-4 text-left text-sm font-semibold bg-green-600 text-white hover:bg-green-500" onClick={() => romance({ kind: "wed", id: p.id, wedding: w.id })}>
+                    <button key={w.id} type="button" className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-4 text-left text-sm font-semibold bg-pine text-white hover:bg-blue-600" onClick={() => romance({ kind: "wed", id: p.id, wedding: w.id })}>
                       <span>{w.name}</span>
                       <span className="shrink-0 tabular-nums">{naira(cost(state, p.id, w.cost))}</span>
                     </button>
                   ))
                 : null}
-              <details className="rounded-xl bg-black/20 p-2">
-                <summary className="cursor-pointer text-xs text-emerald-50/80">Spend the night</summary>
-                <p className="mt-2 text-xs text-emerald-100/65">
+              <details className="rounded-xl bg-paper p-2">
+                <summary className="cursor-pointer text-xs text-ink-soft">Spend the night</summary>
+                <p className="mt-2 text-xs text-muted">
                   Only if they want to. Fade to black. Without protection there is a real chance of pregnancy.
                   {others && p.status === "met" ? " You're in a relationship: this would be cheating." : ""}
                 </p>
@@ -156,7 +156,7 @@ function PartnerCard({ state, p, open, onToggle }: { state: GameState; p: Partne
               ) : null}
               {confirmEnd ? (
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="text-emerald-50/80">{p.status === "married" ? "Divorce costs money and peace. Sure?" : `End things with ${name}?`}</span>
+                  <span className="text-ink-soft">{p.status === "married" ? "Divorce costs money and peace. Sure?" : `End things with ${name}?`}</span>
                   <button
                     type="button"
                     className="min-h-9 rounded-lg bg-red-500 px-3 font-semibold text-white"
