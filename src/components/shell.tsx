@@ -90,6 +90,11 @@ export function Shell({ children }: { children: ReactNode }) {
                 Review
               </Link>
             ) : null}
+            {isAdmin ? (
+              <Link to="/stats" className={navClass(path.startsWith("/stats"))}>
+                Stats
+              </Link>
+            ) : null}
             <div className="inline-flex min-h-11 items-center">
               {isPending ? (
                 <span className="h-8 w-24 animate-pulse rounded-full bg-paper-2" />

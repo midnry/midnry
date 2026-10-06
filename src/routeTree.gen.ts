@@ -20,6 +20,7 @@ import { Route as ReviewRouteImport } from './routes/review'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as StatsRouteImport } from './routes/stats'
 import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as AppsIndexRouteImport } from './routes/apps/index'
 import { Route as AppsSlugRouteImport } from './routes/apps/$slug'
@@ -86,6 +87,11 @@ const SecurityRoute = SecurityRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatsRoute = StatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SubmitRoute = SubmitRouteImport.update({
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/robots.txt': typeof RobotsDottxtRoute
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/stats': typeof StatsRoute
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/stats': typeof StatsRoute
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/stats': typeof StatsRoute
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
@@ -240,6 +249,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/security'
     | '/sitemap.xml'
+    | '/stats'
     | '/submit'
     | '/apps/$slug'
     | '/audiences/$audience'
@@ -265,6 +275,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/security'
     | '/sitemap.xml'
+    | '/stats'
     | '/submit'
     | '/apps/$slug'
     | '/audiences/$audience'
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/robots.txt'
     | '/security'
     | '/sitemap.xml'
+    | '/stats'
     | '/submit'
     | '/apps/$slug'
     | '/audiences/$audience'
@@ -316,6 +328,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SecurityRoute: typeof SecurityRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  StatsRoute: typeof StatsRoute
   SubmitRoute: typeof SubmitRoute
   AppsSlugRoute: typeof AppsSlugRoute
   AudiencesAudienceRoute: typeof AudiencesAudienceRoute
@@ -407,6 +420,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stats': {
+      id: '/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof StatsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/submit': {
@@ -508,6 +528,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   SecurityRoute: SecurityRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  StatsRoute: StatsRoute,
   SubmitRoute: SubmitRoute,
   AppsSlugRoute: AppsSlugRoute,
   AudiencesAudienceRoute: AudiencesAudienceRoute,

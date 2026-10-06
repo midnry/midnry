@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { recordUse } from "@/lib/admin.functions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getApp, includedNames, tierLabel } from "@/lib/catalog";
 import { canOpenApp, PASS_PRICE_LABEL } from "@/lib/access";
@@ -25,6 +27,13 @@ function AppPage() {
   const { user, isPending } = useCurrentUserState();
   const { account, loading } = useAccount();
   const { isAdmin, ready: roleReady } = useRole();
+  const signedIn = Boolean(user);
+
+  // Count one use per person, per app, per day for the admin's stats.
+  useEffect(() => {
+    if (!signedIn || !app) return;
+    void recordUse({ data: app.slug }).catch(() => {});
+  }, [signedIn, app]);
 
   if (!app) return <CommunityPage slug={slug} />;
 
