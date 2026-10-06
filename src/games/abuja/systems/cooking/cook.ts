@@ -226,7 +226,8 @@ function wearKit(k: Kitchen | null, kit: Owned[], r: RecipeDef, notes: string[])
     o.condition = Math.max(0, o.condition - 0.7);
     o.clean = Math.max(0, o.clean - 6);
     const p = ((100 - (st?.reliability ?? 70)) / 2200) * (1 + (100 - o.condition) / 50);
-    if (Math.random() < p) {
+    // Hand tools wear out but don't suddenly break.
+    if ((st?.price ?? 0) >= 20000 && Math.random() < p) {
       o.broken = true;
       notes.push(`Your ${equipment(o.def)?.name.toLowerCase() ?? "kit"} broke down. Repair or replace it.`);
     }

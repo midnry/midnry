@@ -82,6 +82,8 @@ export const DISTRICT_FOOT: Record<string, { foot: number; wealth: number }> = {
   lugbe: { foot: 0.9, wealth: 0.75 },
 };
 
+const SMALLWARES = ["knife", "cutting_board", "mixing_bowl", "whisk", "peeler", "grater", "pot", "frying_pan", "saucepan", "blender"];
+
 const COOK_ROLES: StaffRole[] = ["head_chef", "sous_chef", "line_cook", "baker", "pastry_chef"];
 
 export const ROLE_INFO: Record<StaffRole, { label: string; pay: number; blurb: string }> = {
@@ -238,6 +240,8 @@ export function openVenue(s: GameState, typeId: string, district: string, name: 
     closedUntil: 0,
     inspections: [],
   };
+  // Knives, boards, bowls and pans come with every kitchen.
+  for (const id of SMALLWARES) if (!t.starter.includes(id)) v.equipment.push(own(id, "pro"));
   for (const id of t.starter) {
     const o = own(id, "basic");
     if (!equipment(id)?.tiers.basic) o.tier = "pro";
@@ -291,7 +295,8 @@ export function restock(s: GameState, v: Venue, plan: number | Map<MenuItem, num
     if (!r) continue;
     const portions = typeof plan === "number" ? Math.ceil(plan / items.length) : (plan.get(m) ?? 0);
     const batches = Math.ceil(portions / r.serves);
-    for (const n of r.needs) {
+    // Extras go in when they're there, so buy them too or they eat into other dishes.
+    for (const n of [...r.needs, ...(r.extras ?? []).map((id) => ({ id, qty: 1 }))]) {
       const cur = want.get(n.id) ?? { qty: 0, tier: m.tier === "homegrown" ? "standard" : m.tier };
       cur.qty += n.qty * batches;
       want.set(n.id, cur);
@@ -382,11 +387,30 @@ export function runService(s: GameState, vid: string, you: boolean, opts: { fest
   if (!cooks.length && !you) return { ok: false, text: "Nobody's here to cook. Hire a cook, or work the service yourself." };
   if (!you && !present.some((x) => x.role === "manager" || x.role === "head_chef")) return { ok: false, text: "Without a manager or head chef in, you need to be there yourself." };
 
+  let cost = 0;
+  let restockCost = 0;
+  const notes: string[] = [];
+  // A manager gets broken kit fixed before service.
+  if (present.some((x) => x.role === "manager")) {
+    for (const o of v.equipment) {
+      if (!o.broken) continue;
+      const fee = Math.round((stats(o.def, o.tier)?.price ?? 0) * 0.18);
+      if (s.stats.money < fee) continue;
+      s.stats.money -= fee;
+      cost += fee;
+      o.broken = false;
+      o.condition = 80;
+      notes.push(`Your manager had the ${equipment(o.def)?.name.toLowerCase()} repaired (₦${fee.toLocaleString("en")}).`);
+    }
+  }
   const items = v.menu.filter((m) => {
     const r = recipe(m.recipe);
-    return m.active && r && k.recipes[r.id] && !missingKit(v.equipment, r).length;
+    if (!m.active || !r || !k.recipes[r.id]) return false;
+    const gap = missingKit(v.equipment, r);
+    if (gap.length) notes.push(`Couldn't make ${r.name.toLowerCase()}: nothing working for ${gap.join(", ").toLowerCase()}.`);
+    return !gap.length;
   });
-  if (!items.length) return { ok: false, text: "Nothing on the menu can be cooked here. Add dishes you know, and the kit to cook them." };
+  if (!items.length) return { ok: false, text: `Nothing on the menu can be cooked. ${notes.at(-1) ?? "Add dishes you know, and the kit to cook them."}` };
 
   // ── Demand ──
   const place = DISTRICT_FOOT[v.district] ?? { foot: 1, wealth: 1 };
@@ -422,9 +446,6 @@ export function runService(s: GameState, vid: string, you: boolean, opts: { fest
   const roomFor = Math.min(seatCap, serveCap) + deliveryDemand;
 
   // ── Stock and cooking ──
-  let cost = 0;
-  let restockCost = 0;
-  const notes: string[] = [];
   if (absent) notes.push(`${absent} staff didn't show up.`);
   // Orders by item: what fits the place and its price.
   const weights = items.map((m) => {
@@ -511,6 +532,8 @@ export function runService(s: GameState, vid: string, you: boolean, opts: { fest
   const load = total / Math.max(1, throughput);
   const wait = Math.round(6 + Math.min(1.2, Math.max(0, load - 0.8)) * 25 + (tableService && servers === 0 ? 10 : 0));
   if (wait > 30) notes.push(`Customers waited ${wait} minutes on average.`);
+  if (total > roomFor && roomFor < throughput && tableService) notes.push(servers ? `Your ${servers} server${servers > 1 ? "s" : ""} couldn't keep up: hire more to seat more people.` : "No servers: hardly anyone could be seated and served. Hire servers.");
+  else if (total > throughput) notes.push(`The kitchen could only make about ${throughput} plates. More cooks, better kit or a better layout would help.`);
   if (walkouts > total * 0.25 && total) notes.push(`${walkouts} people gave up and left.`);
 
   // ── How they felt ──

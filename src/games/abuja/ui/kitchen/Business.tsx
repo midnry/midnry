@@ -312,6 +312,11 @@ function Overview({ state, k, v, onSold }: { state: GameState; k: Kitchen; v: Ve
           {!canDelegate ? <p className="mt-1 text-[11px] text-slate-500">Hire a manager or head chef to run services without you. With a manager and a cook, dinner runs every night on its own.</p> : null}
         </section>
       )}
+      {v.equipment.some((o) => o.broken) ? (
+        <p className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100">
+          ⚠️ Broken: {v.equipment.filter((o) => o.broken).map((o) => equipment(o.def)?.name.toLowerCase()).join(", ")}. Dishes that need it can't be made. Repair it under Kitchen{v.staff.some((x) => x.role === "manager") ? ", or your manager will before the next service" : ""}.
+        </p>
+      ) : null}
       {report ? <Report r={report} onClose={() => setReport(null)} /> : null}
       <section>
         <div className="grid grid-cols-2 gap-2 text-sm">
