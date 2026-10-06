@@ -12,7 +12,7 @@ export function WardrobePanel({ state, onDone }: { state: GameState; onDone: () 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-[140px_minmax(0,1fr)]">
       <div className="flex flex-col items-center gap-2">
-        <div className="rounded-3xl bg-gradient-to-b from-amber-200/20 to-transparent p-2">
+        <div className="rounded-3xl bg-gradient-to-b from-green-200/20 to-transparent p-2">
           <Avatar looks={look} size={120} />
         </div>
         <p className="text-sm font-semibold">{state.name}</p>

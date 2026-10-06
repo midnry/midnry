@@ -1,6 +1,6 @@
 // Abuja Hustle service worker: makes the game installable and lets it reopen
 // offline. Pages are network-first; built assets (hashed names) are cache-first.
-const CACHE = "abuja-hustle-v1";
+const CACHE = "abuja-hustle-v2";
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => {

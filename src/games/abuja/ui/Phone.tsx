@@ -18,10 +18,10 @@ const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "loans", label: "QuickKash", icon: "💸", tint: "bg-red-600" },
   { id: "jobs", label: "Jobs", icon: "💼", tint: "bg-sky-600" },
   { id: "contacts", label: "Contacts", icon: "👥", tint: "bg-violet-600" },
-  { id: "map", label: "Map", icon: "🗺️", tint: "bg-amber-600" },
+  { id: "map", label: "Map", icon: "🗺️", tint: "bg-sky-600" },
   { id: "stats", label: "Life", icon: "📊", tint: "bg-teal-600" },
-  { id: "wardrobe", label: "Wardrobe", icon: "👕", tint: "bg-orange-500" },
-  { id: "settings", label: "Settings", icon: "⚙️", tint: "bg-stone-600" },
+  { id: "wardrobe", label: "Wardrobe", icon: "👕", tint: "bg-blue-500" },
+  { id: "settings", label: "Settings", icon: "⚙️", tint: "bg-slate-600" },
 ];
 
 const SOON = ["Tiklok", "Instaflex", "Zoom ride-hailing", "Elections", "Inheritance"];
@@ -31,7 +31,7 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
   return (
     <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div
-        className="flex h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[2rem] border border-white/15 bg-stone-950 text-stone-100 shadow-2xl sm:h-[min(48rem,92dvh)] sm:rounded-[2.5rem]"
+        className="flex h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[2rem] border border-white/15 bg-[#051a10] text-white shadow-2xl sm:h-[min(48rem,92dvh)] sm:rounded-[2.5rem]"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -39,7 +39,7 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
       >
         <div className="flex items-center justify-between gap-2 border-b border-white/10 px-4 py-3">
           {app === "home" ? (
-            <span className="text-sm text-stone-400">Day {state.day}</span>
+            <span className="text-sm text-emerald-100/65">Day {state.day}</span>
           ) : (
             <button type="button" className="min-h-11 rounded-xl px-2 text-sm" onClick={() => onApp("home")}>
               ‹ Home
@@ -81,7 +81,7 @@ function Home({ onApp }: { onApp: (app: PhoneApp) => void }) {
           </button>
         ))}
       </div>
-      <p className="mt-8 text-xs text-stone-500">Coming in the next updates: {SOON.join(", ")}.</p>
+      <p className="mt-8 text-xs text-emerald-100/45">Coming in the next updates: {SOON.join(", ")}.</p>
     </div>
   );
 }
@@ -89,7 +89,7 @@ function Home({ onApp }: { onApp: (app: PhoneApp) => void }) {
 function Row({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-white/5 py-2.5 text-sm">
-      <span className="text-stone-400">{label}</span>
+      <span className="text-emerald-100/65">{label}</span>
       <span className={`font-semibold tabular-nums ${tone ?? ""}`}>{value}</span>
     </div>
   );
@@ -120,9 +120,9 @@ function Wallet({ state }: { state: GameState }) {
           ))}
         </ul>
       ) : (
-        <p className="mt-2 text-sm text-stone-400">No assets yet. Land, houses and cars come later. A POS stand is a start.</p>
+        <p className="mt-2 text-sm text-emerald-100/65">No assets yet. Land, houses and cars come later. A POS stand is a start.</p>
       )}
-      <p className="mt-6 text-xs text-stone-500">Weekly bills: rent, food, transport and data leave your account every 7 days.</p>
+      <p className="mt-6 text-xs text-emerald-100/45">Weekly bills: rent, food, transport and data leave your account every 7 days.</p>
     </div>
   );
 }
@@ -149,7 +149,7 @@ function Loans({ state }: { state: GameState }) {
               className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-left disabled:opacity-45"
             >
               <span className="block font-semibold">{naira(offer.amount)} now</span>
-              <span className="block text-xs text-stone-400">
+              <span className="block text-xs text-emerald-100/65">
                 {ok
                   ? `Repay ${naira(owed)} over ${offer.weeks} weeks (${naira(Math.ceil(owed / offer.weeks))}/week) · ${Math.round(offer.interest * 100)}% interest`
                   : `🔒 Needs ${offer.requires.stat} ${offer.requires.gte}`}
@@ -164,9 +164,9 @@ function Loans({ state }: { state: GameState }) {
           {state.loans.map((loan) => (
             <div key={loan.id} className="rounded-xl bg-white/5 p-3 text-sm">
               <p className="font-semibold">
-                Owing {naira(loan.owed)} <span className="font-normal text-stone-400">(borrowed {naira(loan.principal)})</span>
+                Owing {naira(loan.owed)} <span className="font-normal text-emerald-100/65">(borrowed {naira(loan.principal)})</span>
               </p>
-              <p className="text-xs text-stone-400">
+              <p className="text-xs text-emerald-100/65">
                 {naira(loan.weekly)} due day {loan.nextDue}
                 {loan.missed ? ` · ${loan.missed} missed` : ""}
               </p>
@@ -177,7 +177,7 @@ function Loans({ state }: { state: GameState }) {
           ))}
         </div>
       ) : (
-        <p className="mt-2 text-sm text-stone-400">No loans. Mr. Felix misses you.</p>
+        <p className="mt-2 text-sm text-emerald-100/65">No loans. Mr. Felix misses you.</p>
       )}
     </div>
   );
@@ -197,11 +197,11 @@ function Jobs({ state }: { state: GameState }) {
           </button>
         </div>
       ) : (
-        <p className="mb-4 text-sm text-stone-300">No job yet. Walk to a workplace and apply in person.</p>
+        <p className="mb-4 text-sm text-emerald-50/80">No job yet. Walk to a workplace and apply in person.</p>
       )}
       {(["entry", "mid", "top"] as const).map((tier) => (
         <div key={tier} className="mb-5">
-          <p className="text-xs font-semibold tracking-widest text-stone-400 uppercase">{tier === "entry" ? "Entry" : tier === "mid" ? "Mid-level" : "Top"}</p>
+          <p className="text-xs font-semibold tracking-widest text-emerald-100/65 uppercase">{tier === "entry" ? "Entry" : tier === "mid" ? "Mid-level" : "Top"}</p>
           <div className="mt-2 grid gap-2">
             {list
               .filter((item) => item.def.tier === tier)
@@ -211,10 +211,10 @@ function Jobs({ state }: { state: GameState }) {
                     <p className="font-semibold">{def.title}</p>
                     <p className="tabular-nums text-emerald-400">{naira(def.pay)}/shift</p>
                   </div>
-                  <p className="mt-1 text-xs text-stone-400">
+                  <p className="mt-1 text-xs text-emerald-100/65">
                     {ok ? "✅" : "🔒"} {def.requiresText}
                   </p>
-                  <p className="mt-1 text-xs text-stone-500">Apply at: {PLACES.find((p) => p.id === def.place)?.name}</p>
+                  <p className="mt-1 text-xs text-emerald-100/45">Apply at: {PLACES.find((p) => p.id === def.place)?.name}</p>
                 </div>
               ))}
           </div>
@@ -226,7 +226,7 @@ function Jobs({ state }: { state: GameState }) {
 
 function Contacts({ state }: { state: GameState }) {
   const met = NPCS.filter((def) => state.npcs[def.id]?.met);
-  if (!met.length) return <p className="text-sm text-stone-400">No contacts yet.</p>;
+  if (!met.length) return <p className="text-sm text-emerald-100/65">No contacts yet.</p>;
   return (
     <div className="grid gap-2">
       {met.map((def) => {
@@ -234,12 +234,12 @@ function Contacts({ state }: { state: GameState }) {
         return (
           <div key={def.id} className="rounded-xl bg-white/5 p-3">
             <div className="flex items-center gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full font-bold text-stone-950" style={{ background: def.color }}>
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full font-bold text-[#051a10]" style={{ background: def.color }}>
                 {npcName(state, def.id).charAt(0)}
               </span>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">{npcName(state, def.id)}</p>
-                <p className="text-xs text-stone-400">
+                <p className="text-xs text-emerald-100/65">
                   {def.role} · {def.class === "nepo" ? "Nepo Baby" : def.class === "lapo" ? "Lapo Baby" : def.class}
                 </p>
               </div>
@@ -250,11 +250,11 @@ function Contacts({ state }: { state: GameState }) {
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
               <div className="h-full rounded-full bg-violet-400" style={{ width: `${entry.rel}%` }} />
             </div>
-            <p className="mt-1 text-xs text-stone-500">{def.bio}</p>
+            <p className="mt-1 text-xs text-emerald-100/45">{def.bio}</p>
           </div>
         );
       })}
-      <p className="mt-2 text-xs text-stone-500">Friends you don't see or call for three weeks drift away.</p>
+      <p className="mt-2 text-xs text-emerald-100/45">Friends you don't see or call for three weeks drift away.</p>
     </div>
   );
 }
@@ -267,12 +267,12 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
   return (
     <div>
       <input
-        className="h-11 w-full rounded-xl border border-white/15 bg-black/30 px-3 outline-none focus:border-amber-400"
+        className="h-11 w-full rounded-xl border border-white/15 bg-black/30 px-3 outline-none focus:border-green-400"
         placeholder="Search places"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
       />
-      <p className="mt-2 text-xs text-stone-400">Bus: ₦500 and takes a time slot. Zoom ride: ₦3,500, instant.</p>
+      <p className="mt-2 text-xs text-emerald-100/65">Bus: ₦500 and takes a time slot. Zoom ride: ₦3,500, instant.</p>
       <div className="mt-3 grid gap-2">
         {shown.map((p) => {
           const d = district(p.district);
@@ -282,7 +282,7 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
               <p className="font-semibold">
                 {p.name} {locked ? "🔒" : ""}
               </p>
-              <p className="text-xs text-stone-400">{d?.name}</p>
+              <p className="text-xs text-emerald-100/65">{d?.name}</p>
               <div className="mt-2 flex gap-2">
                 <button
                   type="button"
@@ -339,10 +339,10 @@ function Life({ state }: { state: GameState }) {
         ))}
       </div>
       <p className="mt-5 font-semibold">Moments that shaped you</p>
-      <ul className="mt-2 space-y-1.5 text-sm text-stone-300">
+      <ul className="mt-2 space-y-1.5 text-sm text-emerald-50/80">
         {state.log.slice(-12).map((item) => (
           <li key={item.text}>
-            <span className="text-stone-500">Age {item.age}:</span> {item.text}
+            <span className="text-emerald-100/45">Age {item.age}:</span> {item.text}
           </li>
         ))}
       </ul>
@@ -354,7 +354,7 @@ function Settings() {
   const [confirm, setConfirm] = useState<"retire" | "delete" | null>(null);
   return (
     <div className="grid gap-3">
-      <p className="text-sm text-stone-300">Your game saves automatically on this device.</p>
+      <p className="text-sm text-emerald-50/80">Your game saves automatically on this device.</p>
       {confirm === "retire" ? (
         <button type="button" className={btnPrimary} onClick={retire}>
           Yes, see how my life ends

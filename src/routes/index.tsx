@@ -39,19 +39,28 @@ function Home() {
         <DeskList />
       </section>
 
-      <section className="mt-12 overflow-hidden rounded-3xl bg-[#14110f] p-6 text-stone-100 sm:p-8">
-        <p className="text-xs font-semibold tracking-[0.25em] text-amber-400 uppercase">New game · 18+</p>
-        <h2 className="mt-2 font-display text-3xl tracking-tight">Abuja Hustle</h2>
-        <p className="mt-2 max-w-xl text-pretty text-stone-300">
-          A satirical life sim. Grow up in Abuja without privilege, dodge QuickKash, outwork the Nepo Babies, and chase
-          financial freedom. Plays on your phone or computer.
-        </p>
-        <Link
-          to="/games/abuja-hustle"
-          className="mt-5 inline-flex min-h-11 items-center rounded-full bg-amber-400 px-5 text-sm font-semibold text-stone-950"
-        >
-          Play Abuja Hustle
-        </Link>
+      <section className="mt-12 flex flex-col gap-5 overflow-hidden rounded-3xl bg-[#051a10] p-6 text-white sm:flex-row sm:items-center sm:p-8">
+        <img
+          src="/abuja-hustle-192.png"
+          alt=""
+          width={96}
+          height={96}
+          className="size-24 shrink-0 rounded-3xl shadow-lg ring-1 ring-white/15"
+        />
+        <div>
+          <p className="text-xs font-semibold tracking-[0.25em] text-green-400 uppercase">New game · 18+</p>
+          <h2 className="mt-2 font-display text-3xl tracking-tight">Abuja Hustle</h2>
+          <p className="mt-2 max-w-xl text-pretty text-emerald-50/80">
+            A satirical life sim. Grow up in Abuja without privilege, dodge QuickKash, outwork the Nepo Babies, and chase
+            financial freedom. Plays on your phone or computer.
+          </p>
+          <Link
+            to="/games/abuja-hustle"
+            className="mt-5 inline-flex min-h-11 items-center rounded-full bg-green-600 px-5 text-sm font-semibold text-white hover:bg-green-500"
+          >
+            Play Abuja Hustle
+          </Link>
+        </div>
       </section>
 
       <section className="mt-12 rounded-3xl bg-card p-6 shadow-line sm:p-8">

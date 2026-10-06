@@ -35,7 +35,7 @@
       "y": 0,
       "w": 600,
       "h": 500,
-      "color": "#a16207",
+      "color": "#0369a1",
       "vibe": "Old money, new money, embassy money. Gates within gates.",
       "gate": {
         "if": {
@@ -60,7 +60,7 @@
       "y": 0,
       "w": 800,
       "h": 600,
-      "color": "#92400e",
+      "color": "#1e3a8a",
       "vibe": "Where the Villa is. Sirens are background music.",
       "gate": {
         "if": {
@@ -135,7 +135,7 @@
       "y": 1100,
       "w": 900,
       "h": 700,
-      "color": "#b45309",
+      "color": "#15803d",
       "vibe": "Crowded, loud, alive. Where the grind never sleeps."
     }
   ],
@@ -146,7 +146,7 @@
       "district": "nyanya",
       "x": 1900,
       "y": 1520,
-      "color": "#fbbf24",
+      "color": "#4ade80",
       "if": {
         "background": "lapo"
       },
@@ -209,7 +209,7 @@
       "district": "gwarinpa",
       "x": 760,
       "y": 260,
-      "color": "#fbbf24",
+      "color": "#4ade80",
       "if": {
         "background": "average"
       },
@@ -912,7 +912,7 @@
       "district": "kubwa",
       "x": 260,
       "y": 260,
-      "color": "#f59e0b",
+      "color": "#22c55e",
       "blurb": "Tunde's one-room in Kubwa, always open, always something on the stove.",
       "actions": [
         {

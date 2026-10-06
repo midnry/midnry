@@ -135,7 +135,7 @@ export class WorldScene extends Phaser.Scene {
     this.glows = [];
     this.boat = null;
     const { width, height } = sizeOf(this.mapId);
-    this.cameras.main.setBackgroundColor(this.mapId === "city" ? "#1b1712" : "#1d1a14");
+    this.cameras.main.setBackgroundColor(this.mapId === "city" ? "#0b2216" : "#0d2418");
 
     this.drawPeople();
     if (this.mapId === "city") this.drawCity();
@@ -143,9 +143,9 @@ export class WorldScene extends Phaser.Scene {
 
     const start = this.startPoint();
     this.player = this.makePlayer(start.x, start.y);
-    this.beatMarker = this.makeMarker(0xfbbf24, "!");
+    this.beatMarker = this.makeMarker(0x4ade80, "!");
     this.taskMarker = this.makeMarker(0x22d3ee, "★");
-    this.arrow = this.add.triangle(0, 0, 0, -12, 9, 8, -9, 8, 0xfbbf24).setDepth(20).setVisible(false);
+    this.arrow = this.add.triangle(0, 0, 0, -12, 9, 8, -9, 8, 0x4ade80).setDepth(20).setVisible(false);
     this.night = this.add.rectangle(0, 0, 4000, 4000, 0x0b1330, 0).setOrigin(0).setScrollFactor(0).setDepth(30);
 
     this.cameras.main.setBounds(0, 0, width, height);
@@ -440,8 +440,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private makePlayer(x: number, y: number) {
-    const me = figure(this, x, y, fullLook(getState()?.looks ?? {}), { name: "YOU", nameColor: "#fbbf24", unit: 0.52 });
-    const halo = this.add.ellipse(0, 20, 50, 17, 0xfbbf24, 0.25).setStrokeStyle(3, 0xfbbf24, 0.95);
+    const me = figure(this, x, y, fullLook(getState()?.looks ?? {}), { name: "YOU", nameColor: "#4ade80", unit: 0.52 });
+    const halo = this.add.ellipse(0, 20, 50, 17, 0x4ade80, 0.25).setStrokeStyle(3, 0x4ade80, 0.95);
     me.addAt(halo, 0);
     this.tweens.add({ targets: halo, scaleX: 1.15, scaleY: 1.15, alpha: 0.6, duration: 700, yoyo: true, repeat: -1 });
     return me;
@@ -451,7 +451,7 @@ export class WorldScene extends Phaser.Scene {
   private makeMarker(tint: number, glyph: string) {
     const ring = this.add.circle(0, 0, 34, tint, 0.2).setStrokeStyle(3, tint, 1);
     const sign = this.add
-      .text(0, -62, glyph, { fontFamily: "system-ui", fontSize: "28px", fontStyle: "bold", color: "#14110f", backgroundColor: Phaser.Display.Color.IntegerToColor(tint).rgba, padding: { x: 8, y: 2 } })
+      .text(0, -62, glyph, { fontFamily: "system-ui", fontSize: "28px", fontStyle: "bold", color: "#051a10", backgroundColor: Phaser.Display.Color.IntegerToColor(tint).rgba, padding: { x: 8, y: 2 } })
       .setOrigin(0.5);
     this.tweens.add({ targets: sign, y: -72, duration: 600, yoyo: true, repeat: -1 });
     this.tweens.add({ targets: ring, scale: 1.3, alpha: 0.5, duration: 900, yoyo: true, repeat: -1 });
@@ -651,7 +651,7 @@ export class WorldScene extends Phaser.Scene {
     const angle = Math.atan2(dy, dx);
     this.arrow.setPosition(this.player.x + Math.cos(angle) * 64, this.player.y + Math.sin(angle) * 64);
     this.arrow.setRotation(angle + Math.PI / 2);
-    this.arrow.setFillStyle(step ? 0x22d3ee : 0xfbbf24);
+    this.arrow.setFillStyle(step ? 0x22d3ee : 0x4ade80);
   }
 
   private moveTraffic(dt: number, time: number) {
@@ -695,7 +695,7 @@ export function createGame(parent: HTMLElement): Phaser.Game {
   return new Phaser.Game({
     type: Phaser.AUTO,
     parent,
-    backgroundColor: "#1b1712",
+    backgroundColor: "#0b2216",
     scale: { mode: Phaser.Scale.RESIZE, width: parent.clientWidth, height: parent.clientHeight },
     render: { antialias: true },
     scene: [WorldScene],
