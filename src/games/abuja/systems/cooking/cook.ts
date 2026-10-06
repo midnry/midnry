@@ -261,7 +261,7 @@ function finish(s: GameState, place: Place, r: RecipeDef, used: Lot[], perf: Per
   if (place.where === "home") k.clean = Math.max(0, k.clean - mess);
   else {
     const v = k.venues.find((x) => x.id === place.where);
-    if (v) v.clean = Math.max(0, v.clean - mess / 2);
+    if (v) v.clean = Math.max(0, v.clean - mess / 6);
   }
   const custom = opts.custom ? k.customs.find((c) => c.id === opts.custom) : undefined;
   const skill = mainSkill(r);

@@ -206,6 +206,7 @@ export const SOURCES: Source[] = [
   { id: "wuse", name: "Wuse Market", place: "wuse_market", tiers: ["cheap", "standard"], mult: 1, fee: 0, localOnly: false, blurb: "Everything, everywhere. Haggle and check the tomatoes." },
   { id: "kubwa", name: "Kubwa Village Market", place: "kubwa_market", tiers: ["cheap", "standard"], mult: 0.88, fee: 0, localOnly: true, blurb: "Farm produce straight from the villages. Cheapest local food." },
   { id: "shoprite", name: "Shoprite, Jabi Lake Mall", place: "jabi_mall", tiers: ["standard", "premium"], mult: 1.25, fee: 0, localOnly: false, blurb: "Imported goods, premium cuts, air conditioning." },
+  { id: "sani", name: "Alhaji Sani (wholesale)", place: "kubwa_market", tiers: ["cheap", "standard", "premium"], mult: 0.85, fee: 0, localOnly: false, blurb: "Wholesale for food businesses, delivered to your kitchen. Negotiate a supplier deal for discounts." },
   { id: "chopnow", name: "ChopNow Mart (delivery)", place: "", tiers: ["standard", "premium"], mult: 1.15, fee: 700, localOnly: false, blurb: "Groceries to your door. A bit dearer." },
 ];
 
@@ -216,13 +217,16 @@ export function inSeason(def: IngredientDef, day: number): boolean | null {
   return def.season.includes(MONTH(day));
 }
 
+/** Food prices creep up about 12% every four weeks. */
+export const inflationAt = (day: number) => 1 + 0.12 * (day / 28);
+
 /** What one portion costs today at a source and tier. */
 export function price(s: GameState, id: string, tier: Tier, source: Source): number {
   const def = ingredient(id);
   if (!def || tier === "homegrown") return 0;
   const usd = s.market?.prices.USDNGN ?? 1550;
   const agro = s.market?.prices.AGRO ?? 95;
-  const inflation = 1 + 0.12 * (s.day / 28);
+  const inflation = inflationAt(s.day);
   const econ = def.origin === "imported" ? usd / 1550 : 0.85 + 0.15 * (agro / 95);
   const season = inSeason(def, s.day);
   const seasonal = season === null ? 1 : season ? 0.8 : 1.25;

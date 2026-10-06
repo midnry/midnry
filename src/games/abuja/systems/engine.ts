@@ -31,6 +31,8 @@ import type { Approach, Bluff } from "./negotiate/types";
 import { addLot, CROPS, harvest as harvestPlot, kitchen, moveLot, nightlyGarden, plant as plantPlot, price as foodPrice, SOURCES, sells, spoil, water as waterGarden, weeklyMarket } from "./cooking/kitchen";
 import { cleanKitchen, cookMinutes, cookRecipe, eatDish, experiment as experimentDish, learn, repair as repairKit, saveCustom, type CookResult } from "./cooking/cook";
 import { callMum, guestList, shareMeal, type MealKind } from "./cooking/social";
+import * as V from "./cooking/venues";
+import { lateCatering, nightlyVenues, placeKit, weeklyVenues } from "./cooking/venues";
 import { BOOKS, CLASSES, recipe as recipeDef, RECIPES } from "./cooking/recipes";
 import { equipment as equipDef, stats as equipStats } from "./cooking/equipment";
 import { ingredient as ingDef } from "./cooking/ingredients";
@@ -648,6 +650,9 @@ function sleep(s: GameState) {
     const spoiled = spoil(s, s.kitchen.pantry, s.kitchen.leftovers, s.kitchen.waste);
     if (spoiled.length) note(s, `🗑️ Spoiled overnight: ${spoiled.slice(0, 4).join(", ")}${spoiled.length > 4 ? ` and ${spoiled.length - 4} more` : ""}.`);
     note(s, ...nightlyGarden(s));
+    for (const v of s.kitchen.venues) spoil(s, v.stock, null, s.kitchen.waste);
+    note(s, ...nightlyVenues(s));
+    note(s, ...lateCatering(s));
   }
   life(s).driving = false;
   if (isDirty(s)) {
@@ -723,7 +728,7 @@ function weeklyBills(s: GameState) {
     addStat(s, "money", -fuel);
     lines.push(`Cooking gas and power: ${naira(fuel)}.`);
   }
-  if (s.kitchen) lines.push(...weeklyMarket(s));
+  if (s.kitchen) lines.push(...weeklyMarket(s), ...weeklyVenues(s));
   lines.push(...weeklyPower(s));
   lines.push(...weeklyBusiness(s));
   if (life(s).hospitalBill > 0) {
@@ -1305,11 +1310,14 @@ export function buyEquipment(id: string, tier: EquipTier, where: "home" | string
     const k = kitchen(s);
     const v = where === "home" ? null : k.venues.find((x) => x.id === where);
     if (where === "home" && def.scope === "pro") return toast(s, "That's commercial kit. It won't fit a home kitchen.");
+    if (v && def.scope === "home") return toast(s, "That's home kit. Buy the commercial version for a business.");
     const delivery = st.price > 100_000 ? 5000 : 1500;
     if (s.stats.money < st.price + delivery) return toast(s, `You need ${naira(st.price + delivery)} including delivery.`);
-    addStat(s, "money", -(st.price + delivery));
     const kit = v ? v.equipment : k.equipment;
-    kit.push({ uid: `e${Date.now().toString(36)}${kit.length}`, def: id, tier, condition: 100, clean: 100, broken: false });
+    const item = { uid: `e${Date.now().toString(36)}${kit.length}`, def: id, tier, condition: 100, clean: 100, broken: false };
+    if (v && !placeKit(v, item)) return toast(s, "There's no room left in the kitchen. Sell something first.");
+    kit.push(item);
+    addStat(s, "money", -(st.price + delivery));
     toast(s, `${def.icon} New ${def.name.toLowerCase()} (${tier}) delivered and installed for ${naira(st.price)} plus ${naira(delivery)} delivery.`);
   });
 }
@@ -1436,6 +1444,98 @@ export function hostMeal(dishId: string, guestIds: string[], kind: MealKind): { 
 
 export function phoneMum() {
   update((s) => toast(s, callMum(s)));
+}
+
+// ── Food businesses ──────────────────────────────────────────────────────────
+
+/** Most venue actions are a call into venues.ts and a toast. */
+function venueDo(fn: (s: GameState) => string) {
+  update((s) => {
+    if (s.chapter || s.ending) return;
+    kitchen(s);
+    const line = fn(s);
+    if (line) toast(s, line);
+  });
+}
+
+export const openFoodVenue = (type: string, district: string, name: string) => venueDo((s) => V.openVenue(s, type, district, name));
+export const hireStaff = (vid: string, candidate: string) => venueDo((s) => V.hire(s, vid, candidate));
+export const fireStaff = (vid: string, staff: string) => venueDo((s) => V.fire(s, vid, staff));
+export const addMenuItem = (vid: string, recipeId: string, custom?: string) => venueDo((s) => V.addToMenu(s, vid, recipeId, custom));
+export const venueDeepClean = (vid: string) => venueDo((s) => V.deepClean(s, vid));
+export const venuePromote = (vid: string) => venueDo((s) => V.promote(s, vid));
+export const venueSell = (vid: string) => venueDo((s) => V.sellVenue(s, vid));
+export const truckMove = (vid: string, district: string) => venueDo((s) => V.moveTruck(s, vid, district));
+export const cateringAccept = (id: string) => venueDo((s) => V.acceptCatering(s, id));
+export const cateringDeliver = (id: string) => venueDo((s) => V.deliverCatering(s, id));
+export const competitionEnter = (eventId: string, dishId: string) => venueDo((s) => V.enterCompetition(s, eventId, dishId));
+export const festivalSell = (eventId: string) =>
+  venueDo((s) => {
+    if (s.slot >= SLOTS.length) return "The festival is over for today.";
+    const line = V.sellAtFestival(s, eventId);
+    if (line.startsWith("🎪")) spend(s, 2, -15);
+    return line;
+  });
+export const cateringCook = (id: string, vid: string, recipeId: string) =>
+  venueDo((s) => {
+    if (s.slot >= SLOTS.length) return "Too late to cook tonight.";
+    const line = V.cookForCatering(s, id, vid, recipeId);
+    if (line.startsWith("Cooked")) spend(s, 1, -8);
+    return line;
+  });
+
+export function editMenu(vid: string, recipeId: string, custom: string | undefined, patch: { price?: number; tier?: Tier; active?: boolean; remove?: boolean }) {
+  update((s) => {
+    const v = kitchen(s).venues.find((x) => x.id === vid);
+    if (!v) return;
+    const m = v.menu.find((x) => x.recipe === recipeId && x.custom === custom);
+    if (!m) return;
+    if (patch.remove) v.menu = v.menu.filter((x) => x !== m);
+    if (patch.price != null) m.price = Math.max(50, Math.round(patch.price / 50) * 50);
+    if (patch.tier) m.tier = patch.tier;
+    if (patch.active != null) m.active = patch.active;
+  });
+}
+
+export function setVenue(vid: string, patch: { delivery?: boolean; portion?: number; autoStock?: boolean; name?: string }) {
+  update((s) => {
+    const v = kitchen(s).venues.find((x) => x.id === vid);
+    if (!v) return;
+    if (patch.delivery != null && !V.venueType(v.type)?.delivery) v.delivery = patch.delivery;
+    if (patch.portion != null) v.portion = Math.max(0.8, Math.min(1.4, Math.round(patch.portion * 20) / 20));
+    if (patch.autoStock != null) v.autoStock = patch.autoStock;
+    if (patch.name) v.name = patch.name.trim().slice(0, 36) || v.name;
+  });
+}
+
+export function moveVenueKit(vid: string, kitUid: string, cell: number) {
+  update((s) => {
+    const v = kitchen(s).venues.find((x) => x.id === vid);
+    if (v) V.moveKit(v, kitUid, cell);
+  });
+}
+
+/** Run a service. Working it yourself takes a time slot and energy. */
+export function venueService(vid: string, you: boolean): V.ServiceReport {
+  let out: V.ServiceReport = { ok: false, text: "" };
+  update((s) => {
+    if (s.chapter || s.ending) return;
+    if (s.slot >= SLOTS.length) {
+      out = { ok: false, text: "Everything's closed. Sleep and open tomorrow." };
+      return;
+    }
+    if (you) {
+      const hurt = tooHurtFor(s, -12);
+      if (hurt) {
+        out = { ok: false, text: hurt };
+        return;
+      }
+    }
+    out = V.runService(s, vid, you);
+    if (out.ok && you) spend(s, 1, -12);
+    toast(s, out.text);
+  });
+  return out;
 }
 
 /** Make sure the kitchen exists before the screen shows it. */

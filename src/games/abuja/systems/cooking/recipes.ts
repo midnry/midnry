@@ -1,3 +1,4 @@
+import { ingredient } from "./ingredients";
 import type { Cuisine, FoodTag, Method, Prep, RecipeDef, Step } from "./types";
 
 // Every recipe. Steps are what you actually do, in order; the engine turns
@@ -256,6 +257,12 @@ export const RECIPES: RecipeDef[] = [
     [prep("pound", "Mash the ripe plantain"), prep("mix", "Mix the batter"), cook("bake", 190, 6, "Cook in the waffle iron"), plate("Drizzle with honey")],
     t(0, 1, 7, 0), 3, 4, 2000, 40, ["breakfast", "sweet"], { food: 28, energy: 7, stress: -3 }, "experiment"),
 ];
+
+// A dish always sells for at least 2.5× what goes into it, so cooking to sell can pay.
+for (const r of RECIPES) {
+  const cost = r.needs.reduce((sum, x) => sum + (ingredient(x.id)?.price ?? 0) * x.qty, 0) / r.serves;
+  r.value = Math.max(r.value, Math.round((cost * 2.5) / 50) * 50);
+}
 
 export const recipe = (id: string) => RECIPES.find((r) => r.id === id);
 
