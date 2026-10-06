@@ -978,7 +978,7 @@ function CateringView({ state, k }: { state: GameState; k: Kitchen }) {
           </div>
         );
       })}
-      <p className="text-xs text-slate-500">Cooking for catering uses your business's stock; if it's empty, the first try orders ingredients from the wholesaler. Miss a deadline and your reputation suffers.</p>
+      <p className="text-xs text-slate-500">Each cooking session buys what's missing from the wholesaler and cooks as much as your team can manage. Miss a deadline and your reputation suffers.</p>
     </div>
   );
 }
@@ -1028,7 +1028,7 @@ function EventsView({ state, k, market }: { state: GameState; k: Kitchen; market
               </>
             ) : (
               <>
-                <p className="mt-1 text-xs text-slate-300">Huge crowds all day. Everything you've cooked at home goes on your stall (₦15,000 stall fee, takes the afternoon).</p>
+                <p className="mt-1 text-xs text-slate-300">Huge crowds all day. Everything you've cooked at home goes on your stall (₦5,000 stall fee, takes the afternoon).</p>
                 {today ? (
                   <button type="button" className={`${btnPrimary} mt-2 min-h-9 text-xs`} disabled={!k.leftovers.length || state.slot >= SLOTS.length} onClick={() => festivalSell(e.id)}>
                     Sell at the festival ({k.leftovers.reduce((a, d) => a + d.portions, 0)} portions)

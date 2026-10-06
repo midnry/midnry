@@ -216,16 +216,16 @@ export function cookMinutes(kit: Owned[], r: RecipeDef, knife: number): number {
   return Math.round(total);
 }
 
-function wearKit(k: Kitchen | null, kit: Owned[], r: RecipeDef, notes: string[]): number {
+function wearKit(k: Kitchen | null, kit: Owned[], r: RecipeDef, notes: string[], factor = 1): number {
   let energy = 0;
   for (const step of r.steps) {
     const o = kitFor(kit, step);
     if (!o) continue;
     const st = stats(o.def, o.tier);
     energy += st?.energy ?? 0;
-    o.condition = Math.max(0, o.condition - 0.7);
-    o.clean = Math.max(0, o.clean - 6);
-    const p = ((100 - (st?.reliability ?? 70)) / 2200) * (1 + (100 - o.condition) / 50);
+    o.condition = Math.max(0, o.condition - 0.7 * factor);
+    o.clean = Math.max(0, o.clean - 6 * factor);
+    const p = ((100 - (st?.reliability ?? 70)) / 2200) * (1 + (100 - o.condition) / 50) * factor;
     // Hand tools wear out but don't suddenly break.
     if ((st?.price ?? 0) >= 20000 && Math.random() < p) {
       o.broken = true;
@@ -256,7 +256,8 @@ export function cookRecipe(s: GameState, where: "home" | string, recipeId: strin
 function finish(s: GameState, place: Place, r: RecipeDef, used: Lot[], perf: Performance, opts: { custom?: string; improvised?: boolean; staffSkill?: number; name?: string } = {}): CookResult {
   const k = kitchen(s);
   const { scores, burnt, notes } = scoreDish(s, r, used, place.equipment, place.clean, perf, opts);
-  wearKit(place.where === "home" ? k : null, place.equipment, r, notes);
+  // A business kitchen cooks many small batches a service: each wears the kit less.
+  wearKit(place.where === "home" ? k : null, place.equipment, r, notes, place.where === "home" ? 1 : 0.33);
   // Mess: cooking dirties the kitchen, less so when you're careful.
   const mess = Math.max(1.5, 5 - k.skills.safety / 25);
   if (place.where === "home") k.clean = Math.max(0, k.clean - mess);

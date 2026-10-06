@@ -249,7 +249,8 @@ export function openVenue(s: GameState, typeId: string, district: string, name: 
     placeKit(v, o);
   }
   // Start with what you know that fits.
-  for (const r of Object.keys(k.recipes)) {
+  const fit = (id: string) => recipe(id)?.tags.filter((x) => t.likes.includes(x)).length ?? 0;
+  for (const r of Object.keys(k.recipes).sort((a, b) => fit(b) - fit(a))) {
     const def = recipe(r);
     if (!def || v.menu.length >= 4 || !t.courses.includes(def.course) || missingKit(v.equipment, def).length) continue;
     v.menu.push(menuItem(def, t, district, s.day));
@@ -823,7 +824,7 @@ export function acceptCatering(s: GameState, id: string): string {
   return `Accepted: ${c.title}. Have ${c.needs.map((n) => `${n.qty} ${n.course}s`).join(", ")} ready by day ${c.deadline}.`;
 }
 
-/** Cook a batch for a catering job at one of your venues: as many portions of one recipe as the stock allows. */
+/** Cook for a catering job at one of your venues: buys what's missing, then cooks as much as the team can in one go. */
 export function cookForCatering(s: GameState, id: string, vid: string, recipeId: string): string {
   const k = kitchen(s);
   const c = k.catering.find((x) => x.id === id);
@@ -833,26 +834,30 @@ export function cookForCatering(s: GameState, id: string, vid: string, recipeId:
   const course = r.course === "drink" ? "drink" : r.course === "dessert" || r.course === "baked" ? "dessert" : "main";
   const need = c.needs.find((n) => n.course === course);
   if (!need) return `They didn't ask for any ${course === "main" ? "main dishes" : `${course}s`}.`;
+  const gap = missingKit(v.equipment, r);
+  if (gap.length) return `${v.name} has nothing working for ${gap.join(", ").toLowerCase()}. Buy or repair the kit.`;
   const cooks = v.staff.filter((x) => COOK_ROLES.includes(x.role));
   const skill = Math.max(k.skills[mainSkill(r)], ...cooks.map((x) => x.skill)) + Math.min(10, cooks.length * 2);
+  const left = need.qty - (c.ready[course] ?? 0);
+  // What the team can turn out in one session.
+  const target = Math.min(left, 40 + cooks.length * 30);
+  const bought = restock(s, { ...v, menu: [{ recipe: r.id, price: 0, tier: "standard", active: true, sold: 0, avg: 0 }] }, target);
   let made = 0;
   let q = 0;
-  const target = need.qty - (c.ready[course] ?? 0);
   while (made < target) {
     const res: { ok: boolean; dish?: Dish } = cookRecipe(s, v.id, r.id, staffPerf(r, skill, r.target), { staffSkill: skill });
     if (!res.ok || !res.dish) break;
     made += r.serves;
     q += res.dish.scores.overall * r.serves;
   }
-  if (!made) {
-    const bought = restock(s, { ...v, menu: [{ recipe: r.id, price: 0, tier: "standard", active: true, sold: 0, avg: 0 }] }, Math.min(target, 60));
-    return bought.cost ? `Bought ingredients for ₦${bought.cost.toLocaleString("en")}. Cook again.` : `${v.name} doesn't have the ingredients or kit for ${r.name.toLowerCase()}.`;
-  }
+  if (!made) return bought.short.length ? `You can't afford the ingredients (${bought.short.slice(0, 3).join(", ")}).` : `Couldn't cook ${r.name.toLowerCase()} at ${v.name}.`;
   const before = c.ready[course] ?? 0;
   c.ready[course] = Math.min(need.qty, before + made);
   const total = Object.values(c.ready).reduce((a, b) => a + b, 0);
-  c.quality = Math.round((c.quality * (total - made) + q) / Math.max(1, total));
-  return `Cooked ${made} portions of ${r.name.toLowerCase()} (${Math.round(q / made)}/100). ${course}: ${c.ready[course]}/${need.qty}.`;
+  c.quality = Math.round((c.quality * (total - Math.min(made, need.qty - before)) + q) / Math.max(1, total));
+  c.quality = Math.min(100, c.quality);
+  const more = c.ready[course]! < need.qty ? ` Another session will finish it (${cooks.length ? "more cooks get more done" : "hire cooks to do more at once"}).` : "";
+  return `Cooked ${made} portions of ${r.name.toLowerCase()} (${Math.round(q / made)}/100)${bought.cost ? `, with ₦${bought.cost.toLocaleString("en")} of ingredients` : ""}. ${course}: ${c.ready[course]}/${need.qty}.${more}`;
 }
 
 export function deliverCatering(s: GameState, id: string): string {
@@ -974,7 +979,7 @@ export function sellAtFestival(s: GameState, eventId: string): string {
     revenue += each * d.portions;
     qsum += d.scores.overall * d.portions;
   }
-  const fee = 15000;
+  const fee = 5000;
   const q = Math.round(qsum / portions);
   k.leftovers = [];
   e.done = true;
