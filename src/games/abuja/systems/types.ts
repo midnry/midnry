@@ -247,8 +247,10 @@ export type ActionDef = {
   lockedText?: string;
   effects: Effect[];
   text: string;
+  /** For "negotiate" actions: which deal. */
+  deal?: string;
   /** Special handlers in the UI: sleep, work, apply, loans, hospital, japa. */
-  kind?: "sleep" | "work" | "apply" | "loans" | "japa" | "meet" | "drive" | "doctor" | "paybill" | "unfreeze" | "efcc" | "drivetest" | "rentcar" | "buycar" | "bizapp";
+  kind?: "sleep" | "work" | "apply" | "loans" | "japa" | "meet" | "drive" | "doctor" | "paybill" | "unfreeze" | "efcc" | "drivetest" | "rentcar" | "buycar" | "bizapp" | "negotiate";
   job?: string;
 };
 

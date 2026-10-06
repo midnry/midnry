@@ -169,7 +169,11 @@ export function weeklyBusiness(s: GameState): string[] {
     const [lo, hi] = def.weekly;
     const skill = 1 + Math.min(0.4, (s.skills.trade + s.skills.hustle) / 500);
     let profit = Math.round((lo + Math.random() * (hi - lo)) * (1 + (b.level - 1) * 0.9) * skill);
-    const away = s.day - b.lastVisit;
+    // A supplier deal makes stock cheaper for shops that buy it.
+    const supply = s.life?.neg?.supplier;
+    if (supply && supply.until >= s.day && (b.id === "mama_put" || b.id === "minimart")) profit = Math.round(profit * (1 + supply.discount * 2));
+    // A manager keeps things running when you're not there.
+    const away = s.life?.neg?.staff ? 0 : s.day - b.lastVisit;
     if (away > 14) profit = -Math.round(lo * 0.5 * b.level);
     else if (away > 7) profit = Math.round(profit * 0.4);
     const roll = Math.random();

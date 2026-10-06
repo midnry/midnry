@@ -246,6 +246,16 @@
             "powered": true
           },
           "lockedText": "No light: AEDC cut you off. Pay the electricity bill in the Bills app."
+        },
+        {
+          "id": "nego_rent",
+          "label": "🤝 Talk to Mrs. Bello about your rent",
+          "slots": 0,
+          "energy": 0,
+          "kind": "negotiate",
+          "deal": "rent",
+          "effects": [],
+          "text": ""
         }
       ]
     },
@@ -358,6 +368,16 @@
             "powered": true
           },
           "lockedText": "No light: AEDC cut you off. Pay the electricity bill in the Bills app."
+        },
+        {
+          "id": "nego_rent",
+          "label": "🤝 Talk to Mrs. Bello about your rent",
+          "slots": 0,
+          "energy": 0,
+          "kind": "negotiate",
+          "deal": "rent",
+          "effects": [],
+          "text": ""
         }
       ]
     },
@@ -667,6 +687,16 @@
             }
           ],
           "text": "You wait until the trader turns to argue with a customer…"
+        },
+        {
+          "id": "nego_fabric",
+          "label": "🤝 Haggle with Iya Bose for fabric bales",
+          "slots": 0,
+          "energy": 0,
+          "kind": "negotiate",
+          "deal": "fabric",
+          "effects": [],
+          "text": ""
         }
       ]
     },
@@ -685,6 +715,16 @@
           "slots": 0,
           "energy": 0,
           "kind": "loans",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "nego_loan",
+          "label": "🤝 Negotiate a bigger loan with Mr. Felix",
+          "slots": 0,
+          "energy": 0,
+          "kind": "negotiate",
+          "deal": "loan",
           "effects": [],
           "text": ""
         }
@@ -974,6 +1014,46 @@
           "kind": "bizapp",
           "effects": [],
           "text": ""
+        },
+        {
+          "id": "nego_minimart",
+          "label": "🤝 Negotiate: buy Emeka's mini-mart",
+          "slots": 0,
+          "energy": 0,
+          "kind": "negotiate",
+          "deal": "buy_minimart",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "nego_canteen",
+          "label": "🤝 Negotiate: buy Hajia Rakiya's canteen",
+          "slots": 0,
+          "energy": 0,
+          "kind": "negotiate",
+          "deal": "buy_canteen",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "nego_logistics",
+          "label": "🤝 Negotiate: buy Chief Adebayo's logistics company",
+          "slots": 0,
+          "energy": 0,
+          "kind": "negotiate",
+          "deal": "buy_logistics",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "nego_sell",
+          "label": "🤝 Negotiate: sell a business to Chief Adebayo",
+          "slots": 0,
+          "energy": 0,
+          "kind": "negotiate",
+          "deal": "sell_business",
+          "effects": [],
+          "text": ""
         }
       ]
     },
@@ -1019,6 +1099,16 @@
           "slots": 0,
           "energy": 0,
           "kind": "paybill",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "nego_bill",
+          "label": "🤝 Negotiate your bill with the accountant",
+          "slots": 0,
+          "energy": 0,
+          "kind": "negotiate",
+          "deal": "hospital_bill",
           "effects": [],
           "text": ""
         }
@@ -1792,6 +1882,16 @@
             }
           ],
           "text": "A cold sachet of pure water."
+        },
+        {
+          "id": "nego_supplier",
+          "label": "🤝 Negotiate a supplier deal with Alhaji Sani",
+          "slots": 0,
+          "energy": 0,
+          "kind": "negotiate",
+          "deal": "supplier",
+          "effects": [],
+          "text": ""
         }
       ]
     },
@@ -1932,12 +2032,12 @@
           "text": ""
         },
         {
-          "id": "buy_car",
-          "label": "Buy a 2012 Toyota Corolla (₦3,500,000)",
-          "slots": 1,
-          "energy": -5,
-          "cost": 3500000,
-          "kind": "buycar",
+          "id": "nego_car",
+          "label": "🤝 Negotiate: buy the 2012 Corolla",
+          "slots": 0,
+          "energy": 0,
+          "kind": "negotiate",
+          "deal": "buy_car",
           "effects": [],
           "text": ""
         }

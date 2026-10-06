@@ -26,6 +26,8 @@ import {
 import { bus, update } from "./store";
 import { MENU, DELIVERY_FEE, burn, daysUnwashed, isDirty, life, offense, overnight } from "./life";
 import { caseStatus, nightlyCase, reportScam, resolveFreeze, surrender, withoutBankCheck } from "./bank";
+import { acceptCounter, argue, bluff, closeNegotiation, propose as proposeOffer, setTerms, startNegotiation, walkAway, weeklyNegotiation } from "./negotiate/core";
+import type { Approach, Bluff } from "./negotiate/types";
 import { collect, growBusiness, startBusiness, visitBusiness, weeklyBusiness } from "./business";
 import { buyCar, drivingTest, frscStop, hasCar, nightlyCar, rentCar, toggleDriving, useFuel } from "./drive";
 import { hurt, injured, nightlyHealth, payHospital, payPower, rollHit, tooHurtFor, treat, weeklyPower, type HitBy } from "./health";
@@ -259,6 +261,11 @@ export function doAction(placeId: string, actionId: string): "loans" | "business
     if (!check(s, a.if)) return toast(s, a.lockedText ?? "You can't do that yet.");
     if (a.kind === "sleep") return sleep(s);
     if (a.kind === "paybill") return toast(s, payHospital(s));
+    if (a.kind === "negotiate" && a.deal) {
+      const why = startNegotiation(s, a.deal);
+      if (why) toast(s, why);
+      return;
+    }
     if (a.kind === "unfreeze" || a.kind === "efcc") {
       if (a.slots && s.slot + a.slots > SLOTS.length) return toast(s, "They've closed for the day. Come back tomorrow morning.");
       const line =
@@ -480,6 +487,57 @@ export function travel(placeId: string, mode: RideMode) {
   });
 }
 
+// ── Negotiation ──────────────────────────────────────────────────────────────
+
+/** Sit down to negotiate a deal. */
+export function negotiate(dealId: string) {
+  update((s) => {
+    if (s.chapter || s.ending || s.event) return;
+    if (s.slot >= SLOTS.length) return toast(s, "It's too late to do business today. Come back tomorrow.");
+    const why = startNegotiation(s, dealId);
+    if (why) toast(s, why);
+  });
+}
+
+export function negArgue(a: Approach) {
+  update((s) => argue(s, a));
+}
+
+export function negTerms(terms: { id: string; included: boolean; amount?: number }[]) {
+  update((s) => setTerms(s, terms));
+}
+
+export function negPropose(terms: { id: string; included: boolean; amount?: number }[]) {
+  update((s) => {
+    setTerms(s, terms);
+    proposeOffer(s);
+  });
+}
+
+export function negAccept() {
+  update((s) => acceptCounter(s));
+}
+
+export function negBluff(kind: Bluff) {
+  update((s) => bluff(s, kind));
+}
+
+export function negWalk() {
+  update((s) => walkAway(s));
+}
+
+/** Leave the negotiation screen. Talking took time. */
+export function negClose() {
+  update((s) => {
+    const n = s.life?.neg?.active;
+    if (!n) return;
+    const talked = n.attempts + n.rounds > 0;
+    closeNegotiation(s);
+    if (talked) spend(s, 1, -5);
+    checkEndings(s);
+  });
+}
+
 // ── Businesses ───────────────────────────────────────────────────────────────
 
 export function business(action: { kind: "start" | "grow" | "visit" | "collect"; id: string }) {
@@ -602,11 +660,25 @@ function sleep(s: GameState) {
 }
 
 function weeklyBills(s: GameState) {
-  const rent = RENT[s.background] ?? 10000;
+  const neg = s.life?.neg;
+  const prepaid = (neg?.rentPrepaidUntil ?? 0) >= s.day;
+  const rent = prepaid ? 0 : (neg?.rent ?? RENT[s.background] ?? 10000);
   // Food is now bought meal by meal; this is transport and data.
   const living = 3000 + 1500;
   addStat(s, "money", -(rent + living));
-  const lines = [`Weekly bills: rent ${naira(rent)}, transport and data ${naira(living)}.`];
+  const lines = [`Weekly bills: ${prepaid ? "rent already paid ahead" : `rent ${naira(rent)}`}, transport and data ${naira(living)}.`];
+  if (neg?.staff) {
+    if (s.stats.money >= neg.staff.salary) {
+      addStat(s, "money", -neg.staff.salary);
+      lines.push(`${neg.staff.name}'s salary: ${naira(neg.staff.salary)}.`);
+    } else {
+      lines.push(`You couldn't pay ${neg.staff.name}. She has resigned.`);
+      const mem = neg.npcs.blessing;
+      if (mem) mem.rel = Math.max(-100, mem.rel - 20);
+      neg.staff = null;
+    }
+  }
+  lines.push(...weeklyNegotiation(s));
   let missed = false;
   for (const loan of s.loans) {
     if (loan.nextDue > s.day) continue;

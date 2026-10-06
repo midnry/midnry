@@ -21,6 +21,8 @@ import {
   talk,
 } from "../systems/engine";
 import { hasCar, isDriving } from "../systems/drive";
+import { blocked } from "../systems/negotiate/core";
+import { deal as dealDef } from "../systems/negotiate/deals";
 import { isDirty, lifeOf } from "../systems/life";
 import { personLook } from "../systems/peoplelook";
 import { SLOTS, check, debt, fill, lockReason, naira } from "../systems/rules";
@@ -613,7 +615,8 @@ function PlacePanel({
       </div>
       <div className="mt-3 grid gap-2">
         {p.actions.map((a) => {
-          const ok = check(state, a.if);
+          const dealWhy = a.kind === "negotiate" && a.deal ? blocked(state, a.deal) : null;
+          const ok = check(state, a.if) && !dealWhy;
           const meta = [a.slots ? `${a.slots} slot${a.slots > 1 ? "s" : ""}` : "", a.energy < 0 ? `${a.energy} energy` : a.energy > 0 ? `+${a.energy} energy` : ""]
             .filter(Boolean)
             .join(" · ");
@@ -629,7 +632,7 @@ function PlacePanel({
               className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left transition hover:border-blue-400/60 hover:bg-white/10 disabled:opacity-45"
             >
               <span className="block text-sm font-semibold">{fill(state, a.label)}</span>
-              <span className="block text-xs text-slate-400">{ok ? meta : `🔒 ${a.lockedText ?? "Not available yet"}`}</span>
+              <span className="block text-xs text-slate-400">{ok ? (a.kind === "negotiate" ? `${dealDef(a.deal!)?.blurb ?? ""}` : meta) : `🔒 ${dealWhy ?? a.lockedText ?? "Not available yet"}`}</span>
             </button>
           );
         })}
