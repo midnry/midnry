@@ -66,8 +66,16 @@ const amt = (n: Negotiation, id: string) => get(n, id)?.amount ?? 0;
 const pay = (s: GameState, x: number) => {
   s.stats.money -= Math.round(x);
 };
-/** Money in from a sale: a normal bank credit, so large ones can trigger the bank's checks. */
-const receive = (s: GameState, x: number) => addStat(s, "money", Math.round(x));
+/**
+ * Money in from a sale: a normal bank credit, so a large one can still trigger the bank's
+ * checks. You have the paperwork, though, so the bank can release it on the spot.
+ */
+const receive = (s: GameState, x: number, proof: string) => {
+  const was = s.life?.frozen?.amount ?? 0;
+  addStat(s, "money", Math.round(x));
+  const f = s.life?.frozen;
+  if (f && f.amount > was) f.proof = proof;
+};
 /** A balance paid in weekly instalments, using the loan book. */
 const instalments = (s: GameState, label: string, owed: number, weeks: number) => {
   s.loans.push({ id: `${label}-${s.day}-${s.loans.length}`, principal: owed, owed, weekly: Math.ceil(owed / weeks), nextDue: s.day + 7, missed: 0 });
@@ -244,7 +252,7 @@ export const DEALS: DealDef[] = [
       const price = amt(n, "price");
       const cash = Math.max(0, b?.cash ?? 0);
       life(s).businesses = myBiz(s).filter((x) => x.id !== id);
-      receive(s, price + cash);
+      receive(s, price + cash, "sale agreement and CAC documents");
       if (on(n, "consult")) s.slot = Math.min(3, s.slot + 1);
       addLog(s, `Sold a business to Chief Adebayo for ₦${price.toLocaleString("en")}.`);
       return `Sold for ₦${price.toLocaleString("en")}${cash ? ` (plus ₦${cash.toLocaleString("en")} of its cash)` : ""}.`;

@@ -382,6 +382,8 @@ function Wallet({ state }: { state: GameState }) {
             Since day {frozen.day}.{" "}
             {frozen.dirty
               ? "The bank linked it to fraud and told the EFCC."
+              : frozen.proof
+                ? `Take your BVN and the ${frozen.proof} to Union Capital Bank HQ in the CBD: they can release it on the spot.`
               : state.day - frozen.day < REVIEW_DAYS
                 ? `Compliance is reviewing it. Go to Union Capital Bank HQ in the CBD from day ${frozen.day + REVIEW_DAYS}.`
                 : "The review is done. Go to Union Capital Bank HQ in the CBD to get it released."}

@@ -315,7 +315,7 @@ export type Life = {
   /** Recent money coming in, to spot amounts far outside the usual range. */
   credits: number[];
   /** Money held by the bank while it checks a suspicious credit. */
-  frozen: { amount: number; day: number; dirty: boolean } | null;
+  frozen: { amount: number; day: number; dirty: boolean; proof?: string } | null;
   /** Unpaid hospital bills. */
   hospitalBill: number;
   /** `healsOn` is set once a doctor has treated it (or for cuts, which heal alone). */

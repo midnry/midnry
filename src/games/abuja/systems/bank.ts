@@ -59,14 +59,19 @@ export function resolveFreeze(s: GameState): string {
   const f = l.frozen;
   if (!f) return "Customer care checks your account. \"Everything is fine, sir/ma. No restriction.\"";
   const waited = s.day - f.day;
+  // With paperwork for a clean credit, there's nothing to review.
+  if (f.proof && !f.dirty) {
+    // The fee comes out of the released money: a frozen account can't pay it any other way.
+    s.stats.money += f.amount - UNFREEZE_FEE;
+    l.frozen = null;
+    return `You hand over your BVN, ID and the ${f.proof}. The compliance officer checks them against the transfer and lifts the restriction on the spot. ₦${f.amount.toLocaleString("en")} is back in your account (₦${UNFREEZE_FEE.toLocaleString("en")} fee).`;
+  }
   if (waited < REVIEW_DAYS) return `"Your case is under review by compliance." Come back in ${REVIEW_DAYS - waited} day${REVIEW_DAYS - waited > 1 ? "s" : ""}.`;
   if (f.dirty) {
     openCase(s, 25);
     return "The compliance officer slides a letter across the desk: the funds are linked to fraud and have been reported to the EFCC. The money stays frozen. Your phone buzzes: an unknown number.";
   }
-  if (s.stats.money < UNFREEZE_FEE) return `You need ₦${UNFREEZE_FEE.toLocaleString("en")} for the documentation fee (statements, affidavit).`;
-  s.stats.money -= UNFREEZE_FEE;
-  s.stats.money += f.amount;
+  s.stats.money += f.amount - UNFREEZE_FEE;
   const line = `After an affidavit, two statements and a lot of waiting, the restriction is lifted. ₦${f.amount.toLocaleString("en")} is back in your account (₦${UNFREEZE_FEE.toLocaleString("en")} fees).`;
   l.frozen = null;
   return line;
