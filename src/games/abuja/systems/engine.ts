@@ -181,6 +181,17 @@ export function clearToast() {
   });
 }
 
+/** Kill time until night falls. */
+export function skipToNight() {
+  update((s) => {
+    if (s.chapter || s.ending) return;
+    if (s.slot >= SLOTS.length - 1) return toast(s, "It's already night. Go home and sleep, or see what Abuja does after dark.");
+    s.slot = SLOTS.length - 1;
+    addStat(s, "stress", -2);
+    toast(s, "You gist, scroll and gist some more. The sun goes down on Abuja. 🌙");
+  });
+}
+
 /** New outfit or hairstyle from the wardrobe. */
 export function changeLooks(look: Look) {
   update((s) => {

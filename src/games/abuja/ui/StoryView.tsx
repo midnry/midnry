@@ -2,7 +2,9 @@ import { chapter } from "../systems/data";
 import { choose, continueStory, payFixer } from "../systems/engine";
 import { fill, lockReason, naira } from "../systems/rules";
 import type { GameState } from "../systems/types";
+import { speakerLook } from "../systems/peoplelook";
 import { Avatar } from "./Avatar";
+import { ChatBubble } from "./Chat";
 import { Screen } from "./Menus";
 import { btnGhost, btnPrimary, panel } from "./theme";
 
@@ -52,8 +54,13 @@ export function StoryPanel({ state }: { state: GameState }) {
             </div>
           ) : (
             <div className="mt-6">
-              {speaker ? <p className="mb-1 text-sm font-semibold text-sky-300">{speaker}</p> : null}
-              <p className="text-lg leading-relaxed text-pretty">{fill(state, scene.text)}</p>
+              {speaker ? (
+                <ChatBubble name={speaker} looks={speakerLook(speaker, state.chapter ?? undefined).look} adult={speakerLook(speaker, state.chapter ?? undefined).adult}>
+                  {fill(state, scene.text)}
+                </ChatBubble>
+              ) : (
+                <p className="text-lg leading-relaxed text-pretty">{fill(state, scene.text)}</p>
+              )}
               {scene.special === "fixers" ? <Fixers state={state} /> : null}
               <div className="mt-6 grid gap-2">
                 {(scene.choices ?? []).map((item) => {

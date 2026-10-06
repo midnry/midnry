@@ -3,11 +3,14 @@ import { DISTRICTS, MAPS, PLACES, WORLD, districtAt } from "../systems/data";
 import { LAKE, ROADS, blocked, freePoint, roadRoute, sizeOf, solidsFor } from "../systems/citymap";
 import { FLEET, KEKE_COLORS, OKADA_COLORS, TAXI_COLOR, type VehicleStyle } from "../systems/vehicles";
 import type { RideMode } from "../systems/rides";
+import { personLook } from "../systems/peoplelook";
+import { roomForBuilding } from "../systems/rooms";
+import { RoomScene } from "./RoomScene";
 import { bump, checkpoint, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
 import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
 import { findPath, type Point } from "../systems/path";
-import type { GameState, MapRect, PersonDef } from "../systems/types";
+import type { GameState, MapRect } from "../systems/types";
 import { fullLook, lookKey, randomLook, type Look } from "../systems/character";
 import { INK, animateWalk, building, faceVehicle, figure, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
 
@@ -24,13 +27,9 @@ const title = (scene: Phaser.Scene, x: number, y: number, text: string, size = 1
     .text(x, y, text, { fontFamily: "system-ui, sans-serif", fontSize: `${size}px`, fontStyle: "bold", color: fill, stroke: "#141414", strokeThickness: Math.max(4, size / 4) })
     .setResolution(2)
     .setOrigin(0.5, 0);
-const seedOf = (id: string) => [...id].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) >>> 0, 7);
 
 // Who's who: the same person always looks the same.
-const personOf = (p: PersonDef): Person => ({
-  look: randomLook(seedOf(`${p.map}:${p.id}`), { topColor: p.color, glasses: false, headphones: false, ...(p.build ? { build: p.build } : {}), ...p.look }),
-  adult: !p.kid,
-});
+const personOf = personLook;
 const playerOf = (state: GameState | null): Person => ({ look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18 });
 const WALKERS: Person[] = Array.from({ length: 8 }, (_, i) => ({ look: randomLook(i * 131 + 7), adult: i % 4 !== 3 }));
 const POLICE_LOOK: Look = randomLook(4242, {
@@ -76,9 +75,9 @@ function zoneTile(name: string): string {
 
 /** Which props grow on which ground. */
 const PROPS_ON: Record<string, string[]> = {
-  grass: ["tree", "tree", "palm", "bush", "flowers"],
-  lawn: ["tree", "palm", "bush", "flowers", "flowers"],
-  dirt: ["palm", "kiosk", "generator", "bush", "tree"],
+  grass: ["tree", "tree2", "tree3", "palm", "bush", "flowers"],
+  lawn: ["tree", "tree3", "palm", "bush", "flowers", "flowers"],
+  dirt: ["palm", "kiosk", "generator", "bush", "tree3"],
   sand: ["palm", "bush", "kiosk"],
   pavement: ["bush", "flowers", "palm", "kiosk", "generator"],
   plaza: ["flowers", "bush", "palm"],
@@ -87,7 +86,7 @@ const PROPS_ON: Record<string, string[]> = {
 /** Where the player stood when the scene redraws in place (say, after a change of outfit). */
 let carry: { mapId: string; x: number; y: number } | null = null;
 
-type Near = { kind: "place" | "person" | "beat"; id: string; label: string };
+type Near = { kind: "place" | "person" | "beat" | "door"; id: string; label: string };
 type Interactable = Near & { x: number; y: number };
 
 /**
@@ -113,6 +112,11 @@ export class WorldScene extends Phaser.Scene {
   private riding: { car: Vehicle; tag: Phaser.GameObjects.Text; route: { x: number; y: number }[]; leg: number; speed: number; drop: { x: number; y: number } } | null = null;
   private police: { officer: Figure; barrier: Phaser.GameObjects.Image; x: number; y: number }[] = [];
   private glows: Phaser.GameObjects.Image[] = [];
+  /** Windows that light up after dark (above the night shade). */
+  private windowLights: Phaser.GameObjects.Graphics | null = null;
+  /** Tall buildings fade when you walk behind them. */
+  private towers: { g: Phaser.GameObjects.Graphics; face: { x: number; y: number; w: number; h: number }; base: number }[] = [];
+  private signals: { img: Phaser.GameObjects.Image; x: number; y: number; axis: "x" | "y" }[] = [];
   private boat: Phaser.GameObjects.Image | null = null;
   private beatMarker!: Phaser.GameObjects.Container;
   private taskMarker!: Phaser.GameObjects.Container;
@@ -120,6 +124,8 @@ export class WorldScene extends Phaser.Scene {
   private night!: Phaser.GameObjects.Rectangle;
   private unsub: (() => void) | null = null;
   private lookId = "";
+  /** The story moved to another map while you were inside a building: rebuild when you come out. */
+  private pendingRestart = false;
   /** Looking around the map: the camera is free and the player stays put. */
   private exploring = false;
   private pinch: { dist: number; zoom: number } | null = null;
@@ -158,6 +164,9 @@ export class WorldScene extends Phaser.Scene {
     this.cars = [];
     this.police = [];
     this.riding = null;
+    this.towers = [];
+    this.signals = [];
+    this.windowLights = this.add.graphics().setDepth(31).setAlpha(0);
     this.exploring = false;
     this.pinch = null;
     this.glows = [];
@@ -238,7 +247,8 @@ export class WorldScene extends Phaser.Scene {
       const next = getState();
       if (!next) return;
       if (mapIdFor(next) !== this.mapId) {
-        this.scene.restart();
+        if (this.scene.isSleeping()) this.pendingRestart = true;
+        else this.scene.restart();
         return;
       }
       // New outfit from the wardrobe: redraw the world with the new look, right here.
@@ -252,7 +262,19 @@ export class WorldScene extends Phaser.Scene {
       }
       this.refresh();
     });
+    // Back outside after visiting a room.
+    this.events.on("wake", () => {
+      if (this.pendingRestart) {
+        this.pendingRestart = false;
+        this.scene.restart();
+        return;
+      }
+      this.near = null;
+      bus.emit("near", null);
+      this.refresh();
+    });
     this.events.once("shutdown", () => {
+      this.events.off("wake");
       this.unsub?.();
       this.unsub = null;
       this.offs.forEach((off) => off());
@@ -260,6 +282,7 @@ export class WorldScene extends Phaser.Scene {
       this.scale.off("resize", this.fitZoom, this);
     });
     this.refresh();
+    this.pendingRestart = false;
     this.near = null;
     bus.emit("near", null);
     // Development only: lets automated browser tests move the player.
@@ -420,10 +443,21 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private drawSolids() {
+    const city = this.mapId === "city";
     this.solids.forEach((s, i) => {
-      if (s.kind !== "water") building(this, s, i * 31 + Math.round(s.x));
+      if (s.kind === "water" || s.w < 30) {
+        if (s.kind !== "water") building(this, s, i * 31 + Math.round(s.x));
+        return;
+      }
+      const seed = i * 31 + Math.round(s.x);
+      // Business districts grow towers; homes and estates stay low.
+      const d = city ? districtAt(s.x + s.w / 2, s.y + s.h / 2)?.id : undefined;
+      const tall = d === "cbd" ? 120 + (seed % 60) : d === "wuse" ? 70 + (seed % 50) : d === "garki" ? 45 + (seed % 45) : d === "jabi" ? 40 + (seed % 30) : 0;
+      const made = building(this, s, seed, { style: tall ? "tower" : "house", tall, lights: city ? this.windowLights ?? undefined : undefined });
+      if (tall) this.towers.push({ ...made, base: s.y + s.h });
     });
   }
+
 
   private drawChapterMap() {
     const map = MAPS[this.mapId]!;
@@ -466,9 +500,10 @@ export class WorldScene extends Phaser.Scene {
       const options = PROPS_ON[ground] ?? PROPS_ON.grass!;
       const key = options[Math.floor(pick * options.length)]!;
       const img = this.add.image(x, y, key).setOrigin(0.5, 0.9).setDepth(5 + y / 10000);
-      if (key === "tree" || key === "palm") img.setScale(0.8 + r() * 0.35);
+      const isTree = key.startsWith("tree") || key === "palm";
+      if (isTree) img.setScale(key.startsWith("tree") ? 0.85 + r() * 0.3 : 0.8 + r() * 0.35);
       // Big things are solid at their base, so you walk around them.
-      if (key === "tree" || key === "palm" || key === "kiosk") this.solids.push({ x: x - 9, y: y - 10, w: 18, h: 12 });
+      if (isTree || key === "kiosk") this.solids.push({ x: x - 9, y: y - 10, w: 18, h: 12 });
       placed += 1;
     }
   }
@@ -477,11 +512,22 @@ export class WorldScene extends Phaser.Scene {
     const lamp = (x: number, y: number) => {
       if (blocked(x, y, 12, this.solids)) return;
       this.add.image(x, y, "lamp").setOrigin(0.5, 0.95).setDepth(5 + y / 10000);
-      this.glows.push(this.add.image(x, y - 58, "glow").setDepth(31).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0));
+      this.glows.push(this.add.image(x, y - 58, "glow").setDepth(31).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc46b).setAlpha(0));
     };
     const clear = (v: number, list: number[]) => list.every((c) => Math.abs(v - c) > 70);
     for (const x of ROADS.xs) for (let y = 80; y < WORLD.height; y += 340) if (clear(y, ROADS.ys)) lamp(x + 32, y);
     for (const y of ROADS.ys) for (let x = 120; x < WORLD.width; x += 380) if (clear(x, ROADS.xs)) lamp(x, y - 30);
+    // A traffic light on the corner of every junction.
+    for (const x of ROADS.xs) {
+      for (const y of ROADS.ys) {
+        for (const [px, py, axis] of [[x + 33, y - 32, "x"]] as const) {
+          if (blocked(px, py, 8, this.solids)) continue;
+          this.add.image(px, py, "trafficlight").setOrigin(0.5, 0.95).setDepth(5 + py / 10000);
+          const img = this.add.image(px, py - 64, "signal").setDepth(5 + py / 10000 + 0.00001);
+          this.signals.push({ img, x: px, y: py, axis });
+        }
+      }
+    }
   }
 
   private drawPlaces() {
@@ -584,10 +630,11 @@ export class WorldScene extends Phaser.Scene {
       });
       this.police = [];
     }
-    const alpha = this.mapId !== "city" ? 0 : [0, 0.06, 0.2, 0.42][Math.min(state.slot, 3)]!;
-    this.night.setFillStyle(state.slot === 2 ? 0x7c2d12 : 0x0b1330, alpha);
-    const glow = this.mapId !== "city" ? 0 : [0, 0, 0.25, 0.5][Math.min(state.slot, 3)]!;
+    const alpha = this.mapId !== "city" ? 0 : [0, 0.06, 0.24, 0.62][Math.min(state.slot, 3)]!;
+    this.night.setFillStyle(state.slot === 2 ? 0x7c2d12 : 0x050b24, alpha);
+    const glow = this.mapId !== "city" ? 0 : [0, 0, 0.2, 0.4][Math.min(state.slot, 3)]!;
     this.glows.forEach((g) => g.setAlpha(glow));
+    this.windowLights?.setAlpha(this.mapId !== "city" ? 0 : [0, 0, 0.45, 0.95][Math.min(state.slot, 3)]!);
   }
 
   update(time: number, deltaMs: number) {
@@ -696,6 +743,12 @@ export class WorldScene extends Phaser.Scene {
     for (const p of this.people) options.push({ kind: "person", id: p.id, label: p.label, x: p.body.x, y: p.body.y });
     const beat = currentBeat(state);
     if (beat) options.push({ kind: "beat", id: beat.key, label: beat.spot.label, x: beat.spot.x, y: beat.spot.y });
+    // Story-chapter buildings you can walk into: their door is in the middle of the front wall.
+    if (this.mapId !== "city") {
+      for (const s of MAPS[this.mapId]?.solids ?? []) {
+        if (s.label && s.h >= 22 && roomForBuilding(s.label)) options.push({ kind: "door", id: s.label, label: s.label, x: s.x + s.w / 2, y: s.y + s.h + 16 });
+      }
+    }
     let best: Interactable | null = null;
     let bestDist = NEAR;
     for (const o of options) {
@@ -820,6 +873,19 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private moveTraffic(dt: number, time: number) {
+    // Lights cycle: one direction goes while the other waits.
+    const phase = Math.floor(time / 1000) % 10;
+    for (const s of this.signals) {
+      const go = (phase < 5) === (s.axis === "x");
+      const amber = phase === 4 || phase === 9;
+      const [dy, tint] = amber ? [-55, 0xf59e0b] : go ? [-46, 0x22c55e] : [-64, 0xef4444];
+      s.img.setY(s.y + dy).setTint(tint);
+    }
+    // See yourself through a tall building when you walk behind it.
+    for (const t of this.towers) {
+      const behind = this.player.visible && this.player.x > t.face.x - 6 && this.player.x < t.face.x + t.face.w + 6 && this.player.y > t.face.y && this.player.y < t.base;
+      t.g.setAlpha(behind ? 0.45 : 1);
+    }
     if (this.boat) {
       const t = time / 9000;
       this.boat.setPosition(LAKE.x + Math.cos(t) * LAKE.rx * 0.55, LAKE.y + Math.sin(t) * LAKE.ry * 0.5);
@@ -864,7 +930,7 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     backgroundColor: "#0b1726",
     scale: { mode: Phaser.Scale.RESIZE, width: parent.clientWidth, height: parent.clientHeight },
     render: { antialias: true },
-    scene: [WorldScene],
+    scene: [WorldScene, RoomScene],
     input: { keyboard: true, touch: true },
   });
 }

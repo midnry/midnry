@@ -12,14 +12,18 @@ import {
   offerFor,
   reachBeat,
   resolveEvent,
+  skipToNight,
   storyOpen,
   takeOffer,
   talk,
 } from "../systems/engine";
+import { personLook } from "../systems/peoplelook";
 import { SLOTS, check, debt, fill, lockReason, naira } from "../systems/rules";
 import { bus, input, loadControls, saveControls, type Controls, type NearThing } from "../systems/store";
 import type { GameState } from "../systems/types";
 import { Phone, type PhoneApp } from "./Phone";
+import { roomForBuilding, roomForPlace, type RoomInfo } from "../systems/rooms";
+import { ChatBubble, ReplyButton } from "./Chat";
 import { StoryPanel } from "./StoryView";
 import { WardrobePanel } from "./Wardrobe";
 import { btnGhost, btnPrimary, panel } from "./theme";
@@ -47,6 +51,48 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
     setControls(next);
   };
   const inStory = Boolean(state.chapter);
+  // Inside a building: which room, and the loading screen between outside and in.
+  const [inside, setInside] = useState<RoomInfo | null>(null);
+  const insideRef = useRef<RoomInfo | null>(null);
+  const [loading, setLoading] = useState<{ title: string; icon: string } | null>(null);
+  const loadStarted = useRef(0);
+  const finishLoading = (min = 900) => {
+    const wait = Math.max(0, min - (Date.now() - loadStarted.current));
+    window.setTimeout(() => setLoading(null), wait);
+  };
+  const enterRoom = (info: RoomInfo) => {
+    const g = game.current;
+    if (!g || insideRef.current) return;
+    loadStarted.current = Date.now();
+    setLoading({ title: `Entering ${info.name}`, icon: ROOM_ICON[info.type] });
+    setOpen(null);
+    setTalking(null);
+    insideRef.current = info;
+    setInside(info);
+    window.setTimeout(() => {
+      g.scene.sleep("world");
+      g.scene.start("room", info);
+    }, 120);
+  };
+  const leaveRoom = () => {
+    const g = game.current;
+    if (!g || !insideRef.current) return;
+    loadStarted.current = Date.now();
+    setLoading({ title: "Heading back outside", icon: "🚪" });
+    setOpen(null);
+    setTalking(null);
+    window.setTimeout(() => {
+      g.scene.stop("room");
+      g.scene.wake("world");
+      insideRef.current = null;
+      setInside(null);
+      finishLoading(700);
+    }, 160);
+  };
+  const roomActions = useRef({ enterRoom, leaveRoom });
+  const finishLoadingRef = useRef(() => finishLoading());
+  finishLoadingRef.current = () => finishLoading();
+  roomActions.current = { enterRoom, leaveRoom };
 
   useEffect(() => {
     let cancel = false;
@@ -55,7 +101,16 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       game.current = createGame(host.current);
     });
     const interact = (thing: NearThing) => {
-      if (thing.kind === "place") setOpen(thing.id);
+      if (thing.kind === "place") {
+        const room = roomForPlace(thing.id);
+        if (room && !insideRef.current) roomActions.current.enterRoom({ type: room, name: place(thing.id)?.name ?? thing.label, placeId: thing.id });
+        else setOpen(thing.id);
+      }
+      if (thing.kind === "door") {
+        const room = roomForBuilding(thing.id);
+        if (room) roomActions.current.enterRoom({ type: room, name: thing.label });
+      }
+      if (thing.kind === "exit") roomActions.current.leaveRoom();
       if (thing.kind === "person") {
         talk(thing.id);
         setTalking(thing.id);
@@ -73,6 +128,9 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       bus.on("interact", interact),
       bus.on("blocked", (message) => setBlocked(message)),
       bus.on("exploring", (on) => setExploring(on)),
+      bus.on("roomReady", () => finishLoadingRef.current()),
+      // A ride leaves from the street: step outside first.
+      bus.on("ride", () => roomActions.current.leaveRoom()),
     ];
     return () => {
       cancel = true;
@@ -115,14 +173,14 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const beat = currentBeat(state);
   const here = near && near.kind === "place" ? place(near.id) : undefined;
   const panelOpen = Boolean(here && open === here.id);
-  const showEnter = near && !exploring && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
+  const showEnter = near && !loading && !exploring && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#07152b] text-slate-100 select-none">
       <div ref={host} className="absolute inset-0" />
       {inStory ? <ChapterHud state={state} /> : <Hud state={state} onOpen={setPhone} />}
 
-      {beat && !story ? (
+      {beat && !story && !inside ? (
         <button
           type="button"
           onClick={() => bus.emit("goto", null)}
@@ -155,7 +213,19 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           className={`${btnPrimary} absolute bottom-40 left-1/2 z-10 max-w-[70vw] -translate-x-1/2 shadow-xl sm:bottom-10`}
           onClick={() => bus.emit("interact", near)}
         >
-          {near.kind === "person" ? `💬 Talk to ${near.label}` : near.kind === "beat" ? `▶ ${near.label}` : `Enter ${near.label}`}
+          {near.kind === "person"
+            ? `💬 Talk to ${near.label}`
+            : near.kind === "beat"
+              ? `▶ ${near.label}`
+              : near.kind === "exit"
+                ? "🚪 Leave"
+                : near.kind === "door"
+                  ? `🚪 Enter ${near.label}`
+                  : inside
+                    ? `📋 ${near.label}: things to do`
+                    : roomForPlace(near.id)
+                      ? `🚪 Enter ${near.label}`
+                      : `Visit ${near.label}`}
         </button>
       ) : null}
 
@@ -178,7 +248,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           <span className="h-4 w-1.5 rounded-sm bg-slate-100" />
         </span>
       </button>
-      <div className="absolute top-24 right-3 z-10 flex flex-col gap-2 sm:top-20 lg:top-3">
+      <div className={`absolute top-24 right-3 z-10 flex-col gap-2 sm:top-20 lg:top-3 ${inside ? "hidden" : "flex"}`}>
         <MapButton label="Zoom in" onClick={() => bus.emit("camera", "in")}>
           ＋
         </MapButton>
@@ -188,6 +258,11 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         <MapButton label={exploring ? "Back to me" : "Explore the map"} active={exploring} onClick={() => bus.emit("camera", exploring ? "follow" : "explore")}>
           {exploring ? "📍" : "🗺️"}
         </MapButton>
+        {!inStory && state.slot < SLOTS.length - 1 ? (
+          <MapButton label="Skip to night" onClick={skipToNight}>
+            🌙
+          </MapButton>
+        ) : null}
       </div>
       {exploring ? (
         <div className={`${panel} absolute bottom-40 left-1/2 z-20 flex w-[min(92vw,26rem)] -translate-x-1/2 items-center gap-3 p-3 sm:bottom-10`}>
@@ -219,7 +294,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           </div>
         </div>
       ) : null}
-      {!inStory ? (
+      {!inStory && !inside ? (
         <button
           type="button"
           onClick={() => setPhone("map")}
@@ -253,9 +328,49 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           <StoryPanel state={state} />
         </div>
       ) : null}
+      {loading ? <LoadingScreen title={loading.title} icon={loading.icon} /> : null}
       <p className="pointer-events-none absolute bottom-2 left-1/2 hidden -translate-x-1/2 text-xs text-slate-400 sm:block">
         WASD or arrows to move · {controls === "tap" ? "click to walk" : "joystick to walk"} · E to interact
       </p>
+    </div>
+  );
+}
+
+const ROOM_ICON: Record<RoomInfo["type"], string> = {
+  home: "🏠",
+  mansion: "🏰",
+  office: "🏢",
+  bank: "🏦",
+  clinic: "🏥",
+  shop: "🛍️",
+  classroom: "🏫",
+  dorm: "🛏️",
+  hall: "🎉",
+};
+
+const TIPS = [
+  "Tip: tap 🗺️ outside to look around the map without moving.",
+  "Tip: okadas are fastest, taxis keep you calm.",
+  "Tip: 🌙 skips to night. Abuja looks different after dark.",
+  "Tip: change your look any time in the Wardrobe.",
+  "Tip: talk to people. They remember you.",
+];
+
+function LoadingScreen({ title, icon }: { title: string; icon: string }) {
+  const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)]!);
+  return (
+    <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-[radial-gradient(ellipse_at_top,#14407a,#07152b_65%)] px-6 text-center" role="status" aria-live="polite">
+      <div className="flex size-24 items-center justify-center rounded-3xl border-2 border-white/15 bg-white/10 text-5xl shadow-2xl">
+        <span className="animate-bounce" aria-hidden>
+          {icon}
+        </span>
+      </div>
+      <p className="mt-6 font-display text-2xl text-white">{title}…</p>
+      <div className="mt-5 h-2 w-56 overflow-hidden rounded-full bg-white/15">
+        <div className="h-full w-1/3 animate-[loadbar_0.9s_ease-in-out_infinite] rounded-full bg-emerald-500" />
+      </div>
+      <p className="mt-6 max-w-xs text-sm text-slate-300">{tip}</p>
+      <style>{`@keyframes loadbar { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }`}</style>
     </div>
   );
 }
@@ -336,6 +451,7 @@ function PauseMenu({
             <li>Walk up to people and places, then tap the yellow button (or press E) to talk or enter.</li>
             <li>＋ and － (or pinch, or the mouse wheel) zoom in and out.</li>
             <li>🗺️ Explore lets you look around the map without moving; 📍 brings you back.</li>
+            <li>🌙 skips ahead to night in the city.</li>
             <li>Esc or P pauses the game.</li>
           </ul>
         </div>
@@ -550,42 +666,38 @@ function TalkModal({ state, personKey, onClose }: { state: GameState; personKey:
   const person = findPerson(personKey);
   if (!person) return null;
   const offer = offerFor(state, person);
+  const them = personLook(person);
+  const adult = state.age >= 18;
   return (
-    <div className="absolute inset-x-2 bottom-2 z-30 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-[26rem]">
-      <div className={`${panel} p-4`} role="dialog" aria-label={`Talking to ${person.name}`}>
-        <div className="flex items-center gap-3">
-          <span className="size-10 shrink-0 rounded-full" style={{ background: person.color }} aria-hidden />
-          <p className="flex-1 font-display text-xl">{person.name}</p>
-          <button type="button" onClick={onClose} className="min-h-11 rounded-xl px-3 text-sm text-slate-300 hover:bg-white/10" aria-label="End conversation">
-            ✕
-          </button>
+    <div className="absolute inset-x-2 bottom-2 z-30 max-h-[80dvh] overflow-y-auto sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-[26rem]" role="dialog" aria-label={`Talking to ${person.name}`}>
+      <div className="grid gap-4 pb-1">
+        <ChatBubble name={person.name} looks={them.look} adult={them.adult}>
+          {lineFor(state, person)}
+          {offer ? <span className="mt-2 block">{fill(state, offer.text)}</span> : null}
+        </ChatBubble>
+        <div className="mt-1 grid gap-2 pl-8">
+          {offer?.choices.map((choice) => {
+            const reason = lockReason(state, choice);
+            return (
+              <ReplyButton
+                key={choice.text}
+                looks={state.looks}
+                adult={adult}
+                disabled={Boolean(reason)}
+                note={reason}
+                onClick={() => {
+                  takeOffer(personKey, choice);
+                  onClose();
+                }}
+              >
+                {fill(state, choice.text)}
+              </ReplyButton>
+            );
+          })}
+          <ReplyButton looks={state.looks} adult={adult} onClick={onClose}>
+            {offer ? "Not now 👋" : "Bye 👋"}
+          </ReplyButton>
         </div>
-        <p className="mt-3 text-pretty text-slate-200">{lineFor(state, person)}</p>
-        {offer ? (
-          <div className="mt-3 rounded-xl bg-black/30 p-3">
-            <p className="text-sm text-pretty text-slate-200">{fill(state, offer.text)}</p>
-            <div className="mt-2 grid gap-2">
-              {offer.choices.map((choice) => {
-                const reason = lockReason(state, choice);
-                return (
-                  <button
-                    key={choice.text}
-                    type="button"
-                    disabled={Boolean(reason)}
-                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-sm transition hover:border-emerald-400/60 disabled:opacity-45"
-                    onClick={() => {
-                      takeOffer(personKey, choice);
-                      onClose();
-                    }}
-                  >
-                    {fill(state, choice.text)}
-                    {reason ? <span className="mt-0.5 block text-xs text-slate-400">🔒 {reason}</span> : null}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
       </div>
     </div>
   );

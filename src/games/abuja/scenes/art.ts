@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { characterParts, dims, lookKey, type Look } from "../systems/character";
+import { furnitureSvg } from "../systems/furniture";
 import { FLEET, vehicleBox, vehicleKey, vehicleSvg, type VehicleKind, type VehicleStyle, type VehicleView } from "../systems/vehicles";
 
 // Cartoon art drawn in code: bold dark outlines, flat colours, one shade.
@@ -37,7 +38,7 @@ export function rand(seed: number): () => number {
 
 // ── Ground tiles (64×64, seamless enough at this scale) ─────────────────────
 
-const TILES: Record<string, { base: number; dots: number[]; kind: "grass" | "dirt" | "grid" | "noise" | "water" }> = {
+const TILES: Record<string, { base: number; dots: number[]; kind: "grass" | "dirt" | "grid" | "noise" | "water" | "planks" }> = {
   grass: { base: 0x5fae45, dots: [0x4f9a37, 0x72c254, 0x8bd16a], kind: "grass" },
   lawn: { base: 0x4fa64a, dots: [0x5cb956, 0x45943f], kind: "grass" },
   dirt: { base: 0xb98656, dots: [0xa77446, 0xc9996a, 0x8f6239], kind: "dirt" },
@@ -47,6 +48,8 @@ const TILES: Record<string, { base: number; dots: number[]; kind: "grass" | "dir
   floor: { base: 0xd8cdb8, dots: [0xc7bba4], kind: "grid" },
   asphalt: { base: 0x3d3b40, dots: [0x47454b, 0x343236], kind: "noise" },
   water: { base: 0x3a8fd1, dots: [0x5aa7e0, 0x2f7bb8], kind: "water" },
+  wood: { base: 0xb98154, dots: [0x9c6a42, 0xc99267], kind: "planks" },
+  carpet: { base: 0x9f1d2b, dots: [0xb4283a, 0x8a1724], kind: "noise" },
 };
 
 export function tileKey(name: string) {
@@ -71,6 +74,13 @@ function makeTiles(scene: Phaser.Scene) {
         }
       } else if (t.kind === "grid") {
         g.lineStyle(2, t.dots[0]!, 1).strokeRect(1, 1, 31, 31).strokeRect(33, 1, 30, 31).strokeRect(1, 33, 31, 30).strokeRect(33, 33, 30, 30);
+      } else if (t.kind === "planks") {
+        for (let y = 0; y < 64; y += 16) {
+          g.fillStyle(t.dots[(y / 16) % 2]!, 0.55).fillRect(0, y, 64, 15);
+          g.lineStyle(2, 0x6b4426, 0.8).lineBetween(0, y, 64, y);
+          const off = (y / 16) % 2 ? 20 : 44;
+          g.lineBetween(off, y, off, y + 16);
+        }
       } else if (t.kind === "noise") {
         for (let i = 0; i < 40; i += 1) g.fillStyle(t.dots[i % t.dots.length]!, 1).fillRect(r() * 64, r() * 64, 2, 2);
       } else {
@@ -138,6 +148,23 @@ export function faceVehicle(v: Vehicle, dx: number, dy: number) {
 }
 
 export type Person = { look: Look; adult: boolean };
+
+/** Queue furniture textures for a room (call from preload). */
+export function queueFurniture(scene: Phaser.Scene, items: { id: string; accent?: string }[]) {
+  const urls: string[] = [];
+  const queued = new Set<string>();
+  for (const it of items) {
+    const key = furnitureKey(it.id, it.accent);
+    if (scene.textures.exists(key) || queued.has(key)) continue;
+    queued.add(key);
+    const url = URL.createObjectURL(new Blob([furnitureSvg(it.id, it.accent ?? "#1f6fd1", 1.6)], { type: "image/svg+xml" }));
+    urls.push(url);
+    scene.load.svg(key, url);
+  }
+  if (urls.length) scene.load.once("complete", () => urls.forEach((url) => URL.revokeObjectURL(url)));
+}
+
+export const furnitureKey = (id: string, accent?: string) => `furn_${id}_${(accent ?? "#1f6fd1").slice(1)}`;
 
 const charKey = ({ look, adult }: Person) => `ch_${lookKey(look)}${adult ? "a" : "k"}`;
 
@@ -261,14 +288,51 @@ export function animateWalk(f: Figure, time: number, moving: boolean, dx: number
 // ── Props ───────────────────────────────────────────────────────────────────
 
 function makeProps(scene: Phaser.Scene) {
-  make(scene, "tree", 72, 80, (g) => {
-    g.fillStyle(0x000000, 0.22).fillEllipse(38, 70, 56, 16);
-    g.fillStyle(0x6b4423, 1).fillRect(31, 48, 10, 22);
-    g.lineStyle(3, INK, 1).strokeRect(31, 48, 10, 22);
-    g.fillStyle(0x2f8a3b, 1).fillCircle(24, 36, 18).fillCircle(48, 36, 18).fillCircle(36, 22, 20);
-    g.lineStyle(LINE, INK, 1).strokeCircle(24, 36, 18).strokeCircle(48, 36, 18).strokeCircle(36, 22, 20);
-    g.fillStyle(0x2f8a3b, 1).fillCircle(24, 36, 15).fillCircle(48, 36, 15).fillCircle(36, 22, 17).fillCircle(36, 34, 16);
-    g.fillStyle(0x47a952, 1).fillCircle(30, 18, 7).fillCircle(20, 32, 5);
+  // Leafy trees after the city sheet: dark outline, three greens, a branching trunk and a grass tuft.
+  const canopy = (g: Phaser.GameObjects.Graphics, blobs: [number, number, number][]) => {
+    g.fillStyle(INK, 1);
+    for (const [x, y, r] of blobs) g.fillCircle(x, y, r + 3);
+    g.fillStyle(0x1e5631, 1);
+    for (const [x, y, r] of blobs) g.fillCircle(x, y, r);
+    g.fillStyle(0x2e7d32, 1);
+    for (const [x, y, r] of blobs) g.fillCircle(x - r * 0.18, y - r * 0.2, r * 0.74);
+    g.fillStyle(0x4caf50, 1);
+    for (const [x, y, r] of blobs) g.fillCircle(x - r * 0.35, y - r * 0.38, r * 0.34);
+  };
+  const trunk = (g: Phaser.GameObjects.Graphics, cx: number, top: number, base: number, w: number) => {
+    g.fillStyle(0x000000, 0.22).fillEllipse(cx, base + 4, w * 7, 12);
+    g.fillStyle(0x5d3a1a, 1);
+    g.fillPoints([{ x: cx - w, y: base + 2 }, { x: cx - w * 0.45, y: top }, { x: cx + w * 0.45, y: top }, { x: cx + w, y: base + 2 }], true);
+    g.lineStyle(3, INK, 1).strokePoints([{ x: cx - w, y: base + 2 }, { x: cx - w * 0.45, y: top }, { x: cx + w * 0.45, y: top }, { x: cx + w, y: base + 2 }], true);
+    g.lineStyle(5, INK, 1).lineBetween(cx - 2, top + 14, cx - w * 2.2, top - 4).lineBetween(cx + 2, top + 10, cx + w * 2.4, top - 6);
+    g.lineStyle(3, 0x5d3a1a, 1).lineBetween(cx - 2, top + 14, cx - w * 2.2, top - 4).lineBetween(cx + 2, top + 10, cx + w * 2.4, top - 6);
+    g.fillStyle(0x3f9b3a, 1);
+    for (let i = -3; i <= 3; i += 1) g.fillTriangle(cx + i * 6 - 3, base + 4, cx + i * 6, base - 6 - (i % 2 ? 0 : 4), cx + i * 6 + 3, base + 4);
+  };
+  make(scene, "tree", 100, 118, (g) => {
+    trunk(g, 50, 62, 108, 7);
+    canopy(g, [[50, 40, 27], [28, 52, 19], [72, 52, 19], [35, 28, 17], [65, 28, 17], [50, 62, 16], [20, 38, 11], [80, 38, 11]]);
+  });
+  make(scene, "tree2", 84, 132, (g) => {
+    trunk(g, 42, 72, 122, 6);
+    canopy(g, [[42, 34, 18], [31, 50, 16], [54, 48, 16], [42, 64, 15], [36, 20, 12], [50, 18, 11], [42, 8, 8]]);
+  });
+  make(scene, "tree3", 90, 96, (g) => {
+    trunk(g, 45, 58, 86, 6);
+    canopy(g, [[45, 40, 22], [26, 46, 15], [64, 46, 15], [45, 22, 16], [32, 28, 12], [58, 28, 12]]);
+  });
+  make(scene, "trafficlight", 26, 78, (g) => {
+    g.fillStyle(0x000000, 0.2).fillEllipse(13, 74, 18, 6);
+    g.fillStyle(0x8b2e1d, 1).fillRect(7, 62, 12, 12);
+    g.lineStyle(2, INK, 1).strokeRect(7, 62, 12, 12);
+    g.fillStyle(0x374151, 1).fillRect(11, 30, 4, 32);
+    g.fillStyle(0x1f2937, 1).fillRoundedRect(3, 2, 20, 34, 5);
+    g.lineStyle(2.5, INK, 1).strokeRoundedRect(3, 2, 20, 34, 5).strokeRect(11, 30, 4, 32);
+    g.fillStyle(0x4b5563, 1).fillCircle(13, 10, 4.5).fillCircle(13, 19, 4.5).fillCircle(13, 28, 4.5);
+  });
+  // The lit lamp of a traffic light, tinted red, amber or green.
+  make(scene, "signal", 12, 12, (g) => {
+    g.fillStyle(0xffffff, 1).fillCircle(6, 6, 4.5);
   });
   make(scene, "palm", 72, 84, (g) => {
     g.fillStyle(0x000000, 0.22).fillEllipse(36, 76, 40, 12);
@@ -341,65 +405,119 @@ export function makeArt(scene: Phaser.Scene) {
 
 // ── Buildings (drawn per building, 2.5D: roof, front wall, door, windows) ───
 
-export function building(scene: Phaser.Scene, s: { x: number; y: number; w: number; h: number; color?: string; label?: string }, seed: number) {
+export type BuildingOpts = { style?: "house" | "tower"; lights?: Phaser.GameObjects.Graphics; tall?: number };
+
+/** Draws one building and returns it with the area its front covers (for fading when you walk behind it). */
+export function building(
+  scene: Phaser.Scene,
+  s: { x: number; y: number; w: number; h: number; color?: string; label?: string },
+  seed: number,
+  opts: BuildingOpts = {},
+): { g: Phaser.GameObjects.Graphics; face: { x: number; y: number; w: number; h: number } } {
   const g = scene.add.graphics();
-  const roof = hex(s.color ?? "#9ca3af");
-  const wallH = Math.min(26, Math.max(10, s.h * 0.32));
-  const roofH = s.h - wallH;
+  const r = rand(seed + 11);
   if (s.h < 22) {
     // Fences and low walls.
     g.fillStyle(0xd6d3d1, 1).fillRect(s.x, s.y, s.w, s.h);
     g.fillStyle(0xa8a29e, 1);
     for (let x = s.x; x < s.x + s.w; x += 24) g.fillRect(x, s.y - 4, 6, s.h + 4);
     g.lineStyle(3, INK, 1).strokeRect(s.x, s.y, s.w, s.h);
-    return g;
+    return { g, face: { x: s.x, y: s.y, w: s.w, h: s.h } };
   }
+  const base = s.y + s.h;
+  g.setDepth(5 + base / 10000);
+  const lit = (x: number, y: number, w: number, h: number) => {
+    if (opts.lights && r() < 0.62) opts.lights.fillStyle(r() < 0.8 ? 0xffd97a : 0xfff3c4, 1).fillRect(x + 1, y + 1, w - 2, h - 2);
+  };
+
+  if (opts.style === "tower") {
+    // A tall city block seen from the front, like the sheet: stone or glass, a grid of windows, glass doors.
+    const tall = opts.tall ?? 70 + Math.floor(r() * 90);
+    const top = base - s.h - tall;
+    const glass = r() < 0.35;
+    const wall = glass ? 0x9db7c9 : [0xd8cfbf, 0xcfc6b6, 0xe2dccf, 0xbfb6a6][Math.floor(r() * 4)]!;
+    const accent = hex(s.color ?? "#64748b");
+    g.fillStyle(0x000000, 0.25).fillRect(s.x + 8, top + 10, s.w, base - top);
+    g.fillStyle(wall, 1).fillRect(s.x, top, s.w, base - top);
+    g.fillStyle(shade(wall, 0.85), 1).fillRect(s.x + s.w - 10, top, 10, base - top);
+    // Rooftop: a parapet, a plant room and maybe an antenna.
+    g.fillStyle(shade(wall, 1.12), 1).fillRect(s.x - 3, top - 6, s.w + 6, 8);
+    g.lineStyle(2.5, INK, 1).strokeRect(s.x - 3, top - 6, s.w + 6, 8);
+    const boxW = 18 + r() * 16;
+    g.fillStyle(shade(wall, 0.8), 1).fillRect(s.x + s.w / 2 - boxW / 2, top - 18, boxW, 12);
+    g.lineStyle(2, INK, 1).strokeRect(s.x + s.w / 2 - boxW / 2, top - 18, boxW, 12);
+    if (r() < 0.5) g.lineStyle(2, INK, 1).lineBetween(s.x + s.w / 2 + 6, top - 18, s.x + s.w / 2 + 6, top - 34);
+    // Windows.
+    const ww = 9;
+    const wh = 11;
+    for (let wy = top + 10; wy < base - 30; wy += 17) {
+      for (let wx = s.x + 7; wx < s.x + s.w - 14; wx += 14) {
+        if (glass) {
+          g.fillStyle(0x3d6d8c, 1).fillRect(wx, wy, ww + 3, wh + 4);
+        } else {
+          g.fillStyle(0x4f7fa0, 1).fillRect(wx, wy, ww, wh);
+          g.fillStyle(0xbfe0f2, 0.7).fillRect(wx + 1, wy + 1, 3, wh - 2);
+          g.lineStyle(1.5, INK, 0.9).strokeRect(wx, wy, ww, wh);
+        }
+        lit(wx, wy, glass ? ww + 3 : ww, glass ? wh + 4 : wh);
+      }
+    }
+    if (glass) {
+      g.lineStyle(1.5, 0xdbeaf3, 0.8);
+      for (let x = s.x + 6; x < s.x + s.w - 6; x += 14) g.lineBetween(x - 2, top + 8, x - 2, base - 30);
+    }
+    // Ground floor: an awning in the district colour and glass doors.
+    g.fillStyle(accent, 1).fillRect(s.x + 6, base - 30, s.w - 12, 6);
+    g.lineStyle(2, INK, 1).strokeRect(s.x + 6, base - 30, s.w - 12, 6);
+    g.fillStyle(0x2b3d4f, 1).fillRect(s.x + s.w / 2 - 12, base - 22, 24, 22);
+    g.fillStyle(0x9fd5f5, 0.8).fillRect(s.x + s.w / 2 - 10, base - 20, 9, 20).fillRect(s.x + s.w / 2 + 1, base - 20, 9, 20);
+    g.lineStyle(2, INK, 1).strokeRect(s.x + s.w / 2 - 12, base - 22, 24, 22);
+    g.fillStyle(shade(wall, 0.7), 1).fillRect(s.x - 2, base - 3, s.w + 4, 4);
+    g.lineStyle(LINE, INK, 1).strokeRect(s.x, top, s.w, base - top);
+    if (s.label) labelOn(scene, s.x + s.w / 2, top + 20, s.label, base);
+    return { g, face: { x: s.x, y: top - 34, w: s.w, h: base - top + 34 } };
+  }
+
+  // Houses and low blocks: a roof, a front wall with windows and a door.
+  const roof = hex(s.color ?? "#9ca3af");
+  const wallH = Math.min(26, Math.max(10, s.h * 0.32));
+  const roofH = s.h - wallH;
   g.fillStyle(0x000000, 0.25).fillRoundedRect(s.x + 6, s.y + 8, s.w, s.h, 6);
-  // Front wall.
   g.fillStyle(0xf1e6d0, 1).fillRect(s.x, s.y + roofH, s.w, wallH);
   g.fillStyle(0xd9ccb2, 1).fillRect(s.x, s.y + s.h - 4, s.w, 4);
-  // Roof with a ridge line and a lighter edge.
   g.fillStyle(roof, 1).fillRoundedRect(s.x, s.y, s.w, roofH, { tl: 6, tr: 6, bl: 0, br: 0 });
   g.fillStyle(shade(roof, 1.18), 1).fillRect(s.x + 4, s.y + 4, s.w - 8, 5);
   g.fillStyle(shade(roof, 0.82), 1).fillRect(s.x, s.y + roofH - 6, s.w, 6);
-  // Windows and a door on the front wall.
-  const r = rand(seed + 11);
   const door = s.x + s.w / 2 - 8;
   for (let wx = s.x + 10; wx < s.x + s.w - 20; wx += 26) {
     if (Math.abs(wx - door) < 22) continue;
-    g.fillStyle(0x9fd5f5, 1).fillRect(wx, s.y + roofH + 4, 13, Math.max(5, wallH - 10));
-    g.lineStyle(2, INK, 1).strokeRect(wx, s.y + roofH + 4, 13, Math.max(5, wallH - 10));
+    const wy = s.y + roofH + 4;
+    const wh = Math.max(5, wallH - 10);
+    g.fillStyle(0x9fd5f5, 1).fillRect(wx, wy, 13, wh);
+    g.lineStyle(2, INK, 1).strokeRect(wx, wy, 13, wh);
+    lit(wx, wy, 13, wh);
   }
   g.fillStyle(0x7c4a24, 1).fillRect(door, s.y + s.h - Math.min(22, wallH), 16, Math.min(22, wallH));
   g.lineStyle(2, INK, 1).strokeRect(door, s.y + s.h - Math.min(22, wallH), 16, Math.min(22, wallH));
   g.lineStyle(LINE, INK, 1).strokeRoundedRect(s.x, s.y, s.w, s.h, 6);
   g.lineStyle(2, INK, 0.6).beginPath().moveTo(s.x, s.y + roofH).lineTo(s.x + s.w, s.y + roofH).strokePath();
   // Rooftop details: a black water tank and an AC unit, very Abuja.
-  const props: Phaser.GameObjects.GameObject[] = [g];
-  if (s.w > 60 && roofH > 30 && r() > 0.3) props.push(scene.add.image(s.x + 14 + r() * (s.w - 40), s.y + roofH / 2 - 2, "tank"));
+  if (s.w > 60 && roofH > 30 && r() > 0.3) scene.add.image(s.x + 14 + r() * (s.w - 40), s.y + roofH / 2 - 2, "tank").setDepth(g.depth);
   if (s.w > 90 && roofH > 30 && r() > 0.4) {
-    const ac = scene.add.graphics();
     const ax = s.x + s.w - 34;
     const ay = s.y + 10;
-    ac.fillStyle(0xe5e7eb, 1).fillRect(ax, ay, 22, 14).lineStyle(2, INK, 1).strokeRect(ax, ay, 22, 14).strokeCircle(ax + 11, ay + 7, 4);
-    props.push(ac);
+    g.fillStyle(0xe5e7eb, 1).fillRect(ax, ay, 22, 14).lineStyle(2, INK, 1).strokeRect(ax, ay, 22, 14).strokeCircle(ax + 11, ay + 7, 4);
   }
-  if (s.label) {
-    props.push(
-      scene.add
-        .text(s.x + s.w / 2, s.y + roofH / 2, s.label, {
-          fontFamily: "system-ui, sans-serif",
-          fontSize: "14px",
-          fontStyle: "bold",
-          color: "#ffffff",
-          stroke: "#141414",
-          strokeThickness: 4,
-        })
-        .setResolution(2)
-        .setOrigin(0.5),
-    );
-  }
-  return g;
+  if (s.label) labelOn(scene, s.x + s.w / 2, s.y + roofH / 2, s.label, base);
+  return { g, face: { x: s.x, y: s.y, w: s.w, h: s.h } };
+}
+
+function labelOn(scene: Phaser.Scene, x: number, y: number, text: string, base: number) {
+  scene.add
+    .text(x, y, text, { fontFamily: "system-ui, sans-serif", fontSize: "14px", fontStyle: "bold", color: "#ffffff", stroke: "#141414", strokeThickness: 4 })
+    .setResolution(2)
+    .setOrigin(0.5)
+    .setDepth(5 + base / 10000 + 0.0001);
 }
 
 /** A signpost for a place you can enter: icon, name, and a glowing doormat. */

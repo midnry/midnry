@@ -216,7 +216,8 @@ export function saveControls(controls: Controls): void {
   }
 }
 
-export type NearThing = { kind: "place" | "person" | "beat"; id: string; label: string };
+/** Something you can use: a place, a person, a story spot, a building door, or the way out of a room. */
+export type NearThing = { kind: "place" | "person" | "beat" | "door" | "exit"; id: string; label: string };
 
 type BusEvents = {
   teleport: { x: number; y: number };
@@ -231,6 +232,8 @@ type BusEvents = {
   camera: "in" | "out" | "explore" | "follow";
   /** The world tells the buttons whether you're looking around. */
   exploring: boolean;
+  /** A room has finished loading (the loading screen can go). */
+  roomReady: null;
 };
 type Handler = (payload: never) => void;
 const handlers = new Map<keyof BusEvents, Set<Handler>>();
