@@ -267,6 +267,14 @@ export function doAction(placeId: string, actionId: string): "loans" | "business
     if (!check(s, a.if)) return toast(s, a.lockedText ?? "You can't do that yet.");
     if (a.kind === "sleep") return sleep(s);
     if (a.kind === "paybill") return toast(s, payHospital(s));
+    if (a.kind === "kitchen" || a.kind === "foodshop" || a.kind === "cookclass") {
+      kitchen(s);
+      const at = a.kind === "kitchen" ? "home" : null;
+      const market = a.kind === "cookclass" ? "academy" : (a.deal ?? null);
+      const tab = a.kind === "kitchen" ? "cook" : a.kind === "cookclass" ? "school" : "shop";
+      setTimeout(() => bus.emit("kitchen", { at, market, tab }), 0);
+      return;
+    }
     if (a.kind === "negotiate" && a.deal) {
       const why = startNegotiation(s, a.deal);
       if (why) toast(s, why);
@@ -1391,3 +1399,10 @@ export function takeClass(id: string) {
 }
 
 export { CROPS, cookMinutes };
+
+/** Make sure the kitchen exists before the screen shows it. */
+export function openKitchen() {
+  update((s) => {
+    kitchen(s);
+  });
+}

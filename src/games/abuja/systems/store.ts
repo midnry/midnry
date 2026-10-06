@@ -234,6 +234,8 @@ type BusEvents = {
   exploring: boolean;
   /** A room has finished loading (the loading screen can go). */
   roomReady: null;
+  /** Open the kitchen screen: at home, from a market, or from the phone. */
+  kitchen: { at: "home" | null; market: string | null; tab: "cook" | "shop" | "school" };
 };
 type Handler = (payload: never) => void;
 const handlers = new Map<keyof BusEvents, Set<Handler>>();

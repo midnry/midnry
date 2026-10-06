@@ -188,6 +188,15 @@
           "text": "Garri, beans and a little palm oil. Not fancy, but your stomach is quiet now."
         },
         {
+          "id": "kitchen",
+          "label": "🍳 Go to your kitchen",
+          "slots": 0,
+          "energy": 0,
+          "kind": "kitchen",
+          "effects": [],
+          "text": "Cook from recipes, experiment, manage your pantry and garden."
+        },
+        {
           "id": "sachet_water",
           "label": "Buy pure water sachets (₦200)",
           "slots": 0,
@@ -305,6 +314,15 @@
             }
           ],
           "text": "A proper pot of rice and stew. You'll eat it again tomorrow."
+        },
+        {
+          "id": "kitchen",
+          "label": "🍳 Go to your kitchen",
+          "slots": 0,
+          "energy": 0,
+          "kind": "kitchen",
+          "effects": [],
+          "text": "Cook from recipes, experiment, manage your pantry and garden."
         },
         {
           "id": "dispenser",
@@ -624,6 +642,16 @@
           "text": "Rice, beans, plantain and a piece of meat. Mama put serves with a smile."
         },
         {
+          "id": "foodshop",
+          "label": "🛒 Shop for ingredients",
+          "slots": 0,
+          "energy": 0,
+          "kind": "foodshop",
+          "deal": "wuse",
+          "effects": [],
+          "text": "Cheap and standard produce, meat, fish and provisions."
+        },
+        {
           "id": "pure_water",
           "label": "Buy pure water (₦100)",
           "slots": 0,
@@ -697,6 +725,26 @@
           "deal": "fabric",
           "effects": [],
           "text": ""
+        }
+      ]
+    },
+    {
+      "id": "culinary_academy", "icon": "👩‍🍳",
+      "name": "Abuja Culinary Academy",
+      "district": "wuse",
+      "x": 1240,
+      "y": 640,
+      "color": "#f97316",
+      "blurb": "Chef whites, steel benches and an instructor who has cooked in London. Professional and pastry classes.",
+      "actions": [
+        {
+          "id": "classes",
+          "label": "👩‍🍳 Take a cooking class",
+          "slots": 0,
+          "energy": 0,
+          "kind": "cookclass",
+          "effects": [],
+          "text": "Learn professional recipes and technique."
         }
       ]
     },
@@ -1511,6 +1559,16 @@
           "text": "Small chops, big gist. Someone's cousin works at a bank."
         },
         {
+          "id": "foodshop",
+          "label": "🛒 Shoprite: groceries, kitchenware and cookbooks",
+          "slots": 0,
+          "energy": 0,
+          "kind": "foodshop",
+          "deal": "shoprite",
+          "effects": [],
+          "text": "Premium and imported food, kitchen equipment and the bookshop."
+        },
+        {
           "id": "shoot",
           "label": "Shoot content by the lake",
           "slots": 1,
@@ -1856,6 +1914,16 @@
             }
           ],
           "text": "Bags of rice and beans, one borrowed van, and a prayer."
+        },
+        {
+          "id": "foodshop",
+          "label": "🛒 Shop for farm produce",
+          "slots": 0,
+          "energy": 0,
+          "kind": "foodshop",
+          "deal": "kubwa",
+          "effects": [],
+          "text": "The cheapest local produce in Abuja, straight from the farms."
         },
         {
           "id": "roadside",

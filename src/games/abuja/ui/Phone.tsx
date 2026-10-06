@@ -17,11 +17,12 @@ import { btnGhost, btnPrimary } from "./theme";
 import { Trade } from "./Trade";
 import { WardrobePanel } from "./Wardrobe";
 
-export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe";
+export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "wallet", label: "Wallet", icon: "💳", tint: "bg-blue-600" },
   { id: "food", label: "ChopNow", icon: "🍲", tint: "bg-amber-600" },
+  { id: "kitchen", label: "Kitchen", icon: "🍳", tint: "bg-orange-600" },
   { id: "bills", label: "Bills", icon: "🧾", tint: "bg-cyan-700" },
   { id: "business", label: "Business", icon: "🏪", tint: "bg-lime-700" },
   { id: "deals", label: "Deals", icon: "🤝", tint: "bg-emerald-700" },

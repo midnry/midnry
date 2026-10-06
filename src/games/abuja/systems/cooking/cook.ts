@@ -21,6 +21,7 @@ export function placeOf(s: GameState, where: "home" | string): Place | null {
 // ── What you can cook ────────────────────────────────────────────────────────
 
 const NEEDS_KIT = new Set(["chop", "pound", "grate", "peel"]);
+const DRY = new Set<Method>(["fry", "deepfry", "grill", "roast", "bake", "smoke", "saute", "toast"]);
 
 /** The best working kit for a step, or null if you have nothing that does it. */
 export function kitFor(kit: Owned[], step: Step): Owned | null {
@@ -148,7 +149,11 @@ export function scoreDish(
   const dirty = cleanliness < 50 ? (50 - cleanliness) / 4 : 0;
   const prep = avg(perf.prep, 65);
   const cookAvg = avg(perf.cook, 65);
-  const burnt = perf.cook.some((x) => x < 15);
+  // A wrecked step burns food over dry heat; anything wet is just overdone.
+  const cookSteps = r.steps.filter((x): x is Extract<Step, { kind: "cook" }> => x.kind === "cook");
+  const ruined = perf.cook.map((x, i) => (x < 15 ? (DRY.has(cookSteps[i]?.method ?? "boil") ? "burnt" : "overdone") : null));
+  const burnt = ruined.includes("burnt");
+  const overdone = !burnt && ruined.includes("overdone");
   const seasonQ = r.steps.some((x) => x.kind === "season") ? seasoningScore(perf.season, r.target) : 70;
   const extras = (r.extras ?? []).filter((e) => used.some((l) => l.ing === e)).length * 2;
   const counters = k.equipment.some((o) => o.def === "counters" && !o.broken) ? 5 : 0;
@@ -163,6 +168,11 @@ export function scoreDish(
     taste *= 0.4;
     texture *= 0.35;
     notes.push("Something burnt. The smell is everywhere.");
+  }
+  if (overdone) {
+    taste *= 0.75;
+    texture *= 0.6;
+    notes.push("You lost track of it. It's overdone: mushy, bitter or watery.");
   }
   if (opts.improvised) {
     taste -= 6;

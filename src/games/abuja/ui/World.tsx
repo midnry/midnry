@@ -32,6 +32,7 @@ import { Phone, type PhoneApp } from "./Phone";
 import { isPoorRoom, roomForBuilding, roomForPlace, type RoomInfo } from "../systems/rooms";
 import { ChatBubble, ReplyButton } from "./Chat";
 import { NegotiationScreen } from "./Negotiation";
+import { KitchenScreen, type KitchenOpen } from "./kitchen/Kitchen";
 import { StoryPanel } from "./StoryView";
 import { WardrobePanel } from "./Wardrobe";
 import { btnGhost, btnPrimary, panel } from "./theme";
@@ -60,6 +61,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   };
   const inStory = Boolean(state.chapter);
   const negotiation = state.life?.neg?.active ?? null;
+  const [kitchenOpen, setKitchenOpen] = useState<KitchenOpen | null>(null);
   // Inside a building: which room, and the loading screen between outside and in.
   const [inside, setInside] = useState<RoomInfo | null>(null);
   const insideRef = useRef<RoomInfo | null>(null);
@@ -147,6 +149,11 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       if (thing.kind === "item") {
         const poor = insideRef.current ? isPoorRoom(insideRef.current.type) : false;
         if (thing.id === "freshen") freshenUp(poor);
+        else if (thing.id === "kitchen") {
+          if (getState()?.chapter) bus.emit("blocked", "Mama's kitchen, Mama's rules. You'll cook for yourself when you're grown.");
+          else if (!insideRef.current?.placeId?.startsWith("home_") && !insideRef.current?.parent?.placeId?.startsWith("home_")) bus.emit("blocked", "This isn't your kitchen. Cook at home.");
+          else setKitchenOpen({ at: "home", market: null, tab: "cook" });
+        }
         else if (getState()?.chapter) bus.emit("blocked", "Your phone can wait. You're in the middle of growing up.");
         else setPhone(thing.id === "laptop" ? "jobs" : "home");
       }
@@ -168,6 +175,10 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       bus.on("blocked", (message) => setBlocked(message)),
       bus.on("exploring", (on) => setExploring(on)),
       bus.on("roomReady", () => finishLoadingRef.current()),
+      bus.on("kitchen", (open) => {
+        setOpen(null);
+        setKitchenOpen(open);
+      }),
       // A ride leaves from the street: step outside first.
       bus.on("ride", () => roomActions.current.leaveRoom()),
     ];
@@ -181,10 +192,10 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
 
   // The world stands still while the pause menu is open. Esc or P toggles it.
   useEffect(() => {
-    input.paused = paused || wardrobe || Boolean(negotiation);
+    input.paused = paused || wardrobe || Boolean(negotiation) || Boolean(kitchenOpen);
     input.x = 0;
     input.y = 0;
-  }, [paused, wardrobe, negotiation]);
+  }, [paused, wardrobe, negotiation, kitchenOpen]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape" || event.key === "p" || event.key === "P") setPaused((value) => !value);
@@ -377,8 +388,18 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         </button>
       ) : null}
 
-      {phone && !inStory ? <Phone state={state} app={phone} onApp={setPhone} onClose={() => setPhone(null)} /> : null}
+      {phone && !inStory ? <Phone
+          state={state}
+          app={phone}
+          onApp={(app) => {
+            if (app !== "kitchen") return setPhone(app);
+            setPhone(null);
+            setKitchenOpen({ at: null, market: null, tab: "shop" });
+          }}
+          onClose={() => setPhone(null)}
+        /> : null}
       {state.event ? <EventModal state={state} /> : null}
+      {kitchenOpen && !state.event && !negotiation ? <KitchenScreen state={state} open={kitchenOpen} onClose={() => setKitchenOpen(null)} /> : null}
       {negotiation && !state.event ? <NegotiationScreen key={`${negotiation.deal}-${negotiation.npc}`} state={state} n={negotiation} /> : null}
       {story ? (
         <div className="absolute inset-0 z-40 overflow-y-auto bg-black/55 px-3 py-6 backdrop-blur-[2px] sm:py-12">

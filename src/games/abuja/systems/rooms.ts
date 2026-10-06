@@ -22,7 +22,7 @@ export const ROOM = { w: 640, h: 440, wall: 112, door: { x: 320, y: 418 } };
 
 export type RoomItem = { id: string; x: number; y: number; accent?: string };
 
-export type RoomAction = "phone" | "laptop" | "freshen";
+export type RoomAction = "phone" | "laptop" | "freshen" | "kitchen";
 
 export type RoomLayout = {
   wall: string;
@@ -63,6 +63,7 @@ export const LAYOUTS: Record<RoomType, RoomLayout> = {
       { x: 73, label: "Bedroom", to: "bedroom_middle" },
       { x: 163, label: "Bathroom", to: "bathroom_middle" },
     ],
+    spots: [{ x: 488, y: 196, label: "🍳 Use the kitchen", action: "kitchen" }],
     staff: [{ x: 360, y: 350 }],
   },
   home_poor: {
@@ -86,6 +87,7 @@ export const LAYOUTS: Record<RoomType, RoomLayout> = {
       { x: 73, label: "Bedroom", to: "bedroom_poor" },
       { x: 163, label: "Bathroom", to: "bathroom_poor" },
     ],
+    spots: [{ x: 420, y: 196, label: "🍳 Use the kitchen", action: "kitchen" }],
     staff: [{ x: 360, y: 350 }],
   },
   bedroom_middle: {
