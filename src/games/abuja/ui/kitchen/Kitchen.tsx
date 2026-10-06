@@ -4,6 +4,7 @@ import { EQUIPMENT, equipment, stats, TIER_LABEL } from "../../systems/cooking/e
 import { CAT_LABEL, ingredient, INGREDIENTS } from "../../systems/cooking/ingredients";
 import { capacity, effective, freshness, inSeason, price as foodPrice, SEED_PRICE, sells, SKILLS, SOURCES, used } from "../../systems/cooking/kitchen";
 import { BOOKS, CLASSES, recipe, RECIPES } from "../../systems/cooking/recipes";
+import { allergens, guestList, seats, type MealKind } from "../../systems/cooking/social";
 import type { Cat, EquipKind, EquipTier, Kitchen, Method, Performance, RecipeDef, Storage, Tier } from "../../systems/cooking/types";
 import {
   buyBook,
@@ -15,7 +16,9 @@ import {
   eatLeftover,
   experimentAt,
   gardenAction,
+  hostMeal,
   openKitchen,
+  phoneMum,
   repairEquipment,
   saveRecipeVersion,
   scrubKitchen,
@@ -30,7 +33,7 @@ import type { GameState } from "../../systems/types";
 import { btnGhost, btnPrimary, panel } from "../theme";
 import { ChopGame, gameFor, HeatGame, PlateGame, SeasonPanel, TimingGame, WorkGame } from "./games";
 
-export type KitchenTab = "cook" | "pantry" | "recipes" | "lab" | "kit" | "shop" | "garden" | "school";
+export type KitchenTab = "cook" | "pantry" | "share" | "recipes" | "lab" | "kit" | "shop" | "garden" | "school";
 
 /** Where the kitchen screen was opened from. */
 export type KitchenOpen = { at: "home" | null; market: string | null; tab: KitchenTab };
@@ -40,6 +43,7 @@ type Taste = Performance["season"];
 const TABS: { id: KitchenTab; label: string; icon: string }[] = [
   { id: "cook", label: "Cook", icon: "🍳" },
   { id: "pantry", label: "Pantry", icon: "🧺" },
+  { id: "share", label: "Share", icon: "🍽️" },
   { id: "recipes", label: "Recipes", icon: "📖" },
   { id: "lab", label: "Experiment", icon: "🧪" },
   { id: "kit", label: "Kitchen", icon: "🔪" },
@@ -128,6 +132,8 @@ export function KitchenScreen({ state, open, onClose }: { state: GameState; open
             <CookTab state={state} k={k} at={open.at} onShop={() => setTab("shop")} />
           ) : tab === "pantry" ? (
             <PantryTab state={state} k={k} />
+          ) : tab === "share" ? (
+            <ShareTab state={state} k={k} at={open.at} />
           ) : tab === "recipes" ? (
             <RecipesTab k={k} />
           ) : tab === "lab" ? (
@@ -627,6 +633,129 @@ function PantryTab({ state, k }: { state: GameState; k: Kitchen }) {
           </ul>
         )}
       </section>
+    </div>
+  );
+}
+
+// ── Sharing food ─────────────────────────────────────────────────────────────
+
+function ShareTab({ state, k, at }: { state: GameState; k: Kitchen; at: "home" | null }) {
+  const [dishId, setDishId] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string[]>([]);
+  const [said, setSaid] = useState<string[] | null>(null);
+  const guests = guestList(state);
+  const dish = k.leftovers.find((d) => d.id === dishId) ?? null;
+  const chosen = guests.filter((g) => picked.includes(g.id));
+  const room = seats(state);
+  const serve = (kind: MealKind) => {
+    if (!dish) return;
+    const out = hostMeal(dish.id, picked, kind);
+    setSaid(out.lines);
+    if (out.ok) setPicked([]);
+  };
+  const callMum = (
+    <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-3">
+      <p className="text-sm font-semibold">📞 Call Mama</p>
+      <p className="text-xs text-slate-400">She'll talk you through one of her recipes, or give you a tip. Once a week.</p>
+      <button type="button" className={`${btnGhost} mt-2 min-h-9 text-xs`} onClick={phoneMum}>
+        Call her
+      </button>
+    </div>
+  );
+  if (at !== "home") {
+    return (
+      <div>
+        <p className="text-sm text-slate-400">You serve food at home. Cook something there, then invite people over.</p>
+        {callMum}
+      </div>
+    );
+  }
+  return (
+    <div>
+      <p className="text-sm text-slate-300">Cook for people. Everyone has their tastes, how much pepper they can take, and sometimes an allergy. Good food brings people closer.</p>
+      {said ? (
+        <div className="mt-3 rounded-xl border border-blue-400/30 bg-blue-500/10 p-3">
+          <ul className="space-y-1.5 text-sm">
+            {said.map((l, i) => (
+              <li key={i}>{l}</li>
+            ))}
+          </ul>
+          <button type="button" className="mt-2 text-xs text-sky-300 underline" onClick={() => setSaid(null)}>
+            OK
+          </button>
+        </div>
+      ) : null}
+      <h3 className="mt-4 text-xs font-semibold tracking-widest text-slate-400 uppercase">1. What are you serving?</h3>
+      {!k.leftovers.length ? <p className="mt-2 text-sm text-slate-500">Nothing cooked. Cook something first; dishes for 4 or more are best for guests.</p> : null}
+      <ul className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+        {k.leftovers.map((d) => (
+          <li key={d.id}>
+            <button
+              type="button"
+              onClick={() => setDishId(d.id)}
+              aria-pressed={dishId === d.id}
+              className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm ${dishId === d.id ? "border-blue-400 bg-blue-400/15" : "border-white/10 bg-white/5"}`}
+            >
+              <span className="text-xl" aria-hidden>
+                {d.icon}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold">{d.name}</span>
+                <span className="block text-xs text-slate-400">
+                  {d.portions} portion{d.portions > 1 ? "s" : ""} · {grade(d.scores.overall)}
+                  {allergens(d).size ? ` · contains ${[...allergens(d)].join(", ")}` : ""}
+                </span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <h3 className="mt-4 text-xs font-semibold tracking-widest text-slate-400 uppercase">2. Who's eating?</h3>
+      {!guests.length ? <p className="mt-2 text-sm text-slate-500">You haven't got close enough to anyone to invite them over yet.</p> : null}
+      <ul className="mt-2 grid grid-cols-1 gap-1.5">
+        {guests.map((g) => {
+          const on = picked.includes(g.id);
+          const fan = k.fans[g.id];
+          return (
+            <li key={g.id}>
+              <button
+                type="button"
+                disabled={g.fedToday}
+                onClick={() => setPicked(on ? picked.filter((x) => x !== g.id) : [...picked, g.id])}
+                aria-pressed={on}
+                className={`w-full rounded-xl border px-3 py-2 text-left disabled:opacity-45 ${on ? "border-blue-400 bg-blue-400/15" : "border-white/10 bg-white/5"}`}
+              >
+                <span className="flex items-center gap-2 text-sm font-semibold">
+                  {g.kind === "partner" ? "💗" : g.kind === "family" ? "👨‍👩‍👧" : "🙂"} {g.name}
+                  {g.fedToday ? <span className="text-xs font-normal text-slate-400">· already ate with you today</span> : null}
+                </span>
+                <span className="block text-xs text-slate-400">{g.palate.note}</span>
+                {fan ? <span className="block text-[11px] text-slate-500">Eaten your food {fan.meals}× · best {fan.best} · last time {fan.last}</span> : null}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        <button type="button" className={btnPrimary} disabled={!dish || !chosen.length || chosen.length > (dish?.portions ?? 0)} onClick={() => serve("meal")}>
+          🍽️ Eat together
+        </button>
+        <button type="button" className={btnGhost} disabled={!dish || chosen.length < 2 || chosen.length + 1 > room || chosen.length > (dish?.portions ?? 0) || state.slot >= SLOTS.length} onClick={() => serve("dinner")}>
+          🎉 Dinner party
+        </button>
+        <button
+          type="button"
+          className={btnGhost}
+          disabled={!dish || chosen.length !== 1 || chosen[0]?.kind !== "partner" || state.slot >= SLOTS.length}
+          onClick={() => serve("romantic")}
+        >
+          🕯️ Romantic dinner
+        </button>
+      </div>
+      <p className="mt-2 text-xs text-slate-500">
+        One portion per guest. A dinner party needs 2+ guests and takes an evening (seats for {room}). A romantic dinner is for you and someone you're seeing.
+      </p>
+      {callMum}
     </div>
   );
 }

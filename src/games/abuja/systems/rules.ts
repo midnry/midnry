@@ -3,6 +3,8 @@ import { drink, feed, offense, wash } from "./life";
 import { answerEfcc, bankCredit, frozenAmount } from "./bank";
 import { bizWorth } from "./business";
 import { equity, shock } from "./market";
+import { learn } from "./cooking/cook";
+import { recipe } from "./cooking/recipes";
 import { partnerName, pregnancyText, romanceEffect } from "./romance";
 import type { Cond, Effect, GameState, SkillKey, StatKey } from "./types";
 
@@ -122,6 +124,7 @@ export function apply(state: GameState, effects: Effect[] | undefined, toasts: s
     if (effect.wash) wash(state);
     if (effect.offense) toasts.push(offense(state, effect.offense));
     if (effect.efcc) toasts.push(...answerEfcc(state, effect.efcc));
+    if (effect.recipe && learn(state, effect.recipe)) toasts.push(`📖 New recipe: ${recipe(effect.recipe)?.name}. Find it in your kitchen.`);
     if (effect.log) addLog(state, effect.log);
     if (effect.toast) toasts.push(fill(state, effect.toast));
   }

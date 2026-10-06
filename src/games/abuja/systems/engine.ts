@@ -30,6 +30,7 @@ import { acceptCounter, argue, bluff, closeNegotiation, propose as proposeOffer,
 import type { Approach, Bluff } from "./negotiate/types";
 import { addLot, CROPS, harvest as harvestPlot, kitchen, moveLot, nightlyGarden, plant as plantPlot, price as foodPrice, SOURCES, sells, spoil, water as waterGarden, weeklyMarket } from "./cooking/kitchen";
 import { cleanKitchen, cookMinutes, cookRecipe, eatDish, experiment as experimentDish, learn, repair as repairKit, saveCustom, type CookResult } from "./cooking/cook";
+import { callMum, guestList, shareMeal, type MealKind } from "./cooking/social";
 import { BOOKS, CLASSES, recipe as recipeDef, RECIPES } from "./cooking/recipes";
 import { equipment as equipDef, stats as equipStats } from "./cooking/equipment";
 import { ingredient as ingDef } from "./cooking/ingredients";
@@ -1399,6 +1400,43 @@ export function takeClass(id: string) {
 }
 
 export { CROPS, cookMinutes };
+
+/** Share a cooked dish: a quick meal, a dinner party, or a romantic dinner. Returns what people said. */
+export function hostMeal(dishId: string, guestIds: string[], kind: MealKind): { ok: boolean; lines: string[]; avg: number } {
+  let out: { ok: boolean; lines: string[]; avg: number } = { ok: false, lines: [], avg: 0 };
+  update((s) => {
+    if (s.chapter || s.ending) return;
+    if (kind !== "meal" && s.slot >= SLOTS.length) {
+      out = { ok: false, lines: ["It's too late to host anyone tonight."], avg: 0 };
+      return;
+    }
+    const all = guestList(s);
+    const guests = guestIds.map((id) => all.find((g) => g.id === id)).filter((g): g is NonNullable<typeof g> => Boolean(g && !g.fedToday));
+    out = shareMeal(s, dishId, guests, kind, (g, change) => {
+      if (g.kind === "partner") {
+        const p = s.partners[g.id];
+        if (p) {
+          p.affection = Math.max(0, Math.min(100, p.affection + change));
+          p.lastSeen = s.day;
+        }
+      } else if (g.kind === "family") {
+        addStat(s, "stress", -Math.max(0, change));
+      } else {
+        const n = s.npcs[g.id] ?? { rel: 0, met: true, lastSeen: s.day };
+        s.npcs[g.id] = { ...n, rel: Math.max(0, Math.min(100, n.rel + change)), lastSeen: s.day };
+      }
+    });
+    if (!out.ok) return;
+    if (kind === "meal") addStat(s, "energy", -2);
+    else spend(s, 1, -6);
+    toast(s, out.lines[out.lines.length - 1] ?? "");
+  });
+  return out;
+}
+
+export function phoneMum() {
+  update((s) => toast(s, callMum(s)));
+}
 
 /** Make sure the kitchen exists before the screen shows it. */
 export function openKitchen() {

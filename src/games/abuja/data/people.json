@@ -65,6 +65,7 @@
       "lines": ["\"Have you updated your CV? Update it.\"", "\"Money you didn't sweat for will run away the same way.\"", "\"Network is not begging. It's showing up, again and again.\""],
       "talks": [{ "text": "\"I have a book you should read. Bring it back.\"", "choices": [
         { "text": "Borrow the book", "effects": [{ "skill": "education", "add": 2 }, { "skill": "trading", "add": 1 }], "result": "\"The Richest Man in Babylon\". Old, but it still slaps." },
+        { "text": "Ask for her famous efo riro recipe", "if": { "npc": "okafor", "rel": 40, "notFlag": "learned_efo_riro" }, "effects": [{ "recipe": "efo_riro" }, { "flag": "learned_efo_riro" }, { "npc": "okafor", "rel": 2 }], "result": "She writes it on the back of an envelope. \"Blend the peppers coarse, never smooth. And don't drown the greens.\"" },
         { "text": "Thank her and go" }] }] },
     { "id": "bolaji", "name": "Bolaji", "map": "city", "place": "bolaji_house", "build": "masc", "look": {"chain": true, "watch": true}, "color": "#eab308", "npc": "bolaji",
       "lines": ["\"Bro, you look stressed. Have you tried... not being stressed?\"", "\"Dad's people said the contract is 'sorted'. I don't even know what the contract is.\""],
@@ -82,11 +83,13 @@
       "lines": ["\"Suya hot hot! Extra yaji for you?\"", "\"Thirty years selling suya. My children are doctors.\""],
       "talks": [{ "text": "\"₦2,000 suya, with onions and cabbage?\"", "choices": [
         { "text": "Buy suya (₦2,000)", "effects": [{ "stat": "money", "add": -2000 }, { "stat": "energy", "add": 10 }, { "stat": "stress", "add": -5 }], "result": "Smoky, spicy, life-changing." },
+        { "text": "Pay him to teach you his suya (₦15,000)", "if": { "stat": "money", "gte": 15000, "notFlag": "learned_suya" }, "effects": [{ "stat": "money", "add": -15000 }, { "recipe": "suya" }, { "flag": "learned_suya" }], "result": "He looks around, then shows you how he slices the beef paper-thin and what goes into his yaji. \"If you open shop near me, I go find you.\"" },
         { "text": "Next time" }] }] },
     { "id": "hawker", "name": "Gala hawker", "map": "city", "place": "wuse_market", "dx": 120, "dy": -20, "build": "fem", "look": {"top": "tee"}, "color": "#fde047",
       "lines": ["\"Gala! Fanta! Coke! Pure water!\"", "\"Customer, buy something na. Small thing.\""],
       "talks": [{ "text": "\"Gala and Fanta, ₦700.\"", "choices": [
         { "text": "Buy (₦700)", "effects": [{ "stat": "money", "add": -700 }, { "stat": "energy", "add": 8 }], "result": "The national lunch of the hustling class." },
+        { "text": "Ask how she makes the kunu she sells (₦3,000)", "if": { "stat": "money", "gte": 3000, "notFlag": "learned_kunu" }, "effects": [{ "stat": "money", "add": -3000 }, { "recipe": "kunu" }, { "flag": "learned_kunu" }], "result": "\"Millet, ginger, small clove. Leave am overnight.\" She laughs. \"Just don't come and sell for my side.\"" },
         { "text": "No thanks" }] }] },
     { "id": "agbero", "name": "Agbero", "map": "city", "place": "motor_park", "dx": 120, "dy": 0, "build": "masc", "look": {"top": "tank"}, "color": "#ef4444",
       "lines": ["\"Owo ticket! Everybody pay!\"", "\"Na government collect am. Which government? Our own government.\""],

@@ -130,6 +130,8 @@ export type Effect = {
   offense?: string;
   /** How you answer an EFCC invitation: "honour", "bribe" or "run". */
   efcc?: string;
+  /** Learn a recipe (someone teaches you). */
+  recipe?: string;
 };
 
 export type MapRect = { x: number; y: number; w: number; h: number; label?: string; color?: string; gapFrom?: number; gapTo?: number; kind?: "water" };
