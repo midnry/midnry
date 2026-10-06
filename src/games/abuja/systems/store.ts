@@ -189,7 +189,33 @@ export const input = {
   interact: false,
   /** The pause menu is open: the world stands still. */
   paused: false,
+  /** How you move on screen: a joystick, or tapping where to go (keys always work). */
+  controls: "joystick" as Controls,
 };
+
+export type Controls = "joystick" | "tap";
+const CONTROLS_KEY = "abuja-hustle.controls";
+
+/** Your saved choice, or the joystick on touch screens and tapping on computers. */
+export function loadControls(): Controls {
+  try {
+    const saved = localStorage.getItem(CONTROLS_KEY);
+    if (saved === "joystick" || saved === "tap") return saved;
+  } catch {
+    /* storage blocked: fall back to the device default */
+  }
+  const touch = window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  return touch ? "joystick" : "tap";
+}
+
+export function saveControls(controls: Controls): void {
+  input.controls = controls;
+  try {
+    localStorage.setItem(CONTROLS_KEY, controls);
+  } catch {
+    /* fine: it just won't be remembered */
+  }
+}
 
 export type NearThing = { kind: "place" | "person" | "beat"; id: string; label: string };
 

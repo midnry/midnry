@@ -17,7 +17,7 @@ import {
   talk,
 } from "../systems/engine";
 import { SLOTS, check, debt, fill, lockReason, naira } from "../systems/rules";
-import { bus, input, type NearThing } from "../systems/store";
+import { bus, input, loadControls, saveControls, type Controls, type NearThing } from "../systems/store";
 import type { GameState } from "../systems/types";
 import { Phone, type PhoneApp } from "./Phone";
 import { StoryPanel } from "./StoryView";
@@ -36,6 +36,16 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const [paused, setPaused] = useState(false);
   const [wardrobe, setWardrobe] = useState(false);
   const [exploring, setExploring] = useState(false);
+  const [controls, setControls] = useState<Controls>("joystick");
+  useEffect(() => {
+    const saved = loadControls();
+    input.controls = saved;
+    setControls(saved);
+  }, []);
+  const chooseControls = (next: Controls) => {
+    saveControls(next);
+    setControls(next);
+  };
   const inStory = Boolean(state.chapter);
 
   useEffect(() => {
@@ -156,7 +166,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       {state.task && !inStory ? <TaskPanel state={state} /> : null}
       {state.task?.haggle ? <HaggleModal state={state} /> : null}
 
-      {!story ? <Joystick /> : null}
+      {!story && controls === "joystick" ? <Joystick /> : null}
       <button
         type="button"
         onClick={() => setPaused(true)}
@@ -191,6 +201,8 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       ) : null}
       {paused ? (
         <PauseMenu
+          controls={controls}
+          onControls={chooseControls}
           onResume={() => setPaused(false)}
           onWardrobe={() => {
             setPaused(false);
@@ -242,7 +254,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         </div>
       ) : null}
       <p className="pointer-events-none absolute bottom-2 left-1/2 hidden -translate-x-1/2 text-xs text-slate-400 sm:block">
-        WASD or arrows to move · click to walk · E to interact
+        WASD or arrows to move · {controls === "tap" ? "click to walk" : "joystick to walk"} · E to interact
       </p>
     </div>
   );
@@ -263,7 +275,19 @@ function MapButton({ label, active, onClick, children }: { label: string; active
   );
 }
 
-function PauseMenu({ onResume, onWardrobe, onQuit }: { onResume: () => void; onWardrobe: () => void; onQuit: () => void }) {
+function PauseMenu({
+  controls,
+  onControls,
+  onResume,
+  onWardrobe,
+  onQuit,
+}: {
+  controls: Controls;
+  onControls: (controls: Controls) => void;
+  onResume: () => void;
+  onWardrobe: () => void;
+  onQuit: () => void;
+}) {
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-[2px]" role="dialog" aria-label="Paused">
       <div className={`${panel} w-full max-w-sm p-5`}>
@@ -280,10 +304,34 @@ function PauseMenu({ onResume, onWardrobe, onQuit }: { onResume: () => void; onW
             Save and exit to title
           </button>
         </div>
+        <div className="mt-5">
+          <p className="text-sm font-semibold">Controls</p>
+          <div className="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Controls">
+            {(
+              [
+                ["joystick", "🕹️ Joystick", "Move with the stick"],
+                ["tap", "👆 Tap to move", "Tap where to go"],
+              ] as const
+            ).map(([id, label, hint]) => (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={controls === id}
+                onClick={() => onControls(id)}
+                className={`rounded-xl border p-3 text-left text-sm transition ${controls === id ? "border-emerald-400 bg-emerald-400/15" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
+              >
+                <span className="block font-semibold">{label}</span>
+                <span className="block text-xs text-slate-400">{hint}</span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs text-slate-400">Arrow keys and WASD always work on a keyboard.</p>
+        </div>
         <div className="mt-5 rounded-xl bg-white/5 p-3 text-xs text-slate-300">
           <p className="font-semibold text-slate-200">How to play</p>
           <ul className="mt-1 list-disc space-y-1 pl-4">
-            <li>Move with the joystick, WASD or the arrow keys, or tap/click where you want to go.</li>
+            <li>Move with the joystick or by tapping where you want to go (pick one under Controls), or with WASD or the arrow keys.</li>
             <li>Tap the “Go to” banner (or “Go” on a job) to walk to your goal automatically.</li>
             <li>Walk up to people and places, then tap the yellow button (or press E) to talk or enter.</li>
             <li>＋ and － (or pinch, or the mouse wheel) zoom in and out.</li>
@@ -445,10 +493,6 @@ function EventModal({ state }: { state: GameState }) {
 /** A virtual joystick for touch screens. It writes into the shared input that Phaser reads. */
 function Joystick() {
   const base = useRef<HTMLDivElement>(null);
-  const [touch, setTouch] = useState(false);
-  useEffect(() => {
-    setTouch(window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window || navigator.maxTouchPoints > 0);
-  }, []);
   const [knob, setKnob] = useState({ x: 0, y: 0 });
   const active = useRef<number | null>(null);
 
@@ -477,7 +521,6 @@ function Joystick() {
     input.y = 0;
   }
 
-  if (!touch) return null;
   return (
     <div
       ref={base}

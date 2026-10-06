@@ -187,7 +187,7 @@ export class WorldScene extends Phaser.Scene {
     // Tap to walk; while exploring, drag to look around. Two fingers (or the mouse wheel) zoom.
     this.input.addPointer(1);
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      if (this.exploring || this.input.pointer1.isDown && this.input.pointer2.isDown) return;
+      if (this.exploring || input.controls !== "tap" || (this.input.pointer1.isDown && this.input.pointer2.isDown)) return;
       this.walkTo({ x: pointer.worldX, y: pointer.worldY });
     });
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
