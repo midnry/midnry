@@ -15,13 +15,22 @@ const STAGE_TINT: Record<string, string> = {
 };
 
 export function StoryView({ state }: { state: GameState }) {
+  return (
+    <Screen>
+      <StoryPanel state={state} />
+    </Screen>
+  );
+}
+
+/** The story card: a scene's text and choices, or the result of the last choice. */
+export function StoryPanel({ state }: { state: GameState }) {
   const def = chapter(state.chapter ?? "");
   const scene = def?.scenes[state.scene ?? ""];
   if (!def || !scene) return null;
   const speaker = scene.speaker ? fill(state, scene.speaker) : null;
 
   return (
-    <Screen>
+    <>
       <div className={`mx-auto max-w-2xl rounded-3xl bg-gradient-to-b ${STAGE_TINT[def.stage] ?? ""} to-transparent p-1`}>
         <div className={`${panel} p-5 sm:p-8`}>
           <div className="flex items-center gap-3">
@@ -69,7 +78,7 @@ export function StoryView({ state }: { state: GameState }) {
           )}
         </div>
       </div>
-    </Screen>
+    </>
   );
 }
 

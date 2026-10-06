@@ -8,9 +8,13 @@ import fixersJson from "../data/fixers.json";
 import statesJson from "../data/states.json";
 import endingsJson from "../data/endings.json";
 import loansJson from "../data/loans.json";
+import mapsJson from "../data/maps.json";
+import peopleJson from "../data/people.json";
 import type {
   Background,
   Chapter,
+  ChapterMap,
+  PersonDef,
   Cond,
   DistrictDef,
   EndingId,
@@ -39,6 +43,9 @@ export const LOANS = loansJson as {
   offers: { amount: number; interest: number; weeks: number; requires: Cond }[];
   missedPenalty: number;
 };
+
+export const MAPS = mapsJson as unknown as Record<string, ChapterMap>;
+export const PEOPLE = (peopleJson as unknown as { people: PersonDef[] }).people;
 
 export const chapter = (id: string) => CHAPTERS.find((item) => item.id === id);
 export const place = (id: string) => PLACES.find((item) => item.id === id);

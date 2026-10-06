@@ -110,6 +110,55 @@ export type Effect = {
   romance?: string;
   /** Instant price moves in the trading app, in percent. */
   market?: { asset: string; pct: number }[];
+  /** Time slots this takes, for offers made in conversation. */
+  time?: number;
+};
+
+export type MapRect = { x: number; y: number; w: number; h: number; label?: string; color?: string; gapFrom?: number; gapTo?: number };
+
+export type ChapterMap = {
+  width: number;
+  height: number;
+  spawn: { x: number; y: number };
+  zones: { name: string; x: number; y: number; w: number; h: number; color: string }[];
+  solids: MapRect[];
+  spots: Record<string, { x: number; y: number; label: string }>;
+  beats: Record<string, string>;
+};
+
+export type PersonDef = {
+  id: string;
+  name: string;
+  map: string;
+  x?: number;
+  y?: number;
+  place?: string;
+  dx?: number;
+  dy?: number;
+  color: string;
+  /** A story character: talking raises this relationship a little. */
+  npc?: string;
+  if?: Cond;
+  lines: string[];
+  talks?: { if?: Cond; text: string; choices: Choice[] }[];
+};
+
+export type TaskStep = { x: number; y: number; label: string; kind: "pickup" | "dropoff" | "customer" };
+
+export type Task = {
+  kind: "delivery" | "hawk" | "ride";
+  app?: "zoom" | "ownprice";
+  steps: TaskStep[];
+  index: number;
+  /** Real seconds allowed for the current step. */
+  limit: number;
+  stepStarted: number;
+  earned: number;
+  late: number;
+  /** Ride-hailing: the agreed fare for the current passenger. */
+  fare: number;
+  rating: number[];
+  haggle: { offer: number; passenger: string } | null;
 };
 
 export type Choice = {
@@ -177,7 +226,7 @@ export type ActionDef = {
   effects: Effect[];
   text: string;
   /** Special handlers in the UI: sleep, work, apply, loans, hospital, japa. */
-  kind?: "sleep" | "work" | "apply" | "loans" | "japa" | "meet";
+  kind?: "sleep" | "work" | "apply" | "loans" | "japa" | "meet" | "drive";
   job?: string;
 };
 
@@ -270,4 +319,5 @@ export type GameState = {
   /** Who or how much a forced event is about, for {partner} and {amount} in its text. */
   eventCtx: { partner?: string; amount?: number; asset?: string };
   market: MarketState | null;
+  task: Task | null;
 };

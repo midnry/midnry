@@ -6,7 +6,6 @@ import { AGE_KEY, deleteSave, loadSave, newGame, newestSave, parseSave, replace,
 import type { GameState } from "../systems/types";
 import { EndScreen } from "./EndScreen";
 import { AgeGate, Creator, Title } from "./Menus";
-import { StoryView } from "./StoryView";
 import { useGame } from "./useGame";
 import { World } from "./World";
 
@@ -88,6 +87,5 @@ export function AbujaHustle() {
     );
   }
   if (state.ending) return <EndScreen state={state} />;
-  if (state.chapter) return <StoryView state={state} />;
   return <World state={state} />;
 }

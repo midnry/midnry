@@ -654,6 +654,36 @@
             }
           ],
           "text": "You load bags of rice onto a Jos-bound bus. Your back files a complaint."
+        },
+        {
+          "id": "drive_zoom",
+          "label": "Drive for Zoom (car rental ₦6,000)",
+          "slots": 2,
+          "energy": -25,
+          "cost": 6000,
+          "kind": "drive",
+          "if": {
+            "skill": "driving",
+            "gte": 20
+          },
+          "lockedText": "Needs Driving 20 (lessons at the Garki hub)",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "drive_ownprice",
+          "label": "Drive for OwnPrice: passengers haggle (₦6,000)",
+          "slots": 2,
+          "energy": -25,
+          "cost": 6000,
+          "kind": "drive",
+          "if": {
+            "skill": "driving",
+            "gte": 20
+          },
+          "lockedText": "Needs Driving 20 (lessons at the Garki hub)",
+          "effects": [],
+          "text": ""
         }
       ]
     },

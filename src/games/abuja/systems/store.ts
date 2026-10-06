@@ -165,6 +165,7 @@ export function newGame(input: { name: string; gender: Gender; background: Backg
     children: [],
     eventCtx: {},
     market: null,
+    task: null,
   };
 }
 
@@ -178,9 +179,12 @@ export const input = {
   interact: false,
 };
 
+export type NearThing = { kind: "place" | "person" | "beat"; id: string; label: string };
+
 type BusEvents = {
   teleport: { x: number; y: number };
-  near: string | null;
+  near: NearThing | null;
+  interact: NearThing;
   blocked: string;
 };
 type Handler = (payload: never) => void;

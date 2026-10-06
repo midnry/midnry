@@ -1,0 +1,103 @@
+{
+  "note": "Walkable maps for the story chapters. 'beats' puts each story scene at a spot: walk there to play it. Scenes without a spot open on their own. Solids are buildings you can't walk through.",
+  "primary": {
+    "width": 1600, "height": 1100, "spawn": { "x": 300, "y": 420 },
+    "zones": [
+      { "name": "Home", "x": 0, "y": 0, "w": 600, "h": 560, "color": "#4d7c0f" },
+      { "name": "Street & Junction", "x": 600, "y": 0, "w": 1000, "h": 420, "color": "#78350f" },
+      { "name": "LEA Primary School", "x": 600, "y": 420, "w": 1000, "h": 680, "color": "#1e40af" },
+      { "name": "Football pitch", "x": 0, "y": 560, "w": 600, "h": 540, "color": "#166534" }
+    ],
+    "solids": [
+      { "x": 120, "y": 110, "w": 280, "h": 180, "label": "Home", "color": "#a16207" },
+      { "x": 430, "y": 110, "w": 120, "h": 120, "label": "Neighbours", "color": "#57534e" },
+      { "x": 860, "y": 110, "w": 150, "h": 80, "label": "Pure water depot", "color": "#0e7490" },
+      { "x": 1150, "y": 130, "w": 170, "h": 70, "label": "Mama Put", "color": "#b45309" },
+      { "x": 820, "y": 520, "w": 440, "h": 150, "label": "Classroom block", "color": "#1d4ed8" },
+      { "x": 1320, "y": 520, "w": 200, "h": 150, "label": "Headmaster's office", "color": "#3730a3" },
+      { "x": 600, "y": 420, "w": 1000, "h": 16, "label": "", "color": "#d6d3d1", "gapFrom": 660, "gapTo": 760 }
+    ],
+    "spots": {
+      "home": { "x": 260, "y": 330, "label": "Home" },
+      "assembly": { "x": 1030, "y": 820, "label": "Assembly ground" },
+      "playground": { "x": 1340, "y": 930, "label": "Playground" },
+      "gate": { "x": 710, "y": 470, "label": "School gate" }
+    },
+    "beats": { "home_lapo": "home", "home_average": "home", "fees": "assembly", "friends": "playground", "end": "gate" }
+  },
+  "secondary": {
+    "width": 1700, "height": 1150, "spawn": { "x": 300, "y": 420 },
+    "zones": [
+      { "name": "Home", "x": 0, "y": 0, "w": 600, "h": 560, "color": "#4d7c0f" },
+      { "name": "Your secondary school", "x": 600, "y": 0, "w": 1100, "h": 640, "color": "#065f46" },
+      { "name": "Street corner", "x": 0, "y": 560, "w": 600, "h": 590, "color": "#78350f" },
+      { "name": "Maitama Hall (quiz)", "x": 600, "y": 640, "w": 1100, "h": 510, "color": "#a16207" }
+    ],
+    "solids": [
+      { "x": 120, "y": 110, "w": 280, "h": 180, "label": "Home", "color": "#a16207" },
+      { "x": 760, "y": 90, "w": 420, "h": 160, "label": "Classrooms", "color": "#047857" },
+      { "x": 1250, "y": 90, "w": 300, "h": 160, "label": "Exam hall", "color": "#0f766e" },
+      { "x": 1000, "y": 760, "w": 460, "h": 220, "label": "Maitama Hall", "color": "#ca8a04" },
+      { "x": 150, "y": 760, "w": 160, "h": 90, "label": "Kiosk", "color": "#57534e" }
+    ],
+    "spots": {
+      "classroom": { "x": 960, "y": 300, "label": "Classroom" },
+      "hall": { "x": 1230, "y": 1030, "label": "Maitama Hall entrance" },
+      "corner": { "x": 330, "y": 900, "label": "Street corner" },
+      "home": { "x": 260, "y": 330, "label": "Home" },
+      "exam": { "x": 1400, "y": 300, "label": "Exam hall" },
+      "cbt": { "x": 450, "y": 1050, "label": "CBT centre" }
+    },
+    "beats": { "lapo_school": "classroom", "average_school": "classroom", "big_event": "hall", "peer": "corner", "socials": "home", "crush": "classroom", "waec": "exam", "dropout": "home", "jamb": "cbt" }
+  },
+  "university": {
+    "width": 1800, "height": 1200, "spawn": { "x": 320, "y": 400 },
+    "zones": [
+      { "name": "Hostel", "x": 0, "y": 0, "w": 650, "h": 600, "color": "#7c2d12" },
+      { "name": "Faculty", "x": 650, "y": 0, "w": 1150, "h": 600, "color": "#4c1d95" },
+      { "name": "Sports field", "x": 0, "y": 600, "w": 650, "h": 600, "color": "#166534" },
+      { "name": "Campus gate & Maitama", "x": 650, "y": 600, "w": 1150, "h": 600, "color": "#a16207" }
+    ],
+    "solids": [
+      { "x": 100, "y": 100, "w": 420, "h": 170, "label": "Hostel block B", "color": "#9a3412" },
+      { "x": 760, "y": 100, "w": 380, "h": 170, "label": "Lecture theatre", "color": "#6d28d9" },
+      { "x": 1250, "y": 100, "w": 320, "h": 170, "label": "Faculty offices", "color": "#5b21b6" },
+      { "x": 1250, "y": 760, "w": 380, "h": 200, "label": "Party mansion (Maitama)", "color": "#ca8a04" },
+      { "x": 780, "y": 760, "w": 200, "h": 120, "label": "Campus gate", "color": "#78716c" }
+    ],
+    "spots": {
+      "hostel": { "x": 310, "y": 330, "label": "Hostel" },
+      "field": { "x": 320, "y": 900, "label": "Sports field" },
+      "office": { "x": 1410, "y": 330, "label": "Mrs. Okafor's office" },
+      "party": { "x": 1440, "y": 1030, "label": "Party in Maitama" },
+      "lawn": { "x": 950, "y": 450, "label": "Faculty lawn" },
+      "theatre": { "x": 950, "y": 330, "label": "Lecture theatre" }
+    },
+    "beats": { "start": "hostel", "strike": "hostel", "cult": "field", "mentor": "office", "guru": "hostel", "nepo_party": "party", "love": "lawn", "final": "theatre" }
+  },
+  "nysc": {
+    "width": 1700, "height": 1150, "spawn": { "x": 260, "y": 300 },
+    "zones": [
+      { "name": "Camp gate", "x": 0, "y": 0, "w": 520, "h": 1150, "color": "#3f6212" },
+      { "name": "Parade ground", "x": 520, "y": 0, "w": 1180, "h": 520, "color": "#65a30d" },
+      { "name": "Mammy market", "x": 520, "y": 520, "w": 600, "h": 630, "color": "#b45309" },
+      { "name": "Clinic & hostels", "x": 1120, "y": 520, "w": 580, "h": 630, "color": "#475569" }
+    ],
+    "solids": [
+      { "x": 80, "y": 520, "w": 300, "h": 160, "label": "Gate house", "color": "#57534e" },
+      { "x": 1200, "y": 600, "w": 240, "h": 140, "label": "Camp clinic", "color": "#be123c" },
+      { "x": 1200, "y": 860, "w": 420, "h": 160, "label": "Hostels", "color": "#334155" },
+      { "x": 650, "y": 640, "w": 160, "h": 80, "label": "Suya", "color": "#9a3412" },
+      { "x": 860, "y": 640, "w": 160, "h": 80, "label": "Fried yam", "color": "#c2410c" }
+    ],
+    "spots": {
+      "gate": { "x": 260, "y": 420, "label": "Camp gate" },
+      "parade": { "x": 1100, "y": 260, "label": "Parade ground" },
+      "mammy": { "x": 820, "y": 900, "label": "Mammy market" },
+      "hostels": { "x": 1400, "y": 1080, "label": "Hostels" },
+      "clinic_back": { "x": 1520, "y": 670, "label": "Behind the clinic" },
+      "board": { "x": 700, "y": 420, "label": "Posting board" }
+    },
+    "beats": { "camp": "parade", "mammy": "mammy", "posting_talk": "hostels", "fixers": "clinic_back", "abuja_posting": "board", "away_posting": "board", "pass_out": "parade" }
+  }
+}

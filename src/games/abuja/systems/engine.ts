@@ -1,4 +1,5 @@
-import { CHAPTERS, EVENTS, FIXERS, HOMES, JOBS, LOANS, POSTING_STATES, chapter, district, job, place } from "./data";
+import { CHAPTERS, EVENTS, FIXERS, HOMES, JOBS, LOANS, MAPS, PEOPLE, PLACES, POSTING_STATES, chapter, district, job, place } from "./data";
+import { citySolids, freePoint } from "./citymap";
 import {
   DAYS_PER_YEAR,
   END_AGE,
@@ -7,6 +8,7 @@ import {
   FREEDOM_TARGET,
   SLOTS,
   addLog,
+  addSkill,
   addStat,
   apply,
   canPick,
@@ -35,7 +37,7 @@ import {
   wed,
   weeklyRomance,
 } from "./romance";
-import type { Choice, EndingId, GameState, Scene } from "./types";
+import type { Choice, EndingId, GameState, PersonDef, Scene, TaskStep } from "./types";
 
 // ── Story ────────────────────────────────────────────────────────────────────
 
@@ -58,6 +60,8 @@ function goScene(s: GameState, sceneId: string) {
     if (!scene) return;
     if (scene.branch) {
       const next = scene.branch.find((item) => check(s, item.if));
+      // A branching scene's own text is an intro: show it before the scene it leads to.
+      if (next && scene.text && !s.result) s.result = fill(s, scene.text);
       if (next) {
         if (next.next.startsWith("@")) return go(s, next.next);
         target = next.next;
@@ -194,6 +198,16 @@ export function doAction(placeId: string, actionId: string): "loans" | void {
       open = "loans";
       return;
     }
+    if (a.kind === "drive") {
+      if (s.task) return toast(s, "Finish what you're doing first.");
+      if (s.skills.driving < 20) return toast(s, "You need Driving 20 to drive for ride-hailing apps. Take lessons at the Garki hub.");
+      if (a.cost && s.stats.money < a.cost) return toast(s, `Car rental is ${naira(a.cost)} for the day.`);
+      if (s.slot + a.slots > SLOTS.length) return toast(s, "It's too late to start driving. Go home and sleep.");
+      if (a.cost) addStat(s, "money", -a.cost);
+      spend(s, a.slots, a.energy);
+      startTask(s, "ride", a.id === "drive_ownprice" ? "ownprice" : "zoom");
+      return;
+    }
     if (a.kind === "meet") {
       if (s.slot + a.slots > SLOTS.length) return toast(s, "It's too late for that. Go home and sleep.");
       toast(s, meet(s, p.id));
@@ -213,6 +227,13 @@ export function doAction(placeId: string, actionId: string): "loans" | void {
     if (a.kind === "apply") return applyForJob(s, a.job!);
     if (a.kind === "work") {
       if (s.job !== a.job) return toast(s, "You don't work here. Apply first.");
+      if (s.task) return toast(s, "Finish what you're doing first.");
+      if (a.job === "delivery_rider" || a.job === "market_sales") {
+        spend(s, a.slots, a.energy);
+        if (s.slot === 0) return; // the day ended while getting ready
+        startTask(s, a.job === "delivery_rider" ? "delivery" : "hawk");
+        return;
+      }
       const def = job(a.job)!;
       const bonus = 1 + Math.min(0.5, (s.skills.hustle + s.skills.education) / 400);
       const pay = Math.round(def.pay * bonus);
@@ -579,3 +600,275 @@ export function retire() {
 }
 
 export { rel };
+
+// ── Walkable story, people, street life and on-map work ──────────────────────
+
+export function mapIdFor(s: GameState): string {
+  return s.chapter && MAPS[s.chapter] ? s.chapter : "city";
+}
+
+/** The story beat the player still has to walk to, if any. */
+export function currentBeat(s: GameState): { key: string; spot: { x: number; y: number; label: string } } | null {
+  if (!s.chapter || s.result) return null;
+  const map = MAPS[s.chapter];
+  const spotId = map?.beats[s.scene ?? ""];
+  if (!map || !spotId) return null;
+  const key = `${s.chapter}:${s.scene}`;
+  if (s.flags.beat_at === key) return null;
+  const spot = map.spots[spotId];
+  return spot ? { key, spot } : null;
+}
+
+export function storyOpen(s: GameState): boolean {
+  return Boolean(s.chapter) && (Boolean(s.result) || !currentBeat(s));
+}
+
+export function reachBeat() {
+  update((s) => {
+    const beat = currentBeat(s);
+    if (beat) s.flags.beat_at = beat.key;
+  });
+}
+
+export function personKey(p: PersonDef): string {
+  return `${p.map}:${p.id}`;
+}
+
+/** Where a person stands on their map. */
+export function personAt(p: PersonDef): { x: number; y: number } {
+  if (p.place) {
+    const pl = place(p.place);
+    if (pl) return { x: pl.x + (p.dx ?? 95), y: pl.y + (p.dy ?? -10) };
+  }
+  return { x: p.x ?? 0, y: p.y ?? 0 };
+}
+
+export function peopleOn(s: GameState, mapId: string): PersonDef[] {
+  return PEOPLE.filter((p) => p.map === mapId && check(s, p.if) && (!p.place || check(s, (place(p.place) as { if?: never })?.if)));
+}
+
+export function findPerson(key: string): PersonDef | undefined {
+  return PEOPLE.find((p) => personKey(p) === key);
+}
+
+/** What a person says today: one of their lines, the same all day. */
+export function lineFor(s: GameState, p: PersonDef): string {
+  let hash = s.day * 17;
+  for (const char of p.id) hash = (hash * 31 + char.charCodeAt(0)) % 9973;
+  return fill(s, p.lines[hash % p.lines.length] ?? "");
+}
+
+export function offerFor(s: GameState, p: PersonDef) {
+  if (s.flags[`offer_${personKey(p)}`] === s.day) return null;
+  return p.talks?.find((t) => check(s, t.if)) ?? null;
+}
+
+export function talk(key: string) {
+  update((s) => {
+    const p = findPerson(key);
+    if (!p || s.flags[`talked_${key}`] === s.day) return;
+    s.flags[`talked_${key}`] = s.day;
+    if (p.npc) {
+      const current = s.npcs[p.npc] ?? { rel: 0, met: false, lastSeen: s.day };
+      s.npcs[p.npc] = { rel: clamp(current.rel + 1), met: true, lastSeen: s.day };
+    }
+  });
+}
+
+export function takeOffer(key: string, choice: Choice) {
+  update((s) => {
+    const p = findPerson(key);
+    if (!p || !canPick(s, choice) || s.flags[`offer_${key}`] === s.day) return;
+    const time = (choice.effects ?? []).reduce((sum, e) => sum + (e.time ?? 0), 0);
+    if (s.stage === "adult" && !s.chapter && time && s.slot + time > SLOTS.length) return toast(s, "It's too late for that today.");
+    s.flags[`offer_${key}`] = s.day;
+    const toasts = apply(s, choice.effects);
+    const line = [choice.result ? fill(s, choice.result) : "", ...toasts].filter(Boolean).join(" ");
+    if (line) toast(s, line);
+    if (time && !s.chapter) spend(s, time, 0);
+    checkEndings(s);
+  });
+}
+
+/** A keke or car nearly hits you. */
+export function bump() {
+  update((s) => {
+    if (s.flags.bumped === s.day * 10 + s.slot) return;
+    s.flags.bumped = s.day * 10 + s.slot;
+    addStat(s, "stress", 3);
+    toast(s, ["A keke swerves past, missing you by an inch. The driver shouts something about your mother.", "A danfo screeches to a stop. \"You wan die?!\" Look before you cross.", "An okada brushes your arm. You're fine. Your heart is not."][s.day % 3]!);
+  });
+}
+
+/** Walking into a police checkpoint while your Heat is high. */
+export function checkpoint() {
+  update((s) => {
+    if (s.event || s.ending || s.stats.heat < 40 || s.flags.checkpoint_day === s.day) return;
+    s.flags.checkpoint_day = s.day;
+    s.event = "checkpoint";
+  });
+}
+
+// Tasks: deliveries, market hawking and ride-hailing, played on the map.
+
+const PASSENGERS = ["Mrs. Danjuma", "a corper in khaki", "Alhaji Musa", "two students from UniAbuja", "a nurse coming off shift", "a man on three phone calls", "Pastor Femi", "a tourist from Lagos"];
+
+function openSpots(s: GameState) {
+  const solids = citySolids();
+  return PLACES.filter((p) => {
+    if (!check(s, (p as { if?: never }).if)) return false;
+    const d = district(p.district);
+    return !d?.gate || check(s, d.gate.if);
+  }).map((p) => ({ ...freePoint(p.x, p.y + 95, solids), label: p.name }));
+}
+
+function stepLimit(from: { x: number; y: number }, to: { x: number; y: number }): number {
+  return Math.round(Math.hypot(to.x - from.x, to.y - from.y) / 150 + 10);
+}
+
+function startTask(s: GameState, kind: "delivery" | "hawk" | "ride", app?: "zoom" | "ownprice") {
+  const spots = openSpots(s).sort(() => Math.random() - 0.5);
+  const steps: TaskStep[] = [];
+  if (kind === "delivery") {
+    const hub = place("garki_hub")!;
+    const pickup = { ...freePoint(hub.x, hub.y + 95, citySolids()), label: "Garki Delivery Hub" };
+    for (const drop of spots.filter((sp) => sp.label !== "Garki Delivery Hub").slice(0, 3)) {
+      steps.push({ ...pickup, kind: "pickup" }, { ...drop, label: `Deliver to ${drop.label}`, kind: "dropoff" });
+    }
+  }
+  if (kind === "hawk") {
+    const market = place("wuse_market")!;
+    const d = district("wuse")!;
+    for (let i = 0; i < 5; i += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 140 + Math.random() * 220;
+      const x = Math.min(d.x + d.w - 40, Math.max(d.x + 40, market.x + Math.cos(angle) * r));
+      const y = Math.min(d.y + d.h - 40, Math.max(d.y + 40, market.y + Math.sin(angle) * r));
+      steps.push({ ...freePoint(x, y, citySolids()), label: "Customer waving at you", kind: "customer" });
+    }
+  }
+  if (kind === "ride") {
+    for (let i = 0; i < 3; i += 1) {
+      const from = spots[(i * 2) % spots.length]!;
+      const to = spots[(i * 2 + 1) % spots.length]!;
+      steps.push({ ...from, label: `Pick up at ${from.label}`, kind: "pickup" }, { ...to, label: `Drop off at ${to.label}`, kind: "dropoff" });
+    }
+  }
+  s.task = { kind, app, steps, index: 0, limit: 25, stepStarted: Date.now(), earned: 0, late: 0, fare: 0, rating: [], haggle: null };
+  s.task.limit = stepLimit(s.pos, steps[0]!);
+  const intro: Record<string, string> = {
+    delivery: "Shift started: three deliveries. Pick up at the hub, then drop off. Faster means bigger tips.",
+    hawk: "Shift started: walk to the customers waving at you around Wuse Market.",
+    ride: app === "ownprice" ? "You're online on OwnPrice. Passengers name their price. You can haggle." : "You're online on Zoom. Pick up your first passenger.",
+  };
+  toast(s, intro[kind]!);
+}
+
+function nextStep(s: GameState, from: { x: number; y: number }) {
+  const t = s.task!;
+  t.index += 1;
+  if (t.index >= t.steps.length) return finishTask(s);
+  t.stepStarted = Date.now();
+  t.limit = stepLimit(from, t.steps[t.index]!);
+}
+
+function finishTask(s: GameState) {
+  const t = s.task!;
+  let line = "";
+  if (t.kind === "ride" && t.rating.length) {
+    const avg = t.rating.reduce((a, b) => a + b, 0) / t.rating.length;
+    const bonus = avg >= 4.5 ? 3000 : 0;
+    addStat(s, "money", bonus);
+    t.earned += bonus;
+    line = ` Rating ${avg.toFixed(1)}★${bonus ? `, top-driver bonus ${naira(bonus)}` : ""}.`;
+    addSkill(s, "driving", 2);
+  }
+  if (t.kind === "delivery") addSkill(s, "driving", 1);
+  if (t.kind === "hawk") addSkill(s, "trade", 2);
+  s.flags.shifts = Number(s.flags.shifts ?? 0) + 1;
+  toast(s, `Done for this shift: you earned ${naira(t.earned)}${t.late ? ` (${t.late} late)` : ""}.${line}`);
+  s.task = null;
+  checkEndings(s);
+}
+
+/** The player reached the current task target. */
+export function taskReach() {
+  update((s) => {
+    const t = s.task;
+    if (!t || t.haggle) return;
+    const step = t.steps[t.index]!;
+    const late = (Date.now() - t.stepStarted) / 1000 > t.limit;
+    if (t.kind === "delivery") {
+      if (step.kind === "dropoff") {
+        const pay = late ? 2000 : 3500;
+        addStat(s, "money", pay);
+        t.earned += pay;
+        if (late) t.late += 1;
+        toast(s, late ? `Delivered late. The customer complains. +${naira(pay)}.` : `Delivered on time, with a tip. +${naira(pay)}.`);
+      } else toast(s, "Package collected. Go!");
+    }
+    if (t.kind === "hawk") {
+      const pay = late ? 900 : 1600;
+      addStat(s, "money", pay);
+      t.earned += pay;
+      if (late) t.late += 1;
+      toast(s, late ? `The customer almost left. Sold small. +${naira(pay)}.` : `Sold! +${naira(pay)}.`);
+    }
+    if (t.kind === "ride") {
+      if (step.kind === "pickup") {
+        const drop = t.steps[t.index + 1]!;
+        const fair = Math.round((800 + Math.hypot(drop.x - step.x, drop.y - step.y) * 2.2) / 100) * 100;
+        const passenger = PASSENGERS[(t.index + s.day) % PASSENGERS.length]!;
+        if (t.app === "ownprice") {
+          t.haggle = { offer: Math.round((fair * (0.55 + Math.random() * 0.3)) / 100) * 100, passenger };
+          return;
+        }
+        t.fare = fair;
+        toast(s, `${passenger} gets in. Zoom fare: ${naira(fair)}.`);
+      } else {
+        const stars = late ? 3 : 5;
+        t.rating.push(stars);
+        addStat(s, "money", t.fare - 500);
+        t.earned += t.fare - 500;
+        if (late) t.late += 1;
+        toast(s, `Trip done: ${naira(t.fare)} minus ₦500 fuel. ${"★".repeat(stars)}${late ? " \"You took the long way.\"" : ""}`);
+      }
+    }
+    nextStep(s, step);
+  });
+}
+
+/** OwnPrice: accept the passenger's offer, or counter. */
+export function haggle(accept: boolean) {
+  update((s) => {
+    const t = s.task;
+    if (!t?.haggle) return;
+    const { offer, passenger } = t.haggle;
+    t.haggle = null;
+    const step = t.steps[t.index]!;
+    if (accept) {
+      t.fare = offer;
+      toast(s, `${passenger} gets in. Agreed fare: ${naira(offer)}.`);
+      return nextStep(s, step);
+    }
+    const counter = Math.round((offer * 1.4) / 100) * 100;
+    if (Math.random() < 0.55) {
+      t.fare = counter;
+      toast(s, `"Ah, you too dey price!" ${passenger} agrees to ${naira(counter)}.`);
+      return nextStep(s, step);
+    }
+    toast(s, `${passenger} cancels the ride. "Bolt dey cheaper." Find the next passenger.`);
+    // Skip this trip.
+    t.index += 1;
+    nextStep(s, step);
+  });
+}
+
+export function abandonTask() {
+  update((s) => {
+    const t = s.task;
+    if (!t) return;
+    s.task = null;
+    toast(s, `You stop for today with ${naira(t.earned)} earned.`);
+  });
+}

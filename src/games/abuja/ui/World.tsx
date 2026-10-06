@@ -1,20 +1,38 @@
 import { useEffect, useRef, useState } from "react";
 import type { Game as PhaserGame } from "phaser";
-import { EVENTS, place } from "../systems/data";
-import { clearToast, doAction, resolveEvent } from "../systems/engine";
+import { EVENTS, chapter, place } from "../systems/data";
+import {
+  abandonTask,
+  clearToast,
+  currentBeat,
+  doAction,
+  findPerson,
+  haggle,
+  lineFor,
+  offerFor,
+  reachBeat,
+  resolveEvent,
+  storyOpen,
+  takeOffer,
+  talk,
+} from "../systems/engine";
 import { SLOTS, check, debt, fill, lockReason, naira } from "../systems/rules";
-import { bus, input } from "../systems/store";
+import { bus, input, type NearThing } from "../systems/store";
 import type { GameState } from "../systems/types";
 import { Phone, type PhoneApp } from "./Phone";
-import { btnPrimary, panel } from "./theme";
+import { StoryPanel } from "./StoryView";
+import { btnGhost, btnPrimary, panel } from "./theme";
 
+/** The walkable game: story chapters and adult Abuja share this view. */
 export function World({ state }: { state: GameState }) {
   const host = useRef<HTMLDivElement>(null);
   const game = useRef<PhaserGame | null>(null);
-  const [near, setNear] = useState<string | null>(null);
+  const [near, setNear] = useState<NearThing | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const [talking, setTalking] = useState<string | null>(null);
   const [phone, setPhone] = useState<PhoneApp | null>(null);
   const [blocked, setBlocked] = useState<string | null>(null);
+  const inStory = Boolean(state.chapter);
 
   useEffect(() => {
     let cancel = false;
@@ -22,11 +40,23 @@ export function World({ state }: { state: GameState }) {
       if (cancel || !host.current) return;
       game.current = createGame(host.current);
     });
+    const interact = (thing: NearThing) => {
+      if (thing.kind === "place") setOpen(thing.id);
+      if (thing.kind === "person") {
+        talk(thing.id);
+        setTalking(thing.id);
+      }
+      if (thing.kind === "beat") reachBeat();
+    };
     const offs = [
-      bus.on("near", (id) => {
-        setNear(id);
-        if (!id) setOpen(null);
+      bus.on("near", (thing) => {
+        setNear(thing);
+        if (!thing) {
+          setOpen(null);
+          setTalking(null);
+        }
       }),
+      bus.on("interact", interact),
       bus.on("blocked", (message) => setBlocked(message)),
     ];
     return () => {
@@ -36,12 +66,6 @@ export function World({ state }: { state: GameState }) {
       game.current = null;
     };
   }, []);
-
-  // Keep the map in step with unlocks (homes, flags).
-  useEffect(() => {
-    const scene = game.current?.scene.getScene("world") as { sync?: () => void } | undefined;
-    scene?.sync?.();
-  }, [state.flags, state.assets]);
 
   useEffect(() => {
     if (!state.toast) return;
@@ -55,59 +79,93 @@ export function World({ state }: { state: GameState }) {
     return () => window.clearTimeout(timer);
   }, [blocked]);
 
-  const here = near ? place(near) : undefined;
+  const story = inStory && storyOpen(state);
+  const beat = currentBeat(state);
+  const here = near && near.kind === "place" ? place(near.id) : undefined;
   const panelOpen = Boolean(here && open === here.id);
+  const showEnter = near && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-stone-950 text-stone-100 select-none">
       <div ref={host} className="absolute inset-0" />
-      <Hud state={state} onOpen={setPhone} />
+      {inStory ? <ChapterHud state={state} /> : <Hud state={state} onOpen={setPhone} />}
 
-      {state.toast || blocked ? (
+      {beat && !story ? (
+        <p className={`${panel} pointer-events-none absolute top-24 left-1/2 z-10 -translate-x-1/2 px-4 py-2 text-sm sm:top-20`}>
+          📍 Go to: <span className="font-semibold text-amber-300">{beat.spot.label}</span>
+        </p>
+      ) : null}
+
+      {(state.toast || blocked) && !story ? (
         <button
           type="button"
           onClick={() => {
             clearToast();
             setBlocked(null);
           }}
-          className={`${panel} absolute top-24 left-1/2 z-20 w-[min(92vw,30rem)] -translate-x-1/2 p-3 text-left text-sm text-pretty sm:top-20`}
+          className={`${panel} absolute ${state.task ? "top-48 sm:top-44" : "top-36 sm:top-32"} left-1/2 z-20 w-[min(92vw,30rem)] -translate-x-1/2 p-3 text-left text-sm text-pretty`}
         >
           {blocked ?? state.toast}
         </button>
       ) : null}
 
-      {here && !panelOpen ? (
+      {showEnter ? (
         <button
           type="button"
-          className={`${btnPrimary} absolute bottom-36 left-1/2 z-10 -translate-x-1/2 shadow-xl sm:bottom-10`}
-          onClick={() => setOpen(here.id)}
+          className={`${btnPrimary} absolute bottom-40 left-1/2 z-10 max-w-[70vw] -translate-x-1/2 shadow-xl sm:bottom-10`}
+          onClick={() => bus.emit("interact", near)}
         >
-          Enter {here.name}
+          {near.kind === "person" ? `💬 Talk to ${near.label}` : near.kind === "beat" ? `▶ ${near.label}` : `Enter ${near.label}`}
         </button>
       ) : null}
 
       {panelOpen && here ? (
         <PlacePanel state={state} placeId={here.id} onClose={() => setOpen(null)} onLoans={() => setPhone("loans")} onPhone={() => setPhone("home")} />
       ) : null}
+      {talking ? <TalkModal state={state} personKey={talking} onClose={() => setTalking(null)} /> : null}
+      {state.task && !inStory ? <TaskPanel state={state} /> : null}
+      {state.task?.haggle ? <HaggleModal state={state} /> : null}
 
-      <Joystick />
-      <button
-        type="button"
-        onClick={() => setPhone("home")}
-        className="absolute right-4 bottom-6 z-10 flex size-16 flex-col items-center justify-center rounded-2xl border border-white/15 bg-stone-900/90 text-xs font-semibold shadow-xl"
-        aria-label="Open your phone"
-      >
-        <span className="text-2xl" aria-hidden>
-          📱
-        </span>
-        Phone
-      </button>
+      {!story ? <Joystick /> : null}
+      {!inStory ? (
+        <button
+          type="button"
+          onClick={() => setPhone("home")}
+          className="absolute right-4 bottom-6 z-10 flex size-16 flex-col items-center justify-center rounded-2xl border border-white/15 bg-stone-900/90 text-xs font-semibold shadow-xl"
+          aria-label="Open your phone"
+        >
+          <span className="text-2xl" aria-hidden>
+            📱
+          </span>
+          Phone
+        </button>
+      ) : null}
 
-      {phone ? <Phone state={state} app={phone} onApp={setPhone} onClose={() => setPhone(null)} /> : null}
+      {phone && !inStory ? <Phone state={state} app={phone} onApp={setPhone} onClose={() => setPhone(null)} /> : null}
       {state.event ? <EventModal state={state} /> : null}
+      {story ? (
+        <div className="absolute inset-0 z-40 overflow-y-auto bg-black/55 px-3 py-6 backdrop-blur-[2px] sm:py-12">
+          <StoryPanel state={state} />
+        </div>
+      ) : null}
       <p className="pointer-events-none absolute bottom-2 left-1/2 hidden -translate-x-1/2 text-xs text-stone-400 sm:block">
-        WASD or arrows to move · click to walk · E to enter
+        WASD or arrows to move · click to walk · E to interact
       </p>
+    </div>
+  );
+}
+
+function ChapterHud({ state }: { state: GameState }) {
+  const def = chapter(state.chapter ?? "");
+  return (
+    <div className={`${panel} absolute top-3 left-1/2 z-10 flex w-[min(96vw,36rem)] -translate-x-1/2 items-center justify-between gap-3 px-4 py-2`}>
+      <div className="min-w-0">
+        <p className="truncate text-xs font-semibold tracking-widest text-amber-400 uppercase">{def?.title}</p>
+        <p className="text-[11px] text-stone-400">
+          {state.name} · age {Math.floor(state.age)}
+        </p>
+      </div>
+      <p className="font-bold tabular-nums text-emerald-400">{naira(state.stats.money)}</p>
     </div>
   );
 }
@@ -300,6 +358,105 @@ function Joystick() {
         className="absolute top-1/2 left-1/2 size-14 rounded-full bg-amber-400/80 shadow-lg"
         style={{ transform: `translate(calc(-50% + ${knob.x}px), calc(-50% + ${knob.y}px))` }}
       />
+    </div>
+  );
+}
+
+function TalkModal({ state, personKey, onClose }: { state: GameState; personKey: string; onClose: () => void }) {
+  const person = findPerson(personKey);
+  if (!person) return null;
+  const offer = offerFor(state, person);
+  return (
+    <div className="absolute inset-x-2 bottom-2 z-30 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-[26rem]">
+      <div className={`${panel} p-4`} role="dialog" aria-label={`Talking to ${person.name}`}>
+        <div className="flex items-center gap-3">
+          <span className="size-10 shrink-0 rounded-full" style={{ background: person.color }} aria-hidden />
+          <p className="flex-1 font-display text-xl">{person.name}</p>
+          <button type="button" onClick={onClose} className="min-h-11 rounded-xl px-3 text-sm text-stone-300 hover:bg-white/10" aria-label="End conversation">
+            ✕
+          </button>
+        </div>
+        <p className="mt-3 text-pretty text-stone-200">{lineFor(state, person)}</p>
+        {offer ? (
+          <div className="mt-3 rounded-xl bg-black/30 p-3">
+            <p className="text-sm text-pretty text-stone-200">{fill(state, offer.text)}</p>
+            <div className="mt-2 grid gap-2">
+              {offer.choices.map((choice) => {
+                const reason = lockReason(state, choice);
+                return (
+                  <button
+                    key={choice.text}
+                    type="button"
+                    disabled={Boolean(reason)}
+                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-sm transition hover:border-amber-400/60 disabled:opacity-45"
+                    onClick={() => {
+                      takeOffer(personKey, choice);
+                      onClose();
+                    }}
+                  >
+                    {fill(state, choice.text)}
+                    {reason ? <span className="mt-0.5 block text-xs text-stone-400">🔒 {reason}</span> : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function TaskPanel({ state }: { state: GameState }) {
+  const task = state.task!;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, []);
+  const step = task.steps[task.index];
+  if (!step) return null;
+  const left = Math.max(0, Math.ceil(task.limit - (now - task.stepStarted) / 1000));
+  const title = task.kind === "delivery" ? "Delivery shift" : task.kind === "hawk" ? "Hawking at Wuse Market" : task.app === "ownprice" ? "OwnPrice driver" : "Zoom driver";
+  const done = task.kind === "hawk" ? task.index : Math.floor(task.index / 2);
+  const total = task.kind === "hawk" ? task.steps.length : task.steps.length / 2;
+  return (
+    <div className={`${panel} absolute top-24 left-1/2 z-10 flex w-[min(96vw,30rem)] -translate-x-1/2 items-center gap-3 px-3 py-2 text-sm sm:top-20`}>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[11px] font-semibold tracking-widest text-cyan-300 uppercase">
+          {title} · {done}/{total} · {naira(task.earned)}
+        </p>
+        <p className="truncate font-semibold">★ {step.label}</p>
+        <p className={`text-xs tabular-nums ${left === 0 ? "text-red-400" : "text-stone-300"}`}>
+          {left === 0 ? "Running late!" : `${left}s to get there on time`}
+        </p>
+      </div>
+      <button type="button" className={`${btnGhost} min-h-9 shrink-0 px-3`} onClick={abandonTask}>
+        Stop
+      </button>
+    </div>
+  );
+}
+
+function HaggleModal({ state }: { state: GameState }) {
+  const h = state.task!.haggle!;
+  return (
+    <div className="absolute inset-0 z-40 flex items-end justify-center bg-black/50 p-3 sm:items-center">
+      <div className={`${panel} w-full max-w-sm p-5`} role="dialog" aria-label="Fare offer">
+        <p className="text-xs font-semibold tracking-widest text-cyan-300 uppercase">OwnPrice</p>
+        <p className="mt-2 text-lg text-pretty">
+          {h.passenger} offers <span className="font-bold text-emerald-400">{naira(h.offer)}</span> for this trip.
+        </p>
+        <p className="mt-1 text-xs text-stone-400">Counter for {naira(Math.round((h.offer * 1.4) / 100) * 100)}? They might agree, or cancel.</p>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <button type="button" className={btnPrimary} onClick={() => haggle(true)}>
+            Accept
+          </button>
+          <button type="button" className={btnGhost} onClick={() => haggle(false)}>
+            Counter
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
