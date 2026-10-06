@@ -2,6 +2,7 @@
 // these shapes, so new chapters, events, jobs and places need no code changes.
 
 import type { Build, Look } from "./character";
+import type { NegLife } from "./negotiate/types";
 
 export type Background = "lapo" | "average";
 export type Gender = "male" | "female";
@@ -330,6 +331,8 @@ export type Life = {
   businesses: Business[];
   /** Times caught doing something bad, for the Life app. */
   offenses: number;
+  /** Negotiation skill, reputation, memories of people, and deals that are running. */
+  neg?: NegLife;
 };
 
 export type GameState = {
