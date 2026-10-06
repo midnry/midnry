@@ -3,6 +3,7 @@
 
 import type { Build, Look } from "./character";
 import type { NegLife } from "./negotiate/types";
+import type { Kitchen } from "./cooking/types";
 
 export type Background = "lapo" | "average";
 export type Gender = "male" | "female";
@@ -386,4 +387,6 @@ export type GameState = {
   task: Task | null;
   /** Hunger, laundry, bills, driving and more. Missing in saves from before these existed. */
   life?: Life;
+  /** Your kitchen, recipes, garden and food businesses. Created the first time you cook. */
+  kitchen?: Kitchen;
 };
