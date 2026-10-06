@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PASS_PRICE_LABEL } from "@/lib/access";
 import { Shell } from "@/components/shell";
-import { AppSearch, DeskList } from "@/components/desk-list";
+import { AppSearch } from "@/components/desk-list";
+import { AppMark } from "@/components/app-mark";
+import { APPS, getApp } from "@/lib/catalog";
 import { Favorites } from "@/components/spotlight";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
-import { MatchQuiz } from "@/components/match-quiz";
 import { buttonClass, Skeleton } from "@/components/ui";
 
 export const Route = createFileRoute("/")({
@@ -20,38 +21,30 @@ function Home() {
           Simple tools for everyday life.
         </h1>
         <p className="mt-4 max-w-lg text-pretty text-lg text-muted">
-          Free apps for school, work, business and home. Pick where you fit to start.
+          Free apps for school, work, business and home. Start with our favourites below, or explore them all.
         </p>
         <HeroActions />
       </section>
 
+      <FeaturedSix />
+
+      <section className="mt-10 rounded-3xl bg-card p-6 shadow-line sm:p-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="font-display text-2xl tracking-tight">Looking for something else?</h2>
+            <p className="mt-1 text-sm text-pretty text-muted">
+              There are {APPS.length} apps on the desk for school, work, business and home. Search them, or browse by where you fit.
+            </p>
+          </div>
+          <Link to="/apps" className={buttonClass({ tone: "primary" })}>
+            Explore all {APPS.length} apps
+          </Link>
+        </div>
+        <AppSearch className="mt-5 max-w-2xl" />
+      </section>
+
       <section className="mt-10 empty:hidden">
         <Favorites />
-      </section>
-
-      <div className="mt-10 empty:hidden">
-        <MatchQuiz />
-      </div>
-
-      <section className="mt-12">
-        <h2 className="mb-4 font-display text-3xl tracking-tight">Where do you fit?</h2>
-        <AppSearch className="mb-6 max-w-2xl" />
-        <DeskList />
-      </section>
-
-      <section className="mt-12 overflow-hidden rounded-3xl bg-[radial-gradient(ellipse_at_top_left,#14407a,#07152b_70%)] p-6 text-white sm:p-8">
-        <p className="text-xs font-semibold tracking-[0.25em] text-sky-300 uppercase">New game · 18+</p>
-        <h2 className="mt-2 font-display text-3xl tracking-tight">Abuja Hustle</h2>
-        <p className="mt-2 max-w-xl text-pretty text-slate-200">
-          A satirical life sim. Grow up in Abuja without privilege, dodge QuickKash, outwork the Nepo Babies, and chase
-          financial freedom. Plays on your phone or computer.
-        </p>
-        <Link
-          to="/games/abuja-hustle"
-          className="mt-5 inline-flex min-h-11 items-center rounded-full bg-emerald-600 px-5 text-sm font-semibold text-white hover:bg-emerald-500"
-        >
-          Play Abuja Hustle
-        </Link>
       </section>
 
       <section className="mt-12 rounded-3xl bg-card p-6 shadow-line sm:p-8">
@@ -88,6 +81,77 @@ function Home() {
         </Link>
       </section>
     </Shell>
+  );
+}
+
+/** The five most useful everyday apps, in the words people would use for them. */
+const PICKS: { slug: string; pitch: string; tint: string }[] = [
+  { slug: "tasks", pitch: "Reminders in plain words. Type “pay rent every 25th” and it just works.", tint: "from-sky-500/15" },
+  { slug: "apply", pitch: "Tailor your CV for each job in seconds, then apply on LinkedIn.", tint: "from-indigo-500/15" },
+  { slug: "cycle", pitch: "A simple period tracker. Know when your next period should start.", tint: "from-pink-500/15" },
+  { slug: "ledger", pitch: "Log what you spend and see where the month went, by category.", tint: "from-emerald-500/15" },
+  { slug: "invoice", pitch: "A clean invoice with line items and tax, ready to print or send.", tint: "from-amber-500/15" },
+];
+
+function FeaturedSix() {
+  return (
+    <section className="mt-12" aria-labelledby="featured-heading">
+      <div className="mb-5 flex items-end justify-between gap-4">
+        <div>
+          <h2 id="featured-heading" className="font-display text-3xl tracking-tight">
+            Start with these
+          </h2>
+          <p className="mt-1 text-sm text-muted">Our five most useful apps, and a game.</p>
+        </div>
+        <Link to="/apps" className="hidden shrink-0 text-sm font-medium text-ink underline underline-offset-4 sm:inline">
+          See all apps
+        </Link>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {PICKS.map(({ slug, pitch, tint }) => {
+          const app = getApp(slug);
+          if (!app) return null;
+          return (
+            <Link
+              key={slug}
+              to="/apps/$slug"
+              params={{ slug }}
+              className={`group flex flex-col rounded-3xl bg-card bg-gradient-to-br ${tint} to-transparent p-5 shadow-line transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2`}
+            >
+              <div className="flex items-center gap-3">
+                <AppMark slug={app.slug} name={app.name} className="size-12 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-display text-xl tracking-tight">{app.name}</p>
+                  <p className="text-xs text-muted">{app.tier === "free" ? "Free with an account" : "Midnry Pass"}</p>
+                </div>
+              </div>
+              <p className="mt-3 flex-1 text-sm text-pretty text-muted">{pitch}</p>
+              <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-ink">
+                Open {app.name} <span aria-hidden className="transition group-hover:translate-x-0.5">→</span>
+              </span>
+            </Link>
+          );
+        })}
+        <Link
+          to="/games/abuja-hustle"
+          className="group flex flex-col rounded-3xl bg-[radial-gradient(ellipse_at_top_left,#14407a,#07152b_70%)] p-5 text-white shadow-line transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          <div className="flex items-center gap-3">
+            <img src="/abuja-hustle-192.png" alt="" className="size-12 shrink-0 rounded-2xl" />
+            <div className="min-w-0">
+              <p className="font-display text-xl tracking-tight">Abuja Hustle</p>
+              <p className="text-xs font-semibold tracking-widest text-sky-300 uppercase">New game · 18+</p>
+            </div>
+          </div>
+          <p className="mt-3 flex-1 text-sm text-pretty text-slate-200">
+            A life sim. Grow up in Abuja without privilege, dodge QuickKash, and chase financial freedom.
+          </p>
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-emerald-300">
+            Play free <span aria-hidden className="transition group-hover:translate-x-0.5">→</span>
+          </span>
+        </Link>
+      </div>
+    </section>
   );
 }
 
