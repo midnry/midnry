@@ -656,7 +656,7 @@ export function walkAway(s: GameState) {
   say(n, "you", "\"Thank you for your time.\" You stand up to leave.");
   if (n.stage === "bargain" && !n.walkedOnce) {
     n.walkedOnce = true;
-    const want = n.urgency * 0.5 + (has(n, "desperate") ? 0.3 : 0) + (n.npcAlt ? -0.2 : 0.1) + mem.rel / 200 - n.anger * 0.15;
+    const want = 0.05 + n.urgency * 0.5 + (has(n, "desperate") ? 0.3 : 0) + (n.npcAlt ? -0.1 : 0.1) + mem.rel / 200 - n.anger * 0.15;
     const u = npcUtility(n);
     if (u >= n.reservation - n.market * 0.1 && Math.random() < want) {
       const best = solvePrice(n, n.reservation + n.market * 0.01);
