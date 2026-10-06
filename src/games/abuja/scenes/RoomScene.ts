@@ -73,7 +73,7 @@ export class RoomScene extends Phaser.Scene {
     // Walls around the room, with a doorway at the bottom.
     g.fillStyle(0x3b2a1f, 1).fillRect(-14, -14, 14, H + 28).fillRect(W, -14, 14, H + 28).fillRect(-14, -14, W + 28, 14);
     g.fillRect(-14, H - 10, door.x - 40 + 14, 24).fillRect(door.x + 40, H - 10, W - door.x - 40 + 14, 24);
-    g.fillStyle(0x16a34a, 1).fillRoundedRect(door.x - 34, H - 22, 68, 18, 5);
+    g.fillStyle(0x2563eb, 1).fillRoundedRect(door.x - 34, H - 22, 68, 18, 5);
     g.lineStyle(2, INK, 1).strokeRoundedRect(door.x - 34, H - 22, 68, 18, 5);
     this.add
       .text(door.x, H - 13, this.info.parent ? "BACK" : "EXIT", { fontFamily: "system-ui, sans-serif", fontSize: "11px", fontStyle: "bold", color: "#ffffff" })
@@ -114,7 +114,7 @@ export class RoomScene extends Phaser.Scene {
     });
 
     // Spots to use: the place's desk or bed, things to do, doors to other rooms, and the way out.
-    const ring = (x: number, y: number) => this.add.circle(x, y, 24, 0x22c55e, 0.18).setStrokeStyle(3, 0x22c55e, 0.8).setDepth(1.6);
+    const ring = (x: number, y: number) => this.add.circle(x, y, 24, 0x3b82f6, 0.18).setStrokeStyle(3, 0x3b82f6, 0.8).setDepth(1.6);
     if (layout.use && this.info.placeId) {
       this.spots.push({ kind: "place", id: this.info.placeId, label: layout.use.label, x: layout.use.x, y: layout.use.y });
       ring(layout.use.x, layout.use.y);
@@ -134,7 +134,7 @@ export class RoomScene extends Phaser.Scene {
     this.spots.push({ kind: "exit", id: "door", label: this.info.parent ? "Back to the living room" : "Leave", x: door.x, y: door.y });
 
     // You come in at the door.
-    this.player = figure(this, door.x, door.y - 30, { look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18 }, { name: "YOU", nameColor: "#4ade80", unit: 0.28 });
+    this.player = figure(this, door.x, door.y - 30, { look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18 }, { name: "YOU", nameColor: "#60a5fa", unit: 0.28 });
 
     this.fit();
     this.aim(1);
