@@ -11,11 +11,12 @@ export const END_AGE = 45;
 export const FREEDOM_TARGET = 25_000_000;
 export const USD_RATE = 1550;
 
-const ASSET_VALUES: Record<string, number> = { pos_stand: 120_000, tunde_biz: 300_000, tunde_fleet: 1_500_000 };
+const ASSET_VALUES: Record<string, number> = { pos_stand: 120_000, tunde_biz: 300_000, tunde_fleet: 1_500_000, car: 2_800_000 };
 export const ASSET_NAMES: Record<string, string> = {
   pos_stand: "POS stand (Nyanya)",
   tunde_biz: "Logistics business with Tunde (50%)",
   tunde_fleet: "Fleet of seven delivery bikes",
+  car: "2012 Toyota Corolla (Tokunbo)",
 };
 
 const BOUNDED: StatKey[] = ["energy", "health", "stress", "resilience", "reputation", "heat", "network"];
@@ -53,6 +54,7 @@ export function check(state: GameState, cond: Cond | undefined): boolean {
   if (cond.asset && !state.assets.includes(cond.asset)) return false;
   if (cond.noAsset && state.assets.includes(cond.noAsset)) return false;
   if (cond.powered && state.life?.power.cut) return false;
+  if (cond.license != null && Boolean(state.life?.license) !== cond.license) return false;
   return true;
 }
 

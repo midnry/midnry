@@ -30,3 +30,8 @@ export function fare(mode: RideMode, from: { x: number; y: number }, to: { x: nu
   if (mode === "keke") return roundUp(200 + km * 120);
   return roundUp(800 + km * 380);
 }
+
+/** Fuel for driving yourself there. */
+export function fuelCost(from: { x: number; y: number }, to: { x: number; y: number }): number {
+  return roundUp(rideKm(from, to) * 180);
+}

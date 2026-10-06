@@ -1118,5 +1118,113 @@
         ]
       }
     ]
+  },
+  {
+    "id": "frsc_ok",
+    "weight": 0,
+    "title": "FRSC checkpoint",
+    "text": "A Road Safety marshal in a yellow reflective vest flags you down. \"Good afternoon. Your licence and vehicle particulars, please. Where is your fire extinguisher?\"",
+    "choices": [
+      {
+        "text": "Show your licence and the extinguisher",
+        "effects": [
+          {
+            "chance": 0.75,
+            "then": [
+              {
+                "toast": "Everything checks out. \"Safe journey.\""
+              }
+            ],
+            "else": [
+              {
+                "stat": "money",
+                "add": -3000
+              },
+              {
+                "toast": "Your extinguisher has expired. Official fine: ₦3,000, with a receipt."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "text": "Offer ₦1,000 'for water'",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -1000
+          },
+          {
+            "offense": "bribe"
+          }
+        ],
+        "result": "The marshal pockets it and waves you through."
+      }
+    ]
+  },
+  {
+    "id": "frsc_nolicense",
+    "weight": 0,
+    "title": "FRSC: no licence",
+    "text": "\"Licence, please.\" You don't have one. The marshal's face changes. \"So you are driving on Abuja roads without a licence? Park there.\"",
+    "choices": [
+      {
+        "text": "Pay the official fine (₦10,000)",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -10000
+          },
+          {
+            "stat": "stress",
+            "add": 5
+          }
+        ],
+        "result": "You get a receipt and a warning: get a licence at a driving school."
+      },
+      {
+        "text": "Settle them quietly (₦5,000)",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -5000
+          },
+          {
+            "offense": "bribe"
+          }
+        ],
+        "result": "Five thousand changes hands. \"Next time, get licence o.\""
+      },
+      {
+        "text": "Argue",
+        "effects": [
+          {
+            "chance": 0.5,
+            "then": [
+              {
+                "stat": "stress",
+                "add": 8
+              },
+              {
+                "toast": "After twenty minutes they get tired of you and let you go."
+              }
+            ],
+            "else": [
+              {
+                "stat": "money",
+                "add": -25000
+              },
+              {
+                "stat": "stress",
+                "add": 15
+              },
+              {
+                "toast": "They impound the car. Getting it back costs ₦25,000."
+              }
+            ]
+          }
+        ]
+      }
+    ]
   }
 ]

@@ -1,7 +1,7 @@
 import { CHAPTERS, EVENTS, FIXERS, HOMES, JOBS, LOANS, MAPS, PEOPLE, PLACES, POSTING_STATES, chapter, district, job, place } from "./data";
 import { citySolids, freePoint } from "./citymap";
 import type { Look } from "./character";
-import { RIDE_INFO, fare, type RideMode } from "./rides";
+import { RIDE_INFO, fare, fuelCost, type RideMode } from "./rides";
 import {
   DAYS_PER_YEAR,
   END_AGE,
@@ -26,7 +26,8 @@ import {
 import { bus, update } from "./store";
 import { MENU, DELIVERY_FEE, burn, daysUnwashed, isDirty, life, offense, overnight } from "./life";
 import { caseStatus, nightlyCase, reportScam, resolveFreeze, surrender, withoutBankCheck } from "./bank";
-import { hurt, nightlyHealth, payHospital, payPower, rollHit, tooHurtFor, treat, weeklyPower, type HitBy } from "./health";
+import { buyCar, drivingTest, frscStop, hasCar, nightlyCar, rentCar, toggleDriving, useFuel } from "./drive";
+import { hurt, injured, nightlyHealth, payHospital, payPower, rollHit, tooHurtFor, treat, weeklyPower, type HitBy } from "./health";
 import { closeDay, closePosition, deposit, ensureMarket, insiderTip, openPosition, tick, withdraw } from "./market";
 import {
   askOut,
@@ -304,6 +305,14 @@ export function doAction(placeId: string, actionId: string): "loans" | void {
     if (a.energy < 0 && s.stats.energy + a.energy < 0) return toast(s, "You're too tired. Rest or sleep first.");
     if (a.cost && s.stats.money < a.cost) return toast(s, `You need ${naira(a.cost)} for that.`);
     if (a.kind === "apply") return applyForJob(s, a.job!);
+    if (a.kind === "drivetest" || a.kind === "rentcar" || a.kind === "buycar") {
+      if (a.kind === "buycar" && life(s).car === "owned") return toast(s, "You already own a car.");
+      if (a.kind === "drivetest" && life(s).license) return toast(s, "You already have your licence.");
+      if (a.cost) addStat(s, "money", -a.cost);
+      toast(s, a.kind === "drivetest" ? drivingTest(s) : a.kind === "rentcar" ? rentCar(s) : buyCar(s));
+      spend(s, a.slots, a.energy);
+      return checkEndings(s);
+    }
     if (a.kind === "work") {
       if (s.job !== a.job) return toast(s, "You don't work here. Apply first.");
       if (s.task) return toast(s, "Finish what you're doing first.");
@@ -466,6 +475,58 @@ export function travel(placeId: string, mode: RideMode) {
   });
 }
 
+// ── Driving ──────────────────────────────────────────────────────────────────
+
+/** Get in or out of your car on the map. */
+export function drive() {
+  update((s) => {
+    if (s.chapter || s.ending) return;
+    toast(s, toggleDriving(s));
+  });
+}
+
+/** The world reports distance driven; fuel is paid as you go. */
+export function fuel(px: number) {
+  update((s) => {
+    const line = useFuel(s, px);
+    if (line) toast(s, line);
+  });
+}
+
+/** Driving past an FRSC checkpoint. */
+export function frsc() {
+  update((s) => {
+    const ev = frscStop(s);
+    if (ev) s.event = ev;
+  });
+}
+
+/** Rides app: drive yourself there in your own (or rented) car. */
+export function driveTo(placeId: string) {
+  update((s) => {
+    const p = place(placeId);
+    if (!p || s.chapter || s.ending) return;
+    if (!hasCar(s)) return toast(s, "You don't have a car right now.");
+    if (injured(s) === "fracture") return toast(s, "You can't drive with your leg in a cast.");
+    const d = district(p.district);
+    if (d?.gate && !check(s, d.gate.if)) return toast(s, d.gate.message);
+    const to = { x: p.x, y: p.y + 95 };
+    const cost = fuelCost(s.pos, to);
+    if (s.stats.money < cost) return toast(s, `You need ${naira(cost)} for fuel.`);
+    addStat(s, "money", -cost);
+    const from = { ...s.pos };
+    s.pos = to;
+    s.district = p.district;
+    toast(s, `You drive yourself to ${p.name}. Fuel: ${naira(cost)}.`);
+    bus.emit("ride", { mode: "car", from, to });
+    // No licence? FRSC might be on the way.
+    if (!life(s).license && Math.random() < 0.3 && s.flags.frsc_day !== s.day && !s.event) {
+      s.flags.frsc_day = s.day;
+      s.event = "frsc_nolicense";
+    }
+  });
+}
+
 // ── Day cycle ────────────────────────────────────────────────────────────────
 
 const RENT: Record<string, number> = { lapo: 8000, average: 15000 };
@@ -481,6 +542,8 @@ function sleep(s: GameState) {
   if (!s.flags.fraud) addStat(s, "heat", -1);
   note(s, ...overnight(s));
   note(s, ...nightlyHealth(s));
+  note(s, ...nightlyCar(s));
+  life(s).driving = false;
   if (isDirty(s)) {
     note(s, `Your clothes haven't been washed in ${daysUnwashed(s)} days and it shows.`, offense(s, "dirty"), "Wash them at home or a laundry.");
   }

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
-import { borrow, callContact, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
+import { borrow, callContact, driveTo, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
 import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, netWorth, npcName } from "../systems/rules";
-import { RIDE_INFO, RIDE_MODES, fare, rideKm } from "../systems/rides";
+import { RIDE_INFO, RIDE_MODES, fare, fuelCost, rideKm } from "../systems/rides";
+import { hasCar } from "../systems/drive";
 import { deleteSave, replace } from "../systems/store";
 import type { GameState } from "../systems/types";
 import { REVIEW_DAYS } from "../systems/bank";
@@ -375,6 +376,7 @@ function Contacts({ state }: { state: GameState }) {
 
 function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
   const [query, setQuery] = useState("");
+  const canDrive = hasCar(state) && injured(state) !== "fracture";
   const shown = PLACES.filter((p) => check(state, (p as { if?: never }).if)).filter((p) =>
     `${p.name} ${district(p.district)?.name}`.toLowerCase().includes(query.toLowerCase()),
   );
@@ -400,6 +402,19 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
               <p className="text-xs text-slate-400">
                 {d?.name} · {rideKm(state.pos, to).toFixed(1)} km
               </p>
+              {canDrive ? (
+                <button
+                  type="button"
+                  disabled={state.stats.money < fuelCost(state.pos, to)}
+                  className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-40"
+                  onClick={() => {
+                    driveTo(p.id);
+                    onDone();
+                  }}
+                >
+                  🚗 Drive yourself · fuel {naira(fuelCost(state.pos, to))}
+                </button>
+              ) : null}
               <div className="mt-2 grid grid-cols-4 gap-1.5">
                 {RIDE_MODES.map((mode) => {
                   const cost = fare(mode, state.pos, to);

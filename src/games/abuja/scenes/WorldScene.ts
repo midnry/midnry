@@ -8,7 +8,8 @@ import { roomForBuilding } from "../systems/rooms";
 import { RoomScene } from "./RoomScene";
 import { isDirty } from "../systems/life";
 import { injured, type HitBy } from "../systems/health";
-import { bump, checkpoint, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
+import { CAR_COLOR, frscSpots, isDriving } from "../systems/drive";
+import { bump, checkpoint, frsc, fuel, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
 import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
 import { findPath, type Point } from "../systems/path";
@@ -134,6 +135,13 @@ export class WorldScene extends Phaser.Scene {
   private offs: (() => void)[] = [];
   /** Stains and flies on the player when their clothes haven't been washed. */
   private grime: Phaser.GameObjects.Container | null = null;
+  /** Your own car on the map while you drive, its YOU tag, and distance not yet paid for in fuel. */
+  private myCar: Vehicle | null = null;
+  private myCarTag: Phaser.GameObjects.Text | null = null;
+  private driven = 0;
+  /** FRSC road safety checkpoints, and the day they were set up for. */
+  private frscPosts: { officer: Figure; barrier: Phaser.GameObjects.Image; x: number; y: number }[] = [];
+  private frscDay = -1;
 
   constructor() {
     super("world");
@@ -167,6 +175,11 @@ export class WorldScene extends Phaser.Scene {
     this.walkers = [];
     this.cars = [];
     this.police = [];
+    this.frscPosts = [];
+    this.frscDay = -1;
+    this.myCar = null;
+    this.myCarTag = null;
+    this.driven = 0;
     this.riding = null;
     this.towers = [];
     this.signals = [];
@@ -663,6 +676,20 @@ export class WorldScene extends Phaser.Scene {
         this.police.push({ officer, barrier, x, y });
       }
     }
+    // FRSC sets up at different junctions each day.
+    if (this.mapId === "city" && this.frscDay !== state.day) {
+      this.frscPosts.forEach((p) => {
+        p.officer.destroy();
+        p.barrier.destroy();
+      });
+      this.frscDay = state.day;
+      this.frscPosts = frscSpots(state.day).map(({ x, y }) => {
+        const barrier = this.add.image(x + 30, y + 30, "barrier").setDepth(7);
+        const officer = figure(this, x + 64, y + 4, POLICE, { name: "FRSC", nameColor: "#fde047" });
+        officer.setDepth(5 + (y + 4) / 10000);
+        return { officer, barrier, x: x + 30, y: y + 30 };
+      });
+    }
     if (!wantPolice && this.police.length) {
       this.police.forEach((p) => {
         p.officer.destroy();
@@ -728,11 +755,13 @@ export class WorldScene extends Phaser.Scene {
     }
     const fromX = this.player.x;
     const fromY = this.player.y;
-    // A bad injury slows you down: a cast or a sling.
+    // A bad injury slows you down: a cast or a sling. A car is much faster.
     const hurt = injured(state);
-    const pace = SPEED * (hurt === "fracture" ? 0.45 : hurt === "dislocation" ? 0.75 : 1);
+    const driving = this.mapId === "city" && isDriving(state);
+    const pace = driving ? SPEED * 2.6 : SPEED * (hurt === "fracture" ? 0.45 : hurt === "dislocation" ? 0.75 : 1);
     if (vx || vy) this.move(vx * pace * dt, vy * pace * dt, time);
     const moved = this.player.x !== fromX || this.player.y !== fromY;
+    this.showCar(driving, this.player.x - fromX, this.player.y - fromY);
     animateWalk(this.player, time, moved, this.player.x - fromX, this.player.y - fromY);
     this.player.setDepth(5 + this.player.y / 10000 + 0.5);
 
@@ -815,6 +844,15 @@ export class WorldScene extends Phaser.Scene {
 
   private checkStreet() {
     if (this.mapId !== "city") return;
+    if (isDriving(getState()!)) {
+      for (const p of this.frscPosts) {
+        if (Phaser.Math.Distance.Between(this.player.x, this.player.y, p.x, p.y) < 90) {
+          frsc();
+          break;
+        }
+      }
+      return;
+    }
     for (const car of this.cars) {
       if (Math.abs(car.body.x - this.player.x) < 24 && Math.abs(car.body.y - this.player.y) < 24) {
         const away = car.axis === "x" ? { x: 0, y: this.player.y < car.body.y ? -44 : 44 } : { x: this.player.x < car.body.x ? -44 : 44, y: 0 };
@@ -830,6 +868,38 @@ export class WorldScene extends Phaser.Scene {
         checkpoint();
         break;
       }
+    }
+  }
+
+  /** Behind the wheel: the car stands in for you, and fuel is paid by distance. */
+  private showCar(driving: boolean, dx: number, dy: number) {
+    if (!driving) {
+      if (this.myCar) {
+        this.myCar.destroy();
+        this.myCarTag?.destroy();
+        this.myCar = null;
+        this.myCarTag = null;
+        if (!this.riding) this.player.setVisible(true);
+        this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+      }
+      return;
+    }
+    if (!this.myCar) {
+      this.myCar = vehicle(this, this.player.x, this.player.y, { kind: "car", color: CAR_COLOR });
+      this.myCarTag = this.add
+        .text(0, 0, "YOU", { fontFamily: "system-ui, sans-serif", fontSize: "12px", fontStyle: "bold", color: "#60a5fa", stroke: "#05070c", strokeThickness: 4 })
+        .setResolution(2)
+        .setOrigin(0.5);
+      this.player.setVisible(false);
+    }
+    const car = this.myCar;
+    if (dx || dy) faceVehicle(car, dx, dy);
+    car.setPosition(this.player.x, this.player.y).setDepth(5 + this.player.y / 10000 + 0.5);
+    this.myCarTag!.setPosition(car.x, car.y - car.displayHeight * car.originY - 8).setDepth(car.depth);
+    this.driven += Math.hypot(dx, dy);
+    if (this.driven >= 400) {
+      fuel(this.driven);
+      this.driven = 0;
     }
   }
 
@@ -853,11 +923,18 @@ export class WorldScene extends Phaser.Scene {
 
   // ── Rides ─────────────────────────────────────────────────────────────────
 
-  private startRide(mode: RideMode, to: { x: number; y: number }) {
+  private startRide(mode: RideMode | "car", to: { x: number; y: number }) {
     if (this.mapId !== "city") return;
     this.finishRide();
+    // Driving there yourself: the car on the map becomes the ride.
+    if (this.myCar) {
+      this.myCar.destroy();
+      this.myCarTag?.destroy();
+      this.myCar = null;
+      this.myCarTag = null;
+    }
     const style: VehicleStyle =
-      mode === "taxi" ? { kind: "taxi", color: TAXI_COLOR } : mode === "okada" ? { kind: "okada", color: OKADA_COLORS.red } : mode === "keke" ? { kind: "keke", color: KEKE_COLORS.yellow } : { kind: "bus", color: "#f5c518" };
+      mode === "car" ? { kind: "car", color: CAR_COLOR } : mode === "taxi" ? { kind: "taxi", color: TAXI_COLOR } : mode === "okada" ? { kind: "okada", color: OKADA_COLORS.red } : mode === "keke" ? { kind: "keke", color: KEKE_COLORS.yellow } : { kind: "bus", color: "#f5c518" };
     // You hop in at the nearest road and get dropped at the roadside closest to where you're going.
     const full = roadRoute({ x: this.player.x, y: this.player.y }, to);
     const route = full.length > 2 ? full.slice(1, -1) : [to];

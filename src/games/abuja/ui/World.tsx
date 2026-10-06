@@ -6,6 +6,7 @@ import {
   clearToast,
   currentBeat,
   doAction,
+  drive,
   findPerson,
   haggle,
   insult,
@@ -19,6 +20,7 @@ import {
   takeOffer,
   talk,
 } from "../systems/engine";
+import { hasCar, isDriving } from "../systems/drive";
 import { isDirty, lifeOf } from "../systems/life";
 import { personLook } from "../systems/peoplelook";
 import { SLOTS, check, debt, fill, lockReason, naira } from "../systems/rules";
@@ -330,6 +332,19 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
             <WardrobePanel state={state} onDone={() => setWardrobe(false)} />
           </div>
         </div>
+      ) : null}
+      {!inStory && !inside && hasCar(state) ? (
+        <button
+          type="button"
+          onClick={drive}
+          className={`absolute right-4 bottom-[10.5rem] z-10 flex size-16 flex-col items-center justify-center rounded-2xl border text-xs font-semibold shadow-xl ${isDriving(state) ? "border-blue-300 bg-blue-600 text-white" : "border-white/15 bg-[#0d1220]/90"}`}
+          aria-label={isDriving(state) ? "Park and get out" : "Drive your car"}
+        >
+          <span className="text-2xl" aria-hidden>
+            {isDriving(state) ? "🅿️" : "🚗"}
+          </span>
+          {isDriving(state) ? "Park" : "Drive"}
+        </button>
       ) : null}
       {!inStory && !inside ? (
         <button

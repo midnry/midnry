@@ -86,6 +86,8 @@ export type Cond = {
   noAsset?: string;
   /** The electricity hasn't been cut off. */
   powered?: boolean;
+  /** Has (true) or lacks (false) a driver's licence. */
+  license?: boolean;
   any?: Cond[];
 };
 
@@ -245,7 +247,7 @@ export type ActionDef = {
   effects: Effect[];
   text: string;
   /** Special handlers in the UI: sleep, work, apply, loans, hospital, japa. */
-  kind?: "sleep" | "work" | "apply" | "loans" | "japa" | "meet" | "drive" | "doctor" | "paybill" | "unfreeze" | "efcc";
+  kind?: "sleep" | "work" | "apply" | "loans" | "japa" | "meet" | "drive" | "doctor" | "paybill" | "unfreeze" | "efcc" | "drivetest" | "rentcar" | "buycar";
   job?: string;
 };
 

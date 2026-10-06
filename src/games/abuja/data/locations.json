@@ -848,7 +848,7 @@
         },
         {
           "id": "driving_lesson",
-          "label": "Take a driving lesson (₦5,000)",
+          "label": "Take a quick driving lesson (₦5,000)",
           "slots": 1,
           "energy": -10,
           "cost": 5000,
@@ -948,9 +948,10 @@
           "kind": "drive",
           "if": {
             "skill": "driving",
-            "gte": 20
+            "gte": 20,
+            "license": true
           },
-          "lockedText": "Needs Driving 20 (lessons at the Garki hub)",
+          "lockedText": "Needs Driving 20 and a driver's licence (Safe Wheels Driving School)",
           "effects": [],
           "text": ""
         },
@@ -963,9 +964,10 @@
           "kind": "drive",
           "if": {
             "skill": "driving",
-            "gte": 20
+            "gte": 20,
+            "license": true
           },
-          "lockedText": "Needs Driving 20 (lessons at the Garki hub)",
+          "lockedText": "Needs Driving 20 and a driver's licence (Safe Wheels Driving School)",
           "effects": [],
           "text": ""
         },
@@ -984,6 +986,46 @@
             }
           ],
           "text": "Roasted corn and a sachet of water while the touts shout destinations."
+        }
+      ]
+    },
+    {
+      "id": "driving_school", "icon": "🪪",
+      "name": "Safe Wheels Driving School (Garki)",
+      "district": "garki",
+      "x": 1320,
+      "y": 1580,
+      "color": "#facc15",
+      "blurb": "Learner cars with two brake pedals and instructors with nerves of steel. Pass here, then the FRSC test, and you get your driver's licence.",
+      "actions": [
+        {
+          "id": "school_lesson",
+          "label": "Driving lesson (₦8,000)",
+          "slots": 1,
+          "energy": -10,
+          "cost": 8000,
+          "effects": [
+            {
+              "skill": "driving",
+              "add": 8
+            }
+          ],
+          "text": "Mirror, signal, manoeuvre. The instructor only grabs the wheel twice."
+        },
+        {
+          "id": "school_test",
+          "label": "Take the FRSC driving test (₦25,000)",
+          "slots": 1,
+          "energy": -10,
+          "cost": 25000,
+          "kind": "drivetest",
+          "if": {
+            "skill": "driving",
+            "gte": 40
+          },
+          "lockedText": "Needs Driving 40. Take lessons first.",
+          "effects": [],
+          "text": ""
         }
       ]
     },
@@ -1661,6 +1703,37 @@
             }
           ],
           "text": "Slim stares. \"You go come back.\" You don't."
+        }
+      ]
+    },
+    {
+      "id": "car_mart", "icon": "🚗",
+      "name": "Berger Tokunbo Car Mart (Lugbe)",
+      "district": "lugbe",
+      "x": 200,
+      "y": 1250,
+      "color": "#60a5fa",
+      "blurb": "Rows of 'first body' Tokunbo cars and a dealer who swears every one was used by a grandmother in Toronto.",
+      "actions": [
+        {
+          "id": "rent_car",
+          "label": "Rent a Toyota Camry for 3 days (₦30,000)",
+          "slots": 0,
+          "energy": 0,
+          "cost": 30000,
+          "kind": "rentcar",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "buy_car",
+          "label": "Buy a 2012 Toyota Corolla (₦3,500,000)",
+          "slots": 1,
+          "energy": -5,
+          "cost": 3500000,
+          "kind": "buycar",
+          "effects": [],
+          "text": ""
         }
       ]
     },
