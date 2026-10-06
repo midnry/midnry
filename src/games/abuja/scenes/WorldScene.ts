@@ -4,6 +4,7 @@ import { LAKE, ROADS, blocked, freePoint, sizeOf, solidsFor } from "../systems/c
 import { bump, checkpoint, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
 import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
+import { findPath, type Point } from "../systems/path";
 import type { MapRect } from "../systems/types";
 import { INK, animateWalk, building, figure, makeArt, rand, signpost, tileKey, type Figure } from "./art";
 
@@ -66,7 +67,8 @@ export class WorldScene extends Phaser.Scene {
   private solids: MapRect[] = [];
   private player!: Figure;
   private keys!: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d" | "e" | "space", Phaser.Input.Keyboard.Key>;
-  private target: Phaser.Math.Vector2 | null = null;
+  /** Waypoints for tap-to-walk and "Go to". */
+  private path: Point[] = [];
   private near: Near | null = null;
   private lastSave = 0;
   private lastBlocked = 0;
@@ -123,15 +125,20 @@ export class WorldScene extends Phaser.Scene {
     const kb = this.input.keyboard!;
     this.keys = kb.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D", e: "E", space: "SPACE" }) as typeof this.keys;
     kb.disableGlobalCapture();
-    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      this.target = new Phaser.Math.Vector2(pointer.worldX, pointer.worldY);
-    });
+    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => this.walkTo({ x: pointer.worldX, y: pointer.worldY }));
 
     this.offs.push(
       bus.on("teleport", ({ x, y }) => {
         if (this.mapId !== "city") return;
         this.player.setPosition(x, y);
-        this.target = null;
+        this.path = [];
+      }),
+      bus.on("goto", () => {
+        const state = getState();
+        if (!state) return;
+        const step = this.mapId === "city" ? state.task?.steps[state.task.index] : undefined;
+        const goal = step ?? currentBeat(state)?.spot;
+        if (goal) this.walkTo(goal);
       }),
     );
     // Restart when the story moves to another map; refresh markers on other changes.
@@ -164,6 +171,27 @@ export class WorldScene extends Phaser.Scene {
     // Older saves may stand where the lake or a building now is.
     if (state?.pos.x) return freePoint(state.pos.x, state.pos.y, this.solids);
     return { x: PLACES[0]!.x, y: PLACES[0]!.y + 95 };
+  }
+
+  /** Can the player stand here? Walls, the map edge and locked districts say no. */
+  private standable(x: number, y: number, pad = 0): boolean {
+    const { width, height } = sizeOf(this.mapId);
+    if (x < RADIUS || y < RADIUS || x > width - RADIUS || y > height - RADIUS) return false;
+    if (blocked(x, y, RADIUS + pad, this.solids)) return false;
+    if (this.mapId === "city") {
+      const d = districtAt(x, y);
+      const state = getState();
+      if (d?.gate && state && !check(state, d.gate.if)) return false;
+    }
+    return true;
+  }
+
+  /** Find a way around buildings and fences to a point, then walk it. */
+  private walkTo(goal: Point) {
+    const { width, height } = sizeOf(this.mapId);
+    const route = findPath({ x: this.player.x, y: this.player.y }, goal, width, height, (x, y) => this.standable(x, y, 3));
+    // No way through (say, a locked district): walk straight and let the wall explain.
+    this.path = route ?? [goal];
   }
 
   private fitZoom() {
@@ -443,7 +471,7 @@ export class WorldScene extends Phaser.Scene {
   update(time: number, deltaMs: number) {
     const dt = Math.min(0.05, deltaMs / 1000);
     const state = getState();
-    if (!state) return;
+    if (!state || input.paused) return;
     this.moveTraffic(dt, time);
     const paused = state.event || state.ending || state.task?.haggle || (state.chapter && (state.result || !currentBeat(state)));
     if (paused) {
@@ -458,15 +486,17 @@ export class WorldScene extends Phaser.Scene {
     if (k.right.isDown || k.d.isDown) vx += 1;
     if (k.up.isDown || k.w.isDown) vy -= 1;
     if (k.down.isDown || k.s.isDown) vy += 1;
-    if (vx || vy) this.target = null;
-    else if (this.target) {
-      const dx = this.target.x - this.player.x;
-      const dy = this.target.y - this.player.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist < 8) this.target = null;
-      else {
-        vx = dx / dist;
-        vy = dy / dist;
+    if (vx || vy) this.path = [];
+    else {
+      while (this.path.length && Math.hypot(this.path[0]!.x - this.player.x, this.path[0]!.y - this.player.y) < 8) this.path.shift();
+      const next = this.path[0];
+      if (next) {
+        const dx = next.x - this.player.x;
+        const dy = next.y - this.player.y;
+        const dist = Math.hypot(dx, dy);
+        const step = Math.min(1, dist / (SPEED * dt));
+        vx = (dx / dist) * step;
+        vy = (dy / dist) * step;
       }
     }
     const len = Math.hypot(vx, vy);
@@ -519,7 +549,7 @@ export class WorldScene extends Phaser.Scene {
     if (free(nx, ny)) this.player.setPosition(nx, ny);
     else if (free(nx, this.player.y)) this.player.setX(nx);
     else if (free(this.player.x, ny)) this.player.setY(ny);
-    else this.target = null;
+    else this.path = [];
   }
 
   private checkNear() {

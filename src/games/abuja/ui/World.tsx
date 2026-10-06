@@ -24,7 +24,7 @@ import { StoryPanel } from "./StoryView";
 import { btnGhost, btnPrimary, panel } from "./theme";
 
 /** The walkable game: story chapters and adult Abuja share this view. */
-export function World({ state }: { state: GameState }) {
+export function World({ state, onQuit }: { state: GameState; onQuit: () => void }) {
   const host = useRef<HTMLDivElement>(null);
   const game = useRef<PhaserGame | null>(null);
   const [near, setNear] = useState<NearThing | null>(null);
@@ -32,6 +32,7 @@ export function World({ state }: { state: GameState }) {
   const [talking, setTalking] = useState<string | null>(null);
   const [phone, setPhone] = useState<PhoneApp | null>(null);
   const [blocked, setBlocked] = useState<string | null>(null);
+  const [paused, setPaused] = useState(false);
   const inStory = Boolean(state.chapter);
 
   useEffect(() => {
@@ -67,6 +68,23 @@ export function World({ state }: { state: GameState }) {
     };
   }, []);
 
+  // The world stands still while the pause menu is open. Esc or P toggles it.
+  useEffect(() => {
+    input.paused = paused;
+    input.x = 0;
+    input.y = 0;
+  }, [paused]);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" || event.key === "p" || event.key === "P") setPaused((value) => !value);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      input.paused = false;
+    };
+  }, []);
+
   useEffect(() => {
     if (!state.toast) return;
     const timer = window.setTimeout(clearToast, 6000);
@@ -91,9 +109,17 @@ export function World({ state }: { state: GameState }) {
       {inStory ? <ChapterHud state={state} /> : <Hud state={state} onOpen={setPhone} />}
 
       {beat && !story ? (
-        <p className={`${panel} pointer-events-none absolute top-24 left-1/2 z-10 -translate-x-1/2 px-4 py-2 text-sm sm:top-20`}>
-          📍 Go to: <span className="font-semibold text-amber-300">{beat.spot.label}</span>
-        </p>
+        <button
+          type="button"
+          onClick={() => bus.emit("goto", null)}
+          className={`${panel} absolute top-24 left-1/2 z-10 max-w-[64vw] -translate-x-1/2 px-4 py-2 text-left text-sm shadow-xl hover:bg-stone-800 sm:top-20`}
+          aria-label={`Walk to ${beat.spot.label}`}
+        >
+          <span className="block truncate">
+            📍 Go to: <span className="font-semibold text-amber-300">{beat.spot.label}</span>
+          </span>
+          <span className="block text-[11px] text-stone-400">Tap to walk there</span>
+        </button>
       ) : null}
 
       {(state.toast || blocked) && !story ? (
@@ -127,6 +153,15 @@ export function World({ state }: { state: GameState }) {
       {state.task?.haggle ? <HaggleModal state={state} /> : null}
 
       {!story ? <Joystick /> : null}
+      <button
+        type="button"
+        onClick={() => setPaused(true)}
+        className="absolute top-24 left-3 z-10 flex size-11 items-center justify-center rounded-xl border border-white/15 bg-stone-900/90 text-xl font-bold shadow-xl hover:bg-stone-800 sm:top-20 lg:top-3"
+        aria-label="Pause"
+      >
+        ⏸
+      </button>
+      {paused ? <PauseMenu onResume={() => setPaused(false)} onQuit={onQuit} /> : null}
       {!inStory ? (
         <button
           type="button"
@@ -151,6 +186,34 @@ export function World({ state }: { state: GameState }) {
       <p className="pointer-events-none absolute bottom-2 left-1/2 hidden -translate-x-1/2 text-xs text-stone-400 sm:block">
         WASD or arrows to move · click to walk · E to interact
       </p>
+    </div>
+  );
+}
+
+function PauseMenu({ onResume, onQuit }: { onResume: () => void; onQuit: () => void }) {
+  return (
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-[2px]" role="dialog" aria-label="Paused">
+      <div className={`${panel} w-full max-w-sm p-5`}>
+        <p className="font-display text-2xl">Paused</p>
+        <p className="mt-1 text-sm text-stone-400">Your progress is saved automatically.</p>
+        <div className="mt-4 grid gap-2">
+          <button type="button" className={btnPrimary} onClick={onResume}>
+            ▶ Resume
+          </button>
+          <button type="button" className={btnGhost} onClick={onQuit}>
+            Save and exit to title
+          </button>
+        </div>
+        <div className="mt-5 rounded-xl bg-white/5 p-3 text-xs text-stone-300">
+          <p className="font-semibold text-stone-200">How to play</p>
+          <ul className="mt-1 list-disc space-y-1 pl-4">
+            <li>Move with the joystick, WASD or the arrow keys, or tap/click where you want to go.</li>
+            <li>Tap the “Go to” banner (or “Go” on a job) to walk to your goal automatically.</li>
+            <li>Walk up to people and places, then tap the yellow button (or press E) to talk or enter.</li>
+            <li>Esc or P pauses the game.</li>
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }
@@ -431,6 +494,9 @@ function TaskPanel({ state }: { state: GameState }) {
           {left === 0 ? "Running late!" : `${left}s to get there on time`}
         </p>
       </div>
+      <button type="button" className={`${btnPrimary} min-h-9 shrink-0 px-3`} onClick={() => bus.emit("goto", null)} aria-label={`Walk to ${step.label}`}>
+        Go
+      </button>
       <button type="button" className={`${btnGhost} min-h-9 shrink-0 px-3`} onClick={abandonTask}>
         Stop
       </button>

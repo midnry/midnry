@@ -51,22 +51,32 @@ export function replace(next: GameState | null): void {
 function scheduleSave() {
   if (typeof window === "undefined") return;
   if (saveTimer) window.clearTimeout(saveTimer);
-  saveTimer = window.setTimeout(() => {
-    saveTimer = null;
-    if (!state) return;
-    state.savedAt = Date.now();
-    const payload = JSON.stringify(state);
-    try {
-      localStorage.setItem(SAVE_KEY, payload);
-    } catch {
-      /* storage full or blocked: the game keeps running */
-    }
-    if (cloudSaver) {
-      if (cloudTimer) window.clearTimeout(cloudTimer);
-      const saver = cloudSaver;
-      cloudTimer = window.setTimeout(() => saver(payload), 3000);
-    }
-  }, 300);
+  saveTimer = window.setTimeout(() => writeSave(false), 300);
+}
+
+/** Save right now, on this device and (when signed in) to the account. */
+export function flushSave(): void {
+  if (typeof window === "undefined") return;
+  if (saveTimer) window.clearTimeout(saveTimer);
+  writeSave(true);
+}
+
+function writeSave(now: boolean) {
+  saveTimer = null;
+  if (!state) return;
+  state.savedAt = Date.now();
+  const payload = JSON.stringify(state);
+  try {
+    localStorage.setItem(SAVE_KEY, payload);
+  } catch {
+    /* storage full or blocked: the game keeps running */
+  }
+  if (cloudSaver) {
+    if (cloudTimer) window.clearTimeout(cloudTimer);
+    const saver = cloudSaver;
+    if (now) saver(payload);
+    else cloudTimer = window.setTimeout(() => saver(payload), 3000);
+  }
 }
 
 export function parseSave(raw: string | null): GameState | null {
@@ -177,6 +187,8 @@ export const input = {
   y: 0,
   /** Set to true for one frame to interact with the nearest place. */
   interact: false,
+  /** The pause menu is open: the world stands still. */
+  paused: false,
 };
 
 export type NearThing = { kind: "place" | "person" | "beat"; id: string; label: string };
@@ -186,6 +198,8 @@ type BusEvents = {
   near: NearThing | null;
   interact: NearThing;
   blocked: string;
+  /** Walk to the current goal: the story spot, or the next stop of a job. */
+  goto: null;
 };
 type Handler = (payload: never) => void;
 const handlers = new Map<keyof BusEvents, Set<Handler>>();

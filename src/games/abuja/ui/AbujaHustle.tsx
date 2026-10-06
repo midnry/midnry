@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { loadGame, saveGame } from "../save.functions";
 import { startGame } from "../systems/engine";
-import { AGE_KEY, deleteSave, loadSave, newGame, newestSave, parseSave, replace, setCloudSaver } from "../systems/store";
+import { AGE_KEY, deleteSave, flushSave, loadSave, newGame, newestSave, parseSave, replace, setCloudSaver } from "../systems/store";
 import type { GameState } from "../systems/types";
 import { EndScreen } from "./EndScreen";
 import { AgeGate, Creator, Title } from "./Menus";
@@ -49,6 +49,12 @@ export function AbujaHustle() {
 
   useEffect(() => () => setCloudSaver(null), []);
 
+  // Back on the title (quit, deleted, or finished): show what is saved now.
+  const playing = Boolean(state);
+  useEffect(() => {
+    if (!playing) setSaved(loadSave());
+  }, [playing]);
+
   if (!ready) return <div className="min-h-[100dvh] bg-stone-950" />;
   if (!ageOk) {
     return (
@@ -87,5 +93,13 @@ export function AbujaHustle() {
     );
   }
   if (state.ending) return <EndScreen state={state} />;
-  return <World state={state} />;
+  return (
+    <World
+      state={state}
+      onQuit={() => {
+        flushSave();
+        replace(null);
+      }}
+    />
+  );
 }
