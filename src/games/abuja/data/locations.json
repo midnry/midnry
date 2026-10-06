@@ -223,7 +223,11 @@
               "add": 2
             }
           ],
-          "text": "You read until NEPA takes light. Then you read by phone torch."
+          "text": "You read until NEPA takes light. Then you read by phone torch.",
+          "if": {
+            "powered": true
+          },
+          "lockedText": "No light: AEDC cut you off. Pay the electricity bill in the Bills app."
         },
         {
           "id": "learn_tech",
@@ -237,7 +241,11 @@
               "add": 3
             }
           ],
-          "text": "Free course, paid data. You fix your first bug."
+          "text": "Free course, paid data. You fix your first bug.",
+          "if": {
+            "powered": true
+          },
+          "lockedText": "No light: AEDC cut you off. Pay the electricity bill in the Bills app."
         }
       ]
     },
@@ -310,7 +318,11 @@
               "wash": true
             }
           ],
-          "text": "The machine hums while you scroll. Clean clothes, folded and ready."
+          "text": "The machine hums while you scroll. Clean clothes, folded and ready.",
+          "if": {
+            "powered": true
+          },
+          "lockedText": "No light: AEDC cut you off. Pay the electricity bill in the Bills app."
         },
         {
           "id": "study",
@@ -323,7 +335,11 @@
               "add": 2
             }
           ],
-          "text": "A quiet afternoon with a book. Productive."
+          "text": "A quiet afternoon with a book. Productive.",
+          "if": {
+            "powered": true
+          },
+          "lockedText": "No light: AEDC cut you off. Pay the electricity bill in the Bills app."
         },
         {
           "id": "learn_tech",
@@ -337,7 +353,11 @@
               "add": 3
             }
           ],
-          "text": "You finish a module and feel unstoppable for ten minutes."
+          "text": "You finish a module and feel unstoppable for ten minutes.",
+          "if": {
+            "powered": true
+          },
+          "lockedText": "No light: AEDC cut you off. Pay the electricity bill in the Bills app."
         }
       ]
     },
@@ -849,11 +869,11 @@
       "x": 1320,
       "y": 1320,
       "color": "#f43f5e",
-      "blurb": "Doctors doing their best with what they have. Bring your own gloves, just in case.",
+      "blurb": "Long benches, a generator that never stops, and doctors who have seen everything. Treatment first, bill after.",
       "actions": [
         {
           "id": "treat",
-          "label": "Get treated (₦15,000)",
+          "label": "General check-up and treatment (₦15,000)",
           "slots": 1,
           "energy": 5,
           "cost": 15000,
@@ -868,6 +888,24 @@
             }
           ],
           "text": "Drip, tablets, and a lecture about stress. You feel better."
+        },
+        {
+          "id": "doctor",
+          "label": "See a doctor about an injury",
+          "slots": 1,
+          "energy": 0,
+          "kind": "doctor",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "paybill",
+          "label": "Pay your hospital bill",
+          "slots": 0,
+          "energy": 0,
+          "kind": "paybill",
+          "effects": [],
+          "text": ""
         }
       ]
     },
@@ -984,6 +1022,15 @@
           "slots": 1,
           "energy": -5,
           "kind": "meet",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "unfreeze",
+          "label": "Sort out a frozen account (BVN, statements)",
+          "slots": 1,
+          "energy": -5,
+          "kind": "unfreeze",
           "effects": [],
           "text": ""
         }
@@ -1233,6 +1280,44 @@
             }
           ],
           "text": "The perfume section has no attendant…"
+        }
+      ]
+    },
+    {
+      "id": "efcc_hq", "icon": "🚔",
+      "name": "EFCC Headquarters (Jabi)",
+      "district": "jabi",
+      "x": 650,
+      "y": 900,
+      "color": "#1d4ed8",
+      "blurb": "The Economic and Financial Crimes Commission. Fraudsters, money launderers and corrupt officials all end up here eventually.",
+      "actions": [
+        {
+          "id": "efcc_report",
+          "label": "Report a scam you've seen",
+          "slots": 1,
+          "energy": -5,
+          "kind": "efcc",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "efcc_status",
+          "label": "Ask if there's a case against you",
+          "slots": 0,
+          "energy": 0,
+          "kind": "efcc",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "efcc_surrender",
+          "label": "Turn yourself in (plea bargain)",
+          "slots": 1,
+          "energy": -10,
+          "kind": "efcc",
+          "effects": [],
+          "text": ""
         }
       ]
     },

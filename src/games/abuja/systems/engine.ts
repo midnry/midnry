@@ -24,7 +24,9 @@ import {
   rollStars,
 } from "./rules";
 import { bus, update } from "./store";
-import { MENU, DELIVERY_FEE, burn, daysUnwashed, isDirty, offense, overnight } from "./life";
+import { MENU, DELIVERY_FEE, burn, daysUnwashed, isDirty, life, offense, overnight } from "./life";
+import { caseStatus, nightlyCase, reportScam, resolveFreeze, surrender, withoutBankCheck } from "./bank";
+import { hurt, nightlyHealth, payHospital, payPower, rollHit, tooHurtFor, treat, weeklyPower, type HitBy } from "./health";
 import { closeDay, closePosition, deposit, ensureMarket, insiderTip, openPosition, tick, withdraw } from "./market";
 import {
   askOut,
@@ -218,6 +220,14 @@ export function changeLooks(look: Look) {
   });
 }
 
+/** Bills app: pay electricity or the hospital from your phone. */
+export function payBill(kind: "power" | "hospital") {
+  update((s) => {
+    if (s.ending) return;
+    toast(s, kind === "power" ? payPower(s) : payHospital(s));
+  });
+}
+
 /** ChopNow: a rider brings food to wherever you are. */
 export function orderMeal(id: string) {
   update((s) => {
@@ -246,6 +256,23 @@ export function doAction(placeId: string, actionId: string): "loans" | void {
     if (!p || !a || s.ending || s.event) return;
     if (!check(s, a.if)) return toast(s, a.lockedText ?? "You can't do that yet.");
     if (a.kind === "sleep") return sleep(s);
+    if (a.kind === "paybill") return toast(s, payHospital(s));
+    if (a.kind === "unfreeze" || a.kind === "efcc") {
+      if (a.slots && s.slot + a.slots > SLOTS.length) return toast(s, "They've closed for the day. Come back tomorrow morning.");
+      const line =
+        a.kind === "unfreeze" ? resolveFreeze(s) : a.id === "efcc_surrender" ? surrender(s) : a.id === "efcc_report" ? reportScam(s) : caseStatus(s);
+      toast(s, line);
+      spend(s, a.slots, a.energy);
+      return checkEndings(s);
+    }
+    if (a.kind === "doctor") {
+      if (s.slot + a.slots > SLOTS.length) return toast(s, "The doctors on duty are only taking emergencies. Come back in the morning.");
+      toast(s, treat(s));
+      spend(s, a.slots, a.energy);
+      return;
+    }
+    const hurtLine = tooHurtFor(s, a.energy);
+    if (hurtLine && (a.energy <= -20 || a.kind === "drive" || a.kind === "work")) return toast(s, hurtLine);
     if (a.kind === "loans") {
       open = "loans";
       return;
@@ -370,7 +397,7 @@ export function borrow(index: number) {
       nextDue: s.day + 7,
       missed: 0,
     });
-    addStat(s, "money", offer.amount);
+    withoutBankCheck(() => addStat(s, "money", offer.amount));
     if (!s.flags.first_loan) {
       s.flags.first_loan = true;
       addLog(s, `Took a first QuickKash loan of ${naira(offer.amount)}.`);
@@ -453,6 +480,7 @@ function sleep(s: GameState) {
   addStat(s, "stress", -8);
   if (!s.flags.fraud) addStat(s, "heat", -1);
   note(s, ...overnight(s));
+  note(s, ...nightlyHealth(s));
   if (isDirty(s)) {
     note(s, `Your clothes haven't been washed in ${daysUnwashed(s)} days and it shows.`, offense(s, "dirty"), "Wash them at home or a laundry.");
   }
@@ -475,6 +503,7 @@ function sleep(s: GameState) {
       s.event = "insider";
     }
   }
+  if (!s.event) s.event = nightlyCase(s);
   if (!s.event) s.event = dailyRomance(s);
   neglect(s);
   pickEvent(s);
@@ -504,6 +533,11 @@ function weeklyBills(s: GameState) {
     loan.nextDue += 7;
   }
   s.loans = s.loans.filter((loan) => loan.owed > 0);
+  lines.push(...weeklyPower(s));
+  if (life(s).hospitalBill > 0) {
+    addStat(s, "stress", 3);
+    lines.push(`The hospital accountant called about your ₦${life(s).hospitalBill.toLocaleString("en")} bill.`);
+  }
   s.toast = `${s.toast ? `${s.toast} ` : ""}${lines.join(" ")}`;
   if (missed) {
     s.event = "collectors";
@@ -604,7 +638,9 @@ function checkEndings(s: GameState) {
 /** Burnout puts the MC in hospital: money and days lost, never death. */
 function collapse(s: GameState) {
   addLog(s, "Collapsed from stress and exhaustion. Spent days in hospital.");
-  addStat(s, "money", -30000);
+  const paid = Math.min(30000, Math.max(0, s.stats.money));
+  addStat(s, "money", -paid);
+  life(s).hospitalBill += 30000 - paid;
   s.day += 2;
   s.slot = 0;
   s.stats.health = 55;
@@ -785,13 +821,26 @@ export function takeOffer(key: string, choice: Choice) {
   });
 }
 
-/** A keke or car nearly hits you. */
-export function bump() {
+/** Traffic catches you on the road: a near miss, an injury, or worse. */
+export function bump(by: HitBy = "car") {
   update((s) => {
-    if (s.flags.bumped === s.day * 10 + s.slot) return;
+    if (s.ending || s.flags.bumped === s.day * 10 + s.slot) return;
     s.flags.bumped = s.day * 10 + s.slot;
     addStat(s, "stress", 3);
-    toast(s, ["A keke swerves past, missing you by an inch. The driver shouts something about your mother.", "A danfo screeches to a stop. \"You wan die?!\" Look before you cross.", "An okada brushes your arm. You're fine. Your heart is not."][s.day % 3]!);
+    const { kind, who } = rollHit(by);
+    if (!kind) {
+      toast(s, ["A keke swerves past, missing you by an inch. The driver shouts something about your mother.", "A danfo screeches to a stop. \"You wan die?!\" Look before you cross.", "An okada brushes your arm. You're fine. Your heart is not."][s.day % 3]!);
+      return;
+    }
+    if (kind === "death") {
+      addLog(s, `Hit by ${who} while crossing the road in Abuja. Gone too soon.`);
+      return end(s, "cut");
+    }
+    const line = hurt(s, kind);
+    addStat(s, "stress", kind === "minor" ? 4 : 12);
+    if (kind !== "minor") addLog(s, `Hit by ${who}: ${kind === "fracture" ? "a broken leg" : "a dislocated shoulder"}.`);
+    toast(s, `💥 You're hit by ${who}! ${line} ${kind === "minor" ? "A doctor can clean it up, or it'll heal in a couple of days." : "Get to Garki General Hospital. It will get worse if you don't."}`);
+    checkEndings(s);
   });
 }
 

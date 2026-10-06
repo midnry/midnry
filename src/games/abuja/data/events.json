@@ -1055,5 +1055,68 @@
         ]
       }
     ]
+  },
+  {
+    "id": "bank_frozen",
+    "weight": 0,
+    "title": "Account frozen",
+    "text": "Union Capital Bank has put a Post No Debit restriction on your account. A credit far above your usual range was flagged by compliance. ₦{amount} is on hold. Bring your BVN and explain where the money came from at Union Capital Bank HQ in the CBD. Reviews take two days.",
+    "choices": [
+      {
+        "text": "Ugh. I'll go to the bank.",
+        "effects": [
+          {
+            "stat": "stress",
+            "add": 6
+          }
+        ]
+      },
+      {
+        "text": "Call customer care and shout",
+        "effects": [
+          {
+            "stat": "stress",
+            "add": 10
+          }
+        ],
+        "result": "Forty minutes of hold music, then: \"Please visit your branch.\""
+      }
+    ]
+  },
+  {
+    "id": "efcc_invite",
+    "weight": 0,
+    "title": "EFCC invitation",
+    "text": "A letter on EFCC letterhead: you are \"invited\" to the Commission's headquarters in Jabi tomorrow to \"shed light on some transactions\". Everybody knows what an invitation means.",
+    "choices": [
+      {
+        "text": "Honour the invitation",
+        "effects": [
+          {
+            "efcc": "honour"
+          }
+        ]
+      },
+      {
+        "text": "Pay a 'consultant' to make it go away (₦300,000)",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -300000
+          },
+          {
+            "efcc": "bribe"
+          }
+        ]
+      },
+      {
+        "text": "Run and hide",
+        "effects": [
+          {
+            "efcc": "run"
+          }
+        ]
+      }
+    ]
   }
 ]

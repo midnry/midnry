@@ -1,5 +1,6 @@
 import { NPCS, POSTING_STATES } from "./data";
 import { drink, feed, offense, wash } from "./life";
+import { answerEfcc, bankCredit, frozenAmount } from "./bank";
 import { equity, shock } from "./market";
 import { partnerName, pregnancyText, romanceEffect } from "./romance";
 import type { Cond, Effect, GameState, SkillKey, StatKey } from "./types";
@@ -51,6 +52,7 @@ export function check(state: GameState, cond: Cond | undefined): boolean {
   if (cond.hasJob != null && Boolean(state.job) !== cond.hasJob) return false;
   if (cond.asset && !state.assets.includes(cond.asset)) return false;
   if (cond.noAsset && state.assets.includes(cond.noAsset)) return false;
+  if (cond.powered && state.life?.power.cut) return false;
   return true;
 }
 
@@ -78,6 +80,7 @@ export function addStat(state: GameState, key: StatKey, amount: number): void {
   if (key === "stress" && delta > 0) delta = Math.round(delta * (1 - state.stats.resilience / 200));
   const next = state.stats[key] + delta;
   state.stats[key] = BOUNDED.includes(key) ? clamp(next) : Math.round(next);
+  if (key === "money" && delta > 0) bankCredit(state, delta);
 }
 
 export function addSkill(state: GameState, key: SkillKey, amount: number): void {
@@ -115,6 +118,7 @@ export function apply(state: GameState, effects: Effect[] | undefined, toasts: s
     if (effect.water) drink(state, effect.water);
     if (effect.wash) wash(state);
     if (effect.offense) toasts.push(offense(state, effect.offense));
+    if (effect.efcc) toasts.push(...answerEfcc(state, effect.efcc));
     if (effect.log) addLog(state, effect.log);
     if (effect.toast) toasts.push(fill(state, effect.toast));
   }
@@ -143,14 +147,15 @@ export function fill(state: GameState, text: string): string {
     .replace(/\{pregnancy_text\}/g, pregnancyText(state));
 }
 
+/** Everything owed: loans, plus hospital bills. */
 export function debt(state: GameState): number {
-  return state.loans.reduce((sum, loan) => sum + loan.owed, 0);
+  return state.loans.reduce((sum, loan) => sum + loan.owed, 0) + (state.life?.hospitalBill ?? 0);
 }
 
 export function netWorth(state: GameState): number {
   const assets = state.assets.reduce((sum, id) => sum + (ASSET_VALUES[id] ?? 0), 0);
   const trading = state.market ? equity(state.market) : 0;
-  return Math.round(state.stats.money + state.stats.usd * USD_RATE + assets + trading - debt(state));
+  return Math.round(state.stats.money + frozenAmount(state) + state.stats.usd * USD_RATE + assets + trading - debt(state));
 }
 
 export function naira(value: number): string {

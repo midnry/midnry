@@ -7,6 +7,7 @@ import { personLook } from "../systems/peoplelook";
 import { roomForBuilding } from "../systems/rooms";
 import { RoomScene } from "./RoomScene";
 import { isDirty } from "../systems/life";
+import { injured, type HitBy } from "../systems/health";
 import { bump, checkpoint, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
 import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
@@ -108,7 +109,7 @@ export class WorldScene extends Phaser.Scene {
   private placeMarkers: { id: string; marker: Phaser.GameObjects.Container }[] = [];
   private people: (Interactable & { body: Figure; home: { x: number; y: number }; vx: number; vy: number })[] = [];
   private walkers: { sprite: Figure; axis: "x" | "y"; speed: number }[] = [];
-  private cars: { body: Vehicle; axis: "x" | "y"; speed: number }[] = [];
+  private cars: { body: Vehicle; axis: "x" | "y"; speed: number; kind: HitBy }[] = [];
   /** The ride you're on: your vehicle, the road route and how far along it you are. */
   private riding: { car: Vehicle; tag: Phaser.GameObjects.Text; route: { x: number; y: number }[]; leg: number; speed: number; drop: { x: number; y: number } } | null = null;
   private police: { officer: Figure; barrier: Phaser.GameObjects.Image; x: number; y: number }[] = [];
@@ -572,7 +573,7 @@ export class WorldScene extends Phaser.Scene {
       const speed = (lane < 0 ? -1 : 1) * (style.kind === "bus" ? 80 : 110 + Math.random() * 90);
       const body = vehicle(this, axis === "x" ? pos : roadLine + lane, axis === "x" ? roadLine + lane : pos, style);
       faceVehicle(body, axis === "x" ? speed : 0, axis === "y" ? speed : 0);
-      this.cars.push({ body, axis, speed });
+      this.cars.push({ body, axis, speed, kind: style.kind });
     }
   }
 
@@ -727,7 +728,10 @@ export class WorldScene extends Phaser.Scene {
     }
     const fromX = this.player.x;
     const fromY = this.player.y;
-    if (vx || vy) this.move(vx * SPEED * dt, vy * SPEED * dt, time);
+    // A bad injury slows you down: a cast or a sling.
+    const hurt = injured(state);
+    const pace = SPEED * (hurt === "fracture" ? 0.45 : hurt === "dislocation" ? 0.75 : 1);
+    if (vx || vy) this.move(vx * pace * dt, vy * pace * dt, time);
     const moved = this.player.x !== fromX || this.player.y !== fromY;
     animateWalk(this.player, time, moved, this.player.x - fromX, this.player.y - fromY);
     this.player.setDepth(5 + this.player.y / 10000 + 0.5);
@@ -817,7 +821,7 @@ export class WorldScene extends Phaser.Scene {
         const nx = this.player.x + away.x;
         const ny = this.player.y + away.y;
         if (!blocked(nx, ny, RADIUS, this.solids)) this.player.setPosition(nx, ny);
-        bump();
+        bump(car.kind);
         break;
       }
     }

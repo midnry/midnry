@@ -84,6 +84,8 @@ export type Cond = {
   hasJob?: boolean;
   asset?: string;
   noAsset?: string;
+  /** The electricity hasn't been cut off. */
+  powered?: boolean;
   any?: Cond[];
 };
 
@@ -122,6 +124,8 @@ export type Effect = {
   wash?: boolean;
   /** Something bad you were seen doing: costs reputation and is remembered. */
   offense?: string;
+  /** How you answer an EFCC invitation: "honour", "bribe" or "run". */
+  efcc?: string;
 };
 
 export type MapRect = { x: number; y: number; w: number; h: number; label?: string; color?: string; gapFrom?: number; gapTo?: number; kind?: "water" };
@@ -241,7 +245,7 @@ export type ActionDef = {
   effects: Effect[];
   text: string;
   /** Special handlers in the UI: sleep, work, apply, loans, hospital, japa. */
-  kind?: "sleep" | "work" | "apply" | "loans" | "japa" | "meet" | "drive";
+  kind?: "sleep" | "work" | "apply" | "loans" | "japa" | "meet" | "drive" | "doctor" | "paybill" | "unfreeze" | "efcc";
   job?: string;
 };
 
@@ -309,7 +313,8 @@ export type Life = {
   frozen: { amount: number; day: number; dirty: boolean } | null;
   /** Unpaid hospital bills. */
   hospitalBill: number;
-  injury: { kind: InjuryKind; day: number } | null;
+  /** `healsOn` is set once a doctor has treated it (or for cuts, which heal alone). */
+  injury: { kind: InjuryKind; day: number; healsOn?: number } | null;
   /** Electricity: what's owed, and whether the light has been cut. */
   power: { owed: number; cut: boolean };
   license: boolean;

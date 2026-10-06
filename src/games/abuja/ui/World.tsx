@@ -550,8 +550,8 @@ function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => v
         <p className="text-lg font-bold tabular-nums text-emerald-400">{naira(state.stats.money)}</p>
         <p className="text-[11px] text-slate-400">
           Day {state.day} · {SLOTS[Math.min(state.slot, 3)]} · Age {Math.floor(state.age)}
-          {owed ? <span className="text-red-400"> · owes {naira(owed)}</span> : null}
         </p>
+        {owed ? <p className="text-[11px] text-red-400">Owes {naira(owed)}</p> : null}
       </div>
       <div className="grid grid-cols-4 gap-x-3 gap-y-1 sm:grid-cols-7">
         <Bar label="Energy" icon="⚡" value={state.stats.energy} tone="bg-emerald-400" />

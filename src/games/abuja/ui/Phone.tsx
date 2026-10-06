@@ -1,21 +1,23 @@
 import { useState } from "react";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
-import { borrow, callContact, orderMeal, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
+import { borrow, callContact, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
 import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, netWorth, npcName } from "../systems/rules";
 import { RIDE_INFO, RIDE_MODES, fare, rideKm } from "../systems/rides";
 import { deleteSave, replace } from "../systems/store";
 import type { GameState } from "../systems/types";
+import { INJURY, injured } from "../systems/health";
 import { DELIVERY_FEE, MENU, daysUnwashed, hungerWord, isDirty, lifeOf, thirstWord } from "../systems/life";
 import { Linkup } from "./Linkup";
 import { btnGhost, btnPrimary } from "./theme";
 import { Trade } from "./Trade";
 import { WardrobePanel } from "./Wardrobe";
 
-export type PhoneApp = "home" | "food" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe";
+export type PhoneApp = "home" | "food" | "bills" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "wallet", label: "Wallet", icon: "💳", tint: "bg-blue-600" },
   { id: "food", label: "ChopNow", icon: "🍲", tint: "bg-amber-600" },
+  { id: "bills", label: "Bills", icon: "🧾", tint: "bg-cyan-700" },
   { id: "trade", label: "Trade", icon: "📈", tint: "bg-indigo-600" },
   { id: "linkup", label: "Linkup", icon: "💗", tint: "bg-pink-600" },
   { id: "loans", label: "QuickKash", icon: "💸", tint: "bg-red-600" },
@@ -57,6 +59,7 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
           {app === "home" ? <Home onApp={onApp} /> : null}
           {app === "wallet" ? <Wallet state={state} /> : null}
           {app === "food" ? <FoodApp state={state} /> : null}
+          {app === "bills" ? <Bills state={state} /> : null}
           {app === "loans" ? <Loans state={state} /> : null}
           {app === "jobs" ? <Jobs state={state} /> : null}
           {app === "contacts" ? <Contacts state={state} /> : null}
@@ -86,6 +89,52 @@ function Home({ onApp }: { onApp: (app: PhoneApp) => void }) {
         ))}
       </div>
       <p className="mt-8 text-xs text-slate-500">Coming in the next updates: {SOON.join(", ")}.</p>
+    </div>
+  );
+}
+
+function Bills({ state }: { state: GameState }) {
+  const l = lifeOf(state);
+  const hurt = injured(state);
+  const rent = state.background === "lapo" ? 8000 : 15000;
+  return (
+    <div className="grid gap-3">
+      <div className="rounded-2xl bg-white/5 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <p className="font-semibold">⚡ Electricity (AEDC)</p>
+          <p className={`text-sm font-semibold ${l.power.cut ? "text-red-400" : "text-emerald-400"}`}>{l.power.cut ? "Disconnected" : "Connected"}</p>
+        </div>
+        <p className="mt-1 text-sm text-slate-400">
+          {l.power.owed ? `You owe ${naira(l.power.owed)}${l.power.cut ? " plus a ₦2,000 reconnection fee" : ""}.` : "Paid up. The bill comes every week with rent."}
+        </p>
+        {l.power.cut ? <p className="mt-1 text-xs text-slate-400">Without light you can't study, learn online or use the washing machine at home.</p> : null}
+        {l.power.owed ? (
+          <button type="button" className={`${btnPrimary} mt-3 w-full`} onClick={() => payBill("power")}>
+            Pay {naira(l.power.owed + (l.power.cut ? 2000 : 0))}
+          </button>
+        ) : null}
+      </div>
+      <div className="rounded-2xl bg-white/5 p-4">
+        <p className="font-semibold">🏥 Garki General Hospital</p>
+        <p className="mt-1 text-sm text-slate-400">{l.hospitalBill ? `Unpaid bill: ${naira(l.hospitalBill)}. It counts as debt.` : "No hospital bills."}</p>
+        {hurt ? (
+          <p className="mt-1 text-sm text-red-400">
+            Injury: {INJURY[hurt].name}
+            {l.injury?.healsOn != null ? ` (treated, heals on day ${l.injury.healsOn})` : " (not treated yet: see a doctor)"}
+          </p>
+        ) : null}
+        {l.hospitalBill ? (
+          <button type="button" className={`${btnGhost} mt-3 w-full`} onClick={() => payBill("hospital")}>
+            Pay what you can
+          </button>
+        ) : null}
+      </div>
+      <div className="rounded-2xl bg-white/5 p-4 text-sm">
+        <p className="font-semibold">🏠 Every week, automatically</p>
+        <p className="mt-1 text-slate-400">
+          Rent {naira(rent)}, transport and data {naira(4500)}, electricity, and any QuickKash repayment due.
+        </p>
+      </div>
     </div>
   );
 }
@@ -379,6 +428,7 @@ function Life({ state }: { state: GameState }) {
       <Row label="Food" value={`${hungerWord(l.food)} (${l.food})`} tone={l.food < 25 ? "text-red-400" : ""} />
       <Row label="Water" value={`${thirstWord(l.water)} (${l.water})`} tone={l.water < 25 ? "text-red-400" : ""} />
       <Row label="Clothes" value={isDirty(state) ? `Dirty (${unwashed} days unwashed)` : unwashed ? "Clean, worn once" : "Fresh"} tone={isDirty(state) ? "text-red-400" : ""} />
+      {injured(state) ? <Row label="Injury" value={INJURY[injured(state)!].name} tone="text-red-400" /> : null}
       {l.offenses ? <Row label="Times caught misbehaving" value={String(l.offenses)} tone="text-red-400" /> : null}
       <Row label="Background" value={state.background === "lapo" ? "Lapo Baby" : "Average family"} />
       <Row label="Certificates" value={certs} />
