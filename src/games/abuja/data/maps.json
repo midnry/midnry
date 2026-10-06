@@ -88,16 +88,20 @@
       { "x": 1200, "y": 600, "w": 240, "h": 140, "label": "Camp clinic", "color": "#be123c" },
       { "x": 1200, "y": 860, "w": 420, "h": 160, "label": "Hostels", "color": "#334155" },
       { "x": 650, "y": 640, "w": 160, "h": 80, "label": "Suya", "color": "#9a3412" },
-      { "x": 860, "y": 640, "w": 160, "h": 80, "label": "Fried yam", "color": "#c2410c" }
+      { "x": 860, "y": 640, "w": 160, "h": 80, "label": "Fried yam", "color": "#c2410c" },
+      { "x": 120, "y": 830, "w": 280, "h": 150, "label": "Lecture hall", "color": "#1e3a8a" }
     ],
     "spots": {
       "gate": { "x": 260, "y": 420, "label": "Camp gate" },
+      "saed": { "x": 260, "y": 755, "label": "SAED skills tents" },
+      "lecture": { "x": 260, "y": 1060, "label": "Lecture hall" },
+      "sports": { "x": 1430, "y": 260, "label": "Sports field" },
       "parade": { "x": 1100, "y": 260, "label": "Parade ground" },
       "mammy": { "x": 820, "y": 900, "label": "Mammy market" },
       "hostels": { "x": 1400, "y": 1080, "label": "Hostels" },
       "clinic_back": { "x": 1520, "y": 670, "label": "Behind the clinic" },
       "board": { "x": 700, "y": 420, "label": "Posting board" }
     },
-    "beats": { "camp": "parade", "mammy": "mammy", "posting_talk": "hostels", "fixers": "clinic_back", "abuja_posting": "board", "away_posting": "board", "pass_out": "parade" }
+    "beats": { "camp": "parade", "activities": "saed", "lecture1": "lecture", "games": "sports", "lecture2": "lecture", "mammy": "mammy", "posting_talk": "hostels", "fixers": "clinic_back", "abuja_posting": "board", "away_posting": "board", "pass_out": "parade" }
   }
 }

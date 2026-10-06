@@ -38,5 +38,145 @@
     "events": [
       { "text": "The Abuja–Lokoja road is an adventure novel. You spend one Friday night in traffic behind a fallen trailer and make three friends.", "effects": [{ "stat": "stress", "add": 5 }, { "stat": "network", "add": 3 }] },
       { "text": "Your PPA is a local government office. Your job title is 'Assistant'. Of what, nobody knows.", "effects": [{ "stat": "stress", "add": -3 }] }
+    ] },
+  { "name": "Abia", "blurb": "God's Own State. Aba's markets make anything you can imagine, and some things you can't.",
+    "events": [
+      { "text": "Your PPA is a shoe factory in Aba. You learn how 'Made in Aba' becomes 'Made in Italy' with one label. The craftsmanship is real, though.", "effects": [{ "skill": "trade", "add": 5 }, { "stat": "network", "add": 3 }] },
+      { "text": "An Aba tailor makes you two native outfits for the price of one Abuja shirt. You look like money for the rest of the year.", "effects": [{ "stat": "reputation", "add": 3 }, { "stat": "money", "add": -10000 }] }
+    ] },
+  { "name": "Adamawa", "blurb": "Mountains, the Benue river, and Yola's hot, slow afternoons. Fura da nono at every junction.",
+    "events": [
+      { "text": "You teach at a girls' secondary school in Yola. Your best student wants to be an engineer. You help her apply to university.", "effects": [{ "skill": "education", "add": 4 }, { "stat": "reputation", "add": 4 }] },
+      { "text": "A CDS trip to the Sukur highlands. Ancient stone terraces, cold wind, and the best photographs you will ever take.", "effects": [{ "stat": "stress", "add": -6 }, { "skill": "content", "add": 3 }] }
+    ] },
+  { "name": "Akwa Ibom", "blurb": "Uyo is clean, calm and full of good food. Afang soup might change your life.",
+    "events": [
+      { "text": "Your PPA is the state ministry of information. The roads are smooth, the offices are cool, and the work is light.", "effects": [{ "stat": "network", "add": 4 }, { "stat": "stress", "add": -4 }] },
+      { "text": "A corper friend's mother teaches you to cook afang and edikang ikong. You will never respect Abuja buka soup again.", "effects": [{ "stat": "stress", "add": -5 }, { "skill": "hustle", "add": 2 }] }
+    ] },
+  { "name": "Anambra", "blurb": "Onitsha main market, Nnewi spare parts, and the most serious traders in West Africa.",
+    "events": [
+      { "text": "You serve at a trading company in Onitsha. Your oga can price a container of goods in his head faster than you can on a calculator.", "effects": [{ "skill": "trade", "add": 6 }, { "stat": "network", "add": 3 }] },
+      { "text": "An Nnewi spare-parts dealer offers you a small cut to find buyers in Abuja. You make a few sales.", "effects": [{ "stat": "money", "add": 30000 }, { "skill": "hustle", "add": 3 }] }
+    ] },
+  { "name": "Bauchi", "blurb": "Yankari Game Reserve, Wikki warm springs and wide open skies.",
+    "events": [
+      { "text": "Your CDS group takes a trip to Yankari. You swim in the Wikki warm spring and see elephants for the first time.", "effects": [{ "stat": "stress", "add": -8 }, { "stat": "network", "add": 3 }] },
+      { "text": "You teach maths at a rural school. The students walk five kilometres to class. You stop complaining about Abuja traffic.", "effects": [{ "skill": "education", "add": 4 }, { "stat": "resilience", "add": 4 }] }
+    ] },
+  { "name": "Bayelsa", "blurb": "Yenagoa, creeks, boats instead of buses, and fresh fish pepper soup.",
+    "events": [
+      { "text": "Your PPA is reached by boat. Every morning you put on a life jacket like it's a seatbelt. You learn to love the creeks.", "effects": [{ "stat": "resilience", "add": 4 }, { "stat": "network", "add": 3 }] },
+      { "text": "Flood season. Your lodge takes water and you move in with a family who treat you like their own child.", "effects": [{ "stat": "stress", "add": 6 }, { "stat": "network", "add": 4 }] }
+    ] },
+  { "name": "Borno", "blurb": "Maiduguri, the city that has survived everything. Corpers are posted to the safer capital, and the welcome is warm.",
+    "events": [
+      { "text": "You serve at a general hospital in Maiduguri. You see more courage in one week than in your whole life.", "effects": [{ "stat": "resilience", "add": 6 }, { "stat": "reputation", "add": 4 }] },
+      { "text": "Your landlady sends you dates and kilishi every Friday. 'You are far from home,' she says. You are not, anymore.", "effects": [{ "stat": "stress", "add": -5 }, { "stat": "network", "add": 3 }] }
+    ] },
+  { "name": "Delta", "blurb": "Warri no dey carry last. Sharp people, sharp jokes, and banga soup.",
+    "events": [
+      { "text": "Your PPA is an oil-servicing company in Warri. The staff speak pidgin faster than you can think. You learn fast.", "effects": [{ "skill": "hustle", "add": 4 }, { "stat": "network", "add": 4 }] },
+      { "text": "A Warri 'businessman' tries to recruit you into a scheme. You laugh him off. He laughs too. Nobody is fooled in Warri.", "effects": [{ "stat": "resilience", "add": 3 }] }
+    ] },
+  { "name": "Ebonyi", "blurb": "Abakaliki rice, salt lakes and the friendliest landlords in the South East.",
+    "events": [
+      { "text": "You serve at the state's rice mill. You learn how paddy becomes the rice on your plate. You'll never waste rice again.", "effects": [{ "skill": "trade", "add": 4 }, { "skill": "hustle", "add": 2 }] },
+      { "text": "Your community throws a party for the corpers. You eat so much abacha you skip dinner for two days.", "effects": [{ "stat": "stress", "add": -6 }, { "stat": "network", "add": 3 }] }
+    ] },
+  { "name": "Edo", "blurb": "Benin City: bronze casters, ancient walls and loud, proud people.",
+    "events": [
+      { "text": "Your PPA is a secondary school in Benin City. On weekends you visit Igun Street and watch bronze casters work like their ancestors did.", "effects": [{ "skill": "education", "add": 3 }, { "stat": "stress", "add": -4 }] },
+      { "text": "Every other person you meet has a cousin in Italy. You get very good at saying 'no thank you' to travel agents.", "effects": [{ "stat": "resilience", "add": 3 }, { "stat": "network", "add": 2 }] }
+    ] },
+  { "name": "Ekiti", "blurb": "Fountain of knowledge. Quiet hills, serious professors, and pounded yam with everything.",
+    "events": [
+      { "text": "You teach at a school where the principal wants every student in university. Your lessons are watched closely.", "effects": [{ "skill": "education", "add": 5 }, { "stat": "stress", "add": 3 }] },
+      { "text": "A retired professor in your street lends you books every week. You read more this year than in all of university.", "effects": [{ "skill": "education", "add": 4 }, { "stat": "stress", "add": -3 }] }
+    ] },
+  { "name": "Gombe", "blurb": "Jewel in the Savannah. Peaceful, green, and the cheapest rent you'll ever pay.",
+    "events": [
+      { "text": "Rent is so cheap you save almost your whole allawee. Your bank account has never looked healthier.", "effects": [{ "stat": "money", "add": 40000 }, { "stat": "stress", "add": -3 }] },
+      { "text": "You start a free evening computer class for secondary school leavers. Twenty students sign up.", "effects": [{ "skill": "tech", "add": 3 }, { "stat": "reputation", "add": 4 }] }
+    ] },
+  { "name": "Imo", "blurb": "Owerri: nightlife, shopping and some of the best hotels outside Lagos.",
+    "events": [
+      { "text": "Owerri nightlife is everything they said. Your allawee disappears faster than you planned.", "effects": [{ "stat": "money", "add": -30000 }, { "stat": "stress", "add": -8 }, { "stat": "network", "add": 4 }] },
+      { "text": "Your PPA is a private hospital. You help with records and patients. The doctor says you'd make a great administrator.", "effects": [{ "skill": "education", "add": 3 }, { "stat": "reputation", "add": 3 }] }
+    ] },
+  { "name": "Jigawa", "blurb": "Dutse's rock formations, farms as far as you can see, and people who greet you three times.",
+    "events": [
+      { "text": "You teach English at a rural school. By month three your students are reading story books aloud.", "effects": [{ "skill": "education", "add": 4 }, { "stat": "reputation", "add": 4 }] },
+      { "text": "Your neighbours insist you join them for meals every evening. You put on weight and lose all your loneliness.", "effects": [{ "stat": "stress", "add": -6 }, { "stat": "network", "add": 3 }] }
+    ] },
+  { "name": "Kaduna", "blurb": "The old capital of the North. Big roads, big markets and Kaduna polo on weekends.",
+    "events": [
+      { "text": "Your PPA is a state government agency. Files move slowly, but the director takes a liking to you.", "effects": [{ "stat": "network", "add": 5 }, { "skill": "education", "add": 2 }] },
+      { "text": "A Kaduna textile trader shows you how the market works. You flip some fabric in Abuja for a small profit.", "effects": [{ "stat": "money", "add": 25000 }, { "skill": "trade", "add": 3 }] }
+    ] },
+  { "name": "Katsina", "blurb": "Ancient city walls, the Gobarau minaret and very generous hosts.",
+    "events": [
+      { "text": "Your host family treat you like their own. By the end of the year you speak conversational Hausa.", "effects": [{ "stat": "network", "add": 4 }, { "skill": "trade", "add": 2 }] },
+      { "text": "You teach at a girls' school and help run a debate club. They beat a school from Kano in the state finals.", "effects": [{ "stat": "reputation", "add": 5 }, { "skill": "education", "add": 2 }] }
+    ] },
+  { "name": "Kebbi", "blurb": "Argungu fishing festival country, rice farms and long quiet evenings.",
+    "events": [
+      { "text": "You're there for the Argungu Fishing Festival: thousands of fishermen jump into the river at once. Unforgettable.", "effects": [{ "stat": "stress", "add": -7 }, { "skill": "content", "add": 3 }] },
+      { "text": "Your PPA is an agricultural project. You learn how Kebbi rice gets to Abuja markets, and who takes the profit.", "effects": [{ "skill": "trade", "add": 4 }, { "skill": "hustle", "add": 2 }] }
+    ] },
+  { "name": "Kwara", "blurb": "Ilorin: calm streets, amala, and a place where everybody seems related.",
+    "events": [
+      { "text": "Your PPA is the state broadcasting corporation. You present a youth show on Saturday mornings.", "effects": [{ "skill": "content", "add": 5 }, { "stat": "network", "add": 3 }] },
+      { "text": "Ilorin is so peaceful you sleep eight hours every night for the first time since secondary school.", "effects": [{ "stat": "stress", "add": -8 }, { "stat": "health", "add": 4 }] }
+    ] },
+  { "name": "Nasarawa", "blurb": "Next door to Abuja. Lafia's yams, salt flats and the chance to visit Abuja on weekends.",
+    "events": [
+      { "text": "You're posted to Keffi, an hour from Abuja. You spend weekends in Abuja making connections for after service.", "effects": [{ "stat": "network", "add": 6 }, { "stat": "money", "add": -10000 }] },
+      { "text": "Your PPA is a farm settlement. You learn how yams are stored and sold. Real agribusiness.", "effects": [{ "skill": "trade", "add": 4 }, { "stat": "health", "add": 3 }] }
+    ] },
+  { "name": "Niger", "blurb": "Minna: the hills, the dam at Shiroro, and suya on every street.",
+    "events": [
+      { "text": "You teach at a school in Minna. Your students are curious about Abuja and ask you a hundred questions a day.", "effects": [{ "skill": "education", "add": 4 }, { "stat": "reputation", "add": 3 }] },
+      { "text": "A CDS trip to the Gurara Falls. You stand in the spray and forget all your wahala.", "effects": [{ "stat": "stress", "add": -7 }, { "stat": "network", "add": 2 }] }
+    ] },
+  { "name": "Ondo", "blurb": "Akure, cocoa farms and the beaches of Ilaje.",
+    "events": [
+      { "text": "You serve at a cocoa cooperative. You learn how farmers get cheated by middlemen, and how to stop it.", "effects": [{ "skill": "trade", "add": 5 }, { "stat": "reputation", "add": 2 }] },
+      { "text": "You visit Idanre Hills and climb all 682 steps. Your legs never forgive you. Your Instagram does.", "effects": [{ "skill": "content", "add": 3 }, { "stat": "health", "add": 3 }] }
+    ] },
+  { "name": "Osun", "blurb": "Osogbo: the sacred grove, artists everywhere, and a slow, creative pace.",
+    "events": [
+      { "text": "Your PPA is an art gallery in Osogbo. You learn how artists price, sell and ship their work abroad.", "effects": [{ "skill": "trade", "add": 3 }, { "skill": "content", "add": 3 }] },
+      { "text": "You attend the Osun-Osogbo festival. The colours, the drums, the crowd. You write about it and it goes viral.", "effects": [{ "skill": "content", "add": 4 }, { "stat": "network", "add": 3 }] }
+    ] },
+  { "name": "Oyo", "blurb": "Ibadan: brown roofs, Bodija market, and the oldest university in Nigeria.",
+    "events": [
+      { "text": "Your PPA is a research institute at the University of Ibadan. A lecturer offers to supervise your master's someday.", "effects": [{ "skill": "education", "add": 5 }, { "stat": "network", "add": 3 }] },
+      { "text": "Ibadan is huge. You get lost in Dugbe market twice and come out with good deals both times.", "effects": [{ "skill": "trade", "add": 3 }, { "stat": "stress", "add": 3 }] }
+    ] },
+  { "name": "Plateau", "blurb": "Jos: cool weather, rocks everywhere and strawberries. The closest thing Nigeria has to a hill station.",
+    "events": [
+      { "text": "The cool Jos weather makes you feel like you're on holiday all year. You walk everywhere and get fit.", "effects": [{ "stat": "health", "add": 6 }, { "stat": "stress", "add": -5 }] },
+      { "text": "A Jos potato farmer asks you to help with his books. You find money he didn't know he was losing.", "effects": [{ "skill": "trade", "add": 4 }, { "stat": "network", "add": 3 }] }
+    ] },
+  { "name": "Sokoto", "blurb": "The seat of the Caliphate. History, hospitality and very, very hot afternoons.",
+    "events": [
+      { "text": "The heat is serious, but so is the hospitality. Your host family adopts you completely.", "effects": [{ "stat": "network", "add": 4 }, { "stat": "resilience", "add": 3 }] },
+      { "text": "You teach at an Islamiyya-and-western-education school and run a reading club in the evenings.", "effects": [{ "skill": "education", "add": 4 }, { "stat": "reputation", "add": 4 }] }
+    ] },
+  { "name": "Taraba", "blurb": "The Mambilla Plateau: tea plantations, cattle and cool green hills.",
+    "events": [
+      { "text": "You visit the Mambilla Plateau. Tea fields, cool mist and fresh milk. You don't want to leave.", "effects": [{ "stat": "stress", "add": -8 }, { "stat": "health", "add": 3 }] },
+      { "text": "Your PPA is a health centre in Jalingo. You help with a vaccination drive that reaches three villages.", "effects": [{ "stat": "reputation", "add": 5 }, { "stat": "resilience", "add": 3 }] }
+    ] },
+  { "name": "Yobe", "blurb": "Damaturu: quiet, dusty and full of people who make you feel at home. Corpers serve in the capital.",
+    "events": [
+      { "text": "You teach at a school that lost years to insecurity. The students are hungry to learn. So are you.", "effects": [{ "skill": "education", "add": 4 }, { "stat": "resilience", "add": 5 }] },
+      { "text": "A local trader teaches you the cattle and grain business. You understand Nigeria's food chain for the first time.", "effects": [{ "skill": "trade", "add": 4 }, { "skill": "hustle", "add": 2 }] }
+    ] },
+  { "name": "Zamfara", "blurb": "Gusau: farmland, gold rumours and very patient people. Corpers serve in the capital.",
+    "events": [
+      { "text": "You serve at the state secretariat. Paperwork is slow, but you learn how government really works.", "effects": [{ "skill": "education", "add": 3 }, { "stat": "network", "add": 4 }] },
+      { "text": "Everyone has a story about gold. You decide not to chase it. A wise decision.", "effects": [{ "stat": "resilience", "add": 4 }, { "stat": "stress", "add": -2 }] }
     ] }
 ]

@@ -219,63 +219,754 @@
       "start": {
         "text": "Your call-up letter drops. One year of national service. Without the NYSC certificate, most government and big corporate jobs will lock you out. With it, you will spend a year being called 'Corper'.",
         "choices": [
-          { "text": "Go to camp", "effects": [{ "flag": "did_nysc", "set": true }], "next": "camp" },
-          { "text": "Skip NYSC", "effects": [{ "flag": "no_nysc", "set": true }, { "log": "Skipped NYSC." }], "result": "Freedom now. Paperwork problems later.", "next": "@adult" }
+          {
+            "text": "Go to camp",
+            "effects": [
+              {
+                "flag": "did_nysc",
+                "set": true
+              }
+            ],
+            "next": "camp"
+          },
+          {
+            "text": "Skip NYSC",
+            "effects": [
+              {
+                "flag": "no_nysc",
+                "set": true
+              },
+              {
+                "log": "Skipped NYSC."
+              }
+            ],
+            "result": "Freedom now. Paperwork problems later.",
+            "next": "@adult"
+          }
         ]
       },
       "camp": {
-        "text": "Orientation camp, Kubwa. Three weeks of drills at 4:30 a.m., white shorts, and Mammy market suya at midnight. The soldiers shout. The cooks do not care.",
+        "text": "Orientation camp, Kubwa. Registration queues, white shorts, white canvas, and a soldier screaming \"Corper, double up!\" at 4:30 a.m. You swear the oath with two thousand other corpers. Three weeks start now.",
         "choices": [
-          { "text": "Throw yourself into camp life", "effects": [{ "stat": "network", "add": 8 }, { "stat": "health", "add": 5 }, { "stat": "reputation", "add": 4 }], "result": "You become platoon leader. Everyone knows you by the end of week one.", "next": "mammy" },
-          { "text": "Save energy, avoid drills where possible", "effects": [{ "stat": "stress", "add": -6 }], "result": "You perfect the art of hiding behind the clinic.", "next": "mammy" }
+          {
+            "text": "Throw yourself into camp life",
+            "effects": [
+              {
+                "stat": "network",
+                "add": 6
+              },
+              {
+                "stat": "health",
+                "add": 4
+              },
+              {
+                "stat": "reputation",
+                "add": 3
+              }
+            ],
+            "result": "You become your platoon's leader. Everyone knows your name by day three.",
+            "next": "activities"
+          },
+          {
+            "text": "Keep your head down and save energy",
+            "effects": [
+              {
+                "stat": "stress",
+                "add": -5
+              }
+            ],
+            "result": "You perfect the art of looking busy while doing nothing.",
+            "next": "activities"
+          }
+        ]
+      },
+      "activities": {
+        "text": "Afternoons are for camp activities. The SAED tents teach skills you can earn from. The Man O' War team runs obstacle courses. The cultural troupe practises dances from every state.",
+        "choices": [
+          {
+            "text": "SAED: learn ICT and web design",
+            "effects": [
+              {
+                "skill": "tech",
+                "add": 6
+              },
+              {
+                "flag": "saed",
+                "set": "ict"
+              }
+            ],
+            "result": "Two weeks of HTML, Excel and a certificate from a man who calls computers 'the system'. It's a start.",
+            "next": "lecture1"
+          },
+          {
+            "text": "SAED: learn fashion design or catering",
+            "effects": [
+              {
+                "skill": "trade",
+                "add": 5
+              },
+              {
+                "skill": "hustle",
+                "add": 2
+              },
+              {
+                "flag": "saed",
+                "set": "craft"
+              }
+            ],
+            "result": "You leave with a skill people will always pay for.",
+            "next": "lecture1"
+          },
+          {
+            "text": "Join the Man O' War drills",
+            "effects": [
+              {
+                "stat": "health",
+                "add": 6
+              },
+              {
+                "stat": "resilience",
+                "add": 5
+              },
+              {
+                "stat": "reputation",
+                "add": 2
+              }
+            ],
+            "result": "Rope climbs, mud crawls, river crossings. You come out tougher.",
+            "next": "lecture1"
+          },
+          {
+            "text": "Join the cultural troupe",
+            "effects": [
+              {
+                "stat": "network",
+                "add": 6
+              },
+              {
+                "stat": "stress",
+                "add": -4
+              }
+            ],
+            "result": "You learn three dances and thirty new friends.",
+            "next": "lecture1"
+          }
+        ]
+      },
+      "lecture1": {
+        "speaker": "Camp Commandant",
+        "text": "8 a.m. lecture in the hall: \"The NYSC Act, national unity and your duties as a corps member.\" Attendance will be taken. Officials walk the hostels looking for anyone hiding.",
+        "choices": [
+          {
+            "text": "Attend and take notes",
+            "effects": [
+              {
+                "skill": "education",
+                "add": 3
+              },
+              {
+                "stat": "stress",
+                "add": 2
+              }
+            ],
+            "result": "Long, hot and slow. But your name is on the attendance list.",
+            "next": "games"
+          },
+          {
+            "text": "Sleep in the hostel instead",
+            "effects": [
+              {
+                "flag": "skipped_lecture1",
+                "set": true
+              },
+              {
+                "chance": 0.6,
+                "then": [
+                  {
+                    "stat": "health",
+                    "add": -6
+                  },
+                  {
+                    "stat": "stress",
+                    "add": 8
+                  },
+                  {
+                    "offense": "noshow"
+                  },
+                  {
+                    "toast": "A soldier finds you under your mattress. Punishment: frog jumps round the parade ground, then cutting grass in the sun until 2 p.m."
+                  }
+                ],
+                "else": [
+                  {
+                    "stat": "stress",
+                    "add": -4
+                  },
+                  {
+                    "toast": "Nobody checks your hostel. You sleep like a baby. But your name is missing from the attendance list."
+                  }
+                ]
+              }
+            ],
+            "next": "games"
+          }
+        ]
+      },
+      "games": {
+        "text": "Sports week and social nights. The inter-platoon football final is on Saturday, the volleyball courts are busy, and Friday night is the Mr and Miss NYSC pageant and talent show.",
+        "choices": [
+          {
+            "text": "Play in the platoon football final",
+            "effects": [
+              {
+                "stat": "energy",
+                "add": -10
+              },
+              {
+                "chance": 0.5,
+                "then": [
+                  {
+                    "stat": "reputation",
+                    "add": 6
+                  },
+                  {
+                    "stat": "network",
+                    "add": 4
+                  },
+                  {
+                    "toast": "You score the winner in the 89th minute. Your platoon carries you round the field. Legend."
+                  }
+                ],
+                "else": [
+                  {
+                    "stat": "network",
+                    "add": 2
+                  },
+                  {
+                    "stat": "stress",
+                    "add": 3
+                  },
+                  {
+                    "toast": "You lose on penalties. Platoon 4 will never let you forget it."
+                  }
+                ]
+              }
+            ],
+            "next": "lecture2"
+          },
+          {
+            "text": "Enter Mr/Miss NYSC",
+            "effects": [
+              {
+                "chance": 0.35,
+                "then": [
+                  {
+                    "stat": "reputation",
+                    "add": 8
+                  },
+                  {
+                    "stat": "money",
+                    "add": 20000
+                  },
+                  {
+                    "npc": "love",
+                    "rel": 4
+                  },
+                  {
+                    "toast": "You're crowned! ₦20,000 prize money and a sash you will keep forever."
+                  }
+                ],
+                "else": [
+                  {
+                    "stat": "network",
+                    "add": 3
+                  },
+                  {
+                    "toast": "First runner-up. The crowd loved you anyway."
+                  }
+                ]
+              }
+            ],
+            "next": "lecture2"
+          },
+          {
+            "text": "Perform at the talent show",
+            "effects": [
+              {
+                "chance": 0.5,
+                "then": [
+                  {
+                    "stat": "reputation",
+                    "add": 5
+                  },
+                  {
+                    "skill": "content",
+                    "add": 4
+                  },
+                  {
+                    "toast": "Your performance goes viral on camp WhatsApp. Two thousand new fans."
+                  }
+                ],
+                "else": [
+                  {
+                    "stat": "stress",
+                    "add": 5
+                  },
+                  {
+                    "toast": "The microphone dies halfway through. People still laugh about it. Not with you."
+                  }
+                ]
+              }
+            ],
+            "next": "lecture2"
+          },
+          {
+            "text": "Tug of war and volleyball, just for fun",
+            "effects": [
+              {
+                "stat": "stress",
+                "add": -6
+              },
+              {
+                "stat": "network",
+                "add": 3
+              }
+            ],
+            "result": "No trophies, lots of laughs.",
+            "next": "lecture2"
+          }
+        ]
+      },
+      "lecture2": {
+        "speaker": "SAED Director",
+        "text": "Final week lecture: \"Entrepreneurship, business loans and life after service\", with a bank manager and a successful ex-corper. Missing lectures twice can delay your certificate.",
+        "choices": [
+          {
+            "text": "Attend and ask questions",
+            "effects": [
+              {
+                "skill": "trade",
+                "add": 3
+              },
+              {
+                "stat": "network",
+                "add": 3
+              }
+            ],
+            "result": "The ex-corper gives you her card. \"Call me when you start something.\"",
+            "next": "mammy"
+          },
+          {
+            "text": "Sneak to Mammy market instead",
+            "effects": [
+              {
+                "flag": "skipped_lecture2",
+                "set": true
+              },
+              {
+                "chance": 0.55,
+                "then": [
+                  {
+                    "stat": "stress",
+                    "add": 8
+                  },
+                  {
+                    "offense": "noshow"
+                  },
+                  {
+                    "toast": "Caught with suya in your hand. You spend the evening scrubbing the camp kitchen pots."
+                  }
+                ],
+                "else": [
+                  {
+                    "stat": "stress",
+                    "add": -3
+                  },
+                  {
+                    "toast": "You get away with it. The suya was worth it. Your attendance record disagrees."
+                  }
+                ]
+              }
+            ],
+            "next": "mammy"
+          }
         ]
       },
       "mammy": {
         "text": "Mammy market at night: fried yam, phone charging for ₦200, and every corps member in Nigeria sharing gist. Someone you met in camp asks you to join their table.",
         "choices": [
-          { "text": "Join and swap contacts", "effects": [{ "stat": "network", "add": 6 }, { "npc": "love", "rel": 5 }], "result": "New contacts from five states. One of them is starting a logistics business.", "next": "posting_talk" },
-          { "text": "Sell phone charging yourself", "effects": [{ "stat": "money", "add": 12000 }, { "skill": "hustle", "add": 4 }], "result": "One generator, twelve extensions, a business plan.", "next": "posting_talk" }
+          {
+            "text": "Join and swap contacts",
+            "effects": [
+              {
+                "stat": "network",
+                "add": 6
+              },
+              {
+                "npc": "love",
+                "rel": 5
+              }
+            ],
+            "result": "New contacts from five states. One of them is starting a logistics business.",
+            "next": "posting_talk"
+          },
+          {
+            "text": "Sell phone charging yourself",
+            "effects": [
+              {
+                "stat": "money",
+                "add": 12000
+              },
+              {
+                "skill": "hustle",
+                "add": 4
+              }
+            ],
+            "result": "One generator, twelve extensions, a business plan.",
+            "next": "posting_talk"
+          }
         ]
       },
       "posting_talk": {
         "text": "Posting day is close. Rumour says Nepo Baby corpers are already 'confirmed' for Abuja and Lagos. Around camp, fixers whisper that they can keep you in Abuja. For a price.",
         "choices": [
-          { "text": "Talk to the fixers", "next": "fixers" },
-          { "text": "Let fate decide", "next": "posting" }
+          {
+            "text": "Talk to the fixers",
+            "next": "fixers"
+          },
+          {
+            "text": "Let fate decide",
+            "next": "posting"
+          }
         ]
       },
       "fixers": {
         "special": "fixers",
         "text": "Behind the camp clinic, the fixers gather. Each one has a reputation, if you know who to ask. Stars shown above their heads come from other corpers' reviews.",
-        "choices": [{ "text": "Walk away and let fate decide", "next": "posting" }]
+        "choices": [
+          {
+            "text": "Walk away and let fate decide",
+            "next": "posting"
+          }
+        ]
       },
       "posting": {
         "text": "Posting letters are out.",
         "branch": [
-          { "if": { "flag": "stay_abuja" }, "next": "abuja_posting" },
-          { "next": "away_posting" }
+          {
+            "if": {
+              "flag": "stay_abuja"
+            },
+            "next": "abuja_posting"
+          },
+          {
+            "next": "away_posting"
+          }
         ]
       },
       "abuja_posting": {
-        "text": "Your letter says FCT, Abuja. You exhale. Nearby, a Nepo Baby corper did not even come to camp, and he is also posted to Abuja. Of course.",
+        "text": "Camp is over and your first allawee lands: ₦77,000. Your posting letter says FCT, Abuja. You exhale. Nearby, a Nepo Baby corper who never came to camp is also posted to Abuja. Of course.",
         "choices": [
-          { "text": "Take a PPA at a federal ministry", "effects": [{ "stat": "network", "add": 6 }, { "skill": "education", "add": 3 }], "result": "Your job is to carry files from Room 12 to Room 14. Twice a day.", "next": "pass_out" },
-          { "text": "Take a PPA at a tech startup in Wuse", "effects": [{ "skill": "tech", "add": 8 }], "result": "The startup has a PlayStation and no salaries. You learn plenty.", "next": "pass_out" }
+          {
+            "text": "Take a PPA at a federal ministry",
+            "effects": [
+              {
+                "stat": "network",
+                "add": 6
+              },
+              {
+                "skill": "education",
+                "add": 3
+              }
+            ],
+            "result": "Your job is to carry files from Room 12 to Room 14. Twice a day.",
+            "next": "service1"
+          },
+          {
+            "text": "Take a PPA at a tech startup in Wuse",
+            "effects": [
+              {
+                "skill": "tech",
+                "add": 8
+              }
+            ],
+            "result": "The startup has a PlayStation and no salaries. You learn plenty.",
+            "next": "service1"
+          }
+        ],
+        "effects": [
+          {
+            "stat": "money",
+            "add": 77000
+          },
+          {
+            "log": "Finished NYSC camp. First allowance: ₦77,000."
+          }
         ]
       },
       "away_posting": {
-        "text": "Your letter says: {state}. {state_blurb}",
+        "text": "Camp is over and your first allawee lands: ₦77,000. Your posting letter says: {state}. {state_blurb}",
+        "effects": [
+          {
+            "stat": "money",
+            "add": 77000
+          },
+          {
+            "log": "Finished NYSC camp. First allowance: ₦77,000."
+          }
+        ],
         "choices": [
-          { "text": "Report to your PPA and make the most of it", "effects": [{ "flag": "posted_away", "set": true }, { "stat": "network", "add": 5 }, { "skill": "hustle", "add": 3 }], "result": "Eleven months. Allawee every month: ₦77,000, when it comes. You learn a new place, new food, new people.", "next": "state_event" }
+          {
+            "text": "Report to your PPA and make the most of it",
+            "effects": [
+              {
+                "flag": "posted_away",
+                "set": true
+              },
+              {
+                "stat": "network",
+                "add": 5
+              },
+              {
+                "skill": "hustle",
+                "add": 3
+              }
+            ],
+            "result": "A new place, new food, new people. Eleven months of service start now.",
+            "next": "state_event"
+          }
         ]
       },
       "state_event": {
         "text": "{state_event}",
-        "choices": [{ "text": "Carry on", "next": "pass_out" }]
+        "choices": [
+          {
+            "text": "Carry on",
+            "next": "service1"
+          }
+        ]
+      },
+      "service1": {
+        "text": "Months 1 to 4 of service. Your allawee arrives every month: 4 × ₦77,000 = ₦308,000. Every Thursday is CDS (Community Development Service) with your group. Miss it and your local inspector takes note.",
+        "effects": [
+          {
+            "stat": "money",
+            "add": 308000
+          }
+        ],
+        "choices": [
+          {
+            "text": "Attend CDS faithfully",
+            "effects": [
+              {
+                "stat": "network",
+                "add": 4
+              },
+              {
+                "stat": "reputation",
+                "add": 3
+              }
+            ],
+            "result": "Your CDS group paints a primary school and runs a free health check. The community remembers you.",
+            "next": "service2"
+          },
+          {
+            "text": "Skip CDS and hustle on the side",
+            "effects": [
+              {
+                "stat": "money",
+                "add": 40000
+              },
+              {
+                "skill": "hustle",
+                "add": 3
+              },
+              {
+                "chance": 0.5,
+                "then": [
+                  {
+                    "flag": "skipped_cds",
+                    "set": true
+                  },
+                  {
+                    "offense": "noshow"
+                  },
+                  {
+                    "toast": "Your Local Government Inspector marks you absent three Thursdays in a row. A query letter follows."
+                  }
+                ],
+                "else": [
+                  {
+                    "toast": "Your CDS group covers for you. This time."
+                  }
+                ]
+              }
+            ],
+            "result": "₦40,000 extra from your side hustle.",
+            "next": "service2"
+          }
+        ]
+      },
+      "service2": {
+        "text": "Months 5 to 8. Another ₦308,000 of allawee (4 × ₦77,000). Your PPA pays nothing extra, but the allawee is steady. What do you do with it?",
+        "effects": [
+          {
+            "stat": "money",
+            "add": 308000
+          }
+        ],
+        "choices": [
+          {
+            "text": "Save most of it",
+            "effects": [
+              {
+                "stat": "stress",
+                "add": 2
+              },
+              {
+                "stat": "resilience",
+                "add": 3
+              }
+            ],
+            "result": "Garri and groundnut for dinner, but your savings grow.",
+            "next": "service3"
+          },
+          {
+            "text": "Enjoy it: you're young once",
+            "effects": [
+              {
+                "stat": "money",
+                "add": -150000
+              },
+              {
+                "stat": "stress",
+                "add": -10
+              },
+              {
+                "stat": "network",
+                "add": 3
+              }
+            ],
+            "result": "Owambes, new clothes and suya every weekend. ₦150,000 gone, no regrets. Mostly.",
+            "next": "service3"
+          },
+          {
+            "text": "Start a small side business",
+            "effects": [
+              {
+                "stat": "money",
+                "add": -100000
+              },
+              {
+                "skill": "trade",
+                "add": 4
+              },
+              {
+                "chance": 0.6,
+                "then": [
+                  {
+                    "stat": "money",
+                    "add": 190000
+                  },
+                  {
+                    "toast": "Your side business pays off: ₦190,000 back on ₦100,000."
+                  }
+                ],
+                "else": [
+                  {
+                    "stat": "money",
+                    "add": 40000
+                  },
+                  {
+                    "toast": "It doesn't take off. You get back ₦40,000 of your ₦100,000."
+                  }
+                ]
+              }
+            ],
+            "next": "service3"
+          }
+        ]
+      },
+      "service3": {
+        "text": "Months 9 to 11. The last ₦231,000 of allawee (3 × ₦77,000): twelve payments of ₦77,000 in all, counting camp. Time for final clearance from your Local Government Inspector.",
+        "effects": [
+          {
+            "stat": "money",
+            "add": 231000
+          }
+        ],
+        "choices": [
+          {
+            "text": "Go for final clearance",
+            "next": "clearance"
+          }
+        ]
+      },
+      "clearance": {
+        "text": "The inspector opens your file and checks your attendance.",
+        "branch": [
+          {
+            "if": {
+              "flag": "skipped_cds"
+            },
+            "next": "extension"
+          },
+          {
+            "if": {
+              "flag": "skipped_lecture1",
+              "any": [
+                {
+                  "flag": "skipped_lecture2"
+                }
+              ]
+            },
+            "next": "extension"
+          },
+          {
+            "next": "pass_out"
+          }
+        ]
+      },
+      "extension": {
+        "speaker": "Local Government Inspector",
+        "text": "\"Absent from lectures, absent from CDS. Your service is extended by two months.\" No allawee for the extra months, and your friends pass out without you.",
+        "choices": [
+          {
+            "text": "Serve the extra two months",
+            "effects": [
+              {
+                "stat": "stress",
+                "add": 12
+              },
+              {
+                "stat": "reputation",
+                "add": -3
+              },
+              {
+                "log": "NYSC service extended by two months for absences."
+              }
+            ],
+            "result": "Two long months later, your clearance is finally signed.",
+            "next": "pass_out"
+          }
+        ]
       },
       "pass_out": {
         "text": "Passing out parade. Khaki ironed sharp, certificate in hand. Real life starts now. Abuja is waiting, with its rent, its traffic, and its opportunities.",
-        "choices": [{ "text": "Collect your certificate", "effects": [{ "cert": "nysc" }, { "stat": "money", "add": 30000 }, { "log": "Completed NYSC." }], "next": "@adult" }]
+        "choices": [
+          {
+            "text": "Collect your certificate",
+            "effects": [
+              {
+                "cert": "nysc"
+              },
+              {
+                "log": "Completed NYSC."
+              }
+            ],
+            "next": "@adult"
+          }
+        ]
       }
     }
   },
