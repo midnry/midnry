@@ -24,6 +24,41 @@ export function BrowserFrame({ src, alt }: { src: string; alt: string }) {
 }
 
 /** A screenshot inside a phone frame. */
+/**
+ * A flat status bar drawn on one grid (390 × 54, like a phone's own points), so the
+ * time, the camera cut-out and the icons all sit on the same centre line.
+ */
+function StatusBar({ className }: { className: string }) {
+  const mid = 29; // the shared centre line
+  return (
+    <svg viewBox="0 0 390 54" className={`block w-full ${className}`} aria-hidden>
+      {/* Time, centred in the left section. */}
+      <text x="72" y={mid} textAnchor="middle" dominantBaseline="central" fill="currentColor" fontFamily="system-ui, -apple-system, sans-serif" fontSize="17" fontWeight="600">
+        9:41
+      </text>
+      {/* Camera cut-out, centred, with a lens on the right. */}
+      <rect x="133" y={mid - 18} width="124" height="36" rx="18" fill="#050608" />
+      <circle cx="238" cy={mid} r="6" fill="#121a3a" />
+      <circle cx="238" cy={mid} r="3" fill="#2b3d8f" />
+      {/* Signal, Wi-Fi and battery, centred in the right section and evenly spaced. */}
+      <g fill="currentColor">
+        <rect x="288" y={mid + 1.5} width="3.2" height="4" rx="1" />
+        <rect x="292.8" y={mid - 0.5} width="3.2" height="6" rx="1" />
+        <rect x="297.6" y={mid - 2.8} width="3.2" height="8.3" rx="1" />
+        <rect x="302.4" y={mid - 5.5} width="3.2" height="11" rx="1" />
+      </g>
+      <g fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round">
+        <path d={`M313 ${mid - 2} a 10 10 0 0 1 14 0`} />
+        <path d={`M316 ${mid + 1.2} a 5.8 5.8 0 0 1 8 0`} />
+      </g>
+      <circle cx="320" cy={mid + 4.2} r="1.6" fill="currentColor" />
+      <rect x="335" y={mid - 6} width="24" height="12" rx="3.6" fill="none" stroke="currentColor" strokeWidth="1.2" opacity="0.45" />
+      <rect x="337" y={mid - 4} width="20" height="8" rx="2" fill="currentColor" />
+      <path d={`M360.6 ${mid - 2} a 2 2 0 0 1 0 4 Z`} fill="currentColor" opacity="0.45" />
+    </svg>
+  );
+}
+
 /** A screenshot in a modern phone: thin titanium frame, slim black bezel, and a status bar that keeps the app clear of the camera cut-out. */
 export function PhoneFrame({
   src,
@@ -53,35 +88,7 @@ export function PhoneFrame({
         <div className="rounded-[2.75rem] bg-[#0b0d12] p-[7px]">
           <div className={`overflow-hidden rounded-[2.3rem] ${dark ? "bg-[#0b1a33]" : "bg-[#f4f7fb]"}`}>
             {/* Status bar: the camera sits here, so the app below never touches it. */}
-            <div className={`relative flex h-10 items-center justify-between pr-4 pl-6 ${ink}`} aria-hidden>
-              <span className="text-[12px] font-bold tracking-tight tabular-nums">9:41</span>
-              <span className="absolute top-2 left-1/2 h-[1.3rem] w-[26%] -translate-x-1/2 rounded-full bg-[#050608]">
-                <span className="absolute top-1/2 left-[14%] h-[58%] w-[42%] -translate-y-1/2 rounded-full bg-[#0d0f14]" />
-                <span className="absolute top-1/2 right-[11%] aspect-square h-[36%] -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_40%_40%,#5b6fd6,#1d2453_55%,#0b0e22)]" />
-              </span>
-              <span className="flex items-center gap-[5px]">
-                {/* Signal: four bold bars rising left to right. */}
-                <svg viewBox="0 0 17 11" className="h-[9px] w-auto fill-current">
-                  <rect x="0" y="7" width="3" height="4" rx="0.9" />
-                  <rect x="4.6" y="5" width="3" height="6" rx="0.9" />
-                  <rect x="9.2" y="2.6" width="3" height="8.4" rx="0.9" />
-                  <rect x="13.8" y="0" width="3" height="11" rx="0.9" />
-                </svg>
-                {/* Wi-Fi: three thick arcs over a dot. */}
-                <svg viewBox="0 0 16 12" className="h-[9px] w-auto fill-none stroke-current" strokeWidth="2" strokeLinecap="round">
-                  <path d="M1.6 4.3a9.4 9.4 0 0 1 12.8 0" />
-                  <path d="M4.2 7a5.6 5.6 0 0 1 7.6 0" />
-                  <path d="M6.8 9.6a1.8 1.8 0 0 1 2.4 0" />
-                </svg>
-                {/* Battery: rounded outline, full, with a small tip. */}
-                <span className="flex items-center">
-                  <span className="flex h-[11px] w-[22px] items-center rounded-[3.5px] border-[1.4px] border-current p-[1.5px] opacity-95">
-                    <span className="h-full w-full rounded-[1.6px] bg-current" />
-                  </span>
-                  <span className="ml-[1px] h-[4px] w-[1.6px] rounded-r-[1px] bg-current opacity-60" />
-                </span>
-              </span>
-            </div>
+            <StatusBar className={ink} />
             <img src={src} alt={alt} loading={eager ? "eager" : "lazy"} className="block aspect-[1/2] w-full rounded-b-[2.3rem] object-cover object-top" />
           </div>
         </div>
