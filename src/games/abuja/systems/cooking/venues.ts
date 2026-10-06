@@ -456,9 +456,11 @@ export function runService(s: GameState, vid: string, you: boolean, opts: { fest
     const specialist = cooks.find((c) => (r.course === "baked" && c.role === "baker") || (r.course === "dessert" && c.role === "pastry_chef"));
     const skill = Math.min(100, (specialist ? specialist.skill + 8 : headSkill) + (you ? 4 : 0) - (present.some((x) => x.role === "head_chef") ? 0 : 3));
     while (made < ordered) {
-      const res: { ok: boolean; dish?: Dish } = cookRecipe(s, v.id, r.id, staffPerf(r, skill, custom?.flavor ?? r.target), { custom: m.custom, tier: m.tier, staffSkill: skill });
+      const res: { ok: boolean; text: string; dish?: Dish; notes?: string[] } = cookRecipe(s, v.id, r.id, staffPerf(r, skill, custom?.flavor ?? r.target), { custom: m.custom, tier: m.tier, staffSkill: skill });
+      for (const n of res.notes ?? []) if (n.includes("broke")) notes.push(n.replace("Your", "The"));
       if (!res.ok || !res.dish) {
-        ranOut = true;
+        if (res.text.startsWith("Missing")) ranOut = true;
+        else notes.push(`Had to stop making ${r.name.toLowerCase()}: ${res.text.toLowerCase()}`);
         break;
       }
       made += r.serves;

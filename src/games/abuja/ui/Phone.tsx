@@ -198,6 +198,7 @@ function BusinessApp({ state }: { state: GameState }) {
         <p className="font-display text-2xl">Your businesses</p>
         <p className="text-sm opacity-90">Start small. Check in often. Grow when you can. The big leagues take months.</p>
         <p className="mt-2 text-xs opacity-80">{state.flags.cac ? "✅ Registered with CAC" : "Not registered with CAC yet: do it at the CAC office in Garki."}</p>
+        <p className="mt-1 text-xs opacity-80">🍳 Restaurants, cafés, food trucks and catering: run them hands-on from the Kitchen app.</p>
       </div>
       {mine.length ? (
         <div className="mt-4 grid gap-3">

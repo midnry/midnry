@@ -31,9 +31,10 @@ import {
 import { naira, SLOTS } from "../../systems/rules";
 import type { GameState } from "../../systems/types";
 import { btnGhost, btnPrimary, panel } from "../theme";
+import { BusinessTab } from "./Business";
 import { ChopGame, gameFor, HeatGame, PlateGame, SeasonPanel, TimingGame, WorkGame } from "./games";
 
-export type KitchenTab = "cook" | "pantry" | "share" | "recipes" | "lab" | "kit" | "shop" | "garden" | "school";
+export type KitchenTab = "cook" | "pantry" | "share" | "recipes" | "lab" | "kit" | "shop" | "garden" | "business" | "school";
 
 /** Where the kitchen screen was opened from. */
 export type KitchenOpen = { at: "home" | null; market: string | null; tab: KitchenTab };
@@ -49,6 +50,7 @@ const TABS: { id: KitchenTab; label: string; icon: string }[] = [
   { id: "kit", label: "Kitchen", icon: "🔪" },
   { id: "shop", label: "Shop", icon: "🛒" },
   { id: "garden", label: "Garden", icon: "🌱" },
+  { id: "business", label: "Business", icon: "🏪" },
   { id: "school", label: "Classes", icon: "👩‍🍳" },
 ];
 
@@ -142,6 +144,8 @@ export function KitchenScreen({ state, open, onClose }: { state: GameState; open
             <KitTab state={state} k={k} />
           ) : tab === "shop" ? (
             <ShopTab state={state} k={k} market={open.market} />
+          ) : tab === "business" ? (
+            <BusinessTab state={state} k={k} market={open.market} />
           ) : tab === "garden" ? (
             <GardenTab state={state} k={k} at={open.at} />
           ) : (
