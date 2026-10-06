@@ -121,7 +121,7 @@ function GamePage() {
               <h2 className="mt-2 font-display text-3xl tracking-tight text-balance sm:text-4xl">{f.title}</h2>
               <p className="mt-3 max-w-lg text-lg text-pretty text-muted">{f.text}</p>
             </div>
-            {f.phone ? <PhoneFrame src={shot(f.image)} alt={f.alt} /> : <BrowserFrame src={shot(f.image)} alt={f.alt} />}
+            {f.phone ? <PhoneFrame src={shot(f.image)} alt={f.alt} dark /> : <BrowserFrame src={shot(f.image)} alt={f.alt} />}
           </section>
         ))}
       </div>

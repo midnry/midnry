@@ -24,8 +24,22 @@ export function BrowserFrame({ src, alt }: { src: string; alt: string }) {
 }
 
 /** A screenshot inside a phone frame. */
-/** A screenshot in a modern phone: thin titanium frame, slim black bezel, a pill-shaped camera cut-out. */
-export function PhoneFrame({ src, alt, className = "", eager = false }: { src: string; alt: string; className?: string; eager?: boolean }) {
+/** A screenshot in a modern phone: thin titanium frame, slim black bezel, and a status bar that keeps the app clear of the camera cut-out. */
+export function PhoneFrame({
+  src,
+  alt,
+  className = "",
+  eager = false,
+  dark = false,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  eager?: boolean;
+  /** The screenshot has a dark top (the game): use a dark status bar to match. */
+  dark?: boolean;
+}) {
+  const ink = dark ? "text-white" : "text-[#0b0d12]";
   return (
     <div className={`relative mx-auto w-[min(16.5rem,70vw)] ${className}`}>
       {/* Side buttons: action and volume on the left, power on the right. */}
@@ -37,12 +51,30 @@ export function PhoneFrame({ src, alt, className = "", eager = false }: { src: s
       <div className="rounded-[2.9rem] bg-gradient-to-b from-[#6b7487] via-[#3f4757] to-[#59627a] p-[3px] shadow-[0_30px_60px_-24px_rgba(16,32,51,0.5),0_10px_20px_-10px_rgba(16,32,51,0.25)]">
         {/* Black bezel. */}
         <div className="rounded-[2.75rem] bg-[#0b0d12] p-[7px]">
-          <div className="relative overflow-hidden rounded-[2.3rem] bg-white">
-            <img src={src} alt={alt} loading={eager ? "eager" : "lazy"} className="block aspect-[1/2] w-full object-cover object-top" />
-            {/* Camera cut-out. */}
-            <span className="absolute top-[1.6%] left-1/2 h-[3.4%] w-[31%] -translate-x-1/2 rounded-full bg-[#0b0d12]" aria-hidden>
-              <span className="absolute top-1/2 right-[9%] aspect-square h-[46%] -translate-y-1/2 rounded-full bg-[#1b2333] ring-1 ring-[#2a3448]" />
-            </span>
+          <div className={`overflow-hidden rounded-[2.3rem] ${dark ? "bg-[#0b1a33]" : "bg-[#f4f7fb]"}`}>
+            {/* Status bar: the camera sits here, so the app below never touches it. */}
+            <div className={`relative flex h-10 items-center justify-between px-6 text-[11px] font-semibold ${ink}`} aria-hidden>
+              <span className="tabular-nums">9:41</span>
+              <span className="absolute top-2 left-1/2 h-[1.3rem] w-[27%] -translate-x-1/2 rounded-full bg-[#0b0d12]">
+                <span className="absolute top-1/2 right-[9%] aspect-square h-[46%] -translate-y-1/2 rounded-full bg-[#1b2333] ring-1 ring-[#2a3448]" />
+              </span>
+              <span className="flex items-center gap-1">
+                <svg viewBox="0 0 18 12" className="h-2.5 w-auto fill-current">
+                  <rect x="0" y="8" width="3" height="4" rx="0.8" />
+                  <rect x="5" y="5.5" width="3" height="6.5" rx="0.8" />
+                  <rect x="10" y="3" width="3" height="9" rx="0.8" />
+                  <rect x="15" y="0" width="3" height="12" rx="0.8" />
+                </svg>
+                <svg viewBox="0 0 16 12" className="h-2.5 w-auto fill-current">
+                  <path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0L8 11.5Zm-4.2-4.3L2.2 5.6a8.2 8.2 0 0 1 11.6 0l-1.6 1.6a5.9 5.9 0 0 0-8.4 0ZM.6 4 0 3.4a11.3 11.3 0 0 1 16 0l-.6.6-1 1a9.9 9.9 0 0 0-12.8 0Z" />
+                </svg>
+                <span className="relative ml-0.5 flex h-2.5 w-5 items-center rounded-[3px] border border-current p-[1.5px] opacity-90">
+                  <span className="h-full w-[78%] rounded-[1.5px] bg-current" />
+                  <span className="absolute top-1/2 -right-[3px] h-1 w-[2px] -translate-y-1/2 rounded-r-sm bg-current" />
+                </span>
+              </span>
+            </div>
+            <img src={src} alt={alt} loading={eager ? "eager" : "lazy"} className="block aspect-[1/2] w-full rounded-b-[2.3rem] object-cover object-top" />
           </div>
         </div>
       </div>
