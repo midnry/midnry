@@ -22,7 +22,7 @@ const seedOf = (id: string) => [...id].reduce((n, ch) => (n * 31 + ch.charCodeAt
 
 // Who's who: the same person always looks the same.
 const personOf = (p: PersonDef): Person => ({
-  look: randomLook(seedOf(`${p.map}:${p.id}`), { topColor: p.color, ...(p.build ? { build: p.build } : {}), ...p.look }),
+  look: randomLook(seedOf(`${p.map}:${p.id}`), { topColor: p.color, glasses: false, headphones: false, ...(p.build ? { build: p.build } : {}), ...p.look }),
   adult: !p.kid,
 });
 const playerOf = (state: GameState | null): Person => ({ look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18 });
