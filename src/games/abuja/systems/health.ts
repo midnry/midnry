@@ -77,7 +77,7 @@ export function nightlyHealth(s: GameState): string[] {
   const loss = inj.kind === "fracture" ? 6 : 3;
   s.stats.health = Math.max(1, s.stats.health - loss);
   s.stats.stress = Math.min(100, s.stats.stress + 4);
-  return [`Untreated ${INJURY[inj.kind].name} is getting worse (health -${loss}). Go to Garki General Hospital.`];
+  return [`Your untreated ${INJURY[inj.kind].name.replace(/^an? /, "")} is getting worse (health -${loss}). Go to Garki General Hospital.`];
 }
 
 /** See a doctor about an injury. Pay what you can; the rest goes on your hospital bill. */

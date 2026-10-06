@@ -180,6 +180,7 @@ export function weeklyBusiness(s: GameState): string[] {
       profit = -Math.round(def.start * 0.08);
       out.push(`${def.icon} AMAC task force sealed your ${def.name} for 'permits'. Losses: ₦${(-profit).toLocaleString("en")}.`);
     } else if (away > 14) out.push(`${def.icon} Nobody has seen you at your ${def.name} for weeks. Staff are stealing. Loss this week.`);
+    else out.push(`${def.icon} ${def.name}: ${profit >= 0 ? "+" : "-"}₦${Math.abs(profit).toLocaleString("en")} this week${away > 7 ? " (you haven't checked in lately)" : ""}.`);
     b.cash += profit;
     if (b.cash < -def.start) {
       out.push(`${def.icon} Your ${def.name} has collapsed under its debts. It's gone.`);
