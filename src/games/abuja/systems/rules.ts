@@ -1,4 +1,5 @@
 import { NPCS, POSTING_STATES } from "./data";
+import { drink, feed, offense, wash } from "./life";
 import { equity, shock } from "./market";
 import { partnerName, pregnancyText, romanceEffect } from "./romance";
 import type { Cond, Effect, GameState, SkillKey, StatKey } from "./types";
@@ -110,6 +111,10 @@ export function apply(state: GameState, effects: Effect[] | undefined, toasts: s
     if (effect.ending) state.ending = effect.ending;
     if (effect.market) shock(state, effect.market);
     if (effect.romance) toasts.push(...romanceEffect(state, effect.romance));
+    if (effect.food) feed(state, effect.food);
+    if (effect.water) drink(state, effect.water);
+    if (effect.wash) wash(state);
+    if (effect.offense) toasts.push(offense(state, effect.offense));
     if (effect.log) addLog(state, effect.log);
     if (effect.toast) toasts.push(fill(state, effect.toast));
   }

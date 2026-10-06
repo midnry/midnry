@@ -24,6 +24,7 @@ import {
   rollStars,
 } from "./rules";
 import { bus, update } from "./store";
+import { MENU, DELIVERY_FEE, burn, overnight } from "./life";
 import { closeDay, closePosition, deposit, ensureMarket, insiderTip, openPosition, tick, withdraw } from "./market";
 import {
   askOut,
@@ -175,6 +176,12 @@ function toast(s: GameState, text: string) {
   s.toast = text;
 }
 
+/** Add a line after whatever the toast already says. */
+function note(s: GameState, ...lines: string[]) {
+  const text = lines.filter(Boolean).join(" ");
+  if (text) s.toast = `${s.toast ? `${s.toast} ` : ""}${text}`;
+}
+
 export function clearToast() {
   update((s) => {
     s.toast = null;
@@ -208,6 +215,19 @@ export function skipToNight() {
 export function changeLooks(look: Look) {
   update((s) => {
     s.looks = { ...look, outfit: look.topColor };
+  });
+}
+
+/** ChopNow: a rider brings food to wherever you are. */
+export function orderMeal(id: string) {
+  update((s) => {
+    const meal = MENU.find((m) => m.id === id);
+    if (!meal || s.chapter || s.ending) return;
+    const total = meal.price + DELIVERY_FEE;
+    if (s.stats.money < total) return toast(s, `You need ${naira(total)} for that, delivery included.`);
+    addStat(s, "money", -total);
+    apply(s, [{ food: meal.food }, { water: meal.water }]);
+    toast(s, `${meal.icon} Your ${meal.name} from ${meal.from} arrives. The rider says "Enjoy!" ${naira(total)} with delivery.`);
   });
 }
 
@@ -288,6 +308,7 @@ export function doAction(placeId: string, actionId: string): "loans" | void {
 function spend(s: GameState, slots: number, energy: number) {
   s.slot += slots;
   addStat(s, "energy", energy);
+  note(s, ...burn(s, slots));
   const crashes = tick(s, slots);
   if (crashes.length) s.toast = `${s.toast ? `${s.toast} ` : ""}${crashes.join(" ")}`;
   if (s.slot >= SLOTS.length) {
@@ -427,6 +448,7 @@ function sleep(s: GameState) {
   else addStat(s, "health", 2);
   addStat(s, "stress", -8);
   if (!s.flags.fraud) addStat(s, "heat", -1);
+  note(s, ...overnight(s));
   const home = place(HOMES[s.background])!;
   s.pos = { x: home.x, y: home.y + 95 };
   s.district = home.district;
@@ -454,9 +476,10 @@ function sleep(s: GameState) {
 
 function weeklyBills(s: GameState) {
   const rent = RENT[s.background] ?? 10000;
-  const living = 7000 + 3000 + 1500;
+  // Food is now bought meal by meal; this is transport and data.
+  const living = 3000 + 1500;
   addStat(s, "money", -(rent + living));
-  const lines = [`Weekly bills: rent ${naira(rent)}, food, transport and data ${naira(living)}.`];
+  const lines = [`Weekly bills: rent ${naira(rent)}, transport and data ${naira(living)}.`];
   let missed = false;
   for (const loan of s.loans) {
     if (loan.nextDue > s.day) continue;

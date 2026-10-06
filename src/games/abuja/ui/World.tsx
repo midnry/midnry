@@ -18,6 +18,7 @@ import {
   takeOffer,
   talk,
 } from "../systems/engine";
+import { lifeOf } from "../systems/life";
 import { personLook } from "../systems/peoplelook";
 import { SLOTS, check, debt, fill, lockReason, naira } from "../systems/rules";
 import { bus, getState, input, loadControls, saveControls, type Controls, type NearThing } from "../systems/store";
@@ -531,6 +532,7 @@ function Bar({ label, value, tone }: { label: string; value: number; tone: strin
 
 function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => void }) {
   const owed = debt(state);
+  const l = lifeOf(state);
   return (
     <button
       type="button"
@@ -545,9 +547,11 @@ function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => v
           {owed ? <span className="text-red-400"> · owes {naira(owed)}</span> : null}
         </p>
       </div>
-      <div className="grid grid-cols-3 gap-x-3 gap-y-1 sm:grid-cols-5">
+      <div className="grid grid-cols-4 gap-x-3 gap-y-1 sm:grid-cols-7">
         <Bar label="Energy" value={state.stats.energy} tone="bg-emerald-400" />
         <Bar label="Health" value={state.stats.health} tone="bg-sky-400" />
+        <Bar label="Food" value={l.food} tone={l.food < 25 ? "bg-red-500" : "bg-amber-400"} />
+        <Bar label="Water" value={l.water} tone={l.water < 25 ? "bg-red-500" : "bg-cyan-300"} />
         <Bar label="Stress" value={state.stats.stress} tone="bg-orange-400" />
         <Bar label="Rep" value={state.stats.reputation} tone="bg-violet-300" />
         <Bar label="Heat" value={state.stats.heat} tone="bg-red-500" />

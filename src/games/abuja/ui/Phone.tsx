@@ -1,19 +1,21 @@
 import { useState } from "react";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
-import { borrow, callContact, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
+import { borrow, callContact, orderMeal, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
 import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, netWorth, npcName } from "../systems/rules";
 import { RIDE_INFO, RIDE_MODES, fare, rideKm } from "../systems/rides";
 import { deleteSave, replace } from "../systems/store";
 import type { GameState } from "../systems/types";
+import { DELIVERY_FEE, MENU, hungerWord, lifeOf, thirstWord } from "../systems/life";
 import { Linkup } from "./Linkup";
 import { btnGhost, btnPrimary } from "./theme";
 import { Trade } from "./Trade";
 import { WardrobePanel } from "./Wardrobe";
 
-export type PhoneApp = "home" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe";
+export type PhoneApp = "home" | "food" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "wallet", label: "Wallet", icon: "💳", tint: "bg-blue-600" },
+  { id: "food", label: "ChopNow", icon: "🍲", tint: "bg-amber-600" },
   { id: "trade", label: "Trade", icon: "📈", tint: "bg-indigo-600" },
   { id: "linkup", label: "Linkup", icon: "💗", tint: "bg-pink-600" },
   { id: "loans", label: "QuickKash", icon: "💸", tint: "bg-red-600" },
@@ -54,6 +56,7 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
         <div className="flex-1 overflow-y-auto p-4">
           {app === "home" ? <Home onApp={onApp} /> : null}
           {app === "wallet" ? <Wallet state={state} /> : null}
+          {app === "food" ? <FoodApp state={state} /> : null}
           {app === "loans" ? <Loans state={state} /> : null}
           {app === "jobs" ? <Jobs state={state} /> : null}
           {app === "contacts" ? <Contacts state={state} /> : null}
@@ -83,6 +86,52 @@ function Home({ onApp }: { onApp: (app: PhoneApp) => void }) {
         ))}
       </div>
       <p className="mt-8 text-xs text-slate-500">Coming in the next updates: {SOON.join(", ")}.</p>
+    </div>
+  );
+}
+
+function FoodApp({ state }: { state: GameState }) {
+  const l = lifeOf(state);
+  return (
+    <div>
+      <div className="rounded-2xl bg-amber-600 p-4">
+        <p className="font-display text-2xl">ChopNow</p>
+        <p className="text-sm opacity-90">Food to your door, anywhere in Abuja. Delivery {naira(DELIVERY_FEE)}.</p>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+        <div className="rounded-xl bg-white/5 p-2">
+          🍲 {hungerWord(l.food)} <span className="text-slate-400">({l.food})</span>
+        </div>
+        <div className="rounded-xl bg-white/5 p-2">
+          💧 {thirstWord(l.water)} <span className="text-slate-400">({l.water})</span>
+        </div>
+      </div>
+      <div className="mt-3 grid gap-2">
+        {MENU.map((meal) => {
+          const total = meal.price + DELIVERY_FEE;
+          return (
+            <button
+              key={meal.id}
+              type="button"
+              disabled={state.stats.money < total}
+              onClick={() => orderMeal(meal.id)}
+              className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left transition hover:bg-white/10 disabled:opacity-45"
+            >
+              <span className="text-2xl" aria-hidden>
+                {meal.icon}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">{meal.name}</span>
+                <span className="block text-xs text-slate-400">
+                  {meal.from} · {[meal.food ? `+${meal.food} food` : "", meal.water ? `+${meal.water} water` : ""].filter(Boolean).join(" · ")}
+                </span>
+              </span>
+              <span className="tabular-nums text-sm font-semibold">{naira(meal.price)}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-4 text-xs text-slate-500">Cheaper: cook at home, eat at a buka in the market, or buy pure water from any kiosk.</p>
     </div>
   );
 }

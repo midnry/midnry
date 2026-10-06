@@ -175,6 +175,44 @@
           "text": "You lie down. The neighbour's generator sings you a lullaby."
         },
         {
+          "id": "cook",
+          "label": "Cook garri and beans (₦800)",
+          "slots": 1,
+          "energy": -5,
+          "cost": 800,
+          "effects": [
+            {
+              "food": 45
+            }
+          ],
+          "text": "Garri, beans and a little palm oil. Not fancy, but your stomach is quiet now."
+        },
+        {
+          "id": "sachet_water",
+          "label": "Buy pure water sachets (₦200)",
+          "slots": 0,
+          "energy": 0,
+          "cost": 200,
+          "effects": [
+            {
+              "water": 45
+            }
+          ],
+          "text": "Two cold sachets from the kiosk outside. You bite the corner like a pro."
+        },
+        {
+          "id": "hand_wash",
+          "label": "Wash your clothes by hand",
+          "slots": 1,
+          "energy": -12,
+          "effects": [
+            {
+              "wash": true
+            }
+          ],
+          "text": "Bucket, bar soap, and a lot of scrubbing. Your clothes are clean and on the line."
+        },
+        {
           "id": "study",
           "label": "Study",
           "slots": 1,
@@ -238,6 +276,43 @@
           "text": "You rest. Your mother calls to ask if you have eaten."
         },
         {
+          "id": "cook",
+          "label": "Cook rice and stew (₦1,800)",
+          "slots": 1,
+          "energy": -5,
+          "cost": 1800,
+          "effects": [
+            {
+              "food": 55
+            }
+          ],
+          "text": "A proper pot of rice and stew. You'll eat it again tomorrow."
+        },
+        {
+          "id": "dispenser",
+          "label": "Drink water from the dispenser",
+          "slots": 0,
+          "energy": 0,
+          "effects": [
+            {
+              "water": 45
+            }
+          ],
+          "text": "Cold water from the dispenser. Refreshing."
+        },
+        {
+          "id": "machine_wash",
+          "label": "Wash your clothes (washing machine)",
+          "slots": 1,
+          "energy": -5,
+          "effects": [
+            {
+              "wash": true
+            }
+          ],
+          "text": "The machine hums while you scroll. Clean clothes, folded and ready."
+        },
+        {
           "id": "study",
           "label": "Study",
           "slots": 1,
@@ -263,6 +338,30 @@
             }
           ],
           "text": "You finish a module and feel unstoppable for ten minutes."
+        }
+      ]
+    },
+    {
+      "id": "laundry_gwarinpa", "icon": "🧺",
+      "name": "Spotless Dry Cleaners (Gwarinpa)",
+      "district": "gwarinpa",
+      "x": 620,
+      "y": 420,
+      "color": "#38bdf8",
+      "blurb": "Dry cleaning for people with meetings. Same day if you smile.",
+      "actions": [
+        {
+          "id": "laundry",
+          "label": "Same-day wash and press (₦4,000)",
+          "slots": 0,
+          "energy": 0,
+          "cost": 4000,
+          "effects": [
+            {
+              "wash": true
+            }
+          ],
+          "text": "Crisp, pressed and smelling of fabric softener."
         }
       ]
     },
@@ -351,6 +450,56 @@
             }
           ],
           "text": "You open shop under the umbrella."
+        },
+        {
+          "id": "pure_water",
+          "label": "Buy pure water (₦100)",
+          "slots": 0,
+          "energy": 0,
+          "cost": 100,
+          "effects": [
+            {
+              "water": 35
+            }
+          ],
+          "text": "A cold sachet from the woman beside the POS stand."
+        }
+      ]
+    },
+    {
+      "id": "laundry_nyanya", "icon": "🧺",
+      "name": "Mama Nkechi Laundry (Nyanya)",
+      "district": "nyanya",
+      "x": 1700,
+      "y": 1300,
+      "color": "#38bdf8",
+      "blurb": "Wash, starch and iron. Mama Nkechi knows everybody's business and everybody's shirt size.",
+      "actions": [
+        {
+          "id": "laundry",
+          "label": "Wash and iron everything (₦2,500)",
+          "slots": 0,
+          "energy": 0,
+          "cost": 2500,
+          "effects": [
+            {
+              "wash": true
+            }
+          ],
+          "text": "Mama Nkechi hands your clothes back clean, starched and folded. \"Next time don't wait so long.\""
+        },
+        {
+          "id": "pure_water",
+          "label": "Buy pure water (₦100)",
+          "slots": 0,
+          "energy": 0,
+          "cost": 100,
+          "effects": [
+            {
+              "water": 35
+            }
+          ],
+          "text": "A sachet from Mama Nkechi's freezer."
         }
       ]
     },
@@ -417,6 +566,35 @@
             }
           ],
           "text": "You buy wholesale and hawk it through the market."
+        },
+        {
+          "id": "buka",
+          "label": "Eat at a buka (₦1,500)",
+          "slots": 0,
+          "energy": 0,
+          "cost": 1500,
+          "effects": [
+            {
+              "food": 45
+            },
+            {
+              "water": 10
+            }
+          ],
+          "text": "Rice, beans, plantain and a piece of meat. Mama put serves with a smile."
+        },
+        {
+          "id": "pure_water",
+          "label": "Buy pure water (₦100)",
+          "slots": 0,
+          "energy": 0,
+          "cost": 100,
+          "effects": [
+            {
+              "water": 35
+            }
+          ],
+          "text": "A cold sachet of pure water. Life."
         }
       ]
     },
@@ -516,6 +694,22 @@
           "kind": "meet",
           "effects": [],
           "text": ""
+        },
+        {
+          "id": "cafe",
+          "label": "Coffee and a sandwich at the café (₦3,500)",
+          "slots": 0,
+          "energy": 0,
+          "cost": 3500,
+          "effects": [
+            {
+              "food": 25
+            },
+            {
+              "water": 25
+            }
+          ],
+          "text": "An overpriced latte and a sandwich. You feel like a startup founder."
         }
       ]
     },
@@ -684,6 +878,22 @@
           "lockedText": "Needs Driving 20 (lessons at the Garki hub)",
           "effects": [],
           "text": ""
+        },
+        {
+          "id": "corn",
+          "label": "Buy roasted corn and pure water (₦500)",
+          "slots": 0,
+          "energy": 0,
+          "cost": 500,
+          "effects": [
+            {
+              "food": 20
+            },
+            {
+              "water": 30
+            }
+          ],
+          "text": "Roasted corn and a sachet of water while the touts shout destinations."
         }
       ]
     },
@@ -903,6 +1113,26 @@
           "kind": "meet",
           "effects": [],
           "text": ""
+        },
+        {
+          "id": "restaurant",
+          "label": "Eat at a restaurant (₦9,000)",
+          "slots": 1,
+          "energy": 5,
+          "cost": 9000,
+          "effects": [
+            {
+              "food": 75
+            },
+            {
+              "water": 25
+            },
+            {
+              "stat": "stress",
+              "add": -6
+            }
+          ],
+          "text": "Air conditioning, a real menu and a waiter who calls you 'boss'."
         }
       ]
     },
@@ -1103,6 +1333,32 @@
             }
           ],
           "text": "Bags of rice and beans, one borrowed van, and a prayer."
+        },
+        {
+          "id": "roadside",
+          "label": "Eat roasted plantain and fish (₦1,000)",
+          "slots": 0,
+          "energy": 0,
+          "cost": 1000,
+          "effects": [
+            {
+              "food": 35
+            }
+          ],
+          "text": "Boli and fish, hot from the grill."
+        },
+        {
+          "id": "pure_water",
+          "label": "Buy pure water (₦100)",
+          "slots": 0,
+          "energy": 0,
+          "cost": 100,
+          "effects": [
+            {
+              "water": 35
+            }
+          ],
+          "text": "A cold sachet of pure water."
         }
       ]
     },

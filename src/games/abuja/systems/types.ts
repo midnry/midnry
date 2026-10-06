@@ -115,6 +115,13 @@ export type Effect = {
   market?: { asset: string; pct: number }[];
   /** Time slots this takes, for offers made in conversation. */
   time?: number;
+  /** Fill up food or water (negative to lose some). */
+  food?: number;
+  water?: number;
+  /** Wash your clothes. */
+  wash?: boolean;
+  /** Something bad you were seen doing: costs reputation and is remembered. */
+  offense?: string;
 };
 
 export type MapRect = { x: number; y: number; w: number; h: number; label?: string; color?: string; gapFrom?: number; gapTo?: number; kind?: "water" };
@@ -283,6 +290,41 @@ export type Loan = { id: string; principal: number; owed: number; weekly: number
 
 export type EndingId = "freedom" | "grass" | "jail" | "ninefive" | "broke" | "japa" | "cut";
 
+export type InjuryKind = "minor" | "dislocation" | "fracture";
+
+/** A business the player owns: what it is, how far it has grown, and cash it has made. */
+export type Business = { id: string; level: number; since: number; cash: number; lastVisit: number };
+
+/** Everyday life added after launch. Older saves have none; see systems/life.ts. */
+export type Life = {
+  /** 100 = full, 0 = starving. */
+  food: number;
+  /** 100 = well watered, 0 = dehydrated. */
+  water: number;
+  /** Day the clothes were last washed. */
+  washed: number;
+  /** Recent money coming in, to spot amounts far outside the usual range. */
+  credits: number[];
+  /** Money held by the bank while it checks a suspicious credit. */
+  frozen: { amount: number; day: number; dirty: boolean } | null;
+  /** Unpaid hospital bills. */
+  hospitalBill: number;
+  injury: { kind: InjuryKind; day: number } | null;
+  /** Electricity: what's owed, and whether the light has been cut. */
+  power: { owed: number; cut: boolean };
+  license: boolean;
+  car: "rented" | "owned" | null;
+  /** A rented car goes back after this day. */
+  carUntil: number;
+  /** Behind the wheel on the map. */
+  driving: boolean;
+  /** An open EFCC case: when it started and how strong the evidence is. */
+  efcc: { day: number; evidence: number } | null;
+  businesses: Business[];
+  /** Times caught doing something bad, for the Life app. */
+  offenses: number;
+};
+
 export type GameState = {
   version: 1;
   /** When this save was last written, to pick the newer of device and account saves. */
@@ -330,4 +372,6 @@ export type GameState = {
   eventCtx: { partner?: string; amount?: number; asset?: string };
   market: MarketState | null;
   task: Task | null;
+  /** Hunger, laundry, bills, driving and more. Missing in saves from before these existed. */
+  life?: Life;
 };
