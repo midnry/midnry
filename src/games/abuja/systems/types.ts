@@ -1,6 +1,8 @@
 // Shared types for Abuja Hustle. Content lives in ../data/*.json and follows
 // these shapes, so new chapters, events, jobs and places need no code changes.
 
+import type { Look } from "./character";
+
 export type Background = "lapo" | "average";
 export type Gender = "male" | "female";
 export type Stage = "primary" | "secondary" | "university" | "nysc" | "adult" | "ended";
@@ -18,7 +20,8 @@ export type StatKey =
 
 export type SkillKey = "tech" | "trade" | "hustle" | "education" | "driving" | "trading" | "content";
 
-export type Looks = { skin: string; hair: string; outfit: string };
+/** How the player looks. `outfit` is the top colour; the rest came later, so older saves may lack them. */
+export type Looks = { skin: string; hair: string; outfit: string } & Partial<Omit<Look, "skin" | "hair">>;
 
 export type Interest = "women" | "men" | "both";
 export type Personality = "calm" | "cunning" | "crazy";

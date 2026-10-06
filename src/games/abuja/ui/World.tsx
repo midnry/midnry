@@ -21,6 +21,7 @@ import { bus, input, type NearThing } from "../systems/store";
 import type { GameState } from "../systems/types";
 import { Phone, type PhoneApp } from "./Phone";
 import { StoryPanel } from "./StoryView";
+import { WardrobePanel } from "./Wardrobe";
 import { btnGhost, btnPrimary, panel } from "./theme";
 
 /** The walkable game: story chapters and adult Abuja share this view. */
@@ -33,6 +34,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const [phone, setPhone] = useState<PhoneApp | null>(null);
   const [blocked, setBlocked] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
+  const [wardrobe, setWardrobe] = useState(false);
   const inStory = Boolean(state.chapter);
 
   useEffect(() => {
@@ -70,10 +72,10 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
 
   // The world stands still while the pause menu is open. Esc or P toggles it.
   useEffect(() => {
-    input.paused = paused;
+    input.paused = paused || wardrobe;
     input.x = 0;
     input.y = 0;
-  }, [paused]);
+  }, [paused, wardrobe]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape" || event.key === "p" || event.key === "P") setPaused((value) => !value);
@@ -159,9 +161,29 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         className="absolute top-24 left-3 z-10 flex size-11 items-center justify-center rounded-xl border border-white/15 bg-stone-900/90 text-xl font-bold shadow-xl hover:bg-stone-800 sm:top-20 lg:top-3"
         aria-label="Pause"
       >
-        ⏸
+        <span className="flex gap-1" aria-hidden>
+          <span className="h-4 w-1.5 rounded-sm bg-stone-100" />
+          <span className="h-4 w-1.5 rounded-sm bg-stone-100" />
+        </span>
       </button>
-      {paused ? <PauseMenu onResume={() => setPaused(false)} onQuit={onQuit} /> : null}
+      {paused ? (
+        <PauseMenu
+          onResume={() => setPaused(false)}
+          onWardrobe={() => {
+            setPaused(false);
+            setWardrobe(true);
+          }}
+          onQuit={onQuit}
+        />
+      ) : null}
+      {wardrobe ? (
+        <div className="absolute inset-0 z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4" role="dialog" aria-label="Wardrobe">
+          <div className={`${panel} max-h-[92dvh] w-full max-w-2xl overflow-y-auto rounded-b-none p-4 sm:rounded-b-2xl sm:p-6`}>
+            <p className="mb-3 font-display text-2xl">👕 Wardrobe</p>
+            <WardrobePanel state={state} onDone={() => setWardrobe(false)} />
+          </div>
+        </div>
+      ) : null}
       {!inStory ? (
         <button
           type="button"
@@ -190,7 +212,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   );
 }
 
-function PauseMenu({ onResume, onQuit }: { onResume: () => void; onQuit: () => void }) {
+function PauseMenu({ onResume, onWardrobe, onQuit }: { onResume: () => void; onWardrobe: () => void; onQuit: () => void }) {
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-[2px]" role="dialog" aria-label="Paused">
       <div className={`${panel} w-full max-w-sm p-5`}>
@@ -199,6 +221,9 @@ function PauseMenu({ onResume, onQuit }: { onResume: () => void; onQuit: () => v
         <div className="mt-4 grid gap-2">
           <button type="button" className={btnPrimary} onClick={onResume}>
             ▶ Resume
+          </button>
+          <button type="button" className={btnGhost} onClick={onWardrobe}>
+            👕 Change outfit
           </button>
           <button type="button" className={btnGhost} onClick={onQuit}>
             Save and exit to title

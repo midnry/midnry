@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { HAIRS, OUTFITS, SKINS } from "../systems/art";
+import { PRESETS, type Look } from "../systems/character";
 import type { Background, Gender, Interest, Looks } from "../systems/types";
 import { Avatar } from "./Avatar";
+import { Dresser } from "./Dresser";
 import { btnGhost, btnPrimary, panel } from "./theme";
 
 export function AgeGate({ onPass }: { onPass: () => void }) {
@@ -101,22 +102,27 @@ export function Creator({
   const [gender, setGender] = useState<Gender>("female");
   const [background, setBackground] = useState<Background>("lapo");
   const [interest, setInterest] = useState<Interest>("men");
-  const [looks, setLooks] = useState<Looks>({ skin: SKINS[3]!, hair: "afro", outfit: OUTFITS[0]! });
+  const [look, setLook] = useState<Look>(PRESETS.female);
+  const [dressed, setDressed] = useState(false);
+  const [side, setSide] = useState<"front" | "back">("front");
   const ready = name.trim().length >= 2;
 
   return (
     <Screen>
       <div className={`${panel} mx-auto w-full max-w-3xl p-5 sm:p-8`}>
         <h1 className="font-display text-3xl tracking-tight">Who are you?</h1>
-        <div className="mt-6 grid gap-6 md:grid-cols-[180px_1fr]">
+        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-[180px_minmax(0,1fr)]">
           <div className="flex flex-col items-center gap-2">
             <div className="rounded-3xl bg-gradient-to-b from-amber-200/20 to-transparent p-3">
-              <Avatar looks={looks} size={150} />
+              <Avatar looks={look} size={150} side={side} />
             </div>
+            <button type="button" className="text-xs text-stone-400 underline-offset-2 hover:underline" onClick={() => setSide(side === "front" ? "back" : "front")}>
+              ↻ {side === "front" ? "See the back" : "See the front"}
+            </button>
             <p className="font-semibold">{name.trim() || "Your name"}</p>
             <p className="text-xs text-stone-400">{background === "lapo" ? "Lapo Baby" : "Average family"}</p>
           </div>
-          <div className="grid gap-5">
+          <div className="grid min-w-0 grid-cols-1 gap-5">
             <label className="block">
               <span className="text-sm text-stone-300">Name</span>
               <input
@@ -135,6 +141,8 @@ export function Creator({
                   onClick={() => {
                     setGender(item);
                     setInterest(item === "female" ? "men" : "women");
+                    // Until you start dressing up, the preview follows the choice.
+                    if (!dressed) setLook(PRESETS[item]);
                   }}
                 >
                   {item === "female" ? "Woman" : "Man"}
@@ -148,39 +156,16 @@ export function Creator({
                 </Chip>
               ))}
             </Pick>
-            <Pick label="Skin tone">
-              {SKINS.map((skin) => (
-                <button
-                  key={skin}
-                  type="button"
-                  aria-label={`Skin tone ${skin}`}
-                  aria-pressed={looks.skin === skin}
-                  onClick={() => setLooks({ ...looks, skin })}
-                  className={`size-10 rounded-full ring-offset-2 ring-offset-stone-900 ${looks.skin === skin ? "ring-2 ring-amber-400" : ""}`}
-                  style={{ background: skin }}
-                />
-              ))}
-            </Pick>
-            <Pick label="Hairstyle">
-              {HAIRS.map((hair) => (
-                <Chip key={hair.id} on={looks.hair === hair.id} onClick={() => setLooks({ ...looks, hair: hair.id })}>
-                  {hair.label}
-                </Chip>
-              ))}
-            </Pick>
-            <Pick label="Outfit">
-              {OUTFITS.map((outfit) => (
-                <button
-                  key={outfit}
-                  type="button"
-                  aria-label={`Outfit colour ${outfit}`}
-                  aria-pressed={looks.outfit === outfit}
-                  onClick={() => setLooks({ ...looks, outfit })}
-                  className={`size-10 rounded-xl ring-offset-2 ring-offset-stone-900 ${looks.outfit === outfit ? "ring-2 ring-amber-400" : ""}`}
-                  style={{ background: outfit }}
-                />
-              ))}
-            </Pick>
+            <div>
+              <p className="mb-2 text-sm text-stone-300">Style</p>
+              <Dresser
+                look={look}
+                onChange={(next) => {
+                  setLook(next);
+                  setDressed(true);
+                }}
+              />
+            </div>
           </div>
         </div>
 
@@ -204,7 +189,7 @@ export function Creator({
           type="button"
           className={`${btnPrimary} mt-6 w-full sm:w-auto`}
           disabled={!ready}
-          onClick={() => onDone({ name: name.trim(), gender, background, looks, interest })}
+          onClick={() => onDone({ name: name.trim(), gender, background, looks: { ...look, outfit: look.topColor }, interest })}
         >
           Begin life in Abuja
         </button>

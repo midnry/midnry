@@ -6,7 +6,8 @@ import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
 import { findPath, type Point } from "../systems/path";
 import type { MapRect } from "../systems/types";
-import { INK, animateWalk, building, figure, makeArt, rand, signpost, tileKey, type Figure } from "./art";
+import { fullLook, lookKey, randomLook, type Look } from "../systems/character";
+import { INK, animateWalk, building, figure, makeArt, queueCharacters, rand, signpost, tileKey, type Figure } from "./art";
 
 const SPEED = 230;
 const NEAR = 105;
@@ -17,7 +18,24 @@ const title = (scene: Phaser.Scene, x: number, y: number, text: string, size = 1
   scene.add
     .text(x, y, text, { fontFamily: "system-ui, sans-serif", fontSize: `${size}px`, fontStyle: "bold", color: fill, stroke: "#141414", strokeThickness: Math.max(4, size / 4) })
     .setOrigin(0.5, 0);
-const seedOf = (id: string) => [...id].reduce((n, ch) => n * 31 + ch.charCodeAt(0), 7) >>> 0;
+const seedOf = (id: string) => [...id].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) >>> 0, 7);
+
+// Who's who: the same person always looks the same.
+const personLook = (id: string, top: string): Look => randomLook(seedOf(id), { topColor: top });
+const WALKERS: Look[] = Array.from({ length: 10 }, (_, i) => randomLook(i * 131 + 7));
+const POLICE: Look = randomLook(4242, {
+  top: "shirt",
+  topColor: "#1e3a8a",
+  bottom: "jeans",
+  bottomColor: "#1b1b1d",
+  shoes: "sneakers",
+  shoeColor: "#1b1b1d",
+  hat: "cap",
+  hatColor: "#1b1b1d",
+  bag: false,
+  glasses: false,
+  headphones: false,
+});
 
 /** Ground texture for each district of the city. */
 const DISTRICT_TILE: Record<string, string> = {
@@ -54,6 +72,9 @@ const PROPS_ON: Record<string, string[]> = {
   plaza: ["flowers", "bush", "palm"],
 };
 
+/** Where the player stood when the scene redraws in place (say, after a change of outfit). */
+let carry: { mapId: string; x: number; y: number } | null = null;
+
 type Near = { kind: "place" | "person" | "beat"; id: string; label: string };
 type Interactable = Near & { x: number; y: number };
 
@@ -84,10 +105,20 @@ export class WorldScene extends Phaser.Scene {
   private arrow!: Phaser.GameObjects.Triangle;
   private night!: Phaser.GameObjects.Rectangle;
   private unsub: (() => void) | null = null;
+  private lookId = "";
   private offs: (() => void)[] = [];
 
   constructor() {
     super("world");
+  }
+
+  preload() {
+    const state = getState();
+    const mapId = state ? mapIdFor(state) : "city";
+    const looks: Look[] = [fullLook(state?.looks ?? {})];
+    if (state) looks.push(...peopleOn(state, mapId).map((p) => personLook(p.id, p.color)));
+    if (mapId === "city") looks.push(...WALKERS, POLICE);
+    queueCharacters(this, looks);
   }
 
   create() {
@@ -142,10 +173,19 @@ export class WorldScene extends Phaser.Scene {
       }),
     );
     // Restart when the story moves to another map; refresh markers on other changes.
+    this.lookId = lookKey(fullLook(state?.looks ?? {}));
     this.unsub = subscribe(() => {
       const next = getState();
       if (!next) return;
       if (mapIdFor(next) !== this.mapId) {
+        this.scene.restart();
+        return;
+      }
+      // New outfit from the wardrobe: redraw the world with the new look, right here.
+      const lookId = lookKey(fullLook(next.looks));
+      if (lookId !== this.lookId) {
+        this.lookId = lookId;
+        carry = { mapId: this.mapId, x: this.player.x, y: this.player.y };
         this.scene.restart();
         return;
       }
@@ -167,6 +207,9 @@ export class WorldScene extends Phaser.Scene {
 
   private startPoint() {
     const state = getState();
+    const kept = carry;
+    carry = null;
+    if (kept?.mapId === this.mapId) return { x: kept.x, y: kept.y };
     if (this.mapId !== "city") return MAPS[this.mapId]!.spawn;
     // Older saves may stand where the lake or a building now is.
     if (state?.pos.x) return freePoint(state.pos.x, state.pos.y, this.solids);
@@ -359,23 +402,22 @@ export class WorldScene extends Phaser.Scene {
     if (!state) return;
     for (const p of peopleOn(state, this.mapId)) {
       const at = personAt(p);
-      const body = figure(this, at.x, at.y, { outfit: color(p.color), seed: seedOf(p.id), name: p.name });
+      const body = figure(this, at.x, at.y, personLook(p.id, p.color), { name: p.name });
       body.setDepth(5 + at.y / 10000);
-      const bubble = this.add.text(26, -58, "💬", { fontSize: "20px" });
+      const bubble = this.add.text(14, body.headTop - 4, "💬", { fontSize: "16px" });
       body.add(bubble);
-      this.tweens.add({ targets: bubble, y: -66, duration: 800, yoyo: true, repeat: -1 });
+      this.tweens.add({ targets: bubble, y: body.headTop - 10, duration: 800, yoyo: true, repeat: -1 });
       this.people.push({ kind: "person", id: personKey(p), label: p.name, x: at.x, y: at.y, body, home: at, vx: 0, vy: 0 });
     }
   }
 
   private spawnTraffic() {
-    const outfits = [0xf59e0b, 0x22c55e, 0x60a5fa, 0xf472b6, 0xa78bfa, 0xe5e7eb, 0xef4444, 0x14b8a6];
     for (let i = 0; i < 26; i += 1) {
       const axis = i % 2 ? "x" : "y";
       const side = i % 4 < 2 ? 1 : -1;
       const line = (axis === "x" ? ROADS.ys[i % ROADS.ys.length]! : ROADS.xs[i % ROADS.xs.length]!) + side * 31;
       const pos = Math.random() * (axis === "x" ? WORLD.width : WORLD.height);
-      const sprite = figure(this, axis === "x" ? pos : line, axis === "x" ? line : pos, { outfit: outfits[i % outfits.length]!, seed: i * 37 + 5, scale: 0.42 });
+      const sprite = figure(this, axis === "x" ? pos : line, axis === "x" ? line : pos, WALKERS[i % WALKERS.length]!, { unit: 0.3 });
       this.walkers.push({ sprite, axis, speed: (Math.random() < 0.5 ? -1 : 1) * (25 + Math.random() * 25) });
     }
     const paints = [0xe11d48, 0x2563eb, 0xf8fafc, 0x16a34a, 0x0f172a, 0x9ca3af];
@@ -398,21 +440,13 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private makePlayer(x: number, y: number) {
-    const state = getState();
-    const looks = state?.looks;
-    const me = figure(this, x, y, {
-      outfit: color(looks?.outfit ?? "#1d4ed8"),
-      skin: looks ? color(looks.skin) : undefined,
-      hair: looks?.hair,
-      name: "YOU",
-      nameColor: "#fbbf24",
-      scale: 0.8,
-    });
-    const halo = this.add.ellipse(0, 36, 70, 24, 0xfbbf24, 0.25).setStrokeStyle(3, 0xfbbf24, 0.95);
+    const me = figure(this, x, y, fullLook(getState()?.looks ?? {}), { name: "YOU", nameColor: "#fbbf24", unit: 0.52 });
+    const halo = this.add.ellipse(0, 20, 50, 17, 0xfbbf24, 0.25).setStrokeStyle(3, 0xfbbf24, 0.95);
     me.addAt(halo, 0);
     this.tweens.add({ targets: halo, scaleX: 1.15, scaleY: 1.15, alpha: 0.6, duration: 700, yoyo: true, repeat: -1 });
     return me;
   }
+
 
   private makeMarker(tint: number, glyph: string) {
     const ring = this.add.circle(0, 0, 34, tint, 0.2).setStrokeStyle(3, tint, 1);
@@ -450,7 +484,7 @@ export class WorldScene extends Phaser.Scene {
         [1600, 1100],
       ] as const) {
         const barrier = this.add.image(x, y, "barrier").setDepth(7);
-        const officer = figure(this, x + 34, y - 34, { outfit: 0x1e3a8a, seed: x + y, name: "POLICE", nameColor: "#93c5fd" });
+        const officer = figure(this, x + 34, y - 34, POLICE, { name: "POLICE", nameColor: "#93c5fd" });
         officer.setDepth(5 + (y - 34) / 10000);
         this.police.push({ officer, barrier, x, y });
       }
@@ -508,7 +542,7 @@ export class WorldScene extends Phaser.Scene {
     const fromY = this.player.y;
     if (vx || vy) this.move(vx * SPEED * dt, vy * SPEED * dt, time);
     const moved = this.player.x !== fromX || this.player.y !== fromY;
-    animateWalk(this.player, time, moved, this.player.x - fromX);
+    animateWalk(this.player, time, moved, this.player.x - fromX, this.player.y - fromY);
     this.player.setDepth(5 + this.player.y / 10000 + 0.5);
 
     this.checkNear();
@@ -633,7 +667,7 @@ export class WorldScene extends Phaser.Scene {
       if (w.axis === "x") w.sprite.x = wrapped;
       else w.sprite.y = wrapped;
       w.sprite.setDepth(5 + w.sprite.y / 10000);
-      animateWalk(w.sprite, time, true, w.axis === "x" ? w.speed : 0);
+      animateWalk(w.sprite, time, true, w.axis === "x" ? w.speed : 0, w.axis === "y" ? w.speed : 0);
     }
     for (const car of this.cars) {
       const max = (car.axis === "x" ? WORLD.width : WORLD.height) + 60;
@@ -652,7 +686,7 @@ export class WorldScene extends Phaser.Scene {
       const ok = Math.hypot(nx - p.home.x, ny - p.home.y) < 40 && !blocked(nx, ny, 10, this.solids);
       if (ok) p.body.setPosition(nx, ny);
       p.body.setDepth(5 + p.body.y / 10000);
-      animateWalk(p.body, time + p.home.x, ok, p.vx);
+      animateWalk(p.body, time + p.home.x, ok, p.vx, p.vy);
     }
   }
 }

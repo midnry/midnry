@@ -7,8 +7,9 @@ import type { GameState } from "../systems/types";
 import { Linkup } from "./Linkup";
 import { btnGhost, btnPrimary } from "./theme";
 import { Trade } from "./Trade";
+import { WardrobePanel } from "./Wardrobe";
 
-export type PhoneApp = "home" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade";
+export type PhoneApp = "home" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "wallet", label: "Wallet", icon: "💳", tint: "bg-emerald-600" },
@@ -19,6 +20,7 @@ const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "contacts", label: "Contacts", icon: "👥", tint: "bg-violet-600" },
   { id: "map", label: "Map", icon: "🗺️", tint: "bg-amber-600" },
   { id: "stats", label: "Life", icon: "📊", tint: "bg-teal-600" },
+  { id: "wardrobe", label: "Wardrobe", icon: "👕", tint: "bg-orange-500" },
   { id: "settings", label: "Settings", icon: "⚙️", tint: "bg-stone-600" },
 ];
 
@@ -59,6 +61,7 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
           {app === "settings" ? <Settings /> : null}
           {app === "linkup" ? <Linkup state={state} /> : null}
           {app === "trade" ? <Trade state={state} /> : null}
+          {app === "wardrobe" ? <WardrobePanel state={state} onDone={() => onApp("home")} /> : null}
         </div>
       </div>
     </div>

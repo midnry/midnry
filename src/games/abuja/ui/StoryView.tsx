@@ -34,7 +34,7 @@ export function StoryPanel({ state }: { state: GameState }) {
       <div className={`mx-auto max-w-2xl rounded-3xl bg-gradient-to-b ${STAGE_TINT[def.stage] ?? ""} to-transparent p-1`}>
         <div className={`${panel} p-5 sm:p-8`}>
           <div className="flex items-center gap-3">
-            <Avatar looks={state.looks} size={52} />
+            <Avatar looks={state.looks} size={52} view="head" />
             <div className="min-w-0">
               <p className="text-xs font-semibold tracking-widest text-amber-400 uppercase">{def.title}</p>
               <p className="text-sm text-stone-400">

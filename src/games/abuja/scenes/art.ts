@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import { HAIR_COLOR, SKINS } from "../systems/art";
+import { HIP_Y, LEG_BOX, UPPER_BOX, characterParts, lookKey, type Look } from "../systems/character";
 
 // Cartoon art drawn in code: bold dark outlines, flat colours, one shade.
 // Every look is a texture key, so real sprite sheets can replace any of them
@@ -84,119 +84,107 @@ function makeTiles(scene: Phaser.Scene) {
   }
 }
 
-// ── Characters: bean bodies, tinted per outfit ──────────────────────────────
+// ── Characters: chibi people drawn as SVG (systems/character.ts) ────────────
 
-export const HAIR_STYLES = ["lowcut", "afro", "braids", "cornrows", "bun", "bald"] as const;
+/** Texture pixels per drawing unit: crisp on phones without wasting memory. */
+const RES = 1.8;
 
-function makeCharacters(scene: Phaser.Scene) {
-  // Body: white so it can be tinted to any outfit; shading in greys survives the tint.
-  make(scene, "bean", 64, 72, (g) => {
-    g.fillStyle(0xbfbfbf, 1).fillRoundedRect(4, 30, 14, 26, 6); // backpack
-    g.lineStyle(LINE, INK, 1).strokeRoundedRect(4, 30, 14, 26, 6);
-    g.fillStyle(0xffffff, 1).fillRoundedRect(12, 12, 40, 54, 20);
-    g.fillStyle(0xd9d9d9, 1).fillRoundedRect(36, 18, 13, 44, { tl: 0, tr: 16, bl: 0, br: 16 });
-    g.lineStyle(LINE, INK, 1).strokeRoundedRect(12, 12, 40, 54, 20);
-  });
-  make(scene, "leg", 16, 14, (g) => {
-    g.fillStyle(0xffffff, 1).fillRoundedRect(2, 1, 12, 11, 5);
-    g.lineStyle(3, INK, 1).strokeRoundedRect(2, 1, 12, 11, 5);
-  });
-  // Face window (the "visor"), tinted to skin tone.
-  make(scene, "visor", 40, 28, (g) => {
-    g.fillStyle(0xffffff, 1).fillRoundedRect(3, 3, 34, 22, 11);
-    g.fillStyle(0xe6e6e6, 1).fillRoundedRect(22, 6, 12, 16, { tl: 0, tr: 8, bl: 0, br: 8 });
-    g.lineStyle(3, INK, 1).strokeRoundedRect(3, 3, 34, 22, 11);
-  });
-  make(scene, "eyes", 24, 12, (g) => {
-    g.fillStyle(INK, 1).fillCircle(5, 6, 3.4).fillCircle(17, 6, 3.4);
-    g.fillStyle(0xffffff, 1).fillCircle(6, 5, 1.2).fillCircle(18, 5, 1.2);
-  });
+function makeShadow(scene: Phaser.Scene) {
   make(scene, "shadow", 48, 14, (g) => {
     g.fillStyle(0x000000, 0.28).fillEllipse(24, 7, 46, 12);
   });
-  const hair = hex(HAIR_COLOR);
-  for (const style of HAIR_STYLES) {
-    make(scene, `hair_${style}`, 56, 34, (g) => {
-      g.fillStyle(hair, 1);
-      g.lineStyle(3, INK, 1);
-      if (style === "afro") {
-        g.fillCircle(28, 20, 15).strokeCircle(28, 20, 15);
-        g.fillCircle(16, 22, 9).fillCircle(40, 22, 9);
-      } else if (style === "lowcut") {
-        g.fillRoundedRect(12, 18, 32, 12, { tl: 12, tr: 12, bl: 0, br: 0 });
-      } else if (style === "cornrows") {
-        g.fillRoundedRect(12, 16, 32, 14, { tl: 12, tr: 12, bl: 0, br: 0 });
-        g.lineStyle(2, 0x3a2a22, 1);
-        for (let x = 18; x <= 38; x += 6) g.beginPath().moveTo(x, 18).lineTo(x, 29).strokePath();
-      } else if (style === "braids") {
-        g.fillRoundedRect(12, 16, 32, 14, { tl: 12, tr: 12, bl: 0, br: 0 });
-        g.fillRoundedRect(8, 20, 7, 14, 3).fillRoundedRect(41, 20, 7, 14, 3);
-      } else if (style === "bun") {
-        g.fillRoundedRect(12, 18, 32, 12, { tl: 12, tr: 12, bl: 0, br: 0 });
-        g.fillCircle(28, 10, 8).strokeCircle(28, 10, 8);
-      } else {
-        g.fillStyle(0xffffff, 0.35).fillEllipse(22, 26, 8, 4);
-      }
-    });
-  }
 }
 
-export type Figure = Phaser.GameObjects.Container & { legs?: Phaser.GameObjects.Image[]; bodyParts?: Phaser.GameObjects.Container };
+/** Queue the textures for these looks in the scene's loader (call from preload). */
+export function queueCharacters(scene: Phaser.Scene, looks: Look[]) {
+  const urls: string[] = [];
+  const seen = new Set<string>();
+  for (const look of looks) {
+    const key = lookKey(look);
+    if (seen.has(key) || scene.textures.exists(`ch_${key}_front`)) continue;
+    seen.add(key);
+    for (const [part, svg] of Object.entries(characterParts(look, RES))) {
+      const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+      urls.push(url);
+      scene.load.svg(`ch_${key}_${part}`, url);
+    }
+  }
+  if (urls.length) scene.load.once("complete", () => urls.forEach((url) => URL.revokeObjectURL(url)));
+}
 
-/** A bean character. Skin and hair default from a seed, so crowds look varied. */
-export function figure(
-  scene: Phaser.Scene,
-  x: number,
-  y: number,
-  opts: { outfit: number; skin?: number; hair?: string; seed?: number; name?: string; nameColor?: string; scale?: number },
-): Figure {
-  const seed = opts.seed ?? Math.floor(x * 7 + y * 13);
-  const skin = opts.skin ?? hex(SKINS[seed % SKINS.length]!);
-  const hair = opts.hair ?? HAIR_STYLES[seed % HAIR_STYLES.length]!;
-  const legL = scene.add.image(-9, 30, "leg").setTint(shade(opts.outfit, 0.8));
-  const legR = scene.add.image(9, 30, "leg").setTint(shade(opts.outfit, 0.8));
-  const parts = scene.add.container(0, 0, [
-    scene.add.image(0, -4, "bean").setTint(opts.outfit),
-    scene.add.image(4, -12, "visor").setTint(skin),
-    scene.add.image(5, -12, "eyes"),
-    scene.add.image(0, -38, `hair_${hair}`),
-  ]);
-  const items: Phaser.GameObjects.GameObject[] = [scene.add.image(0, 36, "shadow"), legL, legR, parts];
+export type Figure = Phaser.GameObjects.Container & {
+  rig: Phaser.GameObjects.Container;
+  legs: [Phaser.GameObjects.Image, Phaser.GameObjects.Image];
+  front: Phaser.GameObjects.Image;
+  back: Phaser.GameObjects.Image;
+  /** Height of the top of the head above the figure's position, in pixels (negative). */
+  headTop: number;
+  unit: number;
+};
+
+const FEET = 22; // feet sit this many pixels below the figure's position
+
+/** A person. `unit` is pixels per drawing unit: about 0.46 for people, smaller for crowds. */
+export function figure(scene: Phaser.Scene, x: number, y: number, look: Look, opts: { name?: string; nameColor?: string; unit?: number } = {}): Figure {
+  const unit = opts.unit ?? 0.46;
+  const key = `ch_${lookKey(look)}`;
+  const legY = 0;
+  const legL = scene.add.image(-11, legY, `${key}_leg`).setOrigin(0.5, 0).setScale(1 / RES);
+  const legR = scene.add.image(11, legY, `${key}_leg`).setOrigin(0.5, 0).setScale(1 / RES).setFlipX(true);
+  const top = -HIP_Y + UPPER_BOX.top;
+  const front = scene.add.image(-UPPER_BOX.w / 2, top, `${key}_front`).setOrigin(0, 0).setScale(1 / RES);
+  const back = scene.add.image(-UPPER_BOX.w / 2, top, `${key}_back`).setOrigin(0, 0).setScale(1 / RES).setVisible(false);
+  const rig = scene.add.container(0, FEET - LEG_BOX.h * unit, [legL, legR, front, back]).setScale(unit);
+  const headTop = FEET - (LEG_BOX.h + HIP_Y + 2) * unit;
+  const items: Phaser.GameObjects.GameObject[] = [scene.add.image(0, FEET - 2, "shadow").setScale(unit * 2.2, unit * 2), rig];
   if (opts.name) {
     items.push(
       scene.add
-        .text(0, -68, opts.name, {
+        .text(0, headTop - 10, opts.name, {
           fontFamily: "system-ui, sans-serif",
-          fontSize: "17px",
+          fontSize: "12px",
           fontStyle: "bold",
           color: opts.nameColor ?? "#ffffff",
           stroke: "#141414",
-          strokeThickness: 5,
+          strokeThickness: 4,
         })
         .setOrigin(0.5),
     );
   }
   const c = scene.add.container(x, y, items) as Figure;
+  c.rig = rig;
   c.legs = [legL, legR];
-  c.bodyParts = parts;
-  c.setScale(opts.scale ?? 0.7);
+  c.front = front;
+  c.back = back;
+  c.headTop = headTop;
+  c.unit = unit;
   return c;
 }
 
-/** Step animation: legs swing and the body bobs while moving; face the way you walk. */
-export function animateWalk(f: Figure, time: number, moving: boolean, dx: number) {
-  if (!f.legs || !f.bodyParts) return;
-  if (dx < -0.1) f.bodyParts.scaleX = -1;
-  if (dx > 0.1) f.bodyParts.scaleX = 1;
+/** Step animation: legs lift in turn, the body bobs, and the person faces where they walk. */
+export function animateWalk(f: Figure, time: number, moving: boolean, dx: number, dy = 0) {
+  const sx = Math.abs(f.rig.scaleX);
+  if (dx < -0.1) f.rig.scaleX = -sx;
+  if (dx > 0.1) f.rig.scaleX = sx;
   if (moving) {
-    const t = time / 90;
-    f.legs[0]!.y = 30 + Math.sin(t) * 4;
-    f.legs[1]!.y = 30 - Math.sin(t) * 4;
-    f.bodyParts.y = -Math.abs(Math.sin(t)) * 3;
+    const away = dy < -0.1 && Math.abs(dy) > Math.abs(dx) * 0.6;
+    const toward = dy > 0.1 || Math.abs(dx) > 0.1;
+    if (away) {
+      f.back.setVisible(true);
+      f.front.setVisible(false);
+    } else if (toward) {
+      f.back.setVisible(false);
+      f.front.setVisible(true);
+    }
+    const t = time / 85;
+    f.legs[0].y = Math.min(0, Math.sin(t) * 6);
+    f.legs[1].y = Math.min(0, -Math.sin(t) * 6);
+    const bob = -Math.abs(Math.sin(t)) * 4;
+    f.front.y = f.back.y = -HIP_Y + UPPER_BOX.top + bob;
   } else {
-    f.legs[0]!.y = 30;
-    f.legs[1]!.y = 30;
-    f.bodyParts.y = 0;
+    f.legs[0].y = 0;
+    f.legs[1].y = 0;
+    f.front.y = f.back.y = -HIP_Y + UPPER_BOX.top;
   }
 }
 
@@ -313,7 +301,7 @@ function makeProps(scene: Phaser.Scene) {
 
 export function makeArt(scene: Phaser.Scene) {
   makeTiles(scene);
-  makeCharacters(scene);
+  makeShadow(scene);
   makeVehicles(scene);
   makeProps(scene);
 }

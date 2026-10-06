@@ -1,5 +1,6 @@
 import { CHAPTERS, EVENTS, FIXERS, HOMES, JOBS, LOANS, MAPS, PEOPLE, PLACES, POSTING_STATES, chapter, district, job, place } from "./data";
 import { citySolids, freePoint } from "./citymap";
+import type { Look } from "./character";
 import {
   DAYS_PER_YEAR,
   END_AGE,
@@ -176,6 +177,13 @@ function toast(s: GameState, text: string) {
 export function clearToast() {
   update((s) => {
     s.toast = null;
+  });
+}
+
+/** New outfit or hairstyle from the wardrobe. */
+export function changeLooks(look: Look) {
+  update((s) => {
+    s.looks = { ...look, outfit: look.topColor };
   });
 }
 
