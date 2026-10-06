@@ -340,6 +340,13 @@ const PLACE_ROOMS: Record<string, RoomType> = {
   hospital: "clinic",
   jabi_mall: "shop",
   asokoro_owambe: "hall",
+  wuse_plaza: "office",
+  telecom_office: "office",
+  cac_office: "office",
+  efcc_hq: "office",
+  driving_school: "office",
+  laundry_nyanya: "shop",
+  laundry_gwarinpa: "shop",
 };
 
 /** The room behind a city place's door, if it has one (markets and parks are outdoors). */

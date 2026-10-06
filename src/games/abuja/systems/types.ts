@@ -247,7 +247,7 @@ export type ActionDef = {
   effects: Effect[];
   text: string;
   /** Special handlers in the UI: sleep, work, apply, loans, hospital, japa. */
-  kind?: "sleep" | "work" | "apply" | "loans" | "japa" | "meet" | "drive" | "doctor" | "paybill" | "unfreeze" | "efcc" | "drivetest" | "rentcar" | "buycar";
+  kind?: "sleep" | "work" | "apply" | "loans" | "japa" | "meet" | "drive" | "doctor" | "paybill" | "unfreeze" | "efcc" | "drivetest" | "rentcar" | "buycar" | "bizapp";
   job?: string;
 };
 

@@ -269,7 +269,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       ) : null}
 
       {panelOpen && here ? (
-        <PlacePanel state={state} placeId={here.id} onClose={() => setOpen(null)} onLoans={() => setPhone("loans")} onPhone={() => setPhone("home")} />
+        <PlacePanel state={state} placeId={here.id} onClose={() => setOpen(null)} onApp={setPhone} onPhone={() => setPhone("home")} />
       ) : null}
       {talking ? <TalkModal state={state} personKey={talking} onClose={() => setTalking(null)} /> : null}
       {state.task && !inStory ? <TaskPanel state={state} /> : null}
@@ -585,13 +585,13 @@ function PlacePanel({
   state,
   placeId,
   onClose,
-  onLoans,
+  onApp,
   onPhone,
 }: {
   state: GameState;
   placeId: string;
   onClose: () => void;
-  onLoans: () => void;
+  onApp: (app: PhoneApp) => void;
   onPhone: () => void;
 }) {
   const p = place(placeId)!;
@@ -623,7 +623,8 @@ function PlacePanel({
               type="button"
               disabled={!ok}
               onClick={() => {
-                if (doAction(p.id, a.id) === "loans") onLoans();
+                const app = doAction(p.id, a.id);
+                if (app) onApp(app);
               }}
               className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left transition hover:border-blue-400/60 hover:bg-white/10 disabled:opacity-45"
             >

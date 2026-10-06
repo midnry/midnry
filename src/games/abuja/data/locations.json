@@ -818,6 +818,77 @@
       ]
     },
     {
+      "id": "wuse_plaza", "icon": "🏢",
+      "name": "Wuse Business Plaza",
+      "district": "wuse",
+      "x": 1200,
+      "y": 880,
+      "color": "#94a3b8",
+      "blurb": "Six floors of offices: accountants, HR firms, and a lift that works on Mondays.",
+      "actions": [
+        {
+          "id": "apply_admin_assistant",
+          "label": "Apply: Admin assistant",
+          "slots": 1,
+          "energy": -5,
+          "kind": "apply",
+          "job": "admin_assistant",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_admin_assistant",
+          "label": "Work a shift as admin assistant",
+          "slots": 2,
+          "energy": -18,
+          "kind": "work",
+          "job": "admin_assistant",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "apply_accountant",
+          "label": "Apply: Accountant",
+          "slots": 1,
+          "energy": -5,
+          "kind": "apply",
+          "job": "accountant",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_accountant",
+          "label": "Work a shift as accountant",
+          "slots": 2,
+          "energy": -18,
+          "kind": "work",
+          "job": "accountant",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "apply_hr_officer",
+          "label": "Apply: HR officer",
+          "slots": 1,
+          "energy": -5,
+          "kind": "apply",
+          "job": "hr_officer",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_hr_officer",
+          "label": "Work a shift as hr officer",
+          "slots": 2,
+          "energy": -18,
+          "kind": "work",
+          "job": "hr_officer",
+          "effects": [],
+          "text": ""
+        }
+      ]
+    },
+    {
       "id": "garki_hub", "icon": "📦",
       "name": "Garki Delivery Hub",
       "district": "garki",
@@ -859,6 +930,50 @@
             }
           ],
           "text": "The instructor screams 'BRAKE!' at every roundabout. You improve anyway."
+        }
+      ]
+    },
+    {
+      "id": "cac_office", "icon": "📝",
+      "name": "CAC Registry & Business Centre (Garki)",
+      "district": "garki",
+      "x": 900,
+      "y": 1420,
+      "color": "#a3e635",
+      "blurb": "Where business names are registered and dreams are stamped. Bring two passport photographs.",
+      "actions": [
+        {
+          "id": "register_cac",
+          "label": "Register your business name with CAC (₦25,000)",
+          "slots": 1,
+          "energy": -5,
+          "cost": 25000,
+          "if": {
+            "notFlag": "cac"
+          },
+          "lockedText": "Already registered",
+          "effects": [
+            {
+              "flag": "cac"
+            },
+            {
+              "stat": "reputation",
+              "add": 2
+            },
+            {
+              "log": "Registered a business name with CAC."
+            }
+          ],
+          "text": "Forms, stamps and a long queue. You walk out with a CAC certificate. You are officially a CEO."
+        },
+        {
+          "id": "biz_plan",
+          "label": "Plan and run your businesses",
+          "slots": 0,
+          "energy": 0,
+          "kind": "bizapp",
+          "effects": [],
+          "text": ""
         }
       ]
     },
@@ -1137,6 +1252,26 @@
           "job": "gov_contract",
           "effects": [],
           "text": ""
+        },
+        {
+          "id": "apply_civil_servant",
+          "label": "Apply: Civil servant",
+          "slots": 1,
+          "energy": -5,
+          "kind": "apply",
+          "job": "civil_servant",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_civil_servant",
+          "label": "Work a shift as civil servant",
+          "slots": 2,
+          "energy": -18,
+          "kind": "work",
+          "job": "civil_servant",
+          "effects": [],
+          "text": ""
         }
       ]
     },
@@ -1160,6 +1295,77 @@
             "gte": 6000000
           },
           "lockedText": "Needs ₦6,000,000 proof of funds",
+          "effects": [],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "telecom_office", "icon": "📶",
+      "name": "MTM Telecom office",
+      "district": "cbd",
+      "x": 1950,
+      "y": 930,
+      "color": "#facc15",
+      "blurb": "Yellow everything. Call centres upstairs, engineers in the basement, and free data for staff.",
+      "actions": [
+        {
+          "id": "apply_customer_care",
+          "label": "Apply: Customer care rep",
+          "slots": 1,
+          "energy": -5,
+          "kind": "apply",
+          "job": "customer_care",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_customer_care",
+          "label": "Work a shift as customer care rep",
+          "slots": 2,
+          "energy": -18,
+          "kind": "work",
+          "job": "customer_care",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "apply_sales_exec",
+          "label": "Apply: Sales executive",
+          "slots": 1,
+          "energy": -5,
+          "kind": "apply",
+          "job": "sales_exec",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_sales_exec",
+          "label": "Work a shift as sales executive",
+          "slots": 2,
+          "energy": -18,
+          "kind": "work",
+          "job": "sales_exec",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "apply_network_engineer",
+          "label": "Apply: Network engineer",
+          "slots": 1,
+          "energy": -5,
+          "kind": "apply",
+          "job": "network_engineer",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_network_engineer",
+          "label": "Work a shift as network engineer",
+          "slots": 2,
+          "energy": -18,
+          "kind": "work",
+          "job": "network_engineer",
           "effects": [],
           "text": ""
         }

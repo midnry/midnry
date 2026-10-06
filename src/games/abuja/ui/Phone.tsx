@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
-import { borrow, callContact, driveTo, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
+import { borrow, business, callContact, driveTo, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
 import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, netWorth, npcName } from "../systems/rules";
 import { RIDE_INFO, RIDE_MODES, fare, fuelCost, rideKm } from "../systems/rides";
 import { hasCar } from "../systems/drive";
+import { BUSINESSES, bizDef, canStart, growWhy, upgradeCost } from "../systems/business";
 import { deleteSave, replace } from "../systems/store";
 import type { GameState } from "../systems/types";
 import { REVIEW_DAYS } from "../systems/bank";
@@ -14,12 +15,13 @@ import { btnGhost, btnPrimary } from "./theme";
 import { Trade } from "./Trade";
 import { WardrobePanel } from "./Wardrobe";
 
-export type PhoneApp = "home" | "food" | "bills" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe";
+export type PhoneApp = "home" | "food" | "bills" | "business" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "wallet", label: "Wallet", icon: "💳", tint: "bg-blue-600" },
   { id: "food", label: "ChopNow", icon: "🍲", tint: "bg-amber-600" },
   { id: "bills", label: "Bills", icon: "🧾", tint: "bg-cyan-700" },
+  { id: "business", label: "Business", icon: "🏪", tint: "bg-lime-700" },
   { id: "trade", label: "Trade", icon: "📈", tint: "bg-indigo-600" },
   { id: "linkup", label: "Linkup", icon: "💗", tint: "bg-pink-600" },
   { id: "loans", label: "QuickKash", icon: "💸", tint: "bg-red-600" },
@@ -62,6 +64,7 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
           {app === "wallet" ? <Wallet state={state} /> : null}
           {app === "food" ? <FoodApp state={state} /> : null}
           {app === "bills" ? <Bills state={state} /> : null}
+          {app === "business" ? <BusinessApp state={state} /> : null}
           {app === "loans" ? <Loans state={state} /> : null}
           {app === "jobs" ? <Jobs state={state} /> : null}
           {app === "contacts" ? <Contacts state={state} /> : null}
@@ -91,6 +94,81 @@ function Home({ onApp }: { onApp: (app: PhoneApp) => void }) {
         ))}
       </div>
       <p className="mt-8 text-xs text-slate-500">Coming in the next updates: {SOON.join(", ")}.</p>
+    </div>
+  );
+}
+
+function BusinessApp({ state }: { state: GameState }) {
+  const mine = lifeOf(state).businesses;
+  return (
+    <div>
+      <div className="rounded-2xl bg-lime-700 p-4">
+        <p className="font-display text-2xl">Your businesses</p>
+        <p className="text-sm opacity-90">Start small. Check in often. Grow when you can. The big leagues take months.</p>
+        <p className="mt-2 text-xs opacity-80">{state.flags.cac ? "✅ Registered with CAC" : "Not registered with CAC yet: do it at the CAC office in Garki."}</p>
+      </div>
+      {mine.length ? (
+        <div className="mt-4 grid gap-3">
+          {mine.map((b) => {
+            const def = bizDef(b.id)!;
+            const why = growWhy(state, b);
+            const away = state.day - b.lastVisit;
+            return (
+              <div key={b.id} className="rounded-xl bg-white/5 p-3 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-semibold">
+                    {def.icon} {def.name} <span className="font-normal text-slate-400">· level {b.level}</span>
+                  </p>
+                  <p className={`tabular-nums font-semibold ${b.cash < 0 ? "text-red-400" : "text-emerald-400"}`}>{naira(b.cash)}</p>
+                </div>
+                <p className="mt-1 text-xs text-slate-400">
+                  Open since day {b.since} · {away === 0 ? "you checked in today" : `last check-in ${away} day${away > 1 ? "s" : ""} ago`}
+                  {away > 7 ? <span className="text-red-400"> · profits are falling</span> : null}
+                </p>
+                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                  <button type="button" className={`${btnGhost} min-h-9 px-2 text-xs`} onClick={() => business({ kind: "visit", id: b.id })}>
+                    Check in
+                  </button>
+                  <button type="button" className={`${btnGhost} min-h-9 px-2 text-xs`} disabled={b.cash <= 0} onClick={() => business({ kind: "collect", id: b.id })}>
+                    Take profit
+                  </button>
+                  <button type="button" className={`${btnPrimary} min-h-9 px-2 text-xs`} disabled={Boolean(why)} onClick={() => business({ kind: "grow", id: b.id })}>
+                    Grow
+                  </button>
+                </div>
+                <p className="mt-1 text-[11px] text-slate-500">{why ? `Grow: ${why}` : `Grow to level ${b.level + 1}: ${naira(upgradeCost(def, b.level))}`}</p>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+      <p className="mt-5 font-semibold">Start a business</p>
+      <div className="mt-2 grid gap-2">
+        {BUSINESSES.filter((def) => !mine.some((b) => b.id === def.id)).map((def) => {
+          const why = canStart(state, def);
+          return (
+            <button
+              key={def.id}
+              type="button"
+              disabled={Boolean(why)}
+              onClick={() => business({ kind: "start", id: def.id })}
+              className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-left disabled:opacity-50"
+            >
+              <span className="flex items-center justify-between gap-2">
+                <span className="font-semibold">
+                  {def.icon} {def.name}
+                </span>
+                <span className="tabular-nums text-sm">{naira(def.start)}</span>
+              </span>
+              <span className="mt-0.5 block text-xs text-slate-400">{def.blurb}</span>
+              <span className="mt-1 block text-xs text-slate-300">
+                About {naira(def.weekly[0])}–{naira(def.weekly[1])} a week at first
+              </span>
+              {why ? <span className="mt-1 block text-xs text-amber-300">🔒 {why}</span> : null}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

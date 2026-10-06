@@ -1,6 +1,7 @@
 import { NPCS, POSTING_STATES } from "./data";
 import { drink, feed, offense, wash } from "./life";
 import { answerEfcc, bankCredit, frozenAmount } from "./bank";
+import { bizWorth } from "./business";
 import { equity, shock } from "./market";
 import { partnerName, pregnancyText, romanceEffect } from "./romance";
 import type { Cond, Effect, GameState, SkillKey, StatKey } from "./types";
@@ -157,7 +158,7 @@ export function debt(state: GameState): number {
 export function netWorth(state: GameState): number {
   const assets = state.assets.reduce((sum, id) => sum + (ASSET_VALUES[id] ?? 0), 0);
   const trading = state.market ? equity(state.market) : 0;
-  return Math.round(state.stats.money + frozenAmount(state) + state.stats.usd * USD_RATE + assets + trading - debt(state));
+  return Math.round(state.stats.money + frozenAmount(state) + bizWorth(state) + state.stats.usd * USD_RATE + assets + trading - debt(state));
 }
 
 export function naira(value: number): string {

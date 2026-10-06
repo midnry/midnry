@@ -26,6 +26,7 @@ import {
 import { bus, update } from "./store";
 import { MENU, DELIVERY_FEE, burn, daysUnwashed, isDirty, life, offense, overnight } from "./life";
 import { caseStatus, nightlyCase, reportScam, resolveFreeze, surrender, withoutBankCheck } from "./bank";
+import { collect, growBusiness, startBusiness, visitBusiness, weeklyBusiness } from "./business";
 import { buyCar, drivingTest, frscStop, hasCar, nightlyCar, rentCar, toggleDriving, useFuel } from "./drive";
 import { hurt, injured, nightlyHealth, payHospital, payPower, rollHit, tooHurtFor, treat, weeklyPower, type HitBy } from "./health";
 import { closeDay, closePosition, deposit, ensureMarket, insiderTip, openPosition, tick, withdraw } from "./market";
@@ -249,8 +250,8 @@ export function savePosition(x: number, y: number, districtId: string) {
   });
 }
 
-export function doAction(placeId: string, actionId: string): "loans" | void {
-  let open: "loans" | undefined;
+export function doAction(placeId: string, actionId: string): "loans" | "business" | void {
+  let open: "loans" | "business" | undefined;
   update((s) => {
     const p = place(placeId);
     const a = p?.actions.find((item) => item.id === actionId);
@@ -276,6 +277,10 @@ export function doAction(placeId: string, actionId: string): "loans" | void {
     if (hurtLine && (a.energy <= -20 || a.kind === "drive" || a.kind === "work")) return toast(s, hurtLine);
     if (a.kind === "loans") {
       open = "loans";
+      return;
+    }
+    if (a.kind === "bizapp") {
+      open = "business";
       return;
     }
     if (a.kind === "drive") {
@@ -475,6 +480,29 @@ export function travel(placeId: string, mode: RideMode) {
   });
 }
 
+// ── Businesses ───────────────────────────────────────────────────────────────
+
+export function business(action: { kind: "start" | "grow" | "visit" | "collect"; id: string }) {
+  update((s) => {
+    if (s.chapter || s.ending || s.event) return;
+    if (action.kind === "start") toast(s, startBusiness(s, action.id));
+    if (action.kind === "grow") toast(s, growBusiness(s, action.id));
+    if (action.kind === "visit") {
+      if (s.slot + 1 > SLOTS.length) return toast(s, "It's too late today. Check in tomorrow.");
+      if (s.stats.energy < 10) return toast(s, "You're too tired. Rest first.");
+      toast(s, visitBusiness(s, action.id));
+      spend(s, 1, -10);
+    }
+    if (action.kind === "collect") {
+      const cash = collect(s, action.id);
+      if (cash <= 0) return toast(s, "There's no profit to take out yet.");
+      toast(s, `You transfer ${naira(cash)} of profit to your account.`);
+      addStat(s, "money", cash);
+    }
+    checkEndings(s);
+  });
+}
+
 // ── Driving ──────────────────────────────────────────────────────────────────
 
 /** Get in or out of your car on the map. */
@@ -597,6 +625,7 @@ function weeklyBills(s: GameState) {
   }
   s.loans = s.loans.filter((loan) => loan.owed > 0);
   lines.push(...weeklyPower(s));
+  lines.push(...weeklyBusiness(s));
   if (life(s).hospitalBill > 0) {
     addStat(s, "stress", 3);
     lines.push(`The hospital accountant called about your ₦${life(s).hospitalBill.toLocaleString("en")} bill.`);
