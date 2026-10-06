@@ -4,12 +4,16 @@ import { borrow, callContact, jobStatus, quitJob, repay, retire, travel } from "
 import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, netWorth, npcName } from "../systems/rules";
 import { deleteSave, replace } from "../systems/store";
 import type { GameState } from "../systems/types";
+import { Linkup } from "./Linkup";
 import { btnGhost, btnPrimary } from "./theme";
+import { Trade } from "./Trade";
 
-export type PhoneApp = "home" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings";
+export type PhoneApp = "home" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "wallet", label: "Wallet", icon: "💳", tint: "bg-emerald-600" },
+  { id: "trade", label: "Trade", icon: "📈", tint: "bg-indigo-600" },
+  { id: "linkup", label: "Linkup", icon: "💗", tint: "bg-pink-600" },
   { id: "loans", label: "QuickKash", icon: "💸", tint: "bg-red-600" },
   { id: "jobs", label: "Jobs", icon: "💼", tint: "bg-sky-600" },
   { id: "contacts", label: "Contacts", icon: "👥", tint: "bg-violet-600" },
@@ -18,7 +22,7 @@ const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "settings", label: "Settings", icon: "⚙️", tint: "bg-stone-600" },
 ];
 
-const SOON = ["Trading", "Tiklok", "Instaflex", "Zoom rides", "Dating"];
+const SOON = ["Tiklok", "Instaflex", "Zoom ride-hailing", "Elections", "Inheritance"];
 
 export function Phone({ state, app, onApp, onClose }: { state: GameState; app: PhoneApp; onApp: (app: PhoneApp) => void; onClose: () => void }) {
   const current = APPS.find((item) => item.id === app);
@@ -53,6 +57,8 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
           {app === "map" ? <MapApp state={state} onDone={onClose} /> : null}
           {app === "stats" ? <Life state={state} /> : null}
           {app === "settings" ? <Settings /> : null}
+          {app === "linkup" ? <Linkup state={state} /> : null}
+          {app === "trade" ? <Trade state={state} /> : null}
         </div>
       </div>
     </div>

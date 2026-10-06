@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { HAIRS, OUTFITS, SKINS } from "../systems/art";
-import type { Background, Gender, Looks } from "../systems/types";
+import type { Background, Gender, Interest, Looks } from "../systems/types";
 import { Avatar } from "./Avatar";
 import { btnGhost, btnPrimary, panel } from "./theme";
 
@@ -32,7 +32,17 @@ export function AgeGate({ onPass }: { onPass: () => void }) {
   );
 }
 
-export function Title({ hasSave, onNew, onContinue }: { hasSave: boolean; onNew: () => void; onContinue: () => void }) {
+export function Title({
+  hasSave,
+  signedInAs,
+  onNew,
+  onContinue,
+}: {
+  hasSave: boolean;
+  signedInAs: string | null;
+  onNew: () => void;
+  onContinue: () => void;
+}) {
   const [confirm, setConfirm] = useState(false);
   return (
     <Screen>
@@ -58,6 +68,22 @@ export function Title({ hasSave, onNew, onContinue }: { hasSave: boolean; onNew:
             </button>
           )}
         </div>
+        <div className="mx-auto mt-6 max-w-xs rounded-2xl border border-white/10 bg-white/5 p-4 text-sm">
+          {signedInAs ? (
+            <p className="text-stone-300">
+              ✓ Signed in as <span className="font-semibold text-stone-100">{signedInAs}</span>. Your progress saves to your account and follows
+              you to any device.
+            </p>
+          ) : (
+            <>
+              <p className="text-stone-300">Free to play. Sign in to save your progress to your account and continue on any device.</p>
+              <a href="/login?intent=sign-in&next=/games/abuja-hustle" className={`${btnPrimary} mt-3 w-full`}>
+                Sign in to save progress
+              </a>
+              <p className="mt-2 text-xs text-stone-500">Playing without signing in keeps your progress on this device only.</p>
+            </>
+          )}
+        </div>
         <p className="mt-10 text-xs text-stone-500">
           All characters, parties, companies and lenders are fictional. Satire of systems, not of ordinary people.
         </p>
@@ -66,10 +92,15 @@ export function Title({ hasSave, onNew, onContinue }: { hasSave: boolean; onNew:
   );
 }
 
-export function Creator({ onDone }: { onDone: (input: { name: string; gender: Gender; background: Background; looks: Looks }) => void }) {
+export function Creator({
+  onDone,
+}: {
+  onDone: (input: { name: string; gender: Gender; background: Background; looks: Looks; interest: Interest }) => void;
+}) {
   const [name, setName] = useState("");
   const [gender, setGender] = useState<Gender>("female");
   const [background, setBackground] = useState<Background>("lapo");
+  const [interest, setInterest] = useState<Interest>("men");
   const [looks, setLooks] = useState<Looks>({ skin: SKINS[3]!, hair: "afro", outfit: OUTFITS[0]! });
   const ready = name.trim().length >= 2;
 
@@ -98,8 +129,22 @@ export function Creator({ onDone }: { onDone: (input: { name: string; gender: Ge
             </label>
             <Pick label="Gender">
               {(["female", "male"] as const).map((item) => (
-                <Chip key={item} on={gender === item} onClick={() => setGender(item)}>
+                <Chip
+                  key={item}
+                  on={gender === item}
+                  onClick={() => {
+                    setGender(item);
+                    setInterest(item === "female" ? "men" : "women");
+                  }}
+                >
                   {item === "female" ? "Woman" : "Man"}
+                </Chip>
+              ))}
+            </Pick>
+            <Pick label="Romantically interested in (adult chapters only)">
+              {(["men", "women", "both"] as const).map((item) => (
+                <Chip key={item} on={interest === item} onClick={() => setInterest(item)}>
+                  {item === "men" ? "Men" : item === "women" ? "Women" : "Both"}
                 </Chip>
               ))}
             </Pick>
@@ -159,7 +204,7 @@ export function Creator({ onDone }: { onDone: (input: { name: string; gender: Ge
           type="button"
           className={`${btnPrimary} mt-6 w-full sm:w-auto`}
           disabled={!ready}
-          onClick={() => onDone({ name: name.trim(), gender, background, looks })}
+          onClick={() => onDone({ name: name.trim(), gender, background, looks, interest })}
         >
           Begin life in Abuja
         </button>

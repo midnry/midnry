@@ -1,18 +1,70 @@
 [
-  { "id": "tunde", "name": "Tunde", "role": "Loyal friend", "class": "lapo", "color": "#f59e0b",
-    "bio": "Lapo Baby from Nyanya. Sold sachet water before he could spell 'sachet'. Grinds beside you, always." },
-  { "id": "slim", "name": "Slim", "role": "Bad influence", "class": "hustler", "color": "#a855f7",
-    "bio": "Always has new sneakers and no visible job. Calls everybody 'my guy'. Knows people who know people." },
-  { "id": "okafor", "name": "Mrs. Okafor", "role": "Mentor", "class": "mentor", "color": "#10b981",
-    "bio": "Economics lecturer and consultant. Does not do shortcuts. Will open doors if you show up on time." },
-  { "id": "bolaji", "name": "Bolaji Danjuma-Adeyemi", "role": "Nepo Baby classmate", "class": "nepo", "color": "#eab308",
-    "bio": "Son of (fictional) Senator Danjuma-Adeyemi. Convoy to school. Not a bad person, just never had to check a price." },
-  { "id": "love", "name": "Amaka", "nameByGender": { "male": "Amaka", "female": "Emeka" }, "role": "Love interest", "class": "ordinary", "color": "#ec4899",
-    "bio": "Sharp, funny, and allergic to fake people. Met you when you were both still figuring life out." },
-  { "id": "kash", "name": "Mr. Felix (QuickKash)", "role": "Loan officer", "class": "scammer", "color": "#ef4444",
-    "bio": "QuickKash Microfinance. Smiles when you borrow. Your whole contact list hears from him when you don't pay." },
-  { "id": "prophet", "name": "Prophet Profit", "role": "Forex guru", "class": "guru", "color": "#84cc16",
-    "bio": "Rented Lamborghini, borrowed watch, 'proven signals'. Sells courses about getting rich by selling courses." },
-  { "id": "uncle", "name": "Uncle Sylvester", "role": "Distant uncle", "class": "relative", "color": "#64748b",
-    "bio": "Appears only when there is money, a burial, or land. Has never once brought a gift." }
+  {
+    "id": "tunde",
+    "name": "Tunde",
+    "role": "Loyal friend",
+    "class": "lapo",
+    "color": "#f59e0b",
+    "bio": "Lapo Baby from Nyanya. Sold sachet water before he could spell 'sachet'. Grinds beside you, always."
+  },
+  {
+    "id": "slim",
+    "name": "Slim",
+    "role": "Bad influence",
+    "class": "hustler",
+    "color": "#a855f7",
+    "bio": "Always has new sneakers and no visible job. Calls everybody 'my guy'. Knows people who know people."
+  },
+  {
+    "id": "okafor",
+    "name": "Mrs. Okafor",
+    "role": "Mentor",
+    "class": "mentor",
+    "color": "#10b981",
+    "bio": "Economics lecturer and consultant. Does not do shortcuts. Will open doors if you show up on time."
+  },
+  {
+    "id": "bolaji",
+    "name": "Bolaji Danjuma-Adeyemi",
+    "role": "Nepo Baby classmate",
+    "class": "nepo",
+    "color": "#eab308",
+    "bio": "Son of (fictional) Senator Danjuma-Adeyemi. Convoy to school. Not a bad person, just never had to check a price."
+  },
+  {
+    "id": "love",
+    "name": "Amaka",
+    "nameByGender": {
+      "female": "Amaka",
+      "male": "Emeka"
+    },
+    "role": "Love interest",
+    "class": "ordinary",
+    "color": "#ec4899",
+    "bio": "Sharp, funny, and allergic to fake people. Met you when you were both still figuring life out."
+  },
+  {
+    "id": "kash",
+    "name": "Mr. Felix (QuickKash)",
+    "role": "Loan officer",
+    "class": "scammer",
+    "color": "#ef4444",
+    "bio": "QuickKash Microfinance. Smiles when you borrow. Your whole contact list hears from him when you don't pay."
+  },
+  {
+    "id": "prophet",
+    "name": "Prophet Profit",
+    "role": "Forex guru",
+    "class": "guru",
+    "color": "#84cc16",
+    "bio": "Rented Lamborghini, borrowed watch, 'proven signals'. Sells courses about getting rich by selling courses."
+  },
+  {
+    "id": "uncle",
+    "name": "Uncle Sylvester",
+    "role": "Distant uncle",
+    "class": "relative",
+    "color": "#64748b",
+    "bio": "Appears only when there is money, a burial, or land. Has never once brought a gift."
+  }
 ]

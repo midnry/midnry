@@ -20,6 +20,21 @@ import {
   rollStars,
 } from "./rules";
 import { bus, update } from "./store";
+import { closeDay, closePosition, deposit, ensureMarket, insiderTip, openPosition, tick, withdraw } from "./market";
+import {
+  askOut,
+  breakUp,
+  dailyRomance,
+  giveGift,
+  goOnDate,
+  intimacy,
+  meet,
+  propose,
+  syncPeople,
+  textPartner,
+  wed,
+  weeklyRomance,
+} from "./romance";
 import type { Choice, EndingId, GameState, Scene } from "./types";
 
 // ── Story ────────────────────────────────────────────────────────────────────
@@ -146,6 +161,8 @@ function startAdulthood(s: GameState) {
   s.district = home.district;
   s.pos = { x: home.x, y: home.y + 95 };
   s.flags.adult_day0 = s.day;
+  ensureMarket(s);
+  syncPeople(s);
 }
 
 function toast(s: GameState, text: string) {
@@ -175,6 +192,12 @@ export function doAction(placeId: string, actionId: string): "loans" | void {
     if (a.kind === "sleep") return sleep(s);
     if (a.kind === "loans") {
       open = "loans";
+      return;
+    }
+    if (a.kind === "meet") {
+      if (s.slot + a.slots > SLOTS.length) return toast(s, "It's too late for that. Go home and sleep.");
+      toast(s, meet(s, p.id));
+      spend(s, a.slots, a.energy);
       return;
     }
     if (a.kind === "japa") {
@@ -212,6 +235,8 @@ export function doAction(placeId: string, actionId: string): "loans" | void {
 function spend(s: GameState, slots: number, energy: number) {
   s.slot += slots;
   addStat(s, "energy", energy);
+  const crashes = tick(s, slots);
+  if (crashes.length) s.toast = `${s.toast ? `${s.toast} ` : ""}${crashes.join(" ")}`;
   if (s.slot >= SLOTS.length) {
     s.toast = `${s.toast ? `${s.toast} ` : ""}It's late. You head home and crash.`;
     sleep(s);
@@ -347,7 +372,17 @@ function sleep(s: GameState) {
     s.age += 1;
     s.toast = `${s.toast ? `${s.toast} ` : ""}Happy birthday. You are ${s.age}.`;
   }
-  if (adultDays > 0 && adultDays % 7 === 0) weeklyBills(s);
+  const crashes = closeDay(s);
+  if (crashes.length) s.toast = `${s.toast ? `${s.toast} ` : ""}${crashes.join(" ")}`;
+  if (adultDays > 0 && adultDays % 7 === 0) {
+    weeklyBills(s);
+    if (!s.event) s.event = weeklyRomance(s);
+    if (!s.event && s.flags.bolaji_connect && Math.random() < 0.3) {
+      insiderTip(s);
+      s.event = "insider";
+    }
+  }
+  if (!s.event) s.event = dailyRomance(s);
   neglect(s);
   pickEvent(s);
   checkEndings(s);
@@ -426,6 +461,11 @@ export function resolveEvent(choice: Choice) {
     const toasts = apply(s, choice.effects);
     const line = [choice.result ? fill(s, choice.result) : "", ...toasts].filter(Boolean).join(" ");
     if (line) toast(s, line);
+    const forced = s.flags.force_event;
+    if (typeof forced === "string" && forced) {
+      s.flags.force_event = "";
+      s.event = forced;
+    }
     checkEndings(s);
   });
 }
@@ -477,6 +517,58 @@ function collapse(s: GameState) {
   s.stats.energy = 60;
   addStat(s, "stress", -30);
   s.toast = "You collapsed and woke up in Garki General Hospital. Two days gone, ₦30,000 in bills. The doctor says: \"Rest, or next time it will be worse.\"";
+}
+
+// ── Phone: relationships ─────────────────────────────────────────────────────
+
+type RomanceAction =
+  | { kind: "text"; id: string }
+  | { kind: "date"; id: string; date: string }
+  | { kind: "gift"; id: string }
+  | { kind: "ask"; id: string }
+  | { kind: "propose"; id: string }
+  | { kind: "wed"; id: string; wedding: string }
+  | { kind: "breakup"; id: string }
+  | { kind: "night"; id: string; safe: boolean };
+
+const ROMANCE_SLOTS: Record<RomanceAction["kind"], number> = { text: 0, date: 1, gift: 0, ask: 0, propose: 1, wed: 2, breakup: 0, night: 1 };
+
+export function romance(action: RomanceAction) {
+  update((s) => {
+    if (s.event || s.ending) return;
+    const slots = ROMANCE_SLOTS[action.kind];
+    if (slots && s.slot + slots > SLOTS.length) return toast(s, "It's too late for that today.");
+    let text = "";
+    if (action.kind === "text") text = textPartner(s, action.id);
+    if (action.kind === "date") text = goOnDate(s, action.id, action.date);
+    if (action.kind === "gift") text = giveGift(s, action.id);
+    if (action.kind === "ask") text = askOut(s, action.id);
+    if (action.kind === "propose") text = propose(s, action.id);
+    if (action.kind === "wed") text = wed(s, action.id, action.wedding);
+    if (action.kind === "breakup") text = breakUp(s, action.id);
+    if (action.kind === "night") text = intimacy(s, action.id, action.safe);
+    if (text) toast(s, text);
+    const spent = text && !/^You need|isn't|too soon|already texted|Slow down/.test(text);
+    if (spent && slots) spend(s, slots, action.kind === "date" ? -15 : -5);
+    checkEndings(s);
+  });
+}
+
+export function syncRomance() {
+  update((s) => syncPeople(s));
+}
+
+// ── Phone: trading ───────────────────────────────────────────────────────────
+
+export function trade(action: { kind: "open"; asset: string; side: "long" | "short"; margin: number; leverage: number } | { kind: "close"; id: string } | { kind: "deposit" | "withdraw"; amount: number }) {
+  update((s) => {
+    ensureMarket(s);
+    if (action.kind === "open") toast(s, openPosition(s, action.asset, action.side, action.margin, action.leverage));
+    if (action.kind === "close") toast(s, closePosition(s, action.id));
+    if (action.kind === "deposit") toast(s, deposit(s, action.amount));
+    if (action.kind === "withdraw") toast(s, withdraw(s, action.amount));
+    checkEndings(s);
+  });
 }
 
 export function retire() {

@@ -1,4 +1,4 @@
-import type { Background, Gender, GameState, Looks } from "./types";
+import type { Background, Gender, GameState, Interest, Looks } from "./types";
 
 // A tiny store: the whole game is one plain object, saved to localStorage.
 // React reads it with useGame(); Phaser reads and writes it through the same API.
@@ -11,6 +11,13 @@ type Listener = () => void;
 let state: GameState | null = null;
 const listeners = new Set<Listener>();
 let saveTimer: number | null = null;
+let cloudTimer: number | null = null;
+let cloudSaver: ((payload: string | null) => void) | null = null;
+
+/** When signed in, the UI hands over a function that saves to the account. */
+export function setCloudSaver(saver: ((payload: string | null) => void) | null): void {
+  cloudSaver = saver;
+}
 
 export function getState(): GameState | null {
   return state;
@@ -46,20 +53,35 @@ function scheduleSave() {
   if (saveTimer) window.clearTimeout(saveTimer);
   saveTimer = window.setTimeout(() => {
     saveTimer = null;
+    if (!state) return;
+    state.savedAt = Date.now();
+    const payload = JSON.stringify(state);
     try {
-      if (state) localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+      localStorage.setItem(SAVE_KEY, payload);
     } catch {
       /* storage full or blocked: the game keeps running */
+    }
+    if (cloudSaver) {
+      if (cloudTimer) window.clearTimeout(cloudTimer);
+      const saver = cloudSaver;
+      cloudTimer = window.setTimeout(() => saver(payload), 3000);
     }
   }, 300);
 }
 
-export function loadSave(): GameState | null {
+export function parseSave(raw: string | null): GameState | null {
+  if (!raw) return null;
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) return null;
     const parsed = JSON.parse(raw) as GameState;
     return parsed?.version === 1 ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function loadSave(): GameState | null {
+  try {
+    return parseSave(localStorage.getItem(SAVE_KEY));
   } catch {
     return null;
   }
@@ -71,10 +93,21 @@ export function deleteSave(): void {
   } catch {
     /* ignore */
   }
+  if (cloudTimer) window.clearTimeout(cloudTimer);
+  cloudSaver?.(null);
 }
 
-export function newGame(input: { name: string; gender: Gender; background: Background; looks: Looks }): GameState {
+/** Keep whichever save is newer: this device's or the account's. */
+export function newestSave(local: GameState | null, cloud: GameState | null): GameState | null {
+  if (!local) return cloud;
+  if (!cloud) return local;
+  return (cloud.savedAt ?? 0) > (local.savedAt ?? 0) ? cloud : local;
+}
+
+export function newGame(input: { name: string; gender: Gender; background: Background; looks: Looks; interest: Interest }): GameState {
   const lapo = input.background === "lapo";
+  const loveGender: Gender =
+    input.interest === "women" ? "female" : input.interest === "men" ? "male" : Math.random() < 0.5 ? "female" : "male";
   return {
     version: 1,
     name: input.name,
@@ -124,6 +157,14 @@ export function newGame(input: { name: string; gender: Gender; background: Backg
     usedEvents: [],
     ending: null,
     toast: null,
+    interest: input.interest,
+    loveGender,
+    partners: {},
+    affairs: [],
+    pregnancy: null,
+    children: [],
+    eventCtx: {},
+    market: null,
   };
 }
 

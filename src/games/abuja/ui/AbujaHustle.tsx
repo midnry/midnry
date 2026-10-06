@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { loadGame, saveGame } from "../save.functions";
 import { startGame } from "../systems/engine";
-import { AGE_KEY, deleteSave, loadSave, newGame, replace } from "../systems/store";
+import { AGE_KEY, deleteSave, loadSave, newGame, newestSave, parseSave, replace, setCloudSaver } from "../systems/store";
+import type { GameState } from "../systems/types";
 import { EndScreen } from "./EndScreen";
 import { AgeGate, Creator, Title } from "./Menus";
 import { StoryView } from "./StoryView";
@@ -10,24 +13,42 @@ import { World } from "./World";
 /** The whole game: age gate, title, character creation, story chapters, the open world, and endings. */
 export function AbujaHustle() {
   const state = useGame();
+  const { user, isPending } = useCurrentUserState();
+  const userId = user?.id ?? null;
   const [ready, setReady] = useState(false);
   const [ageOk, setAgeOk] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [hasSave, setHasSave] = useState(false);
+  const [saved, setSaved] = useState<GameState | null>(null);
 
+  // Find the latest save: this device, or the account when signed in.
   useEffect(() => {
+    if (isPending) return;
+    let cancel = false;
     try {
       setAgeOk(localStorage.getItem(AGE_KEY) === "yes");
     } catch {
       /* private mode: ask every time */
     }
-    setHasSave(Boolean(loadSave()));
-    setReady(true);
-  }, []);
+    const local = loadSave();
+    if (!userId) {
+      setCloudSaver(null);
+      setSaved(local);
+      setReady(true);
+      return;
+    }
+    setCloudSaver((payload) => {
+      void saveGame({ data: payload }).catch(() => {});
+    });
+    loadGame()
+      .then((result) => !cancel && setSaved(newestSave(local, parseSave(result.payload))))
+      .catch(() => !cancel && setSaved(local))
+      .finally(() => !cancel && setReady(true));
+    return () => {
+      cancel = true;
+    };
+  }, [userId, isPending]);
 
-  useEffect(() => {
-    if (!state) setHasSave(Boolean(loadSave()));
-  }, [state]);
+  useEffect(() => () => setCloudSaver(null), []);
 
   if (!ready) return <div className="min-h-[100dvh] bg-stone-950" />;
   if (!ageOk) {
@@ -57,7 +78,14 @@ export function AbujaHustle() {
         />
       );
     }
-    return <Title hasSave={hasSave} onNew={() => setCreating(true)} onContinue={() => replace(loadSave())} />;
+    return (
+      <Title
+        hasSave={Boolean(saved)}
+        signedInAs={user ? user.displayName || "you" : null}
+        onNew={() => setCreating(true)}
+        onContinue={() => replace(saved)}
+      />
+    );
   }
   if (state.ending) return <EndScreen state={state} />;
   if (state.chapter) return <StoryView state={state} />;

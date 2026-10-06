@@ -20,6 +20,49 @@ export type SkillKey = "tech" | "trade" | "hustle" | "education" | "driving" | "
 
 export type Looks = { skin: string; hair: string; outfit: string };
 
+export type Interest = "women" | "men" | "both";
+export type Personality = "calm" | "cunning" | "crazy";
+
+export type Partner = {
+  id: string;
+  gender: Gender;
+  affection: number;
+  /** Hidden until enough hints are seen. */
+  personality: Personality;
+  hints: string[];
+  status: "met" | "dating" | "engaged" | "married" | "ex";
+  since: number;
+  lastSeen: number;
+  nepo: boolean;
+};
+
+export type Candle = { o: number; h: number; l: number; c: number };
+
+export type Position = {
+  id: string;
+  asset: string;
+  side: "long" | "short";
+  margin: number;
+  leverage: number;
+  /** Naira exposure: margin × leverage. */
+  notional: number;
+  entry: number;
+  day: number;
+};
+
+export type MarketState = {
+  prices: Record<string, number>;
+  candles: Record<string, Candle[]>;
+  today: Record<string, Candle>;
+  /** Hidden drift per asset that shifts over time; insight hints at it. */
+  regime: Record<string, number>;
+  balance: number;
+  positions: Position[];
+  history: { asset: string; side: "long" | "short"; pnl: number; day: number; leverage: number }[];
+  /** A tip that comes true on the next tick: asset and move in percent. */
+  pendingShock: { asset: string; pct: number } | null;
+};
+
 /** A condition on the current state. Every key given must hold. */
 export type Cond = {
   stat?: StatKey;
@@ -63,6 +106,10 @@ export type Effect = {
   job?: string | null;
   age?: number;
   ending?: EndingId;
+  /** Relationship and pregnancy outcomes, handled in systems/romance.ts. */
+  romance?: string;
+  /** Instant price moves in the trading app, in percent. */
+  market?: { asset: string; pct: number }[];
 };
 
 export type Choice = {
@@ -99,7 +146,7 @@ export type Chapter = {
 export type NpcDef = {
   id: string;
   name: string;
-  /** Different names by the MC's gender, for the love interest. */
+  /** Different names by the character's own gender, for the love interest. */
   nameByGender?: Record<Gender, string>;
   role: string;
   class: "nepo" | "lapo" | "ordinary" | "hustler" | "scammer" | "mentor" | "influencer" | "guru" | "relative";
@@ -130,7 +177,7 @@ export type ActionDef = {
   effects: Effect[];
   text: string;
   /** Special handlers in the UI: sleep, work, apply, loans, hospital, japa. */
-  kind?: "sleep" | "work" | "apply" | "loans" | "japa";
+  kind?: "sleep" | "work" | "apply" | "loans" | "japa" | "meet";
   job?: string;
 };
 
@@ -179,6 +226,8 @@ export type EndingId = "freedom" | "grass" | "jail" | "ninefive" | "broke" | "ja
 
 export type GameState = {
   version: 1;
+  /** When this save was last written, to pick the newer of device and account saves. */
+  savedAt?: number;
   name: string;
   gender: Gender;
   background: Background;
@@ -211,4 +260,14 @@ export type GameState = {
   usedEvents: string[];
   ending: EndingId | null;
   toast: string | null;
+  interest: Interest;
+  /** The story love interest's gender, set from the MC's interest. */
+  loveGender: Gender;
+  partners: Record<string, Partner>;
+  affairs: { with: string; partner: string; day: number }[];
+  pregnancy: { partner: string; day: number; due: number | null; mc: boolean } | null;
+  children: { name: string; born: number; with: string }[];
+  /** Who or how much a forced event is about, for {partner} and {amount} in its text. */
+  eventCtx: { partner?: string; amount?: number; asset?: string };
+  market: MarketState | null;
 };

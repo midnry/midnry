@@ -507,6 +507,15 @@
             }
           ],
           "text": "Free small chops and three founders who want you to work for equity."
+        },
+        {
+          "id": "meet",
+          "label": "Talk to someone new",
+          "slots": 1,
+          "energy": -5,
+          "kind": "meet",
+          "effects": [],
+          "text": ""
         }
       ]
     },
@@ -674,6 +683,15 @@
           "energy": -25,
           "kind": "work",
           "job": "bank_staff",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "meet",
+          "label": "Talk to someone new",
+          "slots": 1,
+          "energy": -5,
+          "kind": "meet",
           "effects": [],
           "text": ""
         }
@@ -846,6 +864,15 @@
             }
           ],
           "text": "You film a skit about Abuja landlords. The geese photobomb it."
+        },
+        {
+          "id": "meet",
+          "label": "Talk to someone new",
+          "slots": 1,
+          "energy": -5,
+          "kind": "meet",
+          "effects": [],
+          "text": ""
         }
       ]
     },
@@ -1225,6 +1252,15 @@
             }
           ],
           "text": "Bolaji makes one phone call. \"My guy, go to the Ministry. They're expecting you.\" It took him eight seconds."
+        },
+        {
+          "id": "meet",
+          "label": "Talk to someone new",
+          "slots": 1,
+          "energy": -5,
+          "kind": "meet",
+          "effects": [],
+          "text": ""
         }
       ]
     },

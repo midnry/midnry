@@ -1,5 +1,6 @@
 import { ENDINGS, job } from "../systems/data";
 import { naira, netWorth } from "../systems/rules";
+import { partnerName } from "../systems/romance";
 import { deleteSave, replace } from "../systems/store";
 import type { GameState } from "../systems/types";
 import { Avatar } from "./Avatar";
@@ -34,6 +35,25 @@ export function EndScreen({ state }: { state: GameState }) {
             <dd>{state.stats.network}</dd>
           </dl>
         </div>
+        {Object.keys(state.partners).length || state.children.length ? (
+          <div className="border-t border-white/10 p-6 sm:p-8">
+            <h2 className="font-display text-2xl">Family and love</h2>
+            <ul className="mt-3 space-y-1 text-sm text-stone-300">
+              {Object.values(state.partners)
+                .filter((p) => p.status !== "met")
+                .map((p) => (
+                  <li key={p.id}>
+                    {partnerName(state, p.id)}: {p.status === "ex" ? "ex" : p.status} ({p.personality})
+                  </li>
+                ))}
+              {state.children.map((child) => (
+                <li key={child.name}>
+                  Child: {child.name}, with {partnerName(state, child.with)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <div className="border-t border-white/10 p-6 sm:p-8">
           <h2 className="font-display text-2xl">The moments that decided it</h2>
           <ol className="mt-3 space-y-2 text-sm text-stone-300">

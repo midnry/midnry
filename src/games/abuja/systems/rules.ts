@@ -1,4 +1,6 @@
 import { NPCS, POSTING_STATES } from "./data";
+import { equity, shock } from "./market";
+import { partnerName, pregnancyText, romanceEffect } from "./romance";
 import type { Cond, Effect, GameState, SkillKey, StatKey } from "./types";
 
 export const SLOTS = ["Morning", "Afternoon", "Evening", "Night"] as const;
@@ -106,6 +108,8 @@ export function apply(state: GameState, effects: Effect[] | undefined, toasts: s
     if (effect.job !== undefined) state.job = effect.job;
     if (effect.age) state.age += effect.age;
     if (effect.ending) state.ending = effect.ending;
+    if (effect.market) shock(state, effect.market);
+    if (effect.romance) toasts.push(...romanceEffect(state, effect.romance));
     if (effect.log) addLog(state, effect.log);
     if (effect.toast) toasts.push(fill(state, effect.toast));
   }
@@ -115,7 +119,7 @@ export function apply(state: GameState, effects: Effect[] | undefined, toasts: s
 export function npcName(state: GameState, id: string): string {
   const def = NPCS.find((item) => item.id === id);
   if (!def) return id;
-  return def.nameByGender?.[state.gender] ?? def.name;
+  return def.nameByGender?.[state.loveGender] ?? def.name;
 }
 
 /** Fill {name}, {love}, {state} and friends in story text. */
@@ -127,7 +131,11 @@ export function fill(state: GameState, text: string): string {
     .replace(/\{love\}/g, npcName(state, "love"))
     .replace(/\{state\}/g, state.postingState ?? "")
     .replace(/\{state_blurb\}/g, posted?.blurb ?? "")
-    .replace(/\{state_event\}/g, posted?.events[eventIndex]?.text ?? "");
+    .replace(/\{state_event\}/g, posted?.events[eventIndex]?.text ?? "")
+    .replace(/\{partner\}/g, state.eventCtx?.partner ? partnerName(state, state.eventCtx.partner) : "your partner")
+    .replace(/\{amount\}/g, (state.eventCtx?.amount ?? 0).toLocaleString("en"))
+    .replace(/\{asset\}/g, state.eventCtx?.asset ?? "a stock")
+    .replace(/\{pregnancy_text\}/g, pregnancyText(state));
 }
 
 export function debt(state: GameState): number {
@@ -136,7 +144,8 @@ export function debt(state: GameState): number {
 
 export function netWorth(state: GameState): number {
   const assets = state.assets.reduce((sum, id) => sum + (ASSET_VALUES[id] ?? 0), 0);
-  return Math.round(state.stats.money + state.stats.usd * USD_RATE + assets - debt(state));
+  const trading = state.market ? equity(state.market) : 0;
+  return Math.round(state.stats.money + state.stats.usd * USD_RATE + assets + trading - debt(state));
 }
 
 export function naira(value: number): string {
