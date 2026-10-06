@@ -31,7 +31,7 @@ export function ReplyButton({ looks, adult, disabled, note, onClick, children }:
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="flex w-full items-center gap-2 rounded-2xl border-2 border-slate-900 bg-emerald-500 py-2 pr-2 pl-3 text-left text-sm font-semibold text-white shadow-[0_3px_0_rgba(15,23,42,0.35)] transition hover:bg-emerald-400 disabled:bg-slate-500 disabled:opacity-60"
+      className="flex w-full items-center gap-2 rounded-2xl border-2 border-slate-900 bg-blue-500 py-2 pr-2 pl-3 text-left text-sm font-semibold text-white shadow-[0_3px_0_rgba(15,23,42,0.35)] transition hover:bg-blue-400 disabled:bg-slate-500 disabled:opacity-60"
     >
       <span className="min-w-0 flex-1">
         {children}

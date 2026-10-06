@@ -40,7 +40,7 @@ export function Dresser({ look, adult = false, onChange }: { look: Look; adult?:
             role="tab"
             aria-selected={tab === item.id}
             onClick={() => setTab(item.id)}
-            className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition ${tab === item.id ? "bg-emerald-600 text-white" : "bg-white/10 text-slate-200 hover:bg-white/15"}`}
+            className={`flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition ${tab === item.id ? "bg-blue-600 text-white" : "bg-white/10 text-slate-200 hover:bg-white/15"}`}
           >
             <span aria-hidden>{item.icon}</span>
             {item.label}
@@ -203,7 +203,7 @@ function Tile({ on, label, onClick, children }: { on: boolean; label: string; on
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 rounded-2xl border p-2 text-xs transition ${on ? "border-emerald-400 bg-emerald-400/15" : "border-white/10 bg-white/[0.06] hover:bg-white/10"}`}
+      className={`flex flex-col items-center gap-1 rounded-2xl border p-2 text-xs transition ${on ? "border-blue-400 bg-blue-400/15" : "border-white/10 bg-white/[0.06] hover:bg-white/10"}`}
     >
       <span className="flex h-16 items-center justify-center overflow-hidden">{children}</span>
       <span className="font-semibold">{label}</span>
@@ -223,7 +223,7 @@ function Swatches({ label, colors, value, onPick, round }: { label: string; colo
             aria-label={`${label} ${c}`}
             aria-pressed={value === c}
             onClick={() => onPick(c)}
-            className={`size-9 border border-white/20 ring-offset-2 ring-offset-[#0b1f3d] ${round ? "rounded-full" : "rounded-lg"} ${value === c ? "ring-2 ring-emerald-400" : ""}`}
+            className={`size-9 border border-white/20 ring-offset-2 ring-offset-[#0d1220] ${round ? "rounded-full" : "rounded-lg"} ${value === c ? "ring-2 ring-blue-400" : ""}`}
             style={{ background: c }}
           />
         ))}
@@ -238,7 +238,7 @@ function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; c
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`min-h-10 rounded-full border px-3 text-sm transition ${on ? "border-emerald-400 bg-emerald-400/15 text-sky-200" : "border-white/15 bg-white/5 text-slate-300 hover:bg-white/10"}`}
+      className={`min-h-10 rounded-full border px-3 text-sm transition ${on ? "border-blue-400 bg-blue-400/15 text-sky-200" : "border-white/15 bg-white/5 text-slate-300 hover:bg-white/10"}`}
     >
       {children}
     </button>

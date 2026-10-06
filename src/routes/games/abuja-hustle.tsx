@@ -12,6 +12,7 @@ export const Route = createFileRoute("/games/abuja-hustle")({
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Abuja Hustle" },
     ],
+    links: [{ rel: "apple-touch-icon", href: "/abuja-hustle-180.png" }],
   }),
   component: GamePage,
 });
@@ -24,7 +25,7 @@ function GamePage() {
     const theme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     const before = { manifest: link?.href, theme: theme?.content };
     if (link) link.href = MANIFEST;
-    if (theme) theme.content = "#07152b";
+    if (theme) theme.content = "#05070c";
     if ("serviceWorker" in navigator) {
       void navigator.serviceWorker.register("/abuja-hustle-sw.js", { scope: "/games/abuja-hustle" }).catch(() => {});
     }

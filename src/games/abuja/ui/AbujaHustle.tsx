@@ -55,7 +55,7 @@ export function AbujaHustle() {
     if (!playing) setSaved(loadSave());
   }, [playing]);
 
-  if (!ready) return <div className="min-h-[100dvh] bg-[#07152b]" />;
+  if (!ready) return <div className="min-h-[100dvh] bg-[#05070c]" />;
   if (!ageOk) {
     return (
       <AgeGate

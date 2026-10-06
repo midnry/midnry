@@ -135,7 +135,7 @@ function FeaturedSix() {
         })}
         <Link
           to="/discover/abuja-hustle"
-          className="group flex flex-col rounded-3xl bg-[radial-gradient(ellipse_at_top_left,#14407a,#07152b_70%)] p-5 text-white shadow-line transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="group flex flex-col rounded-3xl bg-[radial-gradient(ellipse_at_top_left,#11265c,#05070c_70%)] p-5 text-white shadow-line transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <div className="flex items-center gap-3">
             <img src="/abuja-hustle-192.png" alt="" className="size-12 shrink-0 rounded-2xl" />
@@ -147,7 +147,7 @@ function FeaturedSix() {
           <p className="mt-3 flex-1 text-sm text-pretty text-slate-200">
             A life sim. Grow up in Abuja without privilege, dodge QuickKash, and chase financial freedom.
           </p>
-          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-emerald-300">
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-blue-300">
             See the game <span aria-hidden className="transition group-hover:translate-x-0.5">→</span>
           </span>
         </Link>

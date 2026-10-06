@@ -13,7 +13,7 @@ import { WardrobePanel } from "./Wardrobe";
 export type PhoneApp = "home" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
-  { id: "wallet", label: "Wallet", icon: "💳", tint: "bg-emerald-600" },
+  { id: "wallet", label: "Wallet", icon: "💳", tint: "bg-blue-600" },
   { id: "trade", label: "Trade", icon: "📈", tint: "bg-indigo-600" },
   { id: "linkup", label: "Linkup", icon: "💗", tint: "bg-pink-600" },
   { id: "loans", label: "QuickKash", icon: "💸", tint: "bg-red-600" },
@@ -32,7 +32,7 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
   return (
     <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div
-        className="flex h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[2rem] border border-white/15 bg-[#07152b] text-slate-100 shadow-2xl sm:h-[min(48rem,92dvh)] sm:rounded-[2.5rem]"
+        className="flex h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[2rem] border border-white/15 bg-[#05070c] text-slate-100 shadow-2xl sm:h-[min(48rem,92dvh)] sm:rounded-[2.5rem]"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -268,7 +268,7 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
   return (
     <div>
       <input
-        className="h-11 w-full rounded-xl border border-white/15 bg-black/30 px-3 outline-none focus:border-emerald-400"
+        className="h-11 w-full rounded-xl border border-white/15 bg-black/30 px-3 outline-none focus:border-blue-400"
         placeholder="Search places"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
@@ -297,7 +297,7 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
                       title={RIDE_INFO[mode].blurb}
                       aria-label={`${RIDE_INFO[mode].label} to ${p.name} for ${naira(cost)}`}
                       disabled={state.stats.money < cost}
-                      className={`flex min-h-14 flex-col items-center justify-center rounded-xl text-[11px] leading-tight font-semibold transition disabled:opacity-40 ${mode === "taxi" ? "bg-emerald-600 text-white hover:bg-emerald-500" : "bg-white/10 hover:bg-white/15"}`}
+                      className={`flex min-h-14 flex-col items-center justify-center rounded-xl text-[11px] leading-tight font-semibold transition disabled:opacity-40 ${mode === "taxi" ? "bg-blue-600 text-white hover:bg-blue-500" : "bg-white/10 hover:bg-white/15"}`}
                       onClick={() => {
                         travel(p.id, mode);
                         onDone();

@@ -72,7 +72,7 @@ export function StoryPanel({ state }: { state: GameState }) {
                       key={item.text}
                       type="button"
                       disabled={!ok}
-                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:border-emerald-400/60 hover:bg-white/10 disabled:opacity-45"
+                      className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:border-blue-400/60 hover:bg-white/10 disabled:opacity-45"
                       onClick={() => choose(item)}
                     >
                       <span className="font-medium">{fill(state, item.text)}</span>

@@ -121,7 +121,7 @@ export function Creator({
               <button type="button" className="min-h-9 rounded-full bg-white/10 px-3 text-xs hover:bg-white/15" onClick={() => setView(view === "front" ? "side" : view === "side" ? "back" : "front")}>
                 ↻ Turn
               </button>
-              <button type="button" aria-pressed={grown} className={`min-h-9 rounded-full px-3 text-xs ${grown ? "bg-emerald-600 text-white" : "bg-white/10 hover:bg-white/15"}`} onClick={() => setGrown(!grown)}>
+              <button type="button" aria-pressed={grown} className={`min-h-9 rounded-full px-3 text-xs ${grown ? "bg-blue-600 text-white" : "bg-white/10 hover:bg-white/15"}`} onClick={() => setGrown(!grown)}>
                 {grown ? "Grown up (18+)" : "See me at 18+"}
               </button>
             </div>
@@ -132,7 +132,7 @@ export function Creator({
             <label className="block">
               <span className="text-sm text-slate-300">Name</span>
               <input
-                className="mt-1 h-11 w-full rounded-xl border border-white/15 bg-black/30 px-3 text-base outline-none focus:border-emerald-400"
+                className="mt-1 h-11 w-full rounded-xl border border-white/15 bg-black/30 px-3 text-base outline-none focus:border-blue-400"
                 value={name}
                 maxLength={20}
                 placeholder="e.g. Chiamaka, Musa, Tobi"
@@ -211,7 +211,7 @@ function BackgroundCard({ on, onClick, title, lines }: { on: boolean; onClick: (
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`rounded-2xl border p-4 text-left transition ${on ? "border-emerald-400 bg-emerald-400/10" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
+      className={`rounded-2xl border p-4 text-left transition ${on ? "border-blue-400 bg-blue-400/10" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
     >
       <p className="font-display text-xl">{title}</p>
       <ul className="mt-2 space-y-1 text-sm text-slate-300">
@@ -238,7 +238,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
       type="button"
       aria-pressed={on}
       onClick={onClick}
-      className={`h-10 rounded-full px-4 text-sm font-medium ${on ? "bg-emerald-600 text-white" : "bg-white/10 text-slate-100 hover:bg-white/15"}`}
+      className={`h-10 rounded-full px-4 text-sm font-medium ${on ? "bg-blue-600 text-white" : "bg-white/10 text-slate-100 hover:bg-white/15"}`}
     >
       {children}
     </button>
@@ -247,7 +247,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 
 export function Screen({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-[100dvh] overflow-y-auto bg-[radial-gradient(ellipse_at_top,#14407a,#07152b_62%)] px-4 py-10 text-slate-100 sm:py-16">
+    <div className="min-h-[100dvh] overflow-y-auto bg-[radial-gradient(ellipse_at_top,#11265c,#05070c_62%)] px-4 py-10 text-slate-100 sm:py-16">
       {children}
     </div>
   );

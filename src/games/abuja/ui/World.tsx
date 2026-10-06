@@ -207,7 +207,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const showEnter = near && !loading && !exploring && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#07152b] text-slate-100 select-none">
+    <div className="fixed inset-0 overflow-hidden bg-[#05070c] text-slate-100 select-none">
       <div ref={host} className="absolute inset-0" />
       {inStory ? <ChapterHud state={state} /> : <Hud state={state} onOpen={setPhone} />}
 
@@ -215,7 +215,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         <button
           type="button"
           onClick={() => bus.emit("goto", null)}
-          className={`${panel} absolute top-24 left-1/2 z-10 max-w-[64vw] -translate-x-1/2 px-4 py-2 text-left text-sm shadow-xl hover:bg-[#15305a] sm:top-20`}
+          className={`${panel} absolute top-24 left-1/2 z-10 max-w-[64vw] -translate-x-1/2 px-4 py-2 text-left text-sm shadow-xl hover:bg-[#1a2238] sm:top-20`}
           aria-label={`Walk to ${beat.spot.label}`}
         >
           <span className="block truncate">
@@ -275,7 +275,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       <button
         type="button"
         onClick={() => setPaused(true)}
-        className="absolute top-24 left-3 z-10 flex size-11 items-center justify-center rounded-xl border border-white/15 bg-[#0b1f3d]/90 text-xl font-bold shadow-xl hover:bg-[#15305a] sm:top-20 lg:top-3"
+        className="absolute top-24 left-3 z-10 flex size-11 items-center justify-center rounded-xl border border-white/15 bg-[#0d1220]/90 text-xl font-bold shadow-xl hover:bg-[#1a2238] sm:top-20 lg:top-3"
         aria-label="Pause"
       >
         <span className="flex gap-1" aria-hidden>
@@ -333,7 +333,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         <button
           type="button"
           onClick={() => setPhone("map")}
-          className="absolute right-4 bottom-24 z-10 flex size-16 flex-col items-center justify-center rounded-2xl border border-white/15 bg-emerald-600 text-xs font-semibold text-white shadow-xl hover:bg-emerald-500"
+          className="absolute right-4 bottom-24 z-10 flex size-16 flex-col items-center justify-center rounded-2xl border border-white/15 bg-blue-600 text-xs font-semibold text-white shadow-xl hover:bg-blue-500"
           aria-label="Get a ride"
         >
           <span className="text-2xl" aria-hidden>
@@ -346,7 +346,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         <button
           type="button"
           onClick={() => setPhone("home")}
-          className="absolute right-4 bottom-6 z-10 flex size-16 flex-col items-center justify-center rounded-2xl border border-white/15 bg-[#0b1f3d]/90 text-xs font-semibold shadow-xl"
+          className="absolute right-4 bottom-6 z-10 flex size-16 flex-col items-center justify-center rounded-2xl border border-white/15 bg-[#0d1220]/90 text-xs font-semibold shadow-xl"
           aria-label="Open your phone"
         >
           <span className="text-2xl" aria-hidden>
@@ -399,7 +399,7 @@ const TIPS = [
 function LoadingScreen({ title, icon }: { title: string; icon: string }) {
   const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)]!);
   return (
-    <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-[radial-gradient(ellipse_at_top,#14407a,#07152b_65%)] px-6 text-center" role="status" aria-live="polite">
+    <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-[radial-gradient(ellipse_at_top,#11265c,#05070c_65%)] px-6 text-center" role="status" aria-live="polite">
       <div className="flex size-24 items-center justify-center rounded-3xl border-2 border-white/15 bg-white/10 text-5xl shadow-2xl">
         <span className="animate-bounce" aria-hidden>
           {icon}
@@ -407,7 +407,7 @@ function LoadingScreen({ title, icon }: { title: string; icon: string }) {
       </div>
       <p className="mt-6 font-display text-2xl text-white">{title}…</p>
       <div className="mt-5 h-2 w-56 overflow-hidden rounded-full bg-white/15">
-        <div className="h-full w-1/3 animate-[loadbar_0.9s_ease-in-out_infinite] rounded-full bg-emerald-500" />
+        <div className="h-full w-1/3 animate-[loadbar_0.9s_ease-in-out_infinite] rounded-full bg-blue-500" />
       </div>
       <p className="mt-6 max-w-xs text-sm text-slate-300">{tip}</p>
       <style>{`@keyframes loadbar { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }`}</style>
@@ -423,7 +423,7 @@ function MapButton({ label, active, onClick, children }: { label: string; active
       title={label}
       aria-pressed={active}
       onClick={onClick}
-      className={`flex size-11 items-center justify-center rounded-xl border text-lg font-bold shadow-xl transition ${active ? "border-emerald-300 bg-emerald-600 text-white" : "border-white/15 bg-[#0b1f3d]/90 text-slate-100 hover:bg-[#15305a]"}`}
+      className={`flex size-11 items-center justify-center rounded-xl border text-lg font-bold shadow-xl transition ${active ? "border-blue-300 bg-blue-600 text-white" : "border-white/15 bg-[#0d1220]/90 text-slate-100 hover:bg-[#1a2238]"}`}
     >
       {children}
     </button>
@@ -474,7 +474,7 @@ function PauseMenu({
                 role="radio"
                 aria-checked={controls === id}
                 onClick={() => onControls(id)}
-                className={`rounded-xl border p-3 text-left text-sm transition ${controls === id ? "border-emerald-400 bg-emerald-400/15" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
+                className={`rounded-xl border p-3 text-left text-sm transition ${controls === id ? "border-blue-400 bg-blue-400/15" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
               >
                 <span className="block font-semibold">{label}</span>
                 <span className="block text-xs text-slate-400">{hint}</span>
@@ -600,7 +600,7 @@ function PlacePanel({
               onClick={() => {
                 if (doAction(p.id, a.id) === "loans") onLoans();
               }}
-              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left transition hover:border-emerald-400/60 hover:bg-white/10 disabled:opacity-45"
+              className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left transition hover:border-blue-400/60 hover:bg-white/10 disabled:opacity-45"
             >
               <span className="block text-sm font-semibold">{fill(state, a.label)}</span>
               <span className="block text-xs text-slate-400">{ok ? meta : `🔒 ${a.lockedText ?? "Not available yet"}`}</span>
@@ -633,7 +633,7 @@ function EventModal({ state }: { state: GameState }) {
                 type="button"
                 disabled={!ok}
                 onClick={() => resolveEvent(item)}
-                className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:border-emerald-400/60 hover:bg-white/10 disabled:opacity-45"
+                className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left transition hover:border-blue-400/60 hover:bg-white/10 disabled:opacity-45"
               >
                 <span className="font-medium">{item.text}</span>
                 {!ok ? <span className="mt-0.5 block text-xs text-slate-400">🔒 {reason}</span> : null}
@@ -695,7 +695,7 @@ function Joystick() {
       role="presentation"
     >
       <div
-        className="absolute top-1/2 left-1/2 size-14 rounded-full bg-emerald-500/85 shadow-lg"
+        className="absolute top-1/2 left-1/2 size-14 rounded-full bg-blue-500/85 shadow-lg"
         style={{ transform: `translate(calc(-50% + ${knob.x}px), calc(-50% + ${knob.y}px))` }}
       />
     </div>

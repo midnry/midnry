@@ -172,7 +172,7 @@ export class WorldScene extends Phaser.Scene {
     this.glows = [];
     this.boat = null;
     const { width, height } = sizeOf(this.mapId);
-    this.cameras.main.setBackgroundColor(this.mapId === "city" ? "#0b1726" : "#0d1b2e");
+    this.cameras.main.setBackgroundColor(this.mapId === "city" ? "#07090f" : "#0a0d16");
 
     this.drawPeople();
     if (this.mapId === "city") this.drawCity();
@@ -180,9 +180,9 @@ export class WorldScene extends Phaser.Scene {
 
     const start = this.startPoint();
     this.player = this.makePlayer(start.x, start.y);
-    this.beatMarker = this.makeMarker(0x22c55e, "!");
+    this.beatMarker = this.makeMarker(0x3b82f6, "!");
     this.taskMarker = this.makeMarker(0x38bdf8, "★");
-    this.arrow = this.add.triangle(0, 0, 0, -12, 9, 8, -9, 8, 0x22c55e).setDepth(20).setVisible(false);
+    this.arrow = this.add.triangle(0, 0, 0, -12, 9, 8, -9, 8, 0x3b82f6).setDepth(20).setVisible(false);
     this.night = this.add.rectangle(0, 0, 4000, 4000, 0x0b1330, 0).setOrigin(0).setScrollFactor(0).setDepth(30);
 
     this.cameras.main.setBounds(0, 0, width, height);
@@ -574,8 +574,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private makePlayer(x: number, y: number) {
-    const me = figure(this, x, y, playerOf(getState()), { name: "YOU", nameColor: "#4ade80", unit: 0.22 });
-    const halo = this.add.ellipse(0, 9, 32, 11, 0x4ade80, 0.25).setStrokeStyle(2.5, 0xffffff, 0.95);
+    const me = figure(this, x, y, playerOf(getState()), { name: "YOU", nameColor: "#60a5fa", unit: 0.22 });
+    const halo = this.add.ellipse(0, 9, 32, 11, 0x60a5fa, 0.25).setStrokeStyle(2.5, 0xffffff, 0.95);
     me.addAt(halo, 0);
     this.tweens.add({ targets: halo, scaleX: 1.15, scaleY: 1.15, alpha: 0.6, duration: 700, yoyo: true, repeat: -1 });
     return me;
@@ -585,7 +585,7 @@ export class WorldScene extends Phaser.Scene {
   private makeMarker(tint: number, glyph: string) {
     const ring = this.add.circle(0, 0, 34, tint, 0.2).setStrokeStyle(3, tint, 1);
     const sign = this.add
-      .text(0, -62, glyph, { fontFamily: "system-ui", fontSize: "28px", fontStyle: "bold", color: "#ffffff", stroke: "#07152b", strokeThickness: 3, backgroundColor: Phaser.Display.Color.IntegerToColor(tint).rgba, padding: { x: 8, y: 2 } })
+      .text(0, -62, glyph, { fontFamily: "system-ui", fontSize: "28px", fontStyle: "bold", color: "#ffffff", stroke: "#05070c", strokeThickness: 3, backgroundColor: Phaser.Display.Color.IntegerToColor(tint).rgba, padding: { x: 8, y: 2 } })
       .setOrigin(0.5);
     this.tweens.add({ targets: sign, y: -72, duration: 600, yoyo: true, repeat: -1 });
     this.tweens.add({ targets: ring, scale: 1.3, alpha: 0.5, duration: 900, yoyo: true, repeat: -1 });
@@ -805,7 +805,7 @@ export class WorldScene extends Phaser.Scene {
     const angle = Math.atan2(dy, dx);
     this.arrow.setPosition(this.player.x + Math.cos(angle) * 64, this.player.y + Math.sin(angle) * 64);
     this.arrow.setRotation(angle + Math.PI / 2);
-    this.arrow.setFillStyle(step ? 0x38bdf8 : 0x22c55e);
+    this.arrow.setFillStyle(step ? 0x38bdf8 : 0x3b82f6);
   }
 
   // ── Rides ─────────────────────────────────────────────────────────────────
@@ -824,7 +824,7 @@ export class WorldScene extends Phaser.Scene {
     const drop = away > 1 ? { x: curb.x + ((to.x - curb.x) / away) * step, y: curb.y + ((to.y - curb.y) / away) * step } : curb;
     const car = vehicle(this, route[0]!.x, route[0]!.y, style).setDepth(9);
     const tag = this.add
-      .text(car.x, car.y, "YOU", { fontFamily: "system-ui, sans-serif", fontSize: "12px", fontStyle: "bold", color: "#4ade80", stroke: "#0b1726", strokeThickness: 4 })
+      .text(car.x, car.y, "YOU", { fontFamily: "system-ui, sans-serif", fontSize: "12px", fontStyle: "bold", color: "#60a5fa", stroke: "#05070c", strokeThickness: 4 })
       .setResolution(2)
       .setOrigin(0.5)
       .setDepth(9);
@@ -927,7 +927,7 @@ export function createGame(parent: HTMLElement): Phaser.Game {
   return new Phaser.Game({
     type: Phaser.AUTO,
     parent,
-    backgroundColor: "#0b1726",
+    backgroundColor: "#05070c",
     scale: { mode: Phaser.Scale.RESIZE, width: parent.clientWidth, height: parent.clientHeight },
     render: { antialias: true },
     scene: [WorldScene, RoomScene],

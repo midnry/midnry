@@ -70,7 +70,7 @@ const FEATURES: { title: string; text: string; image: string; phone?: boolean; a
 function PlayButtons() {
   return (
     <div className="flex flex-col gap-3 sm:flex-row">
-      <Link to="/games/abuja-hustle" className="inline-flex min-h-12 items-center justify-center rounded-full bg-emerald-500 px-6 text-base font-semibold text-white hover:bg-emerald-400">
+      <Link to="/games/abuja-hustle" className="inline-flex min-h-12 items-center justify-center rounded-full bg-blue-600 px-6 text-base font-semibold text-white hover:bg-blue-500">
         Play free now
       </Link>
       <Link to="/apps" className="inline-flex min-h-12 items-center justify-center rounded-full px-6 text-base font-semibold text-white ring-1 ring-white/40 hover:bg-white/10">
@@ -91,7 +91,7 @@ function GamePage() {
         <span>Abuja Hustle</span>
       </nav>
 
-      <section className="mt-6 overflow-hidden rounded-[2rem] bg-[radial-gradient(ellipse_at_top_left,#14407a,#07152b_70%)] p-6 text-white sm:p-10">
+      <section className="mt-6 overflow-hidden rounded-[2rem] bg-[radial-gradient(ellipse_at_top_left,#11265c,#05070c_70%)] p-6 text-white sm:p-10">
         <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.1fr]">
           <div>
             <div className="flex items-center gap-3">
@@ -143,7 +143,7 @@ function GamePage() {
         </ul>
       </section>
 
-      <section className="mt-16 flex flex-col gap-6 rounded-3xl bg-[radial-gradient(ellipse_at_top_left,#14407a,#07152b_70%)] p-8 text-white sm:flex-row sm:items-center sm:justify-between sm:p-10">
+      <section className="mt-16 flex flex-col gap-6 rounded-3xl bg-[radial-gradient(ellipse_at_top_left,#11265c,#05070c_70%)] p-8 text-white sm:flex-row sm:items-center sm:justify-between sm:p-10">
         <div className="max-w-lg">
           <h2 className="font-display text-3xl tracking-tight">Your life in Abuja starts now</h2>
           <p className="mt-2 text-pretty text-slate-300">Free to play. For adults 18 and over: it deals with money, debt, crime and relationships.</p>

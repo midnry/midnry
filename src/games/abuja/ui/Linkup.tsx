@@ -128,7 +128,7 @@ function PartnerCard({ state, p, open, onToggle }: { state: GameState; p: Partne
               ) : null}
               {p.status === "engaged"
                 ? ROMANCE.weddings.map((w) => (
-                    <button key={w.id} type="button" className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-4 text-left text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-500" onClick={() => romance({ kind: "wed", id: p.id, wedding: w.id })}>
+                    <button key={w.id} type="button" className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-4 text-left text-sm font-semibold bg-blue-600 text-white hover:bg-blue-500" onClick={() => romance({ kind: "wed", id: p.id, wedding: w.id })}>
                       <span>{w.name}</span>
                       <span className="shrink-0 tabular-nums">{naira(cost(state, p.id, w.cost))}</span>
                     </button>
