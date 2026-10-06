@@ -1,0 +1,129 @@
+[
+  {
+    "id": "nepa", "weight": 10, "title": "NEPA has taken light",
+    "text": "Darkness. The whole street groans at once. Your phone is on 9%.",
+    "choices": [
+      { "text": "Buy fuel for the small generator (₦4,000)", "effects": [{ "stat": "money", "add": -4000 }, { "stat": "stress", "add": -2 }], "result": "The 'I better pass my neighbour' generator roars to life." },
+      { "text": "Sleep in the heat", "effects": [{ "stat": "stress", "add": 6 }, { "stat": "energy", "add": -10 }], "result": "Mosquitoes hold a party in your honour." }
+    ]
+  },
+  {
+    "id": "fuel", "weight": 6, "title": "Fuel scarcity",
+    "text": "Queues stretch for kilometres. Transport fares double overnight. A man is selling fuel in jerrycans at three times the price.",
+    "choices": [
+      { "text": "Pay the black-market price (₦8,000)", "effects": [{ "stat": "money", "add": -8000 }], "result": "Your wallet weeps, but you move." },
+      { "text": "Trek and endure", "effects": [{ "stat": "energy", "add": -20 }, { "stat": "stress", "add": 8 }, { "stat": "health", "add": 2 }], "result": "Free cardio, courtesy of the economy." }
+    ]
+  },
+  {
+    "id": "landlord", "weight": 4, "once": true, "title": "Landlord wahala",
+    "text": "Your landlord sends a message: 'Due to the economy, rent is now two years upfront from next year. Thank you for your understanding.' You do not understand.",
+    "choices": [
+      { "text": "Negotiate hard", "effects": [{ "chance": 0.5, "then": [{ "stat": "stress", "add": 4 }, { "toast": "He agrees to one year. Victory, Abuja style." }], "else": [{ "stat": "money", "add": -40000 }, { "stat": "stress", "add": 10 }, { "toast": "He doesn't budge. You pay a ₦40,000 'agreement fee'." }] }] },
+      { "text": "Pay a 'caution fee' to keep things calm (₦25,000)", "effects": [{ "stat": "money", "add": -25000 }], "result": "Peace has a price. It is ₦25,000." }
+    ]
+  },
+  {
+    "id": "black_tax", "weight": 8, "title": "Black tax",
+    "text": "Your phone rings. A relative needs money: school fees for a cousin, hospital bill for an aunt, 'small thing' for a ceremony. Everyone believes you are doing well in Abuja.",
+    "choices": [
+      { "text": "Send ₦20,000", "if": { "stat": "money", "gte": 20000 }, "lockedText": "You don't have ₦20,000", "effects": [{ "stat": "money", "add": -20000 }, { "stat": "reputation", "add": 3 }, { "stat": "stress", "add": 3 }], "result": "Blessings pour in over WhatsApp voice notes." },
+      { "text": "Explain that things are tight", "effects": [{ "stat": "reputation", "add": -3 }, { "stat": "stress", "add": 5 }], "result": "'So Abuja has changed you,' says a voice note. You listen to it twice." }
+    ]
+  },
+  {
+    "id": "devaluation", "weight": 4, "title": "Naira devaluation",
+    "text": "Breaking news: the naira has lost a third of its value overnight. Prices in the market change between breakfast and lunch.",
+    "choices": [
+      { "text": "Panic-buy foodstuff (₦15,000)", "effects": [{ "stat": "money", "add": -15000 }, { "stat": "stress", "add": 3 }], "result": "You buy a bag of rice before it doubles. Smart, for once." },
+      { "text": "Carry on", "effects": [{ "stat": "stress", "add": 6 }], "result": "Your savings are now smaller and nobody even asked you." }
+    ]
+  },
+  {
+    "id": "owambe", "weight": 5, "title": "Owambe invitation",
+    "text": "A friend's wedding this weekend. Aso-ebi costs ₦25,000. Half of Abuja's middle class will be there.",
+    "choices": [
+      { "text": "Buy the aso-ebi and go", "if": { "stat": "money", "gte": 25000 }, "lockedText": "You don't have ₦25,000", "effects": [{ "stat": "money", "add": -25000 }, { "stat": "network", "add": 7 }, { "stat": "stress", "add": -5 }], "result": "You dance, you eat, you leave with two job leads and a party pack." },
+      { "text": "Send your regards", "effects": [{ "stat": "network", "add": -1 }], "result": "Your regards are noted. Your absence is also noted." }
+    ]
+  },
+  {
+    "id": "tunde_help", "weight": 4, "if": { "npc": "tunde", "rel": 40 }, "title": "Tunde calls",
+    "text": "\"Guy, I hear say you dey struggle. Take this small thing. No argue me.\" Tunde sends money he cannot really afford.",
+    "choices": [
+      { "text": "Accept, and promise to pay it back", "effects": [{ "stat": "money", "add": 20000 }, { "npc": "tunde", "rel": 5 }, { "stat": "stress", "add": -6 }], "result": "Real friends are rarer than dollars." },
+      { "text": "Refuse: he needs it more", "effects": [{ "npc": "tunde", "rel": 8 }], "result": "\"You too dey form,\" he laughs. But he's proud of you." }
+    ]
+  },
+  {
+    "id": "slim_offer", "weight": 4, "if": { "npc": "slim", "rel": 20 }, "title": "Slim has a 'deal'",
+    "text": "Slim pulls up in a new Benz. \"My guy, why you dey suffer? One client, one week, you go buy your own car. Come Lugbe.\"",
+    "choices": [
+      { "text": "Tell him you'll come to Lugbe", "effects": [{ "flag": "yahoo_intro", "set": true }, { "npc": "slim", "rel": 5 }], "result": "The address is saved in your phone. It feels heavier than it should." },
+      { "text": "Tell him no, firmly", "effects": [{ "npc": "slim", "rel": -10 }, { "stat": "resilience", "add": 3 }], "result": "He drives off laughing. You keep your peace, and your freedom." }
+    ]
+  },
+  {
+    "id": "guru", "weight": 4, "title": "Prophet Profit's new course",
+    "text": "Prophet Profit is live on Instaflex: \"VIP signals group, ₦100k. Last 10 slots. My students are millionaires!\" (His students are mostly people he sells to.)",
+    "choices": [
+      { "text": "Join the VIP group (₦100,000)", "if": { "stat": "money", "gte": 100000 }, "lockedText": "You don't have ₦100,000", "effects": [{ "stat": "money", "add": -100000 }, { "flag": "guru_victim", "set": true }, { "log": "Paid ₦100,000 for 'VIP forex signals'." }], "result": "The signals are a screenshot of other people's profits. The group is closed a week later." },
+      { "text": "Report the page", "effects": [{ "stat": "reputation", "add": 1 }], "result": "Nothing happens. But you feel cleaner." }
+    ]
+  },
+  {
+    "id": "doubleup", "weight": 3, "once": true, "if": { "stat": "money", "gte": 50000 }, "title": "DoubleUp Global",
+    "text": "Everyone at your office is talking about DoubleUp Global, an 'investment platform' paying 30% a month. Your colleague shows you his dashboard: ₦400,000 profit. It looks real.",
+    "choices": [
+      { "text": "Invest ₦50,000", "effects": [{ "stat": "money", "add": -50000 }, { "flag": "ponzi_in", "set": true }, { "flag": "ponzi_amount", "set": 50000 }], "result": "Your dashboard shows ₦50,000 growing every day. You check it every hour." },
+      { "text": "Walk away. 30% a month is not real.", "effects": [{ "skill": "trading", "add": 2 }], "result": "Your colleague calls you 'Mr. Doubting Thomas'. For now." }
+    ]
+  },
+  {
+    "id": "doubleup_withdraw", "weight": 8, "once": true, "if": { "flag": "ponzi_in" }, "title": "DoubleUp Global: early payout",
+    "text": "Your DoubleUp dashboard shows ₦65,000. A 'withdraw' button glows. Your colleague says withdrawing 'breaks the compound'.",
+    "choices": [
+      { "text": "Withdraw everything", "effects": [{ "stat": "money", "add": 65000 }, { "flag": "ponzi_in", "set": false }, { "log": "Got out of a Ponzi scheme early, with profit." }], "result": "The money lands. You are one of the lucky early ones. Somebody else will pay for it." },
+      { "text": "Reinvest and add ₦100,000 more", "if": { "stat": "money", "gte": 100000 }, "lockedText": "You don't have ₦100,000", "effects": [{ "stat": "money", "add": -100000 }, { "flag": "ponzi_greedy", "set": true }], "result": "The number on the dashboard is beautiful. Numbers on dashboards always are." },
+      { "text": "Leave it to grow", "effects": [], "result": "Let it compound, they said." }
+    ]
+  },
+  {
+    "id": "doubleup_freeze", "weight": 10, "once": true, "if": { "any": [{ "flag": "ponzi_greedy" }, { "flag": "ponzi_in" }] }, "title": "DoubleUp Global has frozen withdrawals",
+    "text": "\"Dear valued investors, due to system upgrade, withdrawals are paused for 30 days.\" The Telegram group is now admin-only. The office is very quiet.",
+    "choices": [
+      { "text": "Accept the loss", "effects": [{ "flag": "ponzi_in", "set": false }, { "flag": "ponzi_greedy", "set": false }, { "stat": "stress", "add": 15 }, { "skill": "trading", "add": 3 }, { "log": "Lost money when a Ponzi scheme collapsed." }], "result": "Expensive lesson. You will never forget it, at least." }
+    ]
+  },
+  {
+    "id": "opportunity", "weight": 4, "if": { "stat": "network", "gte": 30 }, "title": "A contact remembers you",
+    "text": "Someone you met at an owambe sends a message: their company needs a quick contract done this weekend. Pay is good.",
+    "choices": [
+      { "text": "Take the gig", "effects": [{ "stat": "money", "add": 45000 }, { "stat": "energy", "add": -20 }, { "stat": "network", "add": 3 }], "result": "Networking: the only investment that pays in referrals." },
+      { "text": "Decline, you're exhausted", "effects": [{ "stat": "stress", "add": -3 }], "result": "Rest is also productive. Sometimes." }
+    ]
+  },
+  {
+    "id": "okafor_referral", "weight": 3, "once": true, "if": { "npc": "okafor", "rel": 45 }, "title": "Mrs. Okafor makes a call",
+    "text": "\"I spoke about you to a friend at Delta Crest Oil & Gas. Go and see them. And wear a proper tie.\"",
+    "choices": [
+      { "text": "Thank her properly", "effects": [{ "npc": "okafor", "rel": 15 }, { "log": "Mrs. Okafor recommended you to an oil company." }], "result": "A referral from someone who means it is worth more than a hundred CVs." }
+    ]
+  },
+  {
+    "id": "checkpoint", "weight": 0, "title": "Police checkpoint",
+    "text": "\"Stop there! Where are you going? Open your phone.\" The officer scrolls through your messages. Your Heat is high; they have been looking for people like you.",
+    "choices": [
+      { "text": "Talk your way out", "effects": [{ "chance": 0.5, "then": [{ "toast": "You talk about 'my uncle in the force'. They let you go." }, { "stat": "heat", "add": -5 }], "else": [{ "stat": "money", "add": -30000 }, { "stat": "stress", "add": 10 }, { "toast": "They take ₦30,000 'for the boys'." }] }] },
+      { "text": "Pay them to go away (₦20,000)", "effects": [{ "stat": "money", "add": -20000 }, { "stat": "heat", "add": -3 }], "result": "The officer's smile is very wide." },
+      { "text": "Run", "effects": [{ "chance": 0.4, "then": [{ "stat": "heat", "add": 15 }, { "stat": "energy", "add": -30 }, { "toast": "You escape through a market, but now they know your face." }], "else": [{ "flag": "arrested", "set": true }] }] }
+    ]
+  },
+  {
+    "id": "collectors", "weight": 0, "title": "QuickKash collectors",
+    "text": "You missed a QuickKash repayment. Mr. Felix's team has messaged everyone in your contact list: '{name} is a debtor. Tell them to pay.' Your aunt in the village forwards it to the family group.",
+    "choices": [
+      { "text": "Apologise and promise to pay", "effects": [{ "stat": "reputation", "add": -8 }, { "stat": "stress", "add": 12 }, { "log": "QuickKash shamed you to your whole contact list." }], "result": "Your boss saw it. Your pastor saw it. Your ex saw it." }
+    ]
+  }
+]

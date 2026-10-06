@@ -1,0 +1,16 @@
+{
+  "name": "Abuja Hustle",
+  "short_name": "Abuja Hustle",
+  "description": "A satirical life sim set in Abuja, Nigeria. 18+.",
+  "id": "/games/abuja-hustle",
+  "start_url": "/games/abuja-hustle",
+  "scope": "/games/abuja-hustle",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#14110f",
+  "theme_color": "#14110f",
+  "icons": [
+    { "src": "/abuja-hustle-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/abuja-hustle-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

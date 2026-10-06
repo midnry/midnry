@@ -25,6 +25,7 @@ import { Route as AppsIndexRouteImport } from './routes/apps/index'
 import { Route as AppsSlugRouteImport } from './routes/apps/$slug'
 import { Route as AudiencesAudienceRouteImport } from './routes/audiences/$audience'
 import { Route as ForAudienceRouteImport } from './routes/for/$audience'
+import { Route as GamesAbujaHustleRouteImport } from './routes/games/abuja-hustle'
 import { Route as SectionsGenreRouteImport } from './routes/sections/$genre'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAvatarIdRouteImport } from './routes/api/avatar/$id'
@@ -113,6 +114,11 @@ const ForAudienceRoute = ForAudienceRouteImport.update({
   path: '/for/$audience',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GamesAbujaHustleRoute = GamesAbujaHustleRouteImport.update({
+  id: '/games/abuja-hustle',
+  path: '/games/abuja-hustle',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SectionsGenreRoute = SectionsGenreRouteImport.update({
   id: '/sections/$genre',
   path: '/sections/$genre',
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
   '/for/$audience': typeof ForAudienceRoute
+  '/games/abuja-hustle': typeof GamesAbujaHustleRoute
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps/': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
   '/for/$audience': typeof ForAudienceRoute
+  '/games/abuja-hustle': typeof GamesAbujaHustleRoute
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -217,6 +225,7 @@ export interface FileRoutesById {
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
   '/for/$audience': typeof ForAudienceRoute
+  '/games/abuja-hustle': typeof GamesAbujaHustleRoute
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps/': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/apps/$slug'
     | '/audiences/$audience'
     | '/for/$audience'
+    | '/games/abuja-hustle'
     | '/sections/$genre'
     | '/apps/'
     | '/api/auth/$'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/apps/$slug'
     | '/audiences/$audience'
     | '/for/$audience'
+    | '/games/abuja-hustle'
     | '/sections/$genre'
     | '/apps'
     | '/api/auth/$'
@@ -294,6 +305,7 @@ export interface FileRouteTypes {
     | '/apps/$slug'
     | '/audiences/$audience'
     | '/for/$audience'
+    | '/games/abuja-hustle'
     | '/sections/$genre'
     | '/apps/'
     | '/api/auth/$'
@@ -320,6 +332,7 @@ export interface RootRouteChildren {
   AppsSlugRoute: typeof AppsSlugRoute
   AudiencesAudienceRoute: typeof AudiencesAudienceRoute
   ForAudienceRoute: typeof ForAudienceRoute
+  GamesAbujaHustleRoute: typeof GamesAbujaHustleRoute
   SectionsGenreRoute: typeof SectionsGenreRoute
   AppsIndexRoute: typeof AppsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -444,6 +457,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForAudienceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/games/abuja-hustle': {
+      id: '/games/abuja-hustle'
+      path: '/games/abuja-hustle'
+      fullPath: '/games/abuja-hustle'
+      preLoaderRoute: typeof GamesAbujaHustleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sections/$genre': {
       id: '/sections/$genre'
       path: '/sections/$genre'
@@ -512,6 +532,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppsSlugRoute: AppsSlugRoute,
   AudiencesAudienceRoute: AudiencesAudienceRoute,
   ForAudienceRoute: ForAudienceRoute,
+  GamesAbujaHustleRoute: GamesAbujaHustleRoute,
   SectionsGenreRoute: SectionsGenreRoute,
   AppsIndexRoute: AppsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

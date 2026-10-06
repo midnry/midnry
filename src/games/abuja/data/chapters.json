@@ -1,0 +1,306 @@
+[
+  {
+    "id": "primary",
+    "stage": "primary",
+    "title": "Chapter 1 · Primary School",
+    "age": 9,
+    "start": "start",
+    "scenes": {
+      "start": {
+        "text": "Abuja. Federal Capital Territory. Wide roads, big gates, bigger dreams. You are nine years old.",
+        "branch": [
+          { "if": { "background": "lapo" }, "next": "home_lapo" },
+          { "next": "home_average" }
+        ]
+      },
+      "home_lapo": {
+        "speaker": "Mama",
+        "text": "One room in Nyanya. Mama sells pepper and tomatoes by the junction. Last night, garri without sugar again. This morning she says: \"{name}, after school, come help me for the stall o.\"",
+        "choices": [
+          { "text": "Help Mama at the stall every day", "effects": [{ "skill": "hustle", "add": 6 }, { "skill": "trade", "add": 3 }, { "skill": "education", "add": -2 }, { "flag": "helped_mama", "set": true }], "result": "You learn to count change faster than your teacher. Your homework suffers small.", "next": "fees" },
+          { "text": "Beg to focus on your books", "effects": [{ "skill": "education", "add": 6 }, { "stat": "stress", "add": 5 }], "result": "Mama sighs, but she lets you read under the one bulb. When NEPA allows.", "next": "fees" }
+        ]
+      },
+      "fees": {
+        "speaker": "Headmaster",
+        "text": "Assembly. The headmaster reads names. Yours is on the list. \"Those owing school fees, go home and come back with your parents.\" The whole school turns to look.",
+        "choices": [
+          { "text": "Sell sachet water at the junction with Tunde", "effects": [{ "npc": "tunde", "rel": 15 }, { "skill": "hustle", "add": 5 }, { "stat": "money", "add": 1500 }, { "flag": "early_hustle", "set": true }, { "log": "Sold pure water at nine to help pay school fees." }], "result": "Tunde shows you the best spot: under the bridge, where the danfo drivers stop. By Friday, half the fees are paid.", "next": "friends" },
+          { "text": "Ask Uncle Sylvester for help", "effects": [{ "npc": "uncle", "rel": -5 }, { "flag": "uncle_owes", "set": true }, { "stat": "stress", "add": 5 }], "result": "Uncle Sylvester gives a long speech about 'hard work' and ₦500. He will remind the family of this ₦500 for the next twenty years.", "next": "friends" },
+          { "text": "Stay home and study from a borrowed textbook", "effects": [{ "skill": "education", "add": 4 }, { "stat": "stress", "add": 8 }], "result": "You miss two weeks of school, but you finish the borrowed textbook. Twice.", "next": "friends" }
+        ]
+      },
+      "home_average": {
+        "speaker": "Daddy",
+        "text": "A two-bedroom flat in Gwarinpa. Daddy is a civil servant at the Federal Secretariat; Mummy trades fabrics in Wuse Market. Not rich, not suffering. Daddy says: \"{name}, this term, I want to see results.\"",
+        "choices": [
+          { "text": "Take extra lessons after school", "effects": [{ "skill": "education", "add": 6 }, { "stat": "stress", "add": 3 }], "result": "The lesson teacher smells of Robb and wisdom. Your maths improves.", "next": "friends" },
+          { "text": "Help Mummy at her fabric stall on Saturdays", "effects": [{ "skill": "trade", "add": 5 }, { "skill": "hustle", "add": 3 }, { "flag": "helped_mama", "set": true }], "result": "You learn that every customer says \"last price\" and nobody means it.", "next": "friends" },
+          { "text": "Play football every evening", "effects": [{ "stat": "health", "add": 5 }, { "stat": "stress", "add": -5 }, { "stat": "network", "add": 3 }], "result": "You are not Okocha, but the whole estate knows your name.", "next": "friends" }
+        ]
+      },
+      "friends": {
+        "text": "Break time. Tunde, the boy who always comes early because his mama opens shop at 6, sits alone with nothing to eat. Slim, the boy with new shoes every term, waves you over: \"My guy, copy my homework. I get the answers.\"",
+        "choices": [
+          { "text": "Share your lunch with Tunde", "effects": [{ "npc": "tunde", "rel": 20 }, { "flag": "shared_lunch", "set": true }, { "log": "Shared lunch with Tunde. He never forgot." }], "result": "Tunde splits your bread exactly in half. \"I go pay you back one day,\" he says. He means it.", "next": "end" },
+          { "text": "Copy Slim's homework", "effects": [{ "npc": "slim", "rel": 15 }, { "skill": "education", "add": -2 }, { "flag": "slim_friend", "set": true }], "result": "Full marks, zero learning. Slim winks: \"Stick with me.\"", "next": "end" },
+          { "text": "Hang out with both", "effects": [{ "npc": "tunde", "rel": 8 }, { "npc": "slim", "rel": 8 }, { "stat": "network", "add": 2 }], "result": "Tunde brings the jokes, Slim brings the gist. You bring yourself.", "next": "end" }
+        ]
+      },
+      "end": {
+        "text": "Primary school ends. Your mother cries at the graduation. Your father pretends he is not crying. Somewhere in Maitama, a boy your age has just been given his first car keys. For when he turns sixteen.",
+        "choices": [{ "text": "On to secondary school", "next": "@chapter:secondary" }]
+      }
+    }
+  },
+  {
+    "id": "secondary",
+    "stage": "secondary",
+    "title": "Chapter 2 · Secondary School",
+    "age": 14,
+    "start": "start",
+    "scenes": {
+      "start": {
+        "text": "Secondary school. New uniform (yours is your cousin's old one, if you are a Lapo Baby; new from the tailor if not). Same Tunde. Same Slim. New problems.",
+        "branch": [
+          { "if": { "background": "lapo" }, "next": "lapo_school" },
+          { "next": "average_school" }
+        ]
+      },
+      "lapo_school": {
+        "text": "Community secondary school, Nyanya. Forty-eight students per class, one fan, no NEPA. The chemistry lab is a picture of a chemistry lab. But the teachers who care, really care.",
+        "choices": [
+          { "text": "Join the debate club", "effects": [{ "skill": "education", "add": 4 }, { "stat": "reputation", "add": 4 }], "result": "Your argument that 'NEPA should be renamed Never Expect Power Always' wins the inter-school round.", "next": "big_event" },
+          { "text": "Run errands for traders after school", "effects": [{ "skill": "hustle", "add": 5 }, { "stat": "money", "add": 3000 }], "result": "Small money, steady money. Your schoolbag smells like crayfish.", "next": "big_event" }
+        ]
+      },
+      "average_school": {
+        "text": "Federal Government College. Boarding school. Senior students who think they are the Army. The food is a crime scene, but the teachers are decent and the alumni network is long.",
+        "choices": [
+          { "text": "Join the JETS science club", "effects": [{ "skill": "tech", "add": 5 }, { "skill": "education", "add": 3 }], "result": "You build a robot from a biscuit tin. It moves forward, once.", "next": "big_event" },
+          { "text": "Become the class 'provost' who sells provisions", "effects": [{ "skill": "trade", "add": 5 }, { "stat": "money", "add": 5000 }], "result": "Indomie at ₦50 profit per pack. You are the Dangote of Hostel B.", "next": "big_event" }
+        ]
+      },
+      "big_event": {
+        "speaker": "Bolaji",
+        "text": "Inter-school quiz at a 'big' school in Maitama. A convoy rolls in: two Prados, one siren. Out steps Bolaji Danjuma-Adeyemi, son of (fictional) Senator Danjuma-Adeyemi. He scans your team. \"You guys came by bus? Respect, honestly.\"",
+        "choices": [
+          { "text": "Introduce yourself and swap numbers", "effects": [{ "npc": "bolaji", "rel": 15 }, { "stat": "network", "add": 6 }, { "flag": "knows_bolaji", "set": true }, { "log": "Met Bolaji, a Nepo Baby, at a quiz in Maitama." }], "result": "He gives you his number. And his driver's number, 'in case'.", "next": "peer" },
+          { "text": "Beat his team in the quiz", "effects": [{ "skill": "education", "add": 5 }, { "stat": "reputation", "add": 6 }, { "npc": "bolaji", "rel": 5 }, { "flag": "beat_bolaji", "set": true }, { "log": "Beat the Maitama school in a quiz. Bolaji clapped." }], "result": "You win. Bolaji claps, genuinely. His father's aide does not.", "next": "peer" },
+          { "text": "Ignore him. Not your mate.", "effects": [{ "stat": "stress", "add": -3 }], "result": "Pride is free. For now.", "next": "peer" }
+        ]
+      },
+      "peer": {
+        "speaker": "Slim",
+        "text": "Slim finds you after school. New iPhone, school shirt untucked. \"My guy, there's this runs. You just go collect package for one oga for Lugbe, bring am come. ₦10k per trip. No questions.\"",
+        "choices": [
+          { "text": "Do the runs", "effects": [{ "stat": "money", "add": 20000 }, { "stat": "heat", "add": 8 }, { "npc": "slim", "rel": 15 }, { "flag": "slim_runs", "set": true }, { "log": "Did 'no questions' runs for Slim at fifteen." }], "result": "Two trips, ₦20k. The second package was heavier. You did not ask.", "next": "socials" },
+          { "text": "Refuse and tell Tunde", "effects": [{ "npc": "tunde", "rel": 10 }, { "npc": "slim", "rel": -10 }], "result": "Tunde says, \"Guy, that one na trouble.\" Slim calls you 'Pastor' for a month.", "next": "socials" }
+        ]
+      },
+      "socials": {
+        "text": "Everyone is on Tiklok now. Your classmate's skit about Nigerian mothers and slippers has 300k views. You open the app.",
+        "choices": [
+          { "text": "Make skits about school life", "effects": [{ "skill": "content", "add": 8 }, { "flag": "early_creator", "set": true }], "result": "Your third video (\"POV: NEPA takes light during WAEC revision\") gets 40k views. You understand the algorithm a little.", "next": "crush" },
+          { "text": "Just scroll", "effects": [{ "stat": "stress", "add": -4 }, { "skill": "education", "add": -1 }], "result": "Four hours vanish. You learn nothing. It was lovely.", "next": "crush" }
+        ]
+      },
+      "crush": {
+        "text": "There is someone in SS2 who laughs at your jokes. Innocent butterflies. You consider writing a note.",
+        "choices": [
+          { "text": "Write the note", "effects": [{ "stat": "stress", "add": 4 }, { "stat": "reputation", "add": 2 }], "result": "They reply: \"You're funny.\" You re-read it 400 times.", "next": "waec" },
+          { "text": "Focus. WAEC is coming.", "effects": [{ "skill": "education", "add": 3 }], "result": "Love can wait. WAEC cannot.", "next": "waec" }
+        ]
+      },
+      "waec": {
+        "text": "WAEC season. 'Expo' is selling on WhatsApp: ₦5,000 for 'verified' answers. Half the class has bought it.",
+        "choices": [
+          { "text": "Study properly, late nights included", "effects": [{ "stat": "stress", "add": 8 }, { "chance": 0.55, "then": [{ "cert": "waec" }, { "skill": "education", "add": 5 }, { "toast": "WAEC: 5 credits including Maths and English!" }], "else": [{ "flag": "waec_failed", "set": true }, { "toast": "WAEC: Maths missed by one mark." }] }], "next": "dropout", "result": "You read by candlelight. Results come out." },
+          { "text": "Buy the expo", "effects": [{ "stat": "money", "add": -5000 }, { "chance": 0.4, "then": [{ "cert": "waec" }, { "toast": "The expo was real. Somehow." }], "else": [{ "flag": "waec_failed", "set": true }, { "toast": "The expo was for last year's paper. Of course." }] }], "next": "dropout", "result": "You pay. You pray." }
+        ]
+      },
+      "dropout": {
+        "text": "End of secondary school. Money is tight; university will cost. Some people your age are already making money in the market, on the road, online.",
+        "choices": [
+          { "text": "Go for JAMB and university", "if": { "cert": "waec" }, "lockedText": "Needs a WAEC pass", "next": "jamb" },
+          { "text": "Resit WAEC next year, then JAMB", "if": { "noCert": "waec" }, "effects": [{ "age": 1 }, { "stat": "stress", "add": 6 }, { "cert": "waec" }, { "log": "Resat WAEC and passed." }], "result": "One more year, one more try. This time, you pass.", "next": "jamb" },
+          { "text": "Drop out and start hustling now", "effects": [{ "flag": "dropout", "set": "secondary" }, { "log": "Dropped out after secondary school to hustle." }], "next": "@adult" }
+        ]
+      },
+      "jamb": {
+        "text": "JAMB day. The CBT centre in Garki has three working computers and four hundred candidates.",
+        "choices": [
+          { "text": "Sit the exam", "effects": [{ "chance": 0.7, "then": [{ "flag": "admitted", "set": true }, { "toast": "Admission: University of Abuja!" }], "else": [{ "age": 1 }, { "flag": "admitted", "set": true }, { "toast": "Missed the cut-off. Tried again next year and got in." }] }], "result": "Results drop at midnight. Your phone shakes in your hand.", "next": "@chapter:university" }
+        ]
+      }
+    }
+  },
+  {
+    "id": "university",
+    "stage": "university",
+    "title": "Chapter 3 · University",
+    "age": 18,
+    "start": "start",
+    "scenes": {
+      "start": {
+        "text": "University of Abuja, Gwagwalada campus. Hostel with eight people in a four-person room. Somebody's mattress is older than you. Freedom smells like burnt noodles.",
+        "choices": [
+          { "text": "Join the tech club", "effects": [{ "skill": "tech", "add": 6 }, { "stat": "network", "add": 5 }], "result": "They meet in a classroom with one socket and seventeen extension boxes.", "next": "strike" },
+          { "text": "Start a hostel hustle selling snacks", "effects": [{ "skill": "trade", "add": 5 }, { "stat": "money", "add": 15000 }], "result": "Gala and Fanta at 2 a.m. You are a public service.", "next": "strike" },
+          { "text": "Read. Just read.", "effects": [{ "skill": "education", "add": 6 }], "result": "Your CGPA thanks you. Your social life does not.", "next": "strike" }
+        ]
+      },
+      "strike": {
+        "text": "ASUU is on strike. Again. Indefinitely. \"Go home, students.\" Your four-year course is now a five-year course, minimum.",
+        "choices": [
+          { "text": "Learn to code from free videos", "effects": [{ "skill": "tech", "add": 10 }, { "stat": "money", "add": -8000 }], "result": "Data costs more than food, but by month six you build your first website.", "next": "cult" },
+          { "text": "Run a POS stand in Gwagwalada", "effects": [{ "skill": "hustle", "add": 6 }, { "stat": "money", "add": 40000 }, { "skill": "trade", "add": 3 }], "result": "Withdrawal charges are a goldmine. You learn the true face of Nigerian banking.", "next": "cult" },
+          { "text": "Follow Slim to the 'lab' in Lugbe", "effects": [{ "flag": "yahoo_intro", "set": true }, { "npc": "slim", "rel": 15 }, { "stat": "money", "add": 60000 }, { "stat": "heat", "add": 12 }, { "log": "Learned 'the format' in Slim's yahoo lab during an ASUU strike." }], "result": "Ring lights, three laptops, and 'the format'. You make ₦60k in a week. Your stomach turns a little.", "next": "cult" }
+        ]
+      },
+      "cult": {
+        "text": "Strike over. On campus, two groups are recruiting. One wears berets and uses words like 'protection'. The other is the Rotaract club, which mostly does fundraisers.",
+        "choices": [
+          { "text": "Join the 'protection' group", "effects": [{ "flag": "cult", "set": true }, { "stat": "heat", "add": 10 }, { "chance": 0.35, "then": [{ "stat": "health", "add": -25 }, { "toast": "A rival group attacks. You spend two weeks in the clinic." }, { "log": "Joined a campus cult. Got hurt for it." }], "else": [{ "stat": "reputation", "add": -5 }] }], "result": "Initiation is not a party. It is a lesson in how fast bad decisions get serious.", "next": "mentor" },
+          { "text": "Join the club with fundraisers", "effects": [{ "stat": "network", "add": 6 }, { "stat": "reputation", "add": 5 }], "result": "You organise a charity football match. Even the VC shows up.", "next": "mentor" },
+          { "text": "Stay neutral", "next": "mentor" }
+        ]
+      },
+      "mentor": {
+        "speaker": "Mrs. Okafor",
+        "text": "Mrs. Okafor, your economics lecturer, stops you after class. \"You ask good questions. My consultancy needs an intern this holiday. Unpaid. You will work hard. You will learn plenty.\"",
+        "choices": [
+          { "text": "Take the internship", "effects": [{ "npc": "okafor", "rel": 25 }, { "skill": "education", "add": 5 }, { "stat": "network", "add": 8 }, { "flag": "mentored", "set": true }, { "log": "Interned with Mrs. Okafor. She became a mentor." }], "result": "You make 300 photocopies and two good impressions. She starts introducing you as 'my person'.", "next": "guru" },
+          { "text": "Decline: you need paid work", "effects": [{ "skill": "hustle", "add": 4 }, { "stat": "money", "add": 20000 }], "result": "Money now. Maybe doors later. Maybe.", "next": "guru" }
+        ]
+      },
+      "guru": {
+        "speaker": "Prophet Profit",
+        "text": "Your timeline is full of Prophet Profit, standing beside a Lamborghini (rented). \"Forex mentorship: ₦50,000. 95% win rate. Students only discount!\"",
+        "choices": [
+          { "text": "Pay for the course", "effects": [{ "stat": "money", "add": -50000 }, { "skill": "trading", "add": 2 }, { "flag": "guru_victim", "set": true }, { "log": "Paid a forex guru ₦50k for a course." }], "result": "The 'course' is four YouTube links and a Telegram group where he sells a second course.", "next": "nepo_party" },
+          { "text": "Learn trading from free books instead", "effects": [{ "skill": "trading", "add": 6 }], "result": "Boring, slow, and actually useful.", "next": "nepo_party" },
+          { "text": "Scroll past", "next": "nepo_party" }
+        ]
+      },
+      "nepo_party": {
+        "speaker": "Bolaji",
+        "text": "Bolaji, now in a private university that charges in dollars, is throwing a party in Maitama. He invites you, if you know him. If you do not, the caterer is hiring waiters for ₦15k a night.",
+        "choices": [
+          { "text": "Go as a guest", "if": { "flag": "knows_bolaji" }, "lockedText": "You don't know Bolaji", "effects": [{ "stat": "money", "add": -20000 }, { "stat": "network", "add": 10 }, { "npc": "bolaji", "rel": 10 }, { "stat": "stress", "add": 6 }], "result": "You spend ₦20k on an outfit to look like you belong. A senator's aide asks what your father does. You meet three people who will matter.", "next": "love" },
+          { "text": "Work the party as a waiter", "effects": [{ "stat": "money", "add": 15000 }, { "skill": "hustle", "add": 3 }, { "stat": "stress", "add": 4 }], "result": "You serve jollof to people your age who don't say thank you. One of them tips ₦20k without looking at you.", "next": "love" },
+          { "text": "Stay home", "next": "love" }
+        ]
+      },
+      "love": {
+        "speaker": "{love}",
+        "text": "At a friend's birthday, you meet {love}. Sharp, funny, studying law, and completely unimpressed by fake people. (Both of you are over 18.)",
+        "choices": [
+          { "text": "Talk all night", "effects": [{ "npc": "love", "rel": 20 }, { "flag": "met_love", "set": true }, { "log": "Met {love} at a birthday party." }], "result": "You walk them to the gate at 2 a.m. and forget your own name on the way back.", "next": "final" },
+          { "text": "Focus on yourself for now", "next": "final" }
+        ]
+      },
+      "final": {
+        "text": "Final year. Project, defence, and one lecturer who 'cannot find' your file. Some classmates are dropping out to chase money.",
+        "choices": [
+          { "text": "Finish strong and graduate", "effects": [{ "cert": "degree" }, { "skill": "education", "add": 6 }, { "log": "Graduated from the University of Abuja." }], "result": "Second Class Upper. Your mother tells the whole street.", "next": "@chapter:nysc" },
+          { "text": "Drop out: time is money", "effects": [{ "flag": "dropout", "set": "university" }, { "log": "Dropped out of university." }], "next": "@adult" }
+        ]
+      }
+    }
+  },
+  {
+    "id": "nysc",
+    "stage": "nysc",
+    "title": "Chapter 4 · NYSC",
+    "age": 23,
+    "start": "start",
+    "scenes": {
+      "start": {
+        "text": "Your call-up letter drops. One year of national service. Without the NYSC certificate, most government and big corporate jobs will lock you out. With it, you will spend a year being called 'Corper'.",
+        "choices": [
+          { "text": "Go to camp", "effects": [{ "flag": "did_nysc", "set": true }], "next": "camp" },
+          { "text": "Skip NYSC", "effects": [{ "flag": "no_nysc", "set": true }, { "log": "Skipped NYSC." }], "result": "Freedom now. Paperwork problems later.", "next": "@adult" }
+        ]
+      },
+      "camp": {
+        "text": "Orientation camp, Kubwa. Three weeks of drills at 4:30 a.m., white shorts, and Mammy market suya at midnight. The soldiers shout. The cooks do not care.",
+        "choices": [
+          { "text": "Throw yourself into camp life", "effects": [{ "stat": "network", "add": 8 }, { "stat": "health", "add": 5 }, { "stat": "reputation", "add": 4 }], "result": "You become platoon leader. Everyone knows you by the end of week one.", "next": "mammy" },
+          { "text": "Save energy, avoid drills where possible", "effects": [{ "stat": "stress", "add": -6 }], "result": "You perfect the art of hiding behind the clinic.", "next": "mammy" }
+        ]
+      },
+      "mammy": {
+        "text": "Mammy market at night: fried yam, phone charging for ₦200, and every corps member in Nigeria sharing gist. Someone you met in camp asks you to join their table.",
+        "choices": [
+          { "text": "Join and swap contacts", "effects": [{ "stat": "network", "add": 6 }, { "npc": "love", "rel": 5 }], "result": "New contacts from five states. One of them is starting a logistics business.", "next": "posting_talk" },
+          { "text": "Sell phone charging yourself", "effects": [{ "stat": "money", "add": 12000 }, { "skill": "hustle", "add": 4 }], "result": "One generator, twelve extensions, a business plan.", "next": "posting_talk" }
+        ]
+      },
+      "posting_talk": {
+        "text": "Posting day is close. Rumour says Nepo Baby corpers are already 'confirmed' for Abuja and Lagos. Around camp, fixers whisper that they can keep you in Abuja. For a price.",
+        "choices": [
+          { "text": "Talk to the fixers", "next": "fixers" },
+          { "text": "Let fate decide", "next": "posting" }
+        ]
+      },
+      "fixers": {
+        "special": "fixers",
+        "text": "Behind the camp clinic, the fixers gather. Each one has a reputation, if you know who to ask. Stars shown above their heads come from other corpers' reviews.",
+        "choices": [{ "text": "Walk away and let fate decide", "next": "posting" }]
+      },
+      "posting": {
+        "text": "Posting letters are out.",
+        "branch": [
+          { "if": { "flag": "stay_abuja" }, "next": "abuja_posting" },
+          { "next": "away_posting" }
+        ]
+      },
+      "abuja_posting": {
+        "text": "Your letter says FCT, Abuja. You exhale. Nearby, a Nepo Baby corper did not even come to camp, and he is also posted to Abuja. Of course.",
+        "choices": [
+          { "text": "Take a PPA at a federal ministry", "effects": [{ "stat": "network", "add": 6 }, { "skill": "education", "add": 3 }], "result": "Your job is to carry files from Room 12 to Room 14. Twice a day.", "next": "pass_out" },
+          { "text": "Take a PPA at a tech startup in Wuse", "effects": [{ "skill": "tech", "add": 8 }], "result": "The startup has a PlayStation and no salaries. You learn plenty.", "next": "pass_out" }
+        ]
+      },
+      "away_posting": {
+        "text": "Your letter says: {state}. {state_blurb}",
+        "choices": [
+          { "text": "Report to your PPA and make the most of it", "effects": [{ "flag": "posted_away", "set": true }, { "stat": "network", "add": 5 }, { "skill": "hustle", "add": 3 }], "result": "Eleven months. Allawee every month: ₦77,000, when it comes. You learn a new place, new food, new people.", "next": "state_event" }
+        ]
+      },
+      "state_event": {
+        "text": "{state_event}",
+        "choices": [{ "text": "Carry on", "next": "pass_out" }]
+      },
+      "pass_out": {
+        "text": "Passing out parade. Khaki ironed sharp, certificate in hand. Real life starts now. Abuja is waiting, with its rent, its traffic, and its opportunities.",
+        "choices": [{ "text": "Collect your certificate", "effects": [{ "cert": "nysc" }, { "stat": "money", "add": 30000 }, { "log": "Completed NYSC." }], "next": "@adult" }]
+      }
+    }
+  },
+  {
+    "id": "adult",
+    "stage": "adult",
+    "title": "Chapter 5 · Adulthood",
+    "age": 23,
+    "start": "start",
+    "scenes": {
+      "start": {
+        "text": "You are an adult in Abuja now. Rent is due weekly in this game (be grateful: real landlords want two years upfront). Your goal: financial freedom. Talent matters. Grind matters. Money and connections matter more.",
+        "branch": [
+          { "if": { "flag": "dropout" }, "next": "dropout_intro" },
+          { "next": "intro" }
+        ]
+      },
+      "dropout_intro": {
+        "text": "No certificate, no waiting. Some doors are closed to you: banks, ministries, big corporates. Others are wide open: business, trading, content, the road. And Slim's door is always open.",
+        "choices": [{ "text": "Step into Abuja", "next": "@world" }]
+      },
+      "intro": {
+        "text": "Certificates in a nylon bag, CV printed at a business centre, and one good shirt. Walk the city, find work, build something. Open your phone for jobs, loans, contacts and the map.",
+        "choices": [{ "text": "Step into Abuja", "next": "@world" }]
+      }
+    }
+  }
+]

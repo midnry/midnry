@@ -1,0 +1,42 @@
+[
+  { "name": "Kano", "blurb": "Ancient city, dye pits older than your great-grandfather, and the best kilishi you will ever eat.",
+    "events": [
+      { "text": "Your PPA is a secondary school in Kano. The students call you 'Corper Teacher' and correct your Hausa with great patience. By month six you can haggle at Kurmi market.", "effects": [{ "skill": "trade", "add": 4 }, { "stat": "network", "add": 4 }] },
+      { "text": "A Kano trader you befriended offers you a small consignment of leather bags to resell in Abuja. Good margin, if you can move them.", "effects": [{ "skill": "trade", "add": 5 }, { "stat": "money", "add": 25000 }] }
+    ] },
+  { "name": "Enugu", "blurb": "Coal City. Rolling hills, abacha on every corner, and uncles who ask what you are doing with your life.",
+    "events": [
+      { "text": "Your PPA boss in Enugu runs a printing press and teaches you how to price jobs properly. 'Never do business with family on credit,' he says, then sells to his cousin on credit.", "effects": [{ "skill": "hustle", "add": 4 }, { "skill": "trade", "add": 3 }] },
+      { "text": "A landlord in Enugu demands rent in advance even for corpers. You negotiate down with a CDS certificate and pure audacity.", "effects": [{ "stat": "money", "add": -15000 }, { "stat": "resilience", "add": 3 }] }
+    ] },
+  { "name": "Lagos", "blurb": "Somehow, against all odds, you got Lagos. Traffic is a lifestyle. Everyone has three jobs.",
+    "events": [
+      { "text": "In Lagos you share a mini-flat with four corpers in Yaba. The tech scene is wild. You sneak into a startup meetup and leave with two job leads.", "effects": [{ "skill": "tech", "add": 5 }, { "stat": "network", "add": 6 }] },
+      { "text": "Third Mainland Bridge traffic eats four hours a day. You start making skits about it. One goes viral.", "effects": [{ "skill": "content", "add": 6 }, { "stat": "reputation", "add": 4 }] }
+    ] },
+  { "name": "Rivers", "blurb": "Port Harcourt: Garden City, oil money, generator noise and the best bole and fish.",
+    "events": [
+      { "text": "Your PPA is an oil-servicing company. You watch people make in a week what your parents made in a year. You take notes.", "effects": [{ "stat": "network", "add": 6 }, { "skill": "education", "add": 3 }] },
+      { "text": "Soot from illegal refineries settles on your white shirts. A local NGO recruits you for a clean-air campaign.", "effects": [{ "stat": "health", "add": -4 }, { "stat": "reputation", "add": 4 }] }
+    ] },
+  { "name": "Benue", "blurb": "Food Basket of the Nation. Yam, rice, and hospitality that embarrasses Abuja.",
+    "events": [
+      { "text": "You teach agricultural science in a Benue secondary school. A farmer explains more about supply chains in an afternoon than your lecturer did in a semester.", "effects": [{ "skill": "trade", "add": 5 }] },
+      { "text": "Your CDS group builds a small borehole for a village. The chief gives you a goat. You do not know what to do with a goat.", "effects": [{ "stat": "reputation", "add": 6 }, { "stat": "stress", "add": -4 }] }
+    ] },
+  { "name": "Cross River", "blurb": "Calabar: clean streets, carnival season, edikang ikong that changes lives.",
+    "events": [
+      { "text": "Calabar carnival season. You volunteer and end up dancing in a costume with feathers. Your Instaflex grows by 2,000 followers.", "effects": [{ "skill": "content", "add": 4 }, { "stat": "network", "add": 4 }] },
+      { "text": "Your PPA is a hotel. You learn hospitality, and you learn that tourists tip in dollars.", "effects": [{ "stat": "usd", "add": 60 }, { "skill": "hustle", "add": 3 }] }
+    ] },
+  { "name": "Ogun", "blurb": "Next to Lagos, cheaper than Lagos, full of factories and Lagos workers who sleep there.",
+    "events": [
+      { "text": "Your PPA is a factory in Ota. You learn production planning and how to survive on 'staff canteen' rice.", "effects": [{ "skill": "education", "add": 3 }, { "skill": "trade", "add": 3 }] },
+      { "text": "You start selling Adire fabric to your Abuja friends online. Small orders, steady orders.", "effects": [{ "stat": "money", "add": 20000 }, { "skill": "trade", "add": 3 }] }
+    ] },
+  { "name": "Kogi", "blurb": "Where the Niger meets the Benue. Lokoja's confluence view is free; the roads are not smooth.",
+    "events": [
+      { "text": "The Abuja–Lokoja road is an adventure novel. You spend one Friday night in traffic behind a fallen trailer and make three friends.", "effects": [{ "stat": "stress", "add": 5 }, { "stat": "network", "add": 3 }] },
+      { "text": "Your PPA is a local government office. Your job title is 'Assistant'. Of what, nobody knows.", "effects": [{ "stat": "stress", "add": -3 }] }
+    ] }
+]

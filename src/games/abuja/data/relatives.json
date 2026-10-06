@@ -1,0 +1,9 @@
+{
+  "note": "Inheritance and family feud data (coming in a later update).",
+  "relatives": [
+    { "id": "uncle", "name": "Uncle Sylvester", "claim": "the house", "aggression": 0.4 },
+    { "id": "aunty_grace", "name": "Aunty Grace", "claim": "the land in the village", "aggression": 0.2 },
+    { "id": "cousin_dele", "name": "Cousin Dele", "claim": "the family business", "aggression": 0.6 }
+  ],
+  "feudStages": ["family meeting", "village elders", "threats", "fake documents", "land grabbers", "court case"]
+}

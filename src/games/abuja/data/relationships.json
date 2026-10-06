@@ -1,0 +1,9 @@
+{
+  "note": "Dating system data (coming in a later update). All romance is between adults (18+); intimacy is fade-to-black only.",
+  "personalities": ["calm", "cunning", "crazy"],
+  "dates": [
+    { "id": "suya", "name": "Suya by the roadside", "cost": 5000, "affection": 4 },
+    { "id": "jabi", "name": "Jabi Lake boat ride", "cost": 25000, "affection": 8 },
+    { "id": "fine_dining", "name": "Fine dining in Maitama", "cost": 120000, "affection": 14 }
+  ]
+}
