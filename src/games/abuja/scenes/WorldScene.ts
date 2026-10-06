@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
 import { DISTRICTS, MAPS, PLACES, WORLD, districtAt } from "../systems/data";
-import { LAKE, ROADS, blocked, sizeOf, solidsFor } from "../systems/citymap";
+import { LAKE, ROADS, blocked, freePoint, sizeOf, solidsFor } from "../systems/citymap";
 import { bump, checkpoint, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
 import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
@@ -161,7 +161,8 @@ export class WorldScene extends Phaser.Scene {
   private startPoint() {
     const state = getState();
     if (this.mapId !== "city") return MAPS[this.mapId]!.spawn;
-    if (state?.pos.x) return state.pos;
+    // Older saves may stand where the lake or a building now is.
+    if (state?.pos.x) return freePoint(state.pos.x, state.pos.y, this.solids);
     return { x: PLACES[0]!.x, y: PLACES[0]!.y + 95 };
   }
 
