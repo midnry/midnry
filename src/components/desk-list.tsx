@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { APPS, genreLabel, tierLabel } from "@/lib/catalog";
+import { APPS, genreLabel, getApp, tierLabel } from "@/lib/catalog";
 import { AUDIENCES, SECTIONS, TAGS, defaultTagOf, sectionOf, sectionsIn, tagLabel, type GenreId, type TagId } from "@/lib/sections";
 import { canOpenApp } from "@/lib/access";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -23,6 +23,23 @@ type DeskItem = {
 type DeskView = "list" | "grid";
 
 export type { DeskItem };
+
+/** A link to an app: its showcase page for visitors, or the app itself once you're signed in. */
+export function AppLink({ slug, className, children }: { slug: string; className?: string; children: ReactNode }) {
+  const { user } = useCurrentUserState();
+  if (!user && getApp(slug)) {
+    return (
+      <Link to="/discover/$slug" params={{ slug }} preload="intent" className={className}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <Link to="/apps/$slug" params={{ slug }} preload="intent" className={className}>
+      {children}
+    </Link>
+  );
+}
 
 const VIEW_KEY = "midnry.desk.view";
 
@@ -207,10 +224,8 @@ export function EverydayRow({ exclude }: { exclude: TagId }) {
       <ul className="-mx-5 mt-3 flex snap-x gap-3 overflow-x-auto px-5 pb-2">
         {apps.map((app) => (
           <li key={app.slug} className="w-44 shrink-0 snap-start">
-            <Link
-              to="/apps/$slug"
-              params={{ slug: app.slug }}
-              preload="intent"
+            <AppLink
+              slug={app.slug}
               className="group flex h-full flex-col gap-3 rounded-2xl bg-card p-4 shadow-line"
             >
               <AppMark slug={app.slug} name={app.name} className="size-10" />
@@ -218,7 +233,7 @@ export function EverydayRow({ exclude }: { exclude: TagId }) {
                 <span className="block font-medium group-hover:underline">{app.name}</span>
                 <span className="mt-1 line-clamp-2 block text-sm text-muted">{app.blurb}</span>
               </span>
-            </Link>
+            </AppLink>
           </li>
         ))}
       </ul>
@@ -327,10 +342,8 @@ export function AppGroup({
           const status = appStatus(app, known, hasPass, isAdmin);
           return (
             <li key={app.slug} className="flex min-w-0 rounded-2xl bg-card shadow-line">
-              <Link
-                to="/apps/$slug"
-                params={{ slug: app.slug }}
-                preload="intent"
+              <AppLink
+                slug={app.slug}
                 className="group flex min-w-0 flex-1 flex-col gap-3 p-4 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
               >
                 <span className="flex flex-wrap items-start justify-between gap-2">
@@ -341,7 +354,7 @@ export function AppGroup({
                   <span className="block font-medium group-hover:underline">{app.name}</span>
                   <span className="mt-1 line-clamp-3 block text-sm text-pretty text-muted">{app.blurb}</span>
                 </span>
-              </Link>
+              </AppLink>
               <span className="pr-2 pt-2">
                 <SaveButton slug={app.slug} />
               </span>
@@ -358,10 +371,8 @@ export function AppGroup({
         const status = appStatus(app, known, hasPass, isAdmin);
         return (
           <li key={app.slug} className="flex items-stretch gap-2 border-t border-line last:border-b">
-            <Link
-              to="/apps/$slug"
-              params={{ slug: app.slug }}
-              preload="intent"
+            <AppLink
+              slug={app.slug}
               className="group flex min-w-0 flex-1 gap-4 py-4 outline-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
             >
               <span className="w-8 pt-0.5 font-display text-muted tabular-nums">
@@ -377,7 +388,7 @@ export function AppGroup({
                   <span className="mt-1 block text-sm text-pretty text-muted">{app.blurb}</span>
                 </span>
               </span>
-            </Link>
+            </AppLink>
             <SaveButton slug={app.slug} />
           </li>
         );

@@ -25,6 +25,8 @@ import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as AppsIndexRouteImport } from './routes/apps/index'
 import { Route as AppsSlugRouteImport } from './routes/apps/$slug'
 import { Route as AudiencesAudienceRouteImport } from './routes/audiences/$audience'
+import { Route as DiscoverSlugRouteImport } from './routes/discover/$slug'
+import { Route as DiscoverAbujaHustleRouteImport } from './routes/discover/abuja-hustle'
 import { Route as ForAudienceRouteImport } from './routes/for/$audience'
 import { Route as GamesAbujaHustleRouteImport } from './routes/games/abuja-hustle'
 import { Route as SectionsGenreRouteImport } from './routes/sections/$genre'
@@ -115,6 +117,16 @@ const AudiencesAudienceRoute = AudiencesAudienceRouteImport.update({
   path: '/audiences/$audience',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DiscoverSlugRoute = DiscoverSlugRouteImport.update({
+  id: '/discover/$slug',
+  path: '/discover/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiscoverAbujaHustleRoute = DiscoverAbujaHustleRouteImport.update({
+  id: '/discover/abuja-hustle',
+  path: '/discover/abuja-hustle',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ForAudienceRoute = ForAudienceRouteImport.update({
   id: '/for/$audience',
   path: '/for/$audience',
@@ -178,6 +190,8 @@ export interface FileRoutesByFullPath {
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
+  '/discover/$slug': typeof DiscoverSlugRoute
+  '/discover/abuja-hustle': typeof DiscoverAbujaHustleRoute
   '/for/$audience': typeof ForAudienceRoute
   '/games/abuja-hustle': typeof GamesAbujaHustleRoute
   '/sections/$genre': typeof SectionsGenreRoute
@@ -205,6 +219,8 @@ export interface FileRoutesByTo {
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
+  '/discover/$slug': typeof DiscoverSlugRoute
+  '/discover/abuja-hustle': typeof DiscoverAbujaHustleRoute
   '/for/$audience': typeof ForAudienceRoute
   '/games/abuja-hustle': typeof GamesAbujaHustleRoute
   '/sections/$genre': typeof SectionsGenreRoute
@@ -233,6 +249,8 @@ export interface FileRoutesById {
   '/submit': typeof SubmitRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
+  '/discover/$slug': typeof DiscoverSlugRoute
+  '/discover/abuja-hustle': typeof DiscoverAbujaHustleRoute
   '/for/$audience': typeof ForAudienceRoute
   '/games/abuja-hustle': typeof GamesAbujaHustleRoute
   '/sections/$genre': typeof SectionsGenreRoute
@@ -262,6 +280,8 @@ export interface FileRouteTypes {
     | '/submit'
     | '/apps/$slug'
     | '/audiences/$audience'
+    | '/discover/$slug'
+    | '/discover/abuja-hustle'
     | '/for/$audience'
     | '/games/abuja-hustle'
     | '/sections/$genre'
@@ -289,6 +309,8 @@ export interface FileRouteTypes {
     | '/submit'
     | '/apps/$slug'
     | '/audiences/$audience'
+    | '/discover/$slug'
+    | '/discover/abuja-hustle'
     | '/for/$audience'
     | '/games/abuja-hustle'
     | '/sections/$genre'
@@ -316,6 +338,8 @@ export interface FileRouteTypes {
     | '/submit'
     | '/apps/$slug'
     | '/audiences/$audience'
+    | '/discover/$slug'
+    | '/discover/abuja-hustle'
     | '/for/$audience'
     | '/games/abuja-hustle'
     | '/sections/$genre'
@@ -344,6 +368,8 @@ export interface RootRouteChildren {
   SubmitRoute: typeof SubmitRoute
   AppsSlugRoute: typeof AppsSlugRoute
   AudiencesAudienceRoute: typeof AudiencesAudienceRoute
+  DiscoverSlugRoute: typeof DiscoverSlugRoute
+  DiscoverAbujaHustleRoute: typeof DiscoverAbujaHustleRoute
   ForAudienceRoute: typeof ForAudienceRoute
   GamesAbujaHustleRoute: typeof GamesAbujaHustleRoute
   SectionsGenreRoute: typeof SectionsGenreRoute
@@ -470,6 +496,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AudiencesAudienceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/discover/$slug': {
+      id: '/discover/$slug'
+      path: '/discover/$slug'
+      fullPath: '/discover/$slug'
+      preLoaderRoute: typeof DiscoverSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discover/abuja-hustle': {
+      id: '/discover/abuja-hustle'
+      path: '/discover/abuja-hustle'
+      fullPath: '/discover/abuja-hustle'
+      preLoaderRoute: typeof DiscoverAbujaHustleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/for/$audience': {
       id: '/for/$audience'
       path: '/for/$audience'
@@ -552,6 +592,8 @@ const rootRouteChildren: RootRouteChildren = {
   SubmitRoute: SubmitRoute,
   AppsSlugRoute: AppsSlugRoute,
   AudiencesAudienceRoute: AudiencesAudienceRoute,
+  DiscoverSlugRoute: DiscoverSlugRoute,
+  DiscoverAbujaHustleRoute: DiscoverAbujaHustleRoute,
   ForAudienceRoute: ForAudienceRoute,
   GamesAbujaHustleRoute: GamesAbujaHustleRoute,
   SectionsGenreRoute: SectionsGenreRoute,

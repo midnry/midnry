@@ -13,6 +13,7 @@ import { ToolView } from "@/components/tools";
 import { SaveButton } from "@/components/spotlight";
 import { AppMark } from "@/components/app-mark";
 import { AppGuide } from "@/components/app-guide";
+import { AppShowcase } from "@/components/showcase";
 
 export const Route = createFileRoute("/apps/$slug")({
   head: ({ params }) => ({
@@ -61,68 +62,15 @@ function AppPage() {
       </div>
 
       {!user ? (
-        <SignedOutGate
-          name={app.name}
-          blurb={app.blurb}
-          tier={app.tier}
-          slug={app.slug}
-          features={app.features}
-          guide={app.guide}
-        />
+        <div className="mt-2">
+          <AppShowcase app={app} />
+        </div>
       ) : !canOpenApp(app, account?.hasPass ?? false, isAdmin) ? (
         <LockedGate name={app.name} blurb={app.blurb} slug={app.slug} features={app.features} guide={app.guide} />
       ) : (
         <ToolView slug={app.slug} />
       )}
     </Shell>
-  );
-}
-
-function SignedOutGate({
-  name,
-  blurb,
-  tier,
-  slug,
-  features,
-  guide,
-}: {
-  name: string;
-  blurb: string;
-  tier: "free" | "pass";
-  slug: string;
-  features: readonly string[];
-  guide: readonly string[];
-}) {
-  return (
-    <div className="mt-6">
-      <div className="flex items-center gap-4">
-        <AppMark slug={slug} name={name} className="size-14" />
-        <h1 className="font-display text-5xl tracking-tight">{name}</h1>
-      </div>
-      <p className="mt-3 text-pretty text-muted">{blurb}</p>
-      <AppGuide features={features} guide={guide} />
-      <p className="mt-4 text-pretty">
-        {tier === "free"
-          ? "This one is included with every account. Sign in or register to open it."
-          : `This tool is part of Midnry Pass, ${PASS_PRICE_LABEL} a month, charged to a card. Sign in, then subscribe to open it.`}
-      </p>
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Link
-          to="/login"
-          search={{ next: `/apps/${slug}`, intent: "register" }}
-          className={buttonClass({ tone: "primary" })}
-        >
-          Create an account
-        </Link>
-        <Link
-          to="/login"
-          search={{ next: `/apps/${slug}`, intent: "sign-in" }}
-          className={buttonClass({ tone: "quiet" })}
-        >
-          Sign in
-        </Link>
-      </div>
-    </div>
   );
 }
 

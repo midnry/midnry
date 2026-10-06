@@ -4,6 +4,7 @@ import { Shell } from "@/components/shell";
 import { AppSearch } from "@/components/desk-list";
 import { AppMark } from "@/components/app-mark";
 import { APPS, getApp } from "@/lib/catalog";
+import { pitchFor } from "@/lib/pitches";
 import { Favorites } from "@/components/spotlight";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
@@ -85,12 +86,12 @@ function Home() {
 }
 
 /** The five most useful everyday apps, in the words people would use for them. */
-const PICKS: { slug: string; pitch: string; tint: string }[] = [
-  { slug: "tasks", pitch: "Reminders in plain words. Type “pay rent every 25th” and it just works.", tint: "from-sky-500/15" },
-  { slug: "apply", pitch: "Tailor your CV for each job in seconds, then apply on LinkedIn.", tint: "from-indigo-500/15" },
-  { slug: "cycle", pitch: "A simple period tracker. Know when your next period should start.", tint: "from-pink-500/15" },
-  { slug: "ledger", pitch: "Log what you spend and see where the month went, by category.", tint: "from-emerald-500/15" },
-  { slug: "invoice", pitch: "A clean invoice with line items and tax, ready to print or send.", tint: "from-amber-500/15" },
+const PICKS: { slug: string; tint: string }[] = [
+  { slug: "tasks", tint: "from-sky-500/15" },
+  { slug: "apply", tint: "from-indigo-500/15" },
+  { slug: "cycle", tint: "from-pink-500/15" },
+  { slug: "ledger", tint: "from-emerald-500/15" },
+  { slug: "invoice", tint: "from-amber-500/15" },
 ];
 
 function FeaturedSix() {
@@ -108,13 +109,13 @@ function FeaturedSix() {
         </Link>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {PICKS.map(({ slug, pitch, tint }) => {
+        {PICKS.map(({ slug, tint }) => {
           const app = getApp(slug);
           if (!app) return null;
           return (
             <Link
               key={slug}
-              to="/apps/$slug"
+              to="/discover/$slug"
               params={{ slug }}
               className={`group flex flex-col rounded-3xl bg-card bg-gradient-to-br ${tint} to-transparent p-5 shadow-line transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2`}
             >
@@ -125,15 +126,15 @@ function FeaturedSix() {
                   <p className="text-xs text-muted">{app.tier === "free" ? "Free with an account" : "Midnry Pass"}</p>
                 </div>
               </div>
-              <p className="mt-3 flex-1 text-sm text-pretty text-muted">{pitch}</p>
+              <p className="mt-3 flex-1 text-sm text-pretty text-muted">{pitchFor(app)}</p>
               <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-ink">
-                Open {app.name} <span aria-hidden className="transition group-hover:translate-x-0.5">→</span>
+                Learn more <span aria-hidden className="transition group-hover:translate-x-0.5">→</span>
               </span>
             </Link>
           );
         })}
         <Link
-          to="/games/abuja-hustle"
+          to="/discover/abuja-hustle"
           className="group flex flex-col rounded-3xl bg-[radial-gradient(ellipse_at_top_left,#14407a,#07152b_70%)] p-5 text-white shadow-line transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <div className="flex items-center gap-3">
@@ -147,7 +148,7 @@ function FeaturedSix() {
             A life sim. Grow up in Abuja without privilege, dodge QuickKash, and chase financial freedom.
           </p>
           <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-emerald-300">
-            Play free <span aria-hidden className="transition group-hover:translate-x-0.5">→</span>
+            See the game <span aria-hidden className="transition group-hover:translate-x-0.5">→</span>
           </span>
         </Link>
       </div>
