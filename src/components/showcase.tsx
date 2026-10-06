@@ -24,11 +24,11 @@ export function BrowserFrame({ src, alt }: { src: string; alt: string }) {
 }
 
 /** A screenshot inside a phone frame. */
-export function PhoneFrame({ src, alt, className = "" }: { src: string; alt: string; className?: string }) {
+export function PhoneFrame({ src, alt, className = "", eager = false }: { src: string; alt: string; className?: string; eager?: boolean }) {
   return (
     <div className={`relative mx-auto w-[min(17rem,72vw)] rounded-[2.4rem] border-[10px] border-[#0f172a] bg-[#0f172a] shadow-[0_25px_60px_-20px_rgba(16,32,51,0.55)] ${className}`}>
       <span className="absolute top-2 left-1/2 z-10 h-4 w-20 -translate-x-1/2 rounded-full bg-[#0f172a]" aria-hidden />
-      <img src={src} alt={alt} loading="lazy" className="block w-full rounded-[1.7rem]" />
+      <img src={src} alt={alt} loading={eager ? "eager" : "lazy"} className="block w-full rounded-[1.7rem]" />
     </div>
   );
 }
@@ -114,7 +114,7 @@ export function AppShowcase({ app }: { app: AppDef }) {
           </div>
           <p className="mt-3 text-sm text-muted">Works on your phone and your computer. Nothing to install.</p>
         </div>
-        <PhoneFrame src={shot("phone")} alt={`${app.name} on a phone`} />
+        <PhoneFrame src={shot("phone")} alt={`${app.name} on a phone`} eager />
       </div>
 
       {/* The big screenshot */}

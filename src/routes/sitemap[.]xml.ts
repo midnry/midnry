@@ -11,6 +11,9 @@ const PAGES = [
   ...AUDIENCES.map((audience) => `/audiences/${audience.id}`),
   ...SECTIONS.map((section) => `/sections/${section.id}`),
   ...APPS.map((app) => `/apps/${app.slug}`),
+  ...APPS.map((app) => `/discover/${app.slug}`),
+  "/discover/abuja-hustle",
+  "/games/abuja-hustle",
 ];
 
 function originOf(request: Request): string {
