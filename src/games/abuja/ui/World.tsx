@@ -35,6 +35,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const [blocked, setBlocked] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
   const [wardrobe, setWardrobe] = useState(false);
+  const [exploring, setExploring] = useState(false);
   const inStory = Boolean(state.chapter);
 
   useEffect(() => {
@@ -61,6 +62,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       }),
       bus.on("interact", interact),
       bus.on("blocked", (message) => setBlocked(message)),
+      bus.on("exploring", (on) => setExploring(on)),
     ];
     return () => {
       cancel = true;
@@ -103,7 +105,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const beat = currentBeat(state);
   const here = near && near.kind === "place" ? place(near.id) : undefined;
   const panelOpen = Boolean(here && open === here.id);
-  const showEnter = near && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
+  const showEnter = near && !exploring && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#07152b] text-slate-100 select-none">
@@ -166,6 +168,27 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           <span className="h-4 w-1.5 rounded-sm bg-slate-100" />
         </span>
       </button>
+      <div className="absolute top-24 right-3 z-10 flex flex-col gap-2 sm:top-20 lg:top-3">
+        <MapButton label="Zoom in" onClick={() => bus.emit("camera", "in")}>
+          ＋
+        </MapButton>
+        <MapButton label="Zoom out" onClick={() => bus.emit("camera", "out")}>
+          －
+        </MapButton>
+        <MapButton label={exploring ? "Back to me" : "Explore the map"} active={exploring} onClick={() => bus.emit("camera", exploring ? "follow" : "explore")}>
+          {exploring ? "📍" : "🗺️"}
+        </MapButton>
+      </div>
+      {exploring ? (
+        <div className={`${panel} absolute bottom-40 left-1/2 z-20 flex w-[min(92vw,26rem)] -translate-x-1/2 items-center gap-3 p-3 sm:bottom-10`}>
+          <p className="min-w-0 flex-1 text-sm">
+            <span className="font-semibold">👀 Exploring.</span> <span className="text-slate-300">Drag the map (or use the joystick or arrow keys) to look around. Pinch or ＋/－ to zoom.</span>
+          </p>
+          <button type="button" className={`${btnPrimary} shrink-0`} onClick={() => bus.emit("camera", "follow")}>
+            📍 Back to me
+          </button>
+        </div>
+      ) : null}
       {paused ? (
         <PauseMenu
           onResume={() => setPaused(false)}
@@ -225,6 +248,21 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   );
 }
 
+function MapButton({ label, active, onClick, children }: { label: string; active?: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      aria-pressed={active}
+      onClick={onClick}
+      className={`flex size-11 items-center justify-center rounded-xl border text-lg font-bold shadow-xl transition ${active ? "border-emerald-300 bg-emerald-600 text-white" : "border-white/15 bg-[#0b1f3d]/90 text-slate-100 hover:bg-[#15305a]"}`}
+    >
+      {children}
+    </button>
+  );
+}
+
 function PauseMenu({ onResume, onWardrobe, onQuit }: { onResume: () => void; onWardrobe: () => void; onQuit: () => void }) {
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-[2px]" role="dialog" aria-label="Paused">
@@ -248,6 +286,8 @@ function PauseMenu({ onResume, onWardrobe, onQuit }: { onResume: () => void; onW
             <li>Move with the joystick, WASD or the arrow keys, or tap/click where you want to go.</li>
             <li>Tap the “Go to” banner (or “Go” on a job) to walk to your goal automatically.</li>
             <li>Walk up to people and places, then tap the yellow button (or press E) to talk or enter.</li>
+            <li>＋ and － (or pinch, or the mouse wheel) zoom in and out.</li>
+            <li>🗺️ Explore lets you look around the map without moving; 📍 brings you back.</li>
             <li>Esc or P pauses the game.</li>
           </ul>
         </div>

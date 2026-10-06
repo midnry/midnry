@@ -12,6 +12,9 @@ import { fullLook, lookKey, randomLook, type Look } from "../systems/character";
 import { INK, animateWalk, building, faceVehicle, figure, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
 
 const SPEED = 230;
+const ZOOM_KEY = "abuja-hustle.zoom";
+const MIN_ZOOM = 0.7;
+const MAX_ZOOM = 3;
 const NEAR = 105;
 const RADIUS = 14;
 const color = (hex: string) => Phaser.Display.Color.HexStringToColor(hex).color;
@@ -19,6 +22,7 @@ const LINE = 4;
 const title = (scene: Phaser.Scene, x: number, y: number, text: string, size = 14, fill = "#ffffff") =>
   scene.add
     .text(x, y, text, { fontFamily: "system-ui, sans-serif", fontSize: `${size}px`, fontStyle: "bold", color: fill, stroke: "#141414", strokeThickness: Math.max(4, size / 4) })
+    .setResolution(2)
     .setOrigin(0.5, 0);
 const seedOf = (id: string) => [...id].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) >>> 0, 7);
 
@@ -116,6 +120,9 @@ export class WorldScene extends Phaser.Scene {
   private night!: Phaser.GameObjects.Rectangle;
   private unsub: (() => void) | null = null;
   private lookId = "";
+  /** Looking around the map: the camera is free and the player stays put. */
+  private exploring = false;
+  private pinch: { dist: number; zoom: number } | null = null;
   private offs: (() => void)[] = [];
 
   constructor() {
@@ -151,6 +158,8 @@ export class WorldScene extends Phaser.Scene {
     this.cars = [];
     this.police = [];
     this.riding = null;
+    this.exploring = false;
+    this.pinch = null;
     this.glows = [];
     this.boat = null;
     const { width, height } = sizeOf(this.mapId);
@@ -175,7 +184,31 @@ export class WorldScene extends Phaser.Scene {
     const kb = this.input.keyboard!;
     this.keys = kb.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D", e: "E", space: "SPACE" }) as typeof this.keys;
     kb.disableGlobalCapture();
-    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => this.walkTo({ x: pointer.worldX, y: pointer.worldY }));
+    // Tap to walk; while exploring, drag to look around. Two fingers (or the mouse wheel) zoom.
+    this.input.addPointer(1);
+    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      if (this.exploring || this.input.pointer1.isDown && this.input.pointer2.isDown) return;
+      this.walkTo({ x: pointer.worldX, y: pointer.worldY });
+    });
+    this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
+      const [a, b] = [this.input.pointer1, this.input.pointer2];
+      if (a.isDown && b.isDown) {
+        const dist = Phaser.Math.Distance.Between(a.x, a.y, b.x, b.y);
+        if (!this.pinch) this.pinch = { dist, zoom: this.cameras.main.zoom };
+        else this.setZoom((this.pinch.zoom * dist) / Math.max(1, this.pinch.dist));
+        this.path = [];
+        return;
+      }
+      if (this.exploring && pointer.isDown) {
+        const cam = this.cameras.main;
+        cam.scrollX -= (pointer.x - pointer.prevPosition.x) / cam.zoom;
+        cam.scrollY -= (pointer.y - pointer.prevPosition.y) / cam.zoom;
+      }
+    });
+    this.input.on("pointerup", () => {
+      if (!this.input.pointer1.isDown || !this.input.pointer2.isDown) this.pinch = null;
+    });
+    this.input.on("wheel", (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => this.setZoom(this.cameras.main.zoom * (dy > 0 ? 0.9 : 1.1)));
 
     this.offs.push(
       bus.on("teleport", ({ x, y }) => {
@@ -184,7 +217,14 @@ export class WorldScene extends Phaser.Scene {
         this.path = [];
       }),
       bus.on("ride", ({ mode, to }) => this.startRide(mode, to)),
+      bus.on("camera", (action) => {
+        if (action === "in") this.setZoom(this.cameras.main.zoom * 1.25);
+        if (action === "out") this.setZoom(this.cameras.main.zoom / 1.25);
+        if (action === "explore") this.setExploring(true);
+        if (action === "follow") this.setExploring(false);
+      }),
       bus.on("goto", () => {
+        this.setExploring(false);
         const state = getState();
         if (!state) return;
         const step = this.mapId === "city" ? state.task?.steps[state.task.index] : undefined;
@@ -263,11 +303,39 @@ export class WorldScene extends Phaser.Scene {
     this.path = route ?? [goal];
   }
 
+  /** Close enough that everyone is easy to see; your own zoom (buttons, pinch, wheel) is remembered. */
   private fitZoom() {
     const { width, height } = this.scale;
     const small = Math.min(width, height);
-    this.cameras.main.setZoom(small < 520 ? 0.95 : small < 800 ? 1.05 : 1.15);
+    const fallback = small < 520 ? 1.45 : small < 800 ? 1.4 : 1.5;
+    let saved = 0;
+    try {
+      saved = Number(localStorage.getItem(ZOOM_KEY)) || 0;
+    } catch {
+      /* storage blocked: use the default */
+    }
+    this.cameras.main.setZoom(Phaser.Math.Clamp(saved || fallback, MIN_ZOOM, MAX_ZOOM));
   }
+
+  private setZoom(zoom: number) {
+    const z = Phaser.Math.Clamp(zoom, MIN_ZOOM, MAX_ZOOM);
+    this.cameras.main.setZoom(z);
+    try {
+      localStorage.setItem(ZOOM_KEY, z.toFixed(2));
+    } catch {
+      /* fine: it just won't be remembered */
+    }
+  }
+
+  private setExploring(on: boolean) {
+    if (this.exploring === on) return;
+    this.exploring = on;
+    this.path = [];
+    if (on) this.cameras.main.stopFollow();
+    else if (!this.riding) this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    bus.emit("exploring", on);
+  }
+
 
   // ── Drawing ─────────────────────────────────────────────────────────────────
 
@@ -544,6 +612,15 @@ export class WorldScene extends Phaser.Scene {
     if (k.right.isDown || k.d.isDown) vx += 1;
     if (k.up.isDown || k.w.isDown) vy -= 1;
     if (k.down.isDown || k.s.isDown) vy += 1;
+    if (this.exploring) {
+      // The joystick and keys glide the camera instead of walking.
+      const cam = this.cameras.main;
+      const pan = (650 / cam.zoom) * dt;
+      cam.scrollX += vx * pan;
+      cam.scrollY += vy * pan;
+      vx = 0;
+      vy = 0;
+    }
     if (vx || vy) this.path = [];
     else {
       while (this.path.length && Math.hypot(this.path[0]!.x - this.player.x, this.path[0]!.y - this.player.y) < 8) this.path.shift();
@@ -695,8 +772,10 @@ export class WorldScene extends Phaser.Scene {
     const car = vehicle(this, route[0]!.x, route[0]!.y, style).setDepth(9);
     const tag = this.add
       .text(car.x, car.y, "YOU", { fontFamily: "system-ui, sans-serif", fontSize: "12px", fontStyle: "bold", color: "#4ade80", stroke: "#0b1726", strokeThickness: 4 })
+      .setResolution(2)
       .setOrigin(0.5)
       .setDepth(9);
+    this.setExploring(false);
     this.player.setVisible(false);
     this.path = [];
     this.near = null;

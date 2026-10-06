@@ -88,7 +88,7 @@ function makeTiles(scene: Phaser.Scene) {
 // ── Characters: chibi people drawn as SVG (systems/character.ts) ────────────
 
 /** Texture pixels per drawing unit: crisp on phones without wasting memory. */
-const RES = 1.1;
+const RES = 1.5;
 
 function makeShadow(scene: Phaser.Scene) {
   make(scene, "shadow", 48, 14, (g) => {
@@ -98,7 +98,7 @@ function makeShadow(scene: Phaser.Scene) {
 
 // ── Vehicles (drawn as SVG in systems/vehicles.ts) ──────────────────────────
 
-const VRES = 1.4;
+const VRES = 1.8;
 /** Pixels per drawing unit on the map: a car is a bit longer than two people are tall. */
 export const VEHICLE_SCALE: Record<VehicleKind, number> = { car: 0.4, taxi: 0.4, okada: 0.36, keke: 0.38, bus: 0.44 };
 
@@ -196,6 +196,7 @@ export function figure(scene: Phaser.Scene, x: number, y: number, person: Person
           stroke: "#0b1726",
           strokeThickness: 4,
         })
+        .setResolution(2)
         .setOrigin(0.5),
     );
   }
@@ -394,6 +395,7 @@ export function building(scene: Phaser.Scene, s: { x: number; y: number; w: numb
           stroke: "#141414",
           strokeThickness: 4,
         })
+        .setResolution(2)
         .setOrigin(0.5),
     );
   }
@@ -408,6 +410,7 @@ export function signpost(scene: Phaser.Scene, x: number, y: number, name: string
   const glyph = scene.add.text(0, -30, icon, { fontSize: "22px" }).setOrigin(0.5);
   const text = scene.add
     .text(0, 44, name, { fontFamily: "system-ui, sans-serif", fontSize: "14px", fontStyle: "bold", color: "#ffffff", stroke: "#141414", strokeThickness: 4 })
+    .setResolution(2)
     .setOrigin(0.5, 0);
   scene.tweens.add({ targets: mat, scaleX: 1.15, scaleY: 1.15, alpha: 0.6, duration: 1000, yoyo: true, repeat: -1 });
   return scene.add.container(x, y, [mat, post, board, glyph, text]).setDepth(4);

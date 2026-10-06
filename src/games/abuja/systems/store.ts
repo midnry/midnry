@@ -202,6 +202,10 @@ type BusEvents = {
   blocked: string;
   /** Walk to the current goal: the story spot, or the next stop of a job. */
   goto: null;
+  /** Camera controls from the buttons: zoom, or look around without moving. */
+  camera: "in" | "out" | "explore" | "follow";
+  /** The world tells the buttons whether you're looking around. */
+  exploring: boolean;
 };
 type Handler = (payload: never) => void;
 const handlers = new Map<keyof BusEvents, Set<Handler>>();
