@@ -187,6 +187,19 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       {!inStory ? (
         <button
           type="button"
+          onClick={() => setPhone("map")}
+          className="absolute right-4 bottom-24 z-10 flex size-16 flex-col items-center justify-center rounded-2xl border border-white/15 bg-emerald-600 text-xs font-semibold text-white shadow-xl hover:bg-emerald-500"
+          aria-label="Get a ride"
+        >
+          <span className="text-2xl" aria-hidden>
+            🛺
+          </span>
+          Ride
+        </button>
+      ) : null}
+      {!inStory ? (
+        <button
+          type="button"
           onClick={() => setPhone("home")}
           className="absolute right-4 bottom-6 z-10 flex size-16 flex-col items-center justify-center rounded-2xl border border-white/15 bg-[#0b1f3d]/90 text-xs font-semibold shadow-xl"
           aria-label="Open your phone"

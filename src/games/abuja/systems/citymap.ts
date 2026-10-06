@@ -81,3 +81,83 @@ export function freePoint(x: number, y: number, solids: MapRect[]): { x: number;
   }
   return { x, y };
 }
+
+type Pt = { x: number; y: number };
+
+/** The nearest point on any road. */
+function onRoad(p: Pt): Pt {
+  let best: Pt = { x: ROADS.xs[0]!, y: p.y };
+  let bestD = Infinity;
+  for (const x of ROADS.xs) {
+    const d = Math.abs(p.x - x);
+    if (d < bestD) [best, bestD] = [{ x, y: Math.max(0, Math.min(WORLD.height, p.y)) }, d];
+  }
+  for (const y of ROADS.ys) {
+    const d = Math.abs(p.y - y);
+    if (d < bestD) [best, bestD] = [{ x: Math.max(0, Math.min(WORLD.width, p.x)), y }, d];
+  }
+  return best;
+}
+
+/**
+ * A drive from one spot to another along the roads: out to the nearest road,
+ * along the road grid by the shortest way, and in to the destination.
+ */
+export function roadRoute(from: Pt, to: Pt): Pt[] {
+  const a = onRoad(from);
+  const b = onRoad(to);
+  const nodes: Pt[] = [a, b];
+  for (const x of ROADS.xs) for (const y of ROADS.ys) nodes.push({ x, y });
+  const key = (p: Pt) => `${p.x},${p.y}`;
+  const edges = new Map<string, { to: number; cost: number }[]>();
+  const link = (i: number, j: number) => {
+    const cost = Math.abs(nodes[i]!.x - nodes[j]!.x) + Math.abs(nodes[i]!.y - nodes[j]!.y);
+    edges.set(String(i), [...(edges.get(String(i)) ?? []), { to: j, cost }]);
+    edges.set(String(j), [...(edges.get(String(j)) ?? []), { to: i, cost }]);
+  };
+  // Connect neighbours along each road.
+  for (const x of ROADS.xs) {
+    const on = nodes.map((p, i) => ({ p, i })).filter(({ p }) => p.x === x).sort((m, n) => m.p.y - n.p.y);
+    for (let k = 1; k < on.length; k += 1) link(on[k - 1]!.i, on[k]!.i);
+  }
+  for (const y of ROADS.ys) {
+    const on = nodes.map((p, i) => ({ p, i })).filter(({ p }) => p.y === y).sort((m, n) => m.p.x - n.p.x);
+    for (let k = 1; k < on.length; k += 1) link(on[k - 1]!.i, on[k]!.i);
+  }
+  // Dijkstra from a (0) to b (1); the graph is tiny.
+  const dist = nodes.map(() => Infinity);
+  const prev = nodes.map(() => -1);
+  const done = nodes.map(() => false);
+  dist[0] = 0;
+  for (;;) {
+    let u = -1;
+    for (let i = 0; i < nodes.length; i += 1) if (!done[i] && (u === -1 || dist[i]! < dist[u]!)) u = i;
+    if (u === -1 || dist[u] === Infinity || u === 1) break;
+    done[u] = true;
+    for (const e of edges.get(String(u)) ?? []) {
+      if (dist[u]! + e.cost < dist[e.to]!) {
+        dist[e.to] = dist[u]! + e.cost;
+        prev[e.to] = u;
+      }
+    }
+  }
+  const path: Pt[] = [];
+  for (let i = 1; i !== -1; i = prev[i]!) path.unshift(nodes[i]!);
+  if (path[0] && key(path[0]) !== key(a)) path.unshift(a);
+  const out = [from, ...path, to];
+  // Drop repeats and points that sit on a straight line.
+  return out.filter((p, i) => {
+    const q = out[i - 1];
+    const r = out[i + 1];
+    if (q && Math.hypot(p.x - q.x, p.y - q.y) < 1) return false;
+    if (q && r && ((q.x === p.x && p.x === r.x) || (q.y === p.y && p.y === r.y))) return false;
+    return true;
+  });
+}
+
+/** Length of a route in map pixels. */
+export function routeLength(route: Pt[]): number {
+  let total = 0;
+  for (let i = 1; i < route.length; i += 1) total += Math.hypot(route[i]!.x - route[i - 1]!.x, route[i]!.y - route[i - 1]!.y);
+  return total;
+}

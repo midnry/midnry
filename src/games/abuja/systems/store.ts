@@ -195,6 +195,8 @@ export type NearThing = { kind: "place" | "person" | "beat"; id: string; label: 
 
 type BusEvents = {
   teleport: { x: number; y: number };
+  /** A ride across the city: the world animates the trip along the roads. */
+  ride: { mode: "okada" | "keke" | "taxi" | "bus"; from: { x: number; y: number }; to: { x: number; y: number } };
   near: NearThing | null;
   interact: NearThing;
   blocked: string;

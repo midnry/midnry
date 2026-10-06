@@ -1,13 +1,15 @@
 import * as Phaser from "phaser";
 import { DISTRICTS, MAPS, PLACES, WORLD, districtAt } from "../systems/data";
-import { LAKE, ROADS, blocked, freePoint, sizeOf, solidsFor } from "../systems/citymap";
+import { LAKE, ROADS, blocked, freePoint, roadRoute, sizeOf, solidsFor } from "../systems/citymap";
+import { FLEET, KEKE_COLORS, OKADA_COLORS, TAXI_COLOR, type VehicleStyle } from "../systems/vehicles";
+import type { RideMode } from "../systems/rides";
 import { bump, checkpoint, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
 import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
 import { findPath, type Point } from "../systems/path";
 import type { GameState, MapRect, PersonDef } from "../systems/types";
 import { fullLook, lookKey, randomLook, type Look } from "../systems/character";
-import { INK, animateWalk, building, figure, makeArt, queueCharacters, rand, signpost, tileKey, type Figure, type Person } from "./art";
+import { INK, animateWalk, building, faceVehicle, figure, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
 
 const SPEED = 230;
 const NEAR = 105;
@@ -102,7 +104,9 @@ export class WorldScene extends Phaser.Scene {
   private placeMarkers: { id: string; marker: Phaser.GameObjects.Container }[] = [];
   private people: (Interactable & { body: Figure; home: { x: number; y: number }; vx: number; vy: number })[] = [];
   private walkers: { sprite: Figure; axis: "x" | "y"; speed: number }[] = [];
-  private cars: { body: Phaser.GameObjects.Image; axis: "x" | "y"; speed: number }[] = [];
+  private cars: { body: Vehicle; axis: "x" | "y"; speed: number }[] = [];
+  /** The ride you're on: your vehicle, the road route and how far along it you are. */
+  private riding: { car: Vehicle; tag: Phaser.GameObjects.Text; route: { x: number; y: number }[]; leg: number; speed: number; drop: { x: number; y: number } } | null = null;
   private police: { officer: Figure; barrier: Phaser.GameObjects.Image; x: number; y: number }[] = [];
   private glows: Phaser.GameObjects.Image[] = [];
   private boat: Phaser.GameObjects.Image | null = null;
@@ -125,6 +129,7 @@ export class WorldScene extends Phaser.Scene {
     if (state) people.push(...peopleOn(state, mapId).map(personOf));
     if (mapId === "city") people.push(...WALKERS, POLICE);
     queueCharacters(this, people);
+    if (mapId === "city") queueVehicles(this);
     // Drawing everyone takes a moment on slower phones: say so instead of showing a blank screen.
     const note = this.add
       .text(this.scale.width / 2, this.scale.height / 2, "Getting Abuja ready…", { fontFamily: "system-ui, sans-serif", fontSize: "16px", fontStyle: "bold", color: "#ffffff" })
@@ -145,6 +150,7 @@ export class WorldScene extends Phaser.Scene {
     this.walkers = [];
     this.cars = [];
     this.police = [];
+    this.riding = null;
     this.glows = [];
     this.boat = null;
     const { width, height } = sizeOf(this.mapId);
@@ -177,6 +183,7 @@ export class WorldScene extends Phaser.Scene {
         this.player.setPosition(x, y);
         this.path = [];
       }),
+      bus.on("ride", ({ mode, to }) => this.startRide(mode, to)),
       bus.on("goto", () => {
         const state = getState();
         if (!state) return;
@@ -259,7 +266,7 @@ export class WorldScene extends Phaser.Scene {
   private fitZoom() {
     const { width, height } = this.scale;
     const small = Math.min(width, height);
-    this.cameras.main.setZoom(small < 520 ? 0.78 : small < 800 ? 0.92 : 1);
+    this.cameras.main.setZoom(small < 520 ? 0.95 : small < 800 ? 1.05 : 1.15);
   }
 
   // ── Drawing ─────────────────────────────────────────────────────────────────
@@ -436,31 +443,25 @@ export class WorldScene extends Phaser.Scene {
       const side = i % 4 < 2 ? 1 : -1;
       const line = (axis === "x" ? ROADS.ys[i % ROADS.ys.length]! : ROADS.xs[i % ROADS.xs.length]!) + side * 31;
       const pos = Math.random() * (axis === "x" ? WORLD.width : WORLD.height);
-      const sprite = figure(this, axis === "x" ? pos : line, axis === "x" ? line : pos, WALKERS[i % WALKERS.length]!, { unit: 0.3 });
+      const sprite = figure(this, axis === "x" ? pos : line, axis === "x" ? line : pos, WALKERS[i % WALKERS.length]!, { unit: 0.17 });
       this.walkers.push({ sprite, axis, speed: (Math.random() < 0.5 ? -1 : 1) * (25 + Math.random() * 25) });
     }
-    const paints = [0xe11d48, 0x2563eb, 0xf8fafc, 0x16a34a, 0x0f172a, 0x9ca3af];
-    const kinds = ["car", "danfo", "car", "keke", "okada", "car"];
-    for (let i = 0; i < 18; i += 1) {
+    for (let i = 0; i < 20; i += 1) {
       const axis = i % 2 ? "x" : "y";
-      const key = kinds[i % kinds.length]!;
+      const style = FLEET[(i * 7) % FLEET.length]!;
       const lane = (i % 4 < 2 ? -1 : 1) * 11;
       const roadLine = axis === "x" ? ROADS.ys[i % ROADS.ys.length]! : ROADS.xs[i % ROADS.xs.length]!;
       const pos = Math.random() * (axis === "x" ? WORLD.width : WORLD.height);
-      const speed = (lane < 0 ? -1 : 1) * (110 + Math.random() * 90);
-      const body = this.add
-        .image(axis === "x" ? pos : roadLine + lane, axis === "x" ? roadLine + lane : pos, key)
-        .setScale(key === "okada" ? 0.75 : 0.68)
-        .setRotation(axis === "x" ? (speed > 0 ? 0 : Math.PI) : speed > 0 ? Math.PI / 2 : -Math.PI / 2)
-        .setDepth(6);
-      if (key === "car") body.setTint(paints[i % paints.length]!);
+      const speed = (lane < 0 ? -1 : 1) * (style.kind === "bus" ? 80 : 110 + Math.random() * 90);
+      const body = vehicle(this, axis === "x" ? pos : roadLine + lane, axis === "x" ? roadLine + lane : pos, style);
+      faceVehicle(body, axis === "x" ? speed : 0, axis === "y" ? speed : 0);
       this.cars.push({ body, axis, speed });
     }
   }
 
   private makePlayer(x: number, y: number) {
-    const me = figure(this, x, y, playerOf(getState()), { name: "YOU", nameColor: "#4ade80", unit: 0.52 });
-    const halo = this.add.ellipse(0, 20, 50, 17, 0x4ade80, 0.25).setStrokeStyle(3, 0xffffff, 0.95);
+    const me = figure(this, x, y, playerOf(getState()), { name: "YOU", nameColor: "#4ade80", unit: 0.22 });
+    const halo = this.add.ellipse(0, 9, 32, 11, 0x4ade80, 0.25).setStrokeStyle(2.5, 0xffffff, 0.95);
     me.addAt(halo, 0);
     this.tweens.add({ targets: halo, scaleX: 1.15, scaleY: 1.15, alpha: 0.6, duration: 700, yoyo: true, repeat: -1 });
     return me;
@@ -526,6 +527,10 @@ export class WorldScene extends Phaser.Scene {
     const state = getState();
     if (!state || input.paused) return;
     this.moveTraffic(dt, time);
+    if (this.riding) {
+      this.driveRide(dt);
+      return;
+    }
     const paused = state.event || state.ending || state.task?.haggle || (state.chapter && (state.result || !currentBeat(state)));
     if (paused) {
       animateWalk(this.player, time, false, 0);
@@ -673,6 +678,68 @@ export class WorldScene extends Phaser.Scene {
     this.arrow.setFillStyle(step ? 0x38bdf8 : 0x22c55e);
   }
 
+  // ── Rides ─────────────────────────────────────────────────────────────────
+
+  private startRide(mode: RideMode, to: { x: number; y: number }) {
+    if (this.mapId !== "city") return;
+    this.finishRide();
+    const style: VehicleStyle =
+      mode === "taxi" ? { kind: "taxi", color: TAXI_COLOR } : mode === "okada" ? { kind: "okada", color: OKADA_COLORS.red } : mode === "keke" ? { kind: "keke", color: KEKE_COLORS.yellow } : { kind: "bus", color: "#f5c518" };
+    // You hop in at the nearest road and get dropped at the roadside closest to where you're going.
+    const full = roadRoute({ x: this.player.x, y: this.player.y }, to);
+    const route = full.length > 2 ? full.slice(1, -1) : [to];
+    const curb = route[route.length - 1]!;
+    const away = Math.hypot(to.x - curb.x, to.y - curb.y);
+    const step = Math.min(40, away);
+    const drop = away > 1 ? { x: curb.x + ((to.x - curb.x) / away) * step, y: curb.y + ((to.y - curb.y) / away) * step } : curb;
+    const car = vehicle(this, route[0]!.x, route[0]!.y, style).setDepth(9);
+    const tag = this.add
+      .text(car.x, car.y, "YOU", { fontFamily: "system-ui, sans-serif", fontSize: "12px", fontStyle: "bold", color: "#4ade80", stroke: "#0b1726", strokeThickness: 4 })
+      .setOrigin(0.5)
+      .setDepth(9);
+    this.player.setVisible(false);
+    this.path = [];
+    this.near = null;
+    bus.emit("near", null);
+    this.cameras.main.startFollow(car, true, 0.12, 0.12);
+    const speed = mode === "bus" ? 420 : mode === "keke" ? 560 : mode === "okada" ? 720 : 640;
+    this.riding = { car, tag, route, leg: 1, speed, drop: blocked(drop.x, drop.y, RADIUS, this.solids) ? freePoint(drop.x, drop.y, this.solids) : drop };
+  }
+
+  private driveRide(dt: number) {
+    const ride = this.riding!;
+    let budget = ride.speed * dt;
+    while (budget > 0 && ride.leg < ride.route.length) {
+      const target = ride.route[ride.leg]!;
+      const dx = target.x - ride.car.x;
+      const dy = target.y - ride.car.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 0.5) faceVehicle(ride.car, dx, dy);
+      if (dist <= budget) {
+        ride.car.setPosition(target.x, target.y);
+        budget -= dist;
+        ride.leg += 1;
+      } else {
+        ride.car.setPosition(ride.car.x + (dx / dist) * budget, ride.car.y + (dy / dist) * budget);
+        budget = 0;
+      }
+    }
+    ride.tag.setPosition(ride.car.x, ride.car.y - ride.car.displayHeight * ride.car.originY - 8);
+    if (ride.leg >= ride.route.length) this.finishRide();
+  }
+
+  private finishRide() {
+    const ride = this.riding;
+    if (!ride) return;
+    this.riding = null;
+    const end = ride.drop;
+    ride.car.destroy();
+    ride.tag.destroy();
+    this.player.setPosition(end.x, end.y).setVisible(true);
+    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    savePosition(end.x, end.y, districtAt(end.x, end.y)?.id ?? getState()?.district ?? "");
+  }
+
   private moveTraffic(dt: number, time: number) {
     if (this.boat) {
       const t = time / 9000;
@@ -694,6 +761,7 @@ export class WorldScene extends Phaser.Scene {
       const wrapped = next < -60 ? max : next > max ? -60 : next;
       if (car.axis === "x") car.body.x = wrapped;
       else car.body.y = wrapped;
+      car.body.setDepth(5 + car.body.y / 10000);
     }
     for (const p of this.people) {
       if (Math.random() < 0.01) {

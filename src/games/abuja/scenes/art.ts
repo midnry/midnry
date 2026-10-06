@@ -1,5 +1,6 @@
 import * as Phaser from "phaser";
 import { characterParts, dims, lookKey, type Look } from "../systems/character";
+import { FLEET, vehicleBox, vehicleKey, vehicleSvg, type VehicleKind, type VehicleStyle, type VehicleView } from "../systems/vehicles";
 
 // Cartoon art drawn in code: bold dark outlines, flat colours, one shade.
 // Every look is a texture key, so real sprite sheets can replace any of them
@@ -87,12 +88,53 @@ function makeTiles(scene: Phaser.Scene) {
 // ── Characters: chibi people drawn as SVG (systems/character.ts) ────────────
 
 /** Texture pixels per drawing unit: crisp on phones without wasting memory. */
-const RES = 1.8;
+const RES = 1.1;
 
 function makeShadow(scene: Phaser.Scene) {
   make(scene, "shadow", 48, 14, (g) => {
     g.fillStyle(0x000000, 0.28).fillEllipse(24, 7, 46, 12);
   });
+}
+
+// ── Vehicles (drawn as SVG in systems/vehicles.ts) ──────────────────────────
+
+const VRES = 1.4;
+/** Pixels per drawing unit on the map: a car is a bit longer than two people are tall. */
+export const VEHICLE_SCALE: Record<VehicleKind, number> = { car: 0.4, taxi: 0.4, okada: 0.36, keke: 0.38, bus: 0.44 };
+
+/** Queue every vehicle texture (call from preload). */
+export function queueVehicles(scene: Phaser.Scene) {
+  const urls: string[] = [];
+  for (const v of FLEET) {
+    for (const view of ["side", "front", "back"] as const) {
+      const key = `${vehicleKey(v)}_${view}`;
+      if (scene.textures.exists(key)) continue;
+      const url = URL.createObjectURL(new Blob([vehicleSvg(v.kind, v.color, view, VRES)], { type: "image/svg+xml" }));
+      urls.push(url);
+      scene.load.svg(key, url);
+    }
+  }
+  if (urls.length) scene.load.once("complete", () => urls.forEach((url) => URL.revokeObjectURL(url)));
+}
+
+export type Vehicle = Phaser.GameObjects.Image & { style: VehicleStyle; view: VehicleView };
+
+export function vehicle(scene: Phaser.Scene, x: number, y: number, style: VehicleStyle): Vehicle {
+  const v = scene.add.image(x, y, `${vehicleKey(style)}_side`).setScale(VEHICLE_SCALE[style.kind] / VRES) as Vehicle;
+  v.style = style;
+  v.view = "front";
+  faceVehicle(v, 1, 0);
+  return v;
+}
+
+/** Show the side that faces the viewer: side on when driving across, front or back when driving down or up. */
+export function faceVehicle(v: Vehicle, dx: number, dy: number) {
+  const view: VehicleView = Math.abs(dx) >= Math.abs(dy) ? "side" : dy > 0 ? "front" : "back";
+  if (view !== v.view) {
+    v.view = view;
+    v.setTexture(`${vehicleKey(v.style)}_${view}`).setOrigin(0.5, vehicleBox(v.style.kind, view).groundY);
+  }
+  v.setFlipX(view === "side" && dx < 0);
 }
 
 export type Person = { look: Look; adult: boolean };
@@ -130,11 +172,11 @@ export type Figure = Phaser.GameObjects.Container & {
   dims: ReturnType<typeof dims>;
 };
 
-const FEET = 22; // feet sit this many pixels below the figure's position
+const FEET = 10; // feet sit this many pixels below the figure's position
 
-/** A person. `unit` is pixels per drawing unit: about 0.46 for people, smaller for crowds. */
+/** A person. `unit` is pixels per drawing unit: about 0.2 for people, smaller for crowds. */
 export function figure(scene: Phaser.Scene, x: number, y: number, person: Person, opts: { name?: string; nameColor?: string; unit?: number } = {}): Figure {
-  const unit = opts.unit ?? 0.46;
+  const unit = opts.unit ?? 0.2;
   const key = charKey(person);
   const d = dims(person.look, person.adult);
   const legA = scene.add.image(0, 0, `${key}_leg`).setOrigin(0.5, 0).setScale(1 / RES);
@@ -215,42 +257,6 @@ export function animateWalk(f: Figure, time: number, moving: boolean, dx: number
   f.upper.y = base - Math.abs(Math.sin(t)) * 4;
 }
 
-// ── Vehicles (top-down, facing right) ───────────────────────────────────────
-
-function makeVehicles(scene: Phaser.Scene) {
-  make(scene, "car", 64, 36, (g) => {
-    g.fillStyle(0x000000, 0.25).fillRoundedRect(6, 8, 56, 26, 9);
-    g.fillStyle(INK, 1).fillRoundedRect(10, 2, 10, 6, 2).fillRoundedRect(42, 2, 10, 6, 2).fillRoundedRect(10, 28, 10, 6, 2).fillRoundedRect(42, 28, 10, 6, 2);
-    g.fillStyle(0xffffff, 1).fillRoundedRect(4, 6, 54, 24, 9);
-    g.fillStyle(0xd0d0d0, 1).fillRoundedRect(20, 9, 22, 18, 5);
-    g.fillStyle(0x9fd5f5, 1).fillRoundedRect(40, 9, 9, 18, 3).fillRoundedRect(15, 10, 6, 16, 2);
-    g.fillStyle(0xfff3a0, 1).fillCircle(56, 10, 2.5).fillCircle(56, 26, 2.5);
-    g.lineStyle(3, INK, 1).strokeRoundedRect(4, 6, 54, 24, 9);
-  });
-  make(scene, "danfo", 76, 38, (g) => {
-    g.fillStyle(0x000000, 0.25).fillRoundedRect(6, 8, 68, 28, 8);
-    g.fillStyle(0xf5b915, 1).fillRoundedRect(3, 5, 68, 28, 8);
-    g.fillStyle(INK, 1).fillRect(8, 16, 56, 5);
-    g.fillStyle(0x9fd5f5, 1).fillRoundedRect(58, 9, 9, 20, 3);
-    g.fillStyle(0xe5a50f, 1).fillRoundedRect(12, 8, 40, 7, 3);
-    g.lineStyle(3, INK, 1).strokeRoundedRect(3, 5, 68, 28, 8);
-  });
-  make(scene, "keke", 46, 34, (g) => {
-    g.fillStyle(0x000000, 0.25).fillEllipse(24, 22, 40, 22);
-    g.fillStyle(INK, 1).fillCircle(8, 6, 4).fillCircle(8, 28, 4).fillCircle(40, 17, 4);
-    g.fillStyle(0x16a34a, 1).fillRoundedRect(4, 7, 34, 20, 8);
-    g.fillStyle(0xfacc15, 1).fillRoundedRect(8, 9, 22, 16, 5);
-    g.fillStyle(0x9fd5f5, 1).fillRoundedRect(30, 10, 6, 14, 2);
-    g.lineStyle(3, INK, 1).strokeRoundedRect(4, 7, 34, 20, 8);
-  });
-  make(scene, "okada", 40, 24, (g) => {
-    g.fillStyle(INK, 1).fillCircle(6, 12, 5).fillCircle(34, 12, 5);
-    g.fillStyle(0xdc2626, 1).fillRoundedRect(8, 8, 24, 8, 4);
-    g.fillStyle(0x7c3aed, 1).fillCircle(18, 12, 7);
-    g.lineStyle(3, INK, 1).strokeCircle(18, 12, 7).strokeRoundedRect(8, 8, 24, 8, 4);
-  });
-}
-
 // ── Props ───────────────────────────────────────────────────────────────────
 
 function makeProps(scene: Phaser.Scene) {
@@ -329,7 +335,6 @@ function makeProps(scene: Phaser.Scene) {
 export function makeArt(scene: Phaser.Scene) {
   makeTiles(scene);
   makeShadow(scene);
-  makeVehicles(scene);
   makeProps(scene);
 }
 

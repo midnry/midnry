@@ -1,6 +1,7 @@
 import { CHAPTERS, EVENTS, FIXERS, HOMES, JOBS, LOANS, MAPS, PEOPLE, PLACES, POSTING_STATES, chapter, district, job, place } from "./data";
 import { citySolids, freePoint } from "./citymap";
 import type { Look } from "./character";
+import { RIDE_INFO, fare, type RideMode } from "./rides";
 import {
   DAYS_PER_YEAR,
   END_AGE,
@@ -361,21 +362,32 @@ export function callContact(id: string) {
 
 // ── Travel ───────────────────────────────────────────────────────────────────
 
-export function travel(placeId: string, mode: "bus" | "ride") {
+export function travel(placeId: string, mode: RideMode) {
   update((s) => {
     const p = place(placeId);
     if (!p) return;
     const d = district(p.district);
     if (d?.gate && !check(s, d.gate.if)) return toast(s, d.gate.message);
-    const cost = mode === "bus" ? 500 : 3500;
-    if (s.stats.money < cost) return toast(s, `You need ${naira(cost)} for the ${mode === "bus" ? "bus" : "ride"}.`);
-    if (mode === "bus" && s.slot + 1 > SLOTS.length - 1) return toast(s, "No more buses tonight. Take a ride, or walk.");
+    const to = { x: p.x, y: p.y + 95 };
+    const cost = fare(mode, s.pos, to);
+    const name = RIDE_INFO[mode].label.toLowerCase();
+    if (s.stats.money < cost) return toast(s, `You need ${naira(cost)} for the ${name}.`);
+    if (mode === "bus" && s.slot + 1 > SLOTS.length - 1) return toast(s, "No more buses tonight. Take a taxi, a keke or an okada.");
     addStat(s, "money", -cost);
     if (mode === "bus") s.slot += 1;
-    s.pos = { x: p.x, y: p.y + 95 };
+    if (mode === "taxi") addStat(s, "stress", -3);
+    if (mode === "okada") addStat(s, "stress", 1);
+    const from = { ...s.pos };
+    s.pos = to;
     s.district = p.district;
-    toast(s, mode === "bus" ? `You squeeze into a bus to ${p.name}. It takes forever.` : `Your Zoom driver drops you at ${p.name}.`);
-    bus.emit("teleport", s.pos);
+    const lines: Record<RideMode, string> = {
+      okada: `Your okada man weaves through traffic like a man with no fear and drops you at ${p.name}. ${naira(cost)}.`,
+      keke: `The keke rattles you to ${p.name}. The man beside you ate onions for breakfast. ${naira(cost)}.`,
+      taxi: `The green-and-white taxi glides you to ${p.name}, AC on full. ${naira(cost)}.`,
+      bus: `You squeeze onto the bus to ${p.name}. It takes forever.`,
+    };
+    toast(s, lines[mode]);
+    bus.emit("ride", { mode, from, to });
   });
 }
 

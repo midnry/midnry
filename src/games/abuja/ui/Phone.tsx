@@ -2,6 +2,7 @@ import { useState } from "react";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
 import { borrow, callContact, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
 import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, netWorth, npcName } from "../systems/rules";
+import { RIDE_INFO, RIDE_MODES, fare, rideKm } from "../systems/rides";
 import { deleteSave, replace } from "../systems/store";
 import type { GameState } from "../systems/types";
 import { Linkup } from "./Linkup";
@@ -18,7 +19,7 @@ const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "loans", label: "QuickKash", icon: "💸", tint: "bg-red-600" },
   { id: "jobs", label: "Jobs", icon: "💼", tint: "bg-sky-600" },
   { id: "contacts", label: "Contacts", icon: "👥", tint: "bg-violet-600" },
-  { id: "map", label: "Map", icon: "🗺️", tint: "bg-blue-600" },
+  { id: "map", label: "Rides", icon: "🛺", tint: "bg-blue-600" },
   { id: "stats", label: "Life", icon: "📊", tint: "bg-teal-600" },
   { id: "wardrobe", label: "Wardrobe", icon: "👕", tint: "bg-orange-500" },
   { id: "settings", label: "Settings", icon: "⚙️", tint: "bg-slate-600" },
@@ -272,38 +273,44 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
         value={query}
         onChange={(event) => setQuery(event.target.value)}
       />
-      <p className="mt-2 text-xs text-slate-400">Bus: ₦500 and takes a time slot. Zoom ride: ₦3,500, instant.</p>
+      <p className="mt-2 text-xs text-slate-400">Pick where to go, then how: okada, keke or taxi get you there now. The bus is cheapest but takes a time slot.</p>
       <div className="mt-3 grid gap-2">
         {shown.map((p) => {
           const d = district(p.district);
           const locked = d?.gate && !check(state, d.gate.if);
+          const to = { x: p.x, y: p.y + 95 };
           return (
             <div key={p.id} className="rounded-xl bg-white/5 p-3">
               <p className="font-semibold">
                 {p.name} {locked ? "🔒" : ""}
               </p>
-              <p className="text-xs text-slate-400">{d?.name}</p>
-              <div className="mt-2 flex gap-2">
-                <button
-                  type="button"
-                  className={`${btnGhost} min-h-9 flex-1`}
-                  onClick={() => {
-                    travel(p.id, "bus");
-                    onDone();
-                  }}
-                >
-                  Bus
-                </button>
-                <button
-                  type="button"
-                  className={`${btnPrimary} min-h-9 flex-1`}
-                  onClick={() => {
-                    travel(p.id, "ride");
-                    onDone();
-                  }}
-                >
-                  Zoom ride
-                </button>
+              <p className="text-xs text-slate-400">
+                {d?.name} · {rideKm(state.pos, to).toFixed(1)} km
+              </p>
+              <div className="mt-2 grid grid-cols-4 gap-1.5">
+                {RIDE_MODES.map((mode) => {
+                  const cost = fare(mode, state.pos, to);
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      title={RIDE_INFO[mode].blurb}
+                      aria-label={`${RIDE_INFO[mode].label} to ${p.name} for ${naira(cost)}`}
+                      disabled={state.stats.money < cost}
+                      className={`flex min-h-14 flex-col items-center justify-center rounded-xl text-[11px] leading-tight font-semibold transition disabled:opacity-40 ${mode === "taxi" ? "bg-emerald-600 text-white hover:bg-emerald-500" : "bg-white/10 hover:bg-white/15"}`}
+                      onClick={() => {
+                        travel(p.id, mode);
+                        onDone();
+                      }}
+                    >
+                      <span className="text-lg" aria-hidden>
+                        {RIDE_INFO[mode].icon}
+                      </span>
+                      {RIDE_INFO[mode].label}
+                      <span className="font-normal text-slate-300">{naira(cost)}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );
