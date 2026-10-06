@@ -59,9 +59,9 @@ export function ScratchTool() {
   return (
     <ToolFrame slug="scratch" saveState={saveState}>
       <ToolStatus ready={ready} loadError={loadError} blocked={blocked}>
-        <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
-          <div>
-            <form onSubmit={addNote} className="flex gap-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
+          <div className="min-w-0">
+            <form onSubmit={addNote} className="flex min-w-0 gap-2 [&>input]:min-w-0">
               <TextInput
                 value={draftTitle}
                 onChange={(event) => setDraftTitle(event.target.value)}

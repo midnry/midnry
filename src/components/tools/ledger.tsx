@@ -108,8 +108,8 @@ export function LedgerTool() {
   return (
     <ToolFrame slug="ledger" saveState={saveState}>
       <ToolStatus ready={ready} loadError={loadError} blocked={blocked}>
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-          <div>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+          <div className="min-w-0">
             <form onSubmit={add} className="grid gap-4 sm:grid-cols-2">
               <Field label="What">
                 <TextInput value={label} onChange={(event) => setLabel(event.target.value)} maxLength={80} />
@@ -184,38 +184,40 @@ export function LedgerTool() {
                     key={entry.id}
                     className="flex items-center justify-between gap-3 border-t border-line py-3 last:border-b"
                   >
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium">{entry.label}</span>
-                      <span className="text-sm text-muted">
-                        {entry.category} · {entry.date}
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-medium break-words">{entry.label}</span>
+                      <span className="block text-sm text-muted">
+                        {entry.category} · <span className="whitespace-nowrap">{entry.date}</span>
                       </span>
                     </span>
-                    <span className="flex items-center gap-3">
+                    <span className="flex shrink-0 flex-col items-end sm:flex-row sm:items-center sm:gap-3">
                       <span className="tabular-nums">{formatUsd(entry.cents)}</span>
-                      <button
-                        type="button"
-                        className="min-h-9 rounded-full px-2 text-sm text-muted hover:bg-paper-2"
-                        onClick={() => {
-                          setEditing(entry.id);
-                          setLabel(entry.label);
-                          setAmount((entry.cents / 100).toFixed(2));
-                          setCategory(entry.category);
-                          setDate(entry.date);
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        className="min-h-9 rounded-full px-2 text-sm text-fail hover:bg-paper-2"
-                        onClick={() => {
-                          const before = entries;
-                          save({ entries: entries.filter((item) => item.id !== entry.id) });
-                          toast("Expense removed", { action: { label: "Undo", onClick: () => save({ entries: before }) } });
-                        }}
-                      >
-                        Remove
-                      </button>
+                      <span className="-mr-2 flex sm:mr-0 sm:gap-3">
+                        <button
+                          type="button"
+                          className="min-h-9 rounded-full px-2 text-sm text-muted hover:bg-paper-2"
+                          onClick={() => {
+                            setEditing(entry.id);
+                            setLabel(entry.label);
+                            setAmount((entry.cents / 100).toFixed(2));
+                            setCategory(entry.category);
+                            setDate(entry.date);
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="min-h-9 rounded-full px-2 text-sm text-fail hover:bg-paper-2"
+                          onClick={() => {
+                            const before = entries;
+                            save({ entries: entries.filter((item) => item.id !== entry.id) });
+                            toast("Expense removed", { action: { label: "Undo", onClick: () => save({ entries: before }) } });
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </span>
                     </span>
                   </li>
                 ))}

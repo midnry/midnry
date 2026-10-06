@@ -1280,6 +1280,7 @@ function Photo() {
           };
           image.src = URL.createObjectURL(file);
         }}
+        className="block w-full max-w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-paper-2 file:px-4 file:py-2 file:text-sm file:font-medium"
       />
       {src ? <img src={src} alt="Clearer copy" className="mt-4 max-h-96 rounded-2xl" /> : null}
       {src ? <a className="mt-3 inline-flex text-sm underline" href={src} download="clearer.jpg">Download</a> : null}
