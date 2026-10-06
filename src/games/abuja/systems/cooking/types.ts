@@ -261,6 +261,8 @@ export type Kitchen = {
   recipes: Record<string, Knowledge>;
   customs: Custom[];
   favorites: string[];
+  /** Cookbooks you own. */
+  books?: string[];
   garden: Plot[];
   waste: { day: number; what: string; value: number }[];
   market: MarketEvent[];

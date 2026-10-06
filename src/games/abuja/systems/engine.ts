@@ -28,6 +28,12 @@ import { MENU, DELIVERY_FEE, burn, daysUnwashed, isDirty, life, offense, overnig
 import { caseStatus, nightlyCase, reportScam, resolveFreeze, surrender, withoutBankCheck } from "./bank";
 import { acceptCounter, argue, bluff, closeNegotiation, propose as proposeOffer, setTerms, startNegotiation, walkAway, weeklyNegotiation } from "./negotiate/core";
 import type { Approach, Bluff } from "./negotiate/types";
+import { addLot, CROPS, harvest as harvestPlot, kitchen, moveLot, nightlyGarden, plant as plantPlot, price as foodPrice, SOURCES, sells, spoil, water as waterGarden, weeklyMarket } from "./cooking/kitchen";
+import { cleanKitchen, cookMinutes, cookRecipe, eatDish, experiment as experimentDish, learn, repair as repairKit, saveCustom, type CookResult } from "./cooking/cook";
+import { BOOKS, CLASSES, recipe as recipeDef, RECIPES } from "./cooking/recipes";
+import { equipment as equipDef, stats as equipStats } from "./cooking/equipment";
+import { ingredient as ingDef } from "./cooking/ingredients";
+import type { EquipTier, Method, Performance, Storage, Tier } from "./cooking/types";
 import { collect, growBusiness, startBusiness, visitBusiness, weeklyBusiness } from "./business";
 import { buyCar, drivingTest, frscStop, hasCar, nightlyCar, rentCar, toggleDriving, useFuel } from "./drive";
 import { hurt, injured, nightlyHealth, payHospital, payPower, rollHit, tooHurtFor, treat, weeklyPower, type HitBy } from "./health";
@@ -629,6 +635,11 @@ function sleep(s: GameState) {
   note(s, ...overnight(s));
   note(s, ...nightlyHealth(s));
   note(s, ...nightlyCar(s));
+  if (s.kitchen) {
+    const spoiled = spoil(s, s.kitchen.pantry, s.kitchen.leftovers, s.kitchen.waste);
+    if (spoiled.length) note(s, `🗑️ Spoiled overnight: ${spoiled.slice(0, 4).join(", ")}${spoiled.length > 4 ? ` and ${spoiled.length - 4} more` : ""}.`);
+    note(s, ...nightlyGarden(s));
+  }
   life(s).driving = false;
   if (isDirty(s)) {
     note(s, `Your clothes haven't been washed in ${daysUnwashed(s)} days and it shows.`, offense(s, "dirty"), "Wash them at home or a laundry.");
@@ -696,6 +707,14 @@ function weeklyBills(s: GameState) {
     loan.nextDue += 7;
   }
   s.loans = s.loans.filter((loan) => loan.owed > 0);
+  if (s.kitchen?.utilities) {
+    // Cooking gas and electricity go on the bill.
+    const fuel = Math.round(s.kitchen.utilities);
+    s.kitchen.utilities = 0;
+    addStat(s, "money", -fuel);
+    lines.push(`Cooking gas and power: ${naira(fuel)}.`);
+  }
+  if (s.kitchen) lines.push(...weeklyMarket(s));
   lines.push(...weeklyPower(s));
   lines.push(...weeklyBusiness(s));
   if (life(s).hospitalBill > 0) {
@@ -1180,3 +1199,195 @@ export function abandonTask() {
     toast(s, `You stop for today with ${naira(t.earned)} earned.`);
   });
 }
+
+// ── Cooking ──────────────────────────────────────────────────────────────────
+
+/** Minutes of cooking become time out of your day. */
+function cookTime(s: GameState, minutes: number) {
+  const slots = minutes >= 150 ? 2 : minutes >= 35 ? 1 : 0;
+  if (slots) spend(s, slots, -4 * slots);
+  else addStat(s, "energy", -2);
+}
+
+/** Cook a recipe at home (or at your venue). Returns what happened for the screen. */
+export function cookAt(where: "home" | string, recipeId: string, perf: Performance, opts: { custom?: string; tier?: Tier } = {}): CookResult {
+  let out: CookResult = { ok: false, text: "" };
+  update((s) => {
+    if (s.chapter || s.ending) return;
+    const r = recipeDef(recipeId);
+    if (r && s.slot >= SLOTS.length) {
+      out = { ok: false, text: "It's too late to start cooking. Sleep first." };
+      return;
+    }
+    out = cookRecipe(s, where, recipeId, perf, opts);
+    if (out.ok) cookTime(s, out.minutes ?? 30);
+    if (out.text) toast(s, out.text);
+  });
+  return out;
+}
+
+export function experimentAt(picks: { lot: string; qty: number }[], method: Method, perf: Performance): CookResult {
+  let out: CookResult = { ok: false, text: "" };
+  update((s) => {
+    if (s.chapter || s.ending) return;
+    out = experimentDish(s, picks, method, perf);
+    if (out.ok) cookTime(s, 40);
+    if (out.text) toast(s, out.text);
+  });
+  return out;
+}
+
+export function eatLeftover(dishId: string) {
+  update((s) => {
+    const line = eatDish(s, dishId, (food, water) => {
+      const l = life(s);
+      l.food = Math.min(100, l.food + food);
+      l.water = Math.min(100, l.water + water);
+    });
+    if (line) toast(s, line);
+  });
+}
+
+export function throwAway(kind: "lot" | "dish", id: string) {
+  update((s) => {
+    const k = kitchen(s);
+    if (kind === "lot") {
+      const l = k.pantry.find((x) => x.id === id);
+      if (l) k.waste.push({ day: s.day, what: `${l.qty} × ${ingDef(l.ing)?.name ?? l.ing} (thrown away)`, value: (ingDef(l.ing)?.price ?? 0) * l.qty });
+      k.pantry = k.pantry.filter((x) => x.id !== id);
+    } else {
+      const d = k.leftovers.find((x) => x.id === id);
+      if (d) k.waste.push({ day: s.day, what: `${d.portions} × ${d.name} (thrown away)`, value: 0 });
+      k.leftovers = k.leftovers.filter((x) => x.id !== id);
+    }
+  });
+}
+
+export function storeLot(id: string, to: Storage) {
+  update((s) => {
+    const k = kitchen(s);
+    toast(s, moveLot(s, k.pantry, k.equipment, id, to));
+  });
+}
+
+/** Buy ingredients from a market or delivery service. */
+export function buyFood(sourceId: string, id: string, tier: Tier, qty: number, where: "home" | string = "home") {
+  update((s) => {
+    const src = SOURCES.find((x) => x.id === sourceId);
+    const def = ingDef(id);
+    if (!src || !def || !src.tiers.includes(tier) || !sells(src, def) || qty <= 0) return;
+    const k = kitchen(s);
+    const total = foodPrice(s, id, tier, src) * qty + (src.fee && !s.flags[`chopnow_fee_${s.day}_${s.slot}`] ? src.fee : 0);
+    if (s.stats.money < total) return toast(s, `You need ${naira(total)}.`);
+    addStat(s, "money", -total);
+    if (src.fee) s.flags[`chopnow_fee_${s.day}_${s.slot}`] = true;
+    const v = where === "home" ? null : k.venues.find((x) => x.id === where);
+    const placed = addLot(s, v ? v.stock : k.pantry, v ? v.equipment : k.equipment, id, tier, qty, null);
+    toast(s, `Bought ${qty} × ${def.name.toLowerCase()} (${tier}) for ${naira(total)}. Stored in the ${placed === "pantry" ? "cupboard" : placed}.`);
+  });
+}
+
+/** Buy kitchen equipment: delivered and installed. */
+export function buyEquipment(id: string, tier: EquipTier, where: "home" | string = "home") {
+  update((s) => {
+    const def = equipDef(id);
+    const st = equipStats(id, tier);
+    if (!def || !st) return;
+    const k = kitchen(s);
+    const v = where === "home" ? null : k.venues.find((x) => x.id === where);
+    if (where === "home" && def.scope === "pro") return toast(s, "That's commercial kit. It won't fit a home kitchen.");
+    const delivery = st.price > 100_000 ? 5000 : 1500;
+    if (s.stats.money < st.price + delivery) return toast(s, `You need ${naira(st.price + delivery)} including delivery.`);
+    addStat(s, "money", -(st.price + delivery));
+    const kit = v ? v.equipment : k.equipment;
+    kit.push({ uid: `e${Date.now().toString(36)}${kit.length}`, def: id, tier, condition: 100, clean: 100, broken: false });
+    toast(s, `${def.icon} New ${def.name.toLowerCase()} (${tier}) delivered and installed for ${naira(st.price)} plus ${naira(delivery)} delivery.`);
+  });
+}
+
+export function sellEquipment(uidValue: string, where: "home" | string = "home") {
+  update((s) => {
+    const k = kitchen(s);
+    const v = where === "home" ? null : k.venues.find((x) => x.id === where);
+    const kit = v ? v.equipment : k.equipment;
+    const o = kit.find((x) => x.uid === uidValue);
+    if (!o) return;
+    const value = Math.round((equipStats(o.def, o.tier)?.price ?? 0) * (o.broken ? 0.1 : 0.35 * (o.condition / 100)));
+    if (v) v.equipment = v.equipment.filter((x) => x.uid !== uidValue);
+    else k.equipment = k.equipment.filter((x) => x.uid !== uidValue);
+    addStat(s, "money", value);
+    toast(s, `Sold your ${equipDef(o.def)?.name.toLowerCase()} for ${naira(value)}.`);
+  });
+}
+
+export function repairEquipment(uidValue: string, where: "home" | string = "home") {
+  update((s) => {
+    const k = kitchen(s);
+    const v = where === "home" ? null : k.venues.find((x) => x.id === where);
+    toast(s, repairKit(s, v ? v.equipment : k.equipment, uidValue));
+  });
+}
+
+export function scrubKitchen() {
+  update((s) => {
+    if (s.slot >= SLOTS.length) return toast(s, "Too late for cleaning. Sleep.");
+    toast(s, cleanKitchen(s));
+    const dishwasher = kitchen(s).equipment.some((o) => o.def === "dishwasher" && !o.broken);
+    if (dishwasher) addStat(s, "energy", -4);
+    else spend(s, 1, -8);
+  });
+}
+
+export function saveRecipeVersion(base: string, name: string, flavor: Performance["season"], signature: boolean) {
+  update((s) => toast(s, saveCustom(s, base, name, flavor, signature)));
+}
+
+export function toggleFavorite(id: string) {
+  update((s) => {
+    const k = kitchen(s);
+    k.favorites = k.favorites.includes(id) ? k.favorites.filter((x) => x !== id) : [...k.favorites, id];
+  });
+}
+
+export function gardenAction(action: { kind: "plant"; plot: number; crop: string } | { kind: "water" } | { kind: "harvest"; plot: number }) {
+  update((s) => {
+    if (action.kind === "plant") toast(s, plantPlot(s, action.plot, action.crop));
+    if (action.kind === "water") toast(s, waterGarden(s));
+    if (action.kind === "harvest") toast(s, harvestPlot(s, action.plot));
+  });
+}
+
+/** Buy a cookbook: learn every recipe in it. */
+export function buyBook(title: string) {
+  update((s) => {
+    const book = BOOKS.find((b) => b.id === title);
+    if (!book) return;
+    const k = kitchen(s);
+    k.books ??= [];
+    if (k.books.includes(title)) return toast(s, "You already own that book.");
+    if (s.stats.money < book.price) return toast(s, `The book costs ${naira(book.price)}.`);
+    addStat(s, "money", -book.price);
+    k.books.push(title);
+    const learned = RECIPES.filter((r) => r.source === "book" && r.from === title && learn(s, r.id));
+    toast(s, `📖 ${title}: ${learned.length} new recipes in your book (${learned.map((r) => r.name).slice(0, 4).join(", ")}${learned.length > 4 ? "…" : ""}).`);
+  });
+}
+
+export function takeClass(id: string) {
+  update((s) => {
+    const c = CLASSES.find((x) => x.id === id);
+    if (!c) return;
+    if (s.slot + 2 > SLOTS.length) return toast(s, "The class runs for half a day. Come back in the morning.");
+    if (s.stats.money < c.price) return toast(s, `The class costs ${naira(c.price)}.`);
+    addStat(s, "money", -c.price);
+    const k = kitchen(s);
+    const learned = c.recipes.filter((r) => learn(s, r));
+    k.skills.cooking = Math.min(100, k.skills.cooking + 4);
+    k.skills.baking = Math.min(100, k.skills.baking + (id === "class_pastry" ? 8 : 2));
+    k.skills.presentation = Math.min(100, k.skills.presentation + 3);
+    spend(s, 2, -15);
+    toast(s, `👩‍🍳 ${c.title}: you learned ${learned.map((r) => recipeDef(r)?.name).join(", ") || "techniques you already knew"}, and your skills improved.`);
+  });
+}
+
+export { CROPS, cookMinutes };
