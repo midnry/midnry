@@ -24,11 +24,28 @@ export function BrowserFrame({ src, alt }: { src: string; alt: string }) {
 }
 
 /** A screenshot inside a phone frame. */
+/** A screenshot in a modern phone: thin titanium frame, slim black bezel, a pill-shaped camera cut-out. */
 export function PhoneFrame({ src, alt, className = "", eager = false }: { src: string; alt: string; className?: string; eager?: boolean }) {
   return (
-    <div className={`relative mx-auto w-[min(17rem,72vw)] rounded-[2.4rem] border-[10px] border-[#0f172a] bg-[#0f172a] shadow-[0_25px_60px_-20px_rgba(16,32,51,0.55)] ${className}`}>
-      <span className="absolute top-2 left-1/2 z-10 h-4 w-20 -translate-x-1/2 rounded-full bg-[#0f172a]" aria-hidden />
-      <img src={src} alt={alt} loading={eager ? "eager" : "lazy"} className="block w-full rounded-[1.7rem]" />
+    <div className={`relative mx-auto w-[min(16.5rem,70vw)] ${className}`}>
+      {/* Side buttons: action and volume on the left, power on the right. */}
+      <span className="absolute top-[18%] -left-[3px] h-[5%] w-[3px] rounded-l-sm bg-[#5b6577]" aria-hidden />
+      <span className="absolute top-[26%] -left-[3px] h-[9%] w-[3px] rounded-l-sm bg-[#5b6577]" aria-hidden />
+      <span className="absolute top-[37%] -left-[3px] h-[9%] w-[3px] rounded-l-sm bg-[#5b6577]" aria-hidden />
+      <span className="absolute top-[30%] -right-[3px] h-[13%] w-[3px] rounded-r-sm bg-[#5b6577]" aria-hidden />
+      {/* Titanium frame. */}
+      <div className="rounded-[2.9rem] bg-gradient-to-b from-[#6b7487] via-[#3f4757] to-[#59627a] p-[3px] shadow-[0_30px_60px_-24px_rgba(16,32,51,0.5),0_10px_20px_-10px_rgba(16,32,51,0.25)]">
+        {/* Black bezel. */}
+        <div className="rounded-[2.75rem] bg-[#0b0d12] p-[7px]">
+          <div className="relative overflow-hidden rounded-[2.3rem] bg-white">
+            <img src={src} alt={alt} loading={eager ? "eager" : "lazy"} className="block aspect-[1/2] w-full object-cover object-top" />
+            {/* Camera cut-out. */}
+            <span className="absolute top-[1.6%] left-1/2 h-[3.4%] w-[31%] -translate-x-1/2 rounded-full bg-[#0b0d12]" aria-hidden>
+              <span className="absolute top-1/2 right-[9%] aspect-square h-[46%] -translate-y-1/2 rounded-full bg-[#1b2333] ring-1 ring-[#2a3448]" />
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
