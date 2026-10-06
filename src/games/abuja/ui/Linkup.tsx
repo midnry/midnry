@@ -15,7 +15,7 @@ const STATUS: Record<Partner["status"], string> = {
 
 const TRAIT: Record<Partner["personality"], { label: string; tone: string }> = {
   calm: { label: "Calm", tone: "bg-emerald-500/20 text-emerald-300" },
-  cunning: { label: "Cunning", tone: "bg-green-500/20 text-green-300" },
+  cunning: { label: "Cunning", tone: "bg-green-500/20 text-blue-300" },
   crazy: { label: "Crazy", tone: "bg-red-500/20 text-red-300" },
 };
 
@@ -44,7 +44,7 @@ export function Linkup({ state }: { state: GameState }) {
         </p>
       ) : null}
       {people.length === 0 ? (
-        <p className="mt-4 text-sm text-emerald-100/65">
+        <p className="mt-4 text-sm text-slate-400">
           Nobody yet. Meet people at Jabi Lake Mall, the Wuse Tech Hub, Union Capital Bank, or Bolaji's mansion: choose “Talk to someone new”.
         </p>
       ) : (
@@ -66,12 +66,12 @@ function PartnerCard({ state, p, open, onToggle }: { state: GameState; p: Partne
   return (
     <div className={`rounded-xl border ${open ? "border-pink-400/60" : "border-white/10"} bg-white/5`}>
       <button type="button" className="flex w-full items-center gap-3 p-3 text-left" onClick={onToggle} aria-expanded={open}>
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-pink-500 font-bold text-[#051a10]">{name.charAt(0)}</span>
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-pink-500 font-bold text-[#05070c]">{name.charAt(0)}</span>
         <span className="min-w-0 flex-1">
           <span className="block font-semibold">
-            {name} {p.nepo ? <span className="text-xs text-green-300">· Nepo Baby</span> : null}
+            {name} {p.nepo ? <span className="text-xs text-blue-300">· Nepo Baby</span> : null}
           </span>
-          <span className="block text-xs text-emerald-100/65">
+          <span className="block text-xs text-slate-400">
             {STATUS[p.status]} · {known ? TRAIT[p.personality].label : `Personality: ${p.hints.length}/3 clues`}
           </span>
         </span>
@@ -79,7 +79,7 @@ function PartnerCard({ state, p, open, onToggle }: { state: GameState; p: Partne
       </button>
       {open ? (
         <div className="border-t border-white/10 p-3 text-sm">
-          <p className="text-emerald-100/65">{person(p.id)?.blurb}</p>
+          <p className="text-slate-400">{person(p.id)?.blurb}</p>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
             <div className="h-full rounded-full bg-pink-400" style={{ width: `${p.affection}%` }} />
           </div>
@@ -89,14 +89,14 @@ function PartnerCard({ state, p, open, onToggle }: { state: GameState; p: Partne
             </p>
           ) : null}
           {p.hints.length ? (
-            <ul className="mt-2 space-y-1 text-xs text-emerald-50/80">
+            <ul className="mt-2 space-y-1 text-xs text-slate-300">
               {p.hints.map((hint) => (
                 <li key={hint}>🔎 {hint}</li>
               ))}
             </ul>
           ) : null}
           {p.status === "ex" ? (
-            <p className="mt-3 text-xs text-emerald-100/45">It's over.</p>
+            <p className="mt-3 text-xs text-slate-500">It's over.</p>
           ) : (
             <div className="mt-3 grid gap-2">
               <div className="grid grid-cols-2 gap-2">
@@ -107,12 +107,12 @@ function PartnerCard({ state, p, open, onToggle }: { state: GameState; p: Partne
                   🎁 Gift {naira(cost(state, p.id, ROMANCE.gift.cost))}
                 </button>
               </div>
-              <p className="text-xs text-emerald-100/65">Go on a date (1 time slot)</p>
+              <p className="text-xs text-slate-400">Go on a date (1 time slot)</p>
               <div className="grid gap-2">
                 {ROMANCE.dates.map((d) => (
                   <button key={d.id} type="button" className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-4 text-left text-sm font-semibold bg-white/10 hover:bg-white/15" onClick={() => romance({ kind: "date", id: p.id, date: d.id })}>
                     <span>{d.name}</span>
-                    <span className="shrink-0 tabular-nums font-normal text-emerald-100/65">{naira(cost(state, p.id, d.cost))}</span>
+                    <span className="shrink-0 tabular-nums font-normal text-slate-400">{naira(cost(state, p.id, d.cost))}</span>
                   </button>
                 ))}
               </div>
@@ -128,15 +128,15 @@ function PartnerCard({ state, p, open, onToggle }: { state: GameState; p: Partne
               ) : null}
               {p.status === "engaged"
                 ? ROMANCE.weddings.map((w) => (
-                    <button key={w.id} type="button" className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-4 text-left text-sm font-semibold bg-green-600 text-white hover:bg-green-500" onClick={() => romance({ kind: "wed", id: p.id, wedding: w.id })}>
+                    <button key={w.id} type="button" className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-4 text-left text-sm font-semibold bg-blue-600 text-white hover:bg-blue-500" onClick={() => romance({ kind: "wed", id: p.id, wedding: w.id })}>
                       <span>{w.name}</span>
                       <span className="shrink-0 tabular-nums">{naira(cost(state, p.id, w.cost))}</span>
                     </button>
                   ))
                 : null}
               <details className="rounded-xl bg-black/20 p-2">
-                <summary className="cursor-pointer text-xs text-emerald-50/80">Spend the night</summary>
-                <p className="mt-2 text-xs text-emerald-100/65">
+                <summary className="cursor-pointer text-xs text-slate-300">Spend the night</summary>
+                <p className="mt-2 text-xs text-slate-400">
                   Only if they want to. Fade to black. Without protection there is a real chance of pregnancy.
                   {others && p.status === "met" ? " You're in a relationship: this would be cheating." : ""}
                 </p>
@@ -156,7 +156,7 @@ function PartnerCard({ state, p, open, onToggle }: { state: GameState; p: Partne
               ) : null}
               {confirmEnd ? (
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="text-emerald-50/80">{p.status === "married" ? "Divorce costs money and peace. Sure?" : `End things with ${name}?`}</span>
+                  <span className="text-slate-300">{p.status === "married" ? "Divorce costs money and peace. Sure?" : `End things with ${name}?`}</span>
                   <button
                     type="button"
                     className="min-h-9 rounded-lg bg-red-500 px-3 font-semibold text-white"
