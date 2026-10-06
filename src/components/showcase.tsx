@@ -53,24 +53,32 @@ export function PhoneFrame({
         <div className="rounded-[2.75rem] bg-[#0b0d12] p-[7px]">
           <div className={`overflow-hidden rounded-[2.3rem] ${dark ? "bg-[#0b1a33]" : "bg-[#f4f7fb]"}`}>
             {/* Status bar: the camera sits here, so the app below never touches it. */}
-            <div className={`relative flex h-10 items-center justify-between px-6 text-[11px] font-semibold ${ink}`} aria-hidden>
-              <span className="tabular-nums">9:41</span>
-              <span className="absolute top-2 left-1/2 h-[1.3rem] w-[27%] -translate-x-1/2 rounded-full bg-[#0b0d12]">
-                <span className="absolute top-1/2 right-[9%] aspect-square h-[46%] -translate-y-1/2 rounded-full bg-[#1b2333] ring-1 ring-[#2a3448]" />
+            <div className={`relative flex h-10 items-center justify-between pr-5 pl-7 ${ink}`} aria-hidden>
+              <span className="text-[12px] font-bold tracking-tight tabular-nums">9:41</span>
+              <span className="absolute top-2 left-1/2 h-[1.3rem] w-[29%] -translate-x-1/2 rounded-full bg-[#050608]">
+                <span className="absolute top-1/2 left-[14%] h-[58%] w-[42%] -translate-y-1/2 rounded-full bg-[#0d0f14]" />
+                <span className="absolute top-1/2 right-[11%] aspect-square h-[36%] -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_40%_40%,#5b6fd6,#1d2453_55%,#0b0e22)]" />
               </span>
-              <span className="flex items-center gap-1">
-                <svg viewBox="0 0 18 12" className="h-2.5 w-auto fill-current">
-                  <rect x="0" y="8" width="3" height="4" rx="0.8" />
-                  <rect x="5" y="5.5" width="3" height="6.5" rx="0.8" />
-                  <rect x="10" y="3" width="3" height="9" rx="0.8" />
-                  <rect x="15" y="0" width="3" height="12" rx="0.8" />
+              <span className="flex items-center gap-[5px]">
+                {/* Signal: four bold bars rising left to right. */}
+                <svg viewBox="0 0 17 11" className="h-[9px] w-auto fill-current">
+                  <rect x="0" y="7" width="3" height="4" rx="0.9" />
+                  <rect x="4.6" y="5" width="3" height="6" rx="0.9" />
+                  <rect x="9.2" y="2.6" width="3" height="8.4" rx="0.9" />
+                  <rect x="13.8" y="0" width="3" height="11" rx="0.9" />
                 </svg>
-                <svg viewBox="0 0 16 12" className="h-2.5 w-auto fill-current">
-                  <path d="M8 11.5 5.6 9a3.4 3.4 0 0 1 4.8 0L8 11.5Zm-4.2-4.3L2.2 5.6a8.2 8.2 0 0 1 11.6 0l-1.6 1.6a5.9 5.9 0 0 0-8.4 0ZM.6 4 0 3.4a11.3 11.3 0 0 1 16 0l-.6.6-1 1a9.9 9.9 0 0 0-12.8 0Z" />
+                {/* Wi-Fi: three thick arcs over a dot. */}
+                <svg viewBox="0 0 16 12" className="h-[9px] w-auto fill-none stroke-current" strokeWidth="2" strokeLinecap="round">
+                  <path d="M1.6 4.3a9.4 9.4 0 0 1 12.8 0" />
+                  <path d="M4.2 7a5.6 5.6 0 0 1 7.6 0" />
+                  <path d="M6.8 9.6a1.8 1.8 0 0 1 2.4 0" />
                 </svg>
-                <span className="relative ml-0.5 flex h-2.5 w-5 items-center rounded-[3px] border border-current p-[1.5px] opacity-90">
-                  <span className="h-full w-[78%] rounded-[1.5px] bg-current" />
-                  <span className="absolute top-1/2 -right-[3px] h-1 w-[2px] -translate-y-1/2 rounded-r-sm bg-current" />
+                {/* Battery: rounded outline, full, with a small tip. */}
+                <span className="flex items-center">
+                  <span className="flex h-[11px] w-[22px] items-center rounded-[3.5px] border-[1.4px] border-current p-[1.5px] opacity-95">
+                    <span className="h-full w-full rounded-[1.6px] bg-current" />
+                  </span>
+                  <span className="ml-[1px] h-[4px] w-[1.6px] rounded-r-[1px] bg-current opacity-60" />
                 </span>
               </span>
             </div>
