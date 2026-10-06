@@ -39,7 +39,7 @@ function Home() {
         <DeskList />
       </section>
 
-      <section className="mt-12 flex flex-col gap-5 overflow-hidden rounded-3xl bg-[#051a10] p-6 text-white sm:flex-row sm:items-center sm:p-8">
+      <section className="mt-12 flex flex-col gap-5 overflow-hidden rounded-3xl bg-[#05070c] p-6 text-white sm:flex-row sm:items-center sm:p-8">
         <img
           src="/abuja-hustle-192.png"
           alt=""
@@ -48,15 +48,15 @@ function Home() {
           className="size-24 shrink-0 rounded-3xl shadow-lg ring-1 ring-white/15"
         />
         <div>
-          <p className="text-xs font-semibold tracking-[0.25em] text-green-400 uppercase">New game · 18+</p>
+          <p className="text-xs font-semibold tracking-[0.25em] text-blue-400 uppercase">New game · 18+</p>
           <h2 className="mt-2 font-display text-3xl tracking-tight">Abuja Hustle</h2>
-          <p className="mt-2 max-w-xl text-pretty text-emerald-50/80">
+          <p className="mt-2 max-w-xl text-pretty text-slate-300">
             A satirical life sim. Grow up in Abuja without privilege, dodge QuickKash, outwork the Nepo Babies, and chase
             financial freedom. Plays on your phone or computer.
           </p>
           <Link
             to="/games/abuja-hustle"
-            className="mt-5 inline-flex min-h-11 items-center rounded-full bg-green-600 px-5 text-sm font-semibold text-white hover:bg-green-500"
+            className="mt-5 inline-flex min-h-11 items-center rounded-full bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-500"
           >
             Play Abuja Hustle
           </Link>
