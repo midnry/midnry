@@ -1,0 +1,46 @@
+{
+  "note": "Romance is between adults (18+) only. Intimacy is always fade-to-black. Personalities are hidden and revealed slowly.",
+  "people": [
+    { "id": "love", "where": null, "names": { "female": "Amaka", "male": "Emeka" }, "nepo": false,
+      "blurb": "Your person from university. Sharp, funny, allergic to fake people." },
+    { "id": "kemi", "where": "jabi_mall", "names": { "female": "Kemi", "male": "Kunle" }, "nepo": false,
+      "blurb": "Instaflex lifestyle creator. 80k followers, always filming, always 'on'." },
+    { "id": "hauwa", "where": "cbd_bank", "names": { "female": "Hauwa", "male": "Haruna" }, "nepo": false,
+      "blurb": "Works at Union Capital Bank. Organised, ambitious, has a five-year plan in a notebook." },
+    { "id": "ify", "where": "bolaji_house", "names": { "female": "Ifeoma", "male": "Ifeanyi" }, "nepo": true,
+      "blurb": "Child of (fictional) Chief Okonkwo-Bassey. Generous, glamorous, and used to the best of everything." },
+    { "id": "zee", "where": "tech_hub", "names": { "female": "Zainab", "male": "Zayd" }, "nepo": false,
+      "blurb": "Product designer at a Wuse startup. Quiet until you get them talking about anything they love." }
+  ],
+  "personalities": {
+    "calm": { "weight": 0.5, "hints": [
+      "They listen more than they talk, and they remember everything you said.",
+      "When the waiter gets the order wrong, they just smile and say it's fine.",
+      "They tell you plainly what they want. No games."
+    ] },
+    "cunning": { "weight": 0.3, "hints": [
+      "They seem to know a lot about your money. You never told them.",
+      "They tell a story about getting even with an ex. They laugh. You don't.",
+      "Their phone is always face down, and they always know where yours is."
+    ] },
+    "crazy": { "weight": 0.2, "hints": [
+      "A waiter smiled at you. They didn't speak for the rest of the night.",
+      "They mention they 'once' smashed an ex's windscreen. 'He deserved it.'",
+      "Fourteen missed calls because you didn't reply for an hour."
+    ] }
+  },
+  "dates": [
+    { "id": "suya", "name": "Suya and a walk", "cost": 5000, "affection": 4 },
+    { "id": "jabi", "name": "Jabi Lake boat ride and dinner", "cost": 30000, "affection": 8 },
+    { "id": "fine", "name": "Fine dining in Maitama", "cost": 120000, "affection": 14 }
+  ],
+  "gift": { "cost": 20000, "affection": 6 },
+  "nepoMultiplier": 2.5,
+  "pregnancyChance": { "protected": 0.02, "unprotected": 0.14 },
+  "weddings": [
+    { "id": "court", "name": "Court registry wedding", "cost": 150000, "reputation": -4, "text": "A quick signature at the registry. Your aunties will talk about this for years." },
+    { "id": "full", "name": "Traditional + white wedding", "cost": 3500000, "reputation": 15, "text": "Two days, three outfits, a thousand guests, and an MC who forgot your name twice." }
+  ],
+  "childNames": ["Chidera", "Tobi", "Amina", "Kelechi", "Zara", "David", "Fatima", "Ebuka", "Ruth", "Ibrahim"],
+  "childWeeklyCost": 12000
+}

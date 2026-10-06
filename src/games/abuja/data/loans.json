@@ -1,0 +1,10 @@
+{
+  "lender": "QuickKash Microfinance",
+  "note": "Fictional lender. Flat interest is charged on the full amount and repaid weekly over four weeks.",
+  "offers": [
+    { "amount": 50000, "interest": 0.3, "weeks": 4, "requires": {} },
+    { "amount": 200000, "interest": 0.35, "weeks": 4, "requires": { "stat": "reputation", "gte": 20 } },
+    { "amount": 1000000, "interest": 0.4, "weeks": 4, "requires": { "stat": "network", "gte": 40 } }
+  ],
+  "missedPenalty": 0.1
+}

@@ -1,0 +1,16 @@
+{
+  "freedom": { "title": "Financial Freedom", "color": "#22c55e",
+    "text": "Your money works harder than you do now. You choose your mornings. You say no to things. In Abuja, that is the rarest luxury of all." },
+  "grass": { "title": "Grass to Grace", "color": "#16a34a",
+    "text": "From garri without sugar in Nyanya to owning your own future. Nobody handed you anything. The Lapo Baby made it, and every Lapo Baby watching knows it can be done." },
+  "jail": { "title": "Jailed for Fraud", "color": "#ef4444",
+    "text": "The Benz, the clubs, the 'clients'. It all ended in a cell at Kuje. Slim's number no longer connects." },
+  "ninefive": { "title": "Stuck in a 9-5", "color": "#eab308",
+    "text": "Salary comes, salary goes. You are not broke. You are not free. You are tired, stable, and wondering what would have happened if you had taken that one risk." },
+  "broke": { "title": "Broke", "color": "#64748b",
+    "text": "The loans, the flexing, the bad bets, the black tax. Abuja took more than it gave. You end with nothing but stories and a phone full of QuickKash messages." },
+  "japa": { "title": "Japa", "color": "#0ea5e9",
+    "text": "Boarding pass in hand, Nnamdi Azikiwe Airport behind you. A new country, new cold, new hustle. You will send money home. You will miss suya forever." },
+  "cut": { "title": "Life Cut Short", "color": "#111827",
+    "text": "Some stories end before they should. In a city of big dreams, safety is still a privilege. Rest well." }
+}

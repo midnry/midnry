@@ -1,0 +1,1332 @@
+{
+  "world": {
+    "width": 2400,
+    "height": 1800
+  },
+  "homes": {
+    "lapo": "home_nyanya",
+    "average": "home_gwarinpa"
+  },
+  "districts": [
+    {
+      "id": "kubwa",
+      "name": "Kubwa",
+      "x": 0,
+      "y": 0,
+      "w": 500,
+      "h": 500,
+      "color": "#3f6212",
+      "vibe": "Affordable, far, full of hustlers and Lapo Babies. Long commute."
+    },
+    {
+      "id": "gwarinpa",
+      "name": "Gwarinpa",
+      "x": 500,
+      "y": 0,
+      "w": 500,
+      "h": 500,
+      "color": "#4d7c0f",
+      "vibe": "Biggest estate in West Africa. Middle-class families, endless streets."
+    },
+    {
+      "id": "maitama",
+      "name": "Maitama",
+      "x": 1000,
+      "y": 0,
+      "w": 600,
+      "h": 500,
+      "color": "#a16207",
+      "vibe": "Old money, new money, embassy money. Gates within gates.",
+      "gate": {
+        "if": {
+          "any": [
+            {
+              "stat": "reputation",
+              "gte": 45
+            },
+            {
+              "npc": "bolaji",
+              "rel": 40
+            }
+          ]
+        },
+        "message": "Security man: \"Oga, who you come see? No name for list, no entry.\" (Needs Reputation 45 or Bolaji as a friend.)"
+      }
+    },
+    {
+      "id": "asokoro",
+      "name": "Asokoro",
+      "x": 1600,
+      "y": 0,
+      "w": 800,
+      "h": 600,
+      "color": "#92400e",
+      "vibe": "Where the Villa is. Sirens are background music.",
+      "gate": {
+        "if": {
+          "any": [
+            {
+              "stat": "reputation",
+              "gte": 70
+            },
+            {
+              "stat": "network",
+              "gte": 80
+            }
+          ]
+        },
+        "message": "Mobile police at the roundabout wave you back. \"This area is restricted.\" (Needs Reputation 70 or Network 80.)"
+      }
+    },
+    {
+      "id": "jabi",
+      "name": "Jabi Lake & Malls",
+      "x": 0,
+      "y": 500,
+      "w": 800,
+      "h": 600,
+      "color": "#0e7490",
+      "vibe": "Malls, lake views, dates, content shoots, and influencers flexing on credit."
+    },
+    {
+      "id": "wuse",
+      "name": "Wuse",
+      "x": 800,
+      "y": 500,
+      "w": 700,
+      "h": 500,
+      "color": "#1d4ed8",
+      "vibe": "Wuse Market, offices, tech hubs, and QuickKash Microfinance."
+    },
+    {
+      "id": "cbd",
+      "name": "Central Business District",
+      "x": 1500,
+      "y": 600,
+      "w": 900,
+      "h": 500,
+      "color": "#4338ca",
+      "vibe": "Banks, ministries, glass towers, and courts."
+    },
+    {
+      "id": "garki",
+      "name": "Garki",
+      "x": 800,
+      "y": 1000,
+      "w": 700,
+      "h": 800,
+      "color": "#7c3aed",
+      "vibe": "Markets, clinics, the motor park, and civil servants on lunch break."
+    },
+    {
+      "id": "lugbe",
+      "name": "Lugbe",
+      "x": 0,
+      "y": 1100,
+      "w": 800,
+      "h": 700,
+      "color": "#9f1239",
+      "vibe": "Airport road. Affordable, fast-growing, and Slim's 'office'."
+    },
+    {
+      "id": "nyanya",
+      "name": "Nyanya",
+      "x": 1500,
+      "y": 1100,
+      "w": 900,
+      "h": 700,
+      "color": "#b45309",
+      "vibe": "Crowded, loud, alive. Where the grind never sleeps."
+    }
+  ],
+  "places": [
+    {
+      "id": "home_nyanya",
+      "name": "Your room (Nyanya)",
+      "district": "nyanya",
+      "x": 1900,
+      "y": 1520,
+      "color": "#fbbf24",
+      "if": {
+        "background": "lapo"
+      },
+      "blurb": "One room, one window, one landlord who knocks on Saturdays.",
+      "actions": [
+        {
+          "id": "sleep",
+          "label": "Sleep (end the day)",
+          "slots": 0,
+          "energy": 0,
+          "kind": "sleep",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "rest",
+          "label": "Rest",
+          "slots": 1,
+          "energy": 25,
+          "effects": [
+            {
+              "stat": "stress",
+              "add": -6
+            }
+          ],
+          "text": "You lie down. The neighbour's generator sings you a lullaby."
+        },
+        {
+          "id": "study",
+          "label": "Study",
+          "slots": 1,
+          "energy": -15,
+          "effects": [
+            {
+              "skill": "education",
+              "add": 2
+            }
+          ],
+          "text": "You read until NEPA takes light. Then you read by phone torch."
+        },
+        {
+          "id": "learn_tech",
+          "label": "Learn tech online (₦1,500 data)",
+          "slots": 1,
+          "energy": -15,
+          "cost": 1500,
+          "effects": [
+            {
+              "skill": "tech",
+              "add": 3
+            }
+          ],
+          "text": "Free course, paid data. You fix your first bug."
+        }
+      ]
+    },
+    {
+      "id": "home_gwarinpa",
+      "name": "Your flat (Gwarinpa)",
+      "district": "gwarinpa",
+      "x": 760,
+      "y": 260,
+      "color": "#fbbf24",
+      "if": {
+        "background": "average"
+      },
+      "blurb": "A self-contain in Gwarinpa. Water runs on Tuesdays and Fridays.",
+      "actions": [
+        {
+          "id": "sleep",
+          "label": "Sleep (end the day)",
+          "slots": 0,
+          "energy": 0,
+          "kind": "sleep",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "rest",
+          "label": "Rest",
+          "slots": 1,
+          "energy": 25,
+          "effects": [
+            {
+              "stat": "stress",
+              "add": -6
+            }
+          ],
+          "text": "You rest. Your mother calls to ask if you have eaten."
+        },
+        {
+          "id": "study",
+          "label": "Study",
+          "slots": 1,
+          "energy": -15,
+          "effects": [
+            {
+              "skill": "education",
+              "add": 2
+            }
+          ],
+          "text": "A quiet afternoon with a book. Productive."
+        },
+        {
+          "id": "learn_tech",
+          "label": "Learn tech online (₦1,500 data)",
+          "slots": 1,
+          "energy": -15,
+          "cost": 1500,
+          "effects": [
+            {
+              "skill": "tech",
+              "add": 3
+            }
+          ],
+          "text": "You finish a module and feel unstoppable for ten minutes."
+        }
+      ]
+    },
+    {
+      "id": "pos_junction",
+      "name": "POS Junction",
+      "district": "nyanya",
+      "x": 2120,
+      "y": 1320,
+      "color": "#22c55e",
+      "blurb": "Umbrellas, plastic chairs, and a queue that never ends. Withdrawal charges: negotiable.",
+      "actions": [
+        {
+          "id": "apply_pos",
+          "label": "Apply: POS operator",
+          "slots": 1,
+          "energy": -5,
+          "kind": "apply",
+          "job": "pos_operator",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_pos",
+          "label": "Work a shift",
+          "slots": 2,
+          "energy": -30,
+          "kind": "work",
+          "job": "pos_operator",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "buy_stand",
+          "label": "Buy your own POS stand (₦150,000)",
+          "slots": 1,
+          "energy": -5,
+          "cost": 150000,
+          "if": {
+            "noAsset": "pos_stand"
+          },
+          "effects": [
+            {
+              "asset": "pos_stand"
+            },
+            {
+              "log": "Bought a POS stand in Nyanya."
+            }
+          ],
+          "text": "Umbrella, table, terminal, and a hand-painted sign. You are now a businessperson."
+        },
+        {
+          "id": "run_stand",
+          "label": "Run your POS stand",
+          "slots": 2,
+          "energy": -25,
+          "if": {
+            "asset": "pos_stand"
+          },
+          "lockedText": "You don't own a POS stand yet",
+          "effects": [
+            {
+              "skill": "trade",
+              "add": 1
+            },
+            {
+              "chance": 0.75,
+              "then": [
+                {
+                  "stat": "money",
+                  "add": 14000
+                },
+                {
+                  "toast": "Busy day: +₦14,000 in charges."
+                }
+              ],
+              "else": [
+                {
+                  "stat": "money",
+                  "add": -6000
+                },
+                {
+                  "toast": "Network was down all day. A customer's transfer failed and you refunded him."
+                }
+              ]
+            }
+          ],
+          "text": "You open shop under the umbrella."
+        }
+      ]
+    },
+    {
+      "id": "wuse_market",
+      "name": "Wuse Market",
+      "district": "wuse",
+      "x": 1080,
+      "y": 760,
+      "color": "#f97316",
+      "blurb": "Everything, everywhere, all at once. Customers say 'last price' and mean 'first price'.",
+      "actions": [
+        {
+          "id": "apply_market",
+          "label": "Apply: market sales",
+          "slots": 1,
+          "energy": -5,
+          "kind": "apply",
+          "job": "market_sales",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_market",
+          "label": "Work a shift",
+          "slots": 2,
+          "energy": -30,
+          "kind": "work",
+          "job": "market_sales",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "resell",
+          "label": "Buy and resell goods (₦20,000)",
+          "slots": 2,
+          "energy": -25,
+          "cost": 20000,
+          "effects": [
+            {
+              "skill": "trade",
+              "add": 2
+            },
+            {
+              "chance": 0.65,
+              "then": [
+                {
+                  "stat": "money",
+                  "add": 29000
+                },
+                {
+                  "toast": "Sold out! +₦29,000 back."
+                }
+              ],
+              "else": [
+                {
+                  "stat": "money",
+                  "add": 14000
+                },
+                {
+                  "toast": "Slow day. You sold half and got back ₦14,000."
+                }
+              ]
+            }
+          ],
+          "text": "You buy wholesale and hawk it through the market."
+        }
+      ]
+    },
+    {
+      "id": "quickkash",
+      "name": "QuickKash Microfinance",
+      "district": "wuse",
+      "x": 1340,
+      "y": 590,
+      "color": "#ef4444",
+      "blurb": "\"Fast loans, no collateral, no wahala!\" The wahala is in the small print.",
+      "actions": [
+        {
+          "id": "loans",
+          "label": "Talk to Mr. Felix about a loan",
+          "slots": 0,
+          "energy": 0,
+          "kind": "loans",
+          "effects": [],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "tech_hub",
+      "name": "Wuse Tech Hub",
+      "district": "wuse",
+      "x": 930,
+      "y": 920,
+      "color": "#38bdf8",
+      "blurb": "Bean bags, fast Wi-Fi, and founders explaining their 'Uber for X'.",
+      "actions": [
+        {
+          "id": "apply_tech",
+          "label": "Apply: junior developer",
+          "slots": 1,
+          "energy": -5,
+          "kind": "apply",
+          "job": "tech_job",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_tech",
+          "label": "Work a shift",
+          "slots": 2,
+          "energy": -25,
+          "kind": "work",
+          "job": "tech_job",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "freelance",
+          "label": "Do a freelance design gig",
+          "slots": 2,
+          "energy": -20,
+          "if": {
+            "skill": "tech",
+            "gte": 25
+          },
+          "lockedText": "Needs Tech 25",
+          "effects": [
+            {
+              "stat": "money",
+              "add": 9000
+            },
+            {
+              "skill": "tech",
+              "add": 1
+            }
+          ],
+          "text": "A logo for a 'premium' bukka. The client wants it 'more premium'. Paid anyway."
+        },
+        {
+          "id": "meetup",
+          "label": "Attend a tech meetup",
+          "slots": 1,
+          "energy": -10,
+          "effects": [
+            {
+              "stat": "network",
+              "add": 3
+            },
+            {
+              "skill": "tech",
+              "add": 1
+            }
+          ],
+          "text": "Free small chops and three founders who want you to work for equity."
+        },
+        {
+          "id": "meet",
+          "label": "Talk to someone new",
+          "slots": 1,
+          "energy": -5,
+          "kind": "meet",
+          "effects": [],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "okafor_office",
+      "name": "Mrs. Okafor's consultancy",
+      "district": "wuse",
+      "x": 1380,
+      "y": 860,
+      "color": "#10b981",
+      "blurb": "Plain office, serious woman, open door for people who show up.",
+      "actions": [
+        {
+          "id": "visit_okafor",
+          "label": "Visit Mrs. Okafor",
+          "slots": 1,
+          "energy": -5,
+          "effects": [
+            {
+              "npc": "okafor",
+              "rel": 6
+            },
+            {
+              "skill": "education",
+              "add": 1
+            },
+            {
+              "stat": "stress",
+              "add": -3
+            }
+          ],
+          "text": "She asks about your plans, then asks about your plan B. Then your plan C."
+        }
+      ]
+    },
+    {
+      "id": "garki_hub",
+      "name": "Garki Delivery Hub",
+      "district": "garki",
+      "x": 1000,
+      "y": 1160,
+      "color": "#a3e635",
+      "blurb": "Bikes, boxes, and riders who know every shortcut in Abuja.",
+      "actions": [
+        {
+          "id": "apply_delivery",
+          "label": "Apply: delivery rider",
+          "slots": 1,
+          "energy": -5,
+          "kind": "apply",
+          "job": "delivery_rider",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_delivery",
+          "label": "Work a shift",
+          "slots": 2,
+          "energy": -35,
+          "kind": "work",
+          "job": "delivery_rider",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "driving_lesson",
+          "label": "Take a driving lesson (₦5,000)",
+          "slots": 1,
+          "energy": -10,
+          "cost": 5000,
+          "effects": [
+            {
+              "skill": "driving",
+              "add": 6
+            }
+          ],
+          "text": "The instructor screams 'BRAKE!' at every roundabout. You improve anyway."
+        }
+      ]
+    },
+    {
+      "id": "hospital",
+      "name": "Garki General Hospital",
+      "district": "garki",
+      "x": 1320,
+      "y": 1320,
+      "color": "#f43f5e",
+      "blurb": "Doctors doing their best with what they have. Bring your own gloves, just in case.",
+      "actions": [
+        {
+          "id": "treat",
+          "label": "Get treated (₦15,000)",
+          "slots": 1,
+          "energy": 5,
+          "cost": 15000,
+          "effects": [
+            {
+              "stat": "health",
+              "add": 30
+            },
+            {
+              "stat": "stress",
+              "add": -4
+            }
+          ],
+          "text": "Drip, tablets, and a lecture about stress. You feel better."
+        }
+      ]
+    },
+    {
+      "id": "motor_park",
+      "name": "Area 1 Motor Park",
+      "district": "garki",
+      "x": 1100,
+      "y": 1640,
+      "color": "#facc15",
+      "blurb": "Buses to everywhere. Loaders, hawkers, touts. Work for anyone who shows up early.",
+      "actions": [
+        {
+          "id": "day_labour",
+          "label": "Do daily labour (loading)",
+          "slots": 2,
+          "energy": -40,
+          "effects": [
+            {
+              "stat": "money",
+              "add": 4000
+            },
+            {
+              "skill": "hustle",
+              "add": 1
+            },
+            {
+              "stat": "health",
+              "add": -2
+            }
+          ],
+          "text": "You load bags of rice onto a Jos-bound bus. Your back files a complaint."
+        }
+      ]
+    },
+    {
+      "id": "cbd_bank",
+      "name": "Union Capital Bank HQ",
+      "district": "cbd",
+      "x": 1700,
+      "y": 790,
+      "color": "#60a5fa",
+      "blurb": "Fictional bank, very real dress code. Your shoes must shine.",
+      "actions": [
+        {
+          "id": "apply_bank",
+          "label": "Apply: bank staff",
+          "slots": 1,
+          "energy": -5,
+          "kind": "apply",
+          "job": "bank_staff",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_bank",
+          "label": "Work a shift",
+          "slots": 2,
+          "energy": -25,
+          "kind": "work",
+          "job": "bank_staff",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "meet",
+          "label": "Talk to someone new",
+          "slots": 1,
+          "energy": -5,
+          "kind": "meet",
+          "effects": [],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "cbd_tower",
+      "name": "Zenith Heights Tower",
+      "district": "cbd",
+      "x": 2000,
+      "y": 740,
+      "color": "#818cf8",
+      "blurb": "Twenty floors of glass. Corporate jobs that need degrees, NYSC and someone who knows someone.",
+      "actions": [
+        {
+          "id": "apply_corporate",
+          "label": "Apply: corporate analyst",
+          "slots": 1,
+          "energy": -5,
+          "kind": "apply",
+          "job": "corporate",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_corporate",
+          "label": "Work a shift",
+          "slots": 2,
+          "energy": -25,
+          "kind": "work",
+          "job": "corporate",
+          "effects": [],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "ministry",
+      "name": "Federal Ministry of Contracts",
+      "district": "cbd",
+      "x": 2220,
+      "y": 960,
+      "color": "#c084fc",
+      "blurb": "Fictional ministry. Contracts go to whoever's file 'moves'. Files move when people move them.",
+      "actions": [
+        {
+          "id": "apply_contract",
+          "label": "Pursue a government contract",
+          "slots": 1,
+          "energy": -10,
+          "kind": "apply",
+          "job": "gov_contract",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_contract",
+          "label": "Deliver contract work",
+          "slots": 2,
+          "energy": -20,
+          "kind": "work",
+          "job": "gov_contract",
+          "effects": [],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "visa_agent",
+      "name": "Visa & Travel Consultants",
+      "district": "cbd",
+      "x": 1660,
+      "y": 1020,
+      "color": "#2dd4bf",
+      "blurb": "Posters of Canada, the UK and Germany. Proof of funds required. Hope sold separately.",
+      "actions": [
+        {
+          "id": "japa",
+          "label": "Japa: leave the country (needs ₦6,000,000 and a degree)",
+          "slots": 0,
+          "energy": 0,
+          "kind": "japa",
+          "if": {
+            "stat": "money",
+            "gte": 6000000
+          },
+          "lockedText": "Needs ₦6,000,000 proof of funds",
+          "effects": [],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "jabi_mall",
+      "name": "Jabi Lake Mall",
+      "district": "jabi",
+      "x": 420,
+      "y": 780,
+      "color": "#22d3ee",
+      "blurb": "Lake views, overpriced shawarma, and twenty people filming content at once.",
+      "actions": [
+        {
+          "id": "flex",
+          "label": "Flex: designer fit + photos (₦50,000)",
+          "slots": 1,
+          "energy": -10,
+          "cost": 50000,
+          "effects": [
+            {
+              "stat": "reputation",
+              "add": 6
+            },
+            {
+              "stat": "stress",
+              "add": -4
+            },
+            {
+              "flag": "flexed",
+              "set": true
+            }
+          ],
+          "text": "New fit, new pictures, new you. For about a week."
+        },
+        {
+          "id": "hangout",
+          "label": "Hang out and network (₦10,000)",
+          "slots": 1,
+          "energy": -10,
+          "cost": 10000,
+          "effects": [
+            {
+              "stat": "network",
+              "add": 3
+            },
+            {
+              "stat": "stress",
+              "add": -5
+            }
+          ],
+          "text": "Small chops, big gist. Someone's cousin works at a bank."
+        },
+        {
+          "id": "shoot",
+          "label": "Shoot content by the lake",
+          "slots": 1,
+          "energy": -15,
+          "effects": [
+            {
+              "skill": "content",
+              "add": 2
+            },
+            {
+              "chance": 0.12,
+              "then": [
+                {
+                  "stat": "reputation",
+                  "add": 8
+                },
+                {
+                  "stat": "money",
+                  "add": 40000
+                },
+                {
+                  "toast": "Your video went viral! A brand slid into your DMs: +₦40,000."
+                },
+                {
+                  "log": "Had a viral video at Jabi Lake."
+                }
+              ]
+            }
+          ],
+          "text": "You film a skit about Abuja landlords. The geese photobomb it."
+        },
+        {
+          "id": "meet",
+          "label": "Talk to someone new",
+          "slots": 1,
+          "energy": -5,
+          "kind": "meet",
+          "effects": [],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "tunde_place",
+      "name": "Tunde's place (Kubwa)",
+      "district": "kubwa",
+      "x": 260,
+      "y": 260,
+      "color": "#f59e0b",
+      "blurb": "Tunde's one-room in Kubwa, always open, always something on the stove.",
+      "actions": [
+        {
+          "id": "visit_tunde",
+          "label": "Visit Tunde",
+          "slots": 1,
+          "energy": -5,
+          "effects": [
+            {
+              "npc": "tunde",
+              "rel": 8
+            },
+            {
+              "stat": "stress",
+              "add": -8
+            }
+          ],
+          "text": "Pepper soup, old jokes, and new plans. Tunde is still Tunde."
+        },
+        {
+          "id": "tunde_biz",
+          "label": "Go into business with Tunde (₦100,000)",
+          "slots": 1,
+          "energy": -10,
+          "cost": 100000,
+          "if": {
+            "npc": "tunde",
+            "rel": 60
+          },
+          "lockedText": "Needs Tunde's trust (relationship 60)",
+          "effects": [
+            {
+              "asset": "tunde_biz"
+            },
+            {
+              "log": "Started a logistics business with Tunde."
+            }
+          ],
+          "text": "Two bikes, one WhatsApp business line, and a friendship older than both of you. 'Tunde & {name} Logistics' is born."
+        },
+        {
+          "id": "run_tunde_biz",
+          "label": "Work on the business with Tunde",
+          "slots": 2,
+          "energy": -25,
+          "if": {
+            "asset": "tunde_biz"
+          },
+          "lockedText": "You haven't started a business with Tunde",
+          "effects": [
+            {
+              "skill": "trade",
+              "add": 1
+            },
+            {
+              "npc": "tunde",
+              "rel": 2
+            },
+            {
+              "chance": 0.7,
+              "then": [
+                {
+                  "stat": "money",
+                  "add": 22000
+                },
+                {
+                  "toast": "Good week of deliveries: +₦22,000."
+                }
+              ],
+              "else": [
+                {
+                  "stat": "money",
+                  "add": -8000
+                },
+                {
+                  "toast": "A bike broke down. Repairs: ₦8,000."
+                }
+              ]
+            }
+          ],
+          "text": "You and Tunde sort the orders and send out the riders."
+        },
+        {
+          "id": "expand_tunde_biz",
+          "label": "Expand: buy five more bikes (₦600,000)",
+          "slots": 1,
+          "energy": -10,
+          "cost": 600000,
+          "if": {
+            "asset": "tunde_biz",
+            "noAsset": "tunde_fleet"
+          },
+          "lockedText": "Start the business first",
+          "effects": [
+            {
+              "asset": "tunde_fleet"
+            },
+            {
+              "npc": "tunde",
+              "rel": 5
+            },
+            {
+              "log": "Expanded the logistics business to a fleet of seven bikes."
+            }
+          ],
+          "text": "Five new bikes, five new riders, one proper office in Kubwa. Tunde cries small. You pretend you didn't see."
+        },
+        {
+          "id": "run_fleet",
+          "label": "Manage the fleet",
+          "slots": 2,
+          "energy": -25,
+          "if": {
+            "asset": "tunde_fleet"
+          },
+          "lockedText": "Expand the business first",
+          "effects": [
+            {
+              "skill": "trade",
+              "add": 1
+            },
+            {
+              "chance": 0.75,
+              "then": [
+                {
+                  "stat": "money",
+                  "add": 85000
+                },
+                {
+                  "toast": "The fleet ran all week: +₦85,000."
+                }
+              ],
+              "else": [
+                {
+                  "stat": "money",
+                  "add": -20000
+                },
+                {
+                  "toast": "A rider crashed. Hospital and repairs: ₦20,000."
+                }
+              ]
+            }
+          ],
+          "text": "You dispatch riders across Abuja from the Kubwa office."
+        }
+      ]
+    },
+    {
+      "id": "kubwa_market",
+      "name": "Kubwa Village Market",
+      "district": "kubwa",
+      "x": 360,
+      "y": 420,
+      "color": "#84cc16",
+      "blurb": "Cheaper than Wuse. If you can buy here and sell there, you have a business.",
+      "actions": [
+        {
+          "id": "bulk",
+          "label": "Buy foodstuff in bulk to resell (₦30,000)",
+          "slots": 2,
+          "energy": -25,
+          "cost": 30000,
+          "effects": [
+            {
+              "skill": "trade",
+              "add": 2
+            },
+            {
+              "chance": 0.6,
+              "then": [
+                {
+                  "stat": "money",
+                  "add": 45000
+                },
+                {
+                  "toast": "Sold everything in Wuse: +₦45,000."
+                }
+              ],
+              "else": [
+                {
+                  "stat": "money",
+                  "add": 24000
+                },
+                {
+                  "toast": "The tomatoes went soft. You got back ₦24,000."
+                }
+              ]
+            }
+          ],
+          "text": "Bags of rice and beans, one borrowed van, and a prayer."
+        }
+      ]
+    },
+    {
+      "id": "slim_lab",
+      "name": "Slim's 'office' (Lugbe)",
+      "district": "lugbe",
+      "x": 420,
+      "y": 1420,
+      "color": "#a855f7",
+      "blurb": "Blackout curtains, three ring lights, a PS5, and a lot of 'clients' abroad.",
+      "actions": [
+        {
+          "id": "visit_slim",
+          "label": "Gist with Slim",
+          "slots": 1,
+          "energy": -5,
+          "effects": [
+            {
+              "npc": "slim",
+              "rel": 6
+            },
+            {
+              "stat": "stress",
+              "add": -3
+            }
+          ],
+          "text": "Slim orders suya for everybody. \"My guy, when you ready, the format dey.\""
+        },
+        {
+          "id": "fraud",
+          "label": "Run 'the format' (fraud)",
+          "slots": 2,
+          "energy": -20,
+          "if": {
+            "any": [
+              {
+                "flag": "yahoo_intro"
+              },
+              {
+                "npc": "slim",
+                "rel": 30
+              }
+            ]
+          },
+          "lockedText": "Slim doesn't trust you with 'the format' yet",
+          "effects": [
+            {
+              "flag": "fraud",
+              "set": true
+            },
+            {
+              "stat": "heat",
+              "add": 16
+            },
+            {
+              "stat": "stress",
+              "add": 6
+            },
+            {
+              "chance": 0.7,
+              "then": [
+                {
+                  "stat": "money",
+                  "add": 350000
+                },
+                {
+                  "toast": "A 'client' paid. +₦350,000. Your hands are shaking."
+                }
+              ],
+              "else": [
+                {
+                  "stat": "money",
+                  "add": 50000
+                },
+                {
+                  "toast": "The 'client' got suspicious. Only ₦50,000."
+                }
+              ]
+            },
+            {
+              "log": "Ran fraud schemes with Slim."
+            }
+          ],
+          "text": "You open the laptop. The ring light comes on."
+        },
+        {
+          "id": "quit_fraud",
+          "label": "Tell Slim you're out",
+          "slots": 1,
+          "energy": -5,
+          "if": {
+            "flag": "fraud"
+          },
+          "lockedText": "You're not in",
+          "effects": [
+            {
+              "flag": "fraud",
+              "set": false
+            },
+            {
+              "flag": "left_fraud",
+              "set": true
+            },
+            {
+              "npc": "slim",
+              "rel": -20
+            },
+            {
+              "stat": "heat",
+              "add": -10
+            },
+            {
+              "log": "Walked away from fraud before it was too late."
+            }
+          ],
+          "text": "Slim stares. \"You go come back.\" You don't."
+        }
+      ]
+    },
+    {
+      "id": "bolaji_house",
+      "name": "Bolaji's mansion",
+      "district": "maitama",
+      "x": 1300,
+      "y": 220,
+      "color": "#eab308",
+      "blurb": "Fountain, three gatemen, and a garage bigger than your childhood home.",
+      "actions": [
+        {
+          "id": "hang_bolaji",
+          "label": "Hang out with Bolaji (₦30,000 to keep up)",
+          "slots": 1,
+          "energy": -10,
+          "cost": 30000,
+          "effects": [
+            {
+              "npc": "bolaji",
+              "rel": 8
+            },
+            {
+              "stat": "network",
+              "add": 6
+            },
+            {
+              "stat": "stress",
+              "add": 5
+            },
+            {
+              "stat": "resilience",
+              "add": -1
+            }
+          ],
+          "text": "Bolaji's friends talk about 'Dad's people' and 'small money' (₦5 million). You laugh at the right times."
+        },
+        {
+          "id": "ask_connect",
+          "label": "Ask Bolaji for a connect",
+          "slots": 1,
+          "energy": -5,
+          "if": {
+            "npc": "bolaji",
+            "rel": 50
+          },
+          "lockedText": "Needs Bolaji's friendship (relationship 50)",
+          "effects": [
+            {
+              "flag": "bolaji_connect",
+              "set": true
+            },
+            {
+              "stat": "resilience",
+              "add": -2
+            },
+            {
+              "log": "Asked a Nepo Baby for a connect. He made one phone call."
+            }
+          ],
+          "text": "Bolaji makes one phone call. \"My guy, go to the Ministry. They're expecting you.\" It took him eight seconds."
+        },
+        {
+          "id": "meet",
+          "label": "Talk to someone new",
+          "slots": 1,
+          "energy": -5,
+          "kind": "meet",
+          "effects": [],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "oil_hq",
+      "name": "Delta Crest Oil & Gas",
+      "district": "maitama",
+      "x": 1140,
+      "y": 380,
+      "color": "#fde047",
+      "blurb": "Fictional oil company. Salaries in dollars, interviews by referral only.",
+      "actions": [
+        {
+          "id": "apply_oil",
+          "label": "Apply: oil & gas role",
+          "slots": 1,
+          "energy": -5,
+          "kind": "apply",
+          "job": "oil_gas",
+          "effects": [],
+          "text": ""
+        },
+        {
+          "id": "work_oil",
+          "label": "Work a shift",
+          "slots": 2,
+          "energy": -25,
+          "kind": "work",
+          "job": "oil_gas",
+          "effects": [],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "asokoro_owambe",
+      "name": "Asokoro Owambe Hall",
+      "district": "asokoro",
+      "x": 2000,
+      "y": 300,
+      "color": "#fb7185",
+      "blurb": "Every weekend, someone's daughter marries someone's son. Everyone important attends.",
+      "actions": [
+        {
+          "id": "owambe",
+          "label": "Attend in aso-ebi (₦80,000)",
+          "slots": 2,
+          "energy": -20,
+          "cost": 80000,
+          "effects": [
+            {
+              "stat": "network",
+              "add": 12
+            },
+            {
+              "stat": "reputation",
+              "add": 5
+            },
+            {
+              "stat": "stress",
+              "add": -4
+            }
+          ],
+          "text": "Jollof, small chops, and one business card from a man whose title is 'Chief'."
+        }
+      ]
+    }
+  ]
+}

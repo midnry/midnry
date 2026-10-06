@@ -1,0 +1,10 @@
+{
+  "note": "Fictional social platforms for the content creator system (coming in a later update).",
+  "platforms": [
+    { "id": "tiklok", "name": "Tiklok", "kind": "short video", "viral": 0.08, "monetiseAt": 10000 },
+    { "id": "instaflex", "name": "Instaflex", "kind": "photos and lifestyle", "viral": 0.04, "monetiseAt": 20000 },
+    { "id": "youview", "name": "YouView", "kind": "long video", "viral": 0.02, "monetiseAt": 1000 },
+    { "id": "chirp", "name": "Chirp", "kind": "hot takes", "viral": 0.06, "monetiseAt": 50000 }
+  ],
+  "contentTypes": ["comedy skit", "lifestyle", "tech", "food", "gist", "dance", "educational", "grass to grace story"]
+}
