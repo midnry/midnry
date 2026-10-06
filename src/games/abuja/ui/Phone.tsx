@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
-import { borrow, business, callContact, driveTo, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
+import { borrow, business, callContact, driveTo, negotiate, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
 import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, netWorth, npcName } from "../systems/rules";
 import { RIDE_INFO, RIDE_MODES, fare, fuelCost, rideKm } from "../systems/rides";
 import { hasCar } from "../systems/drive";
 import { BUSINESSES, bizDef, canStart, growWhy, upgradeCost } from "../systems/business";
+import { DEALS, QUALITY_LABEL, blocked, repLabel } from "../systems/negotiate/core";
+import { person, TRAIT_INFO } from "../systems/negotiate/people";
 import { deleteSave, replace } from "../systems/store";
 import type { GameState } from "../systems/types";
 import { REVIEW_DAYS } from "../systems/bank";
@@ -15,13 +17,14 @@ import { btnGhost, btnPrimary } from "./theme";
 import { Trade } from "./Trade";
 import { WardrobePanel } from "./Wardrobe";
 
-export type PhoneApp = "home" | "food" | "bills" | "business" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe";
+export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "wallet", label: "Wallet", icon: "💳", tint: "bg-blue-600" },
   { id: "food", label: "ChopNow", icon: "🍲", tint: "bg-amber-600" },
   { id: "bills", label: "Bills", icon: "🧾", tint: "bg-cyan-700" },
   { id: "business", label: "Business", icon: "🏪", tint: "bg-lime-700" },
+  { id: "deals", label: "Deals", icon: "🤝", tint: "bg-emerald-700" },
   { id: "trade", label: "Trade", icon: "📈", tint: "bg-indigo-600" },
   { id: "linkup", label: "Linkup", icon: "💗", tint: "bg-pink-600" },
   { id: "loans", label: "QuickKash", icon: "💸", tint: "bg-red-600" },
@@ -65,6 +68,7 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
           {app === "food" ? <FoodApp state={state} /> : null}
           {app === "bills" ? <Bills state={state} /> : null}
           {app === "business" ? <BusinessApp state={state} /> : null}
+          {app === "deals" ? <DealsApp state={state} onClose={onClose} /> : null}
           {app === "loans" ? <Loans state={state} /> : null}
           {app === "jobs" ? <Jobs state={state} /> : null}
           {app === "contacts" ? <Contacts state={state} /> : null}
@@ -94,6 +98,93 @@ function Home({ onApp }: { onApp: (app: PhoneApp) => void }) {
         ))}
       </div>
       <p className="mt-8 text-xs text-slate-500">Coming in the next updates: {SOON.join(", ")}.</p>
+    </div>
+  );
+}
+
+function DealsApp({ state, onClose }: { state: GameState; onClose: () => void }) {
+  const neg = state.life?.neg;
+  const rep = repLabel(neg?.rep);
+  const opps = (neg?.opportunities ?? []).filter((o) => o.until >= state.day);
+  const contacts = Object.entries(neg?.npcs ?? {});
+  const start = (id: string) => {
+    negotiate(id);
+    onClose();
+  };
+  return (
+    <div>
+      <div className="rounded-2xl bg-emerald-700 p-4">
+        <p className="font-display text-2xl">Deals</p>
+        <p className="text-sm opacity-90">Every price in Abuja is negotiable. Persuade first, then bargain.</p>
+        <p className="mt-2 text-sm">
+          Your reputation: <span className="font-semibold">{rep.label}</span>
+        </p>
+        <p className="text-xs opacity-80">{rep.blurb}</p>
+      </div>
+      {neg?.staff || neg?.supplier || neg?.rent ? (
+        <div className="mt-3 rounded-xl bg-white/5 p-3 text-sm">
+          <p className="font-semibold">Running arrangements</p>
+          {neg.rent ? <p className="text-slate-300">🏠 Rent: {naira(neg.rent)} a week{(neg.rentPrepaidUntil ?? 0) >= state.day ? `, prepaid to day ${neg.rentPrepaidUntil}` : ""}</p> : null}
+          {neg.staff ? <p className="text-slate-300">🧑‍💼 {neg.staff.name}: {naira(neg.staff.salary)} a week</p> : null}
+          {neg.supplier && neg.supplier.until >= state.day ? <p className="text-slate-300">📦 Supplier discount {Math.round(neg.supplier.discount * 1000) / 10}% until day {neg.supplier.until}</p> : null}
+        </div>
+      ) : null}
+      {opps.length ? (
+        <div className="mt-3 grid gap-2">
+          {opps.map((o) => (
+            <button key={o.deal} type="button" onClick={() => start(o.deal)} className="rounded-xl border border-emerald-400/40 bg-emerald-400/10 p-3 text-left text-sm">
+              <span className="font-semibold">⭐ {DEALS.find((d) => d.id === o.deal)?.title}</span>
+              <span className="block text-xs text-slate-300">{o.text} Until day {o.until}.</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <p className="mt-5 font-semibold">Open deals</p>
+      <div className="mt-2 grid gap-2">
+        {DEALS.map((d) => {
+          const why = blocked(state, d.id);
+          if (why && /already|don't own|You need|haven't hired|only started/.test(why) && !/won't|refuses/.test(why)) return null;
+          return (
+            <button key={d.id} type="button" disabled={Boolean(why)} onClick={() => start(d.id)} className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-left disabled:opacity-50">
+              <span className="block font-semibold">
+                {d.icon} {d.title}
+              </span>
+              <span className="block text-xs text-slate-400">{d.blurb}</span>
+              <span className="mt-1 block text-[11px] text-slate-500">
+                {person(d.npc)?.name} · {d.where}
+              </span>
+              {why ? <span className="mt-1 block text-xs text-amber-300">🔒 {why}</span> : null}
+            </button>
+          );
+        })}
+      </div>
+      {contacts.length ? (
+        <>
+          <p className="mt-5 font-semibold">People you've negotiated with</p>
+          <div className="mt-2 grid gap-2">
+            {contacts.map(([id, m]) => {
+              const who = person(id);
+              if (!who) return null;
+              return (
+                <div key={id} className="rounded-xl bg-white/5 p-3 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-semibold">{who.name}</p>
+                    <p className={`text-xs ${m.rel >= 20 ? "text-emerald-300" : m.rel <= -20 ? "text-red-300" : "text-slate-400"}`}>{m.rel >= 50 ? "Friendly" : m.rel >= 20 ? "Warm" : m.rel > -20 ? "Neutral" : m.rel > -50 ? "Cold" : "Hostile"}</p>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    {m.known.length ? m.known.map((t) => `${TRAIT_INFO[t].icon} ${TRAIT_INFO[t].label}`).join(" · ") : "You haven't figured them out yet."}
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    {m.deals} deal{m.deals === 1 ? "" : "s"}
+                    {m.last ? ` · last: ${QUALITY_LABEL[m.last].toLowerCase()}` : ""}
+                    {m.bluffsCaught ? ` · caught you bluffing ${m.bluffsCaught}×` : ""}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

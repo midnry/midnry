@@ -715,12 +715,12 @@ function end(s: GameState, n: Negotiation, how: "walked" | "failed", text: strin
   const neg = negLife(s);
   const mem = memory(s, n.npc);
   say(n, "note", text, how === "failed" ? "bad" : "neutral");
-  if (n.rounds + n.attempts > 6) neg.rep.difficult += 1;
+  if (n.rounds > 5) neg.rep.difficult += 1;
   if (n.anger >= 2 || mem.insults >= 3) mem.refuseUntil = s.day + 7;
   else if (how === "failed") mem.refuseUntil = s.day + 1;
   neg.skill = Math.min(60, neg.skill + 1);
   n.stage = "done";
-  n.outcome = { quality: "fair", agreed: false, summary: how === "walked" ? "No deal. You walked away." : "No deal." };
+  n.outcome = { quality: "fair", agreed: false, summary: text };
   neg.history = [...neg.history, { day: s.day, deal: n.deal, npc: n.npc, quality: how }].slice(-30);
   spreadWord(s, n);
 }

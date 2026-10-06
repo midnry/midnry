@@ -31,6 +31,7 @@ import type { GameState } from "../systems/types";
 import { Phone, type PhoneApp } from "./Phone";
 import { isPoorRoom, roomForBuilding, roomForPlace, type RoomInfo } from "../systems/rooms";
 import { ChatBubble, ReplyButton } from "./Chat";
+import { NegotiationScreen } from "./Negotiation";
 import { StoryPanel } from "./StoryView";
 import { WardrobePanel } from "./Wardrobe";
 import { btnGhost, btnPrimary, panel } from "./theme";
@@ -58,6 +59,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
     setControls(next);
   };
   const inStory = Boolean(state.chapter);
+  const negotiation = state.life?.neg?.active ?? null;
   // Inside a building: which room, and the loading screen between outside and in.
   const [inside, setInside] = useState<RoomInfo | null>(null);
   const insideRef = useRef<RoomInfo | null>(null);
@@ -179,10 +181,10 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
 
   // The world stands still while the pause menu is open. Esc or P toggles it.
   useEffect(() => {
-    input.paused = paused || wardrobe;
+    input.paused = paused || wardrobe || Boolean(negotiation);
     input.x = 0;
     input.y = 0;
-  }, [paused, wardrobe]);
+  }, [paused, wardrobe, negotiation]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape" || event.key === "p" || event.key === "P") setPaused((value) => !value);
@@ -377,6 +379,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
 
       {phone && !inStory ? <Phone state={state} app={phone} onApp={setPhone} onClose={() => setPhone(null)} /> : null}
       {state.event ? <EventModal state={state} /> : null}
+      {negotiation && !state.event ? <NegotiationScreen key={`${negotiation.deal}-${negotiation.npc}`} state={state} n={negotiation} /> : null}
       {story ? (
         <div className="absolute inset-0 z-40 overflow-y-auto bg-black/55 px-3 py-6 backdrop-blur-[2px] sm:py-12">
           <StoryPanel state={state} />
