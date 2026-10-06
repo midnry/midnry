@@ -5,6 +5,7 @@ import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, net
 import { RIDE_INFO, RIDE_MODES, fare, rideKm } from "../systems/rides";
 import { deleteSave, replace } from "../systems/store";
 import type { GameState } from "../systems/types";
+import { REVIEW_DAYS } from "../systems/bank";
 import { INJURY, injured } from "../systems/health";
 import { DELIVERY_FEE, MENU, daysUnwashed, hungerWord, isDirty, lifeOf, thirstWord } from "../systems/life";
 import { Linkup } from "./Linkup";
@@ -196,6 +197,7 @@ function Row({ label, value, tone }: { label: string; value: string; tone?: stri
 
 function Wallet({ state }: { state: GameState }) {
   const worth = netWorth(state);
+  const frozen = lifeOf(state).frozen;
   return (
     <div>
       <div className="rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-900 p-5">
@@ -203,6 +205,19 @@ function Wallet({ state }: { state: GameState }) {
         <p className="mt-1 text-3xl font-bold tabular-nums">{naira(state.stats.money)}</p>
         <p className="mt-3 text-sm opacity-80">USD: ${state.stats.usd.toLocaleString("en")} (≈ {naira(state.stats.usd * USD_RATE)})</p>
       </div>
+      {frozen ? (
+        <div className="mt-3 rounded-2xl border border-red-400/40 bg-red-500/15 p-3 text-sm">
+          <p className="font-semibold text-red-300">🔒 {naira(frozen.amount)} frozen by Union Capital Bank</p>
+          <p className="mt-1 text-slate-300">
+            Since day {frozen.day}.{" "}
+            {frozen.dirty
+              ? "The bank linked it to fraud and told the EFCC."
+              : state.day - frozen.day < REVIEW_DAYS
+                ? `Compliance is reviewing it. Go to Union Capital Bank HQ in the CBD from day ${frozen.day + REVIEW_DAYS}.`
+                : "The review is done. Go to Union Capital Bank HQ in the CBD to get it released."}
+          </p>
+        </div>
+      ) : null}
       <div className="mt-4">
         <Row label="Debt" value={naira(debt(state))} tone={debt(state) ? "text-red-400" : ""} />
         <Row label="Net worth" value={naira(worth)} />
@@ -221,7 +236,7 @@ function Wallet({ state }: { state: GameState }) {
       ) : (
         <p className="mt-2 text-sm text-slate-400">No assets yet. Land, houses and cars come later. A POS stand is a start.</p>
       )}
-      <p className="mt-6 text-xs text-slate-500">Weekly bills: rent, food, transport and data leave your account every 7 days.</p>
+      <p className="mt-6 text-xs text-slate-500">Weekly bills: rent, transport, data and electricity leave your account every 7 days. See the Bills app.</p>
     </div>
   );
 }

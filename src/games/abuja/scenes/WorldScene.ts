@@ -290,7 +290,7 @@ export class WorldScene extends Phaser.Scene {
     this.near = null;
     bus.emit("near", null);
     // Development only: lets automated browser tests move the player.
-    if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y) };
+    if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y), hit: (by: HitBy) => bump(by) };
   }
 
   private lookIdOf(state: GameState | null) {
