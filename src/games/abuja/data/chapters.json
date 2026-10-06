@@ -391,10 +391,10 @@
                     "add": 8
                   },
                   {
-                    "offense": "noshow"
+                    "toast": "A soldier finds you under your mattress. Punishment: frog jumps round the parade ground, then cutting grass in the sun until 2 p.m."
                   },
                   {
-                    "toast": "A soldier finds you under your mattress. Punishment: frog jumps round the parade ground, then cutting grass in the sun until 2 p.m."
+                    "offense": "noshow"
                   }
                 ],
                 "else": [
@@ -571,10 +571,10 @@
                     "add": 8
                   },
                   {
-                    "offense": "noshow"
+                    "toast": "Caught with suya in your hand. You spend the evening scrubbing the camp kitchen pots."
                   },
                   {
-                    "toast": "Caught with suya in your hand. You spend the evening scrubbing the camp kitchen pots."
+                    "offense": "noshow"
                   }
                 ],
                 "else": [
@@ -789,10 +789,10 @@
                     "set": true
                   },
                   {
-                    "offense": "noshow"
+                    "toast": "Your Local Government Inspector marks you absent three Thursdays in a row. A query letter follows."
                   },
                   {
-                    "toast": "Your Local Government Inspector marks you absent three Thursdays in a row. A query letter follows."
+                    "offense": "noshow"
                   }
                 ],
                 "else": [
