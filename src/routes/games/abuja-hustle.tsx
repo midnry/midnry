@@ -24,7 +24,7 @@ function GamePage() {
     const theme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     const before = { manifest: link?.href, theme: theme?.content };
     if (link) link.href = MANIFEST;
-    if (theme) theme.content = "#14110f";
+    if (theme) theme.content = "#07152b";
     if ("serviceWorker" in navigator) {
       void navigator.serviceWorker.register("/abuja-hustle-sw.js", { scope: "/games/abuja-hustle" }).catch(() => {});
     }

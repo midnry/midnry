@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import { HIP_Y, LEG_BOX, UPPER_BOX, characterParts, lookKey, type Look } from "../systems/character";
+import { characterParts, dims, lookKey, type Look } from "../systems/character";
 
 // Cartoon art drawn in code: bold dark outlines, flat colours, one shade.
 // Every look is a texture key, so real sprite sheets can replace any of them
@@ -95,47 +95,53 @@ function makeShadow(scene: Phaser.Scene) {
   });
 }
 
-/** Queue the textures for these looks in the scene's loader (call from preload). */
-export function queueCharacters(scene: Phaser.Scene, looks: Look[]) {
+export type Person = { look: Look; adult: boolean };
+
+const charKey = ({ look, adult }: Person) => `ch_${lookKey(look)}${adult ? "a" : "k"}`;
+
+/** Queue the textures for these people in the scene's loader (call from preload). */
+export function queueCharacters(scene: Phaser.Scene, people: Person[]) {
   const urls: string[] = [];
   const seen = new Set<string>();
-  for (const look of looks) {
-    const key = lookKey(look);
-    if (seen.has(key) || scene.textures.exists(`ch_${key}_front`)) continue;
+  for (const person of people) {
+    const key = charKey(person);
+    if (seen.has(key) || scene.textures.exists(`${key}_front`)) continue;
     seen.add(key);
-    for (const [part, svg] of Object.entries(characterParts(look, RES))) {
-      const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+    const parts = characterParts(person.look, person.adult, RES);
+    for (const part of ["front", "back", "side", "leg", "legSide"] as const) {
+      const url = URL.createObjectURL(new Blob([parts[part]], { type: "image/svg+xml" }));
       urls.push(url);
-      scene.load.svg(`ch_${key}_${part}`, url);
+      scene.load.svg(`${key}_${part}`, url);
     }
   }
   if (urls.length) scene.load.once("complete", () => urls.forEach((url) => URL.revokeObjectURL(url)));
 }
 
+type Facing = "front" | "back" | "side";
+
 export type Figure = Phaser.GameObjects.Container & {
   rig: Phaser.GameObjects.Container;
   legs: [Phaser.GameObjects.Image, Phaser.GameObjects.Image];
-  front: Phaser.GameObjects.Image;
-  back: Phaser.GameObjects.Image;
+  upper: Phaser.GameObjects.Image;
   /** Height of the top of the head above the figure's position, in pixels (negative). */
   headTop: number;
-  unit: number;
+  key: string;
+  facing: Facing;
+  dims: ReturnType<typeof dims>;
 };
 
 const FEET = 22; // feet sit this many pixels below the figure's position
 
 /** A person. `unit` is pixels per drawing unit: about 0.46 for people, smaller for crowds. */
-export function figure(scene: Phaser.Scene, x: number, y: number, look: Look, opts: { name?: string; nameColor?: string; unit?: number } = {}): Figure {
+export function figure(scene: Phaser.Scene, x: number, y: number, person: Person, opts: { name?: string; nameColor?: string; unit?: number } = {}): Figure {
   const unit = opts.unit ?? 0.46;
-  const key = `ch_${lookKey(look)}`;
-  const legY = 0;
-  const legL = scene.add.image(-11, legY, `${key}_leg`).setOrigin(0.5, 0).setScale(1 / RES);
-  const legR = scene.add.image(11, legY, `${key}_leg`).setOrigin(0.5, 0).setScale(1 / RES).setFlipX(true);
-  const top = -HIP_Y + UPPER_BOX.top;
-  const front = scene.add.image(-UPPER_BOX.w / 2, top, `${key}_front`).setOrigin(0, 0).setScale(1 / RES);
-  const back = scene.add.image(-UPPER_BOX.w / 2, top, `${key}_back`).setOrigin(0, 0).setScale(1 / RES).setVisible(false);
-  const rig = scene.add.container(0, FEET - LEG_BOX.h * unit, [legL, legR, front, back]).setScale(unit);
-  const headTop = FEET - (LEG_BOX.h + HIP_Y + 2) * unit;
+  const key = charKey(person);
+  const d = dims(person.look, person.adult);
+  const legA = scene.add.image(0, 0, `${key}_leg`).setOrigin(0.5, 0).setScale(1 / RES);
+  const legB = scene.add.image(0, 0, `${key}_leg`).setOrigin(0.5, 0).setScale(1 / RES);
+  const upper = scene.add.image(-d.width / 2, -d.hipY + d.upperTop, `${key}_front`).setOrigin(0, 0).setScale(1 / RES);
+  const rig = scene.add.container(0, FEET - d.legH * unit, [legA, legB, upper]).setScale(unit);
+  const headTop = rig.y + (d.headTop - d.hipY) * unit;
   const items: Phaser.GameObjects.GameObject[] = [scene.add.image(0, FEET - 2, "shadow").setScale(unit * 2.2, unit * 2), rig];
   if (opts.name) {
     items.push(
@@ -145,7 +151,7 @@ export function figure(scene: Phaser.Scene, x: number, y: number, look: Look, op
           fontSize: "12px",
           fontStyle: "bold",
           color: opts.nameColor ?? "#ffffff",
-          stroke: "#141414",
+          stroke: "#0b1726",
           strokeThickness: 4,
         })
         .setOrigin(0.5),
@@ -153,39 +159,60 @@ export function figure(scene: Phaser.Scene, x: number, y: number, look: Look, op
   }
   const c = scene.add.container(x, y, items) as Figure;
   c.rig = rig;
-  c.legs = [legL, legR];
-  c.front = front;
-  c.back = back;
+  c.legs = [legA, legB];
+  c.upper = upper;
   c.headTop = headTop;
-  c.unit = unit;
+  c.key = key;
+  c.dims = d;
+  c.facing = "side"; // so the first setFacing lays the legs out
+  setFacing(c, "front");
   return c;
 }
 
-/** Step animation: legs lift in turn, the body bobs, and the person faces where they walk. */
-export function animateWalk(f: Figure, time: number, moving: boolean, dx: number, dy = 0) {
-  const sx = Math.abs(f.rig.scaleX);
-  if (dx < -0.1) f.rig.scaleX = -sx;
-  if (dx > 0.1) f.rig.scaleX = sx;
-  if (moving) {
-    const away = dy < -0.1 && Math.abs(dy) > Math.abs(dx) * 0.6;
-    const toward = dy > 0.1 || Math.abs(dx) > 0.1;
-    if (away) {
-      f.back.setVisible(true);
-      f.front.setVisible(false);
-    } else if (toward) {
-      f.back.setVisible(false);
-      f.front.setVisible(true);
-    }
-    const t = time / 85;
-    f.legs[0].y = Math.min(0, Math.sin(t) * 6);
-    f.legs[1].y = Math.min(0, -Math.sin(t) * 6);
-    const bob = -Math.abs(Math.sin(t)) * 4;
-    f.front.y = f.back.y = -HIP_Y + UPPER_BOX.top + bob;
+function setFacing(f: Figure, facing: Facing) {
+  if (f.facing === facing) return;
+  f.facing = facing;
+  f.upper.setTexture(`${f.key}_${facing}`);
+  const [a, b] = f.legs;
+  if (facing === "side") {
+    a.setTexture(`${f.key}_legSide`).setFlipX(false).setPosition(-3, 0).setTint(0xd8d8d8);
+    b.setTexture(`${f.key}_legSide`).setFlipX(false).setPosition(1, 0).clearTint();
   } else {
-    f.legs[0].y = 0;
-    f.legs[1].y = 0;
-    f.front.y = f.back.y = -HIP_Y + UPPER_BOX.top;
+    a.setTexture(`${f.key}_leg`).setFlipX(false).setPosition(-f.dims.legX + 1, 0).clearTint().setRotation(0);
+    b.setTexture(`${f.key}_leg`).setFlipX(true).setPosition(f.dims.legX - 1, 0).clearTint().setRotation(0);
+    f.rig.scaleX = Math.abs(f.rig.scaleX);
   }
+}
+
+/** Step animation: legs lift (or swing, side on), the body bobs, and the person faces where they walk. */
+export function animateWalk(f: Figure, time: number, moving: boolean, dx: number, dy = 0) {
+  if (moving) {
+    if (Math.abs(dx) > 0.1 && Math.abs(dx) >= Math.abs(dy) * 0.8) setFacing(f, "side");
+    else if (dy < -0.1) setFacing(f, "back");
+    else if (dy > 0.1) setFacing(f, "front");
+    if (f.facing === "side") {
+      const sx = Math.abs(f.rig.scaleX);
+      f.rig.scaleX = dx < 0 ? -sx : sx;
+    }
+  }
+  const [a, b] = f.legs;
+  const base = -f.dims.hipY + f.dims.upperTop;
+  if (!moving) {
+    a.y = b.y = 0;
+    a.rotation = b.rotation = 0;
+    f.upper.y = base;
+    return;
+  }
+  const t = time / 85;
+  if (f.facing === "side") {
+    a.rotation = Math.sin(t) * 0.5;
+    b.rotation = -Math.sin(t) * 0.5;
+    a.y = b.y = 0;
+  } else {
+    a.y = Math.min(0, Math.sin(t) * 6);
+    b.y = Math.min(0, -Math.sin(t) * 6);
+  }
+  f.upper.y = base - Math.abs(Math.sin(t)) * 4;
 }
 
 // ── Vehicles (top-down, facing right) ───────────────────────────────────────

@@ -12,13 +12,13 @@ export function WardrobePanel({ state, onDone }: { state: GameState; onDone: () 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-[140px_minmax(0,1fr)]">
       <div className="flex flex-col items-center gap-2">
-        <div className="rounded-3xl bg-gradient-to-b from-amber-200/20 to-transparent p-2">
-          <Avatar looks={look} size={120} />
+        <div className="rounded-3xl bg-gradient-to-b from-sky-200/20 to-transparent p-2">
+          <Avatar looks={look} size={120} adult={state.age >= 18} />
         </div>
         <p className="text-sm font-semibold">{state.name}</p>
       </div>
       <div className="min-w-0">
-        <Dresser look={look} onChange={setLook} />
+        <Dresser look={look} adult={state.age >= 18} onChange={setLook} />
         <div className="mt-4 flex gap-2">
           <button
             type="button"

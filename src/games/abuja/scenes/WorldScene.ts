@@ -5,9 +5,9 @@ import { bump, checkpoint, currentBeat, mapIdFor, peopleOn, personAt, personKey,
 import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
 import { findPath, type Point } from "../systems/path";
-import type { MapRect } from "../systems/types";
+import type { GameState, MapRect, PersonDef } from "../systems/types";
 import { fullLook, lookKey, randomLook, type Look } from "../systems/character";
-import { INK, animateWalk, building, figure, makeArt, queueCharacters, rand, signpost, tileKey, type Figure } from "./art";
+import { INK, animateWalk, building, figure, makeArt, queueCharacters, rand, signpost, tileKey, type Figure, type Person } from "./art";
 
 const SPEED = 230;
 const NEAR = 105;
@@ -21,9 +21,13 @@ const title = (scene: Phaser.Scene, x: number, y: number, text: string, size = 1
 const seedOf = (id: string) => [...id].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) >>> 0, 7);
 
 // Who's who: the same person always looks the same.
-const personLook = (id: string, top: string): Look => randomLook(seedOf(id), { topColor: top });
-const WALKERS: Look[] = Array.from({ length: 10 }, (_, i) => randomLook(i * 131 + 7));
-const POLICE: Look = randomLook(4242, {
+const personOf = (p: PersonDef): Person => ({
+  look: randomLook(seedOf(`${p.map}:${p.id}`), { topColor: p.color, ...(p.build ? { build: p.build } : {}), ...p.look }),
+  adult: !p.kid,
+});
+const playerOf = (state: GameState | null): Person => ({ look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18 });
+const WALKERS: Person[] = Array.from({ length: 8 }, (_, i) => ({ look: randomLook(i * 131 + 7), adult: i % 4 !== 3 }));
+const POLICE_LOOK: Look = randomLook(4242, {
   top: "shirt",
   topColor: "#1e3a8a",
   bottom: "jeans",
@@ -35,7 +39,9 @@ const POLICE: Look = randomLook(4242, {
   bag: false,
   glasses: false,
   headphones: false,
+  build: "masc",
 });
+const POLICE: Person = { look: POLICE_LOOK, adult: true };
 
 /** Ground texture for each district of the city. */
 const DISTRICT_TILE: Record<string, string> = {
@@ -115,10 +121,17 @@ export class WorldScene extends Phaser.Scene {
   preload() {
     const state = getState();
     const mapId = state ? mapIdFor(state) : "city";
-    const looks: Look[] = [fullLook(state?.looks ?? {})];
-    if (state) looks.push(...peopleOn(state, mapId).map((p) => personLook(p.id, p.color)));
-    if (mapId === "city") looks.push(...WALKERS, POLICE);
-    queueCharacters(this, looks);
+    const people: Person[] = [playerOf(state)];
+    if (state) people.push(...peopleOn(state, mapId).map(personOf));
+    if (mapId === "city") people.push(...WALKERS, POLICE);
+    queueCharacters(this, people);
+    // Drawing everyone takes a moment on slower phones: say so instead of showing a blank screen.
+    const note = this.add
+      .text(this.scale.width / 2, this.scale.height / 2, "Getting Abuja ready…", { fontFamily: "system-ui, sans-serif", fontSize: "16px", fontStyle: "bold", color: "#ffffff" })
+      .setOrigin(0.5)
+      .setScrollFactor(0);
+    this.load.on("progress", (p: number) => note.setText(`Getting Abuja ready… ${Math.round(p * 100)}%`));
+    this.load.once("complete", () => note.destroy());
   }
 
   create() {
@@ -135,7 +148,7 @@ export class WorldScene extends Phaser.Scene {
     this.glows = [];
     this.boat = null;
     const { width, height } = sizeOf(this.mapId);
-    this.cameras.main.setBackgroundColor(this.mapId === "city" ? "#1b1712" : "#1d1a14");
+    this.cameras.main.setBackgroundColor(this.mapId === "city" ? "#0b1726" : "#0d1b2e");
 
     this.drawPeople();
     if (this.mapId === "city") this.drawCity();
@@ -143,9 +156,9 @@ export class WorldScene extends Phaser.Scene {
 
     const start = this.startPoint();
     this.player = this.makePlayer(start.x, start.y);
-    this.beatMarker = this.makeMarker(0xfbbf24, "!");
-    this.taskMarker = this.makeMarker(0x22d3ee, "★");
-    this.arrow = this.add.triangle(0, 0, 0, -12, 9, 8, -9, 8, 0xfbbf24).setDepth(20).setVisible(false);
+    this.beatMarker = this.makeMarker(0x22c55e, "!");
+    this.taskMarker = this.makeMarker(0x38bdf8, "★");
+    this.arrow = this.add.triangle(0, 0, 0, -12, 9, 8, -9, 8, 0x22c55e).setDepth(20).setVisible(false);
     this.night = this.add.rectangle(0, 0, 4000, 4000, 0x0b1330, 0).setOrigin(0).setScrollFactor(0).setDepth(30);
 
     this.cameras.main.setBounds(0, 0, width, height);
@@ -173,7 +186,7 @@ export class WorldScene extends Phaser.Scene {
       }),
     );
     // Restart when the story moves to another map; refresh markers on other changes.
-    this.lookId = lookKey(fullLook(state?.looks ?? {}));
+    this.lookId = this.lookIdOf(state);
     this.unsub = subscribe(() => {
       const next = getState();
       if (!next) return;
@@ -182,7 +195,8 @@ export class WorldScene extends Phaser.Scene {
         return;
       }
       // New outfit from the wardrobe: redraw the world with the new look, right here.
-      const lookId = lookKey(fullLook(next.looks));
+      // Turning 18 swaps in the grown-up body the same way.
+      const lookId = this.lookIdOf(next);
       if (lookId !== this.lookId) {
         this.lookId = lookId;
         carry = { mapId: this.mapId, x: this.player.x, y: this.player.y };
@@ -203,6 +217,11 @@ export class WorldScene extends Phaser.Scene {
     bus.emit("near", null);
     // Development only: lets automated browser tests move the player.
     if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y) };
+  }
+
+  private lookIdOf(state: GameState | null) {
+    const me = playerOf(state);
+    return `${lookKey(me.look)}${me.adult ? "a" : "k"}`;
   }
 
   private startPoint() {
@@ -402,7 +421,7 @@ export class WorldScene extends Phaser.Scene {
     if (!state) return;
     for (const p of peopleOn(state, this.mapId)) {
       const at = personAt(p);
-      const body = figure(this, at.x, at.y, personLook(p.id, p.color), { name: p.name });
+      const body = figure(this, at.x, at.y, personOf(p), { name: p.name });
       body.setDepth(5 + at.y / 10000);
       const bubble = this.add.text(14, body.headTop - 4, "💬", { fontSize: "16px" });
       body.add(bubble);
@@ -440,8 +459,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private makePlayer(x: number, y: number) {
-    const me = figure(this, x, y, fullLook(getState()?.looks ?? {}), { name: "YOU", nameColor: "#fbbf24", unit: 0.52 });
-    const halo = this.add.ellipse(0, 20, 50, 17, 0xfbbf24, 0.25).setStrokeStyle(3, 0xfbbf24, 0.95);
+    const me = figure(this, x, y, playerOf(getState()), { name: "YOU", nameColor: "#4ade80", unit: 0.52 });
+    const halo = this.add.ellipse(0, 20, 50, 17, 0x4ade80, 0.25).setStrokeStyle(3, 0xffffff, 0.95);
     me.addAt(halo, 0);
     this.tweens.add({ targets: halo, scaleX: 1.15, scaleY: 1.15, alpha: 0.6, duration: 700, yoyo: true, repeat: -1 });
     return me;
@@ -451,7 +470,7 @@ export class WorldScene extends Phaser.Scene {
   private makeMarker(tint: number, glyph: string) {
     const ring = this.add.circle(0, 0, 34, tint, 0.2).setStrokeStyle(3, tint, 1);
     const sign = this.add
-      .text(0, -62, glyph, { fontFamily: "system-ui", fontSize: "28px", fontStyle: "bold", color: "#14110f", backgroundColor: Phaser.Display.Color.IntegerToColor(tint).rgba, padding: { x: 8, y: 2 } })
+      .text(0, -62, glyph, { fontFamily: "system-ui", fontSize: "28px", fontStyle: "bold", color: "#ffffff", stroke: "#07152b", strokeThickness: 3, backgroundColor: Phaser.Display.Color.IntegerToColor(tint).rgba, padding: { x: 8, y: 2 } })
       .setOrigin(0.5);
     this.tweens.add({ targets: sign, y: -72, duration: 600, yoyo: true, repeat: -1 });
     this.tweens.add({ targets: ring, scale: 1.3, alpha: 0.5, duration: 900, yoyo: true, repeat: -1 });
@@ -651,7 +670,7 @@ export class WorldScene extends Phaser.Scene {
     const angle = Math.atan2(dy, dx);
     this.arrow.setPosition(this.player.x + Math.cos(angle) * 64, this.player.y + Math.sin(angle) * 64);
     this.arrow.setRotation(angle + Math.PI / 2);
-    this.arrow.setFillStyle(step ? 0x22d3ee : 0xfbbf24);
+    this.arrow.setFillStyle(step ? 0x38bdf8 : 0x22c55e);
   }
 
   private moveTraffic(dt: number, time: number) {
@@ -695,7 +714,7 @@ export function createGame(parent: HTMLElement): Phaser.Game {
   return new Phaser.Game({
     type: Phaser.AUTO,
     parent,
-    backgroundColor: "#1b1712",
+    backgroundColor: "#0b1726",
     scale: { mode: Phaser.Scale.RESIZE, width: parent.clientWidth, height: parent.clientHeight },
     render: { antialias: true },
     scene: [WorldScene],

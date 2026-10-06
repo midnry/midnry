@@ -1,7 +1,7 @@
 // Shared types for Abuja Hustle. Content lives in ../data/*.json and follows
 // these shapes, so new chapters, events, jobs and places need no code changes.
 
-import type { Look } from "./character";
+import type { Build, Look } from "./character";
 
 export type Background = "lapo" | "average";
 export type Gender = "male" | "female";
@@ -139,6 +139,11 @@ export type PersonDef = {
   dx?: number;
   dy?: number;
   color: string;
+  /** Body shape once grown; children are drawn as kids even in adult chapters' maps. */
+  build?: Build;
+  kid?: boolean;
+  /** Clothes and features that fit the character (the rest is varied but fixed). */
+  look?: Partial<Look>;
   /** A story character: talking raises this relationship a little. */
   npc?: string;
   if?: Cond;
