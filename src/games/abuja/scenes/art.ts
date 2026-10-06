@@ -50,6 +50,7 @@ const TILES: Record<string, { base: number; dots: number[]; kind: "grass" | "dir
   water: { base: 0x3a8fd1, dots: [0x5aa7e0, 0x2f7bb8], kind: "water" },
   wood: { base: 0xb98154, dots: [0x9c6a42, 0xc99267], kind: "planks" },
   carpet: { base: 0x9f1d2b, dots: [0xb4283a, 0x8a1724], kind: "noise" },
+  concrete: { base: 0xb9b1a3, dots: [0xa79f90, 0xc9c2b5, 0x968e80], kind: "dirt" },
 };
 
 export function tileKey(name: string) {

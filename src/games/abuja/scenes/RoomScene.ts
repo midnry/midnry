@@ -14,9 +14,9 @@ const RADIUS = 12;
 const NEAR = 80;
 const FURN_RES = 1.6;
 /** Things that hang on the wall: drawn flat, nothing to bump into. */
-const ON_WALL = new Set(["window", "picture", "clock", "blackboard", "whiteboard"]);
+const ON_WALL = new Set(["window", "picture", "clock", "blackboard", "whiteboard", "walldoor", "bathmirror", "wallshelf"]);
 
-type Spot = { kind: "place" | "person" | "exit"; id: string; label: string; x: number; y: number };
+type Spot = { kind: "place" | "person" | "exit" | "door" | "item"; id: string; label: string; x: number; y: number };
 
 /** Inside a building: a furnished room you can walk around, use, and leave by the door. */
 export class RoomScene extends Phaser.Scene {
@@ -62,7 +62,7 @@ export class RoomScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor("#0b1726");
 
     // Floor, back wall and a skirting board.
-    const floorTile = layout.floor === "wood" ? "wood" : layout.floor === "carpet" ? "carpet" : "floor";
+    const floorTile = layout.floor === "tile" ? "floor" : layout.floor;
     this.add.tileSprite(0, WALL, W, H - WALL, tileKey(floorTile)).setOrigin(0);
     const g = this.add.graphics();
     g.fillStyle(Phaser.Display.Color.HexStringToColor(layout.wall).color, 1).fillRect(0, 0, W, WALL);
@@ -76,7 +76,7 @@ export class RoomScene extends Phaser.Scene {
     g.fillStyle(0x16a34a, 1).fillRoundedRect(door.x - 34, H - 22, 68, 18, 5);
     g.lineStyle(2, INK, 1).strokeRoundedRect(door.x - 34, H - 22, 68, 18, 5);
     this.add
-      .text(door.x, H - 13, "EXIT", { fontFamily: "system-ui, sans-serif", fontSize: "11px", fontStyle: "bold", color: "#ffffff" })
+      .text(door.x, H - 13, this.info.parent ? "BACK" : "EXIT", { fontFamily: "system-ui, sans-serif", fontSize: "11px", fontStyle: "bold", color: "#ffffff" })
       .setResolution(2)
       .setOrigin(0.5)
       .setDepth(2);
@@ -99,7 +99,7 @@ export class RoomScene extends Phaser.Scene {
     // The people who work here.
     const state = getState();
     const staffSpots = layout.staff;
-    const here = this.staffHere();
+    const here = staffSpots.length ? this.staffHere() : [];
     here.forEach((p, i) => {
       const at = staffSpots[i % staffSpots.length]!;
       // Two people at one spot stand apart so their names don't overlap.
@@ -113,9 +113,25 @@ export class RoomScene extends Phaser.Scene {
       this.staff.push({ body, id: personKey(p), label: p.name });
     });
 
-    if (this.info.placeId) this.spots.push({ kind: "place", id: this.info.placeId, label: layout.use.label, x: layout.use.x, y: layout.use.y });
-    this.spots.push({ kind: "exit", id: "door", label: "Leave", x: door.x, y: door.y });
-    this.add.circle(layout.use.x, layout.use.y, 26, 0x22c55e, 0.18).setStrokeStyle(3, 0x22c55e, 0.8).setDepth(1.6).setVisible(Boolean(this.info.placeId));
+    // Spots to use: the place's desk or bed, things to do, doors to other rooms, and the way out.
+    const ring = (x: number, y: number) => this.add.circle(x, y, 24, 0x22c55e, 0.18).setStrokeStyle(3, 0x22c55e, 0.8).setDepth(1.6);
+    if (layout.use && this.info.placeId) {
+      this.spots.push({ kind: "place", id: this.info.placeId, label: layout.use.label, x: layout.use.x, y: layout.use.y });
+      ring(layout.use.x, layout.use.y);
+    }
+    for (const spot of layout.spots ?? []) {
+      this.spots.push({ kind: "item", id: spot.action, label: spot.label, x: spot.x, y: spot.y });
+      ring(spot.x, spot.y);
+    }
+    for (const d of layout.doors ?? []) {
+      this.spots.push({ kind: "door", id: `room:${d.to}`, label: d.label, x: d.x, y: WALL + 26 });
+      this.add
+        .text(d.x, 66, d.label, { fontFamily: "system-ui, sans-serif", fontSize: "11px", fontStyle: "bold", color: "#ffffff", backgroundColor: "#0b1f3d", padding: { x: 5, y: 2 } })
+        .setResolution(2)
+        .setOrigin(0.5, 0)
+        .setDepth(3);
+    }
+    this.spots.push({ kind: "exit", id: "door", label: this.info.parent ? "Back to the living room" : "Leave", x: door.x, y: door.y });
 
     // You come in at the door.
     this.player = figure(this, door.x, door.y - 30, { look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18 }, { name: "YOU", nameColor: "#4ade80", unit: 0.28 });

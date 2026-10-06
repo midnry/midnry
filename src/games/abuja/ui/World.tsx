@@ -11,6 +11,7 @@ import {
   lineFor,
   offerFor,
   reachBeat,
+  freshenUp,
   resolveEvent,
   skipToNight,
   storyOpen,
@@ -19,10 +20,10 @@ import {
 } from "../systems/engine";
 import { personLook } from "../systems/peoplelook";
 import { SLOTS, check, debt, fill, lockReason, naira } from "../systems/rules";
-import { bus, input, loadControls, saveControls, type Controls, type NearThing } from "../systems/store";
+import { bus, getState, input, loadControls, saveControls, type Controls, type NearThing } from "../systems/store";
 import type { GameState } from "../systems/types";
 import { Phone, type PhoneApp } from "./Phone";
-import { roomForBuilding, roomForPlace, type RoomInfo } from "../systems/rooms";
+import { isPoorRoom, roomForBuilding, roomForPlace, type RoomInfo } from "../systems/rooms";
 import { ChatBubble, ReplyButton } from "./Chat";
 import { StoryPanel } from "./StoryView";
 import { WardrobePanel } from "./Wardrobe";
@@ -89,10 +90,25 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       finishLoading(700);
     }, 160);
   };
-  const roomActions = useRef({ enterRoom, leaveRoom });
+  /** Through a door inside a home: bedroom, bathroom, or back to the living room. */
+  const switchRoom = (info: RoomInfo) => {
+    const g = game.current;
+    if (!g || !insideRef.current) return;
+    loadStarted.current = Date.now();
+    setLoading({ title: info.parent ? `Into the ${info.name.toLowerCase()}` : `Back to ${info.name}`, icon: ROOM_ICON[info.type] });
+    setOpen(null);
+    setTalking(null);
+    insideRef.current = info;
+    setInside(info);
+    window.setTimeout(() => {
+      g.scene.stop("room");
+      g.scene.start("room", info);
+    }, 120);
+  };
+  const roomActions = useRef({ enterRoom, leaveRoom, switchRoom });
+  roomActions.current = { enterRoom, leaveRoom, switchRoom };
   const finishLoadingRef = useRef(() => finishLoading());
   finishLoadingRef.current = () => finishLoading();
-  roomActions.current = { enterRoom, leaveRoom };
 
   useEffect(() => {
     let cancel = false;
@@ -107,10 +123,25 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         else setOpen(thing.id);
       }
       if (thing.kind === "door") {
-        const room = roomForBuilding(thing.id);
-        if (room) roomActions.current.enterRoom({ type: room, name: thing.label });
+        const here = insideRef.current;
+        if (here && thing.id.startsWith("room:")) {
+          roomActions.current.switchRoom({ type: thing.id.slice(5) as RoomInfo["type"], name: thing.label, placeId: here.placeId, parent: here });
+        } else {
+          const room = roomForBuilding(thing.id, getState()?.background);
+          if (room) roomActions.current.enterRoom({ type: room, name: thing.label });
+        }
       }
-      if (thing.kind === "exit") roomActions.current.leaveRoom();
+      if (thing.kind === "exit") {
+        const parent = insideRef.current?.parent;
+        if (parent) roomActions.current.switchRoom(parent);
+        else roomActions.current.leaveRoom();
+      }
+      if (thing.kind === "item") {
+        const poor = insideRef.current ? isPoorRoom(insideRef.current.type) : false;
+        if (thing.id === "freshen") freshenUp(poor);
+        else if (getState()?.chapter) bus.emit("blocked", "Your phone can wait. You're in the middle of growing up.");
+        else setPhone(thing.id === "laptop" ? "jobs" : "home");
+      }
       if (thing.kind === "person") {
         talk(thing.id);
         setTalking(thing.id);
@@ -218,14 +249,18 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
             : near.kind === "beat"
               ? `▶ ${near.label}`
               : near.kind === "exit"
-                ? "🚪 Leave"
-                : near.kind === "door"
-                  ? `🚪 Enter ${near.label}`
-                  : inside
-                    ? `📋 ${near.label}: things to do`
-                    : roomForPlace(near.id)
-                      ? `🚪 Enter ${near.label}`
-                      : `Visit ${near.label}`}
+                ? `🚪 ${near.label}`
+                : near.kind === "item"
+                  ? near.label
+                  : near.kind === "door"
+                    ? inside
+                      ? `🚪 ${near.label}`
+                      : `🚪 Enter ${near.label}`
+                    : inside
+                      ? `📋 ${near.label}: things to do`
+                      : roomForPlace(near.id)
+                        ? `🚪 Enter ${near.label}`
+                        : `Visit ${near.label}`}
         </button>
       ) : null}
 
@@ -337,7 +372,12 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
 }
 
 const ROOM_ICON: Record<RoomInfo["type"], string> = {
-  home: "🏠",
+  home_poor: "🏠",
+  home_middle: "🏠",
+  bedroom_poor: "🛏️",
+  bedroom_middle: "🛏️",
+  bathroom_poor: "🪣",
+  bathroom_middle: "🛁",
   mansion: "🏰",
   office: "🏢",
   bank: "🏦",

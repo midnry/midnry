@@ -216,8 +216,8 @@ export function saveControls(controls: Controls): void {
   }
 }
 
-/** Something you can use: a place, a person, a story spot, a building door, or the way out of a room. */
-export type NearThing = { kind: "place" | "person" | "beat" | "door" | "exit"; id: string; label: string };
+/** Something you can use: a place, a person, a story spot, a door, the way out of a room, or a thing in a room. */
+export type NearThing = { kind: "place" | "person" | "beat" | "door" | "exit" | "item"; id: string; label: string };
 
 type BusEvents = {
   teleport: { x: number; y: number };

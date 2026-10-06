@@ -181,6 +181,18 @@ export function clearToast() {
   });
 }
 
+/** Wash up at home: a shower, or a bucket bath. Once per part of the day. */
+export function freshenUp(poor: boolean) {
+  update((s) => {
+    const stamp = `${s.day}:${s.slot}:${s.age}`;
+    if (s.flags.fresh === stamp) return toast(s, "You're already fresh. Any more and you'll wash away.");
+    s.flags.fresh = stamp;
+    addStat(s, "stress", -3);
+    addStat(s, "energy", 4);
+    toast(s, poor ? "Bucket bath done, cold water and all. You feel like a new person. 🪣" : "Hot shower, nice soap. Life is good. 🚿");
+  });
+}
+
 /** Kill time until night falls. */
 export function skipToNight() {
   update((s) => {
