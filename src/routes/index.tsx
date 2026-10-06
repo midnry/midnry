@@ -39,16 +39,16 @@ function Home() {
         <DeskList />
       </section>
 
-      <section className="mt-12 overflow-hidden rounded-3xl bg-[#14110f] p-6 text-stone-100 sm:p-8">
-        <p className="text-xs font-semibold tracking-[0.25em] text-amber-400 uppercase">New game · 18+</p>
+      <section className="mt-12 overflow-hidden rounded-3xl bg-[radial-gradient(ellipse_at_top_left,#14407a,#07152b_70%)] p-6 text-white sm:p-8">
+        <p className="text-xs font-semibold tracking-[0.25em] text-sky-300 uppercase">New game · 18+</p>
         <h2 className="mt-2 font-display text-3xl tracking-tight">Abuja Hustle</h2>
-        <p className="mt-2 max-w-xl text-pretty text-stone-300">
+        <p className="mt-2 max-w-xl text-pretty text-slate-200">
           A satirical life sim. Grow up in Abuja without privilege, dodge QuickKash, outwork the Nepo Babies, and chase
           financial freedom. Plays on your phone or computer.
         </p>
         <Link
           to="/games/abuja-hustle"
-          className="mt-5 inline-flex min-h-11 items-center rounded-full bg-amber-400 px-5 text-sm font-semibold text-stone-950"
+          className="mt-5 inline-flex min-h-11 items-center rounded-full bg-emerald-600 px-5 text-sm font-semibold text-white hover:bg-emerald-500"
         >
           Play Abuja Hustle
         </Link>
