@@ -5,7 +5,7 @@ import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, net
 import { RIDE_INFO, RIDE_MODES, fare, rideKm } from "../systems/rides";
 import { deleteSave, replace } from "../systems/store";
 import type { GameState } from "../systems/types";
-import { DELIVERY_FEE, MENU, hungerWord, lifeOf, thirstWord } from "../systems/life";
+import { DELIVERY_FEE, MENU, daysUnwashed, hungerWord, isDirty, lifeOf, thirstWord } from "../systems/life";
 import { Linkup } from "./Linkup";
 import { btnGhost, btnPrimary } from "./theme";
 import { Trade } from "./Trade";
@@ -371,9 +371,15 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
 
 function Life({ state }: { state: GameState }) {
   const certs = [state.certs.waec && "WAEC", state.certs.degree && "Degree", state.certs.nysc && "NYSC"].filter(Boolean).join(", ") || "None";
+  const l = lifeOf(state);
+  const unwashed = daysUnwashed(state);
   return (
     <div>
       <Row label="Age" value={`${Math.floor(state.age)} (ends at ${END_AGE})`} />
+      <Row label="Food" value={`${hungerWord(l.food)} (${l.food})`} tone={l.food < 25 ? "text-red-400" : ""} />
+      <Row label="Water" value={`${thirstWord(l.water)} (${l.water})`} tone={l.water < 25 ? "text-red-400" : ""} />
+      <Row label="Clothes" value={isDirty(state) ? `Dirty (${unwashed} days unwashed)` : unwashed ? "Clean, worn once" : "Fresh"} tone={isDirty(state) ? "text-red-400" : ""} />
+      {l.offenses ? <Row label="Times caught misbehaving" value={String(l.offenses)} tone="text-red-400" /> : null}
       <Row label="Background" value={state.background === "lapo" ? "Lapo Baby" : "Average family"} />
       <Row label="Certificates" value={certs} />
       <Row label="Network" value={String(state.stats.network)} />

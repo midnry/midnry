@@ -6,6 +6,7 @@ import type { RideMode } from "../systems/rides";
 import { personLook } from "../systems/peoplelook";
 import { roomForBuilding } from "../systems/rooms";
 import { RoomScene } from "./RoomScene";
+import { isDirty } from "../systems/life";
 import { bump, checkpoint, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
 import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
@@ -130,6 +131,8 @@ export class WorldScene extends Phaser.Scene {
   private exploring = false;
   private pinch: { dist: number; zoom: number } | null = null;
   private offs: (() => void)[] = [];
+  /** Stains and flies on the player when their clothes haven't been washed. */
+  private grime: Phaser.GameObjects.Container | null = null;
 
   constructor() {
     super("world");
@@ -578,7 +581,42 @@ export class WorldScene extends Phaser.Scene {
     const halo = this.add.ellipse(0, 9, 32, 11, 0x60a5fa, 0.25).setStrokeStyle(2.5, 0xffffff, 0.95);
     me.addAt(halo, 0);
     this.tweens.add({ targets: halo, scaleX: 1.15, scaleY: 1.15, alpha: 0.6, duration: 700, yoyo: true, repeat: -1 });
+    this.grime = this.makeGrime(me);
+    me.add(this.grime);
     return me;
+  }
+
+  /** Brown stains on the clothes, stink lines and flies buzzing around: you need a wash. */
+  private makeGrime(me: Figure) {
+    const hip = me.rig.y;
+    const top = me.headTop;
+    const chest = hip - (hip - top) * 0.42;
+    const stains = [
+      this.add.ellipse(-4, chest, 9, 7, 0x5b3a1e, 0.85),
+      this.add.ellipse(5, chest + 7, 7, 5, 0x6b4423, 0.85),
+      this.add.ellipse(-2, hip - 1, 10, 4, 0x5b3a1e, 0.75),
+    ];
+    const stink = [-9, 0, 9].map((dx, i) => {
+      const line = this.add
+        .text(dx, top - 6, "~", { fontFamily: "system-ui, sans-serif", fontSize: "13px", fontStyle: "bold", color: "#86a83a" })
+        .setOrigin(0.5)
+        .setAlpha(0);
+      this.tweens.add({ targets: line, y: top - 22, alpha: { from: 0.95, to: 0 }, duration: 1300, delay: i * 420, repeat: -1 });
+      return line;
+    });
+    const flies = [0, 1, 2].map((i) => {
+      const fly = this.add.text(0, 0, "🪰", { fontSize: "10px" }).setOrigin(0.5);
+      const orbit = { a: (i * Math.PI * 2) / 3 };
+      this.tweens.add({
+        targets: orbit,
+        a: orbit.a + Math.PI * 2,
+        duration: 1100 + i * 300,
+        repeat: -1,
+        onUpdate: () => fly.setPosition(Math.cos(orbit.a) * (14 + i * 3), top + 4 + Math.sin(orbit.a * 2) * 7),
+      });
+      return fly;
+    });
+    return this.add.container(0, 0, [...stains, ...stink, ...flies]).setVisible(false);
   }
 
 
@@ -601,6 +639,7 @@ export class WorldScene extends Phaser.Scene {
       const def = PLACES.find((p) => p.id === id);
       marker.setVisible(check(state, (def as { if?: never })?.if));
     }
+    this.grime?.setVisible(isDirty(state));
     const beat = currentBeat(state);
     this.beatMarker.setVisible(Boolean(beat));
     if (beat) this.beatMarker.setPosition(beat.spot.x, beat.spot.y);

@@ -595,6 +595,58 @@
             }
           ],
           "text": "A cold sachet of pure water. Life."
+        },
+        {
+          "id": "steal_stall",
+          "label": "Pinch something from a stall",
+          "slots": 0,
+          "energy": -5,
+          "effects": [
+            {
+              "chance": 0.45,
+              "then": [
+                {
+                  "stat": "money",
+                  "add": 4000
+                },
+                {
+                  "stat": "stress",
+                  "add": 6
+                },
+                {
+                  "toast": "Nobody saw. You sell it round the corner for ₦4,000. Your heart is still racing."
+                }
+              ],
+              "else": [
+                {
+                  "stat": "health",
+                  "add": -12
+                },
+                {
+                  "stat": "heat",
+                  "add": 10
+                },
+                {
+                  "stat": "money",
+                  "add": -5000
+                },
+                {
+                  "stat": "stress",
+                  "add": 12
+                },
+                {
+                  "toast": "\"OLE! OLE!\" The traders catch you. You're slapped around, made to pay ₦5,000 and dragged to the market chairman."
+                },
+                {
+                  "log": "Caught stealing at Wuse Market."
+                },
+                {
+                  "offense": "steal"
+                }
+              ]
+            }
+          ],
+          "text": "You wait until the trader turns to argue with a customer…"
         }
       ]
     },
@@ -1133,6 +1185,54 @@
             }
           ],
           "text": "Air conditioning, a real menu and a waiter who calls you 'boss'."
+        },
+        {
+          "id": "shoplift",
+          "label": "Slip something into your bag",
+          "slots": 0,
+          "energy": -5,
+          "effects": [
+            {
+              "chance": 0.35,
+              "then": [
+                {
+                  "stat": "money",
+                  "add": 12000
+                },
+                {
+                  "stat": "stress",
+                  "add": 8
+                },
+                {
+                  "toast": "The alarm doesn't go off. You sell the perfume for ₦12,000 and feel sick about it."
+                }
+              ],
+              "else": [
+                {
+                  "stat": "heat",
+                  "add": 18
+                },
+                {
+                  "stat": "money",
+                  "add": -20000
+                },
+                {
+                  "stat": "stress",
+                  "add": 15
+                },
+                {
+                  "toast": "The security man stops you at the door. CCTV, a long talk, a ₦20,000 'fine' and your face on the mall's WhatsApp group."
+                },
+                {
+                  "log": "Caught shoplifting at Jabi Lake Mall."
+                },
+                {
+                  "offense": "steal"
+                }
+              ]
+            }
+          ],
+          "text": "The perfume section has no attendant…"
         }
       ]
     },

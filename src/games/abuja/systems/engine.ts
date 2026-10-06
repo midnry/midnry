@@ -24,7 +24,7 @@ import {
   rollStars,
 } from "./rules";
 import { bus, update } from "./store";
-import { MENU, DELIVERY_FEE, burn, overnight } from "./life";
+import { MENU, DELIVERY_FEE, burn, daysUnwashed, isDirty, offense, overnight } from "./life";
 import { closeDay, closePosition, deposit, ensureMarket, insiderTip, openPosition, tick, withdraw } from "./market";
 import {
   askOut,
@@ -287,6 +287,10 @@ export function doAction(placeId: string, actionId: string): "loans" | void {
         return;
       }
       const def = job(a.job)!;
+      if (isDirty(s)) {
+        const line = offense(s, "dirty");
+        note(s, `Your boss looks at your shirt and sighs. ${line}`);
+      }
       const bonus = 1 + Math.min(0.5, (s.skills.hustle + s.skills.education) / 400);
       const pay = Math.round(def.pay * bonus);
       addStat(s, "money", pay);
@@ -449,6 +453,9 @@ function sleep(s: GameState) {
   addStat(s, "stress", -8);
   if (!s.flags.fraud) addStat(s, "heat", -1);
   note(s, ...overnight(s));
+  if (isDirty(s)) {
+    note(s, `Your clothes haven't been washed in ${daysUnwashed(s)} days and it shows.`, offense(s, "dirty"), "Wash them at home or a laundry.");
+  }
   const home = place(HOMES[s.background])!;
   s.pos = { x: home.x, y: home.y + 95 };
   s.district = home.district;
@@ -738,6 +745,28 @@ export function talk(key: string) {
       const current = s.npcs[p.npc] ?? { rel: 0, met: false, lastSeen: s.day };
       s.npcs[p.npc] = { rel: clamp(current.rel + 1), met: true, lastSeen: s.day };
     }
+  });
+}
+
+const COMEBACKS = [
+  "\"Is it me you're talking to like that?\" They hiss and walk off, telling everyone who will listen.",
+  "\"Your mates are building houses and you're here insulting people.\" A small crowd laughs at you.",
+  "They stare at you for a long second. \"God will judge you.\" Somebody filmed it.",
+  "\"Ehn? Say that one again!\" People hold them back. You leave quickly.",
+];
+
+/** Insult someone: people remember, and so does your reputation. */
+export function insult(key: string) {
+  update((s) => {
+    const p = findPerson(key);
+    if (!p || s.flags[`insulted_${key}`] === s.day) return;
+    s.flags[`insulted_${key}`] = s.day;
+    if (p.npc) {
+      const current = s.npcs[p.npc] ?? { rel: 0, met: true, lastSeen: s.day };
+      s.npcs[p.npc] = { ...current, rel: clamp(current.rel - 12), met: true };
+    }
+    addStat(s, "stress", -2);
+    toast(s, `${COMEBACKS[(s.day + key.length) % COMEBACKS.length]} ${offense(s, "insult")}`);
   });
 }
 

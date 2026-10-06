@@ -8,6 +8,7 @@ import {
   doAction,
   findPerson,
   haggle,
+  insult,
   lineFor,
   offerFor,
   reachBeat,
@@ -18,7 +19,7 @@ import {
   takeOffer,
   talk,
 } from "../systems/engine";
-import { lifeOf } from "../systems/life";
+import { isDirty, lifeOf } from "../systems/life";
 import { personLook } from "../systems/peoplelook";
 import { SLOTS, check, debt, fill, lockReason, naira } from "../systems/rules";
 import { bus, getState, input, loadControls, saveControls, type Controls, type NearThing } from "../systems/store";
@@ -516,12 +517,17 @@ function ChapterHud({ state }: { state: GameState }) {
   );
 }
 
-function Bar({ label, value, tone }: { label: string; value: number; tone: string }) {
+function Bar({ label, icon, value, tone }: { label: string; icon: string; value: number; tone: string }) {
   return (
-    <div className="min-w-0">
+    <div className="min-w-0" title={label}>
       <div className="flex justify-between gap-1 text-[10px] text-slate-400 uppercase">
-        <span>{label}</span>
-        <span>{Math.round(value)}</span>
+        <span className="truncate">
+          <span className="sm:hidden" aria-label={label}>
+            {icon}
+          </span>
+          <span className="hidden sm:inline">{label}</span>
+        </span>
+        <span className="tabular-nums">{Math.round(value)}</span>
       </div>
       <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-white/10">
         <div className={`h-full rounded-full ${tone}`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
@@ -548,13 +554,13 @@ function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => v
         </p>
       </div>
       <div className="grid grid-cols-4 gap-x-3 gap-y-1 sm:grid-cols-7">
-        <Bar label="Energy" value={state.stats.energy} tone="bg-emerald-400" />
-        <Bar label="Health" value={state.stats.health} tone="bg-sky-400" />
-        <Bar label="Food" value={l.food} tone={l.food < 25 ? "bg-red-500" : "bg-amber-400"} />
-        <Bar label="Water" value={l.water} tone={l.water < 25 ? "bg-red-500" : "bg-cyan-300"} />
-        <Bar label="Stress" value={state.stats.stress} tone="bg-orange-400" />
-        <Bar label="Rep" value={state.stats.reputation} tone="bg-violet-300" />
-        <Bar label="Heat" value={state.stats.heat} tone="bg-red-500" />
+        <Bar label="Energy" icon="⚡" value={state.stats.energy} tone="bg-emerald-400" />
+        <Bar label="Health" icon="❤️" value={state.stats.health} tone="bg-sky-400" />
+        <Bar label="Food" icon="🍲" value={l.food} tone={l.food < 25 ? "bg-red-500" : "bg-amber-400"} />
+        <Bar label="Water" icon="💧" value={l.water} tone={l.water < 25 ? "bg-red-500" : "bg-cyan-300"} />
+        <Bar label="Stress" icon="😰" value={state.stats.stress} tone="bg-orange-400" />
+        <Bar label="Rep" icon="⭐" value={state.stats.reputation} tone="bg-violet-300" />
+        <Bar label="Heat" icon="🚨" value={state.stats.heat} tone="bg-red-500" />
       </div>
     </button>
   );
@@ -717,6 +723,7 @@ function TalkModal({ state, personKey, onClose }: { state: GameState; personKey:
       <div className="grid gap-4 pb-1">
         <ChatBubble name={person.name} looks={them.look} adult={them.adult}>
           {lineFor(state, person)}
+          {isDirty(state) ? <span className="mt-2 block italic">They take a small step back. "Ehn… when last did you wash that shirt?"</span> : null}
           {offer ? <span className="mt-2 block">{fill(state, offer.text)}</span> : null}
         </ChatBubble>
         <div className="mt-1 grid gap-2 pl-8">
@@ -741,6 +748,19 @@ function TalkModal({ state, personKey, onClose }: { state: GameState; personKey:
           <ReplyButton looks={state.looks} adult={adult} onClick={onClose}>
             {offer ? "Not now 👋" : "Bye 👋"}
           </ReplyButton>
+          {state.flags[`insulted_${personKey}`] !== state.day ? (
+            <ReplyButton
+              looks={state.looks}
+              adult={adult}
+              note="Costs reputation"
+              onClick={() => {
+                insult(personKey);
+                onClose();
+              }}
+            >
+              Insult them 😤
+            </ReplyButton>
+          ) : null}
         </div>
       </div>
     </div>

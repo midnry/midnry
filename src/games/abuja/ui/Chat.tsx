@@ -35,7 +35,7 @@ export function ReplyButton({ looks, adult, disabled, note, onClick, children }:
     >
       <span className="min-w-0 flex-1">
         {children}
-        {note ? <span className="mt-0.5 block text-xs font-normal text-white/85">🔒 {note}</span> : null}
+        {note ? <span className="mt-0.5 block text-xs font-normal text-white/85">{disabled ? "🔒" : "⚠️"} {note}</span> : null}
       </span>
       <span className="flex size-9 shrink-0 items-end justify-center overflow-hidden rounded-full border-2 border-slate-900 bg-sky-100">
         <Avatar looks={looks} adult={adult} crop="head" size={36} />
