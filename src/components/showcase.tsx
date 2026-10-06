@@ -53,9 +53,9 @@ export function PhoneFrame({
         <div className="rounded-[2.75rem] bg-[#0b0d12] p-[7px]">
           <div className={`overflow-hidden rounded-[2.3rem] ${dark ? "bg-[#0b1a33]" : "bg-[#f4f7fb]"}`}>
             {/* Status bar: the camera sits here, so the app below never touches it. */}
-            <div className={`relative flex h-10 items-center justify-between pr-5 pl-7 ${ink}`} aria-hidden>
+            <div className={`relative flex h-10 items-center justify-between pr-4 pl-6 ${ink}`} aria-hidden>
               <span className="text-[12px] font-bold tracking-tight tabular-nums">9:41</span>
-              <span className="absolute top-2 left-1/2 h-[1.3rem] w-[29%] -translate-x-1/2 rounded-full bg-[#050608]">
+              <span className="absolute top-2 left-1/2 h-[1.3rem] w-[26%] -translate-x-1/2 rounded-full bg-[#050608]">
                 <span className="absolute top-1/2 left-[14%] h-[58%] w-[42%] -translate-y-1/2 rounded-full bg-[#0d0f14]" />
                 <span className="absolute top-1/2 right-[11%] aspect-square h-[36%] -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_40%_40%,#5b6fd6,#1d2453_55%,#0b0e22)]" />
               </span>
