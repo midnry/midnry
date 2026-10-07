@@ -41,7 +41,7 @@ export function autoOutfit(looks: Looks): string | undefined {
 export const NYSC_ART = new Set<string>(["you-nysc-m-light", "you-nysc-m-brown", "you-nysc-f-light", "you-nysc-f-brown", "you-nysc-f-dark", "you-nysc-m-dark"]);
 
 /** The player's own childhood art so far, by gender and skin tone (child at 9, teen at 15). */
-export const KID_ART = new Set<string>(["you-k-m-light", "you-k-f-light"]);
+export const KID_ART = new Set<string>(["you-k-m-light", "you-k-f-light", "you-k-f-brown"]);
 
 /** Skin tone: from the chosen grown-up outfit, else from the drawn skin colour. */
 export function toneOf(looks: Partial<Looks>): Tone {
@@ -142,7 +142,7 @@ export function crowdPainted(gender: "male" | "female", stage: CrowdStage, seed:
 }
 
 /** Painted people with hand-drawn walk cycles: 4 frames per view (<id>-walk-<view>-<n>.png). Others step by cut-out legs. */
-export const WALK_FRAMES = new Set<string>(["you-f-brown-1"]);
+export const WALK_FRAMES = new Set<string>(["you-f-brown-1", "you-m-brown-1"]);
 
 /** Named people from the school, university and camp chapters, with their heights against a grown-up. */
 export const STORY_ART: { id: string; scale: number }[] = [
