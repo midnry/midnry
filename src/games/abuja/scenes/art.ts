@@ -598,86 +598,169 @@ export function placeBuilding(scene: Phaser.Scene, l: Lot) {
 // ── Props ───────────────────────────────────────────────────────────────────
 
 function makeProps(scene: Phaser.Scene) {
-  // Leafy trees after the city sheet: dark outline, three greens, a branching trunk and a grass tuft.
-  const canopy = (g: Phaser.GameObjects.Graphics, blobs: [number, number, number][]) => {
-    g.fillStyle(INK, 1);
-    for (const [x, y, r] of blobs) g.fillCircle(x, y, r + 3);
-    g.fillStyle(0x1e5631, 1);
-    for (const [x, y, r] of blobs) g.fillCircle(x, y, r);
-    g.fillStyle(0x2e7d32, 1);
-    for (const [x, y, r] of blobs) g.fillCircle(x - r * 0.18, y - r * 0.2, r * 0.74);
-    g.fillStyle(0x4caf50, 1);
-    for (const [x, y, r] of blobs) g.fillCircle(x - r * 0.35, y - r * 0.38, r * 0.34);
+  // Painted trees: a soft outline, shade underneath, light from the top left, a few leaf flecks.
+  const OUT = 0x23361f;
+  const canopy = (g: Phaser.GameObjects.Graphics, blobs: [number, number, number][], seed: number) => {
+    const r = rand(seed);
+    g.fillStyle(OUT, 1);
+    for (const [x, y, rad] of blobs) g.fillCircle(x, y, rad + 2.2);
+    g.fillStyle(0x2f6b2c, 1);
+    for (const [x, y, rad] of blobs) g.fillCircle(x, y, rad);
+    g.fillStyle(0x3f8a36, 1);
+    for (const [x, y, rad] of blobs) g.fillCircle(x - rad * 0.12, y - rad * 0.16, rad * 0.84);
+    g.fillStyle(0x56a744, 1);
+    for (const [x, y, rad] of blobs) g.fillCircle(x - rad * 0.28, y - rad * 0.32, rad * 0.55);
+    g.fillStyle(0x7cc65a, 0.9);
+    for (const [x, y, rad] of blobs) g.fillCircle(x - rad * 0.4, y - rad * 0.45, rad * 0.24);
+    for (let i = 0; i < 26; i += 1) {
+      const [x, y, rad] = blobs[i % blobs.length]!;
+      const a = r() * Math.PI * 2;
+      const d = r() * rad * 0.8;
+      g.fillStyle(r() < 0.5 ? 0x9bd774 : 0x2a5f28, 0.8).fillEllipse(x + Math.cos(a) * d, y + Math.sin(a) * d, 4, 2.6);
+    }
   };
   const trunk = (g: Phaser.GameObjects.Graphics, cx: number, top: number, base: number, w: number) => {
-    g.fillStyle(0x000000, 0.22).fillEllipse(cx, base + 4, w * 7, 12);
-    g.fillStyle(0x5d3a1a, 1);
-    g.fillPoints([{ x: cx - w, y: base + 2 }, { x: cx - w * 0.45, y: top }, { x: cx + w * 0.45, y: top }, { x: cx + w, y: base + 2 }], true);
-    g.lineStyle(3, INK, 1).strokePoints([{ x: cx - w, y: base + 2 }, { x: cx - w * 0.45, y: top }, { x: cx + w * 0.45, y: top }, { x: cx + w, y: base + 2 }], true);
-    g.lineStyle(5, INK, 1).lineBetween(cx - 2, top + 14, cx - w * 2.2, top - 4).lineBetween(cx + 2, top + 10, cx + w * 2.4, top - 6);
-    g.lineStyle(3, 0x5d3a1a, 1).lineBetween(cx - 2, top + 14, cx - w * 2.2, top - 4).lineBetween(cx + 2, top + 10, cx + w * 2.4, top - 6);
-    g.fillStyle(0x3f9b3a, 1);
-    for (let i = -3; i <= 3; i += 1) g.fillTriangle(cx + i * 6 - 3, base + 4, cx + i * 6, base - 6 - (i % 2 ? 0 : 4), cx + i * 6 + 3, base + 4);
+    // A soft round shadow on the ground under the crown.
+    for (let i = 0; i < 4; i += 1) g.fillStyle(0x1a1208, 0.07).fillEllipse(cx + 4, base + 2, w * 9 - i * 9, 16 - i * 3);
+    const pts = [{ x: cx - w, y: base + 2 }, { x: cx - w * 0.5, y: top }, { x: cx + w * 0.5, y: top }, { x: cx + w, y: base + 2 }];
+    g.fillStyle(0x6b4423, 1).fillPoints(pts, true);
+    g.fillStyle(0x8a5a32, 1).fillRect(cx - w * 0.5, top, w * 0.45, base - top);
+    g.lineStyle(2, OUT, 1).strokePoints(pts, true);
+    g.lineStyle(4.5, OUT, 1).lineBetween(cx - 2, top + 14, cx - w * 2.2, top - 4).lineBetween(cx + 2, top + 10, cx + w * 2.4, top - 6);
+    g.lineStyle(2.5, 0x6b4423, 1).lineBetween(cx - 2, top + 14, cx - w * 2.2, top - 4).lineBetween(cx + 2, top + 10, cx + w * 2.4, top - 6);
+    g.fillStyle(0x4f9a3a, 1);
+    for (let i = -3; i <= 3; i += 1) g.fillTriangle(cx + i * 5 - 2.5, base + 4, cx + i * 5, base - 4 - (i % 2 ? 0 : 3), cx + i * 5 + 2.5, base + 4);
   };
   make(scene, "tree", 100, 118, (g) => {
     trunk(g, 50, 62, 108, 7);
-    canopy(g, [[50, 40, 27], [28, 52, 19], [72, 52, 19], [35, 28, 17], [65, 28, 17], [50, 62, 16], [20, 38, 11], [80, 38, 11]]);
+    canopy(g, [[50, 40, 27], [28, 52, 19], [72, 52, 19], [35, 28, 17], [65, 28, 17], [50, 62, 16], [20, 38, 11], [80, 38, 11]], 11);
   });
   make(scene, "tree2", 84, 132, (g) => {
     trunk(g, 42, 72, 122, 6);
-    canopy(g, [[42, 34, 18], [31, 50, 16], [54, 48, 16], [42, 64, 15], [36, 20, 12], [50, 18, 11], [42, 8, 8]]);
+    canopy(g, [[42, 34, 18], [31, 50, 16], [54, 48, 16], [42, 64, 15], [36, 20, 12], [50, 18, 11], [42, 8, 8]], 23);
   });
   make(scene, "tree3", 90, 96, (g) => {
     trunk(g, 45, 58, 86, 6);
-    canopy(g, [[45, 40, 22], [26, 46, 15], [64, 46, 15], [45, 22, 16], [32, 28, 12], [58, 28, 12]]);
+    canopy(g, [[45, 40, 22], [26, 46, 15], [64, 46, 15], [45, 22, 16], [32, 28, 12], [58, 28, 12]], 37);
   });
+  // Traffic light: a slim dark pole and a hooded head (lamps lit by the "signal" sprite).
   make(scene, "trafficlight", 26, 78, (g) => {
-    g.fillStyle(0x000000, 0.2).fillEllipse(13, 74, 18, 6);
-    g.fillStyle(0x8b2e1d, 1).fillRect(7, 62, 12, 12);
-    g.lineStyle(2, INK, 1).strokeRect(7, 62, 12, 12);
-    g.fillStyle(0x374151, 1).fillRect(11, 30, 4, 32);
-    g.fillStyle(0x1f2937, 1).fillRoundedRect(3, 2, 20, 34, 5);
-    g.lineStyle(2.5, INK, 1).strokeRoundedRect(3, 2, 20, 34, 5).strokeRect(11, 30, 4, 32);
-    g.fillStyle(0x4b5563, 1).fillCircle(13, 10, 4.5).fillCircle(13, 19, 4.5).fillCircle(13, 28, 4.5);
+    g.fillStyle(0x1a1208, 0.18).fillEllipse(13, 74, 16, 5);
+    g.fillStyle(0x2b2f36, 1).fillRoundedRect(8, 68, 10, 6, 2);
+    g.fillStyle(0x3a3f47, 1).fillRect(11.5, 34, 3, 36);
+    g.fillStyle(0x1f2329, 1).fillRoundedRect(5, 3, 16, 32, 5);
+    g.lineStyle(1.5, 0x0d0f12, 1).strokeRoundedRect(5, 3, 16, 32, 5);
+    g.fillStyle(0x2d333b, 1).fillCircle(13, 10, 4.2).fillCircle(13, 19, 4.2).fillCircle(13, 28, 4.2);
+    g.fillStyle(0x15181c, 1).fillRect(7, 5, 12, 1.5).fillRect(7, 14, 12, 1.5).fillRect(7, 23, 12, 1.5);
   });
   // The lit lamp of a traffic light, tinted red, amber or green.
   make(scene, "signal", 12, 12, (g) => {
-    g.fillStyle(0xffffff, 1).fillCircle(6, 6, 4.5);
+    g.fillStyle(0xffffff, 0.35).fillCircle(6, 6, 5.5);
+    g.fillStyle(0xffffff, 1).fillCircle(6, 6, 3.8);
   });
   make(scene, "palm", 72, 84, (g) => {
-    g.fillStyle(0x000000, 0.22).fillEllipse(36, 76, 40, 12);
-    g.fillStyle(0x8b5a2b, 1).fillRoundedRect(32, 36, 8, 40, 3);
-    g.lineStyle(3, INK, 1).strokeRoundedRect(32, 36, 8, 40, 3);
-    g.fillStyle(0x3f9b3a, 1);
-    for (let i = 0; i < 6; i += 1) {
-      const a = (i / 6) * Math.PI * 2;
-      g.fillEllipse(36 + Math.cos(a) * 16, 30 + Math.sin(a) * 10, 30, 12);
+    for (let i = 0; i < 3; i += 1) g.fillStyle(0x1a1208, 0.08).fillEllipse(38, 78, 40 - i * 10, 11 - i * 2);
+    g.fillStyle(0x8b5a2b, 1).fillRoundedRect(32, 34, 8, 44, 3);
+    g.fillStyle(0xa8743f, 1).fillRect(33, 36, 3, 40);
+    g.lineStyle(1.5, 0x6b4423, 1);
+    for (let y = 40; y < 76; y += 6) g.lineBetween(32, y, 40, y + 2);
+    g.lineStyle(2, OUT, 1).strokeRoundedRect(32, 34, 8, 44, 3);
+    for (let i = 0; i < 7; i += 1) {
+      const a = (i / 7) * Math.PI * 2 + 0.3;
+      const fx = 36 + Math.cos(a) * 16;
+      const fy = 28 + Math.sin(a) * 9;
+      g.fillStyle(OUT, 1).fillEllipse(fx, fy, 33, 13);
+      g.fillStyle(i % 2 ? 0x3f8a36 : 0x4f9e3e, 1).fillEllipse(fx, fy, 30, 10);
+      g.fillStyle(0x7cc65a, 0.8).fillEllipse(fx - Math.cos(a) * 3, fy - 2, 16, 3);
     }
-    g.fillStyle(0x8b5a2b, 1).fillCircle(36, 31, 6);
+    g.fillStyle(0x6b4423, 1).fillCircle(36, 29, 5.5);
+    g.fillStyle(0xd4a017, 1).fillCircle(33, 33, 2.5).fillCircle(39, 33, 2.5);
   });
-  make(scene, "bush", 40, 28, (g) => {
-    g.fillStyle(0x3e9a43, 1).fillCircle(12, 16, 10).fillCircle(28, 16, 10).fillCircle(20, 10, 10);
-    g.lineStyle(3, INK, 1).strokeCircle(12, 16, 10).strokeCircle(28, 16, 10).strokeCircle(20, 10, 10);
-    g.fillStyle(0x3e9a43, 1).fillCircle(20, 15, 10);
-    g.fillStyle(0xf472b6, 1).fillCircle(14, 12, 2.5).fillCircle(26, 18, 2.5);
+  make(scene, "bush", 40, 30, (g) => {
+    for (let i = 0; i < 3; i += 1) g.fillStyle(0x1a1208, 0.08).fillEllipse(21, 26, 38 - i * 9, 7 - i);
+    const b: [number, number, number][] = [[12, 17, 9], [28, 17, 9], [20, 11, 10]];
+    g.fillStyle(OUT, 1);
+    for (const [x, y, r] of b) g.fillCircle(x, y, r + 2);
+    g.fillStyle(0x3a7f33, 1);
+    for (const [x, y, r] of b) g.fillCircle(x, y, r);
+    g.fillStyle(0x56a744, 1);
+    for (const [x, y, r] of b) g.fillCircle(x - 2, y - 2, r * 0.65);
+    g.fillStyle(0x86cc5f, 0.9);
+    for (const [x, y, r] of b) g.fillCircle(x - 3, y - 4, r * 0.25);
+    g.fillStyle(0xf472b6, 1).fillCircle(14, 13, 2.2).fillCircle(26, 19, 2.2).fillCircle(21, 8, 2);
+    g.fillStyle(0xffffff, 0.8).fillCircle(13.5, 12.5, 0.8).fillCircle(25.5, 18.5, 0.8);
   });
-  make(scene, "lamp", 24, 70, (g) => {
-    g.fillStyle(0x000000, 0.2).fillEllipse(12, 66, 18, 6);
-    g.fillStyle(0x4b5563, 1).fillRect(10, 14, 4, 52);
-    g.fillStyle(0x9ca3af, 1).fillRoundedRect(3, 4, 18, 10, 4);
-    g.fillStyle(0xfff7c2, 1).fillRect(6, 12, 12, 3);
-    g.lineStyle(2, INK, 1).strokeRect(10, 14, 4, 52).strokeRoundedRect(3, 4, 18, 10, 4);
+  // Street lamp: a dark iron post with a lantern head, warm even by day.
+  make(scene, "lamp", 26, 78, (g) => {
+    for (let i = 0; i < 3; i += 1) g.fillStyle(0x1a1208, 0.09).fillEllipse(13, 74, 18 - i * 5, 6 - i);
+    g.fillStyle(0x23272e, 1).fillRoundedRect(8, 68, 10, 7, 2);
+    g.fillStyle(0x2f343c, 1).fillRect(11.5, 22, 3, 47);
+    g.fillStyle(0x4b5260, 1).fillRect(12, 22, 1, 47);
+    g.fillStyle(0x23272e, 1).fillRoundedRect(9, 19, 8, 4, 1);
+    // Lantern.
+    g.fillStyle(0x23272e, 1).fillTriangle(5, 8, 21, 8, 13, 1);
+    g.fillStyle(0xffd27a, 1).fillRect(7, 8, 12, 11);
+    g.fillStyle(0xfff3c4, 1).fillRect(9, 9, 4, 9);
+    g.lineStyle(1.5, 0x15181c, 1).strokeRect(7, 8, 12, 11).lineBetween(13, 8, 13, 19);
+    g.fillStyle(0x23272e, 1).fillRect(6, 18, 14, 2);
+  });
+  // Planter box: stone or wood, a shrub and flowers.
+  make(scene, "planter", 52, 40, (g) => {
+    for (let i = 0; i < 3; i += 1) g.fillStyle(0x1a1208, 0.09).fillEllipse(27, 37, 54 - i * 12, 7 - i);
+    g.fillStyle(0x8a5a32, 1).fillRoundedRect(3, 20, 46, 16, 3);
+    g.fillStyle(0xa8743f, 1).fillRect(5, 21, 42, 4);
+    g.lineStyle(1, 0x6b4423, 1).lineBetween(3, 28, 49, 28);
+    g.lineStyle(2, OUT, 1).strokeRoundedRect(3, 20, 46, 16, 3);
+    const b: [number, number, number][] = [[12, 16, 8], [26, 12, 10], [40, 16, 8]];
+    g.fillStyle(OUT, 1);
+    for (const [x, y, r] of b) g.fillCircle(x, y, r + 1.8);
+    g.fillStyle(0x3a7f33, 1);
+    for (const [x, y, r] of b) g.fillCircle(x, y, r);
+    g.fillStyle(0x5aae46, 1);
+    for (const [x, y, r] of b) g.fillCircle(x - 2, y - 2, r * 0.6);
+    const fl = [0xf472b6, 0xfacc15, 0xffffff, 0xfb7185, 0xf472b6];
+    for (let i = 0; i < 9; i += 1) g.fillStyle(fl[i % fl.length]!, 1).fillCircle(7 + i * 4.6, 10 + ((i * 7) % 9), 2);
+  });
+  // Market stall: a striped awning, crates of fruit and vegetables.
+  make(scene, "stall", 70, 64, (g) => {
+    for (let i = 0; i < 3; i += 1) g.fillStyle(0x1a1208, 0.1).fillEllipse(36, 60, 66 - i * 14, 8 - i);
+    g.fillStyle(0x6b4423, 1).fillRect(7, 18, 4, 40).fillRect(59, 18, 4, 40);
+    // Table and crates.
+    g.fillStyle(0x8a5a32, 1).fillRect(5, 38, 60, 16);
+    g.fillStyle(0xa8743f, 1).fillRect(5, 38, 60, 4);
+    g.lineStyle(2, OUT, 1).strokeRect(5, 38, 60, 16);
+    const produce: [number, number][] = [[0xef4444, 13], [0xf59e0b, 27], [0x84cc16, 41], [0xfacc15, 55]];
+    for (const [c, x] of produce) {
+      g.fillStyle(0x6b4423, 1).fillRect(x - 6, 32, 13, 8);
+      for (let k = 0; k < 4; k += 1) g.fillStyle(c, 1).fillCircle(x - 3 + (k % 2) * 6, 31 + Math.floor(k / 2) * 3, 3);
+      g.fillStyle(0xffffff, 0.5).fillCircle(x - 4, 29.5, 1);
+    }
+    // Awning: green and white stripes with a scalloped edge.
+    for (let i = 0; i < 8; i += 1) {
+      g.fillStyle(i % 2 ? 0xf8fafc : 0x16a34a, 1).fillRect(2 + i * 8.25, 6, 8.25, 14);
+      g.fillStyle(i % 2 ? 0xf8fafc : 0x16a34a, 1).fillCircle(6.1 + i * 8.25, 20, 4.1);
+    }
+    g.fillStyle(0x000000, 0.12).fillRect(2, 6, 66, 4);
+    g.lineStyle(2, OUT, 1).strokeRect(2, 6, 66, 14);
   });
   make(scene, "glow", 128, 128, (g) => {
     for (let r = 64; r > 0; r -= 8) g.fillStyle(0xffe9a3, 0.05).fillCircle(64, 64, r);
   });
-  make(scene, "kiosk", 60, 60, (g) => {
-    g.fillStyle(0x000000, 0.22).fillEllipse(30, 54, 50, 10);
-    g.fillStyle(0x8b5a2b, 1).fillRect(12, 34, 36, 18);
-    g.lineStyle(3, INK, 1).strokeRect(12, 34, 36, 18);
-    g.fillStyle(0xef4444, 1).fillTriangle(30, 6, 4, 30, 56, 30);
-    g.fillStyle(0xffffff, 1).fillTriangle(30, 6, 17, 30, 30, 30).fillTriangle(30, 6, 43, 30, 56, 30);
-    g.lineStyle(3, INK, 1).strokeTriangle(30, 6, 4, 30, 56, 30);
+  // Roadside kiosk: a little hut with a corrugated roof and a hatch.
+  make(scene, "kiosk", 60, 62, (g) => {
+    for (let i = 0; i < 3; i += 1) g.fillStyle(0x1a1208, 0.1).fillEllipse(31, 58, 54 - i * 12, 8 - i);
+    g.fillStyle(0x2f7fbf, 1).fillRect(12, 26, 36, 30);
+    g.fillStyle(0x4c9bd6, 1).fillRect(12, 26, 8, 30);
+    g.fillStyle(0x23272e, 1).fillRect(18, 32, 24, 12);
+    g.fillStyle(0xfacc15, 1).fillRect(20, 34, 6, 8);
+    g.fillStyle(0xef4444, 1).fillRect(28, 34, 6, 8);
+    g.fillStyle(0xffffff, 1).fillRect(36, 34, 4, 8);
+    g.fillStyle(0xd6c7a8, 1).fillRect(14, 44, 32, 4);
+    g.lineStyle(2, OUT, 1).strokeRect(12, 26, 36, 30);
+    g.fillStyle(0xb8bec7, 1).fillPoints([{ x: 4, y: 28 }, { x: 10, y: 12 }, { x: 50, y: 12 }, { x: 56, y: 28 }], true);
+    g.lineStyle(1, 0x8b939e, 1);
+    for (let x = 10; x < 52; x += 5) g.lineBetween(x, 13, x - 3, 27);
+    g.lineStyle(2, OUT, 1).strokePoints([{ x: 4, y: 28 }, { x: 10, y: 12 }, { x: 50, y: 12 }, { x: 56, y: 28 }], true);
   });
   make(scene, "tank", 30, 34, (g) => {
     g.fillStyle(INK, 1).fillRoundedRect(4, 4, 22, 26, 8);

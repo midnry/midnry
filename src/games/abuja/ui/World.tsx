@@ -276,7 +276,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       {showEnter ? (
         <button
           type="button"
-          className={`${glass} absolute bottom-40 left-1/2 z-10 flex h-12 max-w-[78vw] -translate-x-1/2 items-center gap-2.5 rounded-full pr-4 pl-3 text-[15px] font-extrabold text-white transition hover:bg-[#1e2740]/90 active:scale-[0.98] sm:bottom-10`}
+          className={`${glass} absolute bottom-40 left-1/2 z-10 flex h-12 max-w-[78vw] -translate-x-1/2 items-center gap-2.5 rounded-full pr-4 pl-3 text-[15px] font-extrabold text-white transition hover:bg-[#1e2740]/90 active:scale-[0.98] sm:bottom-12`}
           style={{ fontFamily: GAME_FONT }}
           onClick={() => bus.emit("interact", near)}
         >

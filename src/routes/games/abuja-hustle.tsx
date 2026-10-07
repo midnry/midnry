@@ -12,11 +12,7 @@ export const Route = createFileRoute("/games/abuja-hustle")({
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Abuja Hustle" },
     ],
-    links: [
-      { rel: "apple-touch-icon", href: "/abuja-hustle-180.png" },
-      // The game's rounded type, for the HUD and the names on the map.
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" },
-    ],
+    links: [{ rel: "apple-touch-icon", href: "/abuja-hustle-180.png" }],
   }),
   component: GamePage,
 });

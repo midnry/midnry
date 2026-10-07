@@ -78,7 +78,9 @@ export class CityLife {
   private wanted = new Set<Person>();
   private nextThink = 0;
   private nextService = 0;
-  private tag: Phaser.GameObjects.Text;
+  private tag: Phaser.GameObjects.Container;
+  private tagText: Phaser.GameObjects.Text;
+  private tagBox: Phaser.GameObjects.Graphics;
   private lotById: Map<string, Lot>;
   private free: (x: number, y: number) => boolean;
   private max: number;
@@ -97,12 +99,13 @@ export class CityLife {
     this.max = Math.min(scene.scale.width, scene.scale.height) < 600 ? MAX_PHONE : MAX_DESKTOP;
     // The train brings people in too.
     this.stops = [...stops, freePoint(RAIL.station.x, RAIL.station.y - 40, solids)];
-    this.tag = scene.add
-      .text(0, 0, "", { fontFamily: GAME_FONT, fontSize: "9px", fontStyle: "bold", color: "#ffffff", backgroundColor: "#0b1220cc", padding: { x: 4, y: 2 }, align: "center" })
-      .setOrigin(0.5, 0)
-      .setResolution(2)
-      .setDepth(28)
-      .setVisible(false);
+    // A name card in the same rounded style as the other names on the map.
+    this.tagText = scene.add
+      .text(0, 0, "", { fontFamily: GAME_FONT, fontSize: "9px", fontStyle: "800", color: "#ffffff", align: "center", lineSpacing: 1 })
+      .setOrigin(0.5)
+      .setResolution(3);
+    this.tagBox = scene.add.graphics();
+    this.tag = scene.add.container(0, 0, [this.tagBox, this.tagText]).setDepth(28).setVisible(false);
   }
 
   /** How many people are on screen, for tests. */
@@ -349,7 +352,19 @@ export class CityLife {
       const { a } = closest;
       const verb = a.end === "bus" ? "catching a bus" : a.phase === "sit" ? "taking a break" : `off ${doing(a.c, { activity: a.activity, lot: a.to }).replace(/^at the |^at /, "to ").replace("to home", "home")}`;
       const age = ageOn(a.c, this.day);
-      this.tag.setText(`${a.c.name}, ${age} · ${a.c.occupation}\n${verb}`).setPosition(a.fig.x, a.fig.y + 8).setVisible(true);
+      const text = `${a.c.name}, ${age} · ${a.c.occupation}\n${verb}`;
+      if (this.tagText.text !== text) {
+        this.tagText.setText(text);
+        const w = this.tagText.width + 14;
+        const h = this.tagText.height + 8;
+        this.tagBox.clear();
+        this.tagBox.fillStyle(0x000000, 0.22).fillRoundedRect(-w / 2, -h / 2 + 2, w, h, 9);
+        this.tagBox.fillStyle(0x141b2d, 0.92).fillRoundedRect(-w / 2, -h / 2, w, h, 9);
+        this.tagBox.lineStyle(1, 0xffffff, 0.14).strokeRoundedRect(-w / 2, -h / 2, w, h, 9);
+      }
+      // Standing right beside you: lift the card clear of your YOU tag.
+      const lift = Math.abs(a.fig.x - player.x) < 80 ? 34 : 0;
+      this.tag.setPosition(a.fig.x, Math.min(a.fig.y, player.y) + a.fig.headTop - this.tagText.height / 2 - 10 - lift).setVisible(true);
     } else this.tag.setVisible(false);
   }
 

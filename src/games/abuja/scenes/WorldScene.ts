@@ -15,7 +15,7 @@ import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
 import { findPath, type Point } from "../systems/path";
 import type { GameState, MapRect } from "../systems/types";
-import { lotDoor } from "../systems/city/layout";
+import { lotDoor, type Lot } from "../systems/city/layout";
 import { drawBridge, drawMedians, drawRail, drawStreetFurniture, makeDecorTextures, zoneOverlay } from "./cityDecor";
 import { lotsFor } from "../systems/city/sim";
 import { CityLife, crowdStarters } from "./cityLife";
@@ -97,12 +97,12 @@ const DISTRICT_PROPS: Record<string, string[]> = {
   maitama: ["palm", "tree", "flowers", "flowers", "bush", "fence"],
   asokoro: ["palm", "tree", "flowers", "rock", "boulders", "bush"],
   cbd: ["palm", "flowers", "bush", "bench", "bin"],
-  wuse: ["kiosk", "bush", "palm", "bin", "generator", "kiosk"],
-  garki: ["tree3", "kiosk", "palm", "bush", "bin"],
+  wuse: ["kiosk", "stall", "bush", "palm", "planter", "bin"],
+  garki: ["tree3", "kiosk", "stall", "palm", "bush", "planter"],
   jabi: ["palm", "tree", "flowers", "bush", "pond", "grass"],
   gwarinpa: ["tree", "bush", "flowers", "palm", "grass", "fence"],
   kubwa: ["rock", "boulders", "tree", "tree2", "grass", "grass"],
-  nyanya: ["kiosk", "generator", "tree3", "rock", "bin", "grass"],
+  nyanya: ["kiosk", "stall", "generator", "tree3", "rock", "grass"],
   lugbe: ["barrel", "rock", "tree3", "generator", "barrel", "grass"],
 };
 
@@ -152,6 +152,8 @@ export class WorldScene extends Phaser.Scene {
   private taskMarker!: Phaser.GameObjects.Container;
   private arrow!: Phaser.GameObjects.Triangle;
   private night!: Phaser.GameObjects.Rectangle;
+  private sun!: Phaser.GameObjects.Rectangle;
+  private vignette!: Phaser.GameObjects.Image;
   private unsub: (() => void) | null = null;
   private lookId = "";
   private rail: { update: (time: number) => void } | null = null;
@@ -246,6 +248,11 @@ export class WorldScene extends Phaser.Scene {
     this.taskMarker = this.makeMarker(0x38bdf8, "★");
     this.arrow = this.add.triangle(0, 0, 0, -12, 9, 8, -9, 8, 0x3b82f6).setDepth(20).setVisible(false);
     this.night = this.add.rectangle(0, 0, 4000, 4000, 0x0b1330, 0).setOrigin(0).setScrollFactor(0).setDepth(30);
+    // Warm sunlight over everything by day, and a soft vignette to pull the eye to the middle.
+    this.sun = this.add.rectangle(0, 0, 4000, 4000, 0xffc978, 0).setOrigin(0).setScrollFactor(0).setDepth(29.5);
+    this.vignette = this.add.image(0, 0, this.makeVignette()).setOrigin(0).setScrollFactor(0).setDepth(29.6);
+    this.sizeVignette();
+    this.scale.on("resize", this.sizeVignette, this);
 
     this.cameras.main.setBounds(0, 0, width, height);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
@@ -351,6 +358,7 @@ export class WorldScene extends Phaser.Scene {
       this.offs.forEach((off) => off());
       this.offs = [];
       this.scale.off("resize", this.fitZoom, this);
+      this.scale.off("resize", this.sizeVignette, this);
     });
     this.refresh();
     this.pendingRestart = false;
@@ -404,6 +412,25 @@ export class WorldScene extends Phaser.Scene {
   }
 
   /** Close enough that everyone is easy to see; your own zoom (buttons, pinch, wheel) is remembered. */
+  /** A radial darkening at the screen edges, drawn once. */
+  private makeVignette() {
+    const key = "vignette";
+    if (this.textures.exists(key)) return key;
+    const canvas = this.textures.createCanvas(key, 512, 512)!;
+    const ctx = canvas.getContext();
+    const g = ctx.createRadialGradient(256, 256, 150, 256, 256, 362);
+    g.addColorStop(0, "rgba(20,12,4,0)");
+    g.addColorStop(1, "rgba(20,12,4,0.32)");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 512, 512);
+    canvas.refresh();
+    return key;
+  }
+
+  private sizeVignette() {
+    this.vignette?.setDisplaySize(this.scale.width, this.scale.height);
+  }
+
   private fitZoom() {
     const { width, height } = this.scale;
     const small = Math.min(width, height);
@@ -460,6 +487,7 @@ export class WorldScene extends Phaser.Scene {
     this.seats = furniture.seats;
     this.life = new CityLife(this, lots, this.solids, furniture.stops, this.seats, sizeOf(this.mapId));
     this.zones = zoneOverlay(this, lots);
+    this.drawStreetscape(lots);
     this.drawProps(260);
     this.drawLamps();
     this.spawnTraffic();
@@ -639,8 +667,80 @@ export class WorldScene extends Phaser.Scene {
       const isTree = key.startsWith("tree") || key === "palm" || key === "boulders";
       if (isTree) img.setScale(key.startsWith("tree") ? 0.85 + r() * 0.3 : 0.8 + r() * 0.35);
       // Big things are solid at their base, so you walk around them.
-      if (isTree || key === "kiosk" || key === "pond") this.solids.push({ x: x - 9, y: y - 10, w: 18, h: 12 });
+      if (isTree || key === "kiosk" || key === "stall" || key === "planter" || key === "pond") this.solids.push({ x: x - 9, y: y - 10, w: 18, h: 12 });
       placed += 1;
+    }
+  }
+
+  /**
+   * Along the edge of every block: street trees and planters, market stalls
+   * around the markets, and cars parked in marked bays.
+   */
+  private drawStreetscape(lots: Lot[]) {
+    const r = rand(5150);
+    const onLot = (x: number, y: number, pad: number) => lots.some((l) => x > l.x - pad && x < l.x + l.w + pad && y > l.y - pad && y < l.y + l.h + pad);
+    const nearPlace = (x: number, y: number, d: number) => PLACES.some((p) => Math.hypot(p.x - x, p.y - y + 10) < d);
+    const free = (x: number, y: number, rad: number) => !blocked(x, y, rad, this.solids) && !onLot(x, y, rad) && !nearPlace(x, y, 70) && x > 30 && y > 30 && x < WORLD.width - 30 && y < WORLD.height - 30 && Math.hypot((x - LAKE.x) / (LAKE.rx + 60), (y - LAKE.y) / (LAKE.ry + 60)) > 1;
+    const clearOfJunctions = (v: number, list: number[]) => list.every((c) => Math.abs(v - c) > 90);
+    const paved = (x: number, y: number) => ["pavement", "plaza"].includes(DISTRICT_TILE[districtAt(x, y)?.id ?? ""] ?? "");
+    const put = (key: string, x: number, y: number, scale = 1) => {
+      this.add.image(x, y, key).setOrigin(0.5, 0.92).setScale(scale).setDepth(5 + y / 10000);
+      this.solids.push({ x: x - 12 * scale, y: y - 8, w: 24 * scale, h: 10 });
+    };
+    // Parked cars: side on, in a white-lined bay just off the road.
+    const bays = this.add.graphics().setDepth(1.5);
+    const parked = FLEET.filter((f) => f.kind === "car" || f.kind === "taxi");
+    let k = 0;
+    for (const y of ROADS.ys) {
+      for (let x = 110; x < WORLD.width - 80; x += 140) {
+        if (!clearOfJunctions(x, ROADS.xs)) continue;
+        for (const side of [-1, 1] as const) {
+          const by = y + side * 58 + (side > 0 ? 12 : 0);
+          if (ROADS.ys.some((o) => o !== y && Math.abs(o - by) < 130)) continue;
+          if (r() < 0.45 || !free(x, by - 6, 40) || !free(x - 34, by - 6, 12) || !free(x + 34, by - 6, 12)) continue;
+          bays.fillStyle(0x000000, 0.06).fillRect(x - 44, by - 22, 88, 30);
+          bays.fillStyle(0xffffff, 0.75).fillRect(x - 44, by - 22, 2, 30).fillRect(x + 42, by - 22, 2, 30);
+          const car = vehicle(this, x, by, parked[k++ % parked.length]!);
+          faceVehicle(car, k % 2 ? 1 : -1, 0);
+          car.setDepth(5 + by / 10000);
+          this.solids.push({ x: x - 34, y: by - 14, w: 68, h: 16 });
+        }
+      }
+    }
+    // Trees and planters lining the streets of the paved districts, greenery elsewhere.
+    for (const x of ROADS.xs) {
+      for (let y = 90; y < WORLD.height - 40; y += 120) {
+        if (!clearOfJunctions(y, ROADS.ys)) continue;
+        for (const side of [-1, 1] as const) {
+          const px = x + side * 52;
+          if (!free(px, y, 18)) continue;
+          const roll = r();
+          if (paved(px, y)) put(roll < 0.5 ? "planter" : "tree3", px, y, roll < 0.5 ? 0.8 : 0.7);
+          else if (roll < 0.6) put(roll < 0.3 ? "tree" : "bush", px, y, roll < 0.3 ? 0.7 : 0.9);
+        }
+      }
+    }
+    for (const y of ROADS.ys) {
+      for (let x = 60; x < WORLD.width - 40; x += 120) {
+        if (!clearOfJunctions(x, ROADS.xs)) continue;
+        for (const side of [-1, 1] as const) {
+          const py = y + side * 52 + (side > 0 ? 14 : 0);
+          if (!free(x, py, 18)) continue;
+          const roll = r();
+          if (paved(x, py)) put(roll < 0.55 ? "planter" : "tree3", x, py, roll < 0.55 ? 0.8 : 0.7);
+          else if (roll < 0.5) put(roll < 0.25 ? "tree" : "bush", x, py, roll < 0.25 ? 0.7 : 0.9);
+        }
+      }
+    }
+    // Markets spill out into the street: stalls around every market.
+    for (const p of PLACES.filter((q) => /market/i.test(q.id))) {
+      for (const [dx, dy] of [[-95, 40], [95, 40], [-95, -50], [95, -50], [0, 95]] as const) {
+        const sx = p.x + dx;
+        const sy = p.y + dy;
+        if (blocked(sx, sy, 30, this.solids) || onLot(sx, sy, 24)) continue;
+        this.add.image(sx, sy, "stall").setOrigin(0.5, 0.92).setScale(0.85).setDepth(5 + sy / 10000);
+        this.solids.push({ x: sx - 26, y: sy - 10, w: 52, h: 12 });
+      }
     }
   }
 
@@ -648,7 +748,7 @@ export class WorldScene extends Phaser.Scene {
     const lamp = (x: number, y: number) => {
       if (blocked(x, y, 12, this.solids)) return;
       this.add.image(x, y, "lamp").setOrigin(0.5, 0.95).setDepth(5 + y / 10000);
-      this.glows.push(this.add.image(x, y - 58, "glow").setDepth(31).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc46b).setAlpha(0));
+      this.glows.push(this.add.image(x, y - 61, "glow").setDepth(31).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc46b).setAlpha(0));
     };
     const clear = (v: number, list: number[]) => list.every((c) => Math.abs(v - c) > 70);
     for (const x of ROADS.xs) for (let y = 80; y < WORLD.height; y += 340) if (clear(y, ROADS.ys)) lamp(x + 32, y);
@@ -817,6 +917,10 @@ export class WorldScene extends Phaser.Scene {
     }
     const alpha = this.mapId !== "city" ? 0 : [0, 0.06, 0.24, 0.62][Math.min(state.slot, 3)]!;
     this.night.setFillStyle(state.slot === 2 ? 0x7c2d12 : 0x050b24, alpha);
+    // Golden morning, bright afternoon, orange evening; the vignette deepens at night.
+    const slot = Math.min(state.slot, 3);
+    this.sun.setFillStyle(slot === 2 ? 0xff9d4d : 0xffc978, this.mapId !== "city" ? 0.03 : [0.07, 0.045, 0.08, 0][slot]!);
+    this.vignette.setAlpha([0.8, 0.7, 0.9, 1][slot]!);
     const glow = this.mapId !== "city" ? 0 : [0, 0, 0.2, 0.4][Math.min(state.slot, 3)]!;
     this.glows.forEach((g) => g.setAlpha(glow));
     this.windowLights?.setAlpha(this.mapId !== "city" ? 0 : [0, 0, 0.45, 0.95][Math.min(state.slot, 3)]!);

@@ -1,3 +1,8 @@
+// The game's rounded type for the HUD and the names on the map, bundled so it works offline.
+import "@fontsource/nunito/latin-600.css";
+import "@fontsource/nunito/latin-700.css";
+import "@fontsource/nunito/latin-800.css";
+import "@fontsource/nunito/latin-900.css";
 import { useEffect, useState } from "react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { loadGame, saveGame } from "../save.functions";
