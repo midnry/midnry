@@ -379,9 +379,10 @@ export type Figure = Phaser.GameObjects.Container & {
   rigY: number;
   /** A one-off or held pose (waving, sitting…) that overrides walking until `until`. */
   action: { motion: Motion; started: number; until: number } | null;
-  /** Hand-painted people: their id and the image's base scale. */
+  /** Hand-painted people: their id, the image's base scale, and the pieces it's cut into. */
   painted?: string;
   bodyScale?: number;
+  parts?: { box: Phaser.GameObjects.Container; body: Phaser.GameObjects.Image; sideL: Phaser.GameObjects.Image; sideR: Phaser.GameObjects.Image; legL: Phaser.GameObjects.Image; legR: Phaser.GameObjects.Image };
 };
 
 const FEET = 10; // feet sit this many pixels below the figure's position
@@ -422,10 +423,15 @@ function paintedFigure(scene: Phaser.Scene, x: number, y: number, id: string, op
   // As tall as a drawn grown-up of the same unit.
   const ref = dims(fullLook({}), "adult");
   const height = (ref.height - ref.headTop) * unit * (PAINTED[id]!.scale ?? 1);
-  const body = scene.add.image(0, 0, paintedKey(id, "front")).setOrigin(0.5, 1);
+  // The painting is cut into pieces sharing one origin: the body above the hips,
+  // each leg, and the strips beside the legs (hands, a hem). Legs then step on their own.
+  const piece = () => scene.add.image(0, 0, paintedKey(id, "front")).setOrigin(0.5, 1);
+  const body = piece();
   const k = height / body.height;
-  body.setScale(k);
-  const rig = scene.add.container(0, FEET, [body]);
+  const [sideL, sideR, legL, legR] = [piece(), piece(), piece(), piece()];
+  const parts = { box: scene.add.container(0, 0, [sideL, sideR, legL, legR, body]), body, sideL, sideR, legL, legR };
+  for (const img of [body, sideL, sideR, legL, legR]) img.setScale(k);
+  const rig = scene.add.container(0, FEET, [parts.box]);
   const hidden = () => scene.add.image(0, 0, paintedKey(id, "front")).setVisible(false);
   const shadow = scene.add.image(0, FEET - 2, "shadow").setScale(unit * 2.6, unit * 2.2);
   const headTop = FEET - height;
@@ -435,15 +441,97 @@ function paintedFigure(scene: Phaser.Scene, x: number, y: number, id: string, op
     items.push(pill(scene, 0, headTop - (you ? 16 : 12), opts.name, { size: you ? 11 : 10, color: you ? "#ffffff" : (opts.nameColor ?? "#ffffff"), pointer: you ? 0x3b82f6 : undefined }));
   }
   const c = scene.add.container(x, y, items) as Figure;
-  Object.assign(c, { rig, legs: [hidden(), hidden()], arms: [hidden(), hidden()], armBack: hidden(), upper: body, shadow, headTop, key: `pt_${id}`, dims: ref, unit, rigY: FEET, action: null, facing: "front", painted: id, bodyScale: k });
+  Object.assign(c, { rig, legs: [hidden(), hidden()], arms: [hidden(), hidden()], armBack: hidden(), upper: body, shadow, headTop, key: `pt_${id}`, dims: ref, unit, rigY: FEET, action: null, facing: "front", painted: id, bodyScale: k, parts });
+  cutPainted(c);
   return c;
+}
+
+type Cut = { split: number; cx: number; l0: number; r1: number };
+const cuts = new Map<string, Cut>();
+
+/**
+ * Where to cut a painting: the hip line (the top of the gap between the legs,
+ * or just above the feet under a long robe), the middle between the legs, and
+ * how far the legs reach either side. Worked out once per image from its pixels.
+ */
+function cutFor(scene: Phaser.Scene, key: string, side: boolean): Cut {
+  const hit = cuts.get(key);
+  if (hit) return hit;
+  const src = scene.textures.get(key).getSourceImage() as HTMLImageElement;
+  const w = src.width;
+  const h = src.height;
+  let cut: Cut = { split: Math.round(h * 0.6), cx: w / 2, l0: 0, r1: w };
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    ctx.drawImage(src, 0, 0);
+    const data = ctx.getImageData(0, 0, w, h).data;
+    const solid = (x: number, y: number) => data[(y * w + x) * 4 + 3]! > 110;
+    // The middle between the feet, from the bottom rows.
+    let sum = 0;
+    let count = 0;
+    for (let y = Math.floor(h * 0.92); y < h; y++) for (let x = 0; x < w; x++) if (solid(x, y)) (sum += x), (count += 1);
+    const cx = count ? Math.round(sum / count) : Math.round(w / 2);
+    // Legs' reach: the outermost solid pixels near the feet.
+    let l0 = w;
+    let r1 = 0;
+    for (let y = Math.floor(h * 0.85); y < h; y++) for (let x = 0; x < w; x++) if (solid(x, y)) (l0 = Math.min(l0, x)), (r1 = Math.max(r1, x));
+    let split = Math.round(h * (side ? 0.62 : 0.6));
+    if (!side) {
+      // Walk up from the feet while there's a gap in the middle with a leg either side.
+      const gapAt = (y: number) => {
+        if ([-2, -1, 0, 1, 2].some((d) => solid(Math.max(0, Math.min(w - 1, cx + d)), y))) return false;
+        let left = false;
+        let right = false;
+        for (let d = 3; d < w * 0.22; d++) {
+          if (cx - d >= 0 && solid(cx - d, y)) left = true;
+          if (cx + d < w && solid(cx + d, y)) right = true;
+        }
+        return left && right;
+      };
+      let y = h - 3;
+      let misses = 0;
+      let top = h;
+      while (y > h * 0.4) {
+        if (gapAt(y)) (top = y), (misses = 0);
+        else if (++misses > 3) break;
+        y -= 1;
+      }
+      split = top < h * 0.95 ? top : Math.round(h * 0.93);
+    }
+    cut = { split, cx, l0: Math.max(0, l0 - 2), r1: Math.min(w, r1 + 3) };
+  } catch {
+    /* pixels unreadable: fall back to proportions */
+  }
+  cuts.set(key, cut);
+  return cut;
+}
+
+/** Crop the pieces of a painted figure for its current view. */
+function cutPainted(f: Figure) {
+  const p = f.parts!;
+  const key = paintedKey(f.painted!, f.facing);
+  for (const img of [p.body, p.sideL, p.sideR, p.legL, p.legR]) img.setTexture(key);
+  const w = p.body.frame.width;
+  const h = p.body.frame.height;
+  const c = cutFor(p.body.scene, key, f.facing === "side");
+  const over = 3;
+  p.body.setCrop(0, 0, w, c.split + over);
+  p.legL.setCrop(c.l0, c.split, c.cx - c.l0, h - c.split);
+  p.legR.setCrop(c.cx, c.split, c.r1 - c.cx, h - c.split);
+  p.sideL.setCrop(0, c.split, c.l0, h - c.split);
+  p.sideR.setCrop(c.r1, c.split, w - c.r1, h - c.split);
+  p.legL.setPosition(0, 0);
+  p.legR.setPosition(0, 0);
 }
 
 function setFacing(f: Figure, facing: Facing) {
   if (f.facing === facing) return;
   if (f.painted) {
     f.facing = facing;
-    f.upper.setTexture(paintedKey(f.painted, facing));
+    cutPainted(f);
     if (facing !== "side") f.rig.scaleX = Math.abs(f.rig.scaleX);
     return;
   }
@@ -618,29 +706,45 @@ function animate(f: Figure, time: number, motion: Motion) {
 
 /** Painted people move as a whole: a bob and a sway to walk, hops to celebrate, a lean to reach. */
 function animatePainted(f: Figure, time: number, motion: Motion) {
-  const k = f.bodyScale ?? 1;
+  const p = f.parts!;
   const side = f.facing === "side";
   const dir = Math.sign(f.rig.scaleX || 1);
+  // Height of the figure in world pixels, for sizing the steps.
+  const tall = -f.headTop;
   f.rig.rotation = 0;
   f.rig.y = f.rigY;
-  f.upper.setScale(k, k);
+  p.box.setScale(1, 1);
+  p.legL.setPosition(0, 0);
+  p.legR.setPosition(0, 0);
   f.alpha = 1;
   f.shadow.setScale(f.unit * 2.6, f.unit * 2.2);
   const t = (time - (f.action?.started ?? 0)) / 1000;
   switch (motion) {
     case "idle":
       // Breathing.
-      f.upper.setScale(k, k * (1 + Math.sin(time / 520) * 0.008));
+      p.box.setScale(1, 1 + Math.sin(time / 520) * 0.008);
       return;
     case "walk":
     case "run":
     case "enter":
     case "exit": {
       const run = motion === "run";
-      const ph = time / (run ? 62 : 92);
-      f.rig.y = f.rigY - Math.abs(Math.sin(ph)) * (run ? 5 : 3);
-      f.rig.rotation = side ? (run ? 0.1 : 0.04) * dir : Math.sin(ph) * (run ? 0.06 : 0.035);
-      f.upper.setScale(k, k * (1 - Math.abs(Math.cos(ph)) * 0.025));
+      const ph = time / (run ? 70 : 105);
+      const swing = Math.sin(ph);
+      if (side) {
+        // Scissor: the front leg reaches forward as the back one pushes off, each lifting as it passes.
+        const reach = tall * (run ? 0.07 : 0.045);
+        p.legR.setPosition(swing * reach, -Math.max(0, swing) * tall * 0.03);
+        p.legL.setPosition(-swing * reach, -Math.max(0, -swing) * tall * 0.03);
+        f.rig.rotation = (run ? 0.07 : 0.02) * dir;
+      } else {
+        // One foot lifts, then the other, and the body sways over the planted one.
+        const lift = tall * (run ? 0.09 : 0.06);
+        p.legL.setPosition(0, -Math.max(0, swing) * lift);
+        p.legR.setPosition(0, -Math.max(0, -swing) * lift);
+        f.rig.rotation = swing * (run ? 0.04 : 0.022);
+      }
+      f.rig.y = f.rigY - Math.abs(Math.cos(ph)) * tall * (run ? 0.04 : 0.02);
       if (motion === "enter") f.alpha = Math.max(0, 1 - t * 1.6);
       if (motion === "exit") f.alpha = Math.min(1, t * 1.6);
       return;
@@ -649,12 +753,14 @@ function animatePainted(f: Figure, time: number, motion: Motion) {
       const h = Math.sin(Math.min(1, t / 0.55) * Math.PI) * 26;
       f.rig.y = f.rigY - h;
       f.shadow.setScale(f.unit * 2.6 * (1 - h / 60), f.unit * 2.2 * (1 - h / 60));
+      p.legL.setPosition(0, -h * 0.15);
+      p.legR.setPosition(0, -h * 0.15);
       return;
     }
     case "sit":
       // Settled down: a little lower and wider.
       f.rig.y = f.rigY + 2;
-      f.upper.setScale(k * 1.03, k * 0.86);
+      p.box.setScale(1.03, 0.86);
       return;
     case "wave":
       f.rig.rotation = Math.sin(time / 120) * 0.07;
@@ -664,11 +770,13 @@ function animatePainted(f: Figure, time: number, motion: Motion) {
       const hop = Math.abs(Math.sin(t * 7)) * 12;
       f.rig.y = f.rigY - hop;
       f.rig.rotation = Math.sin(time / 90) * 0.06;
+      p.legL.setPosition(0, -hop * 0.2);
+      p.legR.setPosition(0, -hop * 0.2);
       return;
     }
     case "interact":
       f.rig.rotation = (side ? 0.12 * dir : 0) * Math.min(1, t * 4);
-      f.upper.setScale(k, k * (1 - Math.min(1, t * 4) * 0.03));
+      p.box.setScale(1, 1 - Math.min(1, t * 4) * 0.03);
       return;
   }
 }

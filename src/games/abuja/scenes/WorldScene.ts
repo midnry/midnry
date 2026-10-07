@@ -368,7 +368,7 @@ export class WorldScene extends Phaser.Scene {
     this.near = null;
     bus.emit("near", null);
     // Development only: lets automated browser tests move the player.
-    if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y), hit: (by: HitBy) => bump(by), crowd: () => this.life?.count ?? 0, crowdAt: () => this.life?.positions ?? [] };
+    if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y), hit: (by: HitBy) => bump(by), crowd: () => this.life?.count ?? 0, crowdAt: () => this.life?.positions ?? [], me: () => { const c = this.cameras.main; return [(this.player.x - c.worldView.x) * c.zoom, (this.player.y - c.worldView.y) * c.zoom, c.zoom]; } };
   }
 
   private cityIdOf(state: GameState | null) {
