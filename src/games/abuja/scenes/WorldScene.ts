@@ -445,9 +445,8 @@ export class WorldScene extends Phaser.Scene {
     this.add.tileSprite(0, 0, WORLD.width, WORLD.height, tileKey("pavement")).setOrigin(0);
     for (const d of DISTRICTS) {
       this.add.tileSprite(d.x, d.y, d.w, d.h, tileKey(DISTRICT_TILE[d.id] ?? "grass")).setOrigin(0);
-      const g = this.add.graphics();
-      if (d.gate) g.fillStyle(color(d.color), 0.14).fillRect(d.x, d.y, d.w, d.h);
-      g.lineStyle(4, color(d.color), 0.55).strokeRect(d.x + 2, d.y + 2, d.w - 4, d.h - 4);
+      // Gated estates get a faint wash of their colour; no hard borders between districts.
+      if (d.gate) this.add.graphics().fillStyle(color(d.color), 0.1).fillRect(d.x, d.y, d.w, d.h);
     }
     this.drawLake();
     drawBridge(this);
@@ -488,43 +487,92 @@ export class WorldScene extends Phaser.Scene {
 
   private drawRoads() {
     const { width, height } = WORLD;
-    const g = this.add.graphics();
-    // Sidewalks with a dark kerb line.
-    g.fillStyle(0xd6d0c4, 1);
-    ROADS.xs.forEach((x) => g.fillRect(x - 36, 0, 72, height));
-    ROADS.ys.forEach((y) => g.fillRect(0, y - 36, width, 72));
+    // Sidewalks of small pale tiles either side of every road.
+    ROADS.xs.forEach((x) => this.add.tileSprite(x - 38, 0, 76, height, tileKey("sidewalk")).setOrigin(0));
+    ROADS.ys.forEach((y) => this.add.tileSprite(0, y - 38, width, 76, tileKey("sidewalk")).setOrigin(0));
+    // The outer edge of the sidewalk: a soft line where it meets the block.
+    const edge = this.add.graphics();
+    edge.lineStyle(2, 0x8f8676, 0.45);
+    ROADS.xs.forEach((x) => edge.lineBetween(x - 38, 0, x - 38, height).lineBetween(x + 38, 0, x + 38, height));
+    ROADS.ys.forEach((y) => edge.lineBetween(0, y - 38, width, y - 38).lineBetween(0, y + 38, width, y + 38));
+    // Asphalt.
     ROADS.xs.forEach((x) => this.add.tileSprite(x - 24, 0, 48, height, tileKey("asphalt")).setOrigin(0));
     ROADS.ys.forEach((y) => this.add.tileSprite(0, y - 24, width, 48, tileKey("asphalt")).setOrigin(0));
-    const m = this.add.graphics();
-    m.lineStyle(3, INK, 0.7);
-    ROADS.xs.forEach((x) => {
-      m.beginPath().moveTo(x - 24, 0).lineTo(x - 24, height).strokePath();
-      m.beginPath().moveTo(x + 24, 0).lineTo(x + 24, height).strokePath();
-    });
-    ROADS.ys.forEach((y) => {
-      m.beginPath().moveTo(0, y - 24).lineTo(width, y - 24).strokePath();
-      m.beginPath().moveTo(0, y + 24).lineTo(width, y + 24).strokePath();
-    });
-    // Re-pave the junctions so kerb lines don't cross them.
-    for (const x of ROADS.xs) for (const y of ROADS.ys) this.add.tileSprite(x - 23, y - 23, 46, 46, tileKey("asphalt")).setOrigin(0);
+    // Kerbs: a pale concrete lip with a shadow on the road side.
+    const kerb = this.add.graphics();
+    const junction = (v: number, list: number[]) => list.some((c) => Math.abs(v - c) < 25);
+    const run = (list: number[], max: number, draw: (a: number, b: number) => void) => {
+      let from = 0;
+      for (const c of [...list].sort((a, b) => a - b)) {
+        draw(from, c - 24);
+        from = c + 24;
+      }
+      draw(from, max);
+    };
+    ROADS.xs.forEach((x) =>
+      run(ROADS.ys, height, (a, b) => {
+        kerb.fillStyle(0x000000, 0.22).fillRect(x - 24, a, 3, b - a).fillRect(x + 21, a, 3, b - a);
+        kerb.fillStyle(0xeae4d8, 1).fillRect(x - 28, a, 4, b - a).fillRect(x + 24, a, 4, b - a);
+        kerb.fillStyle(0x9d9585, 1).fillRect(x - 25, a, 1, b - a).fillRect(x + 24, a, 1, b - a);
+      }),
+    );
+    ROADS.ys.forEach((y) =>
+      run(ROADS.xs, width, (a, b) => {
+        kerb.fillStyle(0x000000, 0.22).fillRect(a, y - 24, b - a, 3).fillRect(a, y + 21, b - a, 3);
+        kerb.fillStyle(0xeae4d8, 1).fillRect(a, y - 28, b - a, 4).fillRect(a, y + 24, b - a, 4);
+        kerb.fillStyle(0x9d9585, 1).fillRect(a, y - 25, b - a, 1).fillRect(a, y + 24, b - a, 1);
+      }),
+    );
+    // Re-pave the junctions over the sidewalk tiles.
+    for (const x of ROADS.xs) for (const y of ROADS.ys) this.add.tileSprite(x - 24, y - 24, 48, 48, tileKey("asphalt")).setOrigin(0);
     const near = (v: number, list: number[]) => list.some((c) => Math.abs(v - c) < 50);
     const lines = this.add.graphics();
-    lines.fillStyle(0xf5f5f4, 0.85);
+    // Centre dashes, and faint solid edge lines.
+    lines.fillStyle(0xf8f6f0, 0.92);
     ROADS.xs.forEach((x) => {
-      for (let y = 0; y < height; y += 44) if (!near(y + 11, ROADS.ys)) lines.fillRect(x - 1.5, y, 3, 22);
+      for (let y = 0; y < height; y += 44) if (!near(y + 11, ROADS.ys)) lines.fillRoundedRect(x - 1.5, y, 3, 22, 1.5);
     });
     ROADS.ys.forEach((y) => {
-      for (let x = 0; x < width; x += 44) if (!near(x + 11, ROADS.xs)) lines.fillRect(x, y - 1.5, 22, 3);
+      for (let x = 0; x < width; x += 44) if (!near(x + 11, ROADS.xs)) lines.fillRoundedRect(x, y - 1.5, 22, 3, 1.5);
     });
-    // Zebra crossings on every side of each junction.
-    lines.fillStyle(0xffffff, 0.9);
+    lines.fillStyle(0xf8f6f0, 0.35);
+    ROADS.xs.forEach((x) => run(ROADS.ys, height, (a, b) => b - a > 60 && lines.fillRect(x - 19, a + 30, 1.5, b - a - 60).fillRect(x + 17.5, a + 30, 1.5, b - a - 60)));
+    ROADS.ys.forEach((y) => run(ROADS.xs, width, (a, b) => b - a > 60 && lines.fillRect(a + 30, y - 19, b - a - 60, 1.5).fillRect(a + 30, y + 17.5, b - a - 60, 1.5)));
+    // Zebra crossings on every side of each junction, with a stop line.
+    lines.fillStyle(0xffffff, 0.88);
     for (const x of ROADS.xs) {
       for (const y of ROADS.ys) {
         for (let i = -20; i <= 16; i += 8) {
-          lines.fillRect(x + i, y - 44, 5, 14).fillRect(x + i, y + 30, 5, 14);
-          lines.fillRect(x - 44, y + i, 14, 5).fillRect(x + 30, y + i, 14, 5);
+          lines.fillRect(x + i, y - 46, 5, 16).fillRect(x + i, y + 30, 5, 16);
+          lines.fillRect(x - 46, y + i, 16, 5).fillRect(x + 30, y + i, 16, 5);
         }
+        lines.fillRect(x - 22, y - 50, 44, 2).fillRect(x - 22, y + 48, 44, 2).fillRect(x - 50, y - 22, 2, 44).fillRect(x + 48, y - 22, 2, 44);
       }
+    }
+    // Storm drains along the kerbs, and the odd manhole cover.
+    const d = this.add.graphics();
+    const grate = (gx: number, gy: number, vertical: boolean) => {
+      const [w, h] = vertical ? [6, 16] : [16, 6];
+      d.fillStyle(0x26262b, 1).fillRect(gx - w / 2, gy - h / 2, w, h);
+      d.lineStyle(1, 0x6b6b72, 1).strokeRect(gx - w / 2, gy - h / 2, w, h);
+      d.lineStyle(1, 0x55555c, 1);
+      for (let k = -6; k <= 6; k += 3) vertical ? d.lineBetween(gx - 2, gy + k, gx + 2, gy + k) : d.lineBetween(gx + k, gy - 2, gx + k, gy + 2);
+    };
+    const r = rand(4242);
+    ROADS.xs.forEach((x) => {
+      for (let y = 120; y < height; y += 210) if (!junction(y, ROADS.ys) && !near(y, ROADS.ys)) grate(x + (r() < 0.5 ? -20 : 20), y, true);
+    });
+    ROADS.ys.forEach((y) => {
+      for (let x = 120; x < width; x += 210) if (!junction(x, ROADS.xs) && !near(x, ROADS.xs)) grate(x, y + (r() < 0.5 ? -20 : 20), false);
+    });
+    for (let i = 0; i < 14; i += 1) {
+      const vertical = i % 2 === 0;
+      const line = vertical ? ROADS.xs[i % ROADS.xs.length]! : ROADS.ys[i % ROADS.ys.length]!;
+      const along = 80 + r() * ((vertical ? height : width) - 160);
+      if (near(along, vertical ? ROADS.ys : ROADS.xs)) continue;
+      const [mx, my] = vertical ? [line + 10, along] : [along, line + 10];
+      d.fillStyle(0x34343a, 1).fillCircle(mx, my, 6);
+      d.lineStyle(1.2, 0x6b6b72, 1).strokeCircle(mx, my, 6).strokeCircle(mx, my, 3.5);
     }
   }
 

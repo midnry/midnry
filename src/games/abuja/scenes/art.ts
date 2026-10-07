@@ -61,8 +61,103 @@ export function tileKey(name: string) {
   return `tile_${name}`;
 }
 
+// The city's ground, painted: warm stone pavers, laterite earth, sun-warmed
+// grass and worn asphalt. Each is a 128px seamless tile; anything drawn near
+// an edge is drawn again on the other side so the tiles join cleanly.
+const T = 128;
+type Painter = (g: Phaser.GameObjects.Graphics, r: () => number) => void;
+const wrap = (draw: (dx: number, dy: number) => void) => {
+  for (const dx of [-T, 0, T]) for (const dy of [-T, 0, T]) draw(dx, dy);
+};
+const blotches = (g: Phaser.GameObjects.Graphics, r: () => number, colors: number[], n: number, size: [number, number], alpha: number) => {
+  for (let i = 0; i < n; i += 1) {
+    const x = r() * T;
+    const y = r() * T;
+    const rad = size[0] + r() * (size[1] - size[0]);
+    const c = colors[i % colors.length]!;
+    wrap((dx, dy) => g.fillStyle(c, alpha).fillEllipse(x + dx, y + dy, rad * 2, rad * 1.5));
+  }
+};
+const pavers = (g: Phaser.GameObjects.Graphics, r: () => number, base: number, grout: number, cell: number, stagger: boolean) => {
+  g.fillStyle(grout, 1).fillRect(0, 0, T, T);
+  for (let y = 0; y < T; y += cell) {
+    const off = stagger && (y / cell) % 2 ? cell / 2 : 0;
+    for (let x = -cell; x < T + cell; x += cell) {
+      const tone = shade(base, 0.95 + r() * 0.1);
+      const px = x + off;
+      g.fillStyle(tone, 1).fillRect(px + 1.5, y + 1.5, cell - 3, cell - 3);
+      g.fillStyle(0xffffff, 0.16).fillRect(px + 1.5, y + 1.5, cell - 3, 2);
+      g.fillStyle(0x000000, 0.06).fillRect(px + 1.5, y + cell - 3.5, cell - 3, 2);
+    }
+  }
+  for (let i = 0; i < 40; i += 1) g.fillStyle(shade(base, 0.8), 0.35).fillCircle(r() * T, r() * T, 0.7 + r() * 0.8);
+};
+const PAINTERS: Record<string, Painter> = {
+  // Warm square pavers: the plazas and pedestrian blocks.
+  pavement: (g, r) => pavers(g, r, 0xdcc8a6, 0xbfa883, 32, false),
+  plaza: (g, r) => pavers(g, r, 0xe6d6b8, 0xcab792, 32, true),
+  // Small pale tiles for the sidewalks.
+  sidewalk: (g, r) => pavers(g, r, 0xd9d3c7, 0xb9b2a4, 16, false),
+  concrete: (g, r) => {
+    g.fillStyle(0xc9c1b2, 1).fillRect(0, 0, T, T);
+    blotches(g, r, [0xbdb4a4, 0xd4ccbe], 14, [10, 26], 0.5);
+    g.lineStyle(1.5, 0xa69d8c, 0.6).strokeRect(0, 0, T, T);
+  },
+  // Abuja's red laterite earth.
+  dirt: (g, r) => {
+    g.fillStyle(0xc4875a, 1).fillRect(0, 0, T, T);
+    blotches(g, r, [0xb5774b, 0xd29a6c, 0xbd7f51], 22, [8, 22], 0.55);
+    for (let i = 0; i < 46; i += 1) g.fillStyle(r() < 0.5 ? 0x8f5a35 : 0xe2b48a, 0.8).fillCircle(r() * T, r() * T, 0.8 + r() * 1.4);
+  },
+  sand: (g, r) => {
+    g.fillStyle(0xe6cd98, 1).fillRect(0, 0, T, T);
+    blotches(g, r, [0xdcc086, 0xefdcb0], 18, [8, 20], 0.55);
+    for (let i = 0; i < 30; i += 1) g.fillStyle(0xc6a66e, 0.7).fillCircle(r() * T, r() * T, 0.8 + r());
+  },
+  // Sunny grass: soft light and shadow patches, then little blades.
+  grass: (g, r) => {
+    g.fillStyle(0x6db04a, 1).fillRect(0, 0, T, T);
+    blotches(g, r, [0x5e9f3e, 0x7dbf56, 0x66a944], 26, [10, 26], 0.55);
+    for (let i = 0; i < 90; i += 1) {
+      const x = r() * T;
+      const y = r() * T;
+      g.lineStyle(1.4, r() < 0.5 ? 0x4f8d33 : 0x8fcc63, 0.9).lineBetween(x, y, x + (r() - 0.5) * 3, y - 3 - r() * 3);
+    }
+    for (let i = 0; i < 5; i += 1) g.fillStyle([0xfff4a3, 0xffffff, 0xf9a8d4][i % 3]!, 0.9).fillCircle(r() * T, r() * T, 1.3);
+  },
+  lawn: (g, r) => {
+    g.fillStyle(0x63a845, 1).fillRect(0, 0, T, T);
+    for (let x = 0; x < T; x += 32) g.fillStyle(0xffffff, 0.05).fillRect(x, 0, 16, T);
+    blotches(g, r, [0x58993d, 0x71b852], 14, [10, 22], 0.35);
+    for (let i = 0; i < 60; i += 1) {
+      const x = r() * T;
+      const y = r() * T;
+      g.lineStyle(1.2, 0x4f8d33, 0.7).lineBetween(x, y, x + (r() - 0.5) * 2, y - 3 - r() * 2);
+    }
+  },
+  // Worn asphalt: fine grit, faint patches and the odd crack.
+  asphalt: (g, r) => {
+    g.fillStyle(0x47474e, 1).fillRect(0, 0, T, T);
+    blotches(g, r, [0x404047, 0x4e4e55], 10, [12, 28], 0.5);
+    for (let i = 0; i < 160; i += 1) g.fillStyle(r() < 0.5 ? 0x5a5a62 : 0x37373d, 0.7).fillRect(r() * T, r() * T, 1.3, 1.3);
+    for (let i = 0; i < 2; i += 1) {
+      let x = r() * T;
+      let y = r() * T;
+      g.lineStyle(1, 0x2f2f34, 0.55).beginPath().moveTo(x, y);
+      for (let k = 0; k < 4; k += 1) {
+        x += (r() - 0.5) * 14;
+        y += 4 + r() * 6;
+        g.lineTo(x, y);
+      }
+      g.strokePath();
+    }
+  },
+};
+
 function makeTiles(scene: Phaser.Scene) {
+  for (const [name, paint] of Object.entries(PAINTERS)) make(scene, tileKey(name), T, T, (g) => paint(g, rand(name.length * 7919 + 31)));
   for (const [name, t] of Object.entries(TILES)) {
+    if (PAINTERS[name]) continue;
     make(scene, tileKey(name), 64, 64, (g) => {
       g.fillStyle(t.base, 1).fillRect(0, 0, 64, 64);
       const r = rand(name.length * 977 + t.base);
