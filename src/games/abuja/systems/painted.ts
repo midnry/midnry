@@ -42,6 +42,22 @@ export const CROWD_PAINTED: { id: string; gender: "male" | "female"; stages: Cro
   { id: "crowd-schoolgirl", gender: "female", stages: ["child"], scale: 0.62 },
   { id: "crowd-teenboy", gender: "male", stages: ["teen"], scale: 0.88 },
   { id: "crowd-teengirl", gender: "female", stages: ["teen"], scale: 0.86 },
+  { id: "crowd-littleboy", gender: "male", stages: ["child"], scale: 0.55 },
+  { id: "crowd-littlegirl", gender: "female", stages: ["child"], scale: 0.55 },
+  { id: "crowd-footballer", gender: "male", stages: ["teen"], scale: 0.9 },
+  { id: "crowd-fashion", gender: "female", stages: ["young"], scale: 0.97 },
+  { id: "crowd-tech", gender: "male", stages: ["young", "adult"], scale: 1 },
+  { id: "crowd-banker", gender: "female", stages: ["young", "adult"], scale: 0.96 },
+  { id: "crowd-mother", gender: "female", stages: ["young"], scale: 0.95 },
+  { id: "crowd-hijab", gender: "female", stages: ["young", "adult"], scale: 0.96 },
+  { id: "crowd-labourer", gender: "male", stages: ["young", "adult"], scale: 1.02 },
+  { id: "crowd-security", gender: "male", stages: ["adult"], scale: 1.02 },
+  { id: "crowd-trader", gender: "male", stages: ["adult"], scale: 1 },
+  { id: "crowd-hairdresser", gender: "female", stages: ["young", "adult"], scale: 0.95 },
+  { id: "crowd-pastorwife", gender: "female", stages: ["adult"], scale: 0.97 },
+  { id: "crowd-olderman", gender: "male", stages: ["adult", "senior"], scale: 1 },
+  { id: "crowd-grandpa", gender: "male", stages: ["senior"], scale: 0.97 },
+  { id: "crowd-grandma", gender: "female", stages: ["senior"], scale: 0.92 },
 ];
 
 /** A painted passer-by for someone of this age and gender, or none yet (they stay drawn). */

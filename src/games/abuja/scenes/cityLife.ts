@@ -20,7 +20,7 @@ import { animateWalk, characterReady, faceVehicle, figure, loadCharacters, pose,
 const MAX_DESKTOP = 26;
 const MAX_PHONE = 16;
 /** Looks per life stage and gender: people share a handful of outfits, so textures stay few. */
-const VARIANTS = 6;
+const VARIANTS = 8;
 /** Trips longer than this go by bus. */
 const BUS_TRIP = 950;
 
