@@ -38,7 +38,7 @@ export function autoOutfit(looks: Looks): string | undefined {
 }
 
 /** The player's own NYSC uniform art so far, by gender and skin tone (you-nysc-f-brown…). */
-export const NYSC_ART = new Set<string>(["you-nysc-m-light", "you-nysc-m-brown"]);
+export const NYSC_ART = new Set<string>(["you-nysc-m-light", "you-nysc-m-brown", "you-nysc-f-light", "you-nysc-f-brown"]);
 
 /** The player's own childhood art so far, by gender and skin tone (child at 9, teen at 15). */
 export const KID_ART = new Set<string>(["you-k-m-light", "you-k-f-light"]);
