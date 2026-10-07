@@ -15,6 +15,7 @@ import { bus, getState, input, subscribe } from "../systems/store";
 import { findPath, type Point } from "../systems/path";
 import type { GameState, MapRect } from "../systems/types";
 import { lotDoor } from "../systems/city/layout";
+import { drawBridge, drawMedians, drawRail, drawStreetFurniture, makeDecorTextures, zoneOverlay } from "./cityDecor";
 import { lotsFor } from "../systems/city/sim";
 import { building as buildingInfo } from "../systems/city/catalog";
 import { fullLook, lookKey, randomLook, stageOf, type Look } from "../systems/character";
@@ -89,6 +90,20 @@ const PROPS_ON: Record<string, string[]> = {
   plaza: ["flowers", "bush", "palm"],
 };
 
+/** Each district has its own look between the buildings. */
+const DISTRICT_PROPS: Record<string, string[]> = {
+  maitama: ["palm", "tree", "flowers", "flowers", "bush", "fence"],
+  asokoro: ["palm", "tree", "flowers", "rock", "boulders", "bush"],
+  cbd: ["palm", "flowers", "bush", "bench", "bin"],
+  wuse: ["kiosk", "bush", "palm", "bin", "generator", "kiosk"],
+  garki: ["tree3", "kiosk", "palm", "bush", "bin"],
+  jabi: ["palm", "tree", "flowers", "bush", "pond", "grass"],
+  gwarinpa: ["tree", "bush", "flowers", "palm", "grass", "fence"],
+  kubwa: ["rock", "boulders", "tree", "tree2", "grass", "grass"],
+  nyanya: ["kiosk", "generator", "tree3", "rock", "bin", "grass"],
+  lugbe: ["barrel", "rock", "tree3", "generator", "barrel", "grass"],
+};
+
 /** Where the player stood when the scene redraws in place (say, after a change of outfit). */
 let carry: { mapId: string; x: number; y: number } | null = null;
 
@@ -136,6 +151,10 @@ export class WorldScene extends Phaser.Scene {
   private night!: Phaser.GameObjects.Rectangle;
   private unsub: (() => void) | null = null;
   private lookId = "";
+  private rail: { update: (time: number) => void } | null = null;
+  private seats: { x: number; y: number }[] = [];
+  private zones: Phaser.GameObjects.Graphics | null = null;
+  private stillSince = 0;
   private cityId = "";
   /** The story moved to another map while you were inside a building: rebuild when you come out. */
   private pendingRestart = false;
@@ -181,6 +200,10 @@ export class WorldScene extends Phaser.Scene {
     const state = getState();
     this.mapId = state ? mapIdFor(state) : "city";
     makeArt(this);
+    makeDecorTextures(this);
+    this.rail = null;
+    this.seats = [];
+    this.zones = null;
     // A copy: trees and stalls add their own small solids for this scene only.
     this.solids = [...solidsFor(this.mapId)];
     this.placeMarkers = [];
@@ -398,6 +421,7 @@ export class WorldScene extends Phaser.Scene {
 
   private setExploring(on: boolean) {
     if (this.exploring === on) return;
+    this.zones?.setVisible(on);
     this.exploring = on;
     this.path = [];
     if (on) this.cameras.main.stopFollow();
@@ -418,9 +442,15 @@ export class WorldScene extends Phaser.Scene {
       g.lineStyle(4, color(d.color), 0.55).strokeRect(d.x + 2, d.y + 2, d.w - 4, d.h - 4);
     }
     this.drawLake();
+    drawBridge(this);
     this.drawRoads();
+    drawMedians(this);
+    this.rail = drawRail(this);
     this.drawSolids();
     this.drawPlaces();
+    const lots = lotsFor(getState());
+    this.seats = drawStreetFurniture(this, this.solids, lots).seats;
+    this.zones = zoneOverlay(this, lots);
     this.drawProps(260);
     this.drawLamps();
     this.spawnTraffic();
@@ -545,13 +575,13 @@ export class WorldScene extends Phaser.Scene {
       } else if (Math.abs(x - width / 2) < 60 || Math.abs(y - height / 2) < 60) continue;
       if (keep.some((k) => Math.hypot(k.x - x, k.y - y) < 120)) continue;
       const ground = city ? DISTRICT_TILE[districtAt(x, y)?.id ?? ""] ?? "grass" : zoneTile(map!.zones.find((z) => x >= z.x && x < z.x + z.w && y >= z.y && y < z.y + z.h)?.name ?? "");
-      const options = PROPS_ON[ground] ?? PROPS_ON.grass!;
+      const options = (city ? DISTRICT_PROPS[districtAt(x, y)?.id ?? ""] : undefined) ?? PROPS_ON[ground] ?? PROPS_ON.grass!;
       const key = options[Math.floor(pick * options.length)]!;
       const img = this.add.image(x, y, key).setOrigin(0.5, 0.9).setDepth(5 + y / 10000);
-      const isTree = key.startsWith("tree") || key === "palm";
+      const isTree = key.startsWith("tree") || key === "palm" || key === "boulders";
       if (isTree) img.setScale(key.startsWith("tree") ? 0.85 + r() * 0.3 : 0.8 + r() * 0.35);
       // Big things are solid at their base, so you walk around them.
-      if (isTree || key === "kiosk") this.solids.push({ x: x - 9, y: y - 10, w: 18, h: 12 });
+      if (isTree || key === "kiosk" || key === "pond") this.solids.push({ x: x - 9, y: y - 10, w: 18, h: 12 });
       placed += 1;
     }
   }
@@ -748,6 +778,7 @@ export class WorldScene extends Phaser.Scene {
     const state = getState();
     if (!state || input.paused) return;
     this.moveTraffic(dt, time);
+    this.rail?.update(time);
     if (this.riding) {
       this.driveRide(dt);
       return;
@@ -805,6 +836,9 @@ export class WorldScene extends Phaser.Scene {
     if (vx || vy) this.move(vx * pace * dt, vy * pace * dt, time);
     const moved = this.player.x !== fromX || this.player.y !== fromY;
     this.showCar(driving, this.player.x - fromX, this.player.y - fromY);
+    // Stand still by a bench and you sit down.
+    if (moved) this.stillSince = time;
+    else if (time - this.stillSince > 1500 && this.player.action?.motion !== "sit" && !driving && this.seats.some((p) => Math.hypot(p.x - this.player.x, p.y - this.player.y) < 26)) pose(this.player, "sit", time, 1e9);
     animateWalk(this.player, time, moved, this.player.x - fromX, this.player.y - fromY, running);
     this.player.setDepth(5 + this.player.y / 10000 + 0.5);
 

@@ -54,10 +54,10 @@ const DISTRICT_ZONES: Record<string, Partial<Record<Zone, number>>> = {
 /** Which buildings suit a zone in a district (more copies = more often). Missing: the zone's defaults. */
 const DISTRICT_KINDS: Record<string, Partial<Record<Zone, string[]>>> = {
   maitama: { residential: ["villa", "big_house", "big_house", "highrise_apts"], civic: ["government", "library"], park: ["park"] },
-  asokoro: { residential: ["villa", "big_house", "duplex"], civic: ["government", "police"], park: ["park"] },
+  asokoro: { residential: ["villa", "big_house", "duplex", "highrise_apts"], civic: ["government", "community", "library"], park: ["park", "playground"] },
   cbd: { commercial: ["business_tower", "business_tower", "office", "office", "hotel", "mall"], civic: ["government", "government", "library"], park: ["park"] },
   wuse: { commercial: ["shop", "restaurant", "office", "cafe", "supermarket", "cinema", "shop", "hotel"], residential: ["apartments", "apartments", "townhouse"], service: ["substation", "clinic"] },
-  garki: { civic: ["clinic", "school", "police", "library", "community"], commercial: ["shop", "office", "restaurant", "cafe"], residential: ["apartments", "townhouse", "big_house"], service: ["fire_station", "substation"] },
+  garki: { civic: ["clinic", "school", "library", "community"], commercial: ["shop", "office", "restaurant", "cafe"], residential: ["apartments", "townhouse", "big_house"], service: ["fire_station", "substation"] },
   jabi: { commercial: ["restaurant", "cafe", "office", "shop", "hotel"], residential: ["highrise_apts", "apartments", "townhouse"], park: ["park", "playground"] },
   gwarinpa: { residential: ["duplex", "duplex", "townhouse", "big_house", "apartments"], commercial: ["shop", "supermarket", "restaurant"], park: ["playground", "park"], service: ["water_tower", "school"] },
   kubwa: { residential: ["small_house", "small_house", "apartments", "big_house"], commercial: ["shop", "restaurant"], park: ["farm", "farm", "park"] },
@@ -178,7 +178,11 @@ export function cityLots(): Lot[] {
   const railClear = (r: MapRect) => r.y + r.h < RAIL.y - 26;
   const inDistrict = (r: MapRect, d: (typeof DISTRICTS)[number]) => r.x >= d.x + 12 && r.y >= d.y + 48 && r.x + r.w <= d.x + d.w - 12 && r.y + r.h <= d.y + d.h - 12;
   // Signposts, their mats and labels, and the people around them.
-  const placeBoxes: MapRect[] = PLACES.map((p) => ({ x: p.x - 92, y: p.y - 60, w: 184, h: 150 }));
+  // The signpost itself is narrow; its doormat and name need a wider strip below.
+  const placeBoxes: MapRect[] = PLACES.flatMap((p) => [
+    { x: p.x - 34, y: p.y - 56, w: 68, h: 60 },
+    { x: p.x - 86, y: p.y - 4, w: 172, h: 76 },
+  ]);
   // People who stand by a place or a spot in the city keep a little space.
   for (const person of PEOPLE) {
     if (person.map !== "city") continue;
@@ -220,7 +224,7 @@ export function cityLots(): Lot[] {
     const h = Math.min(78, def.cells[1] * CELL.h - GAP.h);
     for (const dx of [0, -50, 50, -100, 100]) {
       const r = { x: Math.round(p.x - w / 2 + dx), y: p.y - 62 - h, w, h };
-      const others = placeBoxes.filter((b) => !(b.x === p.x - 92 && b.y === p.y - 60));
+      const others = placeBoxes.filter((b) => !(b.x === p.x - 34 && b.y === p.y - 56) && !(b.x === p.x - 86 && b.y === p.y - 4));
       if (inDistrict(r, d) && roadClear(r) && lakeClear(r) && !others.some((b) => overlaps(r, b)) && !taken.some((t) => overlaps(r, t, 6))) {
         const lot = make(def, r, d.id, hash(p.id), p.id);
         (lot as Lot & { label?: string }).label = art.label;
@@ -276,7 +280,7 @@ export function cityLots(): Lot[] {
           const zr = rng(hash(`${d}:${Math.floor(x / 200)}:${Math.floor(y / 190)}`));
           const zone = weighted(zr, mix);
           const r = rng(hash(`${d}:${x}:${y}`));
-          if (r() < 0.1) continue; // open plots
+          if (r() < 0.06) continue; // open plots
           const options = DISTRICT_KINDS[d]?.[zone] ?? ZONE_DEFAULT[zone];
           const pickDef = building(options[Math.floor(r() * options.length)]!) ?? building("small_house")!;
           const tryDefs = [pickDef, ...options.map((id) => building(id)!).filter((b) => b.cells[0] === 1 && b.cells[1] === 1)];
@@ -289,6 +293,22 @@ export function cityLots(): Lot[] {
           }
         }
       }
+    }
+  }
+  // Then small plots in the gaps: a bungalow, a kiosk-shop or a pocket park where a big plot won't fit.
+  const SMALL: Record<Zone, string[]> = { ...ZONE_DEFAULT, residential: ["small_house"], commercial: ["shop", "cafe"], civic: ["park"], service: ["park"], industrial: ["construction_yard"], park: ["park", "playground"] };
+  const S = { w: 64, h: 56 };
+  for (let y = 44; y + S.h < WORLD.height; y += S.h + 18) {
+    for (let x = 14; x + S.w < WORLD.width; x += S.w + 14) {
+      const rect = { x, y, w: S.w, h: S.h };
+      if (!anywhere(rect)) continue;
+      const d = districtOf(x + S.w / 2, y + S.h / 2);
+      const r = rng(hash(`s${d}:${x}:${y}`));
+      if (r() < 0.35) continue;
+      const zone = weighted(rng(hash(`${d}:${Math.floor(x / 200)}:${Math.floor(y / 190)}`)), DISTRICT_ZONES[d] ?? { residential: 1 });
+      const options = SMALL[zone];
+      const def = building(options[Math.floor(r() * options.length)] ?? "park") ?? building("park")!;
+      make(def, rect, d, hash(`s${d}${x}${y}`));
     }
   }
   cache = lots;

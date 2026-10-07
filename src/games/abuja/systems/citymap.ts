@@ -9,14 +9,18 @@ import { LAKE, ROADS, lotSolids } from "./city/layout";
 export { LAKE, ROADS };
 
 /** Jabi Lake: drawn as an ellipse, walled off by a slightly smaller box. */
-const LAKE_SOLID: MapRect = { x: LAKE.x - 140, y: LAKE.y - 92, w: 280, h: 184, kind: "water" };
+// Two halves, with a gap for the footbridge across the middle.
+const LAKE_SOLIDS: MapRect[] = [
+  { x: LAKE.x - 140, y: LAKE.y - 92, w: 280, h: 78, kind: "water" },
+  { x: LAKE.x - 140, y: LAKE.y + 14, w: 280, h: 78, kind: "water" },
+];
 
 let cache: MapRect[] | null = null;
 
 /** Everything you can't walk through in the city: buildings on their lots, and the lake. */
 export function citySolids(): MapRect[] {
   if (cache) return cache;
-  cache = [...lotSolids(), LAKE_SOLID];
+  cache = [...lotSolids(), ...LAKE_SOLIDS];
   return cache;
 }
 

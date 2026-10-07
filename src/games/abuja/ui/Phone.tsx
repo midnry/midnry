@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CityApp } from "./CityApp";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
 import { borrow, business, callContact, driveTo, negotiate, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
 import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, netWorth, npcName } from "../systems/rules";
@@ -17,7 +18,7 @@ import { btnGhost, btnPrimary } from "./theme";
 import { Trade } from "./Trade";
 import { WardrobePanel } from "./Wardrobe";
 
-export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen";
+export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen" | "city";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "wallet", label: "Wallet", icon: "💳", tint: "bg-blue-600" },
@@ -33,6 +34,7 @@ const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "contacts", label: "Contacts", icon: "👥", tint: "bg-violet-600" },
   { id: "map", label: "Rides", icon: "🛺", tint: "bg-blue-600" },
   { id: "stats", label: "Life", icon: "📊", tint: "bg-teal-600" },
+  { id: "city", label: "City", icon: "🏙️", tint: "bg-teal-700" },
   { id: "wardrobe", label: "Wardrobe", icon: "👕", tint: "bg-orange-500" },
   { id: "settings", label: "Settings", icon: "⚙️", tint: "bg-slate-600" },
 ];
@@ -75,6 +77,7 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
           {app === "contacts" ? <Contacts state={state} /> : null}
           {app === "map" ? <MapApp state={state} onDone={onClose} /> : null}
           {app === "stats" ? <Life state={state} /> : null}
+          {app === "city" ? <CityApp state={state} /> : null}
           {app === "settings" ? <Settings /> : null}
           {app === "linkup" ? <Linkup state={state} /> : null}
           {app === "trade" ? <Trade state={state} /> : null}
