@@ -38,7 +38,7 @@ export function autoOutfit(looks: Looks): string | undefined {
 }
 
 /** The player's own NYSC uniform art so far, by gender and skin tone (you-nysc-f-brown…). */
-export const NYSC_ART = new Set<string>([]);
+export const NYSC_ART = new Set<string>(["you-nysc-m-light"]);
 
 /** The player's own childhood art so far, by gender and skin tone (child at 9, teen at 15). */
 export const KID_ART = new Set<string>(["you-k-m-light", "you-k-f-light"]);
@@ -80,7 +80,9 @@ export function nyscPainted(looks: Partial<Looks>): string | undefined {
   const girl = (looks.build ?? (looks.lashes ? "fem" : "masc")) === "fem";
   const own = `you-nysc-${girl ? "f" : "m"}-${toneOf(looks)}`;
   if (NYSC_ART.has(own)) return own;
-  return girl ? "corper" : undefined;
+  // Someone of the same gender in uniform, until your own tone is painted.
+  const same = [...NYSC_ART].find((id) => id.startsWith(`you-nysc-${girl ? "f" : "m"}-`));
+  return same ?? (girl ? "corper" : undefined);
 }
 
 export function playerPainted(state: Pick<GameState, "looks" | "age" | "stage"> | null): string | undefined {
