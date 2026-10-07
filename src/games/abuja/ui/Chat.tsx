@@ -4,11 +4,16 @@ import type { Looks } from "../systems/types";
 import { Avatar } from "./Avatar";
 
 /** A speech bubble with the speaker's face peeking over the top. */
-export function ChatBubble({ name, looks, adult, children }: { name: string; looks: Looks | Look; adult: boolean; children: ReactNode }) {
+export function ChatBubble({ name, looks, adult, painted, children }: { name: string; looks: Looks | Look; adult: boolean; painted?: string; children: ReactNode }) {
   return (
     <div className="relative pt-12">
       <div className="absolute top-0 left-5 z-10 flex size-[4.6rem] items-end justify-center overflow-hidden rounded-full border-[3px] border-slate-900 bg-sky-100">
-        <Avatar looks={looks} adult={adult} crop="head" size={74} />
+        {painted ? (
+          // Hand-painted people: their portrait is the top of their front view.
+          <img src={`/abuja/people/${painted}-front.png`} alt="" aria-hidden draggable={false} className="absolute top-1 left-1/2 h-[23rem] max-w-none -translate-x-1/2 select-none" />
+        ) : (
+          <Avatar looks={looks} adult={adult} crop="head" size={74} />
+        )}
       </div>
       <div className="relative rounded-3xl border-[3px] border-slate-900 bg-white text-slate-900 shadow-[0_6px_0_rgba(15,23,42,0.35)]">
         <div className="flex items-center gap-2 rounded-t-[1.3rem] border-b-[3px] border-slate-900 bg-slate-100 py-2 pr-4 pl-28">

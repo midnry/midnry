@@ -1,6 +1,6 @@
 import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
-import { characterParts, dims, lookKey, type LifeStage, type Look } from "../systems/character";
+import { characterParts, dims, fullLook, lookKey, type LifeStage, type Look } from "../systems/character";
 import { furnitureSvg } from "../systems/furniture";
 import { building as buildingDef } from "../systems/city/catalog";
 import { buildingArt } from "../systems/city/buildingArt";
@@ -271,7 +271,30 @@ export function faceVehicle(v: Vehicle, dx: number, dy: number) {
 }
 
 /** Who to draw: a look and a body (a grown-up, a kid, or a life stage). */
-export type Person = { look: Look; adult: boolean; stage?: LifeStage };
+export type Person = { look: Look; adult: boolean; stage?: LifeStage; painted?: string };
+
+/**
+ * Hand-painted characters (public/abuja/people/<id>-<view>.png): whole-body
+ * images, one per view, animated by bobbing and leaning rather than by limbs.
+ * `scale` is height relative to an average grown-up. Missing views fall back to the front.
+ */
+export const PAINTED: Record<string, { views: Facing[]; scale?: number }> = {
+  suya: { views: ["front", "side", "back"], scale: 0.98 },
+  pos_lady: { views: ["front", "side", "back"], scale: 0.94 },
+  agbero: { views: ["front", "side", "back"], scale: 1.04 },
+  okada: { views: ["front", "side", "back"] },
+  police: { views: ["front", "side", "back"], scale: 1.02 },
+  frsc: { views: ["front", "side", "back"] },
+  hawker: { views: ["front", "side", "back"], scale: 0.95 },
+  felix: { views: ["front", "side", "back"] },
+  okafor: { views: ["front", "back"], scale: 0.95 },
+  prophet: { views: ["front", "side", "back"], scale: 1.03 },
+  civil_servant: { views: ["front", "side", "back"] },
+  tunde: { views: ["front", "side", "back"] },
+  slim: { views: ["front", "side", "back"], scale: 0.98 },
+  bolaji: { views: ["front", "side", "back"], scale: 1.01 },
+};
+const paintedKey = (id: string, view: Facing) => `pt_${id}_${PAINTED[id]?.views.includes(view) ? view : "front"}`;
 
 const bodyOf = (p: Person): LifeStage => p.stage ?? (p.adult ? "adult" : "child");
 
@@ -294,7 +317,7 @@ export const furnitureKey = (id: string, accent?: string) => `furn_${id}_${(acce
 
 // Grown-ups and teens are teen/young/adult/senior bodies of the same build, so they share textures where the shape is the same.
 const bodyKey = (stage: LifeStage) => (stage === "child" ? "c" : stage === "teen" ? "t" : "a");
-const charKey = (p: Person) => `ch_${lookKey(p.look)}${bodyKey(bodyOf(p))}`;
+const charKey = (p: Person) => (p.painted && PAINTED[p.painted] ? `pt_${p.painted}` : `ch_${lookKey(p.look)}${bodyKey(bodyOf(p))}`);
 const PARTS = ["front", "back", "side", "arm", "leg", "legSide"] as const;
 
 /** Queue the textures for these people in the scene's loader (call from preload). */
@@ -305,6 +328,10 @@ export function queueCharacters(scene: Phaser.Scene, people: Person[]) {
     const key = charKey(person);
     if (seen.has(key) || scene.textures.exists(`${key}_front`)) continue;
     seen.add(key);
+    if (person.painted && PAINTED[person.painted]) {
+      for (const view of PAINTED[person.painted]!.views) scene.load.image(`${key}_${view}`, `/abuja/people/${person.painted}-${view}.png`);
+      continue;
+    }
     const parts = characterParts(person.look, bodyOf(person), RES);
     for (const part of PARTS) {
       const url = URL.createObjectURL(new Blob([parts[part]], { type: "image/svg+xml" }));
@@ -348,6 +375,9 @@ export type Figure = Phaser.GameObjects.Container & {
   rigY: number;
   /** A one-off or held pose (waving, sitting…) that overrides walking until `until`. */
   action: { motion: Motion; started: number; until: number } | null;
+  /** Hand-painted people: their id and the image's base scale. */
+  painted?: string;
+  bodyScale?: number;
 };
 
 const FEET = 10; // feet sit this many pixels below the figure's position
@@ -356,6 +386,7 @@ const NORM = 0.8;
 
 /** A person. `unit` is pixels per drawing unit: about 0.2 for people, smaller for crowds. */
 export function figure(scene: Phaser.Scene, x: number, y: number, person: Person, opts: { name?: string; nameColor?: string; unit?: number } = {}): Figure {
+  if (person.painted && PAINTED[person.painted] && scene.textures.exists(paintedKey(person.painted, "front"))) return paintedFigure(scene, x, y, person.painted, opts);
   const unit = (opts.unit ?? 0.2) * NORM;
   const key = charKey(person);
   const d = dims(person.look, bodyOf(person));
@@ -381,8 +412,37 @@ export function figure(scene: Phaser.Scene, x: number, y: number, person: Person
   return c;
 }
 
+/** A hand-painted person: one image per view, standing on its feet at the figure's position. */
+function paintedFigure(scene: Phaser.Scene, x: number, y: number, id: string, opts: { name?: string; nameColor?: string; unit?: number }): Figure {
+  const unit = (opts.unit ?? 0.2) * NORM;
+  // As tall as a drawn grown-up of the same unit.
+  const ref = dims(fullLook({}), "adult");
+  const height = (ref.height - ref.headTop) * unit * (PAINTED[id]!.scale ?? 1);
+  const body = scene.add.image(0, 0, paintedKey(id, "front")).setOrigin(0.5, 1);
+  const k = height / body.height;
+  body.setScale(k);
+  const rig = scene.add.container(0, FEET, [body]);
+  const hidden = () => scene.add.image(0, 0, paintedKey(id, "front")).setVisible(false);
+  const shadow = scene.add.image(0, FEET - 2, "shadow").setScale(unit * 2.6, unit * 2.2);
+  const headTop = FEET - height;
+  const items: Phaser.GameObjects.GameObject[] = [shadow, rig];
+  if (opts.name) {
+    const you = opts.name === "YOU";
+    items.push(pill(scene, 0, headTop - (you ? 16 : 12), opts.name, { size: you ? 11 : 10, color: you ? "#ffffff" : (opts.nameColor ?? "#ffffff"), pointer: you ? 0x3b82f6 : undefined }));
+  }
+  const c = scene.add.container(x, y, items) as Figure;
+  Object.assign(c, { rig, legs: [hidden(), hidden()], arms: [hidden(), hidden()], armBack: hidden(), upper: body, shadow, headTop, key: `pt_${id}`, dims: ref, unit, rigY: FEET, action: null, facing: "front", painted: id, bodyScale: k });
+  return c;
+}
+
 function setFacing(f: Figure, facing: Facing) {
   if (f.facing === facing) return;
+  if (f.painted) {
+    f.facing = facing;
+    f.upper.setTexture(paintedKey(f.painted, facing));
+    if (facing !== "side") f.rig.scaleX = Math.abs(f.rig.scaleX);
+    return;
+  }
   f.facing = facing;
   f.upper.setTexture(`${f.key}_${facing}`);
   const [a, b] = f.legs;
@@ -436,6 +496,7 @@ export function animateWalk(f: Figure, time: number, moving: boolean, dx: number
 
 /** Set every part for a motion at this moment. Cheap: a handful of numbers per person per frame. */
 function animate(f: Figure, time: number, motion: Motion) {
+  if (f.painted) return animatePainted(f, time, motion);
   const [a, b] = f.legs;
   const [la, ra] = f.arms;
   const d = f.dims;
@@ -548,6 +609,63 @@ function animate(f: Figure, time: number, motion: Motion) {
       f.upper.y = torsoY + reach * 2;
       return;
     }
+  }
+}
+
+/** Painted people move as a whole: a bob and a sway to walk, hops to celebrate, a lean to reach. */
+function animatePainted(f: Figure, time: number, motion: Motion) {
+  const k = f.bodyScale ?? 1;
+  const side = f.facing === "side";
+  const dir = Math.sign(f.rig.scaleX || 1);
+  f.rig.rotation = 0;
+  f.rig.y = f.rigY;
+  f.upper.setScale(k, k);
+  f.alpha = 1;
+  f.shadow.setScale(f.unit * 2.6, f.unit * 2.2);
+  const t = (time - (f.action?.started ?? 0)) / 1000;
+  switch (motion) {
+    case "idle":
+      // Breathing.
+      f.upper.setScale(k, k * (1 + Math.sin(time / 520) * 0.008));
+      return;
+    case "walk":
+    case "run":
+    case "enter":
+    case "exit": {
+      const run = motion === "run";
+      const ph = time / (run ? 62 : 92);
+      f.rig.y = f.rigY - Math.abs(Math.sin(ph)) * (run ? 5 : 3);
+      f.rig.rotation = side ? (run ? 0.1 : 0.04) * dir : Math.sin(ph) * (run ? 0.06 : 0.035);
+      f.upper.setScale(k, k * (1 - Math.abs(Math.cos(ph)) * 0.025));
+      if (motion === "enter") f.alpha = Math.max(0, 1 - t * 1.6);
+      if (motion === "exit") f.alpha = Math.min(1, t * 1.6);
+      return;
+    }
+    case "jump": {
+      const h = Math.sin(Math.min(1, t / 0.55) * Math.PI) * 26;
+      f.rig.y = f.rigY - h;
+      f.shadow.setScale(f.unit * 2.6 * (1 - h / 60), f.unit * 2.2 * (1 - h / 60));
+      return;
+    }
+    case "sit":
+      // Settled down: a little lower and wider.
+      f.rig.y = f.rigY + 2;
+      f.upper.setScale(k * 1.03, k * 0.86);
+      return;
+    case "wave":
+      f.rig.rotation = Math.sin(time / 120) * 0.07;
+      f.rig.y = f.rigY - Math.abs(Math.sin(time / 240)) * 2;
+      return;
+    case "celebrate": {
+      const hop = Math.abs(Math.sin(t * 7)) * 12;
+      f.rig.y = f.rigY - hop;
+      f.rig.rotation = Math.sin(time / 90) * 0.06;
+      return;
+    }
+    case "interact":
+      f.rig.rotation = (side ? 0.12 * dir : 0) * Math.min(1, t * 4);
+      f.upper.setScale(k, k * (1 - Math.min(1, t * 4) * 0.03));
+      return;
   }
 }
 

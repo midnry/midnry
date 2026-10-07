@@ -56,7 +56,8 @@ const POLICE_LOOK: Look = randomLook(4242, {
   headphones: false,
   build: "masc",
 });
-const POLICE: Person = { look: POLICE_LOOK, adult: true };
+const POLICE: Person = { look: POLICE_LOOK, adult: true, painted: "police" };
+const FRSC: Person = { look: POLICE_LOOK, adult: true, painted: "frsc" };
 
 /** Ground texture for each district of the city. */
 const DISTRICT_TILE: Record<string, string> = {
@@ -187,7 +188,7 @@ export class WorldScene extends Phaser.Scene {
     const mapId = state ? mapIdFor(state) : "city";
     const people: Person[] = [playerOf(state)];
     if (state) people.push(...peopleOn(state, mapId).map(personOf));
-    if (mapId === "city") people.push(...crowdStarters(state?.day ?? 0), POLICE);
+    if (mapId === "city") people.push(...crowdStarters(state?.day ?? 0), POLICE, FRSC);
     queueCharacters(this, people);
     if (mapId === "city") {
       queueVehicles(this);
@@ -904,7 +905,7 @@ export class WorldScene extends Phaser.Scene {
       this.frscDay = state.day;
       this.frscPosts = frscSpots(state.day).map(({ x, y }) => {
         const barrier = this.add.image(x + 30, y + 30, "barrier").setDepth(7);
-        const officer = figure(this, x + 64, y + 4, POLICE, { name: "FRSC", nameColor: "#fde047" });
+        const officer = figure(this, x + 64, y + 4, FRSC, { name: "FRSC", nameColor: "#fde047" });
         officer.setDepth(5 + (y + 4) / 10000);
         return { officer, barrier, x: x + 30, y: y + 30 };
       });

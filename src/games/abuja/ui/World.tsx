@@ -805,7 +805,7 @@ function TalkModal({ state, personKey, onClose }: { state: GameState; personKey:
   return (
     <div className="absolute inset-x-2 bottom-2 z-30 max-h-[80dvh] overflow-y-auto sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-[26rem]" role="dialog" aria-label={`Talking to ${person.name}`}>
       <div className="grid gap-4 pb-1">
-        <ChatBubble name={person.name} looks={them.look} adult={them.adult}>
+        <ChatBubble name={person.name} looks={them.look} adult={them.adult} painted={them.painted}>
           {lineFor(state, person)}
           {isDirty(state) ? <span className="mt-2 block italic">They take a small step back. "Ehn… when last did you wash that shirt?"</span> : null}
           {offer ? <span className="mt-2 block">{fill(state, offer.text)}</span> : null}
