@@ -9,7 +9,8 @@ import { btnGhost, btnPrimary } from "./theme";
 /** Change your style any time: same person, new fit. */
 export function WardrobePanel({ state, onDone }: { state: GameState; onDone: () => void }) {
   const look = fullLook(state.looks);
-  const [painted, setPainted] = useState<string>(() => playerPainted(state) ?? "");
+  // Your own outfit choice (not a uniform you happen to be wearing at camp).
+  const [painted, setPainted] = useState<string>(() => playerPainted({ ...state, stage: "adult" }) ?? "");
   const adult = state.age >= 18;
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-[140px_minmax(0,1fr)]">

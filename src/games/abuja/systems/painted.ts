@@ -37,6 +37,9 @@ export function autoOutfit(looks: Looks): string | undefined {
   return PAINTED_OUTFITS.some((o) => o.id === id) ? id : undefined;
 }
 
+/** The player's own NYSC uniform art so far, by gender and skin tone (you-nysc-f-brown…). */
+export const NYSC_ART = new Set<string>([]);
+
 /** The player's own childhood art so far, by gender and skin tone (child at 9, teen at 15). */
 export const KID_ART = new Set<string>(["you-k-m-light", "you-k-f-light"]);
 
@@ -67,13 +70,26 @@ export const YOUNG_FRIENDS: Record<string, { child?: string; teen?: string }> = 
 /** Every young painted id and its height against a grown-up. */
 export const YOUNG_ART: { id: string; scale: number }[] = [
   ...[...KID_ART].flatMap((k) => [{ id: `${k}-child`, scale: 0.62 }, { id: `${k}-teen`, scale: 0.88 }]),
+  ...[...NYSC_ART].map((id) => ({ id, scale: id.includes("-f-") ? 0.96 : 1.02 })),
   ...Object.values(YOUNG_FRIENDS).flatMap((f) => [...(f.child ? [{ id: f.child, scale: 0.62 }] : []), ...(f.teen ? [{ id: f.teen, scale: 0.9 }] : [])]),
 ];
 
 /** The painted art the player wears at their age: school clothes when young, their chosen (or matched) outfit from 18. */
-export function playerPainted(state: Pick<GameState, "looks" | "age"> | null): string | undefined {
+/** NYSC camp: everyone wears the uniform. Your own if it's been painted, else the corper's for women. */
+export function nyscPainted(looks: Partial<Looks>): string | undefined {
+  const girl = (looks.build ?? (looks.lashes ? "fem" : "masc")) === "fem";
+  const own = `you-nysc-${girl ? "f" : "m"}-${toneOf(looks)}`;
+  if (NYSC_ART.has(own)) return own;
+  return girl ? "corper" : undefined;
+}
+
+export function playerPainted(state: Pick<GameState, "looks" | "age" | "stage"> | null): string | undefined {
   if (!state?.looks) return undefined;
   if ((state.age ?? 0) < 18) return youngPainted(state.looks, state.age ?? 0);
+  if (state.stage === "nysc") {
+    const uniform = nyscPainted(state.looks);
+    if (uniform) return uniform;
+  }
   const id = state.looks.painted;
   if (id && PAINTED_OUTFITS.some((o) => o.id === id)) return id;
   return autoOutfit(state.looks);
@@ -83,7 +99,7 @@ export function playerPainted(state: Pick<GameState, "looks" | "age"> | null): s
 export const isPaintedId = (id: string | undefined): id is string => Boolean(id && (PAINTED_OUTFITS.some((o) => o.id === id) || CROWD_PAINTED.some((c) => c.id === id) || YOUNG_ART.some((y) => y.id === id) || STORY_ART.some((y) => y.id === id)));
 
 /** The player's looks with the painted art filled in, for portraits in the interface. */
-export const myLooks = (state: Pick<GameState, "looks" | "age">): Looks => ({ ...state.looks, painted: playerPainted(state) ?? DRAWN });
+export const myLooks = (state: Pick<GameState, "looks" | "age" | "stage">): Looks => ({ ...state.looks, painted: playerPainted(state) ?? DRAWN });
 
 // ── Passers-by ──────────────────────────────────────────────────────────────
 
