@@ -1,5 +1,7 @@
 import * as Phaser from "phaser";
-import { fullLook } from "../systems/character";
+import { fullLook, stageOf } from "../systems/character";
+
+const SEATS = /sofa|armchair|bench|chair|stool|dining|couch/;
 import { blocked } from "../systems/citymap";
 import { peopleOn, personKey } from "../systems/engine";
 import { FURNITURE } from "../systems/furniture";
@@ -7,7 +9,7 @@ import { personLook } from "../systems/peoplelook";
 import { LAYOUTS, ROOM, type RoomInfo } from "../systems/rooms";
 import { bus, getState, input } from "../systems/store";
 import type { MapRect } from "../systems/types";
-import { INK, animateWalk, figure, furnitureKey, makeArt, queueCharacters, queueFurniture, tileKey, type Figure } from "./art";
+import { INK, animateWalk, pose, figure, furnitureKey, makeArt, queueCharacters, queueFurniture, tileKey, type Figure } from "./art";
 
 const SPEED = 200;
 const RADIUS = 12;
@@ -26,6 +28,8 @@ export class RoomScene extends Phaser.Scene {
   private spots: Spot[] = [];
   private staff: { body: Figure; id: string; label: string }[] = [];
   private near: Spot | null = null;
+  private seats: { x: number; y: number }[] = [];
+  private stillSince = 0;
   private target: { x: number; y: number } | null = null;
   private keys!: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d" | "e" | "space", Phaser.Input.Keyboard.Key>;
 
@@ -36,6 +40,7 @@ export class RoomScene extends Phaser.Scene {
   init(data: RoomInfo) {
     this.info = data;
     this.solids = [];
+    this.seats = [];
     this.spots = [];
     this.staff = [];
     this.near = null;
@@ -52,7 +57,7 @@ export class RoomScene extends Phaser.Scene {
     const layout = LAYOUTS[this.info.type];
     queueFurniture(this, layout.items);
     const state = getState();
-    queueCharacters(this, [{ look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18 }, ...this.staffHere().map(personLook)]);
+    queueCharacters(this, [{ look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18, stage: stageOf(state?.age ?? 0) }, ...this.staffHere().map(personLook)]);
   }
 
   create() {
@@ -94,6 +99,8 @@ export class RoomScene extends Phaser.Scene {
       const bottom = it.y + def.h;
       img.setDepth(ON_WALL.has(it.id) ? 1 : it.id === "rug" ? 1.5 : 5 + bottom / 10000);
       if (def.foot && !ON_WALL.has(it.id)) this.solids.push({ x: it.x + 4, y: bottom - def.h * def.foot, w: def.w - 8, h: def.h * def.foot });
+      // Somewhere to sit: just in front of seats.
+      if (SEATS.test(it.id)) this.seats.push({ x: it.x + def.w / 2, y: bottom + 8 });
     }
 
     // The people who work here.
@@ -134,7 +141,9 @@ export class RoomScene extends Phaser.Scene {
     this.spots.push({ kind: "exit", id: "door", label: this.info.parent ? "Back to the living room" : "Leave", x: door.x, y: door.y });
 
     // You come in at the door.
-    this.player = figure(this, door.x, door.y - 30, { look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18 }, { name: "YOU", nameColor: "#60a5fa", unit: 0.28 });
+    this.player = figure(this, door.x, door.y - 30, { look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18, stage: stageOf(state?.age ?? 0) }, { name: "YOU", nameColor: "#60a5fa", unit: 0.28 });
+    // Coming in through the door.
+    pose(this.player, "exit", this.time.now, 600);
 
     this.fit();
     this.aim(1);
@@ -219,6 +228,9 @@ export class RoomScene extends Phaser.Scene {
       else this.target = null;
     }
     const moved = this.player.x !== fromX || this.player.y !== fromY;
+    // Stand still by a seat for a moment and you sit down.
+    if (moved) this.stillSince = time;
+    else if (time - this.stillSince > 1500 && this.player.action?.motion !== "sit" && this.seats.some((p) => Math.hypot(p.x - this.player.x, p.y - this.player.y) < 46)) pose(this.player, "sit", time, 1e9);
     animateWalk(this.player, time, moved, this.player.x - fromX, this.player.y - fromY);
     this.player.setDepth(5 + this.player.y / 10000 + 0.5);
     this.aim(0.15);
@@ -241,7 +253,10 @@ export class RoomScene extends Phaser.Scene {
     }
     if (Phaser.Input.Keyboard.JustDown(k.e) || Phaser.Input.Keyboard.JustDown(k.space) || input.interact) {
       input.interact = false;
-      if (this.near) bus.emit("interact", { kind: this.near.kind, id: this.near.id, label: this.near.label });
+      if (this.near) {
+        pose(this.player, this.near.kind === "person" ? "wave" : "interact", time, 800);
+        bus.emit("interact", { kind: this.near.kind, id: this.near.id, label: this.near.label });
+      }
     }
   }
 }

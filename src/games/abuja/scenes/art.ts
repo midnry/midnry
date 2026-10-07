@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import { characterParts, dims, lookKey, type Look } from "../systems/character";
+import { characterParts, dims, lookKey, type LifeStage, type Look } from "../systems/character";
 import { furnitureSvg } from "../systems/furniture";
 import { FLEET, vehicleBox, vehicleKey, vehicleSvg, type VehicleKind, type VehicleStyle, type VehicleView } from "../systems/vehicles";
 
@@ -96,7 +96,7 @@ function makeTiles(scene: Phaser.Scene) {
   }
 }
 
-// ── Characters: chibi people drawn as SVG (systems/character.ts) ────────────
+// ── Characters: people drawn as SVG parts (systems/character.ts) ───────────
 
 /** Texture pixels per drawing unit: crisp on phones without wasting memory. */
 const RES = 1.5;
@@ -148,7 +148,10 @@ export function faceVehicle(v: Vehicle, dx: number, dy: number) {
   v.setFlipX(view === "side" && dx < 0);
 }
 
-export type Person = { look: Look; adult: boolean };
+/** Who to draw: a look and a body (a grown-up, a kid, or a life stage). */
+export type Person = { look: Look; adult: boolean; stage?: LifeStage };
+
+const bodyOf = (p: Person): LifeStage => p.stage ?? (p.adult ? "adult" : "child");
 
 /** Queue furniture textures for a room (call from preload). */
 export function queueFurniture(scene: Phaser.Scene, items: { id: string; accent?: string }[]) {
@@ -167,7 +170,10 @@ export function queueFurniture(scene: Phaser.Scene, items: { id: string; accent?
 
 export const furnitureKey = (id: string, accent?: string) => `furn_${id}_${(accent ?? "#1f6fd1").slice(1)}`;
 
-const charKey = ({ look, adult }: Person) => `ch_${lookKey(look)}${adult ? "a" : "k"}`;
+// Grown-ups and teens are teen/young/adult/senior bodies of the same build, so they share textures where the shape is the same.
+const bodyKey = (stage: LifeStage) => (stage === "child" ? "c" : stage === "teen" ? "t" : "a");
+const charKey = (p: Person) => `ch_${lookKey(p.look)}${bodyKey(bodyOf(p))}`;
+const PARTS = ["front", "back", "side", "arm", "leg", "legSide"] as const;
 
 /** Queue the textures for these people in the scene's loader (call from preload). */
 export function queueCharacters(scene: Phaser.Scene, people: Person[]) {
@@ -177,8 +183,8 @@ export function queueCharacters(scene: Phaser.Scene, people: Person[]) {
     const key = charKey(person);
     if (seen.has(key) || scene.textures.exists(`${key}_front`)) continue;
     seen.add(key);
-    const parts = characterParts(person.look, person.adult, RES);
-    for (const part of ["front", "back", "side", "leg", "legSide"] as const) {
+    const parts = characterParts(person.look, bodyOf(person), RES);
+    for (const part of PARTS) {
       const url = URL.createObjectURL(new Blob([parts[part]], { type: "image/svg+xml" }));
       urls.push(url);
       scene.load.svg(`${key}_${part}`, url);
@@ -187,32 +193,59 @@ export function queueCharacters(scene: Phaser.Scene, people: Person[]) {
   if (urls.length) scene.load.once("complete", () => urls.forEach((url) => URL.revokeObjectURL(url)));
 }
 
+/** Add people after loading (a crowd that grows as you explore): textures arrive, then `ready` runs. */
+export function loadCharacters(scene: Phaser.Scene, people: Person[], ready: () => void) {
+  const missing = people.filter((p) => !scene.textures.exists(`${charKey(p)}_front`));
+  if (!missing.length) return ready();
+  queueCharacters(scene, missing);
+  scene.load.once("complete", ready);
+  scene.load.start();
+}
+
 type Facing = "front" | "back" | "side";
+
+/** What a person is doing, for the animation. */
+export type Motion = "idle" | "walk" | "run" | "jump" | "sit" | "wave" | "celebrate" | "interact" | "enter" | "exit";
 
 export type Figure = Phaser.GameObjects.Container & {
   rig: Phaser.GameObjects.Container;
   legs: [Phaser.GameObjects.Image, Phaser.GameObjects.Image];
+  arms: [Phaser.GameObjects.Image, Phaser.GameObjects.Image];
+  armBack: Phaser.GameObjects.Image;
   upper: Phaser.GameObjects.Image;
+  shadow: Phaser.GameObjects.Image;
   /** Height of the top of the head above the figure's position, in pixels (negative). */
   headTop: number;
   key: string;
   facing: Facing;
   dims: ReturnType<typeof dims>;
+  unit: number;
+  rigY: number;
+  /** A one-off or held pose (waving, sitting…) that overrides walking until `until`. */
+  action: { motion: Motion; started: number; until: number } | null;
 };
 
 const FEET = 10; // feet sit this many pixels below the figure's position
+/** New bodies are drawn taller (natural proportions); this keeps people the same size on screen. */
+const NORM = 0.72;
 
 /** A person. `unit` is pixels per drawing unit: about 0.2 for people, smaller for crowds. */
 export function figure(scene: Phaser.Scene, x: number, y: number, person: Person, opts: { name?: string; nameColor?: string; unit?: number } = {}): Figure {
-  const unit = opts.unit ?? 0.2;
+  const unit = (opts.unit ?? 0.2) * NORM;
   const key = charKey(person);
-  const d = dims(person.look, person.adult);
-  const legA = scene.add.image(0, 0, `${key}_leg`).setOrigin(0.5, 0).setScale(1 / RES);
-  const legB = scene.add.image(0, 0, `${key}_leg`).setOrigin(0.5, 0).setScale(1 / RES);
-  const upper = scene.add.image(-d.width / 2, -d.hipY + d.upperTop, `${key}_front`).setOrigin(0, 0).setScale(1 / RES);
-  const rig = scene.add.container(0, FEET - d.legH * unit, [legA, legB, upper]).setScale(unit);
-  const headTop = rig.y + (d.headTop - d.hipY) * unit;
-  const items: Phaser.GameObjects.GameObject[] = [scene.add.image(0, FEET - 2, "shadow").setScale(unit * 2.2, unit * 2), rig];
+  const d = dims(person.look, bodyOf(person));
+  const img = (part: string, ox: number, oy: number) => scene.add.image(0, 0, `${key}_${part}`).setOrigin(ox, oy).setScale(1 / RES);
+  const armBack = img("arm", 0.5, 4 / (d.armH + 4)).setTint(0xb8b8b8).setVisible(false);
+  const legA = img("leg", 0.5, 0);
+  const legB = img("leg", 0.5, 0);
+  const upper = img("front", 0, 0).setPosition(-d.width / 2, d.torsoTop - d.hipY);
+  const armA = img("arm", 0.5, 4 / (d.armH + 4));
+  const armB = img("arm", 0.5, 4 / (d.armH + 4)).setFlipX(true);
+  const rigY = FEET - d.legLen * unit;
+  const rig = scene.add.container(0, rigY, [armBack, legA, legB, upper, armA, armB]).setScale(unit);
+  const headTop = rigY + (d.headTop - d.hipY) * unit;
+  const shadow = scene.add.image(0, FEET - 2, "shadow").setScale(unit * 2.4, unit * 2.2);
+  const items: Phaser.GameObjects.GameObject[] = [shadow, rig];
   if (opts.name) {
     items.push(
       scene.add
@@ -229,13 +262,7 @@ export function figure(scene: Phaser.Scene, x: number, y: number, person: Person
     );
   }
   const c = scene.add.container(x, y, items) as Figure;
-  c.rig = rig;
-  c.legs = [legA, legB];
-  c.upper = upper;
-  c.headTop = headTop;
-  c.key = key;
-  c.dims = d;
-  c.facing = "side"; // so the first setFacing lays the legs out
+  Object.assign(c, { rig, legs: [legA, legB], arms: [armA, armB], armBack, upper, shadow, headTop, key, dims: d, unit, rigY, action: null, facing: "side" });
   setFacing(c, "front");
   return c;
 }
@@ -245,19 +272,41 @@ function setFacing(f: Figure, facing: Facing) {
   f.facing = facing;
   f.upper.setTexture(`${f.key}_${facing}`);
   const [a, b] = f.legs;
+  const [la, ra] = f.arms;
+  const d = f.dims;
+  // Hips and shoulders, relative to the rig's origin (the middle of the hips).
   if (facing === "side") {
-    a.setTexture(`${f.key}_legSide`).setFlipX(false).setPosition(-3, 0).setTint(0xd8d8d8);
-    b.setTexture(`${f.key}_legSide`).setFlipX(false).setPosition(1, 0).clearTint();
+    a.setTexture(`${f.key}_legSide`).setPosition(-3, 0).setTint(0xcfcfcf);
+    b.setTexture(`${f.key}_legSide`).setPosition(2, 0).clearTint();
+    f.armBack.setVisible(true).setPosition(3, d.shoulderY - d.hipY);
+    la.setVisible(false);
+    ra.setVisible(true).setFlipX(false).setPosition(-1, d.shoulderY - d.hipY);
   } else {
-    a.setTexture(`${f.key}_leg`).setFlipX(false).setPosition(-f.dims.legX + 1, 0).clearTint().setRotation(0);
-    b.setTexture(`${f.key}_leg`).setFlipX(true).setPosition(f.dims.legX - 1, 0).clearTint().setRotation(0);
+    a.setTexture(`${f.key}_leg`).setFlipX(false).setPosition(-d.legX, 0).clearTint();
+    b.setTexture(`${f.key}_leg`).setFlipX(true).setPosition(d.legX, 0).clearTint();
+    f.armBack.setVisible(false);
+    la.setVisible(true).setFlipX(facing === "back").setPosition(-d.shoulderX, d.shoulderY - d.hipY);
+    ra.setVisible(true).setFlipX(facing !== "back").setPosition(d.shoulderX, d.shoulderY - d.hipY);
     f.rig.scaleX = Math.abs(f.rig.scaleX);
   }
 }
 
-/** Step animation: legs lift (or swing, side on), the body bobs, and the person faces where they walk. */
-export function animateWalk(f: Figure, time: number, moving: boolean, dx: number, dy = 0) {
+/** Start a pose: `ms` long, or held (`hold`) until another pose or movement replaces it. */
+export function pose(f: Figure, motion: Motion, time: number, ms = 1200) {
+  f.action = { motion, started: time, until: time + ms };
+  if (motion === "wave" || motion === "celebrate" || motion === "interact") {
+    if (f.facing === "back") setFacing(f, "front");
+  }
+}
+
+export function clearPose(f: Figure) {
+  f.action = null;
+}
+
+/** Walk (or run, or stand) and face the way you're going; poses play on top. */
+export function animateWalk(f: Figure, time: number, moving: boolean, dx: number, dy = 0, running = false) {
   if (moving) {
+    if (f.action && f.action.motion !== "jump") f.action = null;
     if (Math.abs(dx) > 0.1 && Math.abs(dx) >= Math.abs(dy) * 0.8) setFacing(f, "side");
     else if (dy < -0.1) setFacing(f, "back");
     else if (dy > 0.1) setFacing(f, "front");
@@ -266,24 +315,126 @@ export function animateWalk(f: Figure, time: number, moving: boolean, dx: number
       f.rig.scaleX = dx < 0 ? -sx : sx;
     }
   }
+  if (f.action && time > f.action.until) f.action = null;
+  const motion: Motion = f.action?.motion ?? (moving ? (running ? "run" : "walk") : "idle");
+  animate(f, time, motion);
+}
+
+/** Set every part for a motion at this moment. Cheap: a handful of numbers per person per frame. */
+function animate(f: Figure, time: number, motion: Motion) {
   const [a, b] = f.legs;
-  const base = -f.dims.hipY + f.dims.upperTop;
-  if (!moving) {
+  const [la, ra] = f.arms;
+  const d = f.dims;
+  const side = f.facing === "side";
+  const torsoY = d.torsoTop - d.hipY;
+  const reset = () => {
+    a.rotation = b.rotation = la.rotation = ra.rotation = f.armBack.rotation = 0;
     a.y = b.y = 0;
-    a.rotation = b.rotation = 0;
-    f.upper.y = base;
-    return;
+    a.scaleY = b.scaleY = 1 / RES;
+    f.rig.rotation = 0;
+    f.rig.y = f.rigY;
+    f.upper.y = torsoY;
+    f.alpha = 1;
+    f.shadow.setScale(f.unit * 2.4, f.unit * 2.2);
+  };
+  reset();
+  const t = (time - (f.action?.started ?? 0)) / 1000;
+  switch (motion) {
+    case "idle": {
+      // Breathing.
+      const br = Math.sin(time / 520) * 1.2;
+      f.upper.y = torsoY + br;
+      la.y = ra.y = d.shoulderY - d.hipY + br;
+      la.rotation = side ? 0 : 0.04;
+      ra.rotation = side ? 0 : -0.04;
+      if (side) f.armBack.y = la.y;
+      return;
+    }
+    case "walk":
+    case "run":
+    case "enter":
+    case "exit": {
+      const run = motion === "run";
+      const ph = time / (run ? 62 : 92);
+      const swing = Math.sin(ph);
+      const bob = Math.abs(Math.sin(ph)) * (run ? 6 : 3.5);
+      if (side) {
+        a.rotation = swing * (run ? 0.75 : 0.45);
+        b.rotation = -swing * (run ? 0.75 : 0.45);
+        ra.rotation = swing * (run ? 0.9 : 0.4);
+        f.armBack.rotation = -swing * (run ? 0.9 : 0.4);
+        f.rig.rotation = run ? 0.12 * Math.sign(f.rig.scaleX || 1) : 0;
+      } else {
+        a.y = Math.min(0, swing * (run ? 10 : 6));
+        b.y = Math.min(0, -swing * (run ? 10 : 6));
+        la.rotation = swing * (run ? 0.35 : 0.18);
+        ra.rotation = swing * (run ? 0.35 : 0.18);
+      }
+      f.upper.y = torsoY - bob;
+      la.y = ra.y = d.shoulderY - d.hipY - bob;
+      if (side) f.armBack.y = la.y;
+      // Going in or out of a door: fade.
+      if (motion === "enter") f.alpha = Math.max(0, 1 - t * 1.6);
+      if (motion === "exit") f.alpha = Math.min(1, t * 1.6);
+      return;
+    }
+    case "jump": {
+      const dur = 0.55;
+      const k = Math.min(1, t / dur);
+      const h = Math.sin(k * Math.PI) * 26;
+      f.rig.y = f.rigY - h;
+      f.shadow.setScale(f.unit * 2.4 * (1 - h / 60), f.unit * 2.2 * (1 - h / 60));
+      a.rotation = side ? 0.5 : 0.18;
+      b.rotation = side ? -0.3 : -0.18;
+      la.rotation = side ? 0 : 2.6;
+      ra.rotation = side ? -2.4 : -2.6;
+      return;
+    }
+    case "sit": {
+      if (side) {
+        a.rotation = b.rotation = -1.5;
+        f.rig.y = f.rigY + (d.legLen - 14) * f.unit;
+        ra.rotation = -0.5;
+        f.armBack.rotation = -0.3;
+      } else {
+        a.scaleY = b.scaleY = 0.5 / RES;
+        f.rig.y = f.rigY + d.legLen * 0.5 * f.unit;
+        la.rotation = 0.25;
+        ra.rotation = -0.25;
+      }
+      return;
+    }
+    case "wave": {
+      const w = Math.sin(time / 120) * 0.35;
+      if (side) ra.rotation = -2.5 + w;
+      else {
+        ra.rotation = -2.5 + w;
+        la.rotation = 0.05;
+      }
+      return;
+    }
+    case "celebrate": {
+      const hop = Math.abs(Math.sin(t * 7)) * 12;
+      f.rig.y = f.rigY - hop;
+      const w = Math.sin(time / 90) * 0.2;
+      if (side) {
+        ra.rotation = -2.8 + w;
+        f.armBack.rotation = -2.6 - w;
+      } else {
+        la.rotation = 2.7 + w;
+        ra.rotation = -2.7 - w;
+      }
+      return;
+    }
+    case "interact": {
+      // Reaching out to a counter, a door, a hand.
+      const reach = Math.min(1, t * 4);
+      if (side) ra.rotation = -1.35 * reach;
+      else ra.rotation = -0.9 * reach;
+      f.upper.y = torsoY + reach * 2;
+      return;
+    }
   }
-  const t = time / 85;
-  if (f.facing === "side") {
-    a.rotation = Math.sin(t) * 0.5;
-    b.rotation = -Math.sin(t) * 0.5;
-    a.y = b.y = 0;
-  } else {
-    a.y = Math.min(0, Math.sin(t) * 6);
-    b.y = Math.min(0, -Math.sin(t) * 6);
-  }
-  f.upper.y = base - Math.abs(Math.sin(t)) * 4;
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────

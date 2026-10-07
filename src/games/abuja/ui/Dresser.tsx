@@ -1,17 +1,24 @@
 import { useState, type ReactNode } from "react";
 import {
+  BAGS,
   BEARDS,
   BOTTOMS,
+  BROWS,
   CLOTH_COLORS,
   EARRINGS,
+  EYES,
+  FACE_SHAPES,
   HAIR_COLORS,
   HAIR_STYLES,
   HATS,
+  MOUTHS,
+  NOSES,
   SHOES,
   SKIN_TONES,
   TOPS,
   randomLook,
   type Look,
+  type Pose,
 } from "../systems/character";
 import { Avatar } from "./Avatar";
 
@@ -21,7 +28,8 @@ const TABS = [
   { id: "bottom", label: "Bottoms", icon: "👖" },
   { id: "shoes", label: "Shoes", icon: "👟" },
   { id: "extras", label: "Extras", icon: "🎒" },
-  { id: "body", label: "Face & body", icon: "🙂" },
+  { id: "face", label: "Face", icon: "🙂" },
+  { id: "body", label: "Skin & body", icon: "✋🏾" },
 ] as const;
 type Tab = (typeof TABS)[number]["id"];
 
@@ -29,6 +37,9 @@ type Tab = (typeof TABS)[number]["id"];
 export function Dresser({ look, adult = false, onChange }: { look: Look; adult?: boolean; onChange: (look: Look) => void }) {
   const [tab, setTab] = useState<Tab>("hair");
   const set = (patch: Partial<Look>) => onChange({ ...look, ...patch });
+  const fits = (o: { ages?: string }) => !o.ages || o.ages === "all" || o.ages === (adult ? "adult" : "kid");
+  const hairs = [...HAIR_STYLES].sort((a, b) => Number(b.for === look.build || b.for === "any") - Number(a.for === look.build || a.for === "any"));
+  const [preview, setPreview] = useState<Pose>("stand");
 
   return (
     <div className="min-w-0">
@@ -60,7 +71,7 @@ export function Dresser({ look, adult = false, onChange }: { look: Look; adult?:
         {tab === "hair" ? (
           <>
             <Grid>
-              {HAIR_STYLES.map((h) => (
+              {hairs.map((h) => (
                 <Tile key={h.id} on={look.hair === h.id} label={h.label} onClick={() => set({ hair: h.id })}>
                   <Avatar adult={adult} looks={{ ...look, hair: h.id, hat: "none", headphones: false, glasses: false }} crop="head" size={64} />
                 </Tile>
@@ -73,7 +84,7 @@ export function Dresser({ look, adult = false, onChange }: { look: Look; adult?:
         {tab === "top" ? (
           <>
             <Grid>
-              {TOPS.map((t) => (
+              {TOPS.filter(fits).map((t) => (
                 <Tile key={t.id} on={look.top === t.id} label={t.label} onClick={() => set({ top: t.id })}>
                   <Avatar adult={adult} looks={{ ...look, top: t.id, bag: false }} crop="top" size={72} />
                 </Tile>
@@ -86,7 +97,7 @@ export function Dresser({ look, adult = false, onChange }: { look: Look; adult?:
         {tab === "bottom" ? (
           <>
             <Grid>
-              {BOTTOMS.map((b) => (
+              {BOTTOMS.filter(fits).map((b) => (
                 <Tile key={b.id} on={look.bottom === b.id} label={b.label} onClick={() => set({ bottom: b.id })}>
                   <Avatar adult={adult} looks={{ ...look, bottom: b.id }} crop="legs" size={70} />
                 </Tile>
@@ -112,7 +123,7 @@ export function Dresser({ look, adult = false, onChange }: { look: Look; adult?:
         {tab === "extras" ? (
           <>
             <Grid>
-              {HATS.map((h) => (
+              {HATS.filter(fits).map((h) => (
                 <Tile key={h.id} on={look.hat === h.id} label={h.label} onClick={() => set({ hat: h.id })}>
                   <Avatar adult={adult} looks={{ ...look, hat: h.id }} crop="head" size={64} />
                 </Tile>
@@ -121,27 +132,66 @@ export function Dresser({ look, adult = false, onChange }: { look: Look; adult?:
             <Swatches label="Hat, bow and hair-tie colour" colors={CLOTH_COLORS} value={look.hatColor} onPick={(hatColor) => set({ hatColor })} />
             <div className="flex flex-wrap gap-2">
               <Toggle on={look.bag} onClick={() => set({ bag: !look.bag })}>
-                🎒 Backpack
+                🎒 Bag
               </Toggle>
               <Toggle on={look.glasses} onClick={() => set({ glasses: !look.glasses })}>
                 🕶️ Sunglasses
+              </Toggle>
+              <Toggle on={look.specs} onClick={() => set({ specs: !look.specs })}>
+                👓 Glasses
               </Toggle>
               <Toggle on={look.headphones} onClick={() => set({ headphones: !look.headphones })}>
                 🎧 Headphones
               </Toggle>
             </div>
-            {look.bag ? <Swatches label="Backpack colour" colors={CLOTH_COLORS} value={look.bagColor} onPick={(bagColor) => set({ bagColor })} /> : null}
+            {look.bag ? (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  {BAGS.map((b) => (
+                    <Toggle key={b.id} on={look.bagStyle === b.id} onClick={() => set({ bagStyle: b.id })}>
+                      {b.label}
+                    </Toggle>
+                  ))}
+                </div>
+                <Swatches label="Bag colour" colors={CLOTH_COLORS} value={look.bagColor} onPick={(bagColor) => set({ bagColor })} />
+              </>
+            ) : null}
+          </>
+        ) : null}
+
+        {tab === "face" ? (
+          <>
+            {(
+              [
+                ["Face shape", FACE_SHAPES, "faceShape"],
+                ["Eyes", EYES, "eyes"],
+                ["Eyebrows", BROWS, "brows"],
+                ["Nose", NOSES, "nose"],
+                ["Mouth", MOUTHS, "mouth"],
+              ] as const
+            ).map(([title, list, key]) => (
+              <div key={key}>
+                <p className="mb-1.5 text-xs text-slate-400">{title}</p>
+                <Grid>
+                  {list.map((o) => (
+                    <Tile key={o.id} on={look[key] === o.id} label={o.label} onClick={() => set({ [key]: o.id } as Partial<Look>)}>
+                      <Avatar adult={adult} looks={{ ...look, [key]: o.id, hat: "none", glasses: false, headphones: false }} crop="head" size={60} />
+                    </Tile>
+                  ))}
+                </Grid>
+              </div>
+            ))}
+            <div className="flex flex-wrap gap-2">
+              <Toggle on={look.lashes} onClick={() => set({ lashes: !look.lashes })}>
+                Eyelashes
+              </Toggle>
+            </div>
           </>
         ) : null}
 
         {tab === "body" ? (
           <>
             <Swatches label="Skin tone" colors={SKIN_TONES} value={look.skin} onPick={(skin) => set({ skin })} round />
-            <div className="flex flex-wrap gap-2">
-              <Toggle on={look.lashes} onClick={() => set({ lashes: !look.lashes })}>
-                Eyelashes
-              </Toggle>
-            </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
               <p className="text-sm font-semibold">Grown-up look</p>
               <p className="mt-0.5 text-xs text-slate-400">Shows from age 18, when you grow up.</p>
@@ -188,6 +238,32 @@ export function Dresser({ look, adult = false, onChange }: { look: Look; adult?:
             </div>
           </>
         ) : null}
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+        <p className="text-xs text-slate-400">Moves</p>
+        <div className="mt-2 flex flex-wrap items-end gap-2">
+          {(["stand", "wave", "celebrate", "sit"] as const).map((p) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setPreview(p)}
+              aria-pressed={preview === p}
+              className={`flex flex-col items-center rounded-xl border p-1.5 text-[11px] capitalize ${preview === p ? "border-blue-400 bg-blue-400/15" : "border-white/10"}`}
+            >
+              <Avatar adult={adult} looks={look} pose={p} size={44} />
+              {p === "stand" ? "Idle" : p}
+            </button>
+          ))}
+          <div className="ml-auto flex gap-1">
+            {(["front", "side", "back"] as const).map((v) => (
+              <div key={v} className="flex flex-col items-center text-[11px] text-slate-400">
+                <Avatar adult={adult} looks={look} view={v} pose={preview} size={44} />
+                {v}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

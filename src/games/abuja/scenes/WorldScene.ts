@@ -14,8 +14,8 @@ import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
 import { findPath, type Point } from "../systems/path";
 import type { GameState, MapRect } from "../systems/types";
-import { fullLook, lookKey, randomLook, type Look } from "../systems/character";
-import { INK, animateWalk, building, faceVehicle, figure, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
+import { fullLook, lookKey, randomLook, stageOf, type Look } from "../systems/character";
+import { INK, animateWalk, pose, building, faceVehicle, figure, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
 
 const SPEED = 230;
 const ZOOM_KEY = "abuja-hustle.zoom";
@@ -33,7 +33,7 @@ const title = (scene: Phaser.Scene, x: number, y: number, text: string, size = 1
 
 // Who's who: the same person always looks the same.
 const personOf = personLook;
-const playerOf = (state: GameState | null): Person => ({ look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18 });
+const playerOf = (state: GameState | null): Person => ({ look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18, stage: stageOf(state?.age ?? 0) });
 const WALKERS: Person[] = Array.from({ length: 8 }, (_, i) => ({ look: randomLook(i * 131 + 7), adult: i % 4 !== 3 }));
 const POLICE_LOOK: Look = randomLook(4242, {
   top: "shirt",
@@ -101,7 +101,11 @@ export class WorldScene extends Phaser.Scene {
   private mapId = "city";
   private solids: MapRect[] = [];
   private player!: Figure;
-  private keys!: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d" | "e" | "space", Phaser.Input.Keyboard.Key>;
+  private keys!: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d" | "e" | "space" | "shift" | "j", Phaser.Input.Keyboard.Key>;
+  /** Money and the last message, to spot good news worth celebrating. */
+  private lastMoney: number | null = null;
+  private lastToast: string | null = null;
+  private waved = new Map<string, number>();
   /** Waypoints for tap-to-walk and "Go to". */
   private path: Point[] = [];
   private near: Near | null = null;
@@ -208,7 +212,7 @@ export class WorldScene extends Phaser.Scene {
     this.scale.on("resize", this.fitZoom, this);
 
     const kb = this.input.keyboard!;
-    this.keys = kb.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D", e: "E", space: "SPACE" }) as typeof this.keys;
+    this.keys = kb.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D", e: "E", space: "SPACE", shift: "SHIFT", j: "J" }) as typeof this.keys;
     kb.disableGlobalCapture();
     // Tap to walk; while exploring, drag to look around. Two fingers (or the mouse wheel) zoom.
     this.input.addPointer(1);
@@ -649,6 +653,12 @@ export class WorldScene extends Phaser.Scene {
   private refresh() {
     const state = getState();
     if (!state) return;
+    // Good news: the player celebrates.
+    const now = this.time.now;
+    if (this.player && this.lastMoney != null && state.stats.money - this.lastMoney >= 20000 && !state.event) pose(this.player, "celebrate", now, 1500);
+    if (this.player && state.toast && state.toast !== this.lastToast && /^(🎉|🏆|💡|✅|📖|🌱)/u.test(state.toast)) pose(this.player, "celebrate", now, 1500);
+    this.lastMoney = state.stats.money;
+    this.lastToast = state.toast;
     for (const { id, marker } of this.placeMarkers) {
       const def = PLACES.find((p) => p.id === id);
       marker.setVisible(check(state, (def as { if?: never })?.if));
@@ -758,17 +768,29 @@ export class WorldScene extends Phaser.Scene {
     // A bad injury slows you down: a cast or a sling. A car is much faster.
     const hurt = injured(state);
     const driving = this.mapId === "city" && isDriving(state);
-    const pace = driving ? SPEED * 2.6 : SPEED * (hurt === "fracture" ? 0.45 : hurt === "dislocation" ? 0.75 : 1);
+    // Run with Shift, a joystick pushed all the way, or a long tap-to-walk trip.
+    const far = this.path.length > 0 && Math.hypot(this.path[this.path.length - 1]!.x - this.player.x, this.path[this.path.length - 1]!.y - this.player.y) > 320;
+    const running = !driving && !hurt && (k.shift.isDown || Math.hypot(input.x, input.y) > 0.95 || far);
+    const pace = driving ? SPEED * 2.6 : SPEED * (hurt === "fracture" ? 0.45 : hurt === "dislocation" ? 0.75 : running ? 1.55 : 1);
+    if (Phaser.Input.Keyboard.JustDown(k.j) && !driving) pose(this.player, "jump", time, 560);
     if (vx || vy) this.move(vx * pace * dt, vy * pace * dt, time);
     const moved = this.player.x !== fromX || this.player.y !== fromY;
     this.showCar(driving, this.player.x - fromX, this.player.y - fromY);
-    animateWalk(this.player, time, moved, this.player.x - fromX, this.player.y - fromY);
+    animateWalk(this.player, time, moved, this.player.x - fromX, this.player.y - fromY, running);
     this.player.setDepth(5 + this.player.y / 10000 + 0.5);
 
     this.checkNear();
     if (Phaser.Input.Keyboard.JustDown(k.e) || Phaser.Input.Keyboard.JustDown(k.space) || input.interact) {
       input.interact = false;
-      if (this.near) bus.emit("interact", this.near);
+      if (this.near) {
+        // Reach for the door or counter; wave to people.
+        pose(this.player, this.near.kind === "person" ? "wave" : "interact", time, 800);
+        if (this.near.kind === "person") {
+          const who = this.people.find((p) => p.id === this.near!.id);
+          if (who) pose(who.body, "wave", time, 1100);
+        }
+        bus.emit("interact", this.near);
+      }
     }
     this.checkTask();
     this.checkStreet();
@@ -1029,16 +1051,21 @@ export class WorldScene extends Phaser.Scene {
       car.body.setDepth(5 + car.body.y / 10000);
     }
     for (const p of this.people) {
+      // People you know wave when you come close (now and then, not every step).
+      if (this.player && Math.hypot(p.body.x - this.player.x, p.body.y - this.player.y) < 80 && (this.waved.get(p.id) ?? -1e9) < time - 25000) {
+        this.waved.set(p.id, time);
+        pose(p.body, "wave", time, 1300);
+      }
       if (Math.random() < 0.01) {
         p.vx = (Math.random() - 0.5) * 30;
         p.vy = (Math.random() - 0.5) * 30;
       }
       const nx = p.body.x + p.vx * dt;
       const ny = p.body.y + p.vy * dt;
-      const ok = Math.hypot(nx - p.home.x, ny - p.home.y) < 40 && !blocked(nx, ny, 10, this.solids);
+      const ok = !p.body.action && Math.hypot(nx - p.home.x, ny - p.home.y) < 40 && !blocked(nx, ny, 10, this.solids);
       if (ok) p.body.setPosition(nx, ny);
       p.body.setDepth(5 + p.body.y / 10000);
-      animateWalk(p.body, time + p.home.x, ok, p.vx, p.vy);
+      animateWalk(p.body, time, ok, p.vx, p.vy);
     }
   }
 }
