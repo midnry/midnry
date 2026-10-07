@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Brain, CarFront, ChevronRight, DoorOpen, Droplet, Hand, Heart, LocateFixed, Map as MapIcon, MapPin, MessageCircle, Minus, Moon, Pause, Play, Plus, Search, Siren, Smartphone, SquareParking, Star, Utensils, Zap } from "lucide-react";
 import type { Game as PhaserGame } from "phaser";
 import { EVENTS, chapter, place } from "../systems/data";
 import {
@@ -36,7 +37,7 @@ import { LotPanel } from "./LotPanel";
 import { KitchenScreen, type KitchenOpen } from "./kitchen/Kitchen";
 import { StoryPanel } from "./StoryView";
 import { WardrobePanel } from "./Wardrobe";
-import { btnGhost, btnPrimary, panel } from "./theme";
+import { GAME_FONT, actionBtn, btnGhost, btnPrimary, glass, iconBtn, panel } from "./theme";
 
 /** The walkable game: story chapters and adult Abuja share this view. */
 export function World({ state, onQuit }: { state: GameState; onQuit: () => void }) {
@@ -124,7 +125,9 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
 
   useEffect(() => {
     let cancel = false;
-    void import("../scenes/WorldScene").then(({ createGame }) => {
+    // Wait (briefly) for the game font, so names on the map aren't drawn in a fallback face.
+    const fonts = typeof document !== "undefined" && document.fonts ? Promise.all([document.fonts.load('800 14px "Nunito"'), document.fonts.load('700 14px "Nunito"')]) : Promise.resolve();
+    void Promise.all([import("../scenes/WorldScene"), Promise.race([fonts, new Promise((r) => setTimeout(r, 1500))])]).then(([{ createGame }]) => {
       if (cancel || !host.current) return;
       game.current = createGame(host.current);
     });
@@ -240,13 +243,19 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         <button
           type="button"
           onClick={() => bus.emit("goto", null)}
-          className={`${panel} absolute top-24 left-1/2 z-10 max-w-[64vw] -translate-x-1/2 px-4 py-2 text-left text-sm shadow-xl hover:bg-[#1a2238] sm:top-20`}
+          className={`${glass} absolute top-24 left-1/2 z-10 flex max-w-[70vw] -translate-x-1/2 items-center gap-2.5 rounded-2xl py-2 pr-4 pl-2.5 text-left text-sm hover:bg-[#1e2740]/90 sm:top-[5.5rem]`}
+          style={{ fontFamily: GAME_FONT }}
           aria-label={`Walk to ${beat.spot.label}`}
         >
-          <span className="block truncate">
-            📍 Go to: <span className="font-semibold text-sky-300">{beat.spot.label}</span>
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-blue-500 shadow-[inset_0_-2px_0_rgba(0,0,0,0.2)]">
+            <MapPin className="size-[18px] text-white" strokeWidth={2.6} aria-hidden />
           </span>
-          <span className="block text-[11px] text-slate-400">Tap to walk there</span>
+          <span className="min-w-0">
+            <span className="block truncate font-bold">
+              Go to <span className="text-sky-300">{beat.spot.label}</span>
+            </span>
+            <span className="block text-[11px] font-semibold text-slate-400">Tap to walk there</span>
+          </span>
         </button>
       ) : null}
 
@@ -257,7 +266,8 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
             clearToast();
             setBlocked(null);
           }}
-          className={`${panel} absolute ${state.task ? "top-48 sm:top-44" : "top-36 sm:top-32"} left-1/2 z-20 w-[min(92vw,30rem)] -translate-x-1/2 p-3 text-left text-sm text-pretty`}
+          className={`${glass} absolute ${state.task ? "top-48 sm:top-44" : "top-36 sm:top-32"} left-1/2 z-20 w-[min(92vw,30rem)] -translate-x-1/2 rounded-2xl p-3 text-left text-sm font-semibold text-pretty`}
+          style={{ fontFamily: GAME_FONT }}
         >
           {blocked ?? state.toast}
         </button>
@@ -266,28 +276,29 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       {showEnter ? (
         <button
           type="button"
-          className={`${btnPrimary} absolute bottom-40 left-1/2 z-10 max-w-[70vw] -translate-x-1/2 shadow-xl sm:bottom-10`}
+          className={`${glass} absolute bottom-40 left-1/2 z-10 flex h-12 max-w-[78vw] -translate-x-1/2 items-center gap-2.5 rounded-full pr-4 pl-3 text-[15px] font-extrabold text-white transition hover:bg-[#1e2740]/90 active:scale-[0.98] sm:bottom-10`}
+          style={{ fontFamily: GAME_FONT }}
           onClick={() => bus.emit("interact", near)}
         >
-          {near.kind === "lot"
-            ? `🔎 ${near.label}`
-            : near.kind === "person"
-            ? `💬 Talk to ${near.label}`
-            : near.kind === "beat"
-              ? `▶ ${near.label}`
-              : near.kind === "exit"
-                ? `🚪 ${near.label}`
-                : near.kind === "item"
-                  ? near.label
+          <PromptIcon kind={near.kind === "place" && !inside && !roomForPlace(near.id) ? "visit" : near.kind} />
+          <span className="truncate">
+            {near.kind === "lot"
+              ? near.label
+              : near.kind === "person"
+                ? `Talk to ${near.label}`
+                : near.kind === "beat" || near.kind === "exit" || near.kind === "item"
+                  ? near.label.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, "")
                   : near.kind === "door"
                     ? inside
-                      ? `🚪 ${near.label}`
-                      : `🚪 Enter ${near.label}`
+                      ? near.label
+                      : `Enter ${near.label}`
                     : inside
-                      ? `📋 ${near.label}: things to do`
+                      ? `${near.label}: things to do`
                       : roomForPlace(near.id)
-                        ? `🚪 Enter ${near.label}`
+                        ? `Enter ${near.label}`
                         : `Visit ${near.label}`}
+          </span>
+          <ChevronRight className="size-5 shrink-0 text-slate-300" strokeWidth={3} aria-hidden />
         </button>
       ) : null}
 
@@ -313,27 +324,24 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       <button
         type="button"
         onClick={() => setPaused(true)}
-        className="absolute top-24 left-3 z-10 flex size-11 items-center justify-center rounded-xl border border-white/15 bg-[#0d1220]/90 text-xl font-bold shadow-xl hover:bg-[#1a2238] sm:top-20 lg:top-3"
+        className={`${iconBtn} absolute top-24 left-3 z-10 sm:top-20 lg:top-3`}
         aria-label="Pause"
       >
-        <span className="flex gap-1" aria-hidden>
-          <span className="h-4 w-1.5 rounded-sm bg-slate-100" />
-          <span className="h-4 w-1.5 rounded-sm bg-slate-100" />
-        </span>
+        <Pause className="size-5" fill="currentColor" strokeWidth={0} aria-hidden />
       </button>
       <div className={`absolute top-24 right-3 z-10 flex-col gap-2 sm:top-20 lg:top-3 ${inside ? "hidden" : "flex"}`}>
         <MapButton label="Zoom in" onClick={() => bus.emit("camera", "in")}>
-          ＋
+          <Plus className="size-5" strokeWidth={3} aria-hidden />
         </MapButton>
         <MapButton label="Zoom out" onClick={() => bus.emit("camera", "out")}>
-          －
+          <Minus className="size-5" strokeWidth={3} aria-hidden />
         </MapButton>
         <MapButton label={exploring ? "Back to me" : "Explore the map"} active={exploring} onClick={() => bus.emit("camera", exploring ? "follow" : "explore")}>
-          {exploring ? "📍" : "🗺️"}
+          {exploring ? <LocateFixed className="size-5" strokeWidth={2.5} aria-hidden /> : <MapIcon className="size-5 text-emerald-300" strokeWidth={2.5} aria-hidden />}
         </MapButton>
         {!inStory && state.slot < SLOTS.length - 1 ? (
           <MapButton label="Skip to night" onClick={skipToNight}>
-            🌙
+            <Moon className="size-5 text-amber-300" fill="currentColor" strokeWidth={2} aria-hidden />
           </MapButton>
         ) : null}
       </div>
@@ -371,12 +379,11 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         <button
           type="button"
           onClick={drive}
-          className={`absolute right-4 bottom-[10.5rem] z-10 flex size-16 flex-col items-center justify-center rounded-2xl border text-xs font-semibold shadow-xl ${isDriving(state) ? "border-blue-300 bg-blue-600 text-white" : "border-white/15 bg-[#0d1220]/90"}`}
+          className={`${actionBtn} absolute right-4 bottom-[11rem] z-10 ${isDriving(state) ? "bg-blue-600 text-white ring-2 ring-blue-300/60" : `${glass} text-slate-50`}`}
+          style={{ fontFamily: GAME_FONT }}
           aria-label={isDriving(state) ? "Park and get out" : "Drive your car"}
         >
-          <span className="text-2xl" aria-hidden>
-            {isDriving(state) ? "🅿️" : "🚗"}
-          </span>
+          {isDriving(state) ? <SquareParking className="size-7" strokeWidth={2.4} aria-hidden /> : <CarFront className="size-7" strokeWidth={2.4} aria-hidden />}
           {isDriving(state) ? "Park" : "Drive"}
         </button>
       ) : null}
@@ -384,12 +391,11 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         <button
           type="button"
           onClick={() => setPhone("map")}
-          className="absolute right-4 bottom-24 z-10 flex size-16 flex-col items-center justify-center rounded-2xl border border-white/15 bg-blue-600 text-xs font-semibold text-white shadow-xl hover:bg-blue-500"
+          className={`${actionBtn} absolute right-4 bottom-[6.25rem] z-10 border border-blue-300/40 bg-gradient-to-b from-[#3b82f6] to-[#2563eb] text-white hover:brightness-110`}
+          style={{ fontFamily: GAME_FONT }}
           aria-label="Get a ride"
         >
-          <span className="text-2xl" aria-hidden>
-            🛺
-          </span>
+          <CarFront className="size-7" strokeWidth={2.4} aria-hidden />
           Ride
         </button>
       ) : null}
@@ -397,12 +403,11 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         <button
           type="button"
           onClick={() => setPhone("home")}
-          className="absolute right-4 bottom-6 z-10 flex size-16 flex-col items-center justify-center rounded-2xl border border-white/15 bg-[#0d1220]/90 text-xs font-semibold shadow-xl"
+          className={`${actionBtn} ${glass} absolute right-4 bottom-6 z-10 text-slate-50 hover:bg-[#1e2740]/90`}
+          style={{ fontFamily: GAME_FONT }}
           aria-label="Open your phone"
         >
-          <span className="text-2xl" aria-hidden>
-            📱
-          </span>
+          <Smartphone className="size-7" strokeWidth={2.4} aria-hidden />
           Phone
         </button>
       ) : null}
@@ -477,6 +482,16 @@ function LoadingScreen({ title, icon }: { title: string; icon: string }) {
   );
 }
 
+/** The little round icon at the start of an interaction prompt. */
+function PromptIcon({ kind }: { kind: string }) {
+  const [Icon, tone] = kind === "person" ? [MessageCircle, "bg-sky-500"] : kind === "lot" ? [Search, "bg-emerald-500"] : kind === "beat" ? [Play, "bg-amber-500"] : kind === "visit" ? [MapPin, "bg-violet-500"] : kind === "item" ? [Hand, "bg-amber-500"] : [DoorOpen, "bg-violet-500"];
+  return (
+    <span className={`flex size-8 shrink-0 items-center justify-center rounded-full ${tone} shadow-[inset_0_-2px_0_rgba(0,0,0,0.2)]`}>
+      <Icon className="size-[18px] text-white" strokeWidth={2.6} aria-hidden />
+    </span>
+  );
+}
+
 function MapButton({ label, active, onClick, children }: { label: string; active?: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
@@ -485,7 +500,7 @@ function MapButton({ label, active, onClick, children }: { label: string; active
       title={label}
       aria-pressed={active}
       onClick={onClick}
-      className={`flex size-11 items-center justify-center rounded-xl border text-lg font-bold shadow-xl transition ${active ? "border-blue-300 bg-blue-600 text-white" : "border-white/15 bg-[#0d1220]/90 text-slate-100 hover:bg-[#1a2238]"}`}
+      className={`${iconBtn} ${active ? "!bg-blue-600/95 ring-2 ring-blue-300/60" : ""}`}
     >
       {children}
     </button>
@@ -577,20 +592,20 @@ function ChapterHud({ state }: { state: GameState }) {
   );
 }
 
-function Bar({ label, icon, value, tone }: { label: string; icon: string; value: number; tone: string }) {
+type StatIcon = typeof Zap;
+
+/** One stat: a coloured icon, the name, the number and a bar. */
+function Bar({ label, Icon, value, color, warn }: { label: string; Icon: StatIcon; value: number; color: string; warn?: boolean }) {
+  const fill = warn ? "#ef4444" : color;
   return (
-    <div className="min-w-0" title={label}>
-      <div className="flex justify-between gap-1 text-[10px] text-slate-400 uppercase">
-        <span className="truncate">
-          <span className="sm:hidden" aria-label={label}>
-            {icon}
-          </span>
-          <span className="hidden sm:inline">{label}</span>
-        </span>
-        <span className="tabular-nums">{Math.round(value)}</span>
+    <div className="min-w-0" title={`${label}: ${Math.round(value)}`}>
+      <div className="flex items-center gap-1 text-[10px] font-extrabold tracking-wide text-slate-200 uppercase">
+        <Icon className="size-3.5 shrink-0" style={{ color: fill }} strokeWidth={2.6} fill={Icon === Heart || Icon === Droplet || Icon === Zap || Icon === Star ? fill : "none"} aria-hidden />
+        <span className="hidden truncate sm:inline">{label}</span>
+        <span className="ml-auto tabular-nums text-slate-300">{Math.round(value)}</span>
       </div>
-      <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-white/10">
-        <div className={`h-full rounded-full ${tone}`} style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+      <div className="mt-1 h-[7px] overflow-hidden rounded-full bg-black/35 ring-1 ring-white/5">
+        <div className="h-full rounded-full shadow-[inset_0_-2px_0_rgba(0,0,0,0.18)]" style={{ width: `${Math.max(0, Math.min(100, value))}%`, background: fill }} />
       </div>
     </div>
   );
@@ -603,24 +618,25 @@ function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => v
     <button
       type="button"
       onClick={() => onOpen("stats")}
-      className={`${panel} absolute top-3 left-1/2 z-10 grid w-[min(96vw,44rem)] -translate-x-1/2 grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1 rounded-2xl px-3 py-2 text-left`}
+      className={`${glass} absolute top-3 left-1/2 z-10 grid w-[min(96vw,56rem)] -translate-x-1/2 grid-cols-[auto_1fr] items-center gap-x-5 rounded-2xl px-4 py-2.5 text-left`}
+      style={{ fontFamily: GAME_FONT }}
       aria-label="Your stats"
     >
-      <div className="row-span-2">
-        <p className="text-lg font-bold tabular-nums text-emerald-400">{naira(state.stats.money)}</p>
-        <p className="text-[11px] text-slate-400">
-          Day {state.day} · {SLOTS[Math.min(state.slot, 3)]} · Age {Math.floor(state.age)}
+      <div>
+        <p className="text-xl leading-tight font-black tabular-nums text-[#4ade80] drop-shadow-[0_1px_0_rgba(0,0,0,0.4)]">{naira(state.stats.money)}</p>
+        <p className="text-[11px] font-bold whitespace-nowrap text-slate-300">
+          Day {state.day} <span className="text-slate-500">•</span> {SLOTS[Math.min(state.slot, 3)]} <span className="text-slate-500">•</span> Age {Math.floor(state.age)}
         </p>
-        {owed ? <p className="text-[11px] text-red-400">Owes {naira(owed)}</p> : null}
+        {owed ? <p className="text-[11px] font-bold text-red-400">Owes {naira(owed)}</p> : null}
       </div>
-      <div className="grid grid-cols-4 gap-x-3 gap-y-1 sm:grid-cols-7">
-        <Bar label="Energy" icon="⚡" value={state.stats.energy} tone="bg-emerald-400" />
-        <Bar label="Health" icon="❤️" value={state.stats.health} tone="bg-sky-400" />
-        <Bar label="Food" icon="🍲" value={l.food} tone={l.food < 25 ? "bg-red-500" : "bg-amber-400"} />
-        <Bar label="Water" icon="💧" value={l.water} tone={l.water < 25 ? "bg-red-500" : "bg-cyan-300"} />
-        <Bar label="Stress" icon="😰" value={state.stats.stress} tone="bg-orange-400" />
-        <Bar label="Rep" icon="⭐" value={state.stats.reputation} tone="bg-violet-300" />
-        <Bar label="Heat" icon="🚨" value={state.stats.heat} tone="bg-red-500" />
+      <div className="grid grid-cols-4 gap-x-3 gap-y-1.5 sm:grid-cols-7">
+        <Bar label="Energy" Icon={Zap} value={state.stats.energy} color="#34d399" />
+        <Bar label="Health" Icon={Heart} value={state.stats.health} color="#f2547d" />
+        <Bar label="Food" Icon={Utensils} value={l.food} color="#f59e0b" warn={l.food < 25} />
+        <Bar label="Water" Icon={Droplet} value={l.water} color="#38bdf8" warn={l.water < 25} />
+        <Bar label="Stress" Icon={Brain} value={state.stats.stress} color="#c084fc" />
+        <Bar label="Rep" Icon={Star} value={state.stats.reputation} color="#facc15" />
+        <Bar label="Heat" Icon={Siren} value={state.stats.heat} color="#8b5cf6" />
       </div>
     </button>
   );
@@ -752,7 +768,7 @@ function Joystick() {
   return (
     <div
       ref={base}
-      className="absolute bottom-6 left-4 z-10 size-32 touch-none rounded-full border border-white/15 bg-white/5 backdrop-blur"
+      className="absolute bottom-6 left-4 z-10 size-32 touch-none rounded-full border-2 border-white/25 bg-[#141b2d]/35 shadow-[0_8px_24px_rgba(4,8,20,0.3),inset_0_0_24px_rgba(255,255,255,0.08)] backdrop-blur-sm"
       onPointerDown={(event) => {
         active.current = event.pointerId;
         (event.target as HTMLElement).setPointerCapture(event.pointerId);
@@ -766,8 +782,14 @@ function Joystick() {
       aria-label="Move joystick"
       role="presentation"
     >
+      {/* Direction marks around the ring. */}
+      {[0, 90, 180, 270].map((deg) => (
+        <span key={deg} className="pointer-events-none absolute top-1/2 left-1/2 size-0" style={{ transform: `rotate(${deg}deg) translateY(-54px)` }} aria-hidden>
+          <span className="absolute -left-[6px] -top-[4px] block border-x-[6px] border-b-[7px] border-x-transparent border-b-white/70" />
+        </span>
+      ))}
       <div
-        className="absolute top-1/2 left-1/2 size-14 rounded-full bg-blue-500/85 shadow-lg"
+        className="pointer-events-none absolute top-1/2 left-1/2 size-14 rounded-full border border-white/70 bg-gradient-to-b from-white to-slate-200 shadow-[0_4px_12px_rgba(0,0,0,0.35)]"
         style={{ transform: `translate(calc(-50% + ${knob.x}px), calc(-50% + ${knob.y}px))` }}
       />
     </div>

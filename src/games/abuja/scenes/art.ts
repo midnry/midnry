@@ -1,3 +1,4 @@
+import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
 import { characterParts, dims, lookKey, type LifeStage, type Look } from "../systems/character";
 import { furnitureSvg } from "../systems/furniture";
@@ -268,7 +269,7 @@ export function figure(scene: Phaser.Scene, x: number, y: number, person: Person
     items.push(
       scene.add
         .text(0, headTop - 10, opts.name, {
-          fontFamily: "system-ui, sans-serif",
+          fontFamily: GAME_FONT,
           fontSize: "12px",
           fontStyle: "bold",
           color: opts.nameColor ?? "#ffffff",
@@ -728,7 +729,7 @@ export function building(
 
 function labelOn(scene: Phaser.Scene, x: number, y: number, text: string, base: number) {
   scene.add
-    .text(x, y, text, { fontFamily: "system-ui, sans-serif", fontSize: "14px", fontStyle: "bold", color: "#ffffff", stroke: "#141414", strokeThickness: 4 })
+    .text(x, y, text, { fontFamily: GAME_FONT, fontSize: "14px", fontStyle: "bold", color: "#ffffff", stroke: "#141414", strokeThickness: 4 })
     .setResolution(2)
     .setOrigin(0.5)
     .setDepth(5 + base / 10000 + 0.0001);
@@ -741,7 +742,7 @@ export function signpost(scene: Phaser.Scene, x: number, y: number, name: string
   const board = scene.add.rectangle(0, -30, 46, 36, 0xfffbeb).setStrokeStyle(3, INK);
   const glyph = scene.add.text(0, -30, icon, { fontSize: "22px" }).setOrigin(0.5);
   const text = scene.add
-    .text(0, 44, name, { fontFamily: "system-ui, sans-serif", fontSize: "14px", fontStyle: "bold", color: "#ffffff", stroke: "#141414", strokeThickness: 4 })
+    .text(0, 44, name, { fontFamily: GAME_FONT, fontSize: "14px", fontStyle: "bold", color: "#ffffff", stroke: "#141414", strokeThickness: 4 })
     .setResolution(2)
     .setOrigin(0.5, 0);
   scene.tweens.add({ targets: mat, scaleX: 1.15, scaleY: 1.15, alpha: 0.6, duration: 1000, yoyo: true, repeat: -1 });

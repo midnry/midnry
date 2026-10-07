@@ -1,3 +1,4 @@
+import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
 import { fullLook, stageOf } from "../systems/character";
 
@@ -81,13 +82,13 @@ export class RoomScene extends Phaser.Scene {
     g.fillStyle(0x2563eb, 1).fillRoundedRect(door.x - 34, H - 22, 68, 18, 5);
     g.lineStyle(2, INK, 1).strokeRoundedRect(door.x - 34, H - 22, 68, 18, 5);
     this.add
-      .text(door.x, H - 13, this.info.parent ? "BACK" : "EXIT", { fontFamily: "system-ui, sans-serif", fontSize: "11px", fontStyle: "bold", color: "#ffffff" })
+      .text(door.x, H - 13, this.info.parent ? "BACK" : "EXIT", { fontFamily: GAME_FONT, fontSize: "11px", fontStyle: "bold", color: "#ffffff" })
       .setResolution(2)
       .setOrigin(0.5)
       .setDepth(2);
     // A name plate on the wall.
     this.add
-      .text(W / 2, WALL - 30, this.info.name, { fontFamily: "system-ui, sans-serif", fontSize: "13px", fontStyle: "bold", color: "#ffffff", backgroundColor: "#0b1f3d", padding: { x: 8, y: 3 } })
+      .text(W / 2, WALL - 30, this.info.name, { fontFamily: GAME_FONT, fontSize: "13px", fontStyle: "bold", color: "#ffffff", backgroundColor: "#0b1f3d", padding: { x: 8, y: 3 } })
       .setResolution(2)
       .setOrigin(0.5, 0)
       .setDepth(3);
@@ -133,7 +134,7 @@ export class RoomScene extends Phaser.Scene {
     for (const d of layout.doors ?? []) {
       this.spots.push({ kind: "door", id: `room:${d.to}`, label: d.label, x: d.x, y: WALL + 26 });
       this.add
-        .text(d.x, 66, d.label, { fontFamily: "system-ui, sans-serif", fontSize: "11px", fontStyle: "bold", color: "#ffffff", backgroundColor: "#0b1f3d", padding: { x: 5, y: 2 } })
+        .text(d.x, 66, d.label, { fontFamily: GAME_FONT, fontSize: "11px", fontStyle: "bold", color: "#ffffff", backgroundColor: "#0b1f3d", padding: { x: 5, y: 2 } })
         .setResolution(2)
         .setOrigin(0.5, 0)
         .setDepth(3);

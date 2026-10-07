@@ -1,3 +1,4 @@
+import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
 import { DISTRICTS, MAPS, PLACES, WORLD, districtAt } from "../systems/data";
 import { LAKE, ROADS, blocked, freePoint, roadRoute, sizeOf, solidsFor } from "../systems/citymap";
@@ -32,7 +33,7 @@ const color = (hex: string) => Phaser.Display.Color.HexStringToColor(hex).color;
 const LINE = 4;
 const title = (scene: Phaser.Scene, x: number, y: number, text: string, size = 14, fill = "#ffffff") =>
   scene.add
-    .text(x, y, text, { fontFamily: "system-ui, sans-serif", fontSize: `${size}px`, fontStyle: "bold", color: fill, stroke: "#141414", strokeThickness: Math.max(4, size / 4) })
+    .text(x, y, text, { fontFamily: GAME_FONT, fontSize: `${size}px`, fontStyle: "bold", color: fill, stroke: "#141414", strokeThickness: Math.max(4, size / 4) })
     .setResolution(2)
     .setOrigin(0.5, 0);
 
@@ -190,7 +191,7 @@ export class WorldScene extends Phaser.Scene {
     }
     // Drawing everyone takes a moment on slower phones: say so instead of showing a blank screen.
     const note = this.add
-      .text(this.scale.width / 2, this.scale.height / 2, "Getting Abuja ready…", { fontFamily: "system-ui, sans-serif", fontSize: "16px", fontStyle: "bold", color: "#ffffff" })
+      .text(this.scale.width / 2, this.scale.height / 2, "Getting Abuja ready…", { fontFamily: GAME_FONT, fontSize: "16px", fontStyle: "bold", color: "#ffffff" })
       .setOrigin(0.5)
       .setScrollFactor(0);
     // Only for the first load: people's clothes are drawn later as they appear.
@@ -674,7 +675,7 @@ export class WorldScene extends Phaser.Scene {
     ];
     const stink = [-9, 0, 9].map((dx, i) => {
       const line = this.add
-        .text(dx, top - 6, "~", { fontFamily: "system-ui, sans-serif", fontSize: "13px", fontStyle: "bold", color: "#86a83a" })
+        .text(dx, top - 6, "~", { fontFamily: GAME_FONT, fontSize: "13px", fontStyle: "bold", color: "#86a83a" })
         .setOrigin(0.5)
         .setAlpha(0);
       this.tweens.add({ targets: line, y: top - 22, alpha: { from: 0.95, to: 0 }, duration: 1300, delay: i * 420, repeat: -1 });
@@ -982,7 +983,7 @@ export class WorldScene extends Phaser.Scene {
     if (!this.myCar) {
       this.myCar = vehicle(this, this.player.x, this.player.y, { kind: "car", color: CAR_COLOR });
       this.myCarTag = this.add
-        .text(0, 0, "YOU", { fontFamily: "system-ui, sans-serif", fontSize: "12px", fontStyle: "bold", color: "#60a5fa", stroke: "#05070c", strokeThickness: 4 })
+        .text(0, 0, "YOU", { fontFamily: GAME_FONT, fontSize: "12px", fontStyle: "bold", color: "#60a5fa", stroke: "#05070c", strokeThickness: 4 })
         .setResolution(2)
         .setOrigin(0.5);
       this.player.setVisible(false);
@@ -1039,7 +1040,7 @@ export class WorldScene extends Phaser.Scene {
     const drop = away > 1 ? { x: curb.x + ((to.x - curb.x) / away) * step, y: curb.y + ((to.y - curb.y) / away) * step } : curb;
     const car = vehicle(this, route[0]!.x, route[0]!.y, style).setDepth(9);
     const tag = this.add
-      .text(car.x, car.y, "YOU", { fontFamily: "system-ui, sans-serif", fontSize: "12px", fontStyle: "bold", color: "#60a5fa", stroke: "#05070c", strokeThickness: 4 })
+      .text(car.x, car.y, "YOU", { fontFamily: GAME_FONT, fontSize: "12px", fontStyle: "bold", color: "#60a5fa", stroke: "#05070c", strokeThickness: 4 })
       .setResolution(2)
       .setOrigin(0.5)
       .setDepth(9);

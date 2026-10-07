@@ -1,3 +1,4 @@
+import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
 import { blocked, freePoint } from "../systems/citymap";
 import { findPath, type Point } from "../systems/path";
@@ -97,7 +98,7 @@ export class CityLife {
     // The train brings people in too.
     this.stops = [...stops, freePoint(RAIL.station.x, RAIL.station.y - 40, solids)];
     this.tag = scene.add
-      .text(0, 0, "", { fontFamily: "system-ui, sans-serif", fontSize: "9px", fontStyle: "bold", color: "#ffffff", backgroundColor: "#0b1220cc", padding: { x: 4, y: 2 }, align: "center" })
+      .text(0, 0, "", { fontFamily: GAME_FONT, fontSize: "9px", fontStyle: "bold", color: "#ffffff", backgroundColor: "#0b1220cc", padding: { x: 4, y: 2 }, align: "center" })
       .setOrigin(0.5, 0)
       .setResolution(2)
       .setDepth(28)

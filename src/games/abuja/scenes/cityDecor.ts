@@ -1,3 +1,4 @@
+import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
 import { ZONE_COLORS } from "../systems/city/catalog";
 import { building } from "../systems/city/catalog";
@@ -158,7 +159,7 @@ export function drawRail(scene: Phaser.Scene) {
   canopy.fillStyle(0x16a34a, 1).fillRect(s.x - 80, y - 58, 160, 10);
   canopy.fillStyle(0x374151, 1).fillRect(s.x - 70, y - 48, 3, 20).fillRect(s.x + 67, y - 48, 3, 20);
   canopy.lineStyle(2, INK, 1).strokeRect(s.x - 80, y - 58, 160, 10);
-  scene.add.text(s.x, y - 53, "METRO · GARKI", { fontFamily: "system-ui, sans-serif", fontSize: "9px", fontStyle: "bold", color: "#ffffff" }).setOrigin(0.5).setResolution(2).setDepth(canopy.depth + 0.0001);
+  scene.add.text(s.x, y - 53, "METRO · GARKI", { fontFamily: GAME_FONT, fontSize: "9px", fontStyle: "bold", color: "#ffffff" }).setOrigin(0.5).setResolution(2).setDepth(canopy.depth + 0.0001);
   // Tunnel mouth at the east end.
   const t = scene.add.graphics().setDepth(5 + (y + 16) / 10000);
   t.fillStyle(0x78716c, 1).fillRect(WORLD.width - 40, y - 36, 40, 52);
@@ -229,7 +230,7 @@ export function drawStreetFurniture(scene: Phaser.Scene, solids: MapRect[], lots
         if (kind === "billboard") {
           const bx = x + side * 60;
           if (put(`billboard${ad % ADS.length}`, bx, y, 0.9, { w: 40, h: 8 })) {
-            scene.add.text(bx, y - 41, ADS[ad % ADS.length]!.text, { fontFamily: "system-ui, sans-serif", fontSize: "7px", fontStyle: "bold", color: "#ffffff" }).setOrigin(0.5).setResolution(2).setDepth(5 + y / 10000 + 0.0001);
+            scene.add.text(bx, y - 41, ADS[ad % ADS.length]!.text, { fontFamily: GAME_FONT, fontSize: "7px", fontStyle: "bold", color: "#ffffff" }).setOrigin(0.5).setResolution(2).setDepth(5 + y / 10000 + 0.0001);
             ad += 1;
           }
         }
@@ -257,7 +258,7 @@ export function drawStreetFurniture(scene: Phaser.Scene, solids: MapRect[], lots
       const sy = y - 36;
       if (!clearOf(sx, sy, 4)) continue;
       scene.add.image(sx, sy, "streetsign").setOrigin(0.5, 1).setScale(1.25, 1).setDepth(5 + sy / 10000);
-      scene.add.text(sx, sy - 26, NAMES[ni++ % NAMES.length]!, { fontFamily: "system-ui, sans-serif", fontSize: "6.5px", fontStyle: "bold", color: "#ffffff" }).setOrigin(0.5).setResolution(3).setDepth(5 + sy / 10000 + 0.0001);
+      scene.add.text(sx, sy - 26, NAMES[ni++ % NAMES.length]!, { fontFamily: GAME_FONT, fontSize: "6.5px", fontStyle: "bold", color: "#ffffff" }).setOrigin(0.5).setResolution(3).setDepth(5 + sy / 10000 + 0.0001);
     }
   }
   // Parks get benches you can sit on too.
