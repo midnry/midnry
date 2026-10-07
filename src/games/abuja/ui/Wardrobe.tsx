@@ -1,50 +1,45 @@
 import { useState } from "react";
-import { fullLook, type Look } from "../systems/character";
+import { fullLook } from "../systems/character";
 import { changeLooks } from "../systems/engine";
 import type { GameState } from "../systems/types";
 import { Avatar } from "./Avatar";
-import { Dresser } from "./Dresser";
-import { DRAWN, PAINTED_OUTFITS, TONES, playerPainted, type Tone } from "../systems/painted";
+import { PAINTED_OUTFITS, TONES, playerPainted, type Tone } from "../systems/painted";
 import { btnGhost, btnPrimary } from "./theme";
 
 /** Change your style any time: same person, new fit. */
 export function WardrobePanel({ state, onDone }: { state: GameState; onDone: () => void }) {
-  const [look, setLook] = useState<Look>(() => fullLook(state.looks));
-  const [painted, setPainted] = useState<string>(() => playerPainted(state) ?? DRAWN);
+  const look = fullLook(state.looks);
+  const [painted, setPainted] = useState<string>(() => playerPainted(state) ?? "");
   const adult = state.age >= 18;
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-[140px_minmax(0,1fr)]">
       <div className="flex flex-col items-center gap-2">
         <div className="rounded-3xl bg-gradient-to-b from-sky-200/20 to-transparent p-2">
-          <Avatar looks={{ ...look, outfit: look.topColor, painted }} size={120} adult={adult} />
+          <Avatar looks={{ ...state.looks, painted }} size={120} adult={adult} />
         </div>
         <p className="text-sm font-semibold">{state.name}</p>
       </div>
       <div className="min-w-0">
-        {adult ? <PaintedGallery build={look.build} value={painted} onChange={setPainted} /> : null}
-        <p className="mt-4 mb-2 text-xs font-semibold tracking-wide text-slate-400 uppercase">{adult ? "Or mix and match your own" : "Your look"}</p>
-        <Dresser
-          look={look}
-          adult={adult}
-          onChange={(next) => {
-            // Picking a single piece switches back to the mix-and-match look.
-            setPainted(DRAWN);
-            setLook(next);
-          }}
-        />
+        {adult ? (
+          <PaintedGallery build={look.build} value={painted} onChange={setPainted} fixedBuild />
+        ) : (
+          <p className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-sm text-slate-300">{state.age < 13 ? "School uniform for now." : "Teen clothes for now."} You choose your own outfits from age 18.</p>
+        )}
         <div className="mt-4 flex gap-2">
-          <button
-            type="button"
-            className={btnPrimary}
-            onClick={() => {
-              changeLooks(look, painted);
-              onDone();
-            }}
-          >
-            Save outfit
-          </button>
+          {adult ? (
+            <button
+              type="button"
+              className={btnPrimary}
+              onClick={() => {
+                changeLooks(look, painted);
+                onDone();
+              }}
+            >
+              Save outfit
+            </button>
+          ) : null}
           <button type="button" className={btnGhost} onClick={onDone}>
-            Cancel
+            {adult ? "Cancel" : "Close"}
           </button>
         </div>
       </div>
@@ -80,7 +75,7 @@ export function PaintedGallery({ build, value, onChange, fixedBuild }: { build: 
             <li key={o.id}>
               <button
                 type="button"
-                onClick={() => onChange(value === o.id ? DRAWN : o.id)}
+                onClick={() => onChange(o.id)}
                 aria-pressed={value === o.id}
                 className={`flex w-full flex-col items-center rounded-xl border p-1.5 text-[11px] leading-tight ${value === o.id ? "border-blue-400 bg-blue-500/20" : "border-white/10 bg-black/20 hover:bg-white/10"}`}
               >

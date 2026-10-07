@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { characterSvg, cropBox, fullLook, svgDataUri, type Crop, type LifeStage, type Look, type Pose, type View } from "../systems/character";
 import type { Looks } from "../systems/types";
-import { PAINTED_OUTFITS } from "../systems/painted";
+import { isPaintedId } from "../systems/painted";
 
 /** The player as drawn in the game: the whole person, or a close-up crop. */
 export function Avatar({
@@ -27,7 +27,7 @@ export function Avatar({
   const src = useMemo(() => svgDataUri(characterSvg(look, { crop, view, adult, stage, pose })), [look, crop, view, adult, stage, pose]);
   const box = cropBox(look, body, crop);
   // A grown-up in a hand-painted outfit: the painting, framed like the drawn version.
-  if (painted && adult && (!stage || stage === "adult" || stage === "young") && PAINTED_OUTFITS.some((o) => o.id === painted)) {
+  if (isPaintedId(painted)) {
     const h = Math.round((size * box.h) / box.w);
     const src = `/abuja/people/${painted}-${view === "back" ? "back" : view === "side" ? "side" : "front"}.png`;
     return (

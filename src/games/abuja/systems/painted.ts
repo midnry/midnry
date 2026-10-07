@@ -37,16 +37,26 @@ export function autoOutfit(looks: Looks): string | undefined {
   return PAINTED_OUTFITS.some((o) => o.id === id) ? id : undefined;
 }
 
-/** The painted outfit the player wears (grown-ups only): their choice, or one matched to their look. */
+/** The painted player as a child or teenager: the school kids and teens, by gender. */
+export function youngPainted(looks: Partial<Looks>, age: number): string {
+  const girl = (looks.build ?? (looks.lashes ? "fem" : "masc")) === "fem";
+  if (age < 13) return girl ? "crowd-schoolgirl" : "crowd-schoolboy";
+  return girl ? "crowd-teengirl" : "crowd-teenboy";
+}
+
+/** The painted art the player wears at their age: school clothes when young, their chosen (or matched) outfit from 18. */
 export function playerPainted(state: Pick<GameState, "looks" | "age"> | null): string | undefined {
-  if (!state?.looks || (state.age ?? 0) < 18) return undefined;
+  if (!state?.looks) return undefined;
+  if ((state.age ?? 0) < 18) return youngPainted(state.looks, state.age ?? 0);
   const id = state.looks.painted;
-  if (id === DRAWN) return undefined;
   if (id && PAINTED_OUTFITS.some((o) => o.id === id)) return id;
   return autoOutfit(state.looks);
 }
 
-/** The player's looks with the painted outfit filled in, for portraits in the interface. */
+/** Any painted art id the interface can show as a portrait. */
+export const isPaintedId = (id: string | undefined): id is string => Boolean(id && (PAINTED_OUTFITS.some((o) => o.id === id) || CROWD_PAINTED.some((c) => c.id === id)));
+
+/** The player's looks with the painted art filled in, for portraits in the interface. */
 export const myLooks = (state: Pick<GameState, "looks" | "age">): Looks => ({ ...state.looks, painted: playerPainted(state) ?? DRAWN });
 
 // ── Passers-by ──────────────────────────────────────────────────────────────

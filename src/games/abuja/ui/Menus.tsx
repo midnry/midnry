@@ -2,9 +2,8 @@ import { useState } from "react";
 import { PRESETS, type Look, type View } from "../systems/character";
 import type { Background, Gender, Interest, Looks } from "../systems/types";
 import { Avatar } from "./Avatar";
-import { Dresser } from "./Dresser";
 import { PaintedGallery } from "./Wardrobe";
-import { DRAWN, autoOutfit } from "../systems/painted";
+import { autoOutfit, youngPainted } from "../systems/painted";
 import { btnGhost, btnPrimary, panel } from "./theme";
 
 export function AgeGate({ onPass }: { onPass: () => void }) {
@@ -105,7 +104,6 @@ export function Creator({
   const [background, setBackground] = useState<Background>("lapo");
   const [interest, setInterest] = useState<Interest>("men");
   const [look, setLook] = useState<Look>(PRESETS.female);
-  const [dressed, setDressed] = useState(false);
   const [view, setView] = useState<View>("front");
   const [grown, setGrown] = useState(false);
   /** The painted outfit for 18 and over: picked here, or matched to your look. */
@@ -121,7 +119,7 @@ export function Creator({
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-[180px_minmax(0,1fr)]">
           <div className="flex flex-col items-center gap-2">
             <div className="rounded-3xl bg-gradient-to-b from-sky-200/20 to-transparent p-3">
-              <Avatar looks={grown ? { ...look, outfit: look.topColor, painted: grownOutfit ?? DRAWN } : look} size={150} view={view} adult={grown} />
+              <Avatar looks={{ ...look, outfit: look.topColor, painted: grown ? grownOutfit : youngPainted({ build }, 8) }} size={150} view={view} adult={grown} />
             </div>
             <div className="flex flex-wrap justify-center gap-1">
               <button type="button" className="min-h-9 rounded-full bg-white/10 px-3 text-xs hover:bg-white/15" onClick={() => setView(view === "front" ? "side" : view === "side" ? "back" : "front")}>
@@ -153,8 +151,8 @@ export function Creator({
                   onClick={() => {
                     setGender(item);
                     setInterest(item === "female" ? "men" : "women");
-                    // Until you start dressing up, the preview follows the choice.
-                    if (!dressed) setLook(PRESETS[item]);
+                    setLook(PRESETS[item]);
+                    setPainted(undefined);
                   }}
                 >
                   {item === "female" ? "Woman" : "Man"}
@@ -169,26 +167,15 @@ export function Creator({
               ))}
             </Pick>
             <div>
-              <p className="mb-2 text-sm text-slate-300">Your grown-up look (from age 18)</p>
+              <p className="mb-2 text-sm text-slate-300">Your look from age 18 (you grow up in school uniform, then teen clothes)</p>
               <PaintedGallery
                 key={build}
                 build={build}
                 fixedBuild
                 value={grownOutfit}
                 onChange={(id) => {
-                  setPainted(id === DRAWN ? undefined : id);
+                  setPainted(id);
                   setGrown(true);
-                }}
-              />
-            </div>
-            <div>
-              <p className="mb-2 text-sm text-slate-300">Style as a child (and mix-and-match outfits later)</p>
-              <Dresser
-                look={look}
-                adult={grown}
-                onChange={(next) => {
-                  setLook(next);
-                  setDressed(true);
                 }}
               />
             </div>
