@@ -163,6 +163,19 @@ export const WALK_FRAMES = new Set<string>([
   "you-nysc-m-light",
   "you-nysc-m-brown",
   "you-nysc-m-dark",
+  // Friends and family.
+  "mama",
+  "daddy",
+  "tunde",
+  "tunde-9",
+  "tunde-15",
+  "slim",
+  "slim-9",
+  "slim-15",
+  "bolaji",
+  "bolaji-15",
+  "okafor",
+  "corper",
 ]);
 
 /** Named people from the school, university and camp chapters, with their heights against a grown-up. */
