@@ -1,0 +1,217 @@
+.abuja-loading {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  overflow: hidden;
+  padding: 40px 24px 24px;
+  background: radial-gradient(ellipse at 50% 35%, #193748 0%, #0b1c2b 42%, #050b14 85%);
+  color: #f7edda;
+  font-family: "Nunito", "Outfit", system-ui, sans-serif;
+  text-align: center;
+}
+.abuja-loading--overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  min-height: 0;
+  overflow-y: auto;
+}
+.abuja-loading__grain {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.12;
+  background-image: radial-gradient(#f7edda 1px, transparent 1px);
+  background-size: 5px 5px;
+  mask-image: linear-gradient(transparent, #000);
+  pointer-events: none;
+}
+.abuja-loading__content {
+  width: min(100%, 460px);
+  margin: auto 0;
+}
+.abuja-loading__eyebrow {
+  margin: 0 0 18px;
+  color: #a0b6bd;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+.abuja-loading__brand {
+  margin: 0;
+  font-size: clamp(48px, 9vw, 76px);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+}
+.abuja-loading__brand > span {
+  display: block;
+  color: #edc584;
+}
+.abuja-loading__star {
+  display: inline-block;
+  margin-left: 8px;
+  color: #70d3ad;
+  font-size: 0.5em;
+  vertical-align: middle;
+}
+.abuja-loading__tagline {
+  margin: 18px 0 0;
+  color: #a0b6bd;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+.abuja-loading__city {
+  display: block;
+  width: 100%;
+  margin: 12px 0 22px;
+}
+.abuja-loading__taxi {
+  animation: abuja-taxi 9s linear infinite;
+}
+.abuja-loading__status h2 {
+  margin: 10px 0 6px;
+  font-size: clamp(18px, 4vw, 23px);
+  font-weight: 800;
+  line-height: 1.3;
+}
+.abuja-loading__status p {
+  margin: 0;
+  color: #a0b6bd;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.abuja-loading__icon {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #70d3ad40;
+  border-radius: 12px;
+  background: #70d3ad0c;
+  color: #70d3ad;
+  font-size: 20px;
+}
+.abuja-loading__meter {
+  height: 5px;
+  margin-top: 24px;
+  overflow: hidden;
+  border-radius: 9px;
+  background: #ffffff15;
+}
+.abuja-loading__progress,
+.abuja-loading__indeterminate {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #45a887, #a4ebbc);
+}
+.abuja-loading__progress {
+  transition: width 0.25s ease;
+}
+.abuja-loading__indeterminate {
+  width: 35%;
+  animation: abuja-progress 1.6s ease-in-out infinite;
+}
+.abuja-loading__caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 9px;
+  color: #94b1b6;
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.abuja-loading__tip {
+  margin-top: 25px;
+  padding: 18px 20px;
+  border: 1px solid #b8d4cc18;
+  border-radius: 14px;
+  background: #ffffff03;
+}
+.abuja-loading__tip > span {
+  color: #edc584;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+}
+.abuja-loading__tip p {
+  margin: 7px 0 0;
+  color: #b8c9cb;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.abuja-loading__retry {
+  margin-top: 16px;
+  min-height: 44px;
+  padding: 10px 22px;
+  border: 1px solid #70d3ad66;
+  border-radius: 12px;
+  background: #163c37;
+  color: #d9ffe9;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.abuja-loading__retry:focus-visible {
+  outline: 2px solid #edc584;
+  outline-offset: 4px;
+}
+.abuja-loading__footer {
+  margin: 26px 0 0;
+  color: #829da5;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+@keyframes abuja-taxi {
+  from {
+    transform: translateX(-70px);
+  }
+  to {
+    transform: translateX(620px);
+  }
+}
+@keyframes abuja-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(390%);
+  }
+}
+@media (max-height: 680px) {
+  .abuja-loading {
+    padding-top: 22px;
+  }
+  .abuja-loading__brand {
+    font-size: 48px;
+  }
+  .abuja-loading__city {
+    max-height: 110px;
+    margin-bottom: 14px;
+  }
+  .abuja-loading__tip {
+    margin-top: 16px;
+    padding: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .abuja-loading__taxi {
+    animation: none;
+    transform: translateX(420px);
+  }
+  .abuja-loading__indeterminate {
+    animation: none;
+    width: 100%;
+    opacity: 0.5;
+  }
+  .abuja-loading__progress {
+    transition: none;
+  }
+}

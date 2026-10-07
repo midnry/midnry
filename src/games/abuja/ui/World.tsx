@@ -1,5 +1,7 @@
+import { LoadingScreen } from "./LoadingScreen";
+import { GameLoadingContext } from "./loading-context";
 import { myLooks } from "../systems/painted";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Brain, CarFront, ChevronRight, DoorOpen, Droplet, Hand, Heart, LocateFixed, Map as MapIcon, MapPin, MessageCircle, Minus, Moon, Pause, Play, Plus, Search, Siren, Smartphone, SquareParking, Star, Utensils, Zap } from "lucide-react";
 import type { Game as PhaserGame } from "phaser";
 import { EVENTS, chapter, place } from "../systems/data";
@@ -69,60 +71,57 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   // Inside a building: which room, and the loading screen between outside and in.
   const [inside, setInside] = useState<RoomInfo | null>(null);
   const insideRef = useRef<RoomInfo | null>(null);
-  const [loading, setLoading] = useState<{ title: string; icon: string } | null>(null);
-  const loadStarted = useRef(0);
-  const finishLoading = (min = 900) => {
-    const wait = Math.max(0, min - (Date.now() - loadStarted.current));
-    window.setTimeout(() => setLoading(null), wait);
+  const [loading, setLoading] = useState<{ title: string; icon: string; progress?: number; error?: string } | null>({ title: "Loading your next chapter", icon: "✦" });
+  const presentedLoading = useContext(GameLoadingContext)?.visible ?? false;
+  const isLoading = Boolean(loading) || presentedLoading;
+  const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleTransition = (action: () => void) => {
+    if (transitionTimer.current) clearTimeout(transitionTimer.current);
+    // Give the browser a frame to paint the screen before constructing a scene.
+    transitionTimer.current = setTimeout(action, 120);
   };
   const enterRoom = (info: RoomInfo) => {
     const g = game.current;
-    if (!g || insideRef.current) return;
-    loadStarted.current = Date.now();
+    if (!g || insideRef.current || isLoading) return;
     setLoading({ title: `Entering ${info.name}`, icon: ROOM_ICON[info.type] });
     setOpen(null);
     setTalking(null);
     insideRef.current = info;
     setInside(info);
-    window.setTimeout(() => {
+    scheduleTransition(() => {
       g.scene.sleep("world");
       g.scene.start("room", info);
-    }, 120);
+    });
   };
   const leaveRoom = () => {
     const g = game.current;
-    if (!g || !insideRef.current) return;
-    loadStarted.current = Date.now();
+    if (!g || !insideRef.current || isLoading) return;
     setLoading({ title: "Heading back outside", icon: "🚪" });
     setOpen(null);
     setTalking(null);
-    window.setTimeout(() => {
+    scheduleTransition(() => {
       g.scene.stop("room");
       g.scene.wake("world");
       insideRef.current = null;
       setInside(null);
-      finishLoading(700);
-    }, 160);
+    });
   };
   /** Through a door inside a home: bedroom, bathroom, or back to the living room. */
   const switchRoom = (info: RoomInfo) => {
     const g = game.current;
-    if (!g || !insideRef.current) return;
-    loadStarted.current = Date.now();
+    if (!g || !insideRef.current || isLoading) return;
     setLoading({ title: info.parent ? `Into the ${info.name.toLowerCase()}` : `Back to ${info.name}`, icon: ROOM_ICON[info.type] });
     setOpen(null);
     setTalking(null);
     insideRef.current = info;
     setInside(info);
-    window.setTimeout(() => {
+    scheduleTransition(() => {
       g.scene.stop("room");
       g.scene.start("room", info);
-    }, 120);
+    });
   };
   const roomActions = useRef({ enterRoom, leaveRoom, switchRoom });
   roomActions.current = { enterRoom, leaveRoom, switchRoom };
-  const finishLoadingRef = useRef(() => finishLoading());
-  finishLoadingRef.current = () => finishLoading();
 
   useEffect(() => {
     let cancel = false;
@@ -131,6 +130,8 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
     void Promise.all([import("../scenes/WorldScene"), Promise.race([fonts, new Promise((r) => setTimeout(r, 1500))])]).then(([{ createGame }]) => {
       if (cancel || !host.current) return;
       game.current = createGame(host.current);
+    }).catch(() => {
+      if (!cancel) setLoading({ title: "Loading Abuja", icon: "!", error: "We couldn't load the game files. Check your connection and reload to try again." });
     });
     const interact = (thing: NearThing) => {
       if (thing.kind === "place") {
@@ -184,7 +185,9 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       bus.on("interact", interact),
       bus.on("blocked", (message) => setBlocked(message)),
       bus.on("exploring", (on) => setExploring(on)),
-      bus.on("roomReady", () => finishLoadingRef.current()),
+      bus.on("sceneLoading", ({ title, progress }) => setLoading((previous) => previous?.error ? previous : ({ title, progress, icon: insideRef.current ? ROOM_ICON[insideRef.current.type] : "✦" }))),
+      bus.on("sceneReady", () => setLoading((previous) => previous?.error ? previous : null)),
+      bus.on("sceneLoadError", () => setLoading({ title: "Loading game artwork", icon: "!", error: "Some game artwork couldn't load. Reload to try again." })),
       bus.on("kitchen", (open) => {
         setOpen(null);
         setKitchenOpen(open);
@@ -194,6 +197,8 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
     ];
     return () => {
       cancel = true;
+      if (transitionTimer.current) clearTimeout(transitionTimer.current);
+      input.paused = false;
       offs.forEach((off) => off());
       game.current?.destroy(true);
       game.current = null;
@@ -202,20 +207,20 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
 
   // The world stands still while the pause menu is open. Esc or P toggles it.
   useEffect(() => {
-    input.paused = paused || wardrobe || Boolean(negotiation) || Boolean(kitchenOpen);
+    input.paused = paused || wardrobe || Boolean(negotiation) || Boolean(kitchenOpen) || isLoading;
     input.x = 0;
     input.y = 0;
-  }, [paused, wardrobe, negotiation, kitchenOpen]);
+  }, [paused, wardrobe, negotiation, kitchenOpen, isLoading]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (isLoading) return;
       if (event.key === "Escape" || event.key === "p" || event.key === "P") setPaused((value) => !value);
     };
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
-      input.paused = false;
     };
-  }, []);
+  }, [isLoading]);
 
   useEffect(() => {
     if (!state.toast) return;
@@ -233,10 +238,11 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const beat = currentBeat(state);
   const here = near && near.kind === "place" ? place(near.id) : undefined;
   const panelOpen = Boolean(here && open === here.id);
-  const showEnter = near && !lotOpen && !loading && !exploring && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
+  const showEnter = near && !lotOpen && !isLoading && !exploring && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#05070c] text-slate-100 select-none">
+      <div className="contents" inert={isLoading}>
       <div ref={host} className="absolute inset-0" />
       {inStory ? <ChapterHud state={state} /> : <Hud state={state} onOpen={setPhone} />}
 
@@ -392,7 +398,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         <button
           type="button"
           onClick={() => setPhone("map")}
-          className={`${actionBtn} absolute right-4 bottom-[6.25rem] z-10 border border-blue-300/40 bg-gradient-to-b from-[#3b82f6] to-[#2563eb] text-white hover:brightness-110`}
+          className={`${actionBtn} absolute right-4 bottom-[6.25rem] z-10 border border-blue-300/40 bg-gradient-to-b from-[#285949] to-[#163c37] text-white hover:brightness-110`}
           style={{ fontFamily: GAME_FONT }}
           aria-label="Get a ride"
         >
@@ -431,7 +437,8 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           <StoryPanel state={state} />
         </div>
       ) : null}
-      {loading ? <LoadingScreen title={loading.title} icon={loading.icon} /> : null}
+      </div>
+      {loading ? <LoadingScreen overlay title={loading.title} icon={loading.icon} progress={loading.progress} error={loading.error} /> : null}
       <p className="pointer-events-none absolute bottom-2 left-1/2 hidden -translate-x-1/2 text-xs text-slate-400 sm:block">
         WASD or arrows to move · {controls === "tap" ? "click to walk" : "joystick to walk"} · E to interact
       </p>
@@ -456,33 +463,6 @@ const ROOM_ICON: Record<RoomInfo["type"], string> = {
   hall: "🎉",
 };
 
-const TIPS = [
-  "Tip: tap 🗺️ outside to look around the map without moving.",
-  "Tip: okadas are fastest, taxis keep you calm.",
-  "Tip: 🌙 skips to night. Abuja looks different after dark.",
-  "Tip: change your look any time in the Wardrobe.",
-  "Tip: talk to people. They remember you.",
-];
-
-function LoadingScreen({ title, icon }: { title: string; icon: string }) {
-  const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)]!);
-  return (
-    <div className="absolute inset-0 z-[60] flex flex-col items-center justify-center bg-[radial-gradient(ellipse_at_top,#11265c,#05070c_65%)] px-6 text-center" role="status" aria-live="polite">
-      <div className="flex size-24 items-center justify-center rounded-3xl border-2 border-white/15 bg-white/10 text-5xl shadow-2xl">
-        <span className="animate-bounce" aria-hidden>
-          {icon}
-        </span>
-      </div>
-      <p className="mt-6 font-display text-2xl text-white">{title}…</p>
-      <div className="mt-5 h-2 w-56 overflow-hidden rounded-full bg-white/15">
-        <div className="h-full w-1/3 animate-[loadbar_0.9s_ease-in-out_infinite] rounded-full bg-blue-500" />
-      </div>
-      <p className="mt-6 max-w-xs text-sm text-slate-300">{tip}</p>
-      <style>{`@keyframes loadbar { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }`}</style>
-    </div>
-  );
-}
-
 /** The little round icon at the start of an interaction prompt. */
 function PromptIcon({ kind }: { kind: string }) {
   const [Icon, tone] = kind === "person" ? [MessageCircle, "bg-sky-500"] : kind === "lot" ? [Search, "bg-emerald-500"] : kind === "beat" ? [Play, "bg-amber-500"] : kind === "visit" ? [MapPin, "bg-violet-500"] : kind === "item" ? [Hand, "bg-amber-500"] : [DoorOpen, "bg-violet-500"];
@@ -501,7 +481,7 @@ function MapButton({ label, active, onClick, children }: { label: string; active
       title={label}
       aria-pressed={active}
       onClick={onClick}
-      className={`${iconBtn} ${active ? "!bg-blue-600/95 ring-2 ring-blue-300/60" : ""}`}
+      className={`${iconBtn} ${active ? "!bg-[#23624f]/95 ring-2 ring-blue-300/60" : ""}`}
     >
       {children}
     </button>

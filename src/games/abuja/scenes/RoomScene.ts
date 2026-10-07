@@ -1,3 +1,4 @@
+import { startSceneLoading, finishSceneLoading } from "./loading";
 import { playerPainted } from "../systems/painted";
 import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
@@ -56,6 +57,7 @@ export class RoomScene extends Phaser.Scene {
   }
 
   preload() {
+    startSceneLoading(this, `Entering ${this.info.name}`);
     const layout = LAYOUTS[this.info.type];
     queueFurniture(this, layout.items);
     const state = getState();
@@ -80,16 +82,16 @@ export class RoomScene extends Phaser.Scene {
     // Walls around the room, with a doorway at the bottom.
     g.fillStyle(0x3b2a1f, 1).fillRect(-14, -14, 14, H + 28).fillRect(W, -14, 14, H + 28).fillRect(-14, -14, W + 28, 14);
     g.fillRect(-14, H - 10, door.x - 40 + 14, 24).fillRect(door.x + 40, H - 10, W - door.x - 40 + 14, 24);
-    g.fillStyle(0x2563eb, 1).fillRoundedRect(door.x - 34, H - 22, 68, 18, 5);
+    g.fillStyle(0x23624f, 1).fillRoundedRect(door.x - 34, H - 22, 68, 18, 5);
     g.lineStyle(2, INK, 1).strokeRoundedRect(door.x - 34, H - 22, 68, 18, 5);
     this.add
-      .text(door.x, H - 13, this.info.parent ? "BACK" : "EXIT", { fontFamily: GAME_FONT, fontSize: "11px", fontStyle: "bold", color: "#ffffff" })
+      .text(door.x, H - 13, this.info.parent ? "BACK" : "EXIT", { fontFamily: GAME_FONT, fontSize: "11px", fontStyle: "bold", color: "#f7edda" })
       .setResolution(2)
       .setOrigin(0.5)
       .setDepth(2);
     // A name plate on the wall.
     this.add
-      .text(W / 2, WALL - 30, this.info.name, { fontFamily: GAME_FONT, fontSize: "13px", fontStyle: "bold", color: "#ffffff", backgroundColor: "#0b1f3d", padding: { x: 8, y: 3 } })
+      .text(W / 2, WALL - 30, this.info.name, { fontFamily: GAME_FONT, fontSize: "13px", fontStyle: "bold", color: "#f7edda", backgroundColor: "#0b1f3d", padding: { x: 8, y: 3 } })
       .setResolution(2)
       .setOrigin(0.5, 0)
       .setDepth(3);
@@ -123,7 +125,7 @@ export class RoomScene extends Phaser.Scene {
     });
 
     // Spots to use: the place's desk or bed, things to do, doors to other rooms, and the way out.
-    const ring = (x: number, y: number) => this.add.circle(x, y, 24, 0x3b82f6, 0.18).setStrokeStyle(3, 0x3b82f6, 0.8).setDepth(1.6);
+    const ring = (x: number, y: number) => this.add.circle(x, y, 24, 0x70d3ad, 0.18).setStrokeStyle(3, 0x70d3ad, 0.8).setDepth(1.6);
     if (layout.use && this.info.placeId) {
       this.spots.push({ kind: "place", id: this.info.placeId, label: layout.use.label, x: layout.use.x, y: layout.use.y });
       ring(layout.use.x, layout.use.y);
@@ -135,7 +137,7 @@ export class RoomScene extends Phaser.Scene {
     for (const d of layout.doors ?? []) {
       this.spots.push({ kind: "door", id: `room:${d.to}`, label: d.label, x: d.x, y: WALL + 26 });
       this.add
-        .text(d.x, 66, d.label, { fontFamily: GAME_FONT, fontSize: "11px", fontStyle: "bold", color: "#ffffff", backgroundColor: "#0b1f3d", padding: { x: 5, y: 2 } })
+        .text(d.x, 66, d.label, { fontFamily: GAME_FONT, fontSize: "11px", fontStyle: "bold", color: "#f7edda", backgroundColor: "#0b1f3d", padding: { x: 5, y: 2 } })
         .setResolution(2)
         .setOrigin(0.5, 0)
         .setDepth(3);
@@ -163,6 +165,7 @@ export class RoomScene extends Phaser.Scene {
     });
     bus.emit("near", null);
     bus.emit("roomReady", null);
+    finishSceneLoading(this);
     // Development only: lets automated browser tests move the player.
     if (import.meta.env.DEV) (window as unknown as { __room?: unknown }).__room = { place: (x: number, y: number) => this.player.setPosition(x, y) };
   }
