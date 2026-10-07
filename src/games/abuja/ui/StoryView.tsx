@@ -56,7 +56,7 @@ export function StoryPanel({ state }: { state: GameState }) {
           ) : (
             <div className="mt-6">
               {speaker ? (
-                <ChatBubble name={speaker} looks={speakerLook(speaker, state.chapter ?? undefined).look} adult={speakerLook(speaker, state.chapter ?? undefined).adult} painted={speakerLook(speaker, state.chapter ?? undefined).painted}>
+                <ChatBubble name={speaker} looks={speakerLook(speaker, state.chapter ?? undefined, scene.speaker === "{love}" ? state.loveGender : undefined).look} adult={speakerLook(speaker, state.chapter ?? undefined, scene.speaker === "{love}" ? state.loveGender : undefined).adult} painted={speakerLook(speaker, state.chapter ?? undefined, scene.speaker === "{love}" ? state.loveGender : undefined).painted}>
                   {fill(state, scene.text)}
                 </ChatBubble>
               ) : (
