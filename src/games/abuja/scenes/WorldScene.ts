@@ -33,7 +33,8 @@ const color = (hex: string) => Phaser.Display.Color.HexStringToColor(hex).color;
 const LINE = 4;
 const title = (scene: Phaser.Scene, x: number, y: number, text: string, size = 14, fill = "#ffffff") =>
   scene.add
-    .text(x, y, text, { fontFamily: GAME_FONT, fontSize: `${size}px`, fontStyle: "bold", color: fill, stroke: "#141414", strokeThickness: Math.max(4, size / 4) })
+    .text(x, y, text, { fontFamily: GAME_FONT, fontSize: `${size}px`, fontStyle: "900", color: fill, stroke: "#1b2333", strokeThickness: Math.max(3, size / 5) })
+    .setShadow(0, 2, "rgba(0,0,0,0.35)", 4, true, true)
     .setResolution(2)
     .setOrigin(0.5, 0);
 
@@ -631,9 +632,9 @@ export class WorldScene extends Phaser.Scene {
       const at = personAt(p);
       const body = figure(this, at.x, at.y, personOf(p), { name: p.name });
       body.setDepth(5 + at.y / 10000);
-      const bubble = this.add.text(14, body.headTop - 4, "💬", { fontSize: "16px" });
+      const bubble = this.add.image(p.name.length * 2.9 + 12, body.headTop - 10, "talkbubble").setOrigin(0, 1).setScale(0.8);
       body.add(bubble);
-      this.tweens.add({ targets: bubble, y: body.headTop - 10, duration: 800, yoyo: true, repeat: -1 });
+      this.tweens.add({ targets: bubble, y: body.headTop - 14, duration: 900, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
       this.people.push({ kind: "person", id: personKey(p), label: p.name, x: at.x, y: at.y, body, home: at, vx: 0, vy: 0 });
     }
   }
@@ -655,7 +656,7 @@ export class WorldScene extends Phaser.Scene {
 
   private makePlayer(x: number, y: number) {
     const me = figure(this, x, y, playerOf(getState()), { name: "YOU", nameColor: "#60a5fa", unit: 0.22 });
-    const halo = this.add.ellipse(0, 9, 32, 11, 0x60a5fa, 0.25).setStrokeStyle(2.5, 0xffffff, 0.95);
+    const halo = this.add.ellipse(0, 9, 34, 12, 0xbfdbfe, 0.28).setStrokeStyle(2, 0xffffff, 0.85);
     me.addAt(halo, 0);
     this.tweens.add({ targets: halo, scaleX: 1.15, scaleY: 1.15, alpha: 0.6, duration: 700, yoyo: true, repeat: -1 });
     this.grime = this.makeGrime(me);

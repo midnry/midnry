@@ -106,8 +106,19 @@ function makeTiles(scene: Phaser.Scene) {
 const RES = 1.5;
 
 function makeShadow(scene: Phaser.Scene) {
+  // A soft contact shadow: darker in the middle, feathered at the edge.
   make(scene, "shadow", 48, 14, (g) => {
-    g.fillStyle(0x000000, 0.28).fillEllipse(24, 7, 46, 12);
+    for (let i = 0; i < 5; i += 1) g.fillStyle(0x1a1208, 0.08).fillEllipse(24, 7, 46 - i * 7, 12 - i * 1.8);
+  });
+  // A speech bubble for people with something to say.
+  make(scene, "talkbubble", 30, 26, (g) => {
+    g.fillStyle(0x000000, 0.18).fillRoundedRect(3, 3, 26, 17, 8);
+    g.fillStyle(0xffffff, 1).fillRoundedRect(1, 1, 26, 17, 8);
+    g.fillTriangle(6, 16, 13, 16, 5, 24);
+    g.lineStyle(2, INK, 1).strokeRoundedRect(1, 1, 26, 17, 8);
+    g.fillStyle(0xffffff, 1).fillRect(7, 15, 6, 4);
+    g.lineStyle(2, INK, 1).lineBetween(6, 18, 5, 24).lineBetween(5, 24, 13, 18);
+    g.fillStyle(0x334155, 1).fillCircle(8, 9.5, 2).fillCircle(14, 9.5, 2).fillCircle(20, 9.5, 2);
   });
 }
 
@@ -266,19 +277,8 @@ export function figure(scene: Phaser.Scene, x: number, y: number, person: Person
   const shadow = scene.add.image(0, FEET - 2, "shadow").setScale(unit * 2.4, unit * 2.2);
   const items: Phaser.GameObjects.GameObject[] = [shadow, rig];
   if (opts.name) {
-    items.push(
-      scene.add
-        .text(0, headTop - 10, opts.name, {
-          fontFamily: GAME_FONT,
-          fontSize: "12px",
-          fontStyle: "bold",
-          color: opts.nameColor ?? "#ffffff",
-          stroke: "#0b1726",
-          strokeThickness: 4,
-        })
-        .setResolution(2)
-        .setOrigin(0.5),
-    );
+    const you = opts.name === "YOU";
+    items.push(pill(scene, 0, headTop - (you ? 16 : 12), opts.name, { size: you ? 11 : 10, color: you ? "#ffffff" : (opts.nameColor ?? "#ffffff"), pointer: you ? 0x3b82f6 : undefined }));
   }
   const c = scene.add.container(x, y, items) as Figure;
   Object.assign(c, { rig, legs: [legA, legB], arms: [armA, armB], armBack, upper, shadow, headTop, key, dims: d, unit, rigY, action: null, facing: "side" });
@@ -735,16 +735,69 @@ function labelOn(scene: Phaser.Scene, x: number, y: number, text: string, base: 
     .setDepth(5 + base / 10000 + 0.0001);
 }
 
-/** A signpost for a place you can enter: icon, name, and a glowing doormat. */
+/**
+ * A name in a dark rounded pill, the game's one style for names on the map:
+ * people, places and the YOU marker. `pointer` adds a little arrow underneath.
+ */
+export function pill(scene: Phaser.Scene, x: number, y: number, text: string, opts: { size?: number; color?: string; pointer?: number } = {}) {
+  const size = opts.size ?? 11;
+  const label = scene.add
+    .text(0, 0, text, { fontFamily: GAME_FONT, fontSize: `${size}px`, fontStyle: "900", color: opts.color ?? "#ffffff" })
+    .setResolution(3)
+    .setOrigin(0.5);
+  const w = label.width + size * 1.3;
+  const h = size + 9;
+  const g = scene.add.graphics();
+  g.fillStyle(0x000000, 0.22).fillRoundedRect(-w / 2, -h / 2 + 2, w, h, h / 2);
+  g.fillStyle(0x141b2d, 0.92).fillRoundedRect(-w / 2, -h / 2, w, h, h / 2);
+  g.lineStyle(1, 0xffffff, 0.14).strokeRoundedRect(-w / 2, -h / 2, w, h, h / 2);
+  if (opts.pointer != null) g.fillStyle(opts.pointer, 1).fillTriangle(-5, h / 2 + 1, 5, h / 2 + 1, 0, h / 2 + 7);
+  return scene.add.container(x, y, [g, label]);
+}
+
+/** A signpost for a place you can enter: a wooden board with its icon and name, and a soft glowing ring on the ground. */
 export function signpost(scene: Phaser.Scene, x: number, y: number, name: string, icon: string, color: number) {
-  const mat = scene.add.ellipse(0, 26, 70, 22, color, 0.35).setStrokeStyle(3, color, 0.9);
-  const post = scene.add.rectangle(0, -2, 6, 40, 0x6b4423).setStrokeStyle(2, INK);
-  const board = scene.add.rectangle(0, -30, 46, 36, 0xfffbeb).setStrokeStyle(3, INK);
-  const glyph = scene.add.text(0, -30, icon, { fontSize: "22px" }).setOrigin(0.5);
+  void color;
+  const W = 66;
+  const ground = 24;
+  // The name, printed on the board's lower band.
   const text = scene.add
-    .text(0, 44, name, { fontFamily: GAME_FONT, fontSize: "14px", fontStyle: "bold", color: "#ffffff", stroke: "#141414", strokeThickness: 4 })
-    .setResolution(2)
+    .text(0, 0, name, { fontFamily: GAME_FONT, fontSize: "8.5px", fontStyle: "900", color: "#fdf3dc", align: "center", wordWrap: { width: W - 10 }, lineSpacing: -2 })
+    .setResolution(3)
     .setOrigin(0.5, 0);
-  scene.tweens.add({ targets: mat, scaleX: 1.15, scaleY: 1.15, alpha: 0.6, duration: 1000, yoyo: true, repeat: -1 });
-  return scene.add.container(x, y, [mat, post, board, glyph, text]).setDepth(4);
+  const band = Math.max(14, text.height + 5);
+  const iconH = 28;
+  const bottom = -6;
+  const top = bottom - (6 + iconH + band);
+  const g = scene.add.graphics();
+  // Post and its contact shadow.
+  g.fillStyle(0x000000, 0.25).fillEllipse(0, ground, 26, 7);
+  g.fillStyle(0x5b3a1e, 1).fillRect(-4, bottom - 2, 8, ground - bottom + 2);
+  g.fillStyle(0x7a4f2b, 1).fillRect(-4, bottom - 2, 3, ground - bottom + 2);
+  g.lineStyle(2, INK, 1).strokeRect(-4, bottom - 2, 8, ground - bottom + 2);
+  // Board: a wooden frame, a cream face for the icon and a dark band for the name.
+  g.fillStyle(0x000000, 0.2).fillRoundedRect(-W / 2 + 3, top + 4, W, bottom - top, 7);
+  g.fillStyle(0x6b4423, 1).fillRoundedRect(-W / 2, top, W, bottom - top, 7);
+  g.fillStyle(0x8a5a32, 1).fillRoundedRect(-W / 2, top, W, 5, { tl: 7, tr: 7, bl: 0, br: 0 });
+  g.fillStyle(0xf6ead2, 1).fillRoundedRect(-W / 2 + 5, top + 5, W - 10, iconH, 4);
+  g.fillStyle(0xffffff, 0.35).fillRect(-W / 2 + 7, top + 7, W - 14, 4);
+  g.fillStyle(0x4a2e17, 1).fillRoundedRect(-W / 2 + 5, top + 5 + iconH + 1, W - 10, band - 5, 3);
+  g.lineStyle(2.5, INK, 1).strokeRoundedRect(-W / 2, top, W, bottom - top, 7);
+  const glyph = scene.add.text(0, top + 5 + iconH / 2, icon, { fontSize: "18px" }).setOrigin(0.5);
+  text.setPosition(0, top + 5 + iconH + 2);
+  // The ring on the ground: soft gold glow, gently breathing.
+  const ring = scene.add.graphics().setPosition(x, y + ground).setDepth(4.2);
+  ring.fillStyle(0xffb547, 0.12).fillEllipse(0, 0, 58, 19);
+  ring.lineStyle(8, 0xffa62b, 0.14).strokeEllipse(0, 0, 58, 19);
+  ring.lineStyle(4.5, 0xffb547, 0.35).strokeEllipse(0, 0, 56, 18);
+  ring.lineStyle(2, 0xffd27a, 0.95).strokeEllipse(0, 0, 54, 17);
+  scene.tweens.add({ targets: ring, scaleX: 1.07, scaleY: 1.07, alpha: 0.7, duration: 1300, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+  const c = scene.add.container(x, y, [g, glyph, text]).setDepth(5 + (y + ground) / 10000) as Phaser.GameObjects.Container & { ring: typeof ring };
+  c.ring = ring;
+  const setVisible = c.setVisible.bind(c);
+  c.setVisible = (v: boolean) => {
+    ring.setVisible(v);
+    return setVisible(v);
+  };
+  return c;
 }
