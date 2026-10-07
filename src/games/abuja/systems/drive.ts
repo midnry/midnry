@@ -98,13 +98,16 @@ export function frscStop(s: GameState): string | null {
 
 /** Where FRSC sets up today: different junctions on different days. */
 export function frscSpots(day: number): { x: number; y: number }[] {
+  // Junctions on the big roads: the expressways and the avenues into town.
   const all = [
-    { x: 1500, y: 1100 },
-    { x: 800, y: 600 },
-    { x: 1000, y: 1000 },
-    { x: 1600, y: 500 },
-    { x: 500, y: 1100 },
-    { x: 1500, y: 600 },
+    { x: 1200, y: 1900 },
+    { x: 2700, y: 2000 },
+    { x: 2000, y: 1300 },
+    { x: 3400, y: 1900 },
+    { x: 4100, y: 2000 },
+    { x: 1100, y: 1000 },
+    { x: 2350, y: 2600 },
+    { x: 3050, y: 700 },
   ];
   return [all[day % all.length]!, all[(day + 3) % all.length]!];
 }

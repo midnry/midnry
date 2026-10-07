@@ -11,8 +11,8 @@ export { LAKE, ROADS };
 /** Jabi Lake: drawn as an ellipse, walled off by a slightly smaller box. */
 // Two halves, with a gap for the footbridge across the middle.
 const LAKE_SOLIDS: MapRect[] = [
-  { x: LAKE.x - 140, y: LAKE.y - 92, w: 280, h: 78, kind: "water" },
-  { x: LAKE.x - 140, y: LAKE.y + 14, w: 280, h: 78, kind: "water" },
+  { x: LAKE.x - LAKE.rx + 20, y: LAKE.y - LAKE.ry + 23, w: (LAKE.rx - 20) * 2, h: LAKE.ry - 37, kind: "water" },
+  { x: LAKE.x - LAKE.rx + 20, y: LAKE.y + 14, w: (LAKE.rx - 20) * 2, h: LAKE.ry - 37, kind: "water" },
 ];
 
 let cache: MapRect[] | null = null;

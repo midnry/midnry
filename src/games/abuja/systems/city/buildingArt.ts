@@ -84,7 +84,7 @@ class Pic {
     return this.add(`<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(rx)}" ry="${n(ry)}" fill="${fill}"${line ? ` stroke="${INK}" stroke-width="${SW}"` : ""}/>`);
   }
   text(x: number, y: number, t: string, size: number, fill = "#ffffff", weight = 800) {
-    return this.add(`<text x="${n(x)}" y="${n(y)}" font-family="Nunito, Arial Rounded MT Bold, system-ui, -apple-system, Segoe UI, sans-serif" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="middle" dominant-baseline="middle">${t}</text>`);
+    return this.add(`<text x="${n(x)}" y="${n(y)}" font-family="Nunito, Arial Rounded MT Bold, system-ui, -apple-system, Segoe UI, sans-serif" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="middle" dominant-baseline="middle">${t.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</text>`);
   }
   /** A lit window for the night overlay. */
   light(x: number, y: number, w: number, h: number) {

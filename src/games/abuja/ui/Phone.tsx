@@ -3,7 +3,7 @@ import { CityApp } from "./CityApp";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
 import { borrow, business, callContact, driveTo, negotiate, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
 import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, netWorth, npcName } from "../systems/rules";
-import { RIDE_INFO, RIDE_MODES, fare, fuelCost, rideKm } from "../systems/rides";
+import { RIDE_INFO, RIDE_MODES, fare, fuelCost, rideBan, rideKm } from "../systems/rides";
 import { hasCar } from "../systems/drive";
 import { BUSINESSES, bizDef, canStart, growWhy, upgradeCost } from "../systems/business";
 import { DEALS, QUALITY_LABEL, blocked, repLabel } from "../systems/negotiate/core";
@@ -564,16 +564,17 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
         value={query}
         onChange={(event) => setQuery(event.target.value)}
       />
-      <p className="mt-2 text-xs text-slate-400">Pick where to go, then how: okada, keke or taxi get you there now. The bus is cheapest but takes a time slot.</p>
+      <p className="mt-2 text-xs text-slate-400">Pick where to go, then how: okada, keke or taxi get you there now. The bus is cheapest but takes a time slot. Okadas and kekes are banned in the city centre.</p>
       <div className="mt-3 grid gap-2">
         {shown.map((p) => {
           const d = district(p.district);
-          const locked = d?.gate && !check(state, d.gate.if);
+          const unwelcome = d?.gate && !check(state, d.gate.if);
+          const locked = unwelcome && d?.gate?.hard;
           const to = { x: p.x, y: p.y + 95 };
           return (
             <div key={p.id} className="rounded-xl bg-white/5 p-3">
               <p className="font-semibold">
-                {p.name} {locked ? "🔒" : ""}
+                {p.name} {locked ? "🔒" : unwelcome ? "🛡️" : ""}
               </p>
               <p className="text-xs text-slate-400">
                 {d?.name} · {rideKm(state.pos, to).toFixed(1)} km
@@ -594,13 +595,14 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
               <div className="mt-2 grid grid-cols-4 gap-1.5">
                 {RIDE_MODES.map((mode) => {
                   const cost = fare(mode, state.pos, to);
+                  const banned = rideBan(mode, state.district, p.district);
                   return (
                     <button
                       key={mode}
                       type="button"
-                      title={RIDE_INFO[mode].blurb}
-                      aria-label={`${RIDE_INFO[mode].label} to ${p.name} for ${naira(cost)}`}
-                      disabled={state.stats.money < cost}
+                      title={banned ?? RIDE_INFO[mode].blurb}
+                      aria-label={banned ? `${RIDE_INFO[mode].label}: ${banned}` : `${RIDE_INFO[mode].label} to ${p.name} for ${naira(cost)}`}
+                      disabled={state.stats.money < cost || Boolean(banned)}
                       className={`flex min-h-14 flex-col items-center justify-center rounded-xl text-[11px] leading-tight font-semibold transition disabled:opacity-40 ${mode === "taxi" ? "bg-blue-600 text-white hover:bg-blue-500" : "bg-white/10 hover:bg-white/15"}`}
                       onClick={() => {
                         travel(p.id, mode);
@@ -611,7 +613,7 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
                         {RIDE_INFO[mode].icon}
                       </span>
                       {RIDE_INFO[mode].label}
-                      <span className="font-normal text-slate-300">{naira(cost)}</span>
+                      <span className="font-normal text-slate-300">{banned ? "Banned here" : naira(cost)}</span>
                     </button>
                   );
                 })}

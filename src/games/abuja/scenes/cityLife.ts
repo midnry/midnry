@@ -154,7 +154,10 @@ export class CityLife {
       const first = !this.clock;
       this.clock = clock;
       // A rush hour when the time of day moves on; just a trickle between beats.
+      // Only people whose day touches this part of town: home, work or school nearby.
+      const local = (id?: string) => Boolean(id) && this.nearView(id!, view, 1400);
       for (const c of people) {
+        if (!local(c.home) && !local(c.work) && !local(c.school) && !this.where.has(c.id)) continue;
         const plan = planFor(c, day, slot, beat);
         const before = this.where.get(c.id);
         this.where.set(c.id, plan.lot);

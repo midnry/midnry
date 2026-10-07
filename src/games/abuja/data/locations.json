@@ -1,7 +1,7 @@
 {
   "world": {
-    "width": 2400,
-    "height": 1800
+    "width": 4800,
+    "height": 3600
   },
   "homes": {
     "lapo": "home_nyanya",
@@ -13,29 +13,113 @@
       "name": "Kubwa",
       "x": 0,
       "y": 0,
-      "w": 500,
-      "h": 500,
+      "w": 1100,
+      "h": 1300,
       "color": "#3f6212",
-      "vibe": "Affordable, far, full of hustlers and Lapo Babies. Long commute."
+      "tier": "poor",
+      "vibe": "Affordable, far, full of hustlers and Lapo Babies. A long commute down the Kubwa Expressway."
+    },
+    {
+      "id": "deidei",
+      "name": "Dei-Dei",
+      "x": 0,
+      "y": 1300,
+      "w": 1100,
+      "h": 600,
+      "color": "#7c5a2a",
+      "tier": "poor",
+      "vibe": "Building materials market, trailers, dust and deals. Everybody knows somebody."
+    },
+    {
+      "id": "lugbe",
+      "name": "Lugbe",
+      "x": 0,
+      "y": 1900,
+      "w": 1100,
+      "h": 1700,
+      "color": "#78716c",
+      "tier": "poor",
+      "vibe": "Airport Road: estates half-built, factories, okadas and the smell of fresh cement."
     },
     {
       "id": "gwarinpa",
       "name": "Gwarinpa",
-      "x": 500,
+      "x": 1100,
       "y": 0,
-      "w": 500,
-      "h": 500,
-      "color": "#4d7c0f",
-      "vibe": "Biggest estate in West Africa. Middle-class families, endless streets."
+      "w": 900,
+      "h": 1300,
+      "color": "#15803d",
+      "tier": "middle",
+      "vibe": "Africa's biggest housing estate: duplexes, avenues and a supermarket on every corner."
+    },
+    {
+      "id": "jabi",
+      "name": "Jabi Lake & Malls",
+      "x": 1100,
+      "y": 1300,
+      "w": 900,
+      "h": 600,
+      "color": "#0e7490",
+      "tier": "middle",
+      "vibe": "The lake, the mall, Saturday boat rides and Instagram brunch."
+    },
+    {
+      "id": "wuye",
+      "name": "Wuye",
+      "x": 1100,
+      "y": 1900,
+      "w": 900,
+      "h": 700,
+      "color": "#0f766e",
+      "tier": "middle",
+      "vibe": "Quiet streets, small businesses and civil servants who leave home at 6."
+    },
+    {
+      "id": "lokogoma",
+      "name": "Lokogoma",
+      "x": 1100,
+      "y": 2600,
+      "w": 900,
+      "h": 1000,
+      "color": "#65a30d",
+      "tier": "middle",
+      "vibe": "New estates on the city edge: cheaper rent, unfinished roads."
+    },
+    {
+      "id": "katampe",
+      "name": "Katampe Extension",
+      "x": 2000,
+      "y": 0,
+      "w": 700,
+      "h": 700,
+      "color": "#b45309",
+      "tier": "rich",
+      "vibe": "Hilltop mansions with city views, built behind tall walls.",
+      "gate": {
+        "if": {
+          "any": [
+            {
+              "stat": "reputation",
+              "gte": 45
+            },
+            {
+              "npc": "bolaji",
+              "rel": 40
+            }
+          ]
+        },
+        "message": "Estate security is watching you: \"Oga, who you come see?\" Stay too long and you'll be stopped. (Welcome at Reputation 45 or with Bolaji as a friend.)"
+      }
     },
     {
       "id": "maitama",
       "name": "Maitama",
-      "x": 1000,
-      "y": 0,
-      "w": 600,
-      "h": 500,
+      "x": 2000,
+      "y": 700,
+      "w": 1400,
+      "h": 600,
       "color": "#a16207",
+      "tier": "rich",
       "vibe": "Old money, new money, embassy money. Gates within gates.",
       "gate": {
         "if": {
@@ -50,18 +134,111 @@
             }
           ]
         },
-        "message": "Security man: \"Oga, who you come see? No name for list, no entry.\" (Needs Reputation 45 or Bolaji as a friend.)"
+        "message": "Estate security is watching you: \"Oga, who you come see?\" Stay too long and you'll be stopped. (Welcome at Reputation 45 or with Bolaji as a friend.)"
+      }
+    },
+    {
+      "id": "utako",
+      "name": "Utako",
+      "x": 2000,
+      "y": 1300,
+      "w": 400,
+      "h": 600,
+      "color": "#2563eb",
+      "tier": "middle",
+      "vibe": "Bus parks, banks and the busiest market traffic in town."
+    },
+    {
+      "id": "mpape",
+      "name": "Mpape",
+      "x": 2700,
+      "y": 0,
+      "w": 700,
+      "h": 700,
+      "color": "#57534e",
+      "tier": "poor",
+      "vibe": "A crowded hillside settlement looking down on Maitama."
+    },
+    {
+      "id": "wuse",
+      "name": "Wuse",
+      "x": 2400,
+      "y": 1300,
+      "w": 1000,
+      "h": 600,
+      "color": "#db2777",
+      "tier": "middle",
+      "vibe": "Wuse Market and Wuse II: noise, deals and nightlife."
+    },
+    {
+      "id": "cbd",
+      "name": "Central Business District",
+      "x": 2000,
+      "y": 1900,
+      "w": 1400,
+      "h": 700,
+      "color": "#334155",
+      "tier": "middle",
+      "vibe": "Ministries, banks, towers and the National Mosque."
+    },
+    {
+      "id": "garki",
+      "name": "Garki",
+      "x": 2000,
+      "y": 2600,
+      "w": 700,
+      "h": 1000,
+      "color": "#7c3aed",
+      "tier": "middle",
+      "vibe": "Area 1 to Area 11: offices, hospitals, the motor park and the old city heart."
+    },
+    {
+      "id": "apo",
+      "name": "Apo",
+      "x": 2700,
+      "y": 2600,
+      "w": 700,
+      "h": 1000,
+      "color": "#9a3412",
+      "tier": "middle",
+      "vibe": "Mechanic village, resettlement and a long road to everywhere."
+    },
+    {
+      "id": "threearms",
+      "name": "Three Arms Zone & Aso Rock",
+      "x": 3400,
+      "y": 0,
+      "w": 700,
+      "h": 1300,
+      "color": "#166534",
+      "tier": "rich",
+      "vibe": "The Villa, the National Assembly and the Supreme Court, under the shadow of Aso Rock.",
+      "gate": {
+        "if": {
+          "any": [
+            {
+              "stat": "reputation",
+              "gte": 95
+            },
+            {
+              "flag": "villa_pass"
+            }
+          ]
+        },
+        "message": "Soldiers at the Three Arms Zone checkpoint: \"No access. Turn back now.\" (Needs very high Reputation or an official pass.)",
+        "hard": true
       }
     },
     {
       "id": "asokoro",
       "name": "Asokoro",
-      "x": 1600,
-      "y": 0,
-      "w": 800,
-      "h": 600,
-      "color": "#92400e",
-      "vibe": "Where the Villa is. Sirens are background music.",
+      "x": 3400,
+      "y": 1300,
+      "w": 700,
+      "h": 1300,
+      "color": "#9f1239",
+      "tier": "rich",
+      "vibe": "Where the powerful sleep, behind mobile police and roundabouts.",
       "gate": {
         "if": {
           "any": [
@@ -75,77 +252,66 @@
             }
           ]
         },
-        "message": "Mobile police at the roundabout wave you back. \"This area is restricted.\" (Needs Reputation 70 or Network 80.)"
+        "message": "Mobile police at the roundabout look you over. Hang around too long and they'll stop you. (Welcome at Reputation 70 or Network 80.)"
       }
     },
     {
-      "id": "jabi",
-      "name": "Jabi Lake & Malls",
-      "x": 0,
-      "y": 500,
-      "w": 800,
-      "h": 600,
-      "color": "#0e7490",
-      "vibe": "Malls, lake views, dates, content shoots, and influencers flexing on credit."
-    },
-    {
-      "id": "wuse",
-      "name": "Wuse",
-      "x": 800,
-      "y": 500,
+      "id": "guzape",
+      "name": "Guzape",
+      "x": 3400,
+      "y": 2600,
       "w": 700,
-      "h": 500,
-      "color": "#1d4ed8",
-      "vibe": "Wuse Market, offices, tech hubs, and QuickKash Microfinance."
+      "h": 1000,
+      "color": "#c2410c",
+      "tier": "rich",
+      "vibe": "New mansions on the hills: the money that came after.",
+      "gate": {
+        "if": {
+          "any": [
+            {
+              "stat": "reputation",
+              "gte": 70
+            },
+            {
+              "stat": "network",
+              "gte": 80
+            }
+          ]
+        },
+        "message": "Mobile police at the roundabout look you over. Hang around too long and they'll stop you. (Welcome at Reputation 70 or Network 80.)"
+      }
     },
     {
-      "id": "cbd",
-      "name": "Central Business District",
-      "x": 1500,
-      "y": 600,
-      "w": 900,
-      "h": 500,
-      "color": "#4338ca",
-      "vibe": "Banks, ministries, glass towers, and courts."
-    },
-    {
-      "id": "garki",
-      "name": "Garki",
-      "x": 800,
-      "y": 1000,
+      "id": "karu",
+      "name": "Karu",
+      "x": 4100,
+      "y": 0,
       "w": 700,
-      "h": 800,
-      "color": "#7c3aed",
-      "vibe": "Markets, clinics, the motor park, and civil servants on lunch break."
-    },
-    {
-      "id": "lugbe",
-      "name": "Lugbe",
-      "x": 0,
-      "y": 1100,
-      "w": 800,
-      "h": 700,
-      "color": "#9f1239",
-      "vibe": "Airport road. Affordable, fast-growing, and Slim's 'office'."
+      "h": 1800,
+      "color": "#525252",
+      "tier": "poor",
+      "vibe": "Across the border in Nasarawa: cheap rent, packed buses into the city."
     },
     {
       "id": "nyanya",
       "name": "Nyanya",
-      "x": 1500,
-      "y": 1100,
-      "w": 900,
-      "h": 700,
-      "color": "#b45309",
-      "vibe": "Crowded, loud, alive. Where the grind never sleeps."
+      "x": 4100,
+      "y": 1800,
+      "w": 700,
+      "h": 1800,
+      "color": "#a3a3a3",
+      "tier": "poor",
+      "vibe": "Crowded, lively, rough round the edges. Home for many who work in the city."
     }
   ],
   "places": [
     {
-      "id": "home_nyanya", "icon": "🏠",
+      "id": "home_nyanya",
+      "icon": "🏠",
       "name": "Your room (Nyanya)",
       "district": "nyanya",
-      "x": 1900,
-      "y": 1520,
+      "x": 4305,
+      "y": 2911,
       "color": "#fbbf24",
       "if": {
         "background": "lapo"
@@ -269,11 +435,12 @@
       ]
     },
     {
-      "id": "home_gwarinpa", "icon": "🏠",
+      "id": "home_gwarinpa",
+      "icon": "🏠",
       "name": "Your flat (Gwarinpa)",
       "district": "gwarinpa",
-      "x": 760,
-      "y": 260,
+      "x": 1537,
+      "y": 570,
       "color": "#fbbf24",
       "if": {
         "background": "average"
@@ -400,11 +567,12 @@
       ]
     },
     {
-      "id": "laundry_gwarinpa", "icon": "🧺",
+      "id": "laundry_gwarinpa",
+      "icon": "🧺",
       "name": "Spotless Dry Cleaners (Gwarinpa)",
       "district": "gwarinpa",
-      "x": 620,
-      "y": 420,
+      "x": 1346,
+      "y": 1092,
       "color": "#38bdf8",
       "blurb": "Dry cleaning for people with meetings. Same day if you smile.",
       "actions": [
@@ -424,11 +592,12 @@
       ]
     },
     {
-      "id": "pos_junction", "icon": "💳",
+      "id": "pos_junction",
+      "icon": "💳",
       "name": "POS Junction",
       "district": "nyanya",
-      "x": 2120,
-      "y": 1320,
+      "x": 4592,
+      "y": 2366,
       "color": "#22c55e",
       "blurb": "Umbrellas, plastic chairs, and a queue that never ends. Withdrawal charges: negotiable.",
       "actions": [
@@ -525,11 +694,12 @@
       ]
     },
     {
-      "id": "laundry_nyanya", "icon": "🧺",
+      "id": "laundry_nyanya",
+      "icon": "🧺",
       "name": "Mama Nkechi Laundry (Nyanya)",
       "district": "nyanya",
-      "x": 1700,
-      "y": 1300,
+      "x": 4256,
+      "y": 2314,
       "color": "#38bdf8",
       "blurb": "Wash, starch and iron. Mama Nkechi knows everybody's business and everybody's shirt size.",
       "actions": [
@@ -562,11 +732,12 @@
       ]
     },
     {
-      "id": "wuse_market", "icon": "🛒",
+      "id": "wuse_market",
+      "icon": "🛒",
       "name": "Wuse Market",
       "district": "wuse",
-      "x": 1080,
-      "y": 760,
+      "x": 2980,
+      "y": 1800,
       "color": "#f97316",
       "blurb": "Everything, everywhere, all at once. Customers say 'last price' and mean 'first price'.",
       "actions": [
@@ -729,11 +900,12 @@
       ]
     },
     {
-      "id": "culinary_academy", "icon": "👩‍🍳",
+      "id": "culinary_academy",
+      "icon": "👩‍🍳",
       "name": "Abuja Culinary Academy",
       "district": "wuse",
-      "x": 1240,
-      "y": 640,
+      "x": 2860,
+      "y": 1500,
       "color": "#f97316",
       "blurb": "Chef whites, steel benches and an instructor who has cooked in London. Professional and pastry classes.",
       "actions": [
@@ -749,11 +921,12 @@
       ]
     },
     {
-      "id": "quickkash", "icon": "💸",
+      "id": "quickkash",
+      "icon": "💸",
       "name": "QuickKash Microfinance",
       "district": "wuse",
-      "x": 1340,
-      "y": 590,
+      "x": 3060,
+      "y": 1500,
       "color": "#ef4444",
       "blurb": "\"Fast loans, no collateral, no wahala!\" The wahala is in the small print.",
       "actions": [
@@ -779,11 +952,12 @@
       ]
     },
     {
-      "id": "tech_hub", "icon": "💻",
+      "id": "tech_hub",
+      "icon": "💻",
       "name": "Wuse Tech Hub",
       "district": "wuse",
-      "x": 930,
-      "y": 920,
+      "x": 2560,
+      "y": 1500,
       "color": "#38bdf8",
       "blurb": "Bean bags, fast Wi-Fi, and founders explaining their 'Uber for X'.",
       "actions": [
@@ -874,11 +1048,12 @@
       ]
     },
     {
-      "id": "okafor_office", "icon": "📚",
+      "id": "okafor_office",
+      "icon": "📚",
       "name": "Mrs. Okafor's consultancy",
       "district": "wuse",
-      "x": 1380,
-      "y": 860,
+      "x": 3255,
+      "y": 1500,
       "color": "#10b981",
       "blurb": "Plain office, serious woman, open door for people who show up.",
       "actions": [
@@ -906,11 +1081,12 @@
       ]
     },
     {
-      "id": "wuse_plaza", "icon": "🏢",
+      "id": "wuse_plaza",
+      "icon": "🏢",
       "name": "Wuse Business Plaza",
       "district": "wuse",
-      "x": 1200,
-      "y": 880,
+      "x": 2560,
+      "y": 1800,
       "color": "#94a3b8",
       "blurb": "Six floors of offices: accountants, HR firms, and a lift that works on Mondays.",
       "actions": [
@@ -977,11 +1153,12 @@
       ]
     },
     {
-      "id": "garki_hub", "icon": "📦",
+      "id": "garki_hub",
+      "icon": "📦",
       "name": "Garki Delivery Hub",
       "district": "garki",
-      "x": 1000,
-      "y": 1160,
+      "x": 2200,
+      "y": 2810,
       "color": "#a3e635",
       "blurb": "Bikes, boxes, and riders who know every shortcut in Abuja.",
       "actions": [
@@ -1022,11 +1199,12 @@
       ]
     },
     {
-      "id": "cac_office", "icon": "📝",
+      "id": "cac_office",
+      "icon": "📝",
       "name": "CAC Registry & Business Centre (Garki)",
       "district": "garki",
-      "x": 900,
-      "y": 1420,
+      "x": 2200,
+      "y": 3280,
       "color": "#a3e635",
       "blurb": "Where business names are registered and dreams are stamped. Bring two passport photographs.",
       "actions": [
@@ -1106,11 +1284,12 @@
       ]
     },
     {
-      "id": "hospital", "icon": "🏥",
+      "id": "hospital",
+      "icon": "🏥",
       "name": "Garki General Hospital",
       "district": "garki",
-      "x": 1320,
-      "y": 1320,
+      "x": 2470,
+      "y": 3330,
       "color": "#f43f5e",
       "blurb": "Long benches, a generator that never stops, and doctors who have seen everything. Treatment first, bill after.",
       "actions": [
@@ -1163,11 +1342,12 @@
       ]
     },
     {
-      "id": "motor_park", "icon": "🚌",
+      "id": "motor_park",
+      "icon": "🚌",
       "name": "Area 1 Motor Park",
       "district": "garki",
-      "x": 1100,
-      "y": 1640,
+      "x": 2200,
+      "y": 3480,
       "color": "#facc15",
       "blurb": "Buses to everywhere. Loaders, hawkers, touts. Work for anyone who shows up early.",
       "actions": [
@@ -1243,11 +1423,12 @@
       ]
     },
     {
-      "id": "driving_school", "icon": "🪪",
+      "id": "driving_school",
+      "icon": "🪪",
       "name": "Safe Wheels Driving School (Garki)",
       "district": "garki",
-      "x": 1320,
-      "y": 1580,
+      "x": 2560,
+      "y": 2850,
       "color": "#facc15",
       "blurb": "Learner cars with two brake pedals and instructors with nerves of steel. Pass here, then the FRSC test, and you get your driver's licence.",
       "actions": [
@@ -1283,11 +1464,12 @@
       ]
     },
     {
-      "id": "cbd_bank", "icon": "🏦",
+      "id": "cbd_bank",
+      "icon": "🏦",
       "name": "Union Capital Bank HQ",
       "district": "cbd",
-      "x": 1700,
-      "y": 790,
+      "x": 2326,
+      "y": 2203,
       "color": "#60a5fa",
       "blurb": "Fictional bank, very real dress code. Your shoes must shine.",
       "actions": [
@@ -1332,11 +1514,12 @@
       ]
     },
     {
-      "id": "cbd_tower", "icon": "🏢",
+      "id": "cbd_tower",
+      "icon": "🏢",
       "name": "Zenith Heights Tower",
       "district": "cbd",
-      "x": 2000,
-      "y": 740,
+      "x": 2852,
+      "y": 2203,
       "color": "#818cf8",
       "blurb": "Twenty floors of glass. Corporate jobs that need degrees, NYSC and someone who knows someone.",
       "actions": [
@@ -1363,11 +1546,12 @@
       ]
     },
     {
-      "id": "ministry", "icon": "🏛️",
+      "id": "ministry",
+      "icon": "🏛️",
       "name": "Federal Ministry of Contracts",
       "district": "cbd",
-      "x": 2220,
-      "y": 960,
+      "x": 3120,
+      "y": 2404,
       "color": "#c084fc",
       "blurb": "Fictional ministry. Contracts go to whoever's file 'moves'. Files move when people move them.",
       "actions": [
@@ -1414,11 +1598,12 @@
       ]
     },
     {
-      "id": "visa_agent", "icon": "✈️",
+      "id": "visa_agent",
+      "icon": "✈️",
       "name": "Visa & Travel Consultants",
       "district": "cbd",
-      "x": 1660,
-      "y": 1020,
+      "x": 2249,
+      "y": 2468,
       "color": "#2dd4bf",
       "blurb": "Posters of Canada, the UK and Germany. Proof of funds required. Hope sold separately.",
       "actions": [
@@ -1439,11 +1624,12 @@
       ]
     },
     {
-      "id": "telecom_office", "icon": "📶",
+      "id": "telecom_office",
+      "icon": "📶",
       "name": "MTM Telecom office",
       "district": "cbd",
-      "x": 1950,
-      "y": 930,
+      "x": 2560,
+      "y": 2362,
       "color": "#facc15",
       "blurb": "Yellow everything. Call centres upstairs, engineers in the basement, and free data for staff.",
       "actions": [
@@ -1510,11 +1696,12 @@
       ]
     },
     {
-      "id": "jabi_mall", "icon": "🛍️",
+      "id": "jabi_mall",
+      "icon": "🛍️",
       "name": "Jabi Lake Mall",
       "district": "jabi",
-      "x": 420,
-      "y": 780,
+      "x": 1778,
+      "y": 1503,
       "color": "#22d3ee",
       "blurb": "Lake views, overpriced shawarma, and twenty people filming content at once.",
       "actions": [
@@ -1680,11 +1867,12 @@
       ]
     },
     {
-      "id": "efcc_hq", "icon": "🚔",
+      "id": "efcc_hq",
+      "icon": "🚔",
       "name": "EFCC Headquarters (Jabi)",
       "district": "jabi",
-      "x": 650,
-      "y": 900,
+      "x": 1847,
+      "y": 1758,
       "color": "#1d4ed8",
       "blurb": "The Economic and Financial Crimes Commission. Fraudsters, money launderers and corrupt officials all end up here eventually.",
       "actions": [
@@ -1718,11 +1906,12 @@
       ]
     },
     {
-      "id": "tunde_place", "icon": "🍲",
+      "id": "tunde_place",
+      "icon": "🍲",
       "name": "Tunde's place (Kubwa)",
       "district": "kubwa",
-      "x": 260,
-      "y": 260,
+      "x": 698,
+      "y": 561,
       "color": "#f59e0b",
       "blurb": "Tunde's one-room in Kubwa, always open, always something on the stove.",
       "actions": [
@@ -1872,11 +2061,12 @@
       ]
     },
     {
-      "id": "kubwa_market", "icon": "🧺",
+      "id": "kubwa_market",
+      "icon": "🧺",
       "name": "Kubwa Village Market",
       "district": "kubwa",
-      "x": 360,
-      "y": 420,
+      "x": 792,
+      "y": 1092,
       "color": "#84cc16",
       "blurb": "Cheaper than Wuse. If you can buy here and sell there, you have a business.",
       "actions": [
@@ -1964,11 +2154,12 @@
       ]
     },
     {
-      "id": "slim_lab", "icon": "💡",
+      "id": "slim_lab",
+      "icon": "💡",
       "name": "Slim's 'office' (Lugbe)",
       "district": "lugbe",
-      "x": 420,
-      "y": 1420,
+      "x": 742,
+      "y": 2808,
       "color": "#a855f7",
       "blurb": "Blackout curtains, three ring lights, a PS5, and a lot of 'clients' abroad.",
       "actions": [
@@ -2081,11 +2272,12 @@
       ]
     },
     {
-      "id": "car_mart", "icon": "🚗",
+      "id": "car_mart",
+      "icon": "🚗",
       "name": "Berger Tokunbo Car Mart (Lugbe)",
       "district": "lugbe",
-      "x": 200,
-      "y": 1250,
+      "x": 275,
+      "y": 2264,
       "color": "#60a5fa",
       "blurb": "Rows of 'first body' Tokunbo cars and a dealer who swears every one was used by a grandmother in Toronto.",
       "actions": [
@@ -2112,11 +2304,12 @@
       ]
     },
     {
-      "id": "bolaji_house", "icon": "🏰",
+      "id": "bolaji_house",
+      "icon": "🏰",
       "name": "Bolaji's mansion",
       "district": "maitama",
-      "x": 1300,
-      "y": 220,
+      "x": 2890,
+      "y": 964,
       "color": "#eab308",
       "blurb": "Fountain, three gatemen, and a garage bigger than your childhood home.",
       "actions": [
@@ -2183,11 +2376,12 @@
       ]
     },
     {
-      "id": "oil_hq", "icon": "⛽",
+      "id": "oil_hq",
+      "icon": "⛽",
       "name": "Delta Crest Oil & Gas",
       "district": "maitama",
-      "x": 1140,
-      "y": 380,
+      "x": 2327,
+      "y": 1156,
       "color": "#fde047",
       "blurb": "Fictional oil company. Salaries in dollars, interviews by referral only.",
       "actions": [
@@ -2214,11 +2408,12 @@
       ]
     },
     {
-      "id": "asokoro_owambe", "icon": "🎉",
+      "id": "asokoro_owambe",
+      "icon": "🎉",
       "name": "Asokoro Owambe Hall",
       "district": "asokoro",
-      "x": 2000,
-      "y": 300,
+      "x": 3734,
+      "y": 1771,
       "color": "#fb7185",
       "blurb": "Every weekend, someone's daughter marries someone's son. Everyone important attends.",
       "actions": [

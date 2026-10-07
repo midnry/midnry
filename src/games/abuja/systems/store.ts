@@ -1,4 +1,5 @@
 import type { Background, Gender, GameState, Interest, Looks } from "./types";
+import { MAP_VERSION, migrateSave } from "./migrate";
 
 // A tiny store: the whole game is one plain object, saved to localStorage.
 // React reads it with useGame(); Phaser reads and writes it through the same API.
@@ -115,7 +116,7 @@ export function parseSave(raw: string | null): GameState | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as GameState;
-    return parsed?.version === 1 ? parsed : null;
+    return parsed?.version === 1 ? migrateSave(parsed) : null;
   } catch {
     return null;
   }
@@ -155,6 +156,7 @@ export function newGame(input: { name: string; gender: Gender; background: Backg
     input.interest === "women" ? "female" : input.interest === "men" ? "male" : Math.random() < 0.5 ? "female" : "male";
   return {
     version: 1,
+    mapVersion: MAP_VERSION,
     name: input.name,
     gender: input.gender,
     background: input.background,

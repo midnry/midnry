@@ -101,7 +101,7 @@ const dist = (a: Lot, b: Lot) => Math.hypot(centre(a).x - centre(b).x, centre(a)
 /** Satellite towns people commute in from, by bus and train. */
 export const TOWNS = ["Kubwa", "Nyanya", "Lugbe", "Karu", "Mararaba", "Gwagwalada", "Dutse", "Bwari"];
 /** The share of each workplace's jobs filled by commuters (the city on the map is only the middle of Abuja). */
-const COMMUTERS = 0.3;
+const COMMUTERS = 0.1;
 
 export const isOut = (lot: string) => lot.startsWith("out:");
 
@@ -135,9 +135,13 @@ export function citizens(): Citizen[] {
   const schools = lots.filter((l) => l.def === "school");
   const filled = new Map<string, number>();
   const out: Citizen[] = [];
+  const jobsAt = new Map(workplaces.map((w) => [w.id, building(w.def)!.jobs ?? 0]));
   for (const home of homes) {
     const def = building(home.def)!;
     const r = rng(home.seed * 7 + 13);
+    // Worked out once per home: workplaces by distance, and the nearest school.
+    let byDistance: Lot[] | null = null;
+    const nearestSchool = schools.length ? schools.reduce((a, b) => (dist(b, home) < dist(a, home) ? b : a)) : undefined;
     const people = Math.max(2, Math.round((def.residents ?? 3) * home.floors));
     let n = 0;
     let h = 0;
@@ -168,17 +172,22 @@ export function citizens(): Citizen[] {
         };
         const stage = stageOf(m.age);
         if (stage === "child" || stage === "teen") {
-          const school = schools.length ? [...schools].sort((a, b) => dist(a, home) - dist(b, home))[0] : undefined;
+          const school = nearestSchool;
           c.school = school?.id;
           c.occupation = stage === "child" ? "pupil" : "secondary school student";
         } else if (stage === "senior") {
           c.occupation = "retired";
         } else if (r() < 0.85) {
           // A job somewhere with room, nearer is likelier.
-          const options = workplaces.filter((w) => (filled.get(w.id) ?? 0) < (building(w.def)!.jobs ?? 0));
-          if (options.length) {
-            options.sort((a, b) => dist(a, home) * (0.6 + r()) - dist(b, home) * (0.6 + r()));
-            const w = options[0]!;
+          byDistance ??= [...workplaces].sort((a, b) => dist(a, home) - dist(b, home));
+          const open: Lot[] = [];
+          for (const w of byDistance) {
+            if ((filled.get(w.id) ?? 0) < jobsAt.get(w.id)!) open.push(w);
+            if (open.length === 6) break;
+          }
+          if (open.length) {
+            // One of the nearest few with room: usually close, sometimes across town.
+            const w = open[Math.floor(r() * r() * open.length)]!;
             filled.set(w.id, (filled.get(w.id) ?? 0) + 1);
             c.work = w.id;
             c.occupation = jobFor(r, w.def, m.age);

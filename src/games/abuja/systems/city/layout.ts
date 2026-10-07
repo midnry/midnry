@@ -10,10 +10,19 @@ import { BUILDINGS, building, type BuildingDef, type Zone } from "./catalog";
 // and each place you can visit gets a building behind its signpost.
 
 /** Main roads: kept here so the city layout and the map agree. */
-export const ROADS = { xs: [500, 800, 1000, 1500, 1600], ys: [500, 600, 1000, 1100] };
-export const LAKE = { x: 210, y: 800, rx: 160, ry: 115 };
-/** The light rail along the south edge, and its station. */
-export const RAIL = { y: 1772, station: { x: 1180, y: 1772 } };
+// The grid follows Abuja's main roads, simplified: the Kubwa Expressway (the
+// pair at x 1100/1200) down the west, the Airport Road – Nnamdi Azikiwe –
+// Keffi Road expressway (the pair at y 1900/2000) across the middle, and the
+// avenues in between.
+export const ROADS = { xs: [550, 1100, 1200, 2000, 2700, 3400, 4100, 4450], ys: [700, 1300, 1900, 2000, 2600, 3100] };
+/** Road names for street signs, by line. */
+export const ROAD_NAMES: Record<string, string> = {
+  x550: "Gado Nasko Road", x1100: "Kubwa Expressway", x1200: "Kubwa Expressway", x2000: "Ahmadu Bello Way", x2700: "Shehu Shagari Way", x3400: "Constitution Ave", x4100: "Keffi Road", x4450: "Karu Road",
+  y700: "Outer Northern Expressway", y1300: "Aminu Kano Cres", y1900: "Airport Road Expressway", y2000: "Nnamdi Azikiwe Expressway", y2600: "Ring Road I", y3100: "Ring Road II",
+};
+export const LAKE = { x: 1450, y: 1600, rx: 160, ry: 115 };
+/** The light rail along the south edge, and its station in Garki. */
+export const RAIL = { y: 3572, station: { x: 2525, y: 3572 } };
 
 const CELL = { w: 100, h: 95 };
 const GAP = { w: 16, h: 23 };
@@ -39,30 +48,50 @@ export type Lot = {
 
 /** Which zones each district mixes, and how much of each. */
 const DISTRICT_ZONES: Record<string, Partial<Record<Zone, number>>> = {
-  maitama: { residential: 5, civic: 3, park: 2 },
-  asokoro: { residential: 6, civic: 3, park: 1 },
-  cbd: { commercial: 6, civic: 3, park: 1 },
-  wuse: { commercial: 6, residential: 3, service: 1 },
-  garki: { civic: 3, commercial: 3, residential: 3, service: 1 },
-  jabi: { commercial: 4, residential: 3, park: 3 },
+  kubwa: { residential: 7, commercial: 2, park: 2 },
+  deidei: { commercial: 4, industrial: 4, residential: 3 },
+  lugbe: { industrial: 5, residential: 5, service: 1 },
   gwarinpa: { residential: 8, commercial: 1, park: 1, service: 1 },
-  kubwa: { residential: 5, commercial: 2, park: 3 },
+  jabi: { commercial: 4, residential: 3, park: 3 },
+  wuye: { residential: 5, commercial: 3, civic: 2 },
+  lokogoma: { residential: 7, commercial: 1, park: 1, industrial: 1 },
+  katampe: { residential: 8, park: 2 },
+  maitama: { residential: 5, civic: 3, park: 2 },
+  utako: { commercial: 6, residential: 2, service: 1 },
+  mpape: { residential: 8, commercial: 2 },
+  wuse: { commercial: 6, residential: 3, service: 1 },
+  cbd: { commercial: 6, civic: 4, park: 1 },
+  garki: { civic: 3, commercial: 3, residential: 3, service: 1 },
+  apo: { residential: 5, industrial: 3, commercial: 2 },
+  threearms: { civic: 8, park: 3 },
+  asokoro: { residential: 6, civic: 3, park: 1 },
+  guzape: { residential: 8, park: 2 },
+  karu: { residential: 7, commercial: 3 },
   nyanya: { residential: 6, commercial: 2, industrial: 2 },
-  lugbe: { industrial: 6, residential: 3, service: 1 },
 };
 
 /** Which buildings suit a zone in a district (more copies = more often). Missing: the zone's defaults. */
 const DISTRICT_KINDS: Record<string, Partial<Record<Zone, string[]>>> = {
-  maitama: { residential: ["villa", "big_house", "big_house", "highrise_apts"], civic: ["government", "library"], park: ["park"] },
-  asokoro: { residential: ["villa", "big_house", "duplex", "highrise_apts"], civic: ["government", "community", "library"], park: ["park", "playground"] },
-  cbd: { commercial: ["business_tower", "business_tower", "office", "office", "hotel", "mall"], civic: ["government", "government", "library"], park: ["park"] },
-  wuse: { commercial: ["shop", "restaurant", "office", "cafe", "supermarket", "cinema", "shop", "hotel"], residential: ["apartments", "apartments", "townhouse"], service: ["substation", "clinic"] },
-  garki: { civic: ["clinic", "school", "library", "community"], commercial: ["shop", "office", "restaurant", "cafe"], residential: ["apartments", "townhouse", "big_house"], service: ["fire_station", "substation"] },
-  jabi: { commercial: ["restaurant", "cafe", "office", "shop", "hotel"], residential: ["highrise_apts", "apartments", "townhouse"], park: ["park", "playground"] },
+  kubwa: { residential: ["small_house", "small_house", "apartments", "big_house", "townhouse"], commercial: ["shop", "restaurant", "shop"], park: ["farm", "park"] },
+  deidei: { commercial: ["shop", "shop", "supermarket", "restaurant"], industrial: ["warehouse", "construction_yard", "logistics", "warehouse"], residential: ["small_house", "small_house", "apartments"] },
+  lugbe: { industrial: ["factory", "warehouse", "processing_plant", "logistics", "construction_yard"], residential: ["small_house", "small_house", "apartments", "townhouse"], service: ["substation", "waste_depot"] },
   gwarinpa: { residential: ["duplex", "duplex", "townhouse", "big_house", "apartments"], commercial: ["shop", "supermarket", "restaurant"], park: ["playground", "park"], service: ["water_tower", "school"] },
-  kubwa: { residential: ["small_house", "small_house", "apartments", "big_house"], commercial: ["shop", "restaurant"], park: ["farm", "farm", "park"] },
+  jabi: { commercial: ["restaurant", "cafe", "office", "shop", "hotel"], residential: ["highrise_apts", "apartments", "townhouse"], park: ["park", "playground"] },
+  wuye: { residential: ["townhouse", "apartments", "duplex"], commercial: ["shop", "office", "cafe"], civic: ["school", "clinic", "community"] },
+  lokogoma: { residential: ["duplex", "townhouse", "small_house", "apartments"], commercial: ["shop", "supermarket"], industrial: ["construction_yard"] },
+  katampe: { residential: ["villa", "villa", "big_house"], park: ["park"] },
+  maitama: { residential: ["villa", "big_house", "big_house", "highrise_apts"], civic: ["government", "library"], park: ["park"] },
+  utako: { commercial: ["office", "shop", "supermarket", "restaurant", "hotel"], residential: ["apartments", "townhouse"], service: ["substation"] },
+  mpape: { residential: ["small_house", "small_house", "small_house", "apartments"], commercial: ["shop", "shop", "restaurant"] },
+  wuse: { commercial: ["shop", "restaurant", "office", "cafe", "supermarket", "cinema", "shop", "hotel"], residential: ["apartments", "apartments", "townhouse"], service: ["substation", "clinic"] },
+  cbd: { commercial: ["business_tower", "business_tower", "office", "office", "hotel", "mall"], civic: ["government", "government", "library"], park: ["park"] },
+  garki: { civic: ["clinic", "school", "library", "community"], commercial: ["shop", "office", "restaurant", "cafe"], residential: ["apartments", "townhouse", "big_house"], service: ["fire_station", "substation"] },
+  apo: { residential: ["small_house", "apartments", "townhouse"], industrial: ["construction_yard", "warehouse"], commercial: ["shop", "restaurant"] },
+  threearms: { civic: ["government", "government", "government", "library"], park: ["park"] },
+  asokoro: { residential: ["villa", "big_house", "duplex", "highrise_apts"], civic: ["government", "community", "library"], park: ["park", "playground"] },
+  guzape: { residential: ["villa", "villa", "big_house", "duplex"], park: ["park"] },
+  karu: { residential: ["small_house", "small_house", "apartments"], commercial: ["shop", "shop", "restaurant"] },
   nyanya: { residential: ["small_house", "small_house", "small_house", "apartments", "townhouse"], commercial: ["shop", "restaurant", "shop"], industrial: ["warehouse", "factory", "warehouse", "construction_yard"] },
-  lugbe: { industrial: ["factory", "warehouse", "processing_plant", "logistics", "construction_yard"], residential: ["small_house", "apartments"], service: ["substation", "waste_depot"] },
 };
 
 const ZONE_DEFAULT: Record<Zone, string[]> = {
@@ -79,28 +108,41 @@ const ZONE_DEFAULT: Record<Zone, string[]> = {
 
 /** Landmarks and city utilities: where they'd like to be. */
 const FIXED: { def: string; district: string; near?: { x: number; y: number } }[] = [
-  { def: "stadium", district: "lugbe", near: { x: 620, y: 1640 } },
-  { def: "skyscraper", district: "cbd", near: { x: 2300, y: 700 } },
-  { def: "mosque", district: "cbd", near: { x: 1800, y: 680 } },
-  { def: "church", district: "cbd", near: { x: 2250, y: 1040 } },
-  { def: "museum", district: "garki", near: { x: 1250, y: 1460 } },
-  { def: "monument", district: "maitama", near: { x: 1300, y: 420 } },
-  { def: "hospital_bld", district: "garki", near: { x: 900, y: 1700 } },
-  { def: "power_plant", district: "nyanya", near: { x: 2300, y: 1700 } },
-  { def: "solar_farm", district: "lugbe", near: { x: 100, y: 1720 } },
-  { def: "water_tower", district: "kubwa", near: { x: 80, y: 120 } },
-  { def: "water_tower", district: "nyanya", near: { x: 2300, y: 1180 } },
-  { def: "water_tower", district: "asokoro", near: { x: 2300, y: 120 } },
-  { def: "waste_depot", district: "nyanya", near: { x: 1700, y: 1720 } },
-  { def: "school", district: "nyanya", near: { x: 2100, y: 1640 } },
-  { def: "school", district: "kubwa", near: { x: 120, y: 420 } },
-  { def: "fire_station", district: "cbd", near: { x: 1700, y: 1070 } },
-  { def: "police", district: "nyanya", near: { x: 1700, y: 1450 } },
-  { def: "substation", district: "gwarinpa", near: { x: 950, y: 120 } },
-  { def: "substation", district: "maitama", near: { x: 1550, y: 120 } },
-  { def: "logistics", district: "lugbe", near: { x: 120, y: 1150 } },
-  { def: "community", district: "kubwa", near: { x: 420, y: 120 } },
-  { def: "clinic", district: "nyanya", near: { x: 2300, y: 1450 } },
+  { def: "stadium", district: "lugbe", near: { x: 852, y: 3211 } },
+  { def: "skyscraper", district: "cbd", near: { x: 3244, y: 2040 } },
+  { def: "mosque", district: "cbd", near: { x: 2467, y: 2012 } },
+  { def: "church", district: "cbd", near: { x: 3167, y: 2516 } },
+  { def: "museum", district: "garki", near: { x: 2450, y: 3175 } },
+  { def: "monument", district: "maitama", near: { x: 2700, y: 1204 } },
+  { def: "hospital_bld", district: "garki", near: { x: 2100, y: 3475 } },
+  { def: "power_plant", district: "nyanya", near: { x: 4722, y: 3343 } },
+  { def: "solar_farm", district: "lugbe", near: { x: 138, y: 3406 } },
+  { def: "water_tower", district: "kubwa", near: { x: 176, y: 312 } },
+  { def: "water_tower", district: "nyanya", near: { x: 4722, y: 2006 } },
+  { def: "water_tower", district: "asokoro", near: { x: 4012, y: 1560 } },
+  { def: "waste_depot", district: "nyanya", near: { x: 4256, y: 3394 } },
+  { def: "school", district: "nyanya", near: { x: 4567, y: 3189 } },
+  { def: "school", district: "kubwa", near: { x: 264, y: 1092 } },
+  { def: "fire_station", district: "cbd", near: { x: 2311, y: 2558 } },
+  { def: "police", district: "nyanya", near: { x: 4256, y: 2700 } },
+  { def: "substation", district: "gwarinpa", near: { x: 1910, y: 312 } },
+  { def: "substation", district: "maitama", near: { x: 3283, y: 844 } },
+  { def: "logistics", district: "lugbe", near: { x: 165, y: 2021 } },
+  { def: "community", district: "kubwa", near: { x: 924, y: 312 } },
+  { def: "clinic", district: "nyanya", near: { x: 4722, y: 2700 } },
+  // The new districts' landmarks.
+  { def: "government", district: "threearms", near: { x: 3750, y: 650 } },
+  { def: "government", district: "threearms", near: { x: 3600, y: 1100 } },
+  { def: "monument", district: "threearms", near: { x: 3900, y: 200 } },
+  { def: "mosque", district: "mpape", near: { x: 3050, y: 500 } },
+  { def: "church", district: "karu", near: { x: 4300, y: 900 } },
+  { def: "school", district: "karu", near: { x: 4600, y: 1500 } },
+  { def: "clinic", district: "mpape", near: { x: 2850, y: 200 } },
+  { def: "school", district: "lokogoma", near: { x: 1650, y: 3300 } },
+  { def: "police", district: "apo", near: { x: 3200, y: 2800 } },
+  { def: "water_tower", district: "lokogoma", near: { x: 1250, y: 3450 } },
+  { def: "substation", district: "deidei", near: { x: 300, y: 1450 } },
+  { def: "mall", district: "utako", near: { x: 2200, y: 1500 } },
 ];
 
 /** What each place you can visit looks like. */

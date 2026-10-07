@@ -116,6 +116,7 @@ export function apply(state: GameState, effects: Effect[] | undefined, toasts: s
     if (effect.removeAsset) state.assets = state.assets.filter((item) => item !== effect.removeAsset);
     if (effect.job !== undefined) state.job = effect.job;
     if (effect.age) state.age += effect.age;
+    if (effect.escort) state.flags.escort = true;
     if (effect.ending) state.ending = effect.ending;
     if (effect.market) shock(state, effect.market);
     if (effect.romance) toasts.push(...romanceEffect(state, effect.romance));

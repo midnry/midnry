@@ -1,7 +1,7 @@
 import { CHAPTERS, EVENTS, FIXERS, HOMES, JOBS, LOANS, MAPS, PEOPLE, PLACES, POSTING_STATES, chapter, district, job, place } from "./data";
 import { citySolids, freePoint } from "./citymap";
 import type { Look } from "./character";
-import { RIDE_INFO, fare, fuelCost, type RideMode } from "./rides";
+import { RIDE_INFO, fare, fuelCost, rideBan, type RideMode } from "./rides";
 import {
   DAYS_PER_YEAR,
   END_AGE,
@@ -481,7 +481,9 @@ export function travel(placeId: string, mode: RideMode) {
     const p = place(placeId);
     if (!p) return;
     const d = district(p.district);
-    if (d?.gate && !check(s, d.gate.if)) return toast(s, d.gate.message);
+    if (shutOut(s, p.district)) return toast(s, d!.gate!.message);
+    const banned = rideBan(mode, s.district, p.district);
+    if (banned) return toast(s, banned);
     const to = { x: p.x, y: p.y + 95 };
     const cost = fare(mode, s.pos, to);
     const name = RIDE_INFO[mode].label.toLowerCase();
@@ -613,7 +615,7 @@ export function driveTo(placeId: string) {
     if (!hasCar(s)) return toast(s, "You don't have a car right now.");
     if (injured(s) === "fracture") return toast(s, "You can't drive with your leg in a cast.");
     const d = district(p.district);
-    if (d?.gate && !check(s, d.gate.if)) return toast(s, d.gate.message);
+    if (shutOut(s, p.district)) return toast(s, d!.gate!.message);
     const to = { x: p.x, y: p.y + 95 };
     const cost = fuelCost(s.pos, to);
     if (s.stats.money < cost) return toast(s, `You need ${naira(cost)} for fuel.`);
@@ -788,6 +790,15 @@ export function resolveEvent(choice: Choice) {
     const toasts = apply(s, choice.effects);
     const line = [choice.result ? fill(s, choice.result) : "", ...toasts].filter(Boolean).join(" ");
     if (line) toast(s, line);
+    // Escorted out: you end up back home.
+    if (s.flags.escort) {
+      s.flags.escort = false;
+      s.flags.trespass_secs = 0;
+      const home = place(HOMES[s.background])!;
+      s.pos = { x: home.x, y: home.y + 95 };
+      s.district = home.district;
+      bus.emit("teleport", s.pos);
+    }
     const forced = s.flags.force_event;
     if (typeof forced === "string" && forced) {
       s.flags.force_event = "";
@@ -1043,6 +1054,54 @@ export function bump(by: HitBy = "car") {
   });
 }
 
+// ── Who belongs where ─────────────────────────────────────────────────────────
+
+/** Whether you belong in a district: no gate, or you meet its condition. */
+export function welcome(s: GameState, districtId: string): boolean {
+  const d = district(districtId);
+  return !d?.gate || check(s, d.gate.if);
+}
+
+/** A district you can't enter at all (a hard gate you don't pass). */
+export function shutOut(s: GameState, districtId: string): boolean {
+  const d = district(districtId);
+  return Boolean(d?.gate?.hard) && !check(s, d!.gate!.if);
+}
+
+/** Dressed the part: the smart painted outfits (senator wear, blazers) draw fewer looks. */
+function looksThepart(s: GameState): boolean {
+  return /-(3|4)$/.test(s.looks.painted ?? "") || s.stats.reputation >= 35;
+}
+
+/**
+ * A second spent somewhere you don't belong (a soft-gated rich area). The
+ * longer you hang about, the likelier security or a police patrol stops you.
+ * Driving your own car or looking the part halves the risk.
+ */
+export function trespass(districtId: string, driving: boolean) {
+  update((s) => {
+    if (s.event || s.ending || s.chapter || welcome(s, districtId)) return;
+    const secs = Number(s.flags.trespass_secs ?? 0) + 1;
+    s.flags.trespass_secs = secs;
+    // A quiet first minute, then rising odds.
+    if (secs < 20) return;
+    let p = Math.min(0.06, 0.008 + (secs - 20) * 0.0006);
+    if (driving) p /= 2;
+    if (looksThepart(s)) p /= 2;
+    if (s.slot >= 2) p *= 1.5;
+    if (Math.random() >= p) return;
+    s.flags.trespass_secs = 0;
+    s.event = s.slot >= 2 || Math.random() < 0.4 ? "trespass_police" : "trespass_security";
+  });
+}
+
+/** Out of the rich areas: the clock resets. */
+export function leftRichArea() {
+  update((s) => {
+    if (Number(s.flags.trespass_secs ?? 0) > 0) s.flags.trespass_secs = 0;
+  });
+}
+
 /** Walking into a police checkpoint while your Heat is high. */
 export function checkpoint() {
   update((s) => {
@@ -1065,8 +1124,9 @@ function openSpots(s: GameState) {
   }).map((p) => ({ ...freePoint(p.x, p.y + 95, solids), label: p.name }));
 }
 
+/** Seconds allowed for a leg: a fair walk (or ride) by road, plus a little slack. */
 function stepLimit(from: { x: number; y: number }, to: { x: number; y: number }): number {
-  return Math.round(Math.hypot(to.x - from.x, to.y - from.y) / 150 + 10);
+  return Math.round((Math.abs(to.x - from.x) + Math.abs(to.y - from.y)) / 95 + 15);
 }
 
 function startTask(s: GameState, kind: "delivery" | "hawk" | "ride", app?: "zoom" | "ownprice") {
@@ -1075,7 +1135,9 @@ function startTask(s: GameState, kind: "delivery" | "hawk" | "ride", app?: "zoom
   if (kind === "delivery") {
     const hub = place("garki_hub")!;
     const pickup = { ...freePoint(hub.x, hub.y + 95, citySolids()), label: "Garki Delivery Hub" };
-    for (const drop of spots.filter((sp) => sp.label !== "Garki Delivery Hub").slice(0, 3)) {
+    // Drops around the hub's side of town, not across the whole city.
+    const nearHub = spots.filter((sp) => sp.label !== "Garki Delivery Hub" && Math.hypot(sp.x - pickup.x, sp.y - pickup.y) < 1500);
+    for (const drop of (nearHub.length >= 3 ? nearHub : spots.filter((sp) => sp.label !== "Garki Delivery Hub")).slice(0, 3)) {
       steps.push({ ...pickup, kind: "pickup" }, { ...drop, label: `Deliver to ${drop.label}`, kind: "dropoff" });
     }
   }

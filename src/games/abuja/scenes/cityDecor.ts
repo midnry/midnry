@@ -2,7 +2,7 @@ import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
 import { ZONE_COLORS } from "../systems/city/catalog";
 import { building } from "../systems/city/catalog";
-import { LAKE, RAIL, ROADS, type Lot } from "../systems/city/layout";
+import { LAKE, RAIL, ROADS, ROAD_NAMES, type Lot } from "../systems/city/layout";
 import { WORLD } from "../systems/data";
 import type { MapRect } from "../systems/types";
 import { INK, rand } from "./art";
@@ -250,15 +250,17 @@ export function drawStreetFurniture(scene: Phaser.Scene, solids: MapRect[], lots
     }
   }
   // Street name signs at junctions.
-  const NAMES = ["Ahmadu Bello Way", "Shehu Shagari Way", "Herbert Macaulay Way", "Independence Ave", "Constitution Ave", "Aminu Kano Cres", "Tafawa Balewa Way", "Adetokunbo Ademola Cres", "Ibrahim Babangida Way"];
+  // Each corner sign names one of the two roads, alternating, so both get named along the way.
   let ni = 0;
   for (const x of ROADS.xs) {
     for (const y of ROADS.ys) {
+      const name = ni++ % 2 ? ROAD_NAMES[`x${x}`] : ROAD_NAMES[`y${y}`];
+      if (!name) continue;
       const sx = x - 36;
       const sy = y - 36;
       if (!clearOf(sx, sy, 4)) continue;
       scene.add.image(sx, sy, "streetsign").setOrigin(0.5, 1).setScale(1.25, 1).setDepth(5 + sy / 10000);
-      scene.add.text(sx, sy - 26, NAMES[ni++ % NAMES.length]!, { fontFamily: GAME_FONT, fontSize: "6.5px", fontStyle: "bold", color: "#ffffff" }).setOrigin(0.5).setResolution(3).setDepth(5 + sy / 10000 + 0.0001);
+      scene.add.text(sx, sy - 26, name, { fontFamily: GAME_FONT, fontSize: "6.5px", fontStyle: "bold", color: "#ffffff" }).setOrigin(0.5).setResolution(3).setDepth(5 + sy / 10000 + 0.0001);
     }
   }
   // Parks get benches you can sit on too.

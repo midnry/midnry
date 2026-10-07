@@ -10,7 +10,7 @@ import { RoomScene } from "./RoomScene";
 import { isDirty } from "../systems/life";
 import { injured, type HitBy } from "../systems/health";
 import { CAR_COLOR, frscSpots, isDriving } from "../systems/drive";
-import { bump, checkpoint, frsc, fuel, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
+import { bump, checkpoint, frsc, leftRichArea, shutOut, trespass, welcome, fuel, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
 import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
 import { findPath, type Point } from "../systems/path";
@@ -22,7 +22,8 @@ import { CityLife, crowdStarters } from "./cityLife";
 import { playerPainted } from "../systems/painted";
 import { building as buildingInfo } from "../systems/city/catalog";
 import { fullLook, lookKey, randomLook, stageOf, type Look } from "../systems/character";
-import { INK, animateWalk, pose, building, placeBuilding, queueBuildings, faceVehicle, figure, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
+import { ChunkedGraphics, type CullBounds } from "./chunkedGraphics";
+import { INK, animateWalk, pose, building, lotKey, placeBuilding, queueBuildings, faceVehicle, figure, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
 
 // A brisk walk: a little over two body-lengths a second, as people move in a life sim.
 // Running is about 1.7× that; cars travel separately at road speed.
@@ -65,16 +66,27 @@ const FRSC: Person = { look: POLICE_LOOK, adult: true, painted: "frsc" };
 
 /** Ground texture for each district of the city. */
 const DISTRICT_TILE: Record<string, string> = {
+  // Poor: red laterite earth. Middle: grass and paving. Rich: clipped lawns.
   kubwa: "dirt",
+  deidei: "dirt",
+  lugbe: "dirt",
+  mpape: "dirt",
+  karu: "dirt",
+  nyanya: "dirt",
   gwarinpa: "grass",
+  jabi: "grass",
+  wuye: "grass",
+  lokogoma: "grass",
+  apo: "sand",
+  utako: "pavement",
+  wuse: "pavement",
+  garki: "pavement",
+  cbd: "plaza",
   maitama: "lawn",
   asokoro: "lawn",
-  jabi: "grass",
-  wuse: "pavement",
-  cbd: "plaza",
-  garki: "pavement",
-  lugbe: "dirt",
-  nyanya: "dirt",
+  katampe: "lawn",
+  guzape: "lawn",
+  threearms: "lawn",
 };
 
 /** Ground texture for a chapter zone, from its name. */
@@ -100,6 +112,16 @@ const PROPS_ON: Record<string, string[]> = {
 
 /** Each district has its own look between the buildings. */
 const DISTRICT_PROPS: Record<string, string[]> = {
+  katampe: ["palm", "tree", "flowers", "bush", "rock", "boulders"],
+  guzape: ["palm", "tree", "flowers", "rock", "bush"],
+  threearms: ["palm", "tree", "flowers", "flowers", "boulders"],
+  deidei: ["kiosk", "stall", "barrel", "generator", "rock", "grass"],
+  mpape: ["rock", "boulders", "kiosk", "generator", "tree3", "grass"],
+  karu: ["kiosk", "stall", "generator", "tree3", "bin", "grass"],
+  wuye: ["tree", "bush", "planter", "palm", "bin"],
+  utako: ["kiosk", "planter", "palm", "bin", "stall"],
+  lokogoma: ["tree", "bush", "grass", "rock", "palm"],
+  apo: ["barrel", "generator", "kiosk", "tree3", "rock"],
   maitama: ["palm", "tree", "flowers", "flowers", "bush", "fence"],
   asokoro: ["palm", "tree", "flowers", "rock", "boulders", "bush"],
   cbd: ["palm", "flowers", "bush", "bench", "bin"],
@@ -113,6 +135,8 @@ const DISTRICT_PROPS: Record<string, string[]> = {
 };
 
 /** Where the player stood when the scene redraws in place (say, after a change of outfit). */
+/** How far around you (each way) buildings must be drawn before the city opens. */
+const NEAR_LOTS = 800;
 let carry: { mapId: string; x: number; y: number } | null = null;
 
 type Near = { kind: "place" | "person" | "beat" | "door" | "lot"; id: string; label: string };
@@ -137,6 +161,10 @@ export class WorldScene extends Phaser.Scene {
   private near: Near | null = null;
   private lastSave = 0;
   private lastBlocked = 0;
+  private lastTrespass = 0;
+  private lastCull = 0;
+  private focus = { x: 0, y: 0 };
+  private trespassIn: string | null = null;
   private placeMarkers: { id: string; marker: Phaser.GameObjects.Container }[] = [];
   private people: (Interactable & { body: Figure; home: { x: number; y: number }; vx: number; vy: number })[] = [];
   /** The city's people going about their day near the camera. */
@@ -196,7 +224,10 @@ export class WorldScene extends Phaser.Scene {
     queueCharacters(this, people);
     if (mapId === "city") {
       queueVehicles(this);
-      queueBuildings(this, lotsFor(state));
+      // Only the buildings around you hold up the start; the rest stream in afterwards (streamLots).
+      const at = carry?.mapId === mapId ? carry : state?.pos.x ? state.pos : { x: PLACES[0]!.x, y: PLACES[0]!.y };
+      this.focus = { x: at.x, y: at.y };
+      queueBuildings(this, lotsFor(state).filter((l) => Math.abs(l.x + l.w / 2 - at.x) < NEAR_LOTS && Math.abs(l.y + l.h / 2 - at.y) < NEAR_LOTS));
     }
     // Drawing everyone takes a moment on slower phones: say so instead of showing a blank screen.
     const note = this.add
@@ -375,12 +406,11 @@ export class WorldScene extends Phaser.Scene {
     };
     this.events.once("shutdown", cleanup);
     this.events.once("destroy", cleanup);
-    this.refresh();
     this.pendingRestart = false;
     this.near = null;
     bus.emit("near", null);
     // Development only: lets automated browser tests move the player.
-    if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y), hit: (by: HitBy) => bump(by), crowd: () => this.life?.count ?? 0, crowdAt: () => this.life?.positions ?? [], me: () => { const c = this.cameras.main; return [(this.player.x - c.worldView.x) * c.zoom, (this.player.y - c.worldView.y) * c.zoom, c.zoom]; } };
+    if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y), at: () => [this.player.x, this.player.y], fps: () => [Math.round(this.game.loop.actualFps), this.children.length, this.life?.count ?? 0], hit: (by: HitBy) => bump(by), crowd: () => this.life?.count ?? 0, crowdAt: () => this.life?.positions ?? [], me: () => { const c = this.cameras.main; return [(this.player.x - c.worldView.x) * c.zoom, (this.player.y - c.worldView.y) * c.zoom, c.zoom]; } };
   }
 
   private cityIdOf(state: GameState | null) {
@@ -413,7 +443,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.mapId === "city") {
       const d = districtAt(x, y);
       const state = getState();
-      if (d?.gate && state && !check(state, d.gate.if)) return false;
+      if (d && state && shutOut(state, d.id)) return false;
     }
     return true;
   }
@@ -507,7 +537,7 @@ export class WorldScene extends Phaser.Scene {
     this.drawLamps();
     this.spawnTraffic();
     // District names sit above the scenery.
-    for (const d of DISTRICTS) title(this, d.x + 18, d.y + 12, `${d.name}${d.gate ? " 🔒" : ""}`, 22).setOrigin(0, 0).setDepth(3);
+    for (const d of DISTRICTS) title(this, d.x + 18, d.y + 12, `${d.name}${d.gate?.hard ? " 🔒" : d.gate ? " 🛡️" : ""}`, 22).setOrigin(0, 0).setDepth(3);
   }
 
   private drawLake() {
@@ -569,14 +599,15 @@ export class WorldScene extends Phaser.Scene {
     // Re-pave the junctions over the sidewalk tiles.
     for (const x of ROADS.xs) for (const y of ROADS.ys) this.add.tileSprite(x - 24, y - 24, 48, 48, tileKey("asphalt")).setOrigin(0);
     const near = (v: number, list: number[]) => list.some((c) => Math.abs(v - c) < 50);
-    const lines = this.add.graphics();
+    // Tiled, so only the markings near the camera are drawn each frame.
+    const lines = new ChunkedGraphics(this);
     // Centre dashes, and faint solid edge lines.
     lines.fillStyle(0xf8f6f0, 0.92);
     ROADS.xs.forEach((x) => {
-      for (let y = 0; y < height; y += 44) if (!near(y + 11, ROADS.ys)) lines.fillRoundedRect(x - 1.5, y, 3, 22, 1.5);
+      for (let y = 0; y < height; y += 44) if (!near(y + 11, ROADS.ys)) lines.fillRect(x - 1.5, y, 3, 22);
     });
     ROADS.ys.forEach((y) => {
-      for (let x = 0; x < width; x += 44) if (!near(x + 11, ROADS.xs)) lines.fillRoundedRect(x, y - 1.5, 22, 3, 1.5);
+      for (let x = 0; x < width; x += 44) if (!near(x + 11, ROADS.xs)) lines.fillRect(x, y - 1.5, 22, 3);
     });
     lines.fillStyle(0xf8f6f0, 0.35);
     ROADS.xs.forEach((x) => run(ROADS.ys, height, (a, b) => b - a > 60 && lines.fillRect(x - 19, a + 30, 1.5, b - a - 60).fillRect(x + 17.5, a + 30, 1.5, b - a - 60)));
@@ -593,7 +624,7 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     // Storm drains along the kerbs, and the odd manhole cover.
-    const d = this.add.graphics();
+    const d = new ChunkedGraphics(this);
     const grate = (gx: number, gy: number, vertical: boolean) => {
       const [w, h] = vertical ? [6, 16] : [16, 6];
       d.fillStyle(0x26262b, 1).fillRect(gx - w / 2, gy - h / 2, w, h);
@@ -622,20 +653,81 @@ export class WorldScene extends Phaser.Scene {
   private drawSolids() {
     if (this.mapId === "city") {
       // The city's buildings, from the zoned layout (systems/city).
-      const state = getState();
-      for (const l of lotsFor(state)) {
-        const b = placeBuilding(this, l);
-        if (state?.city?.lots[l.id]?.owned) this.add.text(l.x + l.w - 6, l.y + l.h - 4, "🔑", { fontSize: "14px" }).setOrigin(1, 1).setDepth(5 + (l.y + l.h) / 10000 + 0.0001);
-        if (b.lit) this.nightWindows.push(b.lit);
-        // Walk behind a building and it fades so you can still see yourself.
-        if (l.solid) this.towers.push({ g: { setAlpha: (a: number) => (b.img.setAlpha(a), b.lit?.setAlpha(Math.min(a, b.lit.alpha)), b.img) } as unknown as Phaser.GameObjects.Components.Alpha, face: { x: l.x, y: b.top, w: l.w, h: l.y + l.h - b.top }, base: l.y + l.h });
+      // Buildings near you were drawn while loading; the rest stream in once you can play.
+      const later: Lot[] = [];
+      for (const l of lotsFor(getState())) {
+        if (this.textures.exists(lotKey(l))) this.placeLot(l);
+        else later.push(l);
       }
+      this.streamLots(later);
       return;
     }
     this.solids.forEach((s, i) => {
       if (s.kind === "water") return;
       building(this, s, i * 31 + Math.round(s.x), { style: "house" });
     });
+  }
+
+  /**
+   * Skip drawing what's off screen. The city holds thousands of buildings, trees
+   * and people; drawing them all every frame is what makes a big map slow. The
+   * camera filter hides an object from the camera without touching its own
+   * visibility, which the game uses for other things.
+   */
+  private cull() {
+    const cam = this.cameras.main;
+    const view = cam.worldView;
+    const pad = 320;
+    const [left, top, right, bottom] = [view.x - pad, view.y - pad, view.right + pad, view.bottom + pad];
+    for (const o of this.children.list) {
+      const g = o as Phaser.GameObjects.Image;
+      if (g.scrollFactorX !== 1 || g.x == null) continue;
+      // Containers report no size: give them a person-or-car sized box.
+      const w = g.displayWidth || 200;
+      const h = g.displayHeight || 200;
+      const x0 = g.x - (g.displayWidth ? g.originX * w : w / 2);
+      const y0 = g.y - (g.displayHeight ? g.originY * h : h / 2);
+      // Graphics sit at 0,0 and draw anywhere: keep them, unless they're a tile of a ChunkedGraphics.
+      if (o.type === "Graphics") {
+        const b = (o as Phaser.GameObjects.Graphics & { cullBounds?: CullBounds }).cullBounds;
+        if (b) g.cameraFilter = b.x > right || b.r < left || b.y > bottom || b.b < top ? cam.id : 0;
+        continue;
+      }
+      const off = x0 > right || x0 + w < left || y0 > bottom || y0 + h < top;
+      g.cameraFilter = off ? cam.id : 0;
+    }
+  }
+
+  private placeLot(l: Lot) {
+    const b = placeBuilding(this, l);
+    if (getState()?.city?.lots[l.id]?.owned) this.add.text(l.x + l.w - 6, l.y + l.h - 4, "🔑", { fontSize: "14px" }).setOrigin(1, 1).setDepth(5 + (l.y + l.h) / 10000 + 0.0001);
+    if (b.lit) this.nightWindows.push(b.lit);
+    // Walk behind a building and it fades so you can still see yourself.
+    if (l.solid) this.towers.push({ g: { setAlpha: (a: number) => (b.img.setAlpha(a), b.lit?.setAlpha(Math.min(a, b.lit.alpha)), b.img) } as unknown as Phaser.GameObjects.Components.Alpha, face: { x: l.x, y: b.top, w: l.w, h: l.y + l.h - b.top }, base: l.y + l.h });
+  }
+
+  /** Draw the far-off buildings in the background, nearest first, so the city is playable at once. */
+  private streamLots(lots: Lot[]) {
+    if (!lots.length) return;
+    const at = this.focus;
+    lots.sort((a, b) => Math.hypot(a.x - at.x, a.y - at.y) - Math.hypot(b.x - at.x, b.y - at.y));
+    const waiting = new Map<string, Lot[]>();
+    for (const l of lots) {
+      const key = lotKey(l);
+      waiting.set(key, [...(waiting.get(key) ?? []), l]);
+    }
+    const lit = queueBuildings(this, lots);
+    // A building goes up once its picture, and its night-lights picture if it has one, are both in.
+    const loaded = (fileKey: string) => {
+      const key = fileKey.replace(/_lit$/, "");
+      const ready = waiting.get(key);
+      if (!ready || !this.textures.exists(key) || (lit.has(key) && !this.textures.exists(`${key}_lit`))) return;
+      waiting.delete(key);
+      ready.forEach((l) => this.placeLot(l));
+    };
+    this.load.on("filecomplete", loaded);
+    this.events.once("shutdown", () => this.load.off("filecomplete", loaded));
+    this.load.start();
   }
 
   private drawChapterMap() {
@@ -860,7 +952,6 @@ export class WorldScene extends Phaser.Scene {
     return this.add.container(0, 0, [...stains, ...stink, ...flies]).setVisible(false);
   }
 
-
   private makeMarker(tint: number, glyph: string) {
     const ring = this.add.circle(0, 0, 34, tint, 0.2).setStrokeStyle(3, tint, 1);
     const sign = this.add
@@ -949,6 +1040,10 @@ export class WorldScene extends Phaser.Scene {
     if (!state || input.paused) return;
     this.moveTraffic(dt, time);
     this.rail?.update(time);
+    if (time - this.lastCull > 200) {
+      this.lastCull = time;
+      this.cull();
+    }
     if (this.riding) {
       this.driveRide(dt);
       return;
@@ -1028,6 +1123,20 @@ export class WorldScene extends Phaser.Scene {
     this.checkTask();
     this.checkStreet();
     this.pointArrow();
+    // A rich estate you don't belong in: you can walk in, but the longer you stay the likelier you're stopped.
+    if (this.mapId === "city" && time - this.lastTrespass > 1000) {
+      this.lastTrespass = time;
+      const here = districtAt(this.player.x, this.player.y);
+      const unwelcome = here && !welcome(state, here.id) ? here : null;
+      if (unwelcome) {
+        if (this.trespassIn !== unwelcome.id && unwelcome.gate) bus.emit("blocked", `⚠️ ${unwelcome.gate.message}`);
+        this.trespassIn = unwelcome.id;
+        trespass(unwelcome.id, driving);
+      } else if (this.trespassIn) {
+        this.trespassIn = null;
+        leftRichArea();
+      }
+    }
     if (this.mapId === "city" && time - this.lastSave > 2000) {
       this.lastSave = time;
       savePosition(this.player.x, this.player.y, districtAt(this.player.x, this.player.y)?.id ?? state.district);
@@ -1042,7 +1151,7 @@ export class WorldScene extends Phaser.Scene {
       if (blocked(x, y, RADIUS, this.solids)) return false;
       if (this.mapId === "city") {
         const d = districtAt(x, y);
-        if (d?.gate && !check(state, d.gate.if)) {
+        if (d?.gate && shutOut(state, d.id)) {
           if (time - this.lastBlocked > 2500) {
             this.lastBlocked = time;
             bus.emit("blocked", d.gate.message);

@@ -828,14 +828,17 @@ function lotArt(l: Lot) {
 }
 
 /** Queue every building texture for these lots (call from preload). */
-export function queueBuildings(scene: Phaser.Scene, lots: Lot[]) {
+/** Queue the building pictures not loaded yet. Returns the keys that also have a night-lights picture. */
+export function queueBuildings(scene: Phaser.Scene, lots: Lot[]): Set<string> {
   const urls: string[] = [];
   const seen = new Set<string>();
+  const lit = new Set<string>();
   for (const l of lots) {
     const key = lotKey(l);
     if (seen.has(key) || scene.textures.exists(key)) continue;
     seen.add(key);
     const art = lotArt(l);
+    if (art.lights) lit.add(key);
     const scaled = (svg: string) => svg.replace(/width="([\d.]+)" height="([\d.]+)"/, (_m, w, h) => `width="${Math.round(Number(w) * BRES)}" height="${Math.round(Number(h) * BRES)}"`);
     for (const [k, svg] of [[key, art.svg], [`${key}_lit`, art.lights]] as const) {
       if (!svg) continue;
@@ -845,6 +848,7 @@ export function queueBuildings(scene: Phaser.Scene, lots: Lot[]) {
     }
   }
   if (urls.length) scene.load.once("complete", () => urls.forEach((url) => URL.revokeObjectURL(url)));
+  return lit;
 }
 
 /** Put a lot's building on the map. Returns the building and its night lights. */

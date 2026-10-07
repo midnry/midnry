@@ -14,8 +14,21 @@ export const RIDE_INFO: Record<RideMode, { label: string; icon: string; blurb: s
 
 export const RIDE_MODES: RideMode[] = ["okada", "keke", "taxi", "bus"];
 
-/** About 250 map pixels to a kilometre. */
-const PX_PER_KM = 250;
+/**
+ * Okada and keke have been banned from Abuja's city centre since 2006: they
+ * only work the satellite towns and outer districts.
+ */
+export const CITY_CENTRE = new Set(["cbd", "wuse", "garki", "maitama", "asokoro", "threearms", "utako", "jabi", "wuye", "katampe", "guzape"]);
+
+/** Why a ride can't take this trip, or null when it can. */
+export function rideBan(mode: RideMode, fromDistrict: string, toDistrict: string): string | null {
+  if (mode !== "okada" && mode !== "keke") return null;
+  if (!CITY_CENTRE.has(fromDistrict) && !CITY_CENTRE.has(toDistrict)) return null;
+  return `${RIDE_INFO[mode].label}s are banned in the city centre. Take a taxi or the bus.`;
+}
+
+/** About 160 map pixels to a kilometre: Nyanya to the CBD is roughly 15 km by road. */
+const PX_PER_KM = 160;
 
 const roundUp = (n: number) => Math.ceil(n / 50) * 50;
 

@@ -115,6 +115,8 @@ export type Effect = {
   removeAsset?: string;
   job?: string | null;
   age?: number;
+  /** Escorted out of where you are, back home. */
+  escort?: boolean;
   ending?: EndingId;
   /** Relationship and pregnancy outcomes, handled in systems/romance.ts. */
   romance?: string;
@@ -282,7 +284,13 @@ export type DistrictDef = {
   h: number;
   color: string;
   vibe: string;
-  gate?: { if: Cond; message: string };
+  /** Who lives here: sets the look of the streets, prices and how welcome a stranger is. */
+  tier?: "poor" | "middle" | "rich";
+  /**
+   * Who belongs here. A soft gate lets anyone in, but strangers get stopped
+   * by security and police; a hard gate (Three Arms Zone) turns them back.
+   */
+  gate?: { if: Cond; message: string; hard?: boolean };
 };
 
 export type EventDef = {
@@ -345,6 +353,8 @@ export type GameState = {
   version: 1;
   /** When this save was last written, to pick the newer of device and account saves. */
   savedAt?: number;
+  /** Which city map the positions in this save refer to (missing: the original map). */
+  mapVersion?: number;
   name: string;
   gender: Gender;
   background: Background;
