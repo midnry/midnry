@@ -1,7 +1,7 @@
 import { randomLook, type Look } from "./character";
 import { PEOPLE } from "./data";
 import type { PersonDef } from "./types";
-import { crowdPainted, type CrowdStage } from "./painted";
+import { YOUNG_FRIENDS, crowdPainted, type CrowdStage } from "./painted";
 
 // Who looks like what: the world, the chat boxes and the story all draw a
 // person from here, so Mama in the yard and Mama in a chat box are the same.
@@ -31,7 +31,8 @@ export function personLook(p: PersonDef): Person {
   const gender = (p.build ?? look.build) === "fem" ? "female" : "male";
   // Friends as children: primary-school kids, then secondary-school teens.
   const stage: CrowdStage = p.kid ? (p.map === "primary" ? "child" : "teen") : "adult";
-  const own = p.kid ? undefined : (PAINTED_PEOPLE[`${p.map}:${p.id}`] ?? PAINTED_PEOPLE[p.id]);
+  const young = YOUNG_FRIENDS[p.id];
+  const own = p.kid ? (stage === "child" ? young?.child : young?.teen) : (PAINTED_PEOPLE[`${p.map}:${p.id}`] ?? PAINTED_PEOPLE[p.id]);
   return { look, adult: !p.kid, painted: own ?? standIn(seedOf(`${p.map}:${p.id}`), gender, stage) };
 }
 

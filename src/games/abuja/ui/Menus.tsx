@@ -119,7 +119,7 @@ export function Creator({
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-[180px_minmax(0,1fr)]">
           <div className="flex flex-col items-center gap-2">
             <div className="rounded-3xl bg-gradient-to-b from-sky-200/20 to-transparent p-3">
-              <Avatar looks={{ ...look, outfit: look.topColor, painted: grown ? grownOutfit : youngPainted({ build }, 8) }} size={150} view={view} adult={grown} />
+              <Avatar looks={{ ...look, outfit: look.topColor, painted: grown ? grownOutfit : youngPainted({ build, painted: grownOutfit }, 8) }} size={150} view={view} adult={grown} />
             </div>
             <div className="flex flex-wrap justify-center gap-1">
               <button type="button" className="min-h-9 rounded-full bg-white/10 px-3 text-xs hover:bg-white/15" onClick={() => setView(view === "front" ? "side" : view === "side" ? "back" : "front")}>

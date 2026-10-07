@@ -37,12 +37,38 @@ export function autoOutfit(looks: Looks): string | undefined {
   return PAINTED_OUTFITS.some((o) => o.id === id) ? id : undefined;
 }
 
-/** The painted player as a child or teenager: the school kids and teens, by gender. */
+/** The player's own childhood art so far, by gender and skin tone (child at 9, teen at 15). */
+export const KID_ART = new Set<string>(["you-k-m-light", "you-k-f-light"]);
+
+/** Skin tone: from the chosen grown-up outfit, else from the drawn skin colour. */
+export function toneOf(looks: Partial<Looks>): Tone {
+  const m = /^you-[mf]-(light|brown|dark)-/.exec(looks.painted ?? "");
+  if (m) return m[1] as Tone;
+  const i = SKIN_TONES.indexOf(looks.skin ?? "");
+  return i >= 0 ? (i <= 3 ? "light" : i <= 5 ? "brown" : "dark") : "brown";
+}
+
+/** The painted player as a child or teenager: their own art in their skin tone, else the school kids and teens. */
 export function youngPainted(looks: Partial<Looks>, age: number): string {
   const girl = (looks.build ?? (looks.lashes ? "fem" : "masc")) === "fem";
+  const own = `you-k-${girl ? "f" : "m"}-${toneOf(looks)}`;
+  if (KID_ART.has(own)) return `${own}-${age < 13 ? "child" : "teen"}`;
   if (age < 13) return girl ? "crowd-schoolgirl" : "crowd-schoolboy";
   return girl ? "crowd-teengirl" : "crowd-teenboy";
 }
+
+/** Friends who grew up with you: their art at 9 and 15. */
+export const YOUNG_FRIENDS: Record<string, { child?: string; teen?: string }> = {
+  tunde: { child: "tunde-9", teen: "tunde-15" },
+  slim: { child: "slim-9", teen: "slim-15" },
+  bolaji: { teen: "bolaji-15" },
+};
+
+/** Every young painted id and its height against a grown-up. */
+export const YOUNG_ART: { id: string; scale: number }[] = [
+  ...[...KID_ART].flatMap((k) => [{ id: `${k}-child`, scale: 0.62 }, { id: `${k}-teen`, scale: 0.88 }]),
+  ...Object.values(YOUNG_FRIENDS).flatMap((f) => [...(f.child ? [{ id: f.child, scale: 0.62 }] : []), ...(f.teen ? [{ id: f.teen, scale: 0.9 }] : [])]),
+];
 
 /** The painted art the player wears at their age: school clothes when young, their chosen (or matched) outfit from 18. */
 export function playerPainted(state: Pick<GameState, "looks" | "age"> | null): string | undefined {
@@ -54,7 +80,7 @@ export function playerPainted(state: Pick<GameState, "looks" | "age"> | null): s
 }
 
 /** Any painted art id the interface can show as a portrait. */
-export const isPaintedId = (id: string | undefined): id is string => Boolean(id && (PAINTED_OUTFITS.some((o) => o.id === id) || CROWD_PAINTED.some((c) => c.id === id)));
+export const isPaintedId = (id: string | undefined): id is string => Boolean(id && (PAINTED_OUTFITS.some((o) => o.id === id) || CROWD_PAINTED.some((c) => c.id === id) || YOUNG_ART.some((y) => y.id === id)));
 
 /** The player's looks with the painted art filled in, for portraits in the interface. */
 export const myLooks = (state: Pick<GameState, "looks" | "age">): Looks => ({ ...state.looks, painted: playerPainted(state) ?? DRAWN });
