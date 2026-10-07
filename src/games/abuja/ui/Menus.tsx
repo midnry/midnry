@@ -1,3 +1,4 @@
+import { Skyline } from "./Skyline";
 import { useState } from "react";
 import { PRESETS, type Look, type View } from "../systems/character";
 import type { Background, GameState, Gender, Interest, Looks } from "../systems/types";
@@ -70,11 +71,12 @@ export function Title({
     <Screen>
       <div className="mx-auto max-w-lg text-center">
         <p className="text-sm font-semibold tracking-[0.3em] text-sky-400 uppercase">A life sim · Abuja, Nigeria</p>
-        <h1 className="mt-3 font-display text-6xl tracking-tight text-balance sm:text-7xl">Abuja Hustle</h1>
+        <h1 className="abuja-game__title mt-3 font-display text-6xl text-balance sm:text-7xl">Abuja<span>Hustle<i aria-hidden> ✦</i></span></h1>
         <p className="mx-auto mt-4 max-w-sm text-pretty text-slate-300">
           No inheritance. No uncle in government. Just you, the city, and the dream of financial freedom.
         </p>
-        <p className="mt-8 text-xs font-semibold tracking-widest text-slate-400 uppercase">Your lives · up to {SLOTS_MAX}</p>
+        <Skyline className="abuja-game__skyline" animated={false} />
+        <p className="mt-5 text-xs font-semibold tracking-widest text-slate-400 uppercase">Your lives · up to {SLOTS_MAX}</p>
         <ul className="mx-auto mt-3 grid max-w-md gap-2 text-left">
           {SLOT_IDS.map((slot) => {
             const s = saves[slot - 1] ?? null;
@@ -317,7 +319,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 
 export function Screen({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-[100dvh] overflow-y-auto bg-[radial-gradient(ellipse_at_top,#11265c,#05070c_62%)] px-4 py-10 text-slate-100 sm:py-16">
+    <div className="abuja-game__screen min-h-[100dvh] overflow-y-auto px-4 py-10 text-slate-100 sm:py-16">
       {children}
     </div>
   );

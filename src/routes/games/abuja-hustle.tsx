@@ -1,5 +1,7 @@
 import { lazy, Suspense, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { LoadingProvider } from "@/games/abuja/ui/LoadingProvider";
+import "@/games/abuja/ui/game-theme.css";
 import { GameLoadBoundary, LoadingScreen } from "@/games/abuja/ui/LoadingScreen";
 
 const AbujaHustle = lazy(() => import("@/games/abuja/ui/AbujaHustle").then((module) => ({ default: module.AbujaHustle })));
@@ -18,6 +20,7 @@ export const Route = createFileRoute("/games/abuja-hustle")({
   }),
   pendingComponent: () => <LoadingScreen title="Opening Abuja Hustle" />,
   pendingMs: 0,
+  pendingMinMs: 3000,
   component: GamePage,
 });
 
@@ -29,7 +32,7 @@ function GamePage() {
     const theme = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     const before = { manifest: link?.href, theme: theme?.content };
     if (link) link.href = MANIFEST;
-    if (theme) theme.content = "#05070c";
+    if (theme) theme.content = "#050b14";
     if ("serviceWorker" in navigator) {
       void navigator.serviceWorker.register("/abuja-hustle-sw.js", { scope: "/games/abuja-hustle" }).catch(() => {});
     }
@@ -38,5 +41,5 @@ function GamePage() {
       if (theme && before.theme) theme.content = before.theme;
     };
   }, []);
-  return <GameLoadBoundary><Suspense fallback={<LoadingScreen title="Loading Abuja Hustle" />}><AbujaHustle /></Suspense></GameLoadBoundary>;
+  return <LoadingProvider><GameLoadBoundary><Suspense fallback={<LoadingScreen title="Loading Abuja Hustle" />}><AbujaHustle /></Suspense></GameLoadBoundary></LoadingProvider>;
 }
