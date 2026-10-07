@@ -137,6 +137,9 @@ const DISTRICT_PROPS: Record<string, string[]> = {
 /** Where the player stood when the scene redraws in place (say, after a change of outfit). */
 /** How far around you (each way) buildings must be drawn before the city opens. */
 const NEAR_LOTS = 800;
+/** The city is woken and put to sleep in blocks this size (see wakeBlocks). */
+const BLOCK = 800;
+const blockOf = (x: number, y: number) => `${Math.floor(x / BLOCK)}_${Math.floor(y / BLOCK)}`;
 let carry: { mapId: string; x: number; y: number } | null = null;
 
 type Near = { kind: "place" | "person" | "beat" | "door" | "lot"; id: string; label: string };
@@ -164,6 +167,9 @@ export class WorldScene extends Phaser.Scene {
   private lastTrespass = 0;
   private lastCull = 0;
   private focus = { x: 0, y: 0 };
+  private blocks = new Map<string, { lots: Lot[]; awake: boolean }>();
+  private placed = new Map<string, { img: Phaser.GameObjects.Image; lit: Phaser.GameObjects.Image | null; key: Phaser.GameObjects.Text | null; tower: WorldScene["towers"][number] | null; texture: string }>();
+  private litLevel = 0;
   private trespassIn: string | null = null;
   private placeMarkers: { id: string; marker: Phaser.GameObjects.Container }[] = [];
   private people: (Interactable & { body: Figure; home: { x: number; y: number }; vx: number; vy: number })[] = [];
@@ -410,7 +416,7 @@ export class WorldScene extends Phaser.Scene {
     this.near = null;
     bus.emit("near", null);
     // Development only: lets automated browser tests move the player.
-    if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y), at: () => [this.player.x, this.player.y], fps: () => [Math.round(this.game.loop.actualFps), this.children.length, this.life?.count ?? 0], hit: (by: HitBy) => bump(by), crowd: () => this.life?.count ?? 0, crowdAt: () => this.life?.positions ?? [], me: () => { const c = this.cameras.main; return [(this.player.x - c.worldView.x) * c.zoom, (this.player.y - c.worldView.y) * c.zoom, c.zoom]; } };
+    if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y), at: () => [this.player.x, this.player.y], blocks: () => [this.placed.size, [...this.blocks.values()].filter((b) => b.awake).length, this.textures.getTextureKeys().filter((k) => k.startsWith("bld_")).length], fps: () => [Math.round(this.game.loop.actualFps), this.children.length, this.life?.count ?? 0], hit: (by: HitBy) => bump(by), crowd: () => this.life?.count ?? 0, crowdAt: () => this.life?.positions ?? [], me: () => { const c = this.cameras.main; return [(this.player.x - c.worldView.x) * c.zoom, (this.player.y - c.worldView.y) * c.zoom, c.zoom]; } };
   }
 
   private cityIdOf(state: GameState | null) {
@@ -652,14 +658,17 @@ export class WorldScene extends Phaser.Scene {
 
   private drawSolids() {
     if (this.mapId === "city") {
-      // The city's buildings, from the zoned layout (systems/city).
-      // Buildings near you were drawn while loading; the rest stream in once you can play.
-      const later: Lot[] = [];
+      // The city's buildings, from the zoned layout (systems/city), in blocks:
+      // only the blocks around the camera are loaded (see wakeBlocks).
+      this.blocks = new Map();
+      this.placed = new Map();
       for (const l of lotsFor(getState())) {
-        if (this.textures.exists(lotKey(l))) this.placeLot(l);
-        else later.push(l);
+        const key = blockOf(l.x + l.w / 2, l.y + l.h / 2);
+        const block = this.blocks.get(key) ?? { lots: [], awake: false };
+        block.lots.push(l);
+        this.blocks.set(key, block);
       }
-      this.streamLots(later);
+      this.wakeBlocks();
       return;
     }
     this.solids.forEach((s, i) => {
@@ -699,17 +708,70 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private placeLot(l: Lot) {
+    if (this.placed.has(l.id)) return;
     const b = placeBuilding(this, l);
-    if (getState()?.city?.lots[l.id]?.owned) this.add.text(l.x + l.w - 6, l.y + l.h - 4, "🔑", { fontSize: "14px" }).setOrigin(1, 1).setDepth(5 + (l.y + l.h) / 10000 + 0.0001);
-    if (b.lit) this.nightWindows.push(b.lit);
+    const key = getState()?.city?.lots[l.id]?.owned ? this.add.text(l.x + l.w - 6, l.y + l.h - 4, "🔑", { fontSize: "14px" }).setOrigin(1, 1).setDepth(5 + (l.y + l.h) / 10000 + 0.0001) : null;
+    if (b.lit) {
+      b.lit.setAlpha(this.litLevel);
+      this.nightWindows.push(b.lit);
+    }
     // Walk behind a building and it fades so you can still see yourself.
-    if (l.solid) this.towers.push({ g: { setAlpha: (a: number) => (b.img.setAlpha(a), b.lit?.setAlpha(Math.min(a, b.lit.alpha)), b.img) } as unknown as Phaser.GameObjects.Components.Alpha, face: { x: l.x, y: b.top, w: l.w, h: l.y + l.h - b.top }, base: l.y + l.h });
+    const tower = l.solid ? { g: { setAlpha: (a: number) => (b.img.setAlpha(a), b.lit?.setAlpha(Math.min(a, b.lit.alpha)), b.img) } as unknown as Phaser.GameObjects.Components.Alpha, face: { x: l.x, y: b.top, w: l.w, h: l.y + l.h - b.top }, base: l.y + l.h } : null;
+    if (tower) this.towers.push(tower);
+    this.placed.set(l.id, { img: b.img, lit: b.lit, key, tower, texture: lotKey(l) });
   }
 
-  /** Draw the far-off buildings in the background, nearest first, so the city is playable at once. */
-  private streamLots(lots: Lot[]) {
-    if (!lots.length) return;
-    const at = this.focus;
+  /** Take a building down and, when no other standing building uses its picture, free the picture too. */
+  private removeLot(l: Lot) {
+    const p = this.placed.get(l.id);
+    if (!p) return;
+    this.placed.delete(l.id);
+    p.img.destroy();
+    p.lit?.destroy();
+    p.key?.destroy();
+    if (p.lit) this.nightWindows = this.nightWindows.filter((w) => w !== p.lit);
+    if (p.tower) this.towers = this.towers.filter((t) => t !== p.tower);
+    if (![...this.placed.values()].some((o) => o.texture === p.texture)) {
+      this.textures.remove(p.texture);
+      if (this.textures.exists(`${p.texture}_lit`)) this.textures.remove(`${p.texture}_lit`);
+    }
+  }
+
+  /**
+   * The city is cut into blocks. Blocks around the camera are awake: their
+   * buildings are loaded and drawn. Blocks well away go to sleep and give their
+   * pictures back, so a phone only ever holds the part of Abuja you're in.
+   * A ring of blocks between the two stops anything flickering in and out
+   * as you walk along a block edge.
+   */
+  private wakeBlocks() {
+    if (!this.blocks.size) return;
+    const view = this.cameras.main.worldView;
+    // Before the camera has a view (first frame), centre on where you start.
+    const [cx, cy] = view.width ? [view.centerX, view.centerY] : [this.focus.x, this.focus.y];
+    const [hw, hh] = view.width ? [view.width / 2, view.height / 2] : [600, 400];
+    const wake = (bx: number, by: number) => Math.abs(bx * BLOCK + BLOCK / 2 - cx) <= hw + BLOCK && Math.abs(by * BLOCK + BLOCK / 2 - cy) <= hh + BLOCK;
+    const keep = (bx: number, by: number) => Math.abs(bx * BLOCK + BLOCK / 2 - cx) <= hw + BLOCK * 1.5 && Math.abs(by * BLOCK + BLOCK / 2 - cy) <= hh + BLOCK * 1.5;
+    const toLoad: Lot[] = [];
+    for (const [id, block] of this.blocks) {
+      const [bx, by] = id.split("_").map(Number) as [number, number];
+      if (!block.awake && wake(bx, by)) {
+        block.awake = true;
+        for (const l of block.lots) {
+          if (this.textures.exists(lotKey(l))) this.placeLot(l);
+          else toLoad.push(l);
+        }
+      } else if (block.awake && !keep(bx, by)) {
+        block.awake = false;
+        block.lots.forEach((l) => this.removeLot(l));
+      }
+    }
+    if (toLoad.length) this.loadLots(toLoad);
+  }
+
+  /** Load building pictures in the background, nearest first, and put each building up as it arrives. */
+  private loadLots(lots: Lot[]) {
+    const at = this.player ?? this.focus;
     lots.sort((a, b) => Math.hypot(a.x - at.x, a.y - at.y) - Math.hypot(b.x - at.x, b.y - at.y));
     const waiting = new Map<string, Lot[]>();
     for (const l of lots) {
@@ -717,17 +779,19 @@ export class WorldScene extends Phaser.Scene {
       waiting.set(key, [...(waiting.get(key) ?? []), l]);
     }
     const lit = queueBuildings(this, lots);
-    // A building goes up once its picture, and its night-lights picture if it has one, are both in.
+    // A building goes up once its picture, and its night-lights picture if it has one, are both in,
+    // and only if its block is still awake by then.
     const loaded = (fileKey: string) => {
       const key = fileKey.replace(/_lit$/, "");
       const ready = waiting.get(key);
       if (!ready || !this.textures.exists(key) || (lit.has(key) && !this.textures.exists(`${key}_lit`))) return;
       waiting.delete(key);
-      ready.forEach((l) => this.placeLot(l));
+      ready.filter((l) => this.blocks.get(blockOf(l.x + l.w / 2, l.y + l.h / 2))?.awake).forEach((l) => this.placeLot(l));
+      if (!waiting.size) this.load.off("filecomplete", loaded);
     };
     this.load.on("filecomplete", loaded);
     this.events.once("shutdown", () => this.load.off("filecomplete", loaded));
-    this.load.start();
+    if (!this.load.isLoading()) this.load.start();
   }
 
   private drawChapterMap() {
@@ -1031,6 +1095,7 @@ export class WorldScene extends Phaser.Scene {
     this.glows.forEach((g) => g.setAlpha(glow));
     this.windowLights?.setAlpha(this.mapId !== "city" ? 0 : [0, 0, 0.45, 0.95][Math.min(state.slot, 3)]!);
     const lit = this.mapId !== "city" ? 0 : [0, 0, 0.55, 1][Math.min(state.slot, 3)]!;
+    this.litLevel = lit;
     this.nightWindows.forEach((l) => l.setAlpha(lit));
   }
 
@@ -1043,6 +1108,7 @@ export class WorldScene extends Phaser.Scene {
     if (time - this.lastCull > 200) {
       this.lastCull = time;
       this.cull();
+      if (this.mapId === "city") this.wakeBlocks();
     }
     if (this.riding) {
       this.driveRide(dt);
