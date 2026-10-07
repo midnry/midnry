@@ -4,7 +4,10 @@
 
 import { INK, tone } from "./character";
 
-export type VehicleKind = "car" | "taxi" | "okada" | "keke" | "bus";
+export type VehicleKind = "car" | "taxi" | "okada" | "keke" | "bus" | "truck" | "van" | "ambulance" | "police" | "firetruck" | "mixer";
+
+/** Which everyday vehicle a working one counts as when it hits you. */
+export const HIT_AS: Record<VehicleKind, "car" | "taxi" | "okada" | "keke" | "bus"> = { car: "car", taxi: "taxi", okada: "okada", keke: "keke", bus: "bus", truck: "bus", van: "car", ambulance: "car", police: "car", firetruck: "bus", mixer: "bus" };
 export type VehicleView = "side" | "front" | "back";
 
 export const CAR_COLORS = { yellow: "#f5b316", black: "#1f2023", white: "#f3f4f6", red: "#d92d20", blue: "#1f6fd1", gray: "#9aa0a6", green: "#2e9e3e" };
@@ -223,6 +226,62 @@ function cityBus(color: string, view: VehicleView): string {
   );
 }
 
+// ── Working vehicles: trucks, vans, emergency and construction ──────────────
+
+type Work = { body: string; cab: string; label: string; labelColor: string; lights?: [string, string]; drum?: boolean; long: number };
+
+const WORK: Partial<Record<VehicleKind, (color: string) => Work>> = {
+  truck: (c) => ({ body: "#f3f4f6", cab: c, label: "LOGISTICS", labelColor: c, long: 200 }),
+  van: (c) => ({ body: c, cab: c, label: "CHOPNOW", labelColor: "#ffffff", long: 160 }),
+  ambulance: () => ({ body: "#f8fafc", cab: "#f8fafc", label: "AMBULANCE", labelColor: "#dc2626", lights: ["#ef4444", "#3b82f6"], long: 170 }),
+  police: () => ({ body: "#f8fafc", cab: "#1e3a8a", label: "POLICE", labelColor: "#1e3a8a", lights: ["#ef4444", "#3b82f6"], long: 150 }),
+  firetruck: () => ({ body: "#dc2626", cab: "#dc2626", label: "FIRE SERVICE", labelColor: "#ffffff", lights: ["#ef4444", "#facc15"], long: 210 }),
+  mixer: () => ({ body: "#9ca3af", cab: "#f59e0b", label: "CEMENT", labelColor: "#1f2937", drum: true, long: 200 }),
+};
+
+function workVehicle(kind: VehicleKind, color: string, view: VehicleView): string {
+  const w = WORK[kind]!(color);
+  const L = w.long;
+  const cabD = tone(w.cab, 0.78);
+  const bodyD = tone(w.body, 0.82);
+  const lightbar = (x: number, y: number, len: number) => (w.lights ? `<rect x="${x}" y="${y}" width="${len / 2}" height="6" rx="2" fill="${w.lights[0]}" ${LINE}/><rect x="${x + len / 2}" y="${y}" width="${len / 2}" height="6" rx="2" fill="${w.lights[1]}" ${LINE}/>` : "");
+  if (view === "side") {
+    const cabX = L - 50;
+    const box = w.drum
+      ? shape(`M18 30 Q14 12 40 10 L${cabX - 16} 14 Q${cabX - 4} 30 ${cabX - 16} 50 L40 54 Q14 52 18 30 Z`, w.body) + `<path d="M40 14 L50 50 M70 12 L80 52 M100 12 L110 52" ${thin(bodyD, 2.4)}/>`
+      : kind === "police"
+        ? ""
+        : shape(`M10 70 L10 10 Q10 4 16 4 L${cabX - 2} 4 L${cabX - 2} 70 Z`, w.body) + `<text x="${kind === "ambulance" ? (cabX + 50) / 2 : (cabX + 8) / 2}" y="36" font-family="Arial, sans-serif" font-size="13" font-weight="800" text-anchor="middle" fill="${w.labelColor}">${w.label}</text>` + `<path d="M10 54 L${cabX - 2} 54" ${thin(bodyD, 3)}/>`;
+    if (kind === "police") return car("#f8fafc", "side", false).replace(/<\/svg>/, "") + `<rect x="15" y="46" width="150" height="8" fill="${w.cab}"/><text x="96" y="53" font-family="Arial, sans-serif" font-size="7" font-weight="800" text-anchor="middle" fill="#fff">POLICE</text>` + lightbar(78, 3, 24);
+    return (
+      shadow(L / 2, 84, L / 2 - 8) +
+      box +
+      shape(`M${cabX} 70 L${cabX} 20 Q${cabX} 12 ${cabX + 10} 12 L${L - 18} 12 Q${L - 8} 14 ${L - 4} 30 L${L} 44 L${L} 66 Q${L} 70 ${L - 6} 70 Z`, w.cab) +
+      shape(`M${cabX + 8} 18 L${L - 18} 18 Q${L - 12} 22 ${L - 8} 36 L${cabX + 8} 36 Z`, GLASS) +
+      `<path d="M${cabX} 54 L${L} 54" ${thin(cabD, 2.4)}/>` +
+      shape(`M${L - 6} 44 L${L} 46 L${L} 52 L${L - 6} 51 Z`, "#e4f4ff") +
+      lightbar(cabX + 8, 4, 30) +
+      shape(`M6 62 L${L + 2} 62 L${L + 2} 72 L6 72 Z`, TRIM) +
+      wheelSide(36, 72, 13) +
+      (L > 180 ? wheelSide(66, 72, 13) : "") +
+      wheelSide(L - 28, 72, 13) +
+      (kind === "ambulance" ? `<rect x="24" y="18" width="10" height="26" fill="#dc2626"/><rect x="16" y="26" width="26" height="10" fill="#dc2626"/>` : "")
+    );
+  }
+  const front = view === "front";
+  return (
+    shadow(55, 84, 50) +
+    `<rect x="10" y="64" width="16" height="18" rx="4" fill="#1b1b1e" ${LINE}/><rect x="84" y="64" width="16" height="18" rx="4" fill="#1b1b1e" ${LINE}/>` +
+    shape("M8 74 L8 12 Q8 2 20 2 L90 2 Q102 2 102 12 L102 74 Z", front ? w.cab : w.body) +
+    (front ? shape("M16 10 L94 10 L94 36 L16 36 Z", GLASS) : kind === "mixer" ? shape("M22 6 Q55 -6 88 6 L88 40 Q55 50 22 40 Z", w.body) : `<path d="M55 6 L55 70" ${thin(bodyD, 2)}/>`) +
+    lightbar(30, -6, 50) +
+    (front
+      ? `<circle cx="20" cy="54" r="6" fill="#fdf6d8" ${LINE}/><circle cx="90" cy="54" r="6" fill="#fdf6d8" ${LINE}/><rect x="36" y="46" width="38" height="14" rx="2" fill="${TRIM}" ${LINE}/>`
+      : shape("M12 52 L20 52 L20 64 L12 64 Z", "#e5342a") + shape("M90 52 L98 52 L98 64 L90 64 Z", "#e5342a")) +
+    `<text x="55" y="${front ? 72 : 30}" font-family="Arial, sans-serif" font-size="${w.label.length > 8 ? 7 : 9}" font-weight="800" text-anchor="middle" fill="${front ? "#ffffff" : w.labelColor}">${w.label}</text>`
+  );
+}
+
 // ── Assembly ────────────────────────────────────────────────────────────────
 
 /** Drawing boxes: x, y, width, height, and where the wheels touch the ground. */
@@ -232,12 +291,18 @@ const BOXES: Record<VehicleKind, Record<VehicleView, [number, number, number, nu
   okada: { side: [0, -24, 132, 110], front: [-4, -24, 88, 110], back: [-4, -24, 88, 110] },
   keke: { side: [0, -4, 152, 92], front: [0, -4, 90, 92], back: [0, -4, 90, 92] },
   bus: { side: [0, -4, 202, 92], front: [0, -4, 100, 92], back: [0, -4, 100, 92] },
+  truck: { side: [0, -8, 206, 96], front: [0, -10, 110, 96], back: [0, -10, 110, 96] },
+  van: { side: [0, -8, 166, 96], front: [0, -10, 110, 96], back: [0, -10, 110, 96] },
+  ambulance: { side: [0, -8, 176, 96], front: [0, -10, 110, 96], back: [0, -10, 110, 96] },
+  police: { side: [0, -14, 180, 100], front: [0, -10, 110, 96], back: [0, -10, 110, 96] },
+  firetruck: { side: [0, -8, 216, 96], front: [0, -10, 110, 96], back: [0, -10, 110, 96] },
+  mixer: { side: [0, -8, 206, 96], front: [0, -10, 110, 96], back: [0, -10, 110, 96] },
 };
-const GROUND: Record<VehicleKind, number> = { car: 82, taxi: 82, okada: 82, keke: 84, bus: 84 };
+const GROUND: Record<VehicleKind, number> = { car: 82, taxi: 82, okada: 82, keke: 84, bus: 84, truck: 84, van: 84, ambulance: 84, police: 82, firetruck: 84, mixer: 84 };
 
 export function vehicleSvg(kind: VehicleKind, color: string, view: VehicleView, scale = 1): string {
   const [x, y, w, h] = BOXES[kind][view];
-  const inner = kind === "car" || kind === "taxi" ? car(color, view, kind === "taxi") : kind === "okada" ? okada(color, view) : kind === "keke" ? keke(color, view) : cityBus(color, view);
+  const inner = WORK[kind] ? workVehicle(kind, color, view) : kind === "car" || kind === "taxi" ? car(color, view, kind === "taxi") : kind === "okada" ? okada(color, view) : kind === "keke" ? keke(color, view) : cityBus(color, view);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}" width="${(w * scale).toFixed(1)}" height="${(h * scale).toFixed(1)}">${inner}</svg>`;
 }
 
@@ -259,6 +324,14 @@ export const FLEET: VehicleStyle[] = [
   { kind: "keke", color: KEKE_COLORS.yellow },
   { kind: "keke", color: KEKE_COLORS.green },
   { kind: "bus", color: "#f5c518" },
+  { kind: "truck", color: "#1d4ed8" },
+  { kind: "truck", color: "#dc2626" },
+  { kind: "van", color: "#f59e0b" },
+  { kind: "van", color: "#16a34a" },
+  { kind: "ambulance", color: "#f8fafc" },
+  { kind: "police", color: "#1e3a8a" },
+  { kind: "firetruck", color: "#dc2626" },
+  { kind: "mixer", color: "#f59e0b" },
 ];
 
 export const vehicleKey = (v: VehicleStyle) => `veh_${v.kind}_${v.color.slice(1)}`;

@@ -1,7 +1,7 @@
 import * as Phaser from "phaser";
 import { DISTRICTS, MAPS, PLACES, WORLD, districtAt } from "../systems/data";
 import { LAKE, ROADS, blocked, freePoint, roadRoute, sizeOf, solidsFor } from "../systems/citymap";
-import { FLEET, KEKE_COLORS, OKADA_COLORS, TAXI_COLOR, type VehicleStyle } from "../systems/vehicles";
+import { FLEET, HIT_AS, KEKE_COLORS, OKADA_COLORS, TAXI_COLOR, type VehicleStyle } from "../systems/vehicles";
 import type { RideMode } from "../systems/rides";
 import { personLook } from "../systems/peoplelook";
 import { roomForBuilding } from "../systems/rooms";
@@ -638,16 +638,17 @@ export class WorldScene extends Phaser.Scene {
       const sprite = figure(this, axis === "x" ? pos : line, axis === "x" ? line : pos, WALKERS[i % WALKERS.length]!, { unit: 0.17 });
       this.walkers.push({ sprite, axis, speed: (Math.random() < 0.5 ? -1 : 1) * (25 + Math.random() * 25) });
     }
-    for (let i = 0; i < 20; i += 1) {
+    for (let i = 0; i < 26; i += 1) {
       const axis = i % 2 ? "x" : "y";
       const style = FLEET[(i * 7) % FLEET.length]!;
       const lane = (i % 4 < 2 ? -1 : 1) * 11;
       const roadLine = axis === "x" ? ROADS.ys[i % ROADS.ys.length]! : ROADS.xs[i % ROADS.xs.length]!;
       const pos = Math.random() * (axis === "x" ? WORLD.width : WORLD.height);
-      const speed = (lane < 0 ? -1 : 1) * (style.kind === "bus" ? 80 : 110 + Math.random() * 90);
+      const heavy = style.kind === "bus" || style.kind === "truck" || style.kind === "mixer" || style.kind === "firetruck";
+      const speed = (lane < 0 ? -1 : 1) * (heavy ? 75 + Math.random() * 15 : style.kind === "ambulance" || style.kind === "police" ? 170 + Math.random() * 40 : 110 + Math.random() * 90);
       const body = vehicle(this, axis === "x" ? pos : roadLine + lane, axis === "x" ? roadLine + lane : pos, style);
       faceVehicle(body, axis === "x" ? speed : 0, axis === "y" ? speed : 0);
-      this.cars.push({ body, axis, speed, kind: style.kind });
+      this.cars.push({ body, axis, speed, kind: HIT_AS[style.kind] });
     }
   }
 

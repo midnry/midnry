@@ -114,7 +114,7 @@ function makeShadow(scene: Phaser.Scene) {
 
 const VRES = 1.8;
 /** Pixels per drawing unit on the map: a car is a bit longer than two people are tall. */
-export const VEHICLE_SCALE: Record<VehicleKind, number> = { car: 0.4, taxi: 0.4, okada: 0.36, keke: 0.38, bus: 0.44 };
+export const VEHICLE_SCALE: Record<VehicleKind, number> = { car: 0.4, taxi: 0.4, okada: 0.36, keke: 0.38, bus: 0.44, truck: 0.44, van: 0.4, ambulance: 0.41, police: 0.4, firetruck: 0.45, mixer: 0.44 };
 
 /** Queue every vehicle texture (call from preload). */
 export function queueVehicles(scene: Phaser.Scene) {
