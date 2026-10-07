@@ -1,3 +1,4 @@
+import { crowdPainted } from "../systems/painted";
 import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
 import { blocked, freePoint } from "../systems/citymap";
@@ -51,7 +52,8 @@ function personFor(c: Citizen, day: number): Person {
     const seed = (v + 1) * 7919 + (c.gender === "male" ? 0 : 3) + stage.length * 101;
     const age = { child: 8, teen: 15, young: 24, adult: 40, senior: 70 }[stage];
     const rep = lookOf({ ...c, seed, age }, 0);
-    p = { look: rep.look, adult: stage !== "child" && stage !== "teen", stage };
+    // Painted passers-by where there's art for this age and gender; drawn otherwise.
+    p = { look: rep.look, adult: stage !== "child" && stage !== "teen", stage, painted: crowdPainted(c.gender, stage, v) };
     crowdPeople.set(key, p);
   }
   return p;
