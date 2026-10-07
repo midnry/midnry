@@ -24,7 +24,10 @@ import { building as buildingInfo } from "../systems/city/catalog";
 import { fullLook, lookKey, randomLook, stageOf, type Look } from "../systems/character";
 import { INK, animateWalk, pose, building, placeBuilding, queueBuildings, faceVehicle, figure, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
 
-const SPEED = 230;
+// A brisk walk: a little over two body-lengths a second, as people move in a life sim.
+// Running is about 1.7× that; cars travel separately at road speed.
+const SPEED = 125;
+const CAR_SPEED = 560;
 // v2: the closer default camera from the style guide (an older saved zoom is ignored once).
 const ZOOM_KEY = "abuja-hustle.zoom.v2";
 const MIN_ZOOM = 0.7;
@@ -998,7 +1001,7 @@ export class WorldScene extends Phaser.Scene {
     // Run with Shift, a joystick pushed all the way, or a long tap-to-walk trip.
     const far = this.path.length > 0 && Math.hypot(this.path[this.path.length - 1]!.x - this.player.x, this.path[this.path.length - 1]!.y - this.player.y) > 320;
     const running = !driving && !hurt && (k.shift.isDown || Math.hypot(input.x, input.y) > 0.95 || far);
-    const pace = driving ? SPEED * 2.6 : SPEED * (hurt === "fracture" ? 0.45 : hurt === "dislocation" ? 0.75 : running ? 1.55 : 1);
+    const pace = driving ? CAR_SPEED : SPEED * (hurt === "fracture" ? 0.5 : hurt === "dislocation" ? 0.75 : running ? 1.7 : 1);
     if (Phaser.Input.Keyboard.JustDown(k.j) && !driving) pose(this.player, "jump", time, 560);
     if (vx || vy) this.move(vx * pace * dt, vy * pace * dt, time);
     const moved = this.player.x !== fromX || this.player.y !== fromY;

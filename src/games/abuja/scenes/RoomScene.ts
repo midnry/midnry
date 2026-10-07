@@ -13,7 +13,7 @@ import { bus, getState, input } from "../systems/store";
 import type { MapRect } from "../systems/types";
 import { INK, animateWalk, pose, figure, furnitureKey, makeArt, queueCharacters, queueFurniture, tileKey, type Figure } from "./art";
 
-const SPEED = 200;
+const SPEED = 135;
 const RADIUS = 12;
 const NEAR = 80;
 const FURN_RES = 1.6;
