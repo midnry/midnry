@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { loadGame, saveGame } from "../save.functions";
 import { startGame } from "../systems/engine";
-import { AGE_KEY, deleteSave, flushSave, loadSave, newGame, newestSave, parseSave, replace, setCloudSaver } from "../systems/store";
+import { AGE_KEY, SLOT_IDS, deleteSave, flushSave, getSlot, lastSlot, loadSaves, newGame, newestSave, parseSave, replace, setCloudSaver, setSlot, type Slot } from "../systems/store";
 import type { GameState } from "../systems/types";
 import { EndScreen } from "./EndScreen";
 import { AgeGate, Creator, Title } from "./Menus";
@@ -21,8 +21,10 @@ export function AbujaHustle() {
   const userId = user?.id ?? null;
   const [ready, setReady] = useState(false);
   const [ageOk, setAgeOk] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [saved, setSaved] = useState<GameState | null>(null);
+  /** The slot a new life is being made for. */
+  const [creating, setCreating] = useState<Slot | null>(null);
+  /** What's in each of the three save slots. */
+  const [saved, setSaved] = useState<(GameState | null)[]>([null, null, null]);
 
   // Find the latest save: this device, or the account when signed in.
   useEffect(() => {
@@ -33,18 +35,23 @@ export function AbujaHustle() {
     } catch {
       /* private mode: ask every time */
     }
-    const local = loadSave();
+    setSlot(lastSlot());
+    const local = loadSaves();
     if (!userId) {
       setCloudSaver(null);
       setSaved(local);
       setReady(true);
       return;
     }
-    setCloudSaver((payload) => {
-      void saveGame({ data: payload }).catch(() => {});
+    setCloudSaver((payload, slot) => {
+      void saveGame({ data: { slot, payload } }).catch(() => {});
     });
     loadGame()
-      .then((result) => !cancel && setSaved(newestSave(local, parseSave(result.payload))))
+      .then((result) => {
+        if (cancel) return;
+        const cloud = result.slots ?? [result.payload, null, null];
+        setSaved(SLOT_IDS.map((n, i) => newestSave(local[i] ?? null, parseSave(cloud[i] ?? null))));
+      })
       .catch(() => !cancel && setSaved(local))
       .finally(() => !cancel && setReady(true));
     return () => {
@@ -57,7 +64,10 @@ export function AbujaHustle() {
   // Back on the title (quit, deleted, or finished): show what is saved now.
   const playing = Boolean(state);
   useEffect(() => {
-    if (!playing) setSaved(loadSave());
+    if (playing) return;
+    // This device has the latest for the slot just played (or nothing, if that life was deleted); keep the rest.
+    const local = loadSaves();
+    setSaved((prev) => SLOT_IDS.map((n, i) => (n === getSlot() ? (local[i] ?? null) : newestSave(local[i] ?? null, prev[i] ?? null))));
   }, [playing]);
 
   if (!ready) return <div className="min-h-[100dvh] bg-[#05070c]" />;
@@ -79,21 +89,31 @@ export function AbujaHustle() {
     if (creating) {
       return (
         <Creator
+          onBack={() => setCreating(null)}
           onDone={(input) => {
-            deleteSave();
+            setSlot(creating);
+            deleteSave(creating);
             replace(newGame(input));
             startGame();
-            setCreating(false);
+            setCreating(null);
           }}
         />
       );
     }
     return (
       <Title
-        hasSave={Boolean(saved)}
+        saves={saved}
+        last={lastSlot()}
         signedInAs={user ? user.displayName || "you" : null}
-        onNew={() => setCreating(true)}
-        onContinue={() => replace(saved)}
+        onNew={(slot) => setCreating(slot)}
+        onContinue={(slot) => {
+          setSlot(slot);
+          replace(saved[slot - 1] ?? null);
+        }}
+        onDelete={(slot) => {
+          deleteSave(slot);
+          setSaved((prev) => prev.map((s, i) => (i === slot - 1 ? null : s)));
+        }}
       />
     );
   }

@@ -4,6 +4,37 @@ import type { Background, Gender, GameState, Interest, Looks } from "./types";
 // React reads it with useGame(); Phaser reads and writes it through the same API.
 
 const SAVE_KEY = "abuja-hustle.save.v1";
+const SLOT_KEY = "abuja-hustle.slot";
+
+/** Up to three lives saved side by side. Slot 1 uses the original save key, so older saves are slot 1. */
+export const SLOTS_MAX = 3;
+export type Slot = 1 | 2 | 3;
+export const SLOT_IDS: Slot[] = [1, 2, 3];
+const keyFor = (slot: Slot) => (slot === 1 ? SAVE_KEY : `${SAVE_KEY}.slot${slot}`);
+let slot: Slot = 1;
+
+/** The slot being played. */
+export const getSlot = (): Slot => slot;
+
+/** Play (and save into) this slot from now on. */
+export function setSlot(next: Slot): void {
+  slot = next;
+  try {
+    localStorage.setItem(SLOT_KEY, String(next));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** The slot played last on this device. */
+export function lastSlot(): Slot {
+  try {
+    const n = Number(localStorage.getItem(SLOT_KEY));
+    return n === 2 || n === 3 ? n : 1;
+  } catch {
+    return 1;
+  }
+}
 export const AGE_KEY = "abuja-hustle.age-ok";
 
 type Listener = () => void;
@@ -12,10 +43,10 @@ let state: GameState | null = null;
 const listeners = new Set<Listener>();
 let saveTimer: number | null = null;
 let cloudTimer: number | null = null;
-let cloudSaver: ((payload: string | null) => void) | null = null;
+let cloudSaver: ((payload: string | null, slot: Slot) => void) | null = null;
 
 /** When signed in, the UI hands over a function that saves to the account. */
-export function setCloudSaver(saver: ((payload: string | null) => void) | null): void {
+export function setCloudSaver(saver: ((payload: string | null, slot: Slot) => void) | null): void {
   cloudSaver = saver;
 }
 
@@ -66,16 +97,17 @@ function writeSave(now: boolean) {
   if (!state) return;
   state.savedAt = Date.now();
   const payload = JSON.stringify(state);
+  const into = slot;
   try {
-    localStorage.setItem(SAVE_KEY, payload);
+    localStorage.setItem(keyFor(into), payload);
   } catch {
     /* storage full or blocked: the game keeps running */
   }
   if (cloudSaver) {
     if (cloudTimer) window.clearTimeout(cloudTimer);
     const saver = cloudSaver;
-    if (now) saver(payload);
-    else cloudTimer = window.setTimeout(() => saver(payload), 3000);
+    if (now) saver(payload, into);
+    else cloudTimer = window.setTimeout(() => saver(payload, into), 3000);
   }
 }
 
@@ -89,22 +121,25 @@ export function parseSave(raw: string | null): GameState | null {
   }
 }
 
-export function loadSave(): GameState | null {
+export function loadSave(from: Slot = slot): GameState | null {
   try {
-    return parseSave(localStorage.getItem(SAVE_KEY));
+    return parseSave(localStorage.getItem(keyFor(from)));
   } catch {
     return null;
   }
 }
 
-export function deleteSave(): void {
+/** All three slots on this device. */
+export const loadSaves = (): (GameState | null)[] => SLOT_IDS.map((n) => loadSave(n));
+
+export function deleteSave(from: Slot = slot): void {
   try {
-    localStorage.removeItem(SAVE_KEY);
+    localStorage.removeItem(keyFor(from));
   } catch {
     /* ignore */
   }
-  if (cloudTimer) window.clearTimeout(cloudTimer);
-  cloudSaver?.(null);
+  if (from === slot && cloudTimer) window.clearTimeout(cloudTimer);
+  cloudSaver?.(null, from);
 }
 
 /** Keep whichever save is newer: this device's or the account's. */

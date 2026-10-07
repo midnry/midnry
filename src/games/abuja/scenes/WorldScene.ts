@@ -318,6 +318,12 @@ export class WorldScene extends Phaser.Scene {
     this.cityId = this.cityIdOf(state);
     this.unsub = subscribe(() => {
       const next = getState();
+      // The game was torn down (back to the title): nothing left to update.
+      if (!this.sys?.game || !this.scene) {
+        this.unsub?.();
+        this.unsub = null;
+        return;
+      }
       if (!next) return;
       if (mapIdFor(next) !== this.mapId) {
         if (this.scene.isSleeping()) this.pendingRestart = true;
@@ -354,15 +360,18 @@ export class WorldScene extends Phaser.Scene {
       bus.emit("near", null);
       this.refresh();
     });
-    this.events.once("shutdown", () => {
+    // Let go of the store and the bus when the scene stops, or when the whole game is torn down (back to the title).
+    const cleanup = () => {
       this.events.off("wake");
       this.unsub?.();
       this.unsub = null;
       this.offs.forEach((off) => off());
       this.offs = [];
-      this.scale.off("resize", this.fitZoom, this);
-      this.scale.off("resize", this.sizeVignette, this);
-    });
+      this.scale?.off("resize", this.fitZoom, this);
+      this.scale?.off("resize", this.sizeVignette, this);
+    };
+    this.events.once("shutdown", cleanup);
+    this.events.once("destroy", cleanup);
     this.refresh();
     this.pendingRestart = false;
     this.near = null;

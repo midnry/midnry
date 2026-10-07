@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { PRESETS, type Look, type View } from "../systems/character";
-import type { Background, Gender, Interest, Looks } from "../systems/types";
+import type { Background, GameState, Gender, Interest, Looks } from "../systems/types";
+import { SLOTS_MAX, SLOT_IDS, type Slot } from "../systems/store";
+import { naira } from "../systems/rules";
 import { Avatar } from "./Avatar";
 import { PaintedGallery } from "./Wardrobe";
-import { autoOutfit, youngPainted } from "../systems/painted";
+import { autoOutfit, myLooks, youngPainted } from "../systems/painted";
 import { btnGhost, btnPrimary, panel } from "./theme";
 
 export function AgeGate({ onPass }: { onPass: () => void }) {
@@ -34,18 +36,36 @@ export function AgeGate({ onPass }: { onPass: () => void }) {
   );
 }
 
+const STAGE_LABEL: Record<string, string> = { primary: "Primary school", secondary: "Secondary school", university: "University", nysc: "NYSC", adult: "Adult life", ended: "Life over" };
+
+/** When a save was last played, in words. */
+function ago(t?: number): string {
+  if (!t) return "";
+  const m = Math.round((Date.now() - t) / 60000);
+  if (m < 2) return "just now";
+  if (m < 60) return `${m} min ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} hr ago`;
+  const d = Math.round(h / 24);
+  return d === 1 ? "yesterday" : `${d} days ago`;
+}
+
 export function Title({
-  hasSave,
+  saves,
+  last,
   signedInAs,
   onNew,
   onContinue,
+  onDelete,
 }: {
-  hasSave: boolean;
+  saves: (GameState | null)[];
+  last: Slot;
   signedInAs: string | null;
-  onNew: () => void;
-  onContinue: () => void;
+  onNew: (slot: Slot) => void;
+  onContinue: (slot: Slot) => void;
+  onDelete: (slot: Slot) => void;
 }) {
-  const [confirm, setConfirm] = useState(false);
+  const [confirm, setConfirm] = useState<Slot | null>(null);
   return (
     <Screen>
       <div className="mx-auto max-w-lg text-center">
@@ -54,22 +74,57 @@ export function Title({
         <p className="mx-auto mt-4 max-w-sm text-pretty text-slate-300">
           No inheritance. No uncle in government. Just you, the city, and the dream of financial freedom.
         </p>
-        <div className="mx-auto mt-8 grid max-w-xs gap-2">
-          {hasSave ? (
-            <button type="button" className={btnPrimary} onClick={onContinue}>
-              Continue
-            </button>
-          ) : null}
-          {hasSave && !confirm ? (
-            <button type="button" className={btnGhost} onClick={() => setConfirm(true)}>
-              New life
-            </button>
-          ) : (
-            <button type="button" className={hasSave ? `${btnGhost} ring-1 ring-red-400` : btnPrimary} onClick={onNew}>
-              {hasSave ? "Yes, start over (deletes your save)" : "Start a new life"}
-            </button>
-          )}
-        </div>
+        <p className="mt-8 text-xs font-semibold tracking-widest text-slate-400 uppercase">Your lives · up to {SLOTS_MAX}</p>
+        <ul className="mx-auto mt-3 grid max-w-md gap-2 text-left">
+          {SLOT_IDS.map((slot) => {
+            const s = saves[slot - 1] ?? null;
+            return (
+              <li key={slot} className={`rounded-2xl border p-3 ${s && slot === last ? "border-blue-400/60 bg-blue-500/10" : "border-white/10 bg-white/5"}`}>
+                {s ? (
+                  <div className="flex items-center gap-3">
+                    <div className="shrink-0 overflow-hidden rounded-full bg-sky-100/10">
+                      <Avatar looks={myLooks(s)} crop="head" size={52} adult={s.age >= 18} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold">{s.name}</p>
+                      <p className="truncate text-xs text-slate-400">
+                        Age {Math.floor(s.age)} · {STAGE_LABEL[s.stage] ?? s.stage} · {naira(s.stats.money)}
+                      </p>
+                      <p className="text-[11px] text-slate-500">Slot {slot}{s.savedAt ? ` · played ${ago(s.savedAt)}` : ""}</p>
+                    </div>
+                    {confirm === slot ? (
+                      <div className="flex shrink-0 flex-col gap-1">
+                        <button type="button" className="min-h-9 rounded-lg bg-red-600 px-3 text-xs font-semibold text-white" onClick={() => (onDelete(slot), setConfirm(null))}>
+                          Delete
+                        </button>
+                        <button type="button" className="min-h-9 rounded-lg bg-white/10 px-3 text-xs" onClick={() => setConfirm(null)}>
+                          Keep
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button type="button" className={`${btnPrimary} min-h-10 px-3`} onClick={() => onContinue(slot)}>
+                          Continue
+                        </button>
+                        <button type="button" className="min-h-10 rounded-xl px-2.5 text-slate-400 hover:bg-white/10 hover:text-red-300" onClick={() => setConfirm(slot)} aria-label={`Delete ${s.name}'s life`} title="Delete">
+                          🗑️
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm text-slate-400">Slot {slot} · empty</p>
+                    <button type="button" className={`${saves.some(Boolean) ? btnGhost : btnPrimary} min-h-10 px-3`} onClick={() => onNew(slot)}>
+                      Start a new life
+                    </button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        {confirm ? <p className="mt-2 text-xs text-red-300">Deleting a life can't be undone.</p> : null}
         <div className="mx-auto mt-6 max-w-xs rounded-2xl border border-white/10 bg-white/5 p-4 text-sm">
           {signedInAs ? (
             <p className="text-slate-300">
@@ -96,7 +151,9 @@ export function Title({
 
 export function Creator({
   onDone,
+  onBack,
 }: {
+  onBack?: () => void;
   onDone: (input: { name: string; gender: Gender; background: Background; looks: Looks; interest: Interest }) => void;
 }) {
   const [name, setName] = useState("");
@@ -115,7 +172,14 @@ export function Creator({
   return (
     <Screen>
       <div className={`${panel} mx-auto w-full max-w-3xl p-5 sm:p-8`}>
-        <h1 className="font-display text-3xl tracking-tight">Who are you?</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="font-display text-3xl tracking-tight">Who are you?</h1>
+          {onBack ? (
+            <button type="button" className={btnGhost} onClick={onBack}>
+              ← Back
+            </button>
+          ) : null}
+        </div>
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-[180px_minmax(0,1fr)]">
           <div className="flex flex-col items-center gap-2">
             <div className="rounded-3xl bg-gradient-to-b from-sky-200/20 to-transparent p-3">
