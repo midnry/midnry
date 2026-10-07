@@ -11,7 +11,7 @@ export type Person = { look: Look; adult: boolean; painted?: string };
 export const seedOf = (id: string) => [...id].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) >>> 0, 7);
 
 /** City people with hand-painted art in public/abuja/people. */
-const PAINTED_PEOPLE = ["suya", "pos_lady", "agbero", "okada", "hawker", "felix", "okafor", "prophet", "civil_servant", "tunde", "slim", "bolaji"];
+const PAINTED_PEOPLE = ["suya", "pos_lady", "agbero", "okada", "hawker", "felix", "okafor", "prophet", "civil_servant", "tunde", "slim", "bolaji", "corper"];
 
 export function personLook(p: PersonDef): Person {
   return {

@@ -1,5 +1,6 @@
 import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
+import { PAINTED_OUTFITS } from "../systems/painted";
 import { characterParts, dims, fullLook, lookKey, type LifeStage, type Look } from "../systems/character";
 import { furnitureSvg } from "../systems/furniture";
 import { building as buildingDef } from "../systems/city/catalog";
@@ -287,13 +288,15 @@ export const PAINTED: Record<string, { views: Facing[]; scale?: number }> = {
   frsc: { views: ["front", "side", "back"] },
   hawker: { views: ["front", "side", "back"], scale: 0.95 },
   felix: { views: ["front", "side", "back"] },
-  okafor: { views: ["front", "back"], scale: 0.95 },
+  okafor: { views: ["front", "side", "back"], scale: 0.95 },
+  corper: { views: ["front", "side", "back"], scale: 0.95 },
   prophet: { views: ["front", "side", "back"], scale: 1.03 },
   civil_servant: { views: ["front", "side", "back"] },
   tunde: { views: ["front", "side", "back"] },
   slim: { views: ["front", "side", "back"], scale: 0.98 },
   bolaji: { views: ["front", "side", "back"], scale: 1.01 },
 };
+for (const o of PAINTED_OUTFITS) PAINTED[o.id] = { views: ["front", "side", "back"], scale: o.build === "fem" ? 0.96 : 1.02 };
 const paintedKey = (id: string, view: Facing) => `pt_${id}_${PAINTED[id]?.views.includes(view) ? view : "front"}`;
 
 const bodyOf = (p: Person): LifeStage => p.stage ?? (p.adult ? "adult" : "child");

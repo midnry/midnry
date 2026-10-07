@@ -19,6 +19,7 @@ import { lotDoor, type Lot } from "../systems/city/layout";
 import { drawBridge, drawMedians, drawRail, drawStreetFurniture, makeDecorTextures, zoneOverlay } from "./cityDecor";
 import { lotsFor } from "../systems/city/sim";
 import { CityLife, crowdStarters } from "./cityLife";
+import { playerPainted } from "../systems/painted";
 import { building as buildingInfo } from "../systems/city/catalog";
 import { fullLook, lookKey, randomLook, stageOf, type Look } from "../systems/character";
 import { INK, animateWalk, pose, building, placeBuilding, queueBuildings, faceVehicle, figure, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
@@ -41,7 +42,7 @@ const title = (scene: Phaser.Scene, x: number, y: number, text: string, size = 1
 
 // Who's who: the same person always looks the same.
 const personOf = personLook;
-const playerOf = (state: GameState | null): Person => ({ look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18, stage: stageOf(state?.age ?? 0) });
+const playerOf = (state: GameState | null): Person => ({ look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18, stage: stageOf(state?.age ?? 0), painted: playerPainted(state) });
 const POLICE_LOOK: Look = randomLook(4242, {
   top: "shirt",
   topColor: "#1e3a8a",
@@ -378,7 +379,7 @@ export class WorldScene extends Phaser.Scene {
 
   private lookIdOf(state: GameState | null) {
     const me = playerOf(state);
-    return `${lookKey(me.look)}${me.adult ? "a" : "k"}`;
+    return `${lookKey(me.look)}${me.adult ? "a" : "k"}${me.painted ?? ""}`;
   }
 
   private startPoint() {

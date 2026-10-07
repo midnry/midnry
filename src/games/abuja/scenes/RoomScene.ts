@@ -1,3 +1,4 @@
+import { playerPainted } from "../systems/painted";
 import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
 import { fullLook, stageOf } from "../systems/character";
@@ -58,7 +59,7 @@ export class RoomScene extends Phaser.Scene {
     const layout = LAYOUTS[this.info.type];
     queueFurniture(this, layout.items);
     const state = getState();
-    queueCharacters(this, [{ look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18, stage: stageOf(state?.age ?? 0) }, ...this.staffHere().map(personLook)]);
+    queueCharacters(this, [{ look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18, stage: stageOf(state?.age ?? 0), painted: playerPainted(state) }, ...this.staffHere().map(personLook)]);
   }
 
   create() {
@@ -142,7 +143,7 @@ export class RoomScene extends Phaser.Scene {
     this.spots.push({ kind: "exit", id: "door", label: this.info.parent ? "Back to the living room" : "Leave", x: door.x, y: door.y });
 
     // You come in at the door.
-    this.player = figure(this, door.x, door.y - 30, { look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18, stage: stageOf(state?.age ?? 0) }, { name: "YOU", nameColor: "#60a5fa", unit: 0.28 });
+    this.player = figure(this, door.x, door.y - 30, { look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18, stage: stageOf(state?.age ?? 0), painted: playerPainted(state) }, { name: "YOU", nameColor: "#60a5fa", unit: 0.28 });
     // Coming in through the door.
     pose(this.player, "exit", this.time.now, 600);
 

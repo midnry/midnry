@@ -228,9 +228,9 @@ export function skipToNight() {
 }
 
 /** New outfit or hairstyle from the wardrobe. */
-export function changeLooks(look: Look) {
+export function changeLooks(look: Look, painted?: string) {
   update((s) => {
-    s.looks = { ...look, outfit: look.topColor };
+    s.looks = { ...look, outfit: look.topColor, ...(painted ? { painted } : {}) };
   });
 }
 

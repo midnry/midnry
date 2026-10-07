@@ -24,7 +24,7 @@ export type StatKey =
 export type SkillKey = "tech" | "trade" | "hustle" | "education" | "driving" | "trading" | "content";
 
 /** How the player looks. `outfit` is the top colour; the rest came later, so older saves may lack them. */
-export type Looks = { skin: string; hair: string; outfit: string } & Partial<Omit<Look, "skin" | "hair">>;
+export type Looks = { skin: string; hair: string; outfit: string; /** A hand-painted outfit (systems/painted), worn instead of the drawn look. */ painted?: string } & Partial<Omit<Look, "skin" | "hair">>;
 
 export type Interest = "women" | "men" | "both";
 export type Personality = "calm" | "cunning" | "crazy";
