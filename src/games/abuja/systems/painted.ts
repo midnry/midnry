@@ -86,3 +86,6 @@ export function crowdPainted(gender: "male" | "female", stage: CrowdStage, seed:
   const options = CROWD_PAINTED.filter((c) => c.gender === gender && c.stages.includes(stage));
   return options.length ? options[seed % options.length]!.id : undefined;
 }
+
+/** Painted people with hand-drawn walk cycles: 4 frames per view (<id>-walk-<view>-<n>.png). Others step by cut-out legs. */
+export const WALK_FRAMES = new Set<string>(["you-f-brown-1"]);

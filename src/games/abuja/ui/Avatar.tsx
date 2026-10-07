@@ -24,9 +24,10 @@ export function Avatar({
   const look = useMemo(() => fullLook(looks), [looks]);
   const painted = (looks as Looks).painted;
   const body = stage ?? adult;
+  const src = useMemo(() => svgDataUri(characterSvg(look, { crop, view, adult, stage, pose })), [look, crop, view, adult, stage, pose]);
+  const box = cropBox(look, body, crop);
   // A grown-up in a hand-painted outfit: the painting, framed like the drawn version.
   if (painted && adult && (!stage || stage === "adult" || stage === "young") && PAINTED_OUTFITS.some((o) => o.id === painted)) {
-    const box = cropBox(look, body, crop);
     const h = Math.round((size * box.h) / box.w);
     const src = `/abuja/people/${painted}-${view === "back" ? "back" : view === "side" ? "side" : "front"}.png`;
     return (
@@ -35,7 +36,5 @@ export function Avatar({
       </span>
     );
   }
-  const src = useMemo(() => svgDataUri(characterSvg(look, { crop, view, adult, stage, pose })), [look, crop, view, adult, stage, pose]);
-  const box = cropBox(look, body, crop);
   return <img src={src} width={size} height={Math.round((size * box.h) / box.w)} alt="" aria-hidden draggable={false} className="select-none" />;
 }

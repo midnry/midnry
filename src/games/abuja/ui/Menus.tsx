@@ -3,6 +3,8 @@ import { PRESETS, type Look, type View } from "../systems/character";
 import type { Background, Gender, Interest, Looks } from "../systems/types";
 import { Avatar } from "./Avatar";
 import { Dresser } from "./Dresser";
+import { PaintedGallery } from "./Wardrobe";
+import { DRAWN, autoOutfit } from "../systems/painted";
 import { btnGhost, btnPrimary, panel } from "./theme";
 
 export function AgeGate({ onPass }: { onPass: () => void }) {
@@ -106,6 +108,10 @@ export function Creator({
   const [dressed, setDressed] = useState(false);
   const [view, setView] = useState<View>("front");
   const [grown, setGrown] = useState(false);
+  /** The painted outfit for 18 and over: picked here, or matched to your look. */
+  const [painted, setPainted] = useState<string | undefined>(undefined);
+  const build = gender === "female" ? "fem" : "masc";
+  const grownOutfit = painted ?? autoOutfit({ ...look, build, outfit: look.topColor });
   const ready = name.trim().length >= 2;
 
   return (
@@ -115,7 +121,7 @@ export function Creator({
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-[180px_minmax(0,1fr)]">
           <div className="flex flex-col items-center gap-2">
             <div className="rounded-3xl bg-gradient-to-b from-sky-200/20 to-transparent p-3">
-              <Avatar looks={look} size={150} view={view} adult={grown} />
+              <Avatar looks={grown ? { ...look, outfit: look.topColor, painted: grownOutfit ?? DRAWN } : look} size={150} view={view} adult={grown} />
             </div>
             <div className="flex flex-wrap justify-center gap-1">
               <button type="button" className="min-h-9 rounded-full bg-white/10 px-3 text-xs hover:bg-white/15" onClick={() => setView(view === "front" ? "side" : view === "side" ? "back" : "front")}>
@@ -163,7 +169,20 @@ export function Creator({
               ))}
             </Pick>
             <div>
-              <p className="mb-2 text-sm text-slate-300">Style</p>
+              <p className="mb-2 text-sm text-slate-300">Your grown-up look (from age 18)</p>
+              <PaintedGallery
+                key={build}
+                build={build}
+                fixedBuild
+                value={grownOutfit}
+                onChange={(id) => {
+                  setPainted(id === DRAWN ? undefined : id);
+                  setGrown(true);
+                }}
+              />
+            </div>
+            <div>
+              <p className="mb-2 text-sm text-slate-300">Style as a child (and mix-and-match outfits later)</p>
               <Dresser
                 look={look}
                 adult={grown}
@@ -196,7 +215,7 @@ export function Creator({
           type="button"
           className={`${btnPrimary} mt-6 w-full sm:w-auto`}
           disabled={!ready}
-          onClick={() => onDone({ name: name.trim(), gender, background, looks: { ...look, outfit: look.topColor }, interest })}
+          onClick={() => onDone({ name: name.trim(), gender, background, looks: { ...look, outfit: look.topColor, ...(painted ? { painted } : {}) }, interest })}
         >
           Begin life in Abuja
         </button>

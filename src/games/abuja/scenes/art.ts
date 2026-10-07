@@ -1,6 +1,6 @@
 import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
-import { CROWD_PAINTED, PAINTED_OUTFITS } from "../systems/painted";
+import { CROWD_PAINTED, PAINTED_OUTFITS, WALK_FRAMES } from "../systems/painted";
 import { characterParts, dims, fullLook, lookKey, type LifeStage, type Look } from "../systems/character";
 import { furnitureSvg } from "../systems/furniture";
 import { building as buildingDef } from "../systems/city/catalog";
@@ -334,6 +334,8 @@ export function queueCharacters(scene: Phaser.Scene, people: Person[]) {
     seen.add(key);
     if (person.painted && PAINTED[person.painted]) {
       for (const view of PAINTED[person.painted]!.views) scene.load.image(`${key}_${view}`, `/abuja/people/${person.painted}-${view}.png`);
+      if (WALK_FRAMES.has(person.painted))
+        for (const view of ["front", "side", "back"]) for (let n = 1; n <= 4; n++) scene.load.image(`${key}_walk_${view}_${n}`, `/abuja/people/${person.painted}-walk-${view}-${n}.png`);
       continue;
     }
     const parts = characterParts(person.look, bodyOf(person), RES);
@@ -382,6 +384,8 @@ export type Figure = Phaser.GameObjects.Container & {
   /** Hand-painted people: their id, the image's base scale, and the pieces it's cut into. */
   painted?: string;
   bodyScale?: number;
+  /** Showing hand-drawn walk frames right now. */
+  walking?: boolean;
   parts?: { box: Phaser.GameObjects.Container; body: Phaser.GameObjects.Image; sideL: Phaser.GameObjects.Image; sideR: Phaser.GameObjects.Image; legL: Phaser.GameObjects.Image; legR: Phaser.GameObjects.Image };
 };
 
@@ -531,6 +535,7 @@ function setFacing(f: Figure, facing: Facing) {
   if (f.facing === facing) return;
   if (f.painted) {
     f.facing = facing;
+    if (f.walking) f.walking = false, f.parts!.legL.setVisible(true), f.parts!.legR.setVisible(true), f.parts!.sideL.setVisible(true), f.parts!.sideR.setVisible(true);
     cutPainted(f);
     if (facing !== "side") f.rig.scaleX = Math.abs(f.rig.scaleX);
     return;
@@ -705,8 +710,26 @@ function animate(f: Figure, time: number, motion: Motion) {
 }
 
 /** Painted people move as a whole: a bob and a sway to walk, hops to celebrate, a lean to reach. */
+/** Switch a painted figure between its walk-cycle frames and its standing cut-out. Returns whether frames are in use. */
+function walkFrames(f: Figure, on: boolean): boolean {
+  const p = f.parts!;
+  const has = on && p.body.scene.textures.exists(`pt_${f.painted}_walk_${f.facing}_1`);
+  if (has === Boolean(f.walking)) return has;
+  f.walking = has;
+  if (has) {
+    p.body.setCrop();
+    for (const img of [p.sideL, p.sideR, p.legL, p.legR]) img.setVisible(false);
+  } else {
+    for (const img of [p.sideL, p.sideR, p.legL, p.legR]) img.setVisible(true);
+    cutPainted(f);
+  }
+  return has;
+}
+
 function animatePainted(f: Figure, time: number, motion: Motion) {
   const p = f.parts!;
+  const moving = motion === "walk" || motion === "run" || motion === "enter" || motion === "exit";
+  if (!moving) walkFrames(f, false);
   const side = f.facing === "side";
   const dir = Math.sign(f.rig.scaleX || 1);
   // Height of the figure in world pixels, for sizing the steps.
@@ -729,6 +752,15 @@ function animatePainted(f: Figure, time: number, motion: Motion) {
     case "enter":
     case "exit": {
       const run = motion === "run";
+      if (walkFrames(f, true)) {
+        // A hand-drawn walk cycle: four frames, faster when running.
+        const n = (Math.floor(time / (run ? 95 : 140)) % 4) + 1;
+        p.body.setTexture(`pt_${f.painted}_walk_${f.facing}_${n}`);
+        f.rig.y = f.rigY - (n % 2 === 0 ? tall * 0.012 : 0);
+        if (motion === "enter") f.alpha = Math.max(0, 1 - t * 1.6);
+        if (motion === "exit") f.alpha = Math.min(1, t * 1.6);
+        return;
+      }
       const ph = time / (run ? 70 : 105);
       const swing = Math.sin(ph);
       if (side) {

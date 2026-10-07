@@ -53,12 +53,12 @@ export function WardrobePanel({ state, onDone }: { state: GameState; onDone: () 
 }
 
 /** Hand-painted outfits: choose a build, a skin tone, then an outfit. */
-function PaintedGallery({ build, value, onChange }: { build: "masc" | "fem"; value?: string; onChange: (id: string) => void }) {
+export function PaintedGallery({ build, value, onChange, fixedBuild }: { build: "masc" | "fem"; value?: string; onChange: (id: string) => void; fixedBuild?: boolean }) {
   const current = PAINTED_OUTFITS.find((o) => o.id === value);
-  const [b, setB] = useState<"masc" | "fem">(current?.build ?? build);
+  const [b, setB] = useState<"masc" | "fem">(fixedBuild ? build : (current?.build ?? build));
   const [tone, setTone] = useState<Tone>(current?.tone ?? "brown");
   const options = PAINTED_OUTFITS.filter((o) => o.build === b && o.tone === tone);
-  const builds = (["masc", "fem"] as const).filter((x) => PAINTED_OUTFITS.some((o) => o.build === x));
+  const builds = fixedBuild ? [] : (["masc", "fem"] as const).filter((x) => PAINTED_OUTFITS.some((o) => o.build === x));
   return (
     <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
       <p className="text-sm font-semibold">🎨 Painted outfits</p>
