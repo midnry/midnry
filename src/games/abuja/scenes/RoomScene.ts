@@ -1,3 +1,4 @@
+import { startSceneLoading, finishSceneLoading } from "./loading";
 import { playerPainted } from "../systems/painted";
 import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
@@ -56,6 +57,7 @@ export class RoomScene extends Phaser.Scene {
   }
 
   preload() {
+    startSceneLoading(this, `Entering ${this.info.name}`);
     const layout = LAYOUTS[this.info.type];
     queueFurniture(this, layout.items);
     const state = getState();
@@ -163,6 +165,7 @@ export class RoomScene extends Phaser.Scene {
     });
     bus.emit("near", null);
     bus.emit("roomReady", null);
+    finishSceneLoading(this);
     // Development only: lets automated browser tests move the player.
     if (import.meta.env.DEV) (window as unknown as { __room?: unknown }).__room = { place: (x: number, y: number) => this.player.setPosition(x, y) };
   }

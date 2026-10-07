@@ -3,7 +3,7 @@ import "@fontsource/nunito/latin-600.css";
 import "@fontsource/nunito/latin-700.css";
 import "@fontsource/nunito/latin-800.css";
 import "@fontsource/nunito/latin-900.css";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { loadGame, saveGame } from "../save.functions";
 import { startGame } from "../systems/engine";
@@ -12,7 +12,9 @@ import type { GameState } from "../systems/types";
 import { EndScreen } from "./EndScreen";
 import { AgeGate, Creator, Title } from "./Menus";
 import { useGame } from "./useGame";
-import { World } from "./World";
+import { LoadingScreen } from "./LoadingScreen";
+
+const World = lazy(() => import("./World").then((module) => ({ default: module.World })));
 
 /** The whole game: age gate, title, character creation, story chapters, the open world, and endings. */
 export function AbujaHustle() {
@@ -70,7 +72,7 @@ export function AbujaHustle() {
     setSaved((prev) => SLOT_IDS.map((n, i) => (n === getSlot() ? (local[i] ?? null) : newestSave(local[i] ?? null, prev[i] ?? null))));
   }, [playing]);
 
-  if (!ready) return <div className="min-h-[100dvh] bg-[#05070c]" />;
+  if (!ready) return <LoadingScreen title={isPending ? "Getting your game ready" : "Finding your saved lives"} icon="◈" />;
   if (!ageOk) {
     return (
       <AgeGate
@@ -119,12 +121,12 @@ export function AbujaHustle() {
   }
   if (state.ending) return <EndScreen state={state} />;
   return (
-    <World
+    <Suspense fallback={<LoadingScreen title="Loading your next chapter" />}><World
       state={state}
       onQuit={() => {
         flushSave();
         replace(null);
       }}
-    />
+    /></Suspense>
   );
 }

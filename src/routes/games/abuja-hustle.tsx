@@ -1,6 +1,8 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { AbujaHustle } from "@/games/abuja/ui/AbujaHustle";
+import { GameLoadBoundary, LoadingScreen } from "@/games/abuja/ui/LoadingScreen";
+
+const AbujaHustle = lazy(() => import("@/games/abuja/ui/AbujaHustle").then((module) => ({ default: module.AbujaHustle })));
 
 const MANIFEST = "/abuja-hustle.webmanifest";
 
@@ -14,6 +16,8 @@ export const Route = createFileRoute("/games/abuja-hustle")({
     ],
     links: [{ rel: "apple-touch-icon", href: "/abuja-hustle-180.png" }],
   }),
+  pendingComponent: () => <LoadingScreen title="Opening Abuja Hustle" />,
+  pendingMs: 0,
   component: GamePage,
 });
 
@@ -34,5 +38,5 @@ function GamePage() {
       if (theme && before.theme) theme.content = before.theme;
     };
   }, []);
-  return <AbujaHustle />;
+  return <GameLoadBoundary><Suspense fallback={<LoadingScreen title="Loading Abuja Hustle" />}><AbujaHustle /></Suspense></GameLoadBoundary>;
 }
