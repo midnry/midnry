@@ -4,6 +4,7 @@
 import type { Build, Look } from "./character";
 import type { NegLife } from "./negotiate/types";
 import type { Kitchen } from "./cooking/types";
+import type { CityState } from "./city/sim";
 
 export type Background = "lapo" | "average";
 export type Gender = "male" | "female";
@@ -391,4 +392,6 @@ export type GameState = {
   life?: Life;
   /** Your kitchen, recipes, garden and food businesses. Created the first time you cook. */
   kitchen?: Kitchen;
+  /** Property you own and buildings you've changed in the city. */
+  city?: CityState;
 };

@@ -32,6 +32,7 @@ import { addLot, CROPS, harvest as harvestPlot, kitchen, moveLot, nightlyGarden,
 import { cleanKitchen, cookMinutes, cookRecipe, eatDish, experiment as experimentDish, learn, repair as repairKit, saveCustom, type CookResult } from "./cooking/cook";
 import { callMum, guestList, shareMeal, type MealKind } from "./cooking/social";
 import * as V from "./cooking/venues";
+import { buyLot, lotInfo, redevelop, sellLot, upgradeLot, weeklyRent } from "./city/sim";
 import { lateCatering, nightlyVenues, placeKit, weeklyVenues } from "./cooking/venues";
 import { BOOKS, CLASSES, recipe as recipeDef, RECIPES } from "./cooking/recipes";
 import { equipment as equipDef, stats as equipStats } from "./cooking/equipment";
@@ -729,6 +730,7 @@ function weeklyBills(s: GameState) {
     lines.push(`Cooking gas and power: ${naira(fuel)}.`);
   }
   if (s.kitchen) lines.push(...weeklyMarket(s), ...weeklyVenues(s));
+  lines.push(...weeklyRent(s));
   lines.push(...weeklyPower(s));
   lines.push(...weeklyBusiness(s));
   if (life(s).hospitalBill > 0) {
@@ -1536,6 +1538,30 @@ export function venueService(vid: string, you: boolean): V.ServiceReport {
     toast(s, out.text);
   });
   return out;
+}
+
+// ── City property and buildings ─────────────────────────────────────────────
+
+export const buyProperty = (id: string) => venueDo((s) => buyLot(s, id));
+export const sellProperty = (id: string) => venueDo((s) => sellLot(s, id));
+export const upgradeProperty = (id: string) => venueDo((s) => upgradeLot(s, id));
+export const redevelopProperty = (id: string, def: string) => venueDo((s) => redevelop(s, id, def));
+
+/** Do something at a city building (eat, study, pray…): same rules as a place action. */
+export function lotAction(lotId: string, actionId: string) {
+  update((s) => {
+    const info = lotInfo(s, lotId);
+    const a = info?.def.actions?.find((x) => x.id === actionId);
+    if (!info || !a || s.ending || s.event) return;
+    if (a.open && !info.open) return toast(s, `${info.def.name} is closed right now.`);
+    if (a.slots && s.slot + a.slots > SLOTS.length) return toast(s, "It's too late for that today.");
+    const cost = a.cost ?? 0;
+    if (cost && s.stats.money < cost) return toast(s, `You need ${naira(cost)}.`);
+    if (cost) addStat(s, "money", -cost);
+    const lines = apply(s, a.effects);
+    spend(s, a.slots, a.energy);
+    toast(s, lines[0] ?? a.text ?? `${a.label.replace(/\s*\(.*\)$/, "")}: done.`);
+  });
 }
 
 /** Make sure the kitchen exists before the screen shows it. */

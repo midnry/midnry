@@ -14,8 +14,11 @@ import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
 import { findPath, type Point } from "../systems/path";
 import type { GameState, MapRect } from "../systems/types";
+import { lotDoor } from "../systems/city/layout";
+import { lotsFor } from "../systems/city/sim";
+import { building as buildingInfo } from "../systems/city/catalog";
 import { fullLook, lookKey, randomLook, stageOf, type Look } from "../systems/character";
-import { INK, animateWalk, pose, building, faceVehicle, figure, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
+import { INK, animateWalk, pose, building, placeBuilding, queueBuildings, faceVehicle, figure, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
 
 const SPEED = 230;
 const ZOOM_KEY = "abuja-hustle.zoom";
@@ -89,7 +92,7 @@ const PROPS_ON: Record<string, string[]> = {
 /** Where the player stood when the scene redraws in place (say, after a change of outfit). */
 let carry: { mapId: string; x: number; y: number } | null = null;
 
-type Near = { kind: "place" | "person" | "beat" | "door"; id: string; label: string };
+type Near = { kind: "place" | "person" | "beat" | "door" | "lot"; id: string; label: string };
 type Interactable = Near & { x: number; y: number };
 
 /**
@@ -122,7 +125,9 @@ export class WorldScene extends Phaser.Scene {
   /** Windows that light up after dark (above the night shade). */
   private windowLights: Phaser.GameObjects.Graphics | null = null;
   /** Tall buildings fade when you walk behind them. */
-  private towers: { g: Phaser.GameObjects.Graphics; face: { x: number; y: number; w: number; h: number }; base: number }[] = [];
+  private towers: { g: Phaser.GameObjects.Components.Alpha; face: { x: number; y: number; w: number; h: number }; base: number }[] = [];
+  /** Lit windows of the city's buildings, faded in at night. */
+  private nightWindows: Phaser.GameObjects.Image[] = [];
   private signals: { img: Phaser.GameObjects.Image; x: number; y: number; axis: "x" | "y" }[] = [];
   private boat: Phaser.GameObjects.Image | null = null;
   private beatMarker!: Phaser.GameObjects.Container;
@@ -131,6 +136,7 @@ export class WorldScene extends Phaser.Scene {
   private night!: Phaser.GameObjects.Rectangle;
   private unsub: (() => void) | null = null;
   private lookId = "";
+  private cityId = "";
   /** The story moved to another map while you were inside a building: rebuild when you come out. */
   private pendingRestart = false;
   /** Looking around the map: the camera is free and the player stays put. */
@@ -158,7 +164,10 @@ export class WorldScene extends Phaser.Scene {
     if (state) people.push(...peopleOn(state, mapId).map(personOf));
     if (mapId === "city") people.push(...WALKERS, POLICE);
     queueCharacters(this, people);
-    if (mapId === "city") queueVehicles(this);
+    if (mapId === "city") {
+      queueVehicles(this);
+      queueBuildings(this, lotsFor(state));
+    }
     // Drawing everyone takes a moment on slower phones: say so instead of showing a blank screen.
     const note = this.add
       .text(this.scale.width / 2, this.scale.height / 2, "Getting Abuja ready…", { fontFamily: "system-ui, sans-serif", fontSize: "16px", fontStyle: "bold", color: "#ffffff" })
@@ -186,6 +195,7 @@ export class WorldScene extends Phaser.Scene {
     this.driven = 0;
     this.riding = null;
     this.towers = [];
+    this.nightWindows = [];
     this.signals = [];
     this.windowLights = this.add.graphics().setDepth(31).setAlpha(0);
     this.exploring = false;
@@ -264,12 +274,21 @@ export class WorldScene extends Phaser.Scene {
     );
     // Restart when the story moves to another map; refresh markers on other changes.
     this.lookId = this.lookIdOf(state);
+    this.cityId = this.cityIdOf(state);
     this.unsub = subscribe(() => {
       const next = getState();
       if (!next) return;
       if (mapIdFor(next) !== this.mapId) {
         if (this.scene.isSleeping()) this.pendingRestart = true;
         else this.scene.restart();
+        return;
+      }
+      // A building was rebuilt, or you bought one: redraw the city here.
+      const cityId = this.cityIdOf(next);
+      if (this.mapId === "city" && cityId !== this.cityId) {
+        this.cityId = cityId;
+        carry = { mapId: this.mapId, x: this.player.x, y: this.player.y };
+        this.scene.restart();
         return;
       }
       // New outfit from the wardrobe: redraw the world with the new look, right here.
@@ -308,6 +327,12 @@ export class WorldScene extends Phaser.Scene {
     bus.emit("near", null);
     // Development only: lets automated browser tests move the player.
     if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y), hit: (by: HitBy) => bump(by) };
+  }
+
+  private cityIdOf(state: GameState | null) {
+    return Object.entries(state?.city?.lots ?? {})
+      .map(([id, o]) => `${id}:${o.def ?? ""}:${o.owned ? 1 : 0}`)
+      .join("|");
   }
 
   private lookIdOf(state: GameState | null) {
@@ -464,21 +489,23 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private drawSolids() {
-    const city = this.mapId === "city";
-    this.solids.forEach((s, i) => {
-      if (s.kind === "water" || s.w < 30) {
-        if (s.kind !== "water") building(this, s, i * 31 + Math.round(s.x));
-        return;
+    if (this.mapId === "city") {
+      // The city's buildings, from the zoned layout (systems/city).
+      const state = getState();
+      for (const l of lotsFor(state)) {
+        const b = placeBuilding(this, l);
+        if (state?.city?.lots[l.id]?.owned) this.add.text(l.x + l.w - 6, l.y + l.h - 4, "🔑", { fontSize: "14px" }).setOrigin(1, 1).setDepth(5 + (l.y + l.h) / 10000 + 0.0001);
+        if (b.lit) this.nightWindows.push(b.lit);
+        // Walk behind a building and it fades so you can still see yourself.
+        if (l.solid) this.towers.push({ g: { setAlpha: (a: number) => (b.img.setAlpha(a), b.lit?.setAlpha(Math.min(a, b.lit.alpha)), b.img) } as unknown as Phaser.GameObjects.Components.Alpha, face: { x: l.x, y: b.top, w: l.w, h: l.y + l.h - b.top }, base: l.y + l.h });
       }
-      const seed = i * 31 + Math.round(s.x);
-      // Business districts grow towers; homes and estates stay low.
-      const d = city ? districtAt(s.x + s.w / 2, s.y + s.h / 2)?.id : undefined;
-      const tall = d === "cbd" ? 120 + (seed % 60) : d === "wuse" ? 70 + (seed % 50) : d === "garki" ? 45 + (seed % 45) : d === "jabi" ? 40 + (seed % 30) : 0;
-      const made = building(this, s, seed, { style: tall ? "tower" : "house", tall, lights: city ? this.windowLights ?? undefined : undefined });
-      if (tall) this.towers.push({ ...made, base: s.y + s.h });
+      return;
+    }
+    this.solids.forEach((s, i) => {
+      if (s.kind === "water") return;
+      building(this, s, i * 31 + Math.round(s.x), { style: "house" });
     });
   }
-
 
   private drawChapterMap() {
     const map = MAPS[this.mapId]!;
@@ -712,6 +739,8 @@ export class WorldScene extends Phaser.Scene {
     const glow = this.mapId !== "city" ? 0 : [0, 0, 0.2, 0.4][Math.min(state.slot, 3)]!;
     this.glows.forEach((g) => g.setAlpha(glow));
     this.windowLights?.setAlpha(this.mapId !== "city" ? 0 : [0, 0, 0.45, 0.95][Math.min(state.slot, 3)]!);
+    const lit = this.mapId !== "city" ? 0 : [0, 0, 0.55, 1][Math.min(state.slot, 3)]!;
+    this.nightWindows.forEach((l) => l.setAlpha(lit));
   }
 
   update(time: number, deltaMs: number) {
@@ -837,6 +866,15 @@ export class WorldScene extends Phaser.Scene {
     for (const p of this.people) options.push({ kind: "person", id: p.id, label: p.label, x: p.body.x, y: p.body.y });
     const beat = currentBeat(state);
     if (beat) options.push({ kind: "beat", id: beat.key, label: beat.spot.label, x: beat.spot.x, y: beat.spot.y });
+    // City buildings: walk up to the front to look around or go in.
+    if (this.mapId === "city") {
+      for (const l of lotsFor(state)) {
+        if (l.place) continue;
+        const door = lotDoor(l);
+        if (Math.abs(door.x - this.player.x) > 120 || Math.abs(door.y - this.player.y) > 120) continue;
+        options.push({ kind: "lot", id: l.id, label: buildingInfo(l.def)?.name ?? "Building", x: door.x, y: door.y + 8 });
+      }
+    }
     // Story-chapter buildings you can walk into: their door is in the middle of the front wall.
     if (this.mapId !== "city") {
       for (const s of MAPS[this.mapId]?.solids ?? []) {

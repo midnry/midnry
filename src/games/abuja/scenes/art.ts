@@ -1,6 +1,9 @@
 import * as Phaser from "phaser";
 import { characterParts, dims, lookKey, type LifeStage, type Look } from "../systems/character";
 import { furnitureSvg } from "../systems/furniture";
+import { building as buildingDef } from "../systems/city/catalog";
+import { buildingArt } from "../systems/city/buildingArt";
+import { lotLabel, type Lot } from "../systems/city/layout";
 import { FLEET, vehicleBox, vehicleKey, vehicleSvg, type VehicleKind, type VehicleStyle, type VehicleView } from "../systems/vehicles";
 
 // Cartoon art drawn in code: bold dark outlines, flat colours, one shade.
@@ -435,6 +438,50 @@ function animate(f: Figure, time: number, motion: Motion) {
       return;
     }
   }
+}
+
+// ── City buildings (systems/city): one texture per look, plus its lit windows ─
+
+const BRES = 1.5;
+
+/** The texture for a lot's building: lots that look alike share one. */
+export const lotKey = (l: Lot) => `bld_${l.def}_${l.w}x${l.h}_${l.floors}_${l.palette}_${l.seed % 3}${lotLabel(l) ? `_${lotLabel(l)!.replace(/\W/g, "")}` : ""}`;
+
+function lotArt(l: Lot) {
+  const def = buildingDef(l.def)!;
+  const [wall, trim] = def.palette[l.palette % def.palette.length]!;
+  return buildingArt(def.art, { w: l.w, h: l.h, floors: l.floors, wall, trim, seed: l.seed % 3, label: lotLabel(l) });
+}
+
+/** Queue every building texture for these lots (call from preload). */
+export function queueBuildings(scene: Phaser.Scene, lots: Lot[]) {
+  const urls: string[] = [];
+  const seen = new Set<string>();
+  for (const l of lots) {
+    const key = lotKey(l);
+    if (seen.has(key) || scene.textures.exists(key)) continue;
+    seen.add(key);
+    const art = lotArt(l);
+    const scaled = (svg: string) => svg.replace(/width="([\d.]+)" height="([\d.]+)"/, (_m, w, h) => `width="${Math.round(Number(w) * BRES)}" height="${Math.round(Number(h) * BRES)}"`);
+    for (const [k, svg] of [[key, art.svg], [`${key}_lit`, art.lights]] as const) {
+      if (!svg) continue;
+      const url = URL.createObjectURL(new Blob([scaled(svg)], { type: "image/svg+xml" }));
+      urls.push(url);
+      scene.load.svg(k, url);
+    }
+  }
+  if (urls.length) scene.load.once("complete", () => urls.forEach((url) => URL.revokeObjectURL(url)));
+}
+
+/** Put a lot's building on the map. Returns the building and its night lights. */
+export function placeBuilding(scene: Phaser.Scene, l: Lot) {
+  const key = lotKey(l);
+  const base = l.y + l.h;
+  // Parks and farms are ground you walk on; buildings sort by where they meet the ground.
+  const depth = l.solid ? 5 + base / 10000 : 3;
+  const img = scene.add.image(l.x, base, key).setOrigin(0, 1).setScale(1 / BRES).setDepth(depth);
+  const lit = scene.textures.exists(`${key}_lit`) ? scene.add.image(l.x, base, `${key}_lit`).setOrigin(0, 1).setScale(1 / BRES).setDepth(depth + 0.00001).setAlpha(0) : null;
+  return { img, lit, top: base - img.displayHeight };
 }
 
 // ── Props ───────────────────────────────────────────────────────────────────

@@ -32,6 +32,7 @@ import { Phone, type PhoneApp } from "./Phone";
 import { isPoorRoom, roomForBuilding, roomForPlace, type RoomInfo } from "../systems/rooms";
 import { ChatBubble, ReplyButton } from "./Chat";
 import { NegotiationScreen } from "./Negotiation";
+import { LotPanel } from "./LotPanel";
 import { KitchenScreen, type KitchenOpen } from "./kitchen/Kitchen";
 import { StoryPanel } from "./StoryView";
 import { WardrobePanel } from "./Wardrobe";
@@ -43,6 +44,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const game = useRef<PhaserGame | null>(null);
   const [near, setNear] = useState<NearThing | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const [lotOpen, setLotOpen] = useState<string | null>(null);
   const [talking, setTalking] = useState<string | null>(null);
   const [phone, setPhone] = useState<PhoneApp | null>(null);
   const [blocked, setBlocked] = useState<string | null>(null);
@@ -131,6 +133,10 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         const room = roomForPlace(thing.id);
         if (room && !insideRef.current) roomActions.current.enterRoom({ type: room, name: place(thing.id)?.name ?? thing.label, placeId: thing.id });
         else setOpen(thing.id);
+      }
+      if (thing.kind === "lot") {
+        setLotOpen(thing.id);
+        return;
       }
       if (thing.kind === "door") {
         const here = insideRef.current;
@@ -223,7 +229,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const beat = currentBeat(state);
   const here = near && near.kind === "place" ? place(near.id) : undefined;
   const panelOpen = Boolean(here && open === here.id);
-  const showEnter = near && !loading && !exploring && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
+  const showEnter = near && !lotOpen && !loading && !exploring && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#05070c] text-slate-100 select-none">
@@ -263,7 +269,9 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           className={`${btnPrimary} absolute bottom-40 left-1/2 z-10 max-w-[70vw] -translate-x-1/2 shadow-xl sm:bottom-10`}
           onClick={() => bus.emit("interact", near)}
         >
-          {near.kind === "person"
+          {near.kind === "lot"
+            ? `🔎 ${near.label}`
+            : near.kind === "person"
             ? `💬 Talk to ${near.label}`
             : near.kind === "beat"
               ? `▶ ${near.label}`
@@ -285,6 +293,17 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
 
       {panelOpen && here ? (
         <PlacePanel state={state} placeId={here.id} onClose={() => setOpen(null)} onApp={setPhone} onPhone={() => setPhone("home")} />
+      ) : null}
+      {lotOpen && near?.kind === "lot" && near.id === lotOpen && !inside ? (
+        <LotPanel
+          state={state}
+          lotId={lotOpen}
+          onClose={() => setLotOpen(null)}
+          onEnter={(type, name) => {
+            setLotOpen(null);
+            roomActions.current.enterRoom({ type, name });
+          }}
+        />
       ) : null}
       {talking ? <TalkModal state={state} personKey={talking} onClose={() => setTalking(null)} /> : null}
       {state.task && !inStory ? <TaskPanel state={state} /> : null}
