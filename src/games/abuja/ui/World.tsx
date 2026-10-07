@@ -217,9 +217,8 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
-      input.paused = false;
     };
-  }, []);
+  }, [isLoading]);
 
   useEffect(() => {
     if (!state.toast) return;
