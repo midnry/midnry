@@ -80,7 +80,7 @@ export function playerPainted(state: Pick<GameState, "looks" | "age"> | null): s
 }
 
 /** Any painted art id the interface can show as a portrait. */
-export const isPaintedId = (id: string | undefined): id is string => Boolean(id && (PAINTED_OUTFITS.some((o) => o.id === id) || CROWD_PAINTED.some((c) => c.id === id) || YOUNG_ART.some((y) => y.id === id)));
+export const isPaintedId = (id: string | undefined): id is string => Boolean(id && (PAINTED_OUTFITS.some((o) => o.id === id) || CROWD_PAINTED.some((c) => c.id === id) || YOUNG_ART.some((y) => y.id === id) || STORY_ART.some((y) => y.id === id)));
 
 /** The player's looks with the painted art filled in, for portraits in the interface. */
 export const myLooks = (state: Pick<GameState, "looks" | "age">): Looks => ({ ...state.looks, painted: playerPainted(state) ?? DRAWN });
@@ -125,3 +125,20 @@ export function crowdPainted(gender: "male" | "female", stage: CrowdStage, seed:
 
 /** Painted people with hand-drawn walk cycles: 4 frames per view (<id>-walk-<view>-<n>.png). Others step by cut-out legs. */
 export const WALK_FRAMES = new Set<string>(["you-f-brown-1"]);
+
+/** Named people from the school, university and camp chapters, with their heights against a grown-up. */
+export const STORY_ART: { id: string; scale: number }[] = [
+  { id: "mama", scale: 0.94 },
+  { id: "daddy", scale: 1 },
+  { id: "headmaster", scale: 1.01 },
+  { id: "water_seller", scale: 1.02 },
+  { id: "teacher", scale: 1 },
+  { id: "roommate", scale: 0.99 },
+  { id: "recruiter", scale: 1.03 },
+  { id: "rotaract", scale: 0.94 },
+  { id: "soldier", scale: 1.03 },
+  { id: "commandant", scale: 1.02 },
+  { id: "saed", scale: 0.95 },
+  { id: "inspector", scale: 0.97 },
+  { id: "mammy_seller", scale: 0.94 },
+];

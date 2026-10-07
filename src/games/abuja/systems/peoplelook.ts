@@ -14,6 +14,8 @@ export const seedOf = (id: string) => [...id].reduce((n, ch) => (n * 31 + ch.cha
 /** People with their own hand-painted art: by id on any map, or `map:id` for one map only. */
 const PAINTED_PEOPLE: Record<string, string> = {
   ...Object.fromEntries(["suya", "pos_lady", "agbero", "okada", "hawker", "felix", "okafor", "prophet", "civil_servant", "tunde", "slim", "bolaji", "corper"].map((id) => [`city:${id}`, id])),
+  // The school, university and camp people.
+  ...Object.fromEntries(["mama", "daddy", "headmaster", "water_seller", "teacher", "roommate", "recruiter", "rotaract", "soldier", "mammy_seller"].map((id) => [id, id])),
   // The same people met earlier in life.
   "university:okafor": "okafor",
   "nysc:corper_friend": "corper",
@@ -23,6 +25,9 @@ const PAINTED_PEOPLE: Record<string, string> = {
 function standIn(seed: number, gender: "male" | "female", stage: CrowdStage): string | undefined {
   return crowdPainted(gender, stage, seed) ?? crowdPainted(gender, "adult", seed);
 }
+
+/** Story speakers who aren't on any map but have their own art. */
+const SPEAKER_ART: Record<string, string> = { "camp commandant": "commandant", "saed director": "saed", "local government inspector": "inspector" };
 
 const FEMININE = /\b(mrs|madam|miss|lady|woman|mama|aunty|auntie|mother|sister|queen|princess)\b/i;
 
@@ -42,6 +47,8 @@ export function speakerLook(name: string, map?: string, gender?: "male" | "femal
   const match = (p: PersonDef) => p.name.toLowerCase() === clean || p.name.toLowerCase().startsWith(`${clean} `);
   const p = PEOPLE.find((x) => x.map === map && match(x)) ?? PEOPLE.find(match);
   if (p) return personLook(p);
+  const own = SPEAKER_ART[clean];
+  if (own) return { look: randomLook(seedOf(name)), adult: true, painted: own };
   const g = gender ?? (FEMININE.test(name) ? "female" : "male");
   return { look: randomLook(seedOf(name), { build: g === "female" ? "fem" : "masc" }), adult: true, painted: standIn(seedOf(name), g, "adult") };
 }

@@ -1,6 +1,6 @@
 import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
-import { CROWD_PAINTED, PAINTED_OUTFITS, WALK_FRAMES, YOUNG_ART } from "../systems/painted";
+import { CROWD_PAINTED, PAINTED_OUTFITS, STORY_ART, WALK_FRAMES, YOUNG_ART } from "../systems/painted";
 import { characterParts, dims, fullLook, lookKey, type LifeStage, type Look } from "../systems/character";
 import { furnitureSvg } from "../systems/furniture";
 import { building as buildingDef } from "../systems/city/catalog";
@@ -298,7 +298,7 @@ export const PAINTED: Record<string, { views: Facing[]; scale?: number }> = {
 };
 for (const o of PAINTED_OUTFITS) PAINTED[o.id] = { views: ["front", "side", "back"], scale: o.build === "fem" ? 0.96 : 1.02 };
 for (const c of CROWD_PAINTED) PAINTED[c.id] = { views: ["front", "side", "back"], scale: c.scale };
-for (const y of YOUNG_ART) PAINTED[y.id] = { views: ["front", "side", "back"], scale: y.scale };
+for (const y of [...YOUNG_ART, ...STORY_ART]) PAINTED[y.id] = { views: ["front", "side", "back"], scale: y.scale };
 const paintedKey = (id: string, view: Facing) => `pt_${id}_${PAINTED[id]?.views.includes(view) ? view : "front"}`;
 
 const bodyOf = (p: Person): LifeStage => p.stage ?? (p.adult ? "adult" : "child");
