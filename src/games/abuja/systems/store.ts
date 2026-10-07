@@ -267,6 +267,10 @@ type BusEvents = {
   camera: "in" | "out" | "explore" | "follow";
   /** The world tells the buttons whether you're looking around. */
   exploring: boolean;
+  /** Scene files are loading; progress is the engine’s actual completion fraction. */
+  sceneLoading: { title: string; progress: number };
+  sceneReady: null;
+  sceneLoadError: null;
   /** A room has finished loading (the loading screen can go). */
   roomReady: null;
   /** Open the kitchen screen: at home, from a market, or from the phone. */

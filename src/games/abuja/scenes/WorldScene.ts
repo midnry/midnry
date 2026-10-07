@@ -1,6 +1,7 @@
+import { startSceneLoading, finishSceneLoading } from "./loading";
 import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
-import { DISTRICTS, MAPS, PLACES, WORLD, districtAt } from "../systems/data";
+import { DISTRICTS, MAPS, PLACES, WORLD, chapter, districtAt } from "../systems/data";
 import { LAKE, ROADS, blocked, freePoint, roadRoute, sizeOf, solidsFor } from "../systems/citymap";
 import { FLEET, HIT_AS, KEKE_COLORS, OKADA_COLORS, TAXI_COLOR, type VehicleStyle } from "../systems/vehicles";
 import type { RideMode } from "../systems/rides";
@@ -187,6 +188,7 @@ export class WorldScene extends Phaser.Scene {
   preload() {
     const state = getState();
     const mapId = state ? mapIdFor(state) : "city";
+    startSceneLoading(this, mapId === "city" ? "Getting Abuja ready" : `Loading ${chapter(mapId)?.title ?? "your next chapter"}`);
     const people: Person[] = [playerOf(state)];
     if (state) people.push(...peopleOn(state, mapId).map(personOf));
     if (mapId === "city") people.push(...crowdStarters(state?.day ?? 0), POLICE, FRSC);
@@ -195,18 +197,7 @@ export class WorldScene extends Phaser.Scene {
       queueVehicles(this);
       queueBuildings(this, lotsFor(state));
     }
-    // Drawing everyone takes a moment on slower phones: say so instead of showing a blank screen.
-    const note = this.add
-      .text(this.scale.width / 2, this.scale.height / 2, "Getting Abuja ready…", { fontFamily: GAME_FONT, fontSize: "16px", fontStyle: "bold", color: "#ffffff" })
-      .setOrigin(0.5)
-      .setScrollFactor(0);
-    // Only for the first load: people's clothes are drawn later as they appear.
-    const progress = (p: number) => note.setText(`Getting Abuja ready… ${Math.round(p * 100)}%`);
-    this.load.on("progress", progress);
-    this.load.once("complete", () => {
-      this.load.off("progress", progress);
-      note.destroy();
-    });
+
   }
 
   create() {
@@ -359,6 +350,7 @@ export class WorldScene extends Phaser.Scene {
       this.near = null;
       bus.emit("near", null);
       this.refresh();
+      finishSceneLoading(this);
     });
     // Let go of the store and the bus when the scene stops, or when the whole game is torn down (back to the title).
     const cleanup = () => {
@@ -376,6 +368,7 @@ export class WorldScene extends Phaser.Scene {
     this.pendingRestart = false;
     this.near = null;
     bus.emit("near", null);
+    finishSceneLoading(this);
     // Development only: lets automated browser tests move the player.
     if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y), hit: (by: HitBy) => bump(by), crowd: () => this.life?.count ?? 0, crowdAt: () => this.life?.positions ?? [], me: () => { const c = this.cameras.main; return [(this.player.x - c.worldView.x) * c.zoom, (this.player.y - c.worldView.y) * c.zoom, c.zoom]; } };
   }
