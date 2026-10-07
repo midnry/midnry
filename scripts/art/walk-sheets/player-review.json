@@ -1,0 +1,132 @@
+{
+  "ids": [
+    "you-k-f-light-child",
+    "you-k-f-light-teen",
+    "you-k-f-brown-child",
+    "you-k-f-brown-teen",
+    "you-k-f-dark-child",
+    "you-k-f-dark-teen",
+    "you-k-m-light-child",
+    "you-k-m-light-teen",
+    "you-k-m-brown-child",
+    "you-k-m-brown-teen",
+    "you-k-m-dark-child",
+    "you-k-m-dark-teen",
+    "you-nysc-f-light",
+    "you-nysc-f-brown",
+    "you-nysc-f-dark",
+    "you-nysc-m-light",
+    "you-nysc-m-brown",
+    "you-nysc-m-dark"
+  ],
+  "regenerated_sheets": {
+    "you-k-f-light-child": "Regenerated repeated walking poses; teenage references also required restoring reference head/leg proportions.",
+    "you-k-f-light-teen": "Regenerated repeated walking poses; teenage references also required restoring reference head/leg proportions.",
+    "you-k-f-brown-child": "Regenerated repeated walking poses; teenage references also required restoring reference head/leg proportions.",
+    "you-k-f-brown-teen": "Regenerated repeated walking poses; teenage references also required restoring reference head/leg proportions.",
+    "you-k-f-dark-child": "Regenerated repeated walking poses; teenage references also required restoring reference head/leg proportions.",
+    "you-k-f-dark-teen": "Regenerated repeated walking poses; teenage references also required restoring reference head/leg proportions.",
+    "you-k-m-light-teen": "Regenerated repeated walking poses; teenage references also required restoring reference head/leg proportions.",
+    "you-k-m-brown-teen": "Regenerated reference proportions and repeated side heel-contact arm/leg swing.",
+    "you-k-m-dark-teen": "Regenerated repeated walking poses; teenage references also required restoring reference head/leg proportions.",
+    "you-nysc-m-brown": "Regenerated repeated front3 and side3 poses; final front3 repeated a passing pose and was corrected using only front1 legs."
+  },
+  "sources": {
+    "you-k-f-light-child": {
+      "original_sha256": "7b1cdf22f49d7d4e4948e7c6e35510d15b9c8df785d90cf8e216ad9c6d3950ec",
+      "original": "you-k-f-light-child-sheet-original.png",
+      "corrected": "you-k-f-light-child-sheet-corrected.png"
+    },
+    "you-k-f-light-teen": {
+      "original_sha256": "eefd9f285f108d286389b7aa0f7843e9033f5885a13de0e5009d38f8954e01d9",
+      "original": "you-k-f-light-teen-sheet-original.png",
+      "corrected": "you-k-f-light-teen-sheet-corrected.png"
+    },
+    "you-k-f-brown-child": {
+      "original_sha256": "36ca082526bdf8785d0d40f71f25a22e7612a60382a458c8489574a19b675c4e",
+      "original": "you-k-f-brown-child-sheet-original.png",
+      "corrected": "you-k-f-brown-child-sheet-corrected.png"
+    },
+    "you-k-f-brown-teen": {
+      "original_sha256": "75434c0067ac0c6c23ecf44b2fccce4693f1e4c0c737e0b2d4002242d20b015c",
+      "original": "you-k-f-brown-teen-sheet-original.png",
+      "corrected": "you-k-f-brown-teen-sheet-corrected.png"
+    },
+    "you-k-f-dark-child": {
+      "original_sha256": "3d4837da5d50ccb4c223f8f3a31da8c10f924df4e0924682d8b1a12781dc30df",
+      "original": "you-k-f-dark-child-sheet-original.png",
+      "corrected": "you-k-f-dark-child-sheet-corrected.png"
+    },
+    "you-k-f-dark-teen": {
+      "original_sha256": "0a51d4ea3facd68468082160b14a6f549d15bbfd8092399e8c524d2d30e817d6",
+      "original": "you-k-f-dark-teen-sheet-original.png",
+      "corrected": "you-k-f-dark-teen-sheet-corrected.png"
+    },
+    "you-k-m-light-child": {
+      "original_sha256": "5bb4902ed301ffc5fe90ec5d204409118784873af8e795c96826c7fb0111b8d7",
+      "original": "you-k-m-light-child-sheet-original.png",
+      "corrected": "you-k-m-light-child-sheet-corrected.png"
+    },
+    "you-k-m-light-teen": {
+      "original_sha256": "23b7b90753c5a243b19615b73d29c0792bbbae843bf22ecd07348876a7da1652",
+      "original": "you-k-m-light-teen-sheet-original.png",
+      "corrected": "you-k-m-light-teen-sheet-corrected.png"
+    },
+    "you-k-m-brown-child": {
+      "original_sha256": "2c2b3ad5d7899d036198d8e5eb2065af663884641e5e17b06e2bc6586cd3f568",
+      "original": "you-k-m-brown-child-sheet-original.png",
+      "corrected": "you-k-m-brown-child-sheet-corrected.png"
+    },
+    "you-k-m-brown-teen": {
+      "original_sha256": "b1dd3c2e5ee84ff26e7ac9efda491b2805584219c1b8b5ec342265b1e5cb18f4",
+      "original": "you-k-m-brown-teen-sheet-original.png",
+      "corrected": "you-k-m-brown-teen-sheet-corrected.png"
+    },
+    "you-k-m-dark-child": {
+      "original_sha256": "154cdd0239b276c712f42dcc15dcf11c953cb261ba9aab0d5e12688f6db29fb7",
+      "original": "you-k-m-dark-child-sheet-original.png",
+      "corrected": "you-k-m-dark-child-sheet-corrected.png"
+    },
+    "you-k-m-dark-teen": {
+      "original_sha256": "36f8f6747c7465345400d7e7ef48a0e333e426c90da035e9d8f5526467543395",
+      "original": "you-k-m-dark-teen-sheet-original.png",
+      "corrected": "you-k-m-dark-teen-sheet-corrected.png"
+    },
+    "you-nysc-f-light": {
+      "original_sha256": "9726793cf3491abf510aef28bfc0b28ad40f196b91ec8a6c66aca055940e3b42",
+      "original": "you-nysc-f-light-sheet-original.png",
+      "corrected": "you-nysc-f-light-sheet-corrected.png"
+    },
+    "you-nysc-f-brown": {
+      "original_sha256": "64b0ba9d67f40246f0cc42890aeb410f08f6f27f4c39291daab926f498202726",
+      "original": "you-nysc-f-brown-sheet-original.png",
+      "corrected": "you-nysc-f-brown-sheet-corrected.png"
+    },
+    "you-nysc-f-dark": {
+      "original_sha256": "1f6df3734bd0a57fa2b9317b906d0ecbde6fc165c4da4f3066cd5d7e54023186",
+      "original": "you-nysc-f-dark-sheet-original.png",
+      "corrected": "you-nysc-f-dark-sheet-corrected.png"
+    },
+    "you-nysc-m-light": {
+      "original_sha256": "2881dc90873fa700576a11f652c66af48d77477b964f50ec2b0f1595d1428eee",
+      "original": "you-nysc-m-light-sheet-original.png",
+      "corrected": "you-nysc-m-light-sheet-corrected.png"
+    },
+    "you-nysc-m-brown": {
+      "original_sha256": "4f554e00443bee26a61bf200f6f6fe3ca257aeb6582f63513ac23dad8e2a0630",
+      "original": "you-nysc-m-brown-sheet-original.png",
+      "corrected": "you-nysc-m-brown-sheet-corrected.png"
+    },
+    "you-nysc-m-dark": {
+      "original_sha256": "87e6fcb60307b9a15d6ab91685bc1e1fad3119b67db08eb0ffc07c2b1ac21124",
+      "original": "you-nysc-m-dark-sheet-original.png",
+      "corrected": "you-nysc-m-dark-sheet-corrected.png"
+    }
+  },
+  "checks": [
+    "Unchanged cut_sheet.py walk command; all sheets split 4/4/4",
+    "Opened all cuts beside standing references; no clipping, checkerboard or neighboring poses; opposite contact/passing legs; right-facing side poses",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
