@@ -799,11 +799,12 @@ type Frame = {
 };
 
 const FRAMES: Record<string, Frame> = {
-  "adult-masc": { stage: "adult", hx: 60, hy: 30, hk: 1, sy: 61, sh: 30, neck: 6.4, waistY: 112, waist: 25, hemY: 152, hip: 26, hipY: 145, legX: 11, legLen: 150, legW: 24, armLen: 98, armW: 15, hand: 6 },
-  "adult-fem": { stage: "adult", hx: 60, hy: 31, hk: 0.96, sy: 61, sh: 24, neck: 5.2, waistY: 108, waist: 17.5, hemY: 144, hip: 26, hipY: 140, legX: 10, legLen: 150, legW: 21, armLen: 92, armW: 12, hand: 5 },
-  "teen-masc": { stage: "teen", hx: 60, hy: 31, hk: 1, sy: 60, sh: 26, neck: 5.8, waistY: 106, waist: 22, hemY: 140, hip: 23, hipY: 134, legX: 10, legLen: 132, legW: 21, armLen: 88, armW: 13, hand: 5.4 },
-  "teen-fem": { stage: "teen", hx: 60, hy: 31, hk: 0.96, sy: 60, sh: 22, neck: 5, waistY: 104, waist: 17, hemY: 134, hip: 23, hipY: 130, legX: 9.5, legLen: 132, legW: 19, armLen: 84, armW: 11, hand: 4.8 },
-  child: { stage: "child", hx: 60, hy: 33, hk: 1.18, sy: 64, sh: 21, neck: 5, waistY: 96, waist: 20, hemY: 118, hip: 21, hipY: 112, legX: 9, legLen: 80, legW: 19, armLen: 58, armW: 12, hand: 5 },
+  // Proportions after the game's style guide: a slightly larger head (about a sixth of the height), slim tapered limbs.
+  "adult-masc": { stage: "adult", hx: 60, hy: 26.5, hk: 1.2, sy: 61, sh: 31.9, neck: 6.8, waistY: 112, waist: 25.3, hemY: 152, hip: 26.4, hipY: 145, legX: 11.6, legLen: 150, legW: 22.6, armLen: 98, armW: 15.4, hand: 6.8 },
+  "adult-fem": { stage: "adult", hx: 60, hy: 27.5, hk: 1.15, sy: 61, sh: 25.3, neck: 5.5, waistY: 108, waist: 18.2, hemY: 144, hip: 27.5, hipY: 140, legX: 10.5, legLen: 150, legW: 19.8, armLen: 92, armW: 12.1, hand: 5.7 },
+  "teen-masc": { stage: "teen", hx: 60, hy: 25.5, hk: 1.22, sy: 60, sh: 27.5, neck: 6.2, waistY: 106, waist: 22.6, hemY: 140, hip: 24.2, hipY: 134, legX: 10.5, legLen: 132, legW: 20.4, armLen: 88, armW: 13.2, hand: 5.9 },
+  "teen-fem": { stage: "teen", hx: 60, hy: 26.5, hk: 1.17, sy: 60, sh: 23.1, neck: 5.3, waistY: 104, waist: 17.6, hemY: 134, hip: 24.2, hipY: 130, legX: 9.9, legLen: 132, legW: 18.2, armLen: 84, armW: 11.6, hand: 5.3 },
+  child: { stage: "child", hx: 60, hy: 29, hk: 1.36, sy: 64, sh: 22.0, neck: 5.3, waistY: 96, waist: 20.9, hemY: 118, hip: 22.0, hipY: 112, legX: 9.4, legLen: 80, legW: 18.2, armLen: 58, armW: 12.1, hand: 5.5 },
 };
 
 export function frameFor(look: Look, body: Body): Frame {
@@ -878,8 +879,10 @@ function topArt(look: Look, f: Frame, view: View): string {
     return out;
   }
   out += shape(torso, c);
-  // Cel shade down one side.
+  // Cel shade down one side, light catching the other.
   out += flat(`M${n(60 + sh - 6)} ${top + 6} Q${n(60 + sh)} ${top + 16} ${n(60 + wa)} ${f.waistY} L${n(60 + hm)} ${bottom - 1} L${n(60 + hm - 7)} ${bottom - 1} L${n(60 + wa - 6)} ${f.waistY} Z`, d);
+  out += `<path d="M${n(60 - sh + 3)} ${top + 6} Q${n(60 - sh + 1)} ${top + 16} ${n(60 - wa + 2)} ${f.waistY} L${n(60 - hm + 2)} ${bottom - 3} L${n(60 - hm + 6)} ${bottom - 3} L${n(60 - wa + 6)} ${f.waistY} Q${n(60 - sh + 5)} ${top + 16} ${n(60 - sh + 7)} ${top + 6} Z" fill="${hi}" opacity="0.55"/>`;
+  out += `<path d="M${n(60 - sh + 4)} ${top + 2} Q60 ${top - 2} ${n(60 + sh - 4)} ${top + 2}" fill="none" stroke="${hi}" stroke-width="2" stroke-linecap="round" opacity="0.6"/>`;
   if (side) {
     if (style === "hoodie" || style === "ziphoodie") out += shape(`M${n(60 - sh - 3)} ${top - 2} Q${n(60 - sh - 7)} ${top + 12} ${n(60 - sh + 4)} ${top + 12} Q${n(60 - sh + 6)} ${top + 2} ${n(60 - sh + 2)} ${top - 3} Z`, d);
     if (style === "kaftan") out += `<path d="M${n(60 + sh - 3)} ${top + 4} L${n(60 + hm - 2)} ${bottom - 6}" ${thin(GOLD, 1.4)}/>`;
@@ -1041,9 +1044,13 @@ function legInner(look: Look, f: Frame, view: "front" | "side"): string {
     if (!grownUp(f) && look.bottom === "shorts") out += column(n(ankle - 10), ankle + 1, "#f4f1ea", skinW, skinW);
   } else {
     // Long trousers: wide at the bottom for cargos and wide jeans, with a stacked hem.
-    const flare = look.bottom === "track" ? -3 : look.bottom === "overalls" ? 0 : 2;
+    // Tapered from hip to ankle: slim for jeans and track pants, a little looser for cargos.
+    const flare = (w * (look.bottom === "cargo" ? 0.9 : look.bottom === "overalls" ? 0.86 : 0.78)) - w;
     out += column(0, ankle + 1, c, w, w + flare);
-    out += flat(`M${n(cx + w / 2 - 6)} 0 L${n(cx + w / 2)} 0 L${n(cx + (w + flare) / 2)} ${ankle} L${n(cx + (w + flare) / 2 - 6)} ${ankle} Z`, d);
+    out += flat(`M${n(cx + w / 2 - 6)} 0 L${n(cx + w / 2)} 0 L${n(cx + (w + flare) / 2)} ${ankle} L${n(cx + (w + flare) / 2 - 5)} ${ankle} Z`, d);
+    out += `<path d="M${n(cx - w / 2 + 1.5)} 3 L${n(cx - w / 2 + 5)} 3 L${n(cx - (w + flare) / 2 + 4.5)} ${n(ankle - 2)} L${n(cx - (w + flare) / 2 + 1.5)} ${n(ankle - 2)} Z" fill="${tone(c, 1.16)}" opacity="0.6"/>`;
+    // A soft knee crease.
+    out += `<path d="M${n(cx - w * 0.3)} ${n(L * 0.48)} Q${cx} ${n(L * 0.5)} ${n(cx + w * 0.25)} ${n(L * 0.47)}" fill="none" stroke="${d}" stroke-width="1" opacity="0.7"/>`;
     if (look.bottom === "cargo") {
       const py = n(L * 0.32);
       const px = view === "side" ? cx - 4 : cx - w / 2 - 1;

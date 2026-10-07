@@ -24,7 +24,8 @@ import { fullLook, lookKey, randomLook, stageOf, type Look } from "../systems/ch
 import { INK, animateWalk, pose, building, placeBuilding, queueBuildings, faceVehicle, figure, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
 
 const SPEED = 230;
-const ZOOM_KEY = "abuja-hustle.zoom";
+// v2: the closer default camera from the style guide (an older saved zoom is ignored once).
+const ZOOM_KEY = "abuja-hustle.zoom.v2";
 const MIN_ZOOM = 0.7;
 const MAX_ZOOM = 3;
 const NEAR = 105;
@@ -434,7 +435,7 @@ export class WorldScene extends Phaser.Scene {
   private fitZoom() {
     const { width, height } = this.scale;
     const small = Math.min(width, height);
-    const fallback = small < 520 ? 1.45 : small < 800 ? 1.4 : 1.5;
+    const fallback = small < 520 ? 1.85 : small < 800 ? 1.9 : 2.05;
     let saved = 0;
     try {
       saved = Number(localStorage.getItem(ZOOM_KEY)) || 0;

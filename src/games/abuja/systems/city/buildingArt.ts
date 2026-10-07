@@ -12,8 +12,19 @@ import type { ArtKind } from "./catalog";
 export type BuildingArtOpts = { w: number; h: number; floors: number; wall: string; trim: string; seed: number; label?: string };
 export type BuildingArt = { svg: string; lights: string; width: number; height: number };
 
-const INK = "#1c1917";
-const SW = 1.6;
+// Warm dark outlines, not black: the game's style guide.
+const INK = "#2b1d14";
+const SW = 1.3;
+
+/** Shared paint for every building: soft light from the top left, glass that reflects the sky, a faint grain. */
+const DEFS = `<defs>
+<linearGradient id="wallShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#1a0f08" stop-opacity="0.2"/></linearGradient>
+<linearGradient id="sideShade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1a0f08" stop-opacity="0.04"/><stop offset="1" stop-color="#1a0f08" stop-opacity="0.22"/></linearGradient>
+<linearGradient id="roofShade" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#1a0f08" stop-opacity="0.12"/><stop offset="1" stop-color="#fff" stop-opacity="0.18"/></linearGradient>
+<linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d7eefb"/><stop offset="0.45" stop-color="#8cc2e6"/><stop offset="1" stop-color="#4f86b3"/></linearGradient>
+<linearGradient id="ao" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a0f08" stop-opacity="0.32"/><stop offset="1" stop-color="#1a0f08" stop-opacity="0"/></linearGradient>
+<pattern id="grain" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="1.5" cy="2" r="0.45" fill="#1a0f08" opacity="0.12"/><circle cx="5" cy="5.5" r="0.4" fill="#fff" opacity="0.18"/><circle cx="5.5" cy="1" r="0.35" fill="#1a0f08" opacity="0.08"/></pattern>
+</defs>`;
 
 function rgb(hex: string): [number, number, number] {
   const v = parseInt(hex.replace("#", "").padEnd(6, "0").slice(0, 6), 16);
@@ -73,7 +84,7 @@ class Pic {
     return this.add(`<ellipse cx="${n(x)}" cy="${n(y)}" rx="${n(rx)}" ry="${n(ry)}" fill="${fill}"${line ? ` stroke="${INK}" stroke-width="${SW}"` : ""}/>`);
   }
   text(x: number, y: number, t: string, size: number, fill = "#ffffff", weight = 800) {
-    return this.add(`<text x="${n(x)}" y="${n(y)}" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="middle" dominant-baseline="middle">${t}</text>`);
+    return this.add(`<text x="${n(x)}" y="${n(y)}" font-family="Nunito, Arial Rounded MT Bold, system-ui, -apple-system, Segoe UI, sans-serif" font-size="${size}" font-weight="${weight}" fill="${fill}" text-anchor="middle" dominant-baseline="middle">${t}</text>`);
   }
   /** A lit window for the night overlay. */
   light(x: number, y: number, w: number, h: number) {
@@ -84,9 +95,23 @@ class Pic {
 /** An oblique box: front wall from (x, yb) up by F, receding D up and S right. Returns the roof's corners. */
 function box(p: Pic, x: number, yb: number, W: number, F: number, D: number, S: number, wall: string, roof: string) {
   const side = shade(wall, 0.78);
-  p.poly([[x + W, yb], [x + W + S, yb - D], [x + W + S, yb - D - F], [x + W, yb - F]], side);
+  const pts = (q: [number, number][]) => q.map(([a, b]) => `${n(a)},${n(b)}`).join(" ");
+  // A soft shadow cast on the ground to the right, and darker ground where the wall meets it.
+  p.add(`<polygon points="${pts([[x + W, yb], [x + W + 10, yb], [x + W + S + 10, yb - D], [x + W + S, yb - D]])}" fill="#1a0f08" opacity="0.16"/>`);
+  p.add(`<rect x="${n(x - 1)}" y="${n(yb)}" width="${n(W + 2)}" height="4" fill="url(#ao)"/>`);
+  const sidePts: [number, number][] = [[x + W, yb], [x + W + S, yb - D], [x + W + S, yb - D - F], [x + W, yb - F]];
+  p.poly(sidePts, side);
+  p.add(`<polygon points="${pts(sidePts)}" fill="url(#sideShade)"/>`);
   p.rect(x, yb - F, W, F, wall);
-  p.poly([[x, yb - F], [x + W, yb - F], [x + W + S, yb - F - D], [x + S, yb - F - D]], roof);
+  p.add(`<rect x="${n(x)}" y="${n(yb - F)}" width="${n(W)}" height="${n(F)}" fill="url(#grain)"/><rect x="${n(x)}" y="${n(yb - F)}" width="${n(W)}" height="${n(F)}" fill="url(#wallShade)"/>`);
+  // A plinth along the foot of the wall.
+  const plinth = Math.min(4, F * 0.12);
+  p.add(`<rect x="${n(x + 0.6)}" y="${n(yb - plinth)}" width="${n(W - 1.2)}" height="${n(plinth - 0.6)}" fill="${shade(wall, 0.72)}"/>`);
+  const roofPts: [number, number][] = [[x, yb - F], [x + W, yb - F], [x + W + S, yb - F - D], [x + S, yb - F - D]];
+  p.poly(roofPts, roof);
+  p.add(`<polygon points="${pts(roofPts)}" fill="url(#roofShade)"/>`);
+  // Parapet edge catching the light.
+  p.line(x + 1, yb - F - 0.8, x + W - 1, yb - F - 0.8, shade(roof, 1.35), 1.1);
   return { top: yb - F, back: yb - F - D };
 }
 
@@ -132,16 +157,21 @@ function windows(p: Pic, x: number, y: number, W: number, F: number, rows: numbe
     for (let c = 0; c < cols; c++) {
       const wx = x + 2 + c * step + (step - ww) / 2;
       if (o.skipDoor != null && row === rows - 1 && Math.abs(wx + ww / 2 - o.skipDoor) < 9) continue;
-      p.rect(wx, wy, ww, wh, glass, { line: false });
-      p.add(`<rect x="${n(wx)}" y="${n(wy)}" width="${n(ww)}" height="${n(wh)}" fill="none" stroke="${INK}" stroke-width="0.9"/>`);
-      p.rect(wx + 0.8, wy + 0.8, 1.6, wh - 1.6, "#ffffff", { line: false, op: 0.45 });
+      // Framed glass with a sill and a sky reflection.
+      p.rect(wx, wy, ww, wh, o.glass ? glass : "url(#glass)", { line: false });
+      p.add(`<rect x="${n(wx)}" y="${n(wy)}" width="${n(ww)}" height="${n(wh)}" fill="none" stroke="#f6f1e7" stroke-width="0.9"/><rect x="${n(wx - 0.4)}" y="${n(wy - 0.4)}" width="${n(ww + 0.8)}" height="${n(wh + 0.8)}" fill="none" stroke="${INK}" stroke-width="0.5" opacity="0.7"/>`);
+      p.add(`<path d="M${n(wx + 0.8)} ${n(wy + wh * 0.7)} L${n(wx + ww * 0.7)} ${n(wy + 0.8)}" stroke="#ffffff" stroke-width="1" opacity="0.5"/>`);
+      p.rect(wx - 0.8, wy + wh, ww + 1.6, 1.2, "#efe8da", { line: false });
       p.light(wx, wy, ww, wh);
     }
   }
 }
 
 function door(p: Pic, cx: number, yb: number, w = 8, h = 11, fill = "#7c4a24") {
+  p.rect(cx - w / 2 - 1.2, yb - h - 1.2, w + 2.4, h + 1.2, "#efe8da", { line: false });
+  p.rect(cx - w / 2 - 2, yb - 1, w + 4, 2, "#cfc6b5", { line: false });
   p.rect(cx - w / 2, yb - h, w, h, fill);
+  p.rect(cx - w / 2 + 1.2, yb - h + 1.2, w - 2.4, h * 0.4, shade(fill, 1.2), { line: false, op: 0.6 });
   p.circle(cx + w / 2 - 2, yb - h / 2, 0.7, "#e6b53a", false);
 }
 
@@ -803,7 +833,7 @@ export function buildingArt(kind: ArtKind, o: BuildingArtOpts): BuildingArt {
   const H = Math.ceil(o.h + (rise[kind] ?? 30));
   const p = new Pic(o.w, H, rng(o.seed));
   DRAW[kind](p, o);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${o.w} ${H}" width="${o.w}" height="${H}">${p.parts.join("")}</svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${o.w} ${H}" width="${o.w}" height="${H}">${DEFS}${p.parts.join("")}</svg>`;
   const lights = p.lights.length ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${o.w} ${H}" width="${o.w}" height="${H}">${p.lights.join("")}</svg>` : "";
   return { svg, lights, width: o.w, height: H };
 }

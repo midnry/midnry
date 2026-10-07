@@ -352,7 +352,7 @@ export type Figure = Phaser.GameObjects.Container & {
 
 const FEET = 10; // feet sit this many pixels below the figure's position
 /** New bodies are drawn taller (natural proportions); this keeps people the same size on screen. */
-const NORM = 0.72;
+const NORM = 0.8;
 
 /** A person. `unit` is pixels per drawing unit: about 0.2 for people, smaller for crowds. */
 export function figure(scene: Phaser.Scene, x: number, y: number, person: Person, opts: { name?: string; nameColor?: string; unit?: number } = {}): Figure {
@@ -553,7 +553,7 @@ function animate(f: Figure, time: number, motion: Motion) {
 
 // ── City buildings (systems/city): one texture per look, plus its lit windows ─
 
-const BRES = 1.5;
+const BRES = 2.2;
 
 /** The texture for a lot's building: lots that look alike share one. */
 export const lotKey = (l: Lot) => `bld_${l.def}_${l.w}x${l.h}_${l.floors}_${l.palette}_${l.seed % 3}${lotLabel(l) ? `_${lotLabel(l)!.replace(/\W/g, "")}` : ""}`;
@@ -970,7 +970,11 @@ export function signpost(scene: Phaser.Scene, x: number, y: number, name: string
   ring.lineStyle(4.5, 0xffb547, 0.35).strokeEllipse(0, 0, 56, 18);
   ring.lineStyle(2, 0xffd27a, 0.95).strokeEllipse(0, 0, 54, 17);
   scene.tweens.add({ targets: ring, scaleX: 1.07, scaleY: 1.07, alpha: 0.7, duration: 1300, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
-  const c = scene.add.container(x, y, [g, glyph, text]).setDepth(5 + (y + ground) / 10000) as Phaser.GameObjects.Container & { ring: typeof ring };
+  // Boards stand a little taller than a person, no more.
+  const c = scene.add.container(x, y, [g, glyph, text]).setScale(0.82).setDepth(5 + (y + ground) / 10000) as Phaser.GameObjects.Container & { ring: typeof ring };
+  g.setPosition(0, ground * 0.22);
+  glyph.y += ground * 0.22;
+  text.y += ground * 0.22;
   c.ring = ring;
   const setVisible = c.setVisible.bind(c);
   c.setVisible = (v: boolean) => {
