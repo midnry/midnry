@@ -4,7 +4,7 @@ import { furnitureSvg } from "../systems/furniture";
 import { building as buildingDef } from "../systems/city/catalog";
 import { buildingArt } from "../systems/city/buildingArt";
 import { lotLabel, type Lot } from "../systems/city/layout";
-import { FLEET, vehicleBox, vehicleKey, vehicleSvg, type VehicleKind, type VehicleStyle, type VehicleView } from "../systems/vehicles";
+import { FLEET, vehicleBox, vehicleKey, vehicleSvg, vehicleSvgLeft, type VehicleKind, type VehicleStyle, type VehicleView } from "../systems/vehicles";
 
 // Cartoon art drawn in code: bold dark outlines, flat colours, one shade.
 // Every look is a texture key, so real sprite sheets can replace any of them
@@ -127,6 +127,13 @@ export function queueVehicles(scene: Phaser.Scene) {
       urls.push(url);
       scene.load.svg(key, url);
     }
+    const left = vehicleSvgLeft(v.kind, v.color, VRES);
+    const key = `${vehicleKey(v)}_sideL`;
+    if (left && !scene.textures.exists(key)) {
+      const url = URL.createObjectURL(new Blob([left], { type: "image/svg+xml" }));
+      urls.push(url);
+      scene.load.svg(key, url);
+    }
   }
   if (urls.length) scene.load.once("complete", () => urls.forEach((url) => URL.revokeObjectURL(url)));
 }
@@ -144,11 +151,16 @@ export function vehicle(scene: Phaser.Scene, x: number, y: number, style: Vehicl
 /** Show the side that faces the viewer: side on when driving across, front or back when driving down or up. */
 export function faceVehicle(v: Vehicle, dx: number, dy: number) {
   const view: VehicleView = Math.abs(dx) >= Math.abs(dy) ? "side" : dy > 0 ? "front" : "back";
-  if (view !== v.view) {
+  // Facing left: a mirrored drawing, unless it has writing on it that would read backwards.
+  const left = view === "side" && dx < 0;
+  const key = `${vehicleKey(v.style)}_${view}`;
+  const lettered = left && v.scene.textures.exists(`${key}L`);
+  const texture = lettered ? `${key}L` : key;
+  if (view !== v.view || v.texture.key !== texture) {
     v.view = view;
-    v.setTexture(`${vehicleKey(v.style)}_${view}`).setOrigin(0.5, vehicleBox(v.style.kind, view).groundY);
+    v.setTexture(texture).setOrigin(0.5, vehicleBox(v.style.kind, view).groundY);
   }
-  v.setFlipX(view === "side" && dx < 0);
+  v.setFlipX(left && !lettered);
 }
 
 /** Who to draw: a look and a body (a grown-up, a kid, or a life stage). */
@@ -197,6 +209,9 @@ export function queueCharacters(scene: Phaser.Scene, people: Person[]) {
 }
 
 /** Add people after loading (a crowd that grows as you explore): textures arrive, then `ready` runs. */
+/** Whether a person's textures are loaded yet. */
+export const characterReady = (scene: Phaser.Scene, p: Person) => scene.textures.exists(`${charKey(p)}_front`);
+
 export function loadCharacters(scene: Phaser.Scene, people: Person[], ready: () => void) {
   const missing = people.filter((p) => !scene.textures.exists(`${charKey(p)}_front`));
   if (!missing.length) return ready();

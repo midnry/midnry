@@ -103,8 +103,8 @@ export function lotInfo(s: GameState | null, id: string): LotInfo | null {
     const od = building(other.def)!;
     const d = dist(lot, other);
     for (const p of od.provides ?? []) if (d <= p.radius) reach.add(p.service);
-    if (other !== lot && od.pollution) pollution += od.pollution * Math.max(0, 1 - d / 520);
-    if (od.attract) attract += od.attract * Math.max(0, 1 - d / 650);
+    if (other !== lot && od.pollution) pollution += od.pollution * 0.55 * Math.max(0, 1 - d / 420);
+    if (od.attract) attract += od.attract * 0.6 * Math.max(0, 1 - d / 520);
   }
   pollution = Math.min(10, pollution + (def.pollution ?? 0) * 0.5);
   attract = Math.min(10, attract);

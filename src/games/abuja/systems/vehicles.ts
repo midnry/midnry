@@ -251,7 +251,7 @@ function workVehicle(kind: VehicleKind, color: string, view: VehicleView): strin
       ? shape(`M18 30 Q14 12 40 10 L${cabX - 16} 14 Q${cabX - 4} 30 ${cabX - 16} 50 L40 54 Q14 52 18 30 Z`, w.body) + `<path d="M40 14 L50 50 M70 12 L80 52 M100 12 L110 52" ${thin(bodyD, 2.4)}/>`
       : kind === "police"
         ? ""
-        : shape(`M10 70 L10 10 Q10 4 16 4 L${cabX - 2} 4 L${cabX - 2} 70 Z`, w.body) + `<text x="${kind === "ambulance" ? (cabX + 50) / 2 : (cabX + 8) / 2}" y="36" font-family="Arial, sans-serif" font-size="13" font-weight="800" text-anchor="middle" fill="${w.labelColor}">${w.label}</text>` + `<path d="M10 54 L${cabX - 2} 54" ${thin(bodyD, 3)}/>`;
+        : shape(`M10 70 L10 10 Q10 4 16 4 L${cabX - 2} 4 L${cabX - 2} 70 Z`, w.body) + `<text x="${kind === "ambulance" ? (cabX + 44) / 2 : (cabX + 8) / 2}" y="36" font-family="Arial, sans-serif" font-size="${kind === "ambulance" ? 11 : 13}" font-weight="800" text-anchor="middle" fill="${w.labelColor}">${w.label}</text>` + `<path d="M10 54 L${cabX - 2} 54" ${thin(bodyD, 3)}/>`;
     if (kind === "police") return car("#f8fafc", "side", false).replace(/<\/svg>/, "") + `<rect x="15" y="46" width="150" height="8" fill="${w.cab}"/><text x="96" y="53" font-family="Arial, sans-serif" font-size="7" font-weight="800" text-anchor="middle" fill="#fff">POLICE</text>` + lightbar(78, 3, 24);
     return (
       shadow(L / 2, 84, L / 2 - 8) +
@@ -304,6 +304,18 @@ export function vehicleSvg(kind: VehicleKind, color: string, view: VehicleView, 
   const [x, y, w, h] = BOXES[kind][view];
   const inner = WORK[kind] ? workVehicle(kind, color, view) : kind === "car" || kind === "taxi" ? car(color, view, kind === "taxi") : kind === "okada" ? okada(color, view) : kind === "keke" ? keke(color, view) : cityBus(color, view);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}" width="${(w * scale).toFixed(1)}" height="${(h * scale).toFixed(1)}">${inner}</svg>`;
+}
+
+/**
+ * The side view facing left, for vehicles with writing on them: the body is
+ * mirrored but the lettering still reads the right way round.
+ */
+export function vehicleSvgLeft(kind: VehicleKind, color: string, scale = 1): string | null {
+  const [x, y, w, h] = BOXES[kind].side;
+  const inner = WORK[kind] ? workVehicle(kind, color, "side") : kind === "car" || kind === "taxi" ? car(color, "side", kind === "taxi") : kind === "okada" ? okada(color, "side") : kind === "keke" ? keke(color, "side") : cityBus(color, "side");
+  if (!inner.includes("<text")) return null;
+  const unflipped = inner.replace(/<text x="([\d.]+)"[^>]*>[^<]*<\/text>/g, (t, tx: string) => `<g transform="translate(${Number(tx) * 2} 0) scale(-1 1)">${t}</g>`);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x} ${y} ${w} ${h}" width="${(w * scale).toFixed(1)}" height="${(h * scale).toFixed(1)}"><g transform="translate(${2 * x + w} 0) scale(-1 1)">${unflipped}</g></svg>`;
 }
 
 /** Size of a view in drawing units, and the ground line as a fraction of its height (for the sprite origin). */

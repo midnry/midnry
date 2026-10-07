@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ZONE_COLORS, ZONE_LABEL, type ArtKind } from "../systems/city/catalog";
+import { ACTIVITY_LABEL, ageOn, doing, isOut, lotPeople } from "../systems/city/citizens";
 import { lotInfo, redevelopCost, redevelopOptions, upgradeCost } from "../systems/city/sim";
 import { buyProperty, lotAction, redevelopProperty, sellProperty, upgradeProperty } from "../systems/engine";
 import type { RoomType } from "../systems/rooms";
@@ -83,7 +84,7 @@ export function LotPanel({ state, lotId, onClose, onEnter }: { state: GameState;
         ) : null}
         {info.jobs ? (
           <div className="rounded-xl bg-white/5 p-2">
-            <dt className="text-slate-400">Staff</dt>
+            <dt className="text-slate-400">Jobs</dt>
             <dd className="text-base font-semibold">{info.jobs}</dd>
           </div>
         ) : null}
@@ -129,6 +130,8 @@ export function LotPanel({ state, lotId, onClose, onEnter }: { state: GameState;
         {info.area} {info.pollution >= 2 ? `Pollution ${info.pollution}/10.` : ""} {info.attract >= 2 ? `Attractiveness ${info.attract}/10.` : ""}
       </p>
       {def.provides?.length ? <p className="mt-1 text-xs text-sky-200">Provides {def.provides.map((x) => SERVICE_LABEL[x.service] ?? x.service).join(", ")} to the area around it.</p> : null}
+
+      <People state={state} lotId={lotId} category={def.category} defId={def.id} />
 
       <div className="mt-3 grid gap-2">
         {canEnter && room ? (
@@ -200,5 +203,53 @@ export function LotPanel({ state, lotId, onClose, onEnter }: { state: GameState;
         </section>
       ) : null}
     </div>
+  );
+}
+
+/** What the visitors are called at each kind of place. */
+const VISITOR_WORD: Record<string, string> = { school: "Pupils in class", clinic: "Patients", hospital_bld: "Patients", park: "People enjoying it", playground: "Kids playing", mosque: "Worshippers", church: "Worshippers", library: "Readers" };
+
+/** The people of the city connected to this building, and where they are right now. */
+function People({ state, lotId, category, defId }: { state: GameState; lotId: string; category: string; defId: string }) {
+  const { residents, staff, onShift, visitors } = lotPeople(lotId, state.day, state.slot);
+  if (!residents.length && !staff.length && !visitors.length) return null;
+  const home = residents.filter((r) => r.plan.lot === lotId).length;
+  const commuters = staff.filter((c) => isOut(c.home)).length;
+  const towns = [...new Set(staff.filter((c) => isOut(c.home)).map((c) => c.home.slice(4)))].slice(0, 3);
+  const row = (key: string, name: string, age: number, what: string, status: string, here: boolean) => (
+    <li key={key} className="flex items-baseline justify-between gap-2 py-1">
+      <span className="min-w-0 truncate">
+        <span className="font-semibold">{name}</span>
+        <span className="text-slate-400">
+          , {age} · {what}
+        </span>
+      </span>
+      <span className={`shrink-0 text-[11px] ${here ? "text-emerald-300" : "text-slate-400"}`}>{status}</span>
+    </li>
+  );
+  return (
+    <section className="mt-3 rounded-xl border border-white/10 bg-white/[0.04] p-3 text-xs">
+      <p className="text-sm font-semibold">👥 People you might meet</p>
+      <p className="mt-0.5 text-slate-400">
+        {[
+          residents.length ? `${home} of ${residents.length} residents home` : "",
+          staff.length ? `${onShift.length} of ${staff.length} staff on shift` : "",
+          visitors.length ? `${VISITOR_WORD[defId] ?? (category === "residential" ? "Guests" : category === "commercial" ? "Customers" : "Visitors")} from nearby: ${visitors.length}` : "",
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      </p>
+      {commuters ? (
+        <p className="mt-0.5 text-slate-400">
+          {commuters} of the staff commute in from {towns.join(", ")}
+          {towns.length < 3 ? "" : " and further"}.
+        </p>
+      ) : null}
+      <ul className="mt-1.5 divide-y divide-white/5">
+        {residents.slice(0, 5).map(({ c, plan }) => row(c.id, c.name, ageOn(c, state.day), c.occupation, plan.lot === lotId ? "home" : doing(c, plan), plan.lot === lotId))}
+        {onShift.slice(0, residents.length ? 2 : 4).map((c) => row(c.id, c.name, ageOn(c, state.day), c.occupation, "working", true))}
+        {visitors.slice(0, residents.length ? 2 : 3).map(({ c, activity }) => row(c.id, c.name, ageOn(c, state.day), c.occupation, ACTIVITY_LABEL[activity], true))}
+      </ul>
+    </section>
   );
 }

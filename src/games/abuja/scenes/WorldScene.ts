@@ -17,6 +17,7 @@ import type { GameState, MapRect } from "../systems/types";
 import { lotDoor } from "../systems/city/layout";
 import { drawBridge, drawMedians, drawRail, drawStreetFurniture, makeDecorTextures, zoneOverlay } from "./cityDecor";
 import { lotsFor } from "../systems/city/sim";
+import { CityLife, crowdStarters } from "./cityLife";
 import { building as buildingInfo } from "../systems/city/catalog";
 import { fullLook, lookKey, randomLook, stageOf, type Look } from "../systems/character";
 import { INK, animateWalk, pose, building, placeBuilding, queueBuildings, faceVehicle, figure, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
@@ -38,7 +39,6 @@ const title = (scene: Phaser.Scene, x: number, y: number, text: string, size = 1
 // Who's who: the same person always looks the same.
 const personOf = personLook;
 const playerOf = (state: GameState | null): Person => ({ look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18, stage: stageOf(state?.age ?? 0) });
-const WALKERS: Person[] = Array.from({ length: 8 }, (_, i) => ({ look: randomLook(i * 131 + 7), adult: i % 4 !== 3 }));
 const POLICE_LOOK: Look = randomLook(4242, {
   top: "shirt",
   topColor: "#1e3a8a",
@@ -131,7 +131,8 @@ export class WorldScene extends Phaser.Scene {
   private lastBlocked = 0;
   private placeMarkers: { id: string; marker: Phaser.GameObjects.Container }[] = [];
   private people: (Interactable & { body: Figure; home: { x: number; y: number }; vx: number; vy: number })[] = [];
-  private walkers: { sprite: Figure; axis: "x" | "y"; speed: number }[] = [];
+  /** The city's people going about their day near the camera. */
+  private life: CityLife | null = null;
   private cars: { body: Vehicle; axis: "x" | "y"; speed: number; kind: HitBy }[] = [];
   /** The ride you're on: your vehicle, the road route and how far along it you are. */
   private riding: { car: Vehicle; tag: Phaser.GameObjects.Text; route: { x: number; y: number }[]; leg: number; speed: number; drop: { x: number; y: number } } | null = null;
@@ -181,7 +182,7 @@ export class WorldScene extends Phaser.Scene {
     const mapId = state ? mapIdFor(state) : "city";
     const people: Person[] = [playerOf(state)];
     if (state) people.push(...peopleOn(state, mapId).map(personOf));
-    if (mapId === "city") people.push(...WALKERS, POLICE);
+    if (mapId === "city") people.push(...crowdStarters(state?.day ?? 0), POLICE);
     queueCharacters(this, people);
     if (mapId === "city") {
       queueVehicles(this);
@@ -192,8 +193,13 @@ export class WorldScene extends Phaser.Scene {
       .text(this.scale.width / 2, this.scale.height / 2, "Getting Abuja ready…", { fontFamily: "system-ui, sans-serif", fontSize: "16px", fontStyle: "bold", color: "#ffffff" })
       .setOrigin(0.5)
       .setScrollFactor(0);
-    this.load.on("progress", (p: number) => note.setText(`Getting Abuja ready… ${Math.round(p * 100)}%`));
-    this.load.once("complete", () => note.destroy());
+    // Only for the first load: people's clothes are drawn later as they appear.
+    const progress = (p: number) => note.setText(`Getting Abuja ready… ${Math.round(p * 100)}%`);
+    this.load.on("progress", progress);
+    this.load.once("complete", () => {
+      this.load.off("progress", progress);
+      note.destroy();
+    });
   }
 
   create() {
@@ -208,7 +214,7 @@ export class WorldScene extends Phaser.Scene {
     this.solids = [...solidsFor(this.mapId)];
     this.placeMarkers = [];
     this.people = [];
-    this.walkers = [];
+    this.life = null;
     this.cars = [];
     this.police = [];
     this.frscPosts = [];
@@ -349,7 +355,7 @@ export class WorldScene extends Phaser.Scene {
     this.near = null;
     bus.emit("near", null);
     // Development only: lets automated browser tests move the player.
-    if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y), hit: (by: HitBy) => bump(by) };
+    if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y), hit: (by: HitBy) => bump(by), crowd: () => this.life?.count ?? 0, crowdAt: () => this.life?.positions ?? [] };
   }
 
   private cityIdOf(state: GameState | null) {
@@ -449,7 +455,9 @@ export class WorldScene extends Phaser.Scene {
     this.drawSolids();
     this.drawPlaces();
     const lots = lotsFor(getState());
-    this.seats = drawStreetFurniture(this, this.solids, lots).seats;
+    const furniture = drawStreetFurniture(this, this.solids, lots);
+    this.seats = furniture.seats;
+    this.life = new CityLife(this, lots, this.solids, furniture.stops, this.seats, sizeOf(this.mapId));
     this.zones = zoneOverlay(this, lots);
     this.drawProps(260);
     this.drawLamps();
@@ -630,14 +638,6 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private spawnTraffic() {
-    for (let i = 0; i < 26; i += 1) {
-      const axis = i % 2 ? "x" : "y";
-      const side = i % 4 < 2 ? 1 : -1;
-      const line = (axis === "x" ? ROADS.ys[i % ROADS.ys.length]! : ROADS.xs[i % ROADS.xs.length]!) + side * 31;
-      const pos = Math.random() * (axis === "x" ? WORLD.width : WORLD.height);
-      const sprite = figure(this, axis === "x" ? pos : line, axis === "x" ? line : pos, WALKERS[i % WALKERS.length]!, { unit: 0.17 });
-      this.walkers.push({ sprite, axis, speed: (Math.random() < 0.5 ? -1 : 1) * (25 + Math.random() * 25) });
-    }
     for (let i = 0; i < 26; i += 1) {
       const axis = i % 2 ? "x" : "y";
       const style = FLEET[(i * 7) % FLEET.length]!;
@@ -1106,15 +1106,8 @@ export class WorldScene extends Phaser.Scene {
       this.boat.setPosition(LAKE.x + Math.cos(t) * LAKE.rx * 0.55, LAKE.y + Math.sin(t) * LAKE.ry * 0.5);
       this.boat.setFlipX(Math.sin(t) > 0);
     }
-    for (const w of this.walkers) {
-      const max = w.axis === "x" ? WORLD.width : WORLD.height;
-      const next = (w.axis === "x" ? w.sprite.x : w.sprite.y) + w.speed * dt;
-      const wrapped = next < 0 ? max : next > max ? 0 : next;
-      if (w.axis === "x") w.sprite.x = wrapped;
-      else w.sprite.y = wrapped;
-      w.sprite.setDepth(5 + w.sprite.y / 10000);
-      animateWalk(w.sprite, time, true, w.axis === "x" ? w.speed : 0, w.axis === "y" ? w.speed : 0);
-    }
+    const state = getState();
+    if (this.life && state && this.player) this.life.update(time, dt, state, this.player);
     for (const car of this.cars) {
       const max = (car.axis === "x" ? WORLD.width : WORLD.height) + 60;
       const next = (car.axis === "x" ? car.body.x : car.body.y) + car.speed * dt;

@@ -200,8 +200,10 @@ export function drawBridge(scene: Phaser.Scene) {
 }
 
 /** Things to see and use along the streets. Returns benches (you can sit on them) and new solids. */
-export function drawStreetFurniture(scene: Phaser.Scene, solids: MapRect[], lots: Lot[]): { seats: { x: number; y: number }[] } {
+export function drawStreetFurniture(scene: Phaser.Scene, solids: MapRect[], lots: Lot[]): { seats: { x: number; y: number }[]; stops: { x: number; y: number }[] } {
   const seats: { x: number; y: number }[] = [];
+  /** Where people stand to wait for the bus. */
+  const stops: { x: number; y: number }[] = [];
   const r = rand(9090);
   const clearOf = (x: number, y: number, rad: number) => !solids.some((s) => x > s.x - rad && x < s.x + s.w + rad && y > s.y - rad && y < s.y + s.h + rad) && !lots.some((l) => x > l.x - rad && x < l.x + l.w + rad && y > l.y - 20 && y < l.y + l.h + rad);
   const awayFromJunction = (v: number, list: number[]) => list.every((c) => Math.abs(v - c) > 90);
@@ -223,7 +225,7 @@ export function drawStreetFurniture(scene: Phaser.Scene, solids: MapRect[], lots
         const px = x + side * 31;
         if (kind === "bench" && put("bench", px, y, 0.9)) seats.push({ x: px, y: y + 6 });
         if (kind === "bin") put("bin", px, y);
-        if (kind === "busstop") put("busstop", x + side * 52, y + 10, 0.8, { w: 34, h: 8 });
+        if (kind === "busstop" && put("busstop", x + side * 52, y + 10, 0.8, { w: 34, h: 8 })) stops.push({ x: x + side * 31, y: y + 16 });
         if (kind === "billboard") {
           const bx = x + side * 60;
           if (put(`billboard${ad % ADS.length}`, bx, y, 0.9, { w: 40, h: 8 })) {
@@ -242,7 +244,7 @@ export function drawStreetFurniture(scene: Phaser.Scene, solids: MapRect[], lots
         const py = y + side * 31 + (side > 0 ? 8 : 0);
         if (kind === "bench" && put("bench", x, py, 0.9)) seats.push({ x, y: py + 6 });
         if (kind === "bin") put("bin", x + 20, py);
-        if (kind === "busstop") put("busstop", x, y + side * 50 + (side > 0 ? 16 : 0), 0.8, { w: 34, h: 8 });
+        if (kind === "busstop" && put("busstop", x, y + side * 50 + (side > 0 ? 16 : 0), 0.8, { w: 34, h: 8 })) stops.push({ x: x + 24, y: y + side * 31 + (side > 0 ? 14 : 0) });
       }
     }
   }
@@ -264,7 +266,7 @@ export function drawStreetFurniture(scene: Phaser.Scene, solids: MapRect[], lots
     if (def?.art === "park") seats.push({ x: l.x + l.w * 0.26, y: l.y + l.h - l.h * 0.35 + 8 }, { x: l.x + l.w * 0.71, y: l.y + l.h - l.h * 0.55 + 8 });
   }
   void r;
-  return { seats };
+  return { seats, stops };
 }
 
 /** Coloured zones over the map, shown while you explore. */
