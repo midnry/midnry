@@ -232,12 +232,11 @@ export class WorldScene extends Phaser.Scene {
     queueCharacters(this, people);
     if (mapId === "city") {
       queueVehicles(this);
-      // Only the buildings around you hold up the start; the rest stream in afterwards (streamLots).
+      // Only the buildings around you hold up the start; the rest load block by block (wakeBlocks).
       const at = carry?.mapId === mapId ? carry : state?.pos.x ? state.pos : { x: PLACES[0]!.x, y: PLACES[0]!.y };
       this.focus = { x: at.x, y: at.y };
       queueBuildings(this, lotsFor(state).filter((l) => Math.abs(l.x + l.w / 2 - at.x) < NEAR_LOTS && Math.abs(l.y + l.h / 2 - at.y) < NEAR_LOTS));
     }
-
   }
 
   create() {
