@@ -1,6 +1,7 @@
 import { LoadingScreen } from "./LoadingScreen";
+import { GameLoadingContext } from "./loading-context";
 import { myLooks } from "../systems/painted";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Brain, CarFront, ChevronRight, DoorOpen, Droplet, Hand, Heart, LocateFixed, Map as MapIcon, MapPin, MessageCircle, Minus, Moon, Pause, Play, Plus, Search, Siren, Smartphone, SquareParking, Star, Utensils, Zap } from "lucide-react";
 import type { Game as PhaserGame } from "phaser";
 import { EVENTS, chapter, place } from "../systems/data";
@@ -71,7 +72,8 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const [inside, setInside] = useState<RoomInfo | null>(null);
   const insideRef = useRef<RoomInfo | null>(null);
   const [loading, setLoading] = useState<{ title: string; icon: string; progress?: number; error?: string } | null>({ title: "Loading your next chapter", icon: "✦" });
-  const isLoading = Boolean(loading);
+  const presentedLoading = useContext(GameLoadingContext)?.visible ?? false;
+  const isLoading = Boolean(loading) || presentedLoading;
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scheduleTransition = (action: () => void) => {
     if (transitionTimer.current) clearTimeout(transitionTimer.current);
@@ -80,7 +82,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   };
   const enterRoom = (info: RoomInfo) => {
     const g = game.current;
-    if (!g || insideRef.current || loading) return;
+    if (!g || insideRef.current || isLoading) return;
     setLoading({ title: `Entering ${info.name}`, icon: ROOM_ICON[info.type] });
     setOpen(null);
     setTalking(null);
@@ -93,7 +95,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   };
   const leaveRoom = () => {
     const g = game.current;
-    if (!g || !insideRef.current || loading) return;
+    if (!g || !insideRef.current || isLoading) return;
     setLoading({ title: "Heading back outside", icon: "🚪" });
     setOpen(null);
     setTalking(null);
@@ -107,7 +109,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   /** Through a door inside a home: bedroom, bathroom, or back to the living room. */
   const switchRoom = (info: RoomInfo) => {
     const g = game.current;
-    if (!g || !insideRef.current || loading) return;
+    if (!g || !insideRef.current || isLoading) return;
     setLoading({ title: info.parent ? `Into the ${info.name.toLowerCase()}` : `Back to ${info.name}`, icon: ROOM_ICON[info.type] });
     setOpen(null);
     setTalking(null);
@@ -205,10 +207,10 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
 
   // The world stands still while the pause menu is open. Esc or P toggles it.
   useEffect(() => {
-    input.paused = paused || wardrobe || Boolean(negotiation) || Boolean(kitchenOpen) || Boolean(loading);
+    input.paused = paused || wardrobe || Boolean(negotiation) || Boolean(kitchenOpen) || isLoading;
     input.x = 0;
     input.y = 0;
-  }, [paused, wardrobe, negotiation, kitchenOpen, loading]);
+  }, [paused, wardrobe, negotiation, kitchenOpen, isLoading]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (isLoading) return;
@@ -236,7 +238,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const beat = currentBeat(state);
   const here = near && near.kind === "place" ? place(near.id) : undefined;
   const panelOpen = Boolean(here && open === here.id);
-  const showEnter = near && !lotOpen && !loading && !exploring && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
+  const showEnter = near && !lotOpen && !isLoading && !exploring && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#05070c] text-slate-100 select-none">
@@ -396,7 +398,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         <button
           type="button"
           onClick={() => setPhone("map")}
-          className={`${actionBtn} absolute right-4 bottom-[6.25rem] z-10 border border-blue-300/40 bg-gradient-to-b from-[#3b82f6] to-[#2563eb] text-white hover:brightness-110`}
+          className={`${actionBtn} absolute right-4 bottom-[6.25rem] z-10 border border-blue-300/40 bg-gradient-to-b from-[#285949] to-[#163c37] text-white hover:brightness-110`}
           style={{ fontFamily: GAME_FONT }}
           aria-label="Get a ride"
         >
@@ -479,7 +481,7 @@ function MapButton({ label, active, onClick, children }: { label: string; active
       title={label}
       aria-pressed={active}
       onClick={onClick}
-      className={`${iconBtn} ${active ? "!bg-blue-600/95 ring-2 ring-blue-300/60" : ""}`}
+      className={`${iconBtn} ${active ? "!bg-[#23624f]/95 ring-2 ring-blue-300/60" : ""}`}
     >
       {children}
     </button>

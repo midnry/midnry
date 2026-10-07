@@ -238,9 +238,9 @@ export class WorldScene extends Phaser.Scene {
 
     const start = this.startPoint();
     this.player = this.makePlayer(start.x, start.y);
-    this.beatMarker = this.makeMarker(0x3b82f6, "!");
+    this.beatMarker = this.makeMarker(0x70d3ad, "!");
     this.taskMarker = this.makeMarker(0x38bdf8, "★");
-    this.arrow = this.add.triangle(0, 0, 0, -12, 9, 8, -9, 8, 0x3b82f6).setDepth(20).setVisible(false);
+    this.arrow = this.add.triangle(0, 0, 0, -12, 9, 8, -9, 8, 0x70d3ad).setDepth(20).setVisible(false);
     this.night = this.add.rectangle(0, 0, 4000, 4000, 0x0b1330, 0).setOrigin(0).setScrollFactor(0).setDepth(30);
     // Warm sunlight over everything by day, and a soft vignette to pull the eye to the middle.
     this.sun = this.add.rectangle(0, 0, 4000, 4000, 0xffc978, 0).setOrigin(0).setScrollFactor(0).setDepth(29.5);
@@ -854,7 +854,7 @@ export class WorldScene extends Phaser.Scene {
   private makeMarker(tint: number, glyph: string) {
     const ring = this.add.circle(0, 0, 34, tint, 0.2).setStrokeStyle(3, tint, 1);
     const sign = this.add
-      .text(0, -62, glyph, { fontFamily: "system-ui", fontSize: "28px", fontStyle: "bold", color: "#ffffff", stroke: "#05070c", strokeThickness: 3, backgroundColor: Phaser.Display.Color.IntegerToColor(tint).rgba, padding: { x: 8, y: 2 } })
+      .text(0, -62, glyph, { fontFamily: "system-ui", fontSize: "28px", fontStyle: "bold", color: "#f7edda", stroke: "#05070c", strokeThickness: 3, backgroundColor: Phaser.Display.Color.IntegerToColor(tint).rgba, padding: { x: 8, y: 2 } })
       .setOrigin(0.5);
     this.tweens.add({ targets: sign, y: -72, duration: 600, yoyo: true, repeat: -1 });
     this.tweens.add({ targets: ring, scale: 1.3, alpha: 0.5, duration: 900, yoyo: true, repeat: -1 });
@@ -1172,7 +1172,7 @@ export class WorldScene extends Phaser.Scene {
     const angle = Math.atan2(dy, dx);
     this.arrow.setPosition(this.player.x + Math.cos(angle) * 64, this.player.y + Math.sin(angle) * 64);
     this.arrow.setRotation(angle + Math.PI / 2);
-    this.arrow.setFillStyle(step ? 0x38bdf8 : 0x3b82f6);
+    this.arrow.setFillStyle(step ? 0x38bdf8 : 0x70d3ad);
   }
 
   // ── Rides ─────────────────────────────────────────────────────────────────
