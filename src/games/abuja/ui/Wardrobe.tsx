@@ -4,13 +4,13 @@ import { changeLooks } from "../systems/engine";
 import type { GameState } from "../systems/types";
 import { Avatar } from "./Avatar";
 import { Dresser } from "./Dresser";
-import { PAINTED_OUTFITS, TONES, type Tone } from "../systems/painted";
+import { DRAWN, PAINTED_OUTFITS, TONES, playerPainted, type Tone } from "../systems/painted";
 import { btnGhost, btnPrimary } from "./theme";
 
 /** Change your style any time: same person, new fit. */
 export function WardrobePanel({ state, onDone }: { state: GameState; onDone: () => void }) {
   const [look, setLook] = useState<Look>(() => fullLook(state.looks));
-  const [painted, setPainted] = useState<string | undefined>(state.looks.painted);
+  const [painted, setPainted] = useState<string>(() => playerPainted(state) ?? DRAWN);
   const adult = state.age >= 18;
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-[140px_minmax(0,1fr)]">
@@ -28,7 +28,7 @@ export function WardrobePanel({ state, onDone }: { state: GameState; onDone: () 
           adult={adult}
           onChange={(next) => {
             // Picking a single piece switches back to the mix-and-match look.
-            setPainted(undefined);
+            setPainted(DRAWN);
             setLook(next);
           }}
         />
@@ -53,7 +53,7 @@ export function WardrobePanel({ state, onDone }: { state: GameState; onDone: () 
 }
 
 /** Hand-painted outfits: choose a build, a skin tone, then an outfit. */
-function PaintedGallery({ build, value, onChange }: { build: "masc" | "fem"; value?: string; onChange: (id: string | undefined) => void }) {
+function PaintedGallery({ build, value, onChange }: { build: "masc" | "fem"; value?: string; onChange: (id: string) => void }) {
   const current = PAINTED_OUTFITS.find((o) => o.id === value);
   const [b, setB] = useState<"masc" | "fem">(current?.build ?? build);
   const [tone, setTone] = useState<Tone>(current?.tone ?? "brown");
@@ -80,7 +80,7 @@ function PaintedGallery({ build, value, onChange }: { build: "masc" | "fem"; val
             <li key={o.id}>
               <button
                 type="button"
-                onClick={() => onChange(value === o.id ? undefined : o.id)}
+                onClick={() => onChange(value === o.id ? DRAWN : o.id)}
                 aria-pressed={value === o.id}
                 className={`flex w-full flex-col items-center rounded-xl border p-1.5 text-[11px] leading-tight ${value === o.id ? "border-blue-400 bg-blue-500/20" : "border-white/10 bg-black/20 hover:bg-white/10"}`}
               >

@@ -1,3 +1,4 @@
+import { myLooks } from "../systems/painted";
 import { useEffect, useRef, useState } from "react";
 import { Brain, CarFront, ChevronRight, DoorOpen, Droplet, Hand, Heart, LocateFixed, Map as MapIcon, MapPin, MessageCircle, Minus, Moon, Pause, Play, Plus, Search, Siren, Smartphone, SquareParking, Star, Utensils, Zap } from "lucide-react";
 import type { Game as PhaserGame } from "phaser";
@@ -816,7 +817,7 @@ function TalkModal({ state, personKey, onClose }: { state: GameState; personKey:
             return (
               <ReplyButton
                 key={choice.text}
-                looks={state.looks}
+                looks={myLooks(state)}
                 adult={adult}
                 disabled={Boolean(reason)}
                 note={reason}
@@ -829,12 +830,12 @@ function TalkModal({ state, personKey, onClose }: { state: GameState; personKey:
               </ReplyButton>
             );
           })}
-          <ReplyButton looks={state.looks} adult={adult} onClick={onClose}>
+          <ReplyButton looks={myLooks(state)} adult={adult} onClick={onClose}>
             {offer ? "Not now 👋" : "Bye 👋"}
           </ReplyButton>
           {state.flags[`insulted_${personKey}`] !== state.day ? (
             <ReplyButton
-              looks={state.looks}
+              looks={myLooks(state)}
               adult={adult}
               note="Costs reputation"
               onClick={() => {

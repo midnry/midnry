@@ -1,4 +1,5 @@
-import type { GameState } from "./types";
+import { SKIN_TONES, fullLook } from "./character";
+import type { GameState, Looks } from "./types";
 
 // Hand-painted art (public/abuja/people). Named city people have their own
 // sheets; the player can wear one of the painted outfits from the wardrobe.
@@ -22,11 +23,31 @@ export const PAINTED_OUTFITS: PaintedOutfit[] = (["masc", "fem"] as const).flatM
   READY[build].flatMap((tone) => (build === "masc" ? MASC : FEM).map((label, i) => ({ id: `you-${build === "masc" ? "m" : "f"}-${tone}-${i + 1}`, build, tone, label }))),
 );
 
-/** The painted outfit the player is wearing, if any (grown-ups only). */
-export function playerPainted(state: Pick<GameState, "looks" | "age"> | null): string | undefined {
-  const id = state?.looks?.painted;
-  return id && (state?.age ?? 0) >= 18 && PAINTED_OUTFITS.some((o) => o.id === id) ? id : undefined;
+/** `looks.painted` set to this means the player chose the mix-and-match drawn look. */
+export const DRAWN = "none";
+
+/** The painted outfit closest to a drawn look: same build, nearest skin tone, a similar kind of top. */
+export function autoOutfit(looks: Looks): string | undefined {
+  const look = fullLook(looks);
+  const i = SKIN_TONES.indexOf(look.skin);
+  const tone: Tone = i >= 0 ? (i <= 3 ? "light" : i <= 5 ? "brown" : "dark") : "brown";
+  const top = look.top;
+  const n = ["kaftan", "dress"].includes(top) ? 3 : ["blazer", "jacket"].includes(top) ? 4 : ["tee", "tank", "shirt"].includes(top) ? 2 : 1;
+  const id = `you-${look.build === "fem" ? "f" : "m"}-${tone}-${n}`;
+  return PAINTED_OUTFITS.some((o) => o.id === id) ? id : undefined;
 }
+
+/** The painted outfit the player wears (grown-ups only): their choice, or one matched to their look. */
+export function playerPainted(state: Pick<GameState, "looks" | "age"> | null): string | undefined {
+  if (!state?.looks || (state.age ?? 0) < 18) return undefined;
+  const id = state.looks.painted;
+  if (id === DRAWN) return undefined;
+  if (id && PAINTED_OUTFITS.some((o) => o.id === id)) return id;
+  return autoOutfit(state.looks);
+}
+
+/** The player's looks with the painted outfit filled in, for portraits in the interface. */
+export const myLooks = (state: Pick<GameState, "looks" | "age">): Looks => ({ ...state.looks, painted: playerPainted(state) ?? DRAWN });
 
 // ── Passers-by ──────────────────────────────────────────────────────────────
 

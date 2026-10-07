@@ -1,3 +1,4 @@
+import { myLooks } from "../systems/painted";
 import { ENDINGS, job } from "../systems/data";
 import { naira, netWorth } from "../systems/rules";
 import { partnerName } from "../systems/romance";
@@ -19,7 +20,7 @@ export function EndScreen({ state }: { state: GameState }) {
           <p className="mt-4 text-lg text-pretty text-slate-200">{ending.text}</p>
         </div>
         <div className="grid gap-6 p-6 sm:grid-cols-[auto_1fr] sm:p-8">
-          <Avatar looks={state.looks} size={110} adult={state.age >= 18} />
+          <Avatar looks={myLooks(state)} size={110} adult={state.age >= 18} />
           <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
             <dt className="text-slate-400">Started as</dt>
             <dd>{state.background === "lapo" ? "Lapo Baby" : "Average family"}</dd>
