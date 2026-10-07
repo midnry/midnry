@@ -142,7 +142,7 @@ export function crowdPainted(gender: "male" | "female", stage: CrowdStage, seed:
 }
 
 /** Painted people with hand-drawn walk cycles: 4 frames per view (<id>-walk-<view>-<n>.png). Others step by cut-out legs. */
-export const WALK_FRAMES = new Set<string>(["you-f-brown-1", "you-m-brown-1", "you-m-light-1", "you-m-light-2", "you-m-light-3", "you-m-light-4", "you-m-brown-2"]);
+export const WALK_FRAMES = new Set<string>(["you-f-brown-1", "you-m-brown-1", "you-m-light-1", "you-m-light-2", "you-m-light-3", "you-m-light-4", "you-m-brown-2", "you-m-brown-3", "you-m-brown-4", "you-m-dark-1", "you-m-dark-2", "you-m-dark-3"]);
 
 /** Named people from the school, university and camp chapters, with their heights against a grown-up. */
 export const STORY_ART: { id: string; scale: number }[] = [
