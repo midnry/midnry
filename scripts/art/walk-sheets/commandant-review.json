@@ -1,0 +1,46 @@
+{
+  "id": "commandant",
+  "original": "commandant-sheet-original.png",
+  "corrected": "commandant-sheet-corrected.png",
+  "original_sha256": "7f63c68394c29baa149a1fddba93f9dd7c35b8a4d485f29fd6649e18f89df80e",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated side heel-contact arm swing and incorrect side passing counter-swing; regenerated using a finished adult walk only as pose guide while retaining all three commandant appearance references.",
+      "source": "/workspace/generated_images/exec-a53dc347-9a31-4d5c-bf3b-fbc8fb90f6dd.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Unchanged walk cutter refused sheet: expected 4/4/4, got 4/4/3. Regenerate with clear row spacing and complete feet/bottom margin.",
+      "source": "/workspace/generated_images/exec-e73a00b7-719e-48b3-a5ed-8c76466101a5.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "commandant",
+      "view": "front",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 364,
+      "x0": 523,
+      "x1": 744,
+      "reflection_axis_twice": 1271
+    },
+    {
+      "id": "commandant",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1307,
+      "x0": 528,
+      "x1": 745,
+      "reflection_axis_twice": 1276
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
