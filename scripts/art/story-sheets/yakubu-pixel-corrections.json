@@ -1,0 +1,26 @@
+[
+  {
+    "view": "front",
+    "frame": 3,
+    "boundary_y": 421,
+    "region": [
+      421,
+      487,
+      583,
+      743
+    ],
+    "change": "Mirrored only this frame\u2019s existing exposed lower-leg and sandal pixels below the unchanged robe hem to reverse the repeated contact stride. Cane excluded from the edit. Blended eight source-pixel rows at ankle joins using existing ankle pixels; removed faint stray background in the edited regions. Robe, hem, face, beard, cap, body proportions, arms, hands and cane unchanged."
+  },
+  {
+    "view": "back",
+    "frame": 3,
+    "boundary_y": 1408,
+    "region": [
+      1408,
+      1476,
+      528,
+      718
+    ],
+    "change": "Mirrored only this frame\u2019s existing exposed lower-leg and sandal pixels below the unchanged robe hem to reverse the repeated contact stride. Cane excluded from the edit. Blended eight source-pixel rows at ankle joins using existing ankle pixels; removed faint stray background in the edited regions. Robe, hem, face, beard, cap, body proportions, arms, hands and cane unchanged."
+  }
+]

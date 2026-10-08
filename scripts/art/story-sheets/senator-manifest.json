@@ -1,0 +1,233 @@
+{
+  "id": "senator",
+  "walk_generation_attempt": 4,
+  "compression": "libimagequant maximum 256 colors, no dithering; highest quality target 70\u2013100 fitting 10 KiB; PNG optimize/compress_level=9 and lossless oxipng level 4",
+  "pixel_corrections": [],
+  "standing_canvas": "Shorter views padded at top to 220px; artwork proportions unchanged.",
+  "frames": [
+    {
+      "file": "senator-front.png",
+      "size": [
+        113,
+        220
+      ],
+      "mode": "P",
+      "colors": 91,
+      "bytes": 9168,
+      "rgba_bytes": 37337,
+      "quantization_quality_target": 80,
+      "sha256": "177604b994b42d789f54ef4a406f3ed57751e1547342ef5df4ca2151566a96ef"
+    },
+    {
+      "file": "senator-side.png",
+      "size": [
+        92,
+        220
+      ],
+      "mode": "P",
+      "colors": 144,
+      "bytes": 9236,
+      "rgba_bytes": 29124,
+      "quantization_quality_target": 85,
+      "sha256": "32b2f465d3e5bf0f65dca74b2722de055f7774815fddcece63f5b0c8ed568645"
+    },
+    {
+      "file": "senator-back.png",
+      "size": [
+        111,
+        220
+      ],
+      "mode": "P",
+      "colors": 106,
+      "bytes": 8815,
+      "rgba_bytes": 30614,
+      "quantization_quality_target": 85,
+      "sha256": "b87d6e5e3ae2afb067ffe970ff1370fed4ac58a7a83a0740a6c71cb72e7b2cb2"
+    },
+    {
+      "file": "senator-walk-front-1.png",
+      "size": [
+        120,
+        220
+      ],
+      "mode": "P",
+      "colors": 130,
+      "bytes": 10153,
+      "rgba_bytes": 35537,
+      "quantization_quality_target": 80,
+      "sha256": "92ce4f1ee37307a6ad9253d8f75d9c61a3096b0743a54e3618fa426286ef9da3"
+    },
+    {
+      "file": "senator-walk-front-2.png",
+      "size": [
+        112,
+        220
+      ],
+      "mode": "P",
+      "colors": 121,
+      "bytes": 9658,
+      "rgba_bytes": 35086,
+      "quantization_quality_target": 80,
+      "sha256": "3fb35b0d10787cef37532537dd27d54654742f891b8ff9a25ab217428358228b"
+    },
+    {
+      "file": "senator-walk-front-3.png",
+      "size": [
+        116,
+        220
+      ],
+      "mode": "P",
+      "colors": 116,
+      "bytes": 9808,
+      "rgba_bytes": 34986,
+      "quantization_quality_target": 80,
+      "sha256": "b5c3be4def0c23eddb7b7fa21c4aeafd4888ab32f1b261f9fe165ecc9ba045f4"
+    },
+    {
+      "file": "senator-walk-front-4.png",
+      "size": [
+        114,
+        220
+      ],
+      "mode": "P",
+      "colors": 126,
+      "bytes": 9792,
+      "rgba_bytes": 34899,
+      "quantization_quality_target": 80,
+      "sha256": "939c79a6ed33ba82220948d0a70e953f2ad0637179262916de1db52a0f597523"
+    },
+    {
+      "file": "senator-walk-side-1.png",
+      "size": [
+        144,
+        220
+      ],
+      "mode": "P",
+      "colors": 107,
+      "bytes": 9449,
+      "rgba_bytes": 34426,
+      "quantization_quality_target": 80,
+      "sha256": "11edce40fa19e41123a807deb9220bc240d54908c29a3a594d5dacfc362af282"
+    },
+    {
+      "file": "senator-walk-side-2.png",
+      "size": [
+        124,
+        220
+      ],
+      "mode": "P",
+      "colors": 112,
+      "bytes": 9365,
+      "rgba_bytes": 32830,
+      "quantization_quality_target": 80,
+      "sha256": "187afa82e2a654f2b0f5032984f8fe58ad9085c9d70bfeefe8e8207c2260d97c"
+    },
+    {
+      "file": "senator-walk-side-3.png",
+      "size": [
+        142,
+        220
+      ],
+      "mode": "P",
+      "colors": 110,
+      "bytes": 9775,
+      "rgba_bytes": 35778,
+      "quantization_quality_target": 80,
+      "sha256": "ceb5fa7998ac7d807740276ed912067a00c25800ba26c0ea76a762801cde1dce"
+    },
+    {
+      "file": "senator-walk-side-4.png",
+      "size": [
+        128,
+        220
+      ],
+      "mode": "P",
+      "colors": 134,
+      "bytes": 9684,
+      "rgba_bytes": 33056,
+      "quantization_quality_target": 80,
+      "sha256": "a1028285eb04fce46b51cefdf45893b3c8d15996436290c3ad9802878e230ecf"
+    },
+    {
+      "file": "senator-walk-back-1.png",
+      "size": [
+        118,
+        220
+      ],
+      "mode": "P",
+      "colors": 94,
+      "bytes": 8813,
+      "rgba_bytes": 30888,
+      "quantization_quality_target": 80,
+      "sha256": "256ead804271f953b747b57e35cff92d0fb43a79e8da7040c6de140e03de56b9"
+    },
+    {
+      "file": "senator-walk-back-2.png",
+      "size": [
+        118,
+        220
+      ],
+      "mode": "P",
+      "colors": 156,
+      "bytes": 9981,
+      "rgba_bytes": 30856,
+      "quantization_quality_target": 85,
+      "sha256": "c4540443c210b6931b8005066d6cf23517771d7e2544fc4206a703afdc249a50"
+    },
+    {
+      "file": "senator-walk-back-3.png",
+      "size": [
+        120,
+        220
+      ],
+      "mode": "P",
+      "colors": 107,
+      "bytes": 9370,
+      "rgba_bytes": 32070,
+      "quantization_quality_target": 80,
+      "sha256": "07209e710ae2a55bf1bec906c69303bb0ac6c21705af026d6b2134ad02b2b259"
+    },
+    {
+      "file": "senator-walk-back-4.png",
+      "size": [
+        114,
+        220
+      ],
+      "mode": "P",
+      "colors": 162,
+      "bytes": 10028,
+      "rgba_bytes": 30333,
+      "quantization_quality_target": 85,
+      "sha256": "1bbfc4e6f0519bd808cf17fe9d9b9a96a557e7b3d9383c8d2b3f557e7693d3e2"
+    }
+  ],
+  "regeneration_history": [
+    {
+      "attempt": 1,
+      "result": "Rejected: repeated front/back leg phases."
+    },
+    {
+      "attempt": 2,
+      "result": "Rejected: repeated side gait and contact poses."
+    },
+    {
+      "attempt": 3,
+      "result": "Rejected: repeated back contact and side contact phase."
+    },
+    {
+      "attempt": 4,
+      "result": "Accepted: regenerated side stride and opposite back contact; no manual pixel corrections."
+    }
+  ],
+  "visual_review": {
+    "standing": "Complete front, right-facing side and back; same heavy-set mature man, outfit and jewelry.",
+    "walking": "Opposite forward feet in 1/3 and opposite raised feet in 2/4; four right-facing side views; continuous agbada hem with feet visible.",
+    "compression": "Reviewed all fifteen paletted PNGs after compression; transparent background, complete figure, 220px canvas and feet on bottom edge."
+  },
+  "checks": {
+    "typecheck": "passed",
+    "build": "passed",
+    "existing_files": "unchanged",
+    "cutter": "unchanged"
+  }
+}

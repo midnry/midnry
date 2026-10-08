@@ -1,0 +1,38 @@
+[
+  {
+    "view": "front",
+    "frame": 3,
+    "boundary_y": 351,
+    "region": [
+      351,
+      521,
+      536,
+      765
+    ],
+    "change": "Mirrored only existing trouser-leg and shoe pixels below mid-thigh, reversing the repeated contact step (front-3/back-1) or raised knee (back-4). Blended twelve source-pixel rows at leg joins using samples from those same existing leg pixels. Cleared faint stray background in the edited leg region. Face, headwrap, torso, arms, hands, phone, bag, badge and upper thighs unchanged."
+  },
+  {
+    "view": "back",
+    "frame": 1,
+    "boundary_y": 1337,
+    "region": [
+      1337,
+      1506,
+      17,
+      245
+    ],
+    "change": "Mirrored only existing trouser-leg and shoe pixels below mid-thigh, reversing the repeated contact step (front-3/back-1) or raised knee (back-4). Blended twelve source-pixel rows at leg joins using samples from those same existing leg pixels. Cleared faint stray background in the edited leg region. Face, headwrap, torso, arms, hands, phone, bag, badge and upper thighs unchanged."
+  },
+  {
+    "view": "back",
+    "frame": 4,
+    "boundary_y": 1339,
+    "region": [
+      1339,
+      1508,
+      790,
+      1000
+    ],
+    "change": "Mirrored only existing trouser-leg and shoe pixels below mid-thigh, reversing the repeated contact step (front-3/back-1) or raised knee (back-4). Blended twelve source-pixel rows at leg joins using samples from those same existing leg pixels. Cleared faint stray background in the edited leg region. Face, headwrap, torso, arms, hands, phone, bag, badge and upper thighs unchanged."
+  }
+]
