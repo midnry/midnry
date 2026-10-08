@@ -2,6 +2,7 @@ import { CHAPTERS, EVENTS, FIXERS, HOMES, JOBS, LOANS, MAPS, PEOPLE, PLACES, POS
 import { citySolids, freePoint } from "./citymap";
 import type { Look } from "./character";
 import { RIDE_INFO, fare, fuelCost, rideBan, type RideMode } from "./rides";
+import { rainSurge, weatherOf } from "./weather";
 import {
   DAYS_PER_YEAR,
   END_AGE,
@@ -224,6 +225,20 @@ export function skipToNight() {
     s.slot = SLOTS.length - 1;
     addStat(s, "stress", -2);
     toast(s, "You gist, scroll and gist some more. The sun goes down on Abuja. 🌙");
+  });
+}
+
+/** Out on foot when the rain starts: soaked, and a little fed up. Once per downpour. */
+export function caughtInRain() {
+  update((s) => {
+    if (s.chapter || s.ending || s.event) return;
+    const w = weatherOf(s.day, s.slot);
+    const key = `${s.day}:${s.slot}`;
+    if (!w.wet || s.flags.soaked === key) return;
+    s.flags.soaked = key;
+    addStat(s, "stress", w.sky === "storm" ? 4 : 2);
+    addStat(s, "energy", -2);
+    toast(s, w.sky === "storm" ? "⛈️ The heavens open. You're soaked to the skin. Get indoors, or take a taxi." : "🌧️ Rain dey fall! You're getting wet. Duck into a building or under a bus stop.");
   });
 }
 
@@ -495,7 +510,7 @@ export function travel(placeId: string, mode: RideMode) {
     const banned = rideBan(mode, s.district, p.district);
     if (banned) return toast(s, banned);
     const to = { x: p.x, y: p.y + 95 };
-    const cost = fare(mode, s.pos, to);
+    const cost = fare(mode, s.pos, to, rainSurge(weatherOf(s.day, s.slot)));
     const name = RIDE_INFO[mode].label.toLowerCase();
     if (s.stats.money < cost) return toast(s, `You need ${naira(cost)} for the ${name}.`);
     if (mode === "bus" && s.slot + 1 > SLOTS.length - 1) return toast(s, "No more buses tonight. Take a taxi, a keke or an okada.");

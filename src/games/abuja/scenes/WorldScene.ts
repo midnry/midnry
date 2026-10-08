@@ -8,11 +8,12 @@ import type { RideMode } from "../systems/rides";
 import { personLook } from "../systems/peoplelook";
 import { roomForBuilding } from "../systems/rooms";
 import { RoomScene } from "./RoomScene";
+import { weatherOf, type Weather } from "../systems/weather";
 import { DriveScene } from "./DriveScene";
 import { isDirty } from "../systems/life";
 import { injured, type HitBy } from "../systems/health";
 import { CAR_COLOR, frscSpots, isDriving } from "../systems/drive";
-import { bump, checkpoint, frsc, leftRichArea, shutOut, trespass, welcome, fuel, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
+import { bump, caughtInRain, checkpoint, frsc, leftRichArea, shutOut, trespass, welcome, fuel, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
 import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
 import { findPath, type Point } from "../systems/path";
@@ -197,6 +198,12 @@ export class WorldScene extends Phaser.Scene {
   private taskMarker!: Phaser.GameObjects.Container;
   private arrow!: Phaser.GameObjects.Triangle;
   private night!: Phaser.GameObjects.Rectangle;
+  private haze!: Phaser.GameObjects.Rectangle;
+  private rain!: Phaser.GameObjects.TileSprite;
+  private flash!: Phaser.GameObjects.Rectangle;
+  private weather: Weather | null = null;
+  private nextFlash = 0;
+  private lastSoakCheck = 0;
   private sun!: Phaser.GameObjects.Rectangle;
   private vignette!: Phaser.GameObjects.Image;
   private unsub: (() => void) | null = null;
@@ -290,6 +297,11 @@ export class WorldScene extends Phaser.Scene {
     this.vignette = this.add.image(0, 0, this.makeVignette()).setOrigin(0).setScrollFactor(0).setDepth(29.6);
     this.sizeVignette();
     this.scale.on("resize", this.sizeVignette, this);
+    // The weather: rain streaks, harmattan dust and lightning, over the whole view.
+    this.makeRainTexture();
+    this.haze = this.add.rectangle(0, 0, 4000, 4000, 0xd8c9a3, 0).setOrigin(0).setScrollFactor(0).setDepth(29.55);
+    this.rain = this.add.tileSprite(0, 0, 2400, 2400, "rainstreaks").setOrigin(0).setScrollFactor(0).setDepth(29.7).setVisible(false);
+    this.flash = this.add.rectangle(0, 0, 4000, 4000, 0xffffff, 0).setOrigin(0).setScrollFactor(0).setDepth(30.5);
 
     this.cameras.main.setBounds(0, 0, width, height);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
@@ -472,6 +484,21 @@ export class WorldScene extends Phaser.Scene {
     ctx.fillRect(0, 0, 512, 512);
     canvas.refresh();
     return key;
+  }
+
+  /** Thin slanting streaks of rain, tiled over the view. */
+  private makeRainTexture() {
+    if (this.textures.exists("rainstreaks")) return;
+    const g = this.make.graphics({ x: 0, y: 0 }, false);
+    const r = rand(311);
+    for (let i = 0; i < 90; i++) {
+      const x = r() * 256;
+      const y = r() * 256;
+      const len = 10 + r() * 14;
+      g.lineStyle(1.4, 0xdbeafe, 0.35 + r() * 0.35).lineBetween(x, y, x - len * 0.28, y + len);
+    }
+    g.generateTexture("rainstreaks", 256, 256);
+    g.destroy();
   }
 
   private sizeVignette() {
@@ -1152,7 +1179,13 @@ export class WorldScene extends Phaser.Scene {
       });
       this.police = [];
     }
-    const alpha = this.mapId !== "city" ? 0 : [0, 0.06, 0.24, 0.62][Math.min(state.slot, 3)]!;
+    // Weather: outdoors on every map. Rain darkens the day; harmattan dust hazes it.
+    const w = weatherOf(state.day, state.slot);
+    this.weather = w;
+    this.rain.setVisible(w.wet).setAlpha(w.sky === "storm" ? 0.95 : 0.7);
+    this.haze.setFillStyle(0xd8c9a3, w.sky === "haze" ? (state.slot === 0 ? 0.32 : 0.22) : 0);
+    const gloom = w.sky === "storm" ? 0.28 : w.sky === "rain" ? 0.16 : w.sky === "cloudy" ? 0.06 : 0;
+    const alpha = Math.min(0.75, (this.mapId !== "city" ? 0 : [0, 0.06, 0.24, 0.62][Math.min(state.slot, 3)]!) + gloom);
     this.night.setFillStyle(state.slot === 2 ? 0x7c2d12 : 0x050b24, alpha);
     // Golden morning, bright afternoon, orange evening; the vignette deepens at night.
     const slot = Math.min(state.slot, 3);
@@ -1268,6 +1301,20 @@ export class WorldScene extends Phaser.Scene {
       } else if (this.trespassIn) {
         this.trespassIn = null;
         leftRichArea();
+      }
+    }
+    // Rain: it streaks past, storms flash, and you get wet if you're out on foot.
+    if (this.weather?.wet) {
+      this.rain.tilePositionY -= dt * 900;
+      this.rain.tilePositionX += dt * 250;
+      if (this.weather.sky === "storm" && time > this.nextFlash) {
+        this.nextFlash = time + 5000 + Math.random() * 9000;
+        this.flash.setAlpha(0.55);
+        this.tweens.add({ targets: this.flash, alpha: 0, duration: 380, ease: "Quad.easeOut" });
+      }
+      if (time - this.lastSoakCheck > 2000 && !driving && !this.riding && state.flags.soaked !== `${state.day}:${state.slot}`) {
+        this.lastSoakCheck = time;
+        caughtInRain();
       }
     }
     if (this.mapId === "city" && time - this.lastSave > 2000) {

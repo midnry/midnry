@@ -44,6 +44,7 @@ import { StoryPanel } from "./StoryView";
 import { WardrobePanel } from "./Wardrobe";
 import { DecorPanel } from "./Decor";
 import { DriveHudView } from "./DriveHud";
+import { MONTHS, SEASON_NAMES, weatherOf } from "../systems/weather";
 import { isMyRoom } from "../systems/decor";
 import { GAME_FONT, actionBtn, btnGhost, btnPrimary, glass, iconBtn, panel } from "./theme";
 
@@ -663,6 +664,7 @@ function Bar({ label, Icon, value, color, warn }: { label: string; Icon: StatIco
 }
 
 function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => void }) {
+  const weather = weatherOf(state.day, state.slot);
   const owed = debt(state);
   const l = lifeOf(state);
   return (
@@ -676,7 +678,11 @@ function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => v
       <div>
         <p className="text-xl leading-tight font-black tabular-nums text-[#4ade80] drop-shadow-[0_1px_0_rgba(0,0,0,0.4)]">{naira(state.stats.money)}</p>
         <p className="text-[11px] font-bold whitespace-nowrap text-slate-300">
-          Day {state.day} <span className="text-slate-500">•</span> {SLOTS[Math.min(state.slot, 3)]} <span className="text-slate-500">•</span> Age {Math.floor(state.age)}
+          Day {state.day} <span className="text-slate-500">•</span> {SLOTS[Math.min(state.slot, 3)]}{" "}
+          <span title={`${weather.label} · ${MONTHS[weather.month]} · ${SEASON_NAMES[weather.season]}`} aria-label={`Weather: ${weather.label}, ${MONTHS[weather.month]}`}>
+            {weather.icon}
+          </span>{" "}
+          <span className="text-slate-500">•</span> Age {Math.floor(state.age)}
         </p>
         {owed ? <p className="text-[11px] font-bold text-red-400">Owes {naira(owed)}</p> : null}
       </div>

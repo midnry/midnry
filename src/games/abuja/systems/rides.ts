@@ -36,12 +36,13 @@ export function rideKm(from: { x: number; y: number }, to: { x: number; y: numbe
   return routeLength(roadRoute(from, to)) / PX_PER_KM;
 }
 
-export function fare(mode: RideMode, from: { x: number; y: number }, to: { x: number; y: number }): number {
+/** The fare for a trip; `surge` raises it in the rain (bus fares stay put). */
+export function fare(mode: RideMode, from: { x: number; y: number }, to: { x: number; y: number }, surge = 1): number {
   const km = rideKm(from, to);
   if (mode === "bus") return 500;
-  if (mode === "okada") return roundUp(300 + km * 150);
-  if (mode === "keke") return roundUp(200 + km * 120);
-  return roundUp(800 + km * 380);
+  if (mode === "okada") return roundUp((300 + km * 150) * surge);
+  if (mode === "keke") return roundUp((200 + km * 120) * surge);
+  return roundUp((800 + km * 380) * surge);
 }
 
 /** Fuel for driving yourself there. */

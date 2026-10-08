@@ -11,6 +11,7 @@ import { FLEET, vehicleKey, vehicleSvg, type VehicleStyle } from "../systems/veh
 import { bus, driveInput, getState, input } from "../systems/store";
 import { lotKey, queueBuildings, queueVehicles } from "./art";
 import { GAME_FONT } from "../ui/theme";
+import { weatherOf, type Weather } from "../systems/weather";
 
 // Driving yourself somewhere, seen from behind your car: the real route
 // through Abuja's roads, laid out as a road ahead of you that bends at the
@@ -91,6 +92,8 @@ export class DriveScene extends Phaser.Scene {
   private arrived = false;
   private label!: Phaser.GameObjects.Text;
   private lastRoad: Road | null = null;
+  private weather!: Weather;
+  private rain: Phaser.GameObjects.TileSprite | null = null;
   private easeTo: number | null = null;
   private keys!: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d", Phaser.Input.Keyboard.Key>;
   /** The wheel, pedals and gear: the keyboard, or the on-screen controls. */
@@ -224,6 +227,14 @@ export class DriveScene extends Phaser.Scene {
     this.sky = this.add.tileSprite(0, 0, width, height * 0.6, "drive_sky").setOrigin(0).setScrollFactor(0).setDepth(0);
     this.hills = this.add.tileSprite(0, height * 0.5 - 140, width, 160, "drive_hills").setOrigin(0).setScrollFactor(0).setDepth(1);
     this.g = this.add.graphics().setDepth(2);
+    // The weather on the road: rain streaks and a darker sky, or harmattan haze.
+    const st = getState();
+    this.weather = weatherOf(st?.day ?? 1, st?.slot ?? 0);
+    const w = this.weather;
+    if (w.wet || w.sky === "cloudy") this.sky.setTint(w.sky === "storm" ? 0x7d8794 : w.sky === "rain" ? 0x9aa6b2 : 0xc9d2da);
+    if (w.wet && this.textures.exists("rainstreaks")) this.rain = this.add.tileSprite(0, 0, width, height, "rainstreaks").setOrigin(0).setScrollFactor(0).setDepth(999).setAlpha(w.sky === "storm" ? 0.95 : 0.75).setScale(1.4);
+    if (w.sky === "haze") this.add.rectangle(0, 0, width, height, 0xd8c9a3, 0.22).setOrigin(0).setScrollFactor(0).setDepth(998);
+    if (w.wet || w.sky === "haze") this.add.rectangle(0, 0, width, height, 0x1e293b, w.sky === "storm" ? 0.22 : w.sky === "haze" ? 0 : 0.12).setOrigin(0).setScrollFactor(0).setDepth(997);
     this.placeScenery();
     this.spawnTraffic();
     const myKey = `${vehicleKey({ kind: "car", color: CAR_COLOR })}_back`;
@@ -441,7 +452,12 @@ export class DriveScene extends Phaser.Scene {
       if (Math.abs(this.easeTo - this.x) < 10 || Math.abs(this.controls.steer) > 0) this.easeTo = null;
     }
     // Pedals: accelerate, brake, and reverse slowly in R.
-    const max = drive.reverse ? -240 : MAX;
+    // Wet roads: ease off a little.
+    const max = drive.reverse ? -240 : MAX * (this.weather.sky === "storm" ? 0.75 : this.weather.wet ? 0.85 : 1);
+    if (this.rain) {
+      this.rain.tilePositionY -= dt * 1100;
+      this.rain.tilePositionX += dt * 200;
+    }
     if (drive.throttle > 0) this.speed += (drive.reverse ? -300 : 420) * drive.throttle * dt;
     else this.speed -= Math.sign(this.speed) * Math.min(Math.abs(this.speed), 160 * dt);
     if (drive.brake > 0) this.speed -= Math.sign(this.speed) * Math.min(Math.abs(this.speed), 1400 * drive.brake * dt);

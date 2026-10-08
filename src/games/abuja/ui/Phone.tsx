@@ -4,6 +4,7 @@ import { LOANS, NPCS, PLACES, district } from "../systems/data";
 import { borrow, business, callContact, driveTo, negotiate, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
 import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, netWorth, npcName } from "../systems/rules";
 import { RIDE_INFO, RIDE_MODES, fare, fuelCost, rideBan, rideKm } from "../systems/rides";
+import { rainSurge, weatherOf } from "../systems/weather";
 import { hasCar } from "../systems/drive";
 import { BUSINESSES, bizDef, canStart, growWhy, upgradeCost } from "../systems/business";
 import { DEALS, QUALITY_LABEL, blocked, repLabel } from "../systems/negotiate/core";
@@ -564,11 +565,12 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
         value={query}
         onChange={(event) => setQuery(event.target.value)}
       />
-      <p className="mt-2 text-xs text-slate-400">Pick where to go, then how: okada, keke or taxi get you there now. The bus is cheapest but takes a time slot. Okadas and kekes are banned in the city centre.</p>
+      <p className="mt-2 text-xs text-slate-400">Pick where to go, then how: okada, keke or taxi get you there now. The bus is cheapest but takes a time slot. Okadas and kekes are banned in the city centre.{rainSurge(weatherOf(state.day, state.slot)) > 1 ? " It's raining: fares are up." : ""}</p>
       <div className="mt-3 grid gap-2">
         {shown.map((p) => {
           const d = district(p.district);
           const unwelcome = d?.gate && !check(state, d.gate.if);
+          const surge = rainSurge(weatherOf(state.day, state.slot));
           const locked = unwelcome && d?.gate?.hard;
           const to = { x: p.x, y: p.y + 95 };
           return (
@@ -594,7 +596,7 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
               ) : null}
               <div className="mt-2 grid grid-cols-4 gap-1.5">
                 {RIDE_MODES.map((mode) => {
-                  const cost = fare(mode, state.pos, to);
+                  const cost = fare(mode, state.pos, to, surge);
                   const banned = rideBan(mode, state.district, p.district);
                   return (
                     <button
