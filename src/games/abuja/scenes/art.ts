@@ -288,6 +288,10 @@ export const PAINTED: Record<string, { views: Facing[]; scale?: number }> = {
   frsc: { views: ["front", "side", "back"] },
   hawker: { views: ["front", "side", "back"], scale: 0.95 },
   felix: { views: ["front", "side", "back"] },
+  // The Capital, Act One.
+  senator: { views: ["front", "side", "back"], scale: 1.04 },
+  halima: { views: ["front", "side", "back"], scale: 0.95 },
+  yakubu: { views: ["front", "side", "back"], scale: 0.97 },
   okafor: { views: ["front", "side", "back"], scale: 0.95 },
   corper: { views: ["front", "side", "back"], scale: 0.95 },
   prophet: { views: ["front", "side", "back"], scale: 1.03 },

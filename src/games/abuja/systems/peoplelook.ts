@@ -13,7 +13,7 @@ export const seedOf = (id: string) => [...id].reduce((n, ch) => (n * 31 + ch.cha
 
 /** People with their own hand-painted art: by id on any map, or `map:id` for one map only. */
 const PAINTED_PEOPLE: Record<string, string> = {
-  ...Object.fromEntries(["suya", "pos_lady", "agbero", "okada", "hawker", "felix", "okafor", "prophet", "civil_servant", "tunde", "slim", "bolaji", "corper"].map((id) => [`city:${id}`, id])),
+  ...Object.fromEntries(["suya", "pos_lady", "agbero", "okada", "hawker", "felix", "okafor", "prophet", "civil_servant", "tunde", "slim", "bolaji", "corper", "senator", "halima", "yakubu"].map((id) => [`city:${id}`, id])),
   // The school, university and camp people.
   ...Object.fromEntries(["mama", "daddy", "headmaster", "water_seller", "teacher", "roommate", "recruiter", "rotaract", "soldier", "mammy_seller"].map((id) => [id, id])),
   // The same people met earlier in life.
