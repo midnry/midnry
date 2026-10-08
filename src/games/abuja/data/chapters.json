@@ -25,7 +25,7 @@
         "speaker": "Headmaster",
         "text": "Assembly. The headmaster reads names. Yours is on the list. \"Those owing school fees, go home and come back with your parents.\" The whole school turns to look.",
         "choices": [
-          { "text": "Sell sachet water at the junction with Tunde", "effects": [{ "npc": "tunde", "rel": 15 }, { "skill": "hustle", "add": 5 }, { "stat": "money", "add": 1500 }, { "flag": "early_hustle", "set": true }, { "log": "Sold pure water at nine to help pay school fees." }], "result": "Tunde shows you the best spot: under the bridge, where the danfo drivers stop. By Friday, half the fees are paid.", "next": "friends" },
+          { "text": "Sell sachet water at the junction with Tunde", "effects": [{ "npc": "tunde", "rel": 15, "remember": { "what": "You sold pure water with them at the junction as kids", "say": "\"You remember when we used to sell pure water at the junction? Two of us, shouting 'Pure wa-ter!' Hustle started early.\"", "tone": "warm", "weight": 3 } }, { "skill": "hustle", "add": 5 }, { "stat": "money", "add": 1500 }, { "flag": "early_hustle", "set": true }, { "log": "Sold pure water at nine to help pay school fees." }], "result": "Tunde shows you the best spot: under the bridge, where the danfo drivers stop. By Friday, half the fees are paid.", "next": "friends" },
           { "text": "Ask Uncle Sylvester for help", "effects": [{ "npc": "uncle", "rel": -5 }, { "flag": "uncle_owes", "set": true }, { "stat": "stress", "add": 5 }], "result": "Uncle Sylvester gives a long speech about 'hard work' and ₦500. He will remind the family of this ₦500 for the next twenty years.", "next": "friends" },
           { "text": "Stay home and study from a borrowed textbook", "effects": [{ "skill": "education", "add": 4 }, { "stat": "stress", "add": 8 }], "result": "You miss two weeks of school, but you finish the borrowed textbook. Twice.", "next": "friends" }
         ]
@@ -42,8 +42,8 @@
       "friends": {
         "text": "Break time. Tunde, the boy who always comes early because his mama opens shop at 6, sits alone with nothing to eat. Slim, the boy with new shoes every term, waves you over: \"My guy, copy my homework. I get the answers.\"",
         "choices": [
-          { "text": "Share your lunch with Tunde", "effects": [{ "npc": "tunde", "rel": 20 }, { "flag": "shared_lunch", "set": true }, { "log": "Shared lunch with Tunde. He never forgot." }], "result": "Tunde splits your bread exactly in half. \"I go pay you back one day,\" he says. He means it.", "next": "end" },
-          { "text": "Copy Slim's homework", "effects": [{ "npc": "slim", "rel": 15 }, { "skill": "education", "add": -2 }, { "flag": "slim_friend", "set": true }], "result": "Full marks, zero learning. Slim winks: \"Stick with me.\"", "next": "end" },
+          { "text": "Share your lunch with Tunde", "effects": [{ "npc": "tunde", "rel": 20, "remember": { "what": "You shared your lunch with them when they had nothing", "say": "\"I still think about that time you shared your lunch with me. Nobody else did. I never forgot.\"", "tone": "warm", "weight": 3 } }, { "flag": "shared_lunch", "set": true }, { "log": "Shared lunch with Tunde. He never forgot." }], "result": "Tunde splits your bread exactly in half. \"I go pay you back one day,\" he says. He means it.", "next": "end" },
+          { "text": "Copy Slim's homework", "effects": [{ "npc": "slim", "rel": 15, "remember": { "what": "You copied their homework in primary school", "say": "\"Primary school, you were copying my homework. Now look at us. I'm still the brains, sha.\"", "tone": "story", "weight": 3 } }, { "skill": "education", "add": -2 }, { "flag": "slim_friend", "set": true }], "result": "Full marks, zero learning. Slim winks: \"Stick with me.\"", "next": "end" },
           { "text": "Hang out with both", "effects": [{ "npc": "tunde", "rel": 8 }, { "npc": "slim", "rel": 8 }, { "stat": "network", "add": 2 }], "result": "Tunde brings the jokes, Slim brings the gist. You bring yourself.", "next": "end" }
         ]
       },
@@ -85,7 +85,7 @@
         "speaker": "Bolaji",
         "text": "Inter-school quiz at a 'big' school in Maitama. A convoy rolls in: two Prados, one siren. Out steps Bolaji Danjuma-Adeyemi, son of (fictional) Senator Danjuma-Adeyemi. He scans your team. \"You guys came by bus? Respect, honestly.\"",
         "choices": [
-          { "text": "Introduce yourself and swap numbers", "effects": [{ "npc": "bolaji", "rel": 15 }, { "stat": "network", "add": 6 }, { "flag": "knows_bolaji", "set": true }, { "log": "Met Bolaji, a Nepo Baby, at a quiz in Maitama." }], "result": "He gives you his number. And his driver's number, 'in case'.", "next": "peer" },
+          { "text": "Introduce yourself and swap numbers", "effects": [{ "npc": "bolaji", "rel": 15, "remember": { "what": "You introduced yourself at school, no fear", "say": "\"You were the only one in that school who talked to me like a normal person. Not my father's son. Me.\"", "tone": "warm", "weight": 3 } }, { "stat": "network", "add": 6 }, { "flag": "knows_bolaji", "set": true }, { "log": "Met Bolaji, a Nepo Baby, at a quiz in Maitama." }], "result": "He gives you his number. And his driver's number, 'in case'.", "next": "peer" },
           { "text": "Beat his team in the quiz", "effects": [{ "skill": "education", "add": 5 }, { "stat": "reputation", "add": 6 }, { "npc": "bolaji", "rel": 5 }, { "flag": "beat_bolaji", "set": true }, { "log": "Beat the Maitama school in a quiz. Bolaji clapped." }], "result": "You win. Bolaji claps, genuinely. His father's aide does not.", "next": "peer" },
           { "text": "Ignore him. Not your mate.", "effects": [{ "stat": "stress", "add": -3 }], "result": "Pride is free. For now.", "next": "peer" }
         ]
@@ -94,8 +94,8 @@
         "speaker": "Slim",
         "text": "Slim finds you after school. New iPhone, school shirt untucked. \"My guy, there's this runs. You just go collect package for one oga for Lugbe, bring am come. ₦10k per trip. No questions.\"",
         "choices": [
-          { "text": "Do the runs", "effects": [{ "stat": "money", "add": 20000 }, { "stat": "heat", "add": 8 }, { "npc": "slim", "rel": 15 }, { "flag": "slim_runs", "set": true }, { "log": "Did 'no questions' runs for Slim at fifteen." }], "result": "Two trips, ₦20k. The second package was heavier. You did not ask.", "next": "socials" },
-          { "text": "Refuse and tell Tunde", "effects": [{ "npc": "tunde", "rel": 10 }, { "npc": "slim", "rel": -10 }], "result": "Tunde says, \"Guy, that one na trouble.\" Slim calls you 'Pastor' for a month.", "next": "socials" }
+          { "text": "Do the runs", "effects": [{ "stat": "money", "add": 20000 }, { "stat": "heat", "add": 8 }, { "npc": "slim", "rel": 15, "remember": { "what": "You did runs for them in secondary school", "say": "\"You did those runs for me back in school and never talked. That kind of loyalty, I remember.\"", "tone": "story", "weight": 3 } }, { "flag": "slim_runs", "set": true }, { "log": "Did 'no questions' runs for Slim at fifteen." }], "result": "Two trips, ₦20k. The second package was heavier. You did not ask.", "next": "socials" },
+          { "text": "Refuse and tell Tunde", "effects": [{ "npc": "tunde", "rel": 10, "remember": { "what": "You told them the truth about Slim's runs", "say": "\"You told me the truth about Slim back then, when it would have been easier to keep quiet.\"", "tone": "warm", "weight": 3 } }, { "npc": "slim", "rel": -10, "remember": { "what": "You snitched to Tunde about their runs", "say": "\"I haven't forgotten you went and told Tunde my business back in school. Water under the bridge… mostly.\"", "tone": "hurt", "weight": 3 } }], "result": "Tunde says, \"Guy, that one na trouble.\" Slim calls you 'Pastor' for a month.", "next": "socials" }
         ]
       },
       "socials": {
@@ -155,7 +155,7 @@
         "choices": [
           { "text": "Learn to code from free videos", "effects": [{ "skill": "tech", "add": 10 }, { "stat": "money", "add": -8000 }], "result": "Data costs more than food, but by month six you build your first website.", "next": "cult" },
           { "text": "Run a POS stand in Gwagwalada", "effects": [{ "skill": "hustle", "add": 6 }, { "stat": "money", "add": 40000 }, { "skill": "trade", "add": 3 }], "result": "Withdrawal charges are a goldmine. You learn the true face of Nigerian banking.", "next": "cult" },
-          { "text": "Follow Slim to the 'lab' in Lugbe", "effects": [{ "flag": "yahoo_intro", "set": true }, { "npc": "slim", "rel": 15 }, { "stat": "money", "add": 60000 }, { "stat": "heat", "add": 12 }, { "log": "Learned 'the format' in Slim's yahoo lab during an ASUU strike." }], "result": "Ring lights, three laptops, and 'the format'. You make ₦60k in a week. Your stomach turns a little.", "next": "cult" }
+          { "text": "Follow Slim to the 'lab' in Lugbe", "effects": [{ "flag": "yahoo_intro", "set": true }, { "npc": "slim", "rel": 15, "remember": { "what": "You followed them to the 'lab' in Lugbe", "say": "\"Lugbe days! You followed me to the lab when nobody believed in me.\"", "tone": "story", "weight": 3 } }, { "stat": "money", "add": 60000 }, { "stat": "heat", "add": 12 }, { "log": "Learned 'the format' in Slim's yahoo lab during an ASUU strike." }], "result": "Ring lights, three laptops, and 'the format'. You make ₦60k in a week. Your stomach turns a little.", "next": "cult" }
         ]
       },
       "cult": {
@@ -170,7 +170,7 @@
         "speaker": "Mrs. Okafor",
         "text": "Mrs. Okafor, your economics lecturer, stops you after class. \"You ask good questions. My consultancy needs an intern this holiday. Unpaid. You will work hard. You will learn plenty.\"",
         "choices": [
-          { "text": "Take the internship", "effects": [{ "npc": "okafor", "rel": 25 }, { "skill": "education", "add": 5 }, { "stat": "network", "add": 8 }, { "flag": "mentored", "set": true }, { "log": "Interned with Mrs. Okafor. She became a mentor." }], "result": "You make 300 photocopies and two good impressions. She starts introducing you as 'my person'.", "next": "guru" },
+          { "text": "Take the internship", "effects": [{ "npc": "okafor", "rel": 25, "remember": { "what": "You took their internship at university", "say": "\"I took a chance on you as an intern. Don't make me regret it.\"", "tone": "story", "weight": 3 } }, { "skill": "education", "add": 5 }, { "stat": "network", "add": 8 }, { "flag": "mentored", "set": true }, { "log": "Interned with Mrs. Okafor. She became a mentor." }], "result": "You make 300 photocopies and two good impressions. She starts introducing you as 'my person'.", "next": "guru" },
           { "text": "Decline: you need paid work", "effects": [{ "skill": "hustle", "add": 4 }, { "stat": "money", "add": 20000 }], "result": "Money now. Maybe doors later. Maybe.", "next": "guru" }
         ]
       },
@@ -196,7 +196,7 @@
         "speaker": "{love}",
         "text": "At a friend's birthday, you meet {love}. Sharp, funny, studying law, and completely unimpressed by fake people. (Both of you are over 18.)",
         "choices": [
-          { "text": "Talk all night", "effects": [{ "npc": "love", "rel": 20 }, { "flag": "met_love", "set": true }, { "log": "Met {love} at a birthday party." }], "result": "You walk them to the gate at 2 a.m. and forget your own name on the way back.", "next": "final" },
+          { "text": "Talk all night", "effects": [{ "npc": "love", "rel": 20, "remember": { "what": "You talked all night the first time you met", "say": "\"Sometimes I think about that first night we just talked until morning.\"", "tone": "warm", "weight": 3 } }, { "flag": "met_love", "set": true }, { "log": "Met {love} at a birthday party." }], "result": "You walk them to the gate at 2 a.m. and forget your own name on the way back.", "next": "final" },
           { "text": "Focus on yourself for now", "next": "final" }
         ]
       },

@@ -5,6 +5,7 @@ import type { Build, Look } from "./character";
 import type { NegLife } from "./negotiate/types";
 import type { Kitchen } from "./cooking/types";
 import type { CityState } from "./city/sim";
+import type { Memory, Tone } from "./memory";
 
 export type Background = "lapo" | "average";
 export type Gender = "male" | "female";
@@ -135,6 +136,10 @@ export type Effect = {
   efcc?: string;
   /** Learn a recipe (someone teaches you). */
   recipe?: string;
+  /** Something the person in `npc` will remember about you. */
+  remember?: { what: string; say?: string; tone: Tone; weight: 1 | 2 | 3 };
+  /** Something the person in `npc` lets go of (by its `what`). */
+  forget?: string;
 };
 
 export type MapRect = { x: number; y: number; w: number; h: number; label?: string; color?: string; gapFrom?: number; gapTo?: number; kind?: "water" };
@@ -355,6 +360,8 @@ export type GameState = {
   savedAt?: number;
   /** Which city map the positions in this save refer to (missing: the original map). */
   mapVersion?: number;
+  /** What people remember about you, by person (an NPC id, or a city person's id). */
+  memories?: Record<string, Memory[]>;
   name: string;
   gender: Gender;
   background: Background;

@@ -58,6 +58,7 @@ import {
   weeklyRomance,
 } from "./romance";
 import type { Choice, EndingId, GameState, PersonDef, Scene, TaskStep } from "./types";
+import { fadeMemories, forget, memoriesOf, recalled, remember, sinceWhen } from "./memory";
 
 // ── Story ────────────────────────────────────────────────────────────────────
 
@@ -480,6 +481,7 @@ export function repay(loanId: string) {
     loan.owed -= amount;
     if (loan.owed <= 0) {
       s.loans = s.loans.filter((item) => item.id !== loanId);
+      if (!s.loans.length) forget(s, "kash", "You missed a loan repayment");
       toast(s, "Loan fully repaid. Mr. Felix looks almost disappointed.");
     } else toast(s, `Paid ${naira(amount)}. Still owing ${naira(loan.owed)}.`);
   });
@@ -495,6 +497,7 @@ export function callContact(id: string) {
     s.flags[`called_${id}`] = s.day;
     entry.rel = clamp(entry.rel + 2);
     entry.lastSeen = s.day;
+    forget(s, id, "You went quiet for weeks");
     toast(s, "A good long call. The relationship stays warm.");
   });
 }
@@ -705,6 +708,7 @@ function sleep(s: GameState) {
   if (!s.event) s.event = nightlyCase(s);
   if (!s.event) s.event = dailyRomance(s);
   neglect(s);
+  fadeMemories(s);
   pickEvent(s);
   checkEndings(s);
 }
@@ -740,6 +744,7 @@ function weeklyBills(s: GameState) {
     } else {
       loan.missed += 1;
       loan.owed = Math.round(loan.owed * (1 + LOANS.missedPenalty));
+      remember(s, "kash", { what: "You missed a loan repayment", say: "\"My guy, you missed my repayment. My boys have your contacts list. Just saying.\"", tone: "debt", weight: loan.missed >= 2 ? 2 : 1 });
       missed = true;
       lines.push(`Missed a QuickKash repayment. Penalty added: you now owe ${naira(loan.owed)}.`);
     }
@@ -775,6 +780,10 @@ function neglect(s: GameState) {
   if (s.day % 7 !== 0) return;
   for (const entry of Object.values(s.npcs)) {
     if (entry.met && s.day - entry.lastSeen > 21) entry.rel = clamp(entry.rel - 3);
+  }
+  for (const [id, entry] of Object.entries(s.npcs)) {
+    if (entry.met && s.day - entry.lastSeen > 21)
+      remember(s, id, { what: "You went quiet for weeks", say: "\"Ah, look who remembered me. I thought you'd travelled.\"", tone: "hurt", weight: 1 });
   }
 }
 
@@ -992,6 +1001,11 @@ export function findPerson(key: string): PersonDef | undefined {
   return PEOPLE.find((p) => personKey(p) === key);
 }
 
+/** Whose memories a person keeps: their story character's, or their own for city folk. */
+export function memoryKey(p: PersonDef): string {
+  return p.npc ?? p.id;
+}
+
 /** What a person says today: one of their lines, the same all day. */
 export function lineFor(s: GameState, p: PersonDef): string {
   let hash = s.day * 17;
@@ -1009,9 +1023,14 @@ export function talk(key: string) {
     const p = findPerson(key);
     if (!p || s.flags[`talked_${key}`] === s.day) return;
     s.flags[`talked_${key}`] = s.day;
+    const who = memoryKey(p);
+    recalled(s, who);
     if (p.npc) {
       const current = s.npcs[p.npc] ?? { rel: 0, met: false, lastSeen: s.day };
       s.npcs[p.npc] = { rel: clamp(current.rel + 1), met: true, lastSeen: s.day };
+      if (!current.met) remember(s, who, { what: sinceWhen(s), tone: "warm", weight: 3 });
+      // You came back after a long silence: the hurt fades.
+      forget(s, who, "You went quiet for weeks");
     }
   });
 }
@@ -1033,6 +1052,15 @@ export function insult(key: string) {
       const current = s.npcs[p.npc] ?? { rel: 0, met: true, lastSeen: s.day };
       s.npcs[p.npc] = { ...current, rel: clamp(current.rel - 12), met: true };
     }
+    const before = memoriesOf(s, memoryKey(p)).find((m) => m.what === "You insulted them in public");
+    remember(s, memoryKey(p), {
+      what: "You insulted them in public",
+      say: before
+        ? "\"This is the second time you've disgraced me in public. I'm counting, o.\""
+        : "\"I haven't forgotten how you insulted me in front of everybody. Just so you know.\"",
+      tone: "hurt",
+      weight: before ? 3 : 2,
+    });
     addStat(s, "stress", -2);
     toast(s, `${COMEBACKS[(s.day + key.length) % COMEBACKS.length]} ${offense(s, "insult")}`);
   });
@@ -1045,7 +1073,12 @@ export function takeOffer(key: string, choice: Choice) {
     const time = (choice.effects ?? []).reduce((sum, e) => sum + (e.time ?? 0), 0);
     if (s.stage === "adult" && !s.chapter && time && s.slot + time > SLOTS.length) return toast(s, "It's too late for that today.");
     s.flags[`offer_${key}`] = s.day;
+    const rel = (choice.effects ?? []).reduce((sum, e) => sum + (e.npc ? (e.rel ?? 0) : 0), 0);
     const toasts = apply(s, choice.effects);
+    if (p.npc && !(choice.effects ?? []).some((e) => e.remember)) {
+      if (rel >= 4) remember(s, memoryKey(p), { what: "You came through for them", say: "\"You came through for me that time. I won't forget it.\"", tone: "warm", weight: rel >= 10 ? 2 : 1 });
+      else if (rel <= -4) remember(s, memoryKey(p), { what: "You let them down", say: "\"Last time, you let me down. Let's see about today.\"", tone: "hurt", weight: rel <= -10 ? 2 : 1 });
+    }
     const line = [choice.result ? fill(s, choice.result) : "", ...toasts].filter(Boolean).join(" ");
     if (line) toast(s, line);
     if (time && !s.chapter) spend(s, time, 0);
@@ -1518,6 +1551,9 @@ export function hostMeal(dishId: string, guestIds: string[], kind: MealKind): { 
       } else {
         const n = s.npcs[g.id] ?? { rel: 0, met: true, lastSeen: s.day };
         s.npcs[g.id] = { ...n, rel: Math.max(0, Math.min(100, n.rel + change)), lastSeen: s.day };
+        const dish = (recipeDef(dishId)?.name ?? "your food").toLowerCase();
+        if (change >= 4) remember(s, g.id, { what: `You cooked ${dish} for them`, say: `"That ${dish} you made me… I'm still thinking about it. When are you cooking again?"`, tone: "warm", weight: change >= 8 ? 2 : 1 });
+        else if (change < 0) remember(s, g.id, { what: `Your ${dish} didn't go down well`, say: `"No offence, but that ${dish} you gave me… my stomach is still recovering."`, tone: "hurt", weight: 1 });
       }
     });
     if (!out.ok) return;

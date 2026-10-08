@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CityApp } from "./CityApp";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
 import { borrow, business, callContact, driveTo, negotiate, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
+import { ago, memoriesOf, TONE_ICON } from "../systems/memory";
 import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, netWorth, npcName } from "../systems/rules";
 import { RIDE_INFO, RIDE_MODES, fare, fuelCost, rideBan, rideKm } from "../systems/rides";
 import { rainSurge, weatherOf } from "../systems/weather";
@@ -543,11 +544,29 @@ function Contacts({ state }: { state: GameState }) {
               <div className="h-full rounded-full bg-violet-400" style={{ width: `${entry.rel}%` }} />
             </div>
             <p className="mt-1 text-xs text-slate-500">{def.bio}</p>
+            <Remembers state={state} who={def.id} />
           </div>
         );
       })}
-      <p className="mt-2 text-xs text-slate-500">Friends you don't see or call for three weeks drift away.</p>
+      <p className="mt-2 text-xs text-slate-500">People remember what you do for them, and to them. Friends you don't see or call for three weeks drift away.</p>
     </div>
+  );
+}
+
+/** What a contact remembers about you, the weightiest first. */
+function Remembers({ state, who }: { state: GameState; who: string }) {
+  const list = [...memoriesOf(state, who)].sort((a, b) => b.weight - a.weight || b.day - a.day).slice(0, 4);
+  if (!list.length) return null;
+  return (
+    <ul className="mt-2 grid gap-1 border-t border-white/10 pt-2 text-xs text-slate-300" aria-label="They remember">
+      {list.map((m) => (
+        <li key={m.what} className="flex gap-2">
+          <span aria-hidden>{TONE_ICON[m.tone]}</span>
+          <span className="min-w-0 flex-1">{m.what}</span>
+          {m.weight < 3 ? <span className="shrink-0 text-slate-500">{ago(state, m.day)}</span> : null}
+        </li>
+      ))}
+    </ul>
   );
 }
 

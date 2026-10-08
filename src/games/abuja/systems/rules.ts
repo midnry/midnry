@@ -5,6 +5,7 @@ import { bizWorth } from "./business";
 import { equity, shock } from "./market";
 import { learn } from "./cooking/cook";
 import { recipe } from "./cooking/recipes";
+import { forget, remember, sinceWhen } from "./memory";
 import { partnerName, pregnancyText, romanceEffect } from "./romance";
 import type { Cond, Effect, GameState, SkillKey, StatKey } from "./types";
 
@@ -110,7 +111,10 @@ export function apply(state: GameState, effects: Effect[] | undefined, toasts: s
     if (effect.npc) {
       const current = state.npcs[effect.npc] ?? { rel: 0, met: false, lastSeen: state.day };
       state.npcs[effect.npc] = { rel: clamp(current.rel + (effect.rel ?? 0)), met: true, lastSeen: state.day };
+      if (!current.met) remember(state, effect.npc, { what: sinceWhen(state), tone: "warm", weight: 3 });
     }
+    if (effect.npc && effect.remember) remember(state, effect.npc, effect.remember);
+    if (effect.npc && effect.forget) forget(state, effect.npc, effect.forget);
     if (effect.cert) state.certs[effect.cert] = true;
     if (effect.asset && !state.assets.includes(effect.asset)) state.assets.push(effect.asset);
     if (effect.removeAsset) state.assets = state.assets.filter((item) => item !== effect.removeAsset);
