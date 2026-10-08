@@ -1,0 +1,51 @@
+{
+  "id": "crowd-banker",
+  "original": "crowd-banker-sheet-original.png",
+  "corrected": "crowd-banker-sheet-corrected.png",
+  "original_sha256": "5ad64345569d5660c614cc3571e41fe090fa0384021fc8cba55ed4410922e080",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated side strides and passing knees; regenerate side row and front/back passing knees while preserving the continuous skirt.",
+      "source": "/workspace/generated_images/exec-8083a0c6-1486-411b-a363-442902f7bdaf.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Passing knees still wrong or repeated; watch moved wrists. Regenerate correct knees and keep the reference watch on the right wrist.",
+      "source": "/workspace/generated_images/exec-55f695bc-b16b-4910-a157-aef4b03c5500.png"
+    },
+    {
+      "attempt": 4,
+      "reason": "Front-2 still lifted the same knee as front-4; regenerate that single pose with the opposite knee and the reference watch wrist.",
+      "source": "/workspace/generated_images/exec-7d2bc17a-3e20-4951-8a7e-2125d83af620.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "crowd-banker",
+      "view": "front",
+      "frame": 3,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose.",
+      "boundary_y": 374,
+      "x0": 553,
+      "x1": 747,
+      "reflection_axis_twice": 1303
+    },
+    {
+      "id": "crowd-banker",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose.",
+      "boundary_y": 1366,
+      "x0": 549,
+      "x1": 757,
+      "reflection_axis_twice": 1307
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
