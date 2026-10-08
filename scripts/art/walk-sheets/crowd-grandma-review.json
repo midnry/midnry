@@ -1,0 +1,41 @@
+{
+  "id": "crowd-grandma",
+  "original": "crowd-grandma-sheet-original.png",
+  "corrected": "crowd-grandma-sheet-corrected.png",
+  "original_sha256": "eeb8064cbdd124bfb7c1c919744525a032585be94b5022404b196f1dea042b01",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated passing knees under a continuous printed wrapper; regenerate those poses rather than changing garment pixels.",
+      "source": "/workspace/generated_images/exec-a289fb1c-ab19-41cd-a071-dfa6b8694658.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Back-4 still repeated the left lifted knee from back-2; regenerate that one continuous-wrapper pose.",
+      "source": "/workspace/generated_images/exec-82ea1be4-cfce-4624-9aeb-eab1794be0c2.png"
+    },
+    {
+      "attempt": 4,
+      "reason": "Front-2 still repeated the knee from front-4; regenerate the single wrapper pose with the opposite knee.",
+      "source": "/workspace/generated_images/exec-7b36ef63-3cf1-4c73-90cd-4f36f406474c.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "crowd-grandma",
+      "view": "back",
+      "frame": 1,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1451,
+      "x0": 22,
+      "x1": 256,
+      "reflection_axis_twice": 276
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
