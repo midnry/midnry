@@ -1,0 +1,20 @@
+{
+  "id": "rotaract",
+  "original": "rotaract-sheet-original.png",
+  "corrected": "rotaract-sheet-corrected.png",
+  "original_sha256": "fc1b3ef5bb7f24446995af09e01cb838421940a3b4d47dd6b5d14c75c6723cda",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated side passing poses: frames2 and4 do not counter-swing the free arm on opposite knees; regenerate side row.",
+      "source": "/workspace/generated_images/exec-3d030f59-734c-42bc-a92a-9cbd29e9e363.png"
+    }
+  ],
+  "corrections": [],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
