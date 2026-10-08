@@ -1,0 +1,46 @@
+{
+  "id": "crowd-schoolgirl",
+  "original": "crowd-schoolgirl-sheet-original.png",
+  "corrected": "crowd-schoolgirl-sheet-corrected.png",
+  "original_sha256": "8e9e2c529ff5c6feead679d588a55c871a1be0747ed60392a8003d1c11de3184",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Pose guide enlarged the child's head and changed school-age proportions. Regenerate from standing references alone to retain reference anatomy.",
+      "source": "/workspace/generated_images/exec-1485545b-e450-4d38-a457-818d32ec4588.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Back-4 repeated the left knee of back-2. Regenerate back-4 with the right knee lifted.",
+      "source": "/workspace/generated_images/exec-d67aac83-6846-45e6-9726-648db88f2a17.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "crowd-schoolgirl",
+      "view": "front",
+      "frame": 1,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 376,
+      "x0": 49,
+      "x1": 240,
+      "reflection_axis_twice": 278
+    },
+    {
+      "id": "crowd-schoolgirl",
+      "view": "back",
+      "frame": 1,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1369,
+      "x0": 34,
+      "x1": 218,
+      "reflection_axis_twice": 256
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
