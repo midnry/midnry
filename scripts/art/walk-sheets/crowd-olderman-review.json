@@ -1,0 +1,30 @@
+{
+  "id": "crowd-olderman",
+  "original": "crowd-olderman-sheet-original.png",
+  "corrected": "crowd-olderman-sheet-corrected.png",
+  "original_sha256": "ab30c5a90f9359086ef8bb8b679490c60e3b6b23faed80f3f62825b78bf062dd",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated front/back passing knees under the agbada; regenerate those garment poses rather than painting the robe.",
+      "source": "/workspace/generated_images/exec-f5045a08-8eaa-49a9-a279-9357d4a71742.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Repeated front and back passing knees persisted. Regenerate using standing references and verified alternating pose guide.",
+      "source": "/workspace/generated_images/exec-15494ad3-3b18-4bf2-bc7b-2cbc412f161c.png"
+    },
+    {
+      "attempt": 4,
+      "reason": "Front-2 still repeats the right passing knee. Regenerate the opposite clearly image-right shoe and knee.",
+      "source": "/workspace/generated_images/exec-9220d2e6-90c5-41be-af38-2c41a35ea7fa.png"
+    }
+  ],
+  "corrections": [],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
