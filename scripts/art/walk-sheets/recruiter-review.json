@@ -1,0 +1,45 @@
+{
+  "id": "recruiter",
+  "original": "recruiter-sheet-original.png",
+  "corrected": "recruiter-sheet-corrected.png",
+  "original_sha256": "b5a782a92fedf810680d0e0fad5615d48145f434c15b3d903cea3a3450d8a4d4",
+  "regenerations": [],
+  "corrections": [
+    {
+      "id": "recruiter",
+      "view": "front",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 278,
+      "x0": 549,
+      "x1": 743,
+      "reflection_axis_twice": 1291
+    },
+    {
+      "id": "recruiter",
+      "view": "front",
+      "frame": 4,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 279,
+      "x0": 791,
+      "x1": 983,
+      "reflection_axis_twice": 1768
+    },
+    {
+      "id": "recruiter",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1284,
+      "x0": 540,
+      "x1": 748,
+      "reflection_axis_twice": 1289
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
