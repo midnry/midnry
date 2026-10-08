@@ -1,0 +1,20 @@
+{
+  "id": "agbero",
+  "original": "agbero-sheet-original.png",
+  "corrected": "agbero-sheet-corrected.png",
+  "original_sha256": "28b8ed7997a5055b73e1708f14223762ef1b3e833db563c232230983a686a51b",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated side heel contacts 1/3 and passing poses 2/4; regenerate side limb swing.",
+      "source": "/workspace/generated_images/exec-d867cab0-3342-4302-9608-74c7d4997dcd.png"
+    }
+  ],
+  "corrections": [],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
