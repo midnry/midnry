@@ -1885,5 +1885,466 @@
         "result": "Forty retweets and a lot of angry emojis. It isn't much. It isn't nothing. — End of Act One."
       }
     ]
+  },
+  {
+    "id": "fraud_simswap",
+    "weight": 2,
+    "if": {
+      "any": [
+        {
+          "flag": "yahoo"
+        },
+        {
+          "flag": "yahoo_intro"
+        },
+        {
+          "npc": "slim",
+          "rel": 30
+        }
+      ]
+    },
+    "title": "Slim's new format",
+    "text": "Slim calls at midnight. \"SIM swap. We clone a big man's line, the bank sends us his OTPs, we empty the account before morning. I need someone with a clean face to walk into the telecom office. ₦300k for one night.\"",
+    "choices": [
+      {
+        "text": "Do it",
+        "effects": [
+          {
+            "stat": "money",
+            "add": 300000
+          },
+          {
+            "stat": "heat",
+            "add": 20
+          },
+          {
+            "flag": "fraud",
+            "set": true
+          },
+          {
+            "offense": "fraud"
+          },
+          {
+            "chance": 0.3,
+            "then": [
+              {
+                "flag": "arrested",
+                "set": true
+              }
+            ]
+          }
+        ],
+        "result": "The telecom girl barely looks at your fake ID. By 4 a.m. the money is moving through six accounts."
+      },
+      {
+        "text": "Say no",
+        "effects": [
+          {
+            "npc": "slim",
+            "rel": -3
+          }
+        ],
+        "result": "\"You'll still be poor when I'm in Dubai,\" he says, and hangs up."
+      },
+      {
+        "text": "Report it to the police cybercrime desk",
+        "effects": [
+          {
+            "stat": "reputation",
+            "add": 4
+          },
+          {
+            "npc": "slim",
+            "rel": -15
+          }
+        ],
+        "result": "The officer takes notes. Slim never calls again."
+      }
+    ]
+  },
+  {
+    "id": "fraud_land",
+    "weight": 2,
+    "if": {
+      "stat": "network",
+      "gte": 20
+    },
+    "title": "One plot, three buyers",
+    "text": "An agent in Kuje has a plot of land with no fence and an owner abroad. \"We sell it three times: three buyers, three deposits, one plot. By the time they find out, we're gone.\"",
+    "choices": [
+      {
+        "text": "Sell the plot three times",
+        "effects": [
+          {
+            "stat": "money",
+            "add": 500000
+          },
+          {
+            "stat": "heat",
+            "add": 25
+          },
+          {
+            "flag": "fraud",
+            "set": true
+          },
+          {
+            "offense": "fraud"
+          },
+          {
+            "chance": 0.35,
+            "then": [
+              {
+                "flag": "arrested",
+                "set": true
+              }
+            ]
+          }
+        ],
+        "result": "Three families, three sets of 'documents', ₦500,000 for you."
+      },
+      {
+        "text": "Walk away",
+        "effects": [],
+        "result": "\"Your loss,\" the agent says, already calling someone else."
+      },
+      {
+        "text": "Warn the buyers",
+        "effects": [
+          {
+            "stat": "reputation",
+            "add": 5
+          },
+          {
+            "stat": "stress",
+            "add": 4
+          }
+        ],
+        "result": "One of the buyers cries on the phone. The agent sends you a threatening voice note."
+      }
+    ]
+  },
+  {
+    "id": "fraud_charity",
+    "weight": 2,
+    "if": {
+      "stat": "reputation",
+      "gte": 15
+    },
+    "title": "Save Baby Chioma",
+    "text": "A content creator you know has an idea: a crowdfunding page for a sick child, with photos from Google. \"Nigerians are generous online. We share 50/50.\"",
+    "choices": [
+      {
+        "text": "Post the fake fundraiser",
+        "effects": [
+          {
+            "stat": "money",
+            "add": 150000
+          },
+          {
+            "stat": "heat",
+            "add": 15
+          },
+          {
+            "flag": "fraud",
+            "set": true
+          },
+          {
+            "chance": 0.3,
+            "then": [
+              {
+                "stat": "reputation",
+                "add": -15
+              },
+              {
+                "toast": "A blogger reverse-searches the photos. Your name trends for the wrong reason."
+              }
+            ]
+          }
+        ],
+        "result": "₦150,000 in three days. Strangers send prayers with every transfer."
+      },
+      {
+        "text": "Refuse",
+        "effects": [],
+        "result": "\"Na your choice,\" he says, and finds someone else."
+      }
+    ]
+  },
+  {
+    "id": "fraud_invoice",
+    "weight": 3,
+    "if": {
+      "hasJob": true
+    },
+    "title": "The inflated invoice",
+    "text": "Your oga slides a supplier invoice across the desk. ₦1.2 million for what costs ₦700,000. \"Sign as the second approver. ₦200,000 is yours.\"",
+    "choices": [
+      {
+        "text": "Sign it",
+        "effects": [
+          {
+            "stat": "money",
+            "add": 200000
+          },
+          {
+            "stat": "heat",
+            "add": 8
+          },
+          {
+            "chance": 0.25,
+            "then": [
+              {
+                "job": null
+              },
+              {
+                "stat": "reputation",
+                "add": -6
+              },
+              {
+                "toast": "Internal audit finds it. You and your oga are both sacked."
+              }
+            ]
+          }
+        ],
+        "result": "Your signature is worth ₦200,000 today."
+      },
+      {
+        "text": "Refuse to sign",
+        "effects": [
+          {
+            "stat": "reputation",
+            "add": 3
+          },
+          {
+            "stat": "stress",
+            "add": 4
+          }
+        ],
+        "result": "Your oga smiles a cold smile. \"No problem.\""
+      },
+      {
+        "text": "Report it to internal audit",
+        "effects": [
+          {
+            "stat": "reputation",
+            "add": 5
+          },
+          {
+            "chance": 0.5,
+            "then": [
+              {
+                "job": null
+              },
+              {
+                "toast": "Somehow, it's you who gets 'restructured' out."
+              }
+            ],
+            "else": [
+              {
+                "toast": "Your oga is suspended. Colleagues look at you differently, some with respect."
+              }
+            ]
+          }
+        ],
+        "result": "You send the email and hold your breath."
+      }
+    ]
+  },
+  {
+    "id": "fraud_pos",
+    "weight": 2,
+    "title": "The magic POS",
+    "text": "A man at the motor park sells a 'special' POS terminal: it reverses transfers after the customer leaves. \"₦50,000. You make it back in one day.\"",
+    "choices": [
+      {
+        "text": "Buy it (₦50,000)",
+        "if": {
+          "stat": "money",
+          "gte": 50000
+        },
+        "lockedText": "Needs ₦50,000",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -50000
+          },
+          {
+            "chance": 0.45,
+            "then": [
+              {
+                "stat": "money",
+                "add": 250000
+              },
+              {
+                "stat": "heat",
+                "add": 20
+              },
+              {
+                "flag": "fraud",
+                "set": true
+              },
+              {
+                "offense": "fraud"
+              }
+            ],
+            "else": [
+              {
+                "toast": "It's a normal POS with a sticker on it. The man's number is switched off."
+              }
+            ]
+          }
+        ],
+        "result": "You test it on a stranger at the market."
+      },
+      {
+        "text": "No, thanks",
+        "effects": [],
+        "result": "He tries the next person."
+      }
+    ]
+  },
+  {
+    "id": "fraud_degree_check",
+    "weight": 6,
+    "if": {
+      "flag": "fake_degree",
+      "hasJob": true
+    },
+    "once": true,
+    "title": "Certificate verification",
+    "text": "HR emails everybody: the company is verifying all degree certificates with the universities this month.",
+    "choices": [
+      {
+        "text": "Confess and resign quietly",
+        "effects": [
+          {
+            "job": null
+          },
+          {
+            "stat": "reputation",
+            "add": -5
+          },
+          {
+            "flag": "fake_degree",
+            "set": false
+          }
+        ],
+        "result": "You clear your desk before anyone asks why."
+      },
+      {
+        "text": "Bribe the verification agent (₦100,000)",
+        "if": {
+          "stat": "money",
+          "gte": 100000
+        },
+        "lockedText": "Needs ₦100,000",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -100000
+          },
+          {
+            "chance": 0.6,
+            "then": [
+              {
+                "toast": "Your file comes back 'verified'."
+              }
+            ],
+            "else": [
+              {
+                "job": null
+              },
+              {
+                "stat": "heat",
+                "add": 15
+              },
+              {
+                "toast": "The agent was honest. You're sacked and reported."
+              }
+            ]
+          }
+        ],
+        "result": "You meet the agent at a hotel lobby."
+      },
+      {
+        "text": "Brazen it out",
+        "effects": [
+          {
+            "chance": 0.7,
+            "then": [
+              {
+                "job": null
+              },
+              {
+                "stat": "heat",
+                "add": 20
+              },
+              {
+                "flag": "arrested",
+                "set": true
+              }
+            ],
+            "else": [
+              {
+                "toast": "Somehow, nobody checks your file."
+              }
+            ]
+          }
+        ],
+        "result": "You smile in every meeting and pray."
+      }
+    ]
+  },
+  {
+    "id": "fraud_room14",
+    "weight": 2,
+    "if": {
+      "flag": "yahoo"
+    },
+    "once": true,
+    "title": "Room 14 calls",
+    "text": "Chairman Tobi from your university hostel calls. \"One big client. A widow in Texas. ₦2 million for you if you handle the chats. One month.\"",
+    "choices": [
+      {
+        "text": "Take the job",
+        "effects": [
+          {
+            "stat": "money",
+            "add": 2000000
+          },
+          {
+            "stat": "heat",
+            "add": 35
+          },
+          {
+            "flag": "fraud",
+            "set": true
+          },
+          {
+            "offense": "fraud"
+          },
+          {
+            "chance": 0.4,
+            "then": [
+              {
+                "flag": "arrested",
+                "set": true
+              }
+            ]
+          }
+        ],
+        "result": "You learn her late husband's name, her dog's name, her bank's name."
+      },
+      {
+        "text": "Tell Tobi you're out for good",
+        "effects": [
+          {
+            "stat": "stress",
+            "add": -4
+          }
+        ],
+        "result": "\"Old boy has changed,\" Tobi laughs. You have."
+      }
+    ]
   }
 ]

@@ -15,6 +15,7 @@ import {
   addStat,
   apply,
   canPick,
+  beatKey,
   check,
   clamp,
   debt,
@@ -69,6 +70,9 @@ function enterChapter(s: GameState, id: string) {
   if (!def) return;
   s.chapter = def.id;
   s.stage = def.stage;
+  // A new school, a clean record.
+  s.flags.strikes = 0;
+  s.flags.discipline_due = "";
   s.age = Math.max(s.age, def.age);
   if (def.stage === "adult") startAdulthood(s);
   goScene(s, def.start);
@@ -100,6 +104,12 @@ function goScene(s: GameState, sceneId: string) {
 
 function go(s: GameState, next: string | undefined) {
   if (!next) return;
+  // Back from a suspension or expulsion scene to where the story was heading.
+  if (next === "@resume") {
+    const back = String(s.flags.resume_next ?? "");
+    s.flags.resume_next = "";
+    return go(s, back || undefined);
+  }
   if (next.startsWith("@chapter:")) return enterChapter(s, next.slice(9));
   if (next === "@adult") return enterChapter(s, "adult");
   if (next === "@world") {
@@ -121,14 +131,51 @@ export function choose(choice: Choice) {
     if (!canPick(s, choice)) return;
     const toasts = apply(s, choice.effects);
     if (s.ending) return;
+    // A sports-day event: play it first; finishGame shows the result and moves on.
+    if (choice.game) {
+      s.minigame = { ...choice.game, next: choice.next };
+      return;
+    }
+    const next = disciplineDetour(s, choice.next);
     const result = [choice.result ? fill(s, choice.result) : "", ...toasts].filter(Boolean).join("\n\n");
     if (result) {
       s.result = result;
-      s.pendingNext = choice.next ?? null;
+      s.pendingNext = next ?? null;
     } else {
-      go(s, choice.next);
+      go(s, next);
     }
   });
+}
+
+/** The end of a sports-day mini-game: apply what winning or losing does, show it, then carry on. */
+export function finishGame(won: boolean) {
+  update((s) => {
+    const g = s.minigame;
+    if (!g) return;
+    s.minigame = null;
+    const toasts = apply(s, won ? g.win : g.lose);
+    const text = won ? g.winText : g.loseText;
+    const next = disciplineDetour(s, g.next);
+    s.result = [text ? fill(s, text) : won ? "You win!" : "Not this time.", ...toasts].filter(Boolean).join("\n\n");
+    s.pendingNext = next ?? null;
+  });
+}
+
+/**
+ * When strikes at school have added up to a suspension or an expulsion, the
+ * story stops off at that scene first, then picks up where it was heading.
+ */
+function disciplineDetour(s: GameState, next: string | undefined): string | undefined {
+  const due = String(s.flags.discipline_due ?? "");
+  if (!due || !s.chapter) return next;
+  s.flags.discipline_due = "";
+  if (!chapter(s.chapter)?.scenes[due]) return next;
+  s.flags[`${due}_${s.chapter}`] = true;
+  // Expelled while already suspended: keep where the story was heading before either.
+  const detouring = next === "suspended" || next === "expelled" || next === "@resume";
+  if (!detouring) s.flags.resume_next = next ?? "";
+  addLog(s, due === "expelled" ? `Expelled during ${chapter(s.chapter)?.title.split("·")[1]?.trim() ?? "school"}.` : `Suspended during ${chapter(s.chapter)?.title.split("·")[1]?.trim() ?? "school"}.`);
+  return due;
 }
 
 export function continueStory() {
@@ -1030,15 +1077,15 @@ export function lineFor(s: GameState, p: PersonDef): string {
 }
 
 export function offerFor(s: GameState, p: PersonDef) {
-  if (s.flags[`offer_${personKey(p)}`] === s.day) return null;
+  if (s.flags[`offer_${personKey(p)}`] === beatKey(s)) return null;
   return p.talks?.find((t) => check(s, t.if)) ?? null;
 }
 
 export function talk(key: string) {
   update((s) => {
     const p = findPerson(key);
-    if (!p || s.flags[`talked_${key}`] === s.day) return;
-    s.flags[`talked_${key}`] = s.day;
+    if (!p || s.flags[`talked_${key}`] === beatKey(s)) return;
+    s.flags[`talked_${key}`] = beatKey(s);
     const who = memoryKey(p);
     recalled(s, who);
     if (p.npc) {
@@ -1062,8 +1109,8 @@ const COMEBACKS = [
 export function insult(key: string) {
   update((s) => {
     const p = findPerson(key);
-    if (!p || s.flags[`insulted_${key}`] === s.day) return;
-    s.flags[`insulted_${key}`] = s.day;
+    if (!p || s.flags[`insulted_${key}`] === beatKey(s)) return;
+    s.flags[`insulted_${key}`] = beatKey(s);
     if (p.npc) {
       const current = s.npcs[p.npc] ?? { rel: 0, met: true, lastSeen: s.day };
       s.npcs[p.npc] = { ...current, rel: clamp(current.rel - 12), met: true };
@@ -1085,12 +1132,17 @@ export function insult(key: string) {
 export function takeOffer(key: string, choice: Choice) {
   update((s) => {
     const p = findPerson(key);
-    if (!p || !canPick(s, choice) || s.flags[`offer_${key}`] === s.day) return;
+    if (!p || !canPick(s, choice) || s.flags[`offer_${key}`] === beatKey(s)) return;
     const time = (choice.effects ?? []).reduce((sum, e) => sum + (e.time ?? 0), 0);
     if (s.stage === "adult" && !s.chapter && time && s.slot + time > SLOTS.length) return toast(s, "It's too late for that today.");
-    s.flags[`offer_${key}`] = s.day;
+    s.flags[`offer_${key}`] = beatKey(s);
     const rel = (choice.effects ?? []).reduce((sum, e) => sum + (e.npc ? (e.rel ?? 0) : 0), 0);
     const toasts = apply(s, choice.effects);
+    // Caught at school through a conversation: the suspension or expulsion scene plays now.
+    if (s.chapter && s.flags.discipline_due && s.scene) {
+      const detour = disciplineDetour(s, s.scene);
+      if (detour && detour !== s.scene) goScene(s, detour);
+    }
     // A conversation can lead straight into a story scene.
     const forced = s.flags.force_event;
     if (typeof forced === "string" && forced) {

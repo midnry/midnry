@@ -34,6 +34,14 @@ export function rel(state: GameState, id: string): number {
   return state.npcs[id]?.rel ?? 0;
 }
 
+/**
+ * What "once a day" means for talking and offers: a day in the city, but each
+ * story beat while growing up (school days pass between scenes).
+ */
+export function beatKey(state: GameState): string | number {
+  return state.chapter ? `${state.chapter}:${state.scene}` : state.day;
+}
+
 export function check(state: GameState, cond: Cond | undefined): boolean {
   if (!cond) return true;
   if (cond.any && !cond.any.some((item) => check(state, item))) return false;
@@ -47,7 +55,16 @@ export function check(state: GameState, cond: Cond | undefined): boolean {
     if (cond.gte != null && value < cond.gte) return false;
     if (cond.lte != null && value > cond.lte) return false;
   }
-  if (cond.flag && !state.flags[cond.flag]) return false;
+  if (cond.flag) {
+    const value = state.flags[cond.flag];
+    if (!value) return false;
+    // A counted flag (house points, discipline strikes): compare its number.
+    if (!cond.stat && !cond.skill && (cond.gte != null || cond.lte != null)) {
+      const n = Number(value);
+      if (cond.gte != null && n < cond.gte) return false;
+      if (cond.lte != null && n > cond.lte) return false;
+    }
+  }
   if (cond.notFlag && state.flags[cond.notFlag]) return false;
   if (cond.background && state.background !== cond.background) return false;
   if (cond.gender && state.gender !== cond.gender) return false;
@@ -99,6 +116,31 @@ export function addLog(state: GameState, text: string): void {
   state.log.push({ age: Math.floor(state.age), text: fill(state, text) });
 }
 
+const STRIKE_LINES = [
+  "",
+  "Your name goes into the black book. One more and your parents get a letter.",
+  "Second strike. The vice principal now knows your face, and not in a good way.",
+  "",
+  "You're on your final warning. One more thing and you are out of this school.",
+];
+
+/**
+ * Discipline at school: strikes add up through a chapter. The third gets you
+ * suspended and the fifth expelled; the story takes a detour through those
+ * scenes (see disciplineDetour in the engine).
+ */
+export function discipline(state: GameState, n: number, toasts: string[]): void {
+  if (!state.chapter || state.stage === "adult") return;
+  const before = Number(state.flags.strikes ?? 0);
+  const after = Math.max(0, before + n);
+  state.flags.strikes = after;
+  if (n <= 0) return;
+  const ch = state.chapter;
+  if (after >= 5 && !state.flags[`expelled_${ch}`]) state.flags.discipline_due = "expelled";
+  else if (after >= 3 && !state.flags[`suspended_${ch}`]) state.flags.discipline_due = "suspended";
+  else if (STRIKE_LINES[after]) toasts.push(STRIKE_LINES[after]!);
+}
+
 /** Apply effects in order. Returns toast lines raised by the effects. */
 export function apply(state: GameState, effects: Effect[] | undefined, toasts: string[] = []): string[] {
   for (const effect of effects ?? []) {
@@ -111,7 +153,9 @@ export function apply(state: GameState, effects: Effect[] | undefined, toasts: s
       else addStat(state, effect.stat, effect.add ?? 0);
     }
     if (effect.skill) addSkill(state, effect.skill, effect.add ?? 0);
-    if (effect.flag) state.flags[effect.flag] = effect.set ?? true;
+    if (effect.flag && effect.add != null && !effect.stat && !effect.skill) state.flags[effect.flag] = Number(state.flags[effect.flag] ?? 0) + effect.add;
+    else if (effect.flag) state.flags[effect.flag] = effect.set ?? true;
+    if (effect.discipline) discipline(state, effect.discipline, toasts);
     if (effect.npc) {
       const current = state.npcs[effect.npc] ?? { rel: 0, met: false, lastSeen: state.day };
       state.npcs[effect.npc] = { rel: clamp(current.rel + (effect.rel ?? 0)), met: true, lastSeen: state.day };

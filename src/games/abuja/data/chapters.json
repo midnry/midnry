@@ -42,14 +42,96 @@
       "friends": {
         "text": "Break time. Tunde, the boy who always comes early because his mama opens shop at 6, sits alone with nothing to eat. Slim, the boy with new shoes every term, waves you over: \"My guy, copy my homework. I get the answers.\"",
         "choices": [
-          { "text": "Share your lunch with Tunde", "effects": [{ "npc": "tunde", "rel": 20, "remember": { "what": "You shared your lunch with them when they had nothing", "say": "\"I still think about that time you shared your lunch with me. Nobody else did. I never forgot.\"", "tone": "warm", "weight": 3 } }, { "flag": "shared_lunch", "set": true }, { "log": "Shared lunch with Tunde. He never forgot." }], "result": "Tunde splits your bread exactly in half. \"I go pay you back one day,\" he says. He means it.", "next": "end" },
-          { "text": "Copy Slim's homework", "effects": [{ "npc": "slim", "rel": 15, "remember": { "what": "You copied their homework in primary school", "say": "\"Primary school, you were copying my homework. Now look at us. I'm still the brains, sha.\"", "tone": "story", "weight": 3 } }, { "skill": "education", "add": -2 }, { "flag": "slim_friend", "set": true }], "result": "Full marks, zero learning. Slim winks: \"Stick with me.\"", "next": "end" },
-          { "text": "Hang out with both", "effects": [{ "npc": "tunde", "rel": 8 }, { "npc": "slim", "rel": 8 }, { "stat": "network", "add": 2 }], "result": "Tunde brings the jokes, Slim brings the gist. You bring yourself.", "next": "end" }
+          { "text": "Share your lunch with Tunde", "effects": [{ "npc": "tunde", "rel": 20, "remember": { "what": "You shared your lunch with them when they had nothing", "say": "\"I still think about that time you shared your lunch with me. Nobody else did. I never forgot.\"", "tone": "warm", "weight": 3 } }, { "flag": "shared_lunch", "set": true }, { "log": "Shared lunch with Tunde. He never forgot." }], "result": "Tunde splits your bread exactly in half. \"I go pay you back one day,\" he says. He means it.", "next": "sweets" },
+          { "text": "Copy Slim's homework", "effects": [{ "npc": "slim", "rel": 15, "remember": { "what": "You copied their homework in primary school", "say": "\"Primary school, you were copying my homework. Now look at us. I'm still the brains, sha.\"", "tone": "story", "weight": 3 } }, { "skill": "education", "add": -2 }, { "flag": "slim_friend", "set": true }], "result": "Full marks, zero learning. Slim winks: \"Stick with me.\"", "next": "sweets" },
+          { "text": "Hang out with both", "effects": [{ "npc": "tunde", "rel": 8 }, { "npc": "slim", "rel": 8 }, { "stat": "network", "add": 2 }], "result": "Tunde brings the jokes, Slim brings the gist. You bring yourself.", "next": "sweets" }
         ]
       },
       "end": {
         "text": "Primary school ends. Your mother cries at the graduation. Your father pretends he is not crying. Somewhere in Maitama, a boy your age has just been given his first car keys. For when he turns sixteen.",
         "choices": [{ "text": "On to secondary school", "next": "@chapter:secondary" }]
+      },
+      "sweets": {
+        "speaker": "Mrs. Bassey",
+        "text": "Your class is a market. Kemi sells Tom-Tom at ₦10, Musa sells chin-chin in nylon, and somebody is renting out a Game Boy by the minute. Mrs. Bassey, the class teacher, has banned trading in class. Everybody trades in class.",
+        "choices": [
+          { "text": "Buy sweets in bulk at the junction and sell them in class", "effects": [{ "skill": "hustle", "add": 4 }, { "skill": "trade", "add": 2 }, { "chance": 0.35, "then": [{ "stat": "money", "add": -300 }, { "discipline": 1 }, { "toast": "Mrs. Bassey seizes your whole stock and eats a Tom-Tom in front of you." }], "else": [{ "stat": "money", "add": 1200 }, { "toast": "Sold out by second period. ₦1,200 profit." }] }], "result": "Buy low, sell at break. Simple economics. Mostly.", "next": "interhouse" },
+          { "text": "Become the class monitor who writes the names of noisemakers", "effects": [{ "stat": "reputation", "add": 2 }, { "skill": "education", "add": 2 }, { "flag": "monitor", "set": true }], "result": "Chalk, a ruler and power. Your classmates start being very nice to you.", "next": "interhouse" },
+          { "text": "Collect ₦200 each for a 'class party'… that nobody planned", "effects": [{ "stat": "money", "add": 3000 }, { "chance": 0.5, "then": [{ "discipline": 2 }, { "stat": "reputation", "add": -4 }, { "npc": "tunde", "rel": -5, "remember": { "what": "You collected fake party money from the class", "tone": "hurt", "weight": 2, "say": "\"You remember that 'class party' money? Some people still talk about it.\"" } }, { "toast": "Somebody's mother calls the school. There is no party. There is you, in the headmaster's office." }] }], "result": "Twenty classmates, ₦200 each. The party is always 'next Friday'.", "next": "interhouse" },
+          { "text": "Stay out of it and read", "effects": [{ "skill": "education", "add": 2 }], "result": "Your exercise book is the neatest in class. Nobody buys anything from you.", "next": "interhouse" }
+        ]
+      },
+      "interhouse": {
+        "speaker": "Games master",
+        "text": "Inter-house sports week! The whole school is split into four houses. There are march-pasts, drummers, parents on plastic chairs, and a trophy that the headmaster polishes every morning. Which house are you in?",
+        "choices": [
+          { "text": "Red House", "effects": [{ "flag": "house", "set": "red" }, { "flag": "house_pts", "set": 0 }], "result": "Red vest, red ribbon, red face paint. Your house captain hugs you like you have already won.", "next": "interhouse_events" },
+          { "text": "Blue House", "effects": [{ "flag": "house", "set": "blue" }, { "flag": "house_pts", "set": 0 }], "result": "Blue House: the house of serious people and loud drummers.", "next": "interhouse_events" },
+          { "text": "Green House", "effects": [{ "flag": "house", "set": "green" }, { "flag": "house_pts", "set": 0 }], "result": "Green House. The colour of the flag, the colour of victory, says your house master.", "next": "interhouse_events" },
+          { "text": "Yellow House", "effects": [{ "flag": "house", "set": "yellow" }, { "flag": "house_pts", "set": 0 }], "result": "Yellow House. Bright vests, brighter mouths. Your house sings the loudest.", "next": "interhouse_events" }
+        ]
+      },
+      "interhouse_events": {
+        "text": "The pitch is chalked, the drummers are going, and your house captain needs points. Pick your event.",
+        "choices": [
+          { "text": "Run the 100m sprint", "game": { "kind": "sprint", "level": 1, "win": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 2 }, { "stat": "stress", "add": -3 }, { "stat": "health", "add": 2 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "You burst through the tape! Your house mates carry you on their shoulders.", "loseText": "Fourth. Your legs had other plans." }, "next": "interhouse_events2" },
+          { "text": "Hop the sack race", "game": { "kind": "sack", "level": 1, "win": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 2 }, { "stat": "stress", "add": -3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "Hop, hop, hop, WIN! Nobody has ever been so proud of a rice sack.", "loseText": "You fall flat in your sack. The parents laugh. Kindly." }, "next": "interhouse_events2" },
+          { "text": "Carry the egg in the egg-and-spoon race", "game": { "kind": "egg", "level": 1, "win": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 2 }, { "stat": "stress", "add": -3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "Not a crack! Your house cheers like you've scored at the World Cup.", "loseText": "Splat. The egg is everywhere. Your sports vest smells for a week." }, "next": "interhouse_events2" },
+          { "text": "Put a stone in the shoe of Slim's house runner", "effects": [{ "chance": 0.5, "then": [{ "discipline": 2 }, { "stat": "reputation", "add": -4 }, { "npc": "slim", "rel": -6, "remember": { "what": "You sabotaged their house runner", "tone": "hurt", "weight": 2, "say": "\"I know it was you who put that stone in our runner's shoe.\"" } }, { "toast": "The runner shows the stone to the games master. Everyone looks at you." }], "else": [{ "flag": "house_pts", "add": 1 }, { "toast": "Their runner limps home last. Your house gets the point. Your conscience does not." }] }], "result": "You find a small, sharp stone.", "next": "interhouse_events2" },
+          { "text": "Sell zobo and puff-puff to the parents", "effects": [{ "stat": "money", "add": 2500 }, { "skill": "hustle", "add": 3 }, { "skill": "trade", "add": 2 }], "result": "Hot sun plus thirsty parents equals ₦2,500. You learn the first law of business.", "next": "interhouse_events2" }
+        ]
+      },
+      "interhouse_events2": {
+        "text": "Last event of the day: tug of war, house against house. Your captain counts the strongest children twice.",
+        "choices": [
+          { "text": "Anchor the rope for your house", "game": { "kind": "tug", "level": 1, "win": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 3 }, { "stat": "stress", "add": -3 }, { "npc": "tunde", "rel": 3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "The rope slides your way, inch by inch… and over the line! Tunde jumps on your back.", "loseText": "Your house ends up in the sand. Together, at least." }, "next": "interhouse_end" },
+          { "text": "Lead the march-past with the house flag", "effects": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 3 }], "result": "Left, right, left. You salute the headmaster like a general. Best march-past: your house.", "next": "interhouse_end" },
+          { "text": "Lead the cheering", "effects": [{ "stat": "stress", "add": -5 }, { "stat": "network", "add": 2 }], "result": "You lose your voice. You gain a reputation for noise.", "next": "interhouse_end" }
+        ]
+      },
+      "interhouse_end": {
+        "text": "The headmaster lifts the trophy. The results are read out.",
+        "branch": [
+          { "if": { "flag": "house_pts", "gte": 2 }, "next": "interhouse_cup" },
+          { "next": "interhouse_close" }
+        ]
+      },
+      "interhouse_cup": {
+        "text": "\"And the overall winner of this year's inter-house sports is…\" Your house. The trophy goes up, the drummers lose their minds, and for one afternoon you are famous.",
+        "choices": [
+          { "text": "Celebrate", "effects": [{ "stat": "reputation", "add": 4 }, { "stat": "stress", "add": -6 }, { "log": "Won the inter-house sports cup in primary school." }, { "npc": "tunde", "rel": 3, "remember": { "what": "You won the inter-house cup together", "tone": "warm", "weight": 3, "say": "\"Primary school inter-house! You remember how we carried that trophy?\"" } }], "next": "common_entrance" }
+        ]
+      },
+      "interhouse_close": {
+        "text": "Your house doesn't win the cup this year. The winners dance past your stand. Your house master says, \"Next year,\" like he says every year.",
+        "choices": [
+          { "text": "Next year, then", "effects": [{ "stat": "stress", "add": 2 }], "next": "common_entrance" }
+        ]
+      },
+      "common_entrance": {
+        "text": "Common Entrance is next month: the exam into secondary school. A man at the junction runs a 'special centre' where, they say, the answers are written on the board.",
+        "choices": [
+          { "text": "Study with past questions every evening", "effects": [{ "skill": "education", "add": 5 }, { "stat": "stress", "add": 4 }], "result": "Your Mama tests you every night by the lantern. You know your times tables in your sleep.", "next": "end" },
+          { "text": "Register at the 'special centre' (₦2,000)", "effects": [{ "stat": "money", "add": -2000 }, { "flag": "malpractice", "set": true }, { "chance": 0.3, "then": [{ "discipline": 2 }, { "toast": "Exam officials raid the centre. Your name is on their list." }], "else": [{ "skill": "education", "add": -1 }, { "toast": "The answers really are on the board. You pass. You learn nothing." }] }], "result": "A crowded room, a man with chalk, and a lookout at the door.", "next": "end" },
+          { "text": "Help Tunde study too", "effects": [{ "skill": "education", "add": 3 }, { "npc": "tunde", "rel": 6, "remember": { "what": "You helped them study for Common Entrance", "tone": "warm", "weight": 2, "say": "\"I passed Common Entrance because you drilled me. Don't think I forgot.\"" } }], "result": "Two heads, one lantern. Both of you pass.", "next": "end" }
+        ]
+      },
+      "suspended": {
+        "speaker": "Headmaster",
+        "text": "\"You are suspended for two weeks.\" The headmaster writes a letter for your parents. The walk home is the longest of your life.",
+        "choices": [
+          { "text": "Help at the stall while you're home", "effects": [{ "skill": "hustle", "add": 3 }, { "stat": "money", "add": 800 }, { "stat": "stress", "add": 4 }], "result": "Two weeks of selling tomatoes and hearing about it from every customer.", "next": "@resume" },
+          { "text": "Study at home and promise to change", "effects": [{ "skill": "education", "add": 3 }, { "discipline": -1 }], "result": "You copy your notes twice. The promise is real, mostly.", "next": "@resume" },
+          { "text": "Roam the street with the older boys", "effects": [{ "stat": "heat", "add": 2 }, { "stat": "network", "add": 2 }, { "stat": "money", "add": 500 }], "result": "They teach you things that are not in the curriculum.", "next": "@resume" }
+        ]
+      },
+      "expelled": {
+        "speaker": "Headmaster",
+        "text": "\"Pack your things. You are no longer a pupil of this school.\" Your parents are called in. Mama cries; Daddy does not speak for three days.",
+        "choices": [
+          { "text": "Start again at a cheaper school across town", "effects": [{ "skill": "education", "add": -4 }, { "stat": "reputation", "add": -3 }, { "stat": "stress", "add": 8 }, { "flag": "expelled_primary", "set": true }, { "npc": "tunde", "rel": -3, "remember": { "what": "You got expelled and moved schools", "tone": "hurt", "weight": 2 } }, { "log": "Expelled from primary school and moved to another." }], "result": "New uniform, new teachers, same you. You decide which version.", "next": "@resume" },
+          { "text": "Beg the headmaster with a 'development levy' (₦10,000)", "if": { "stat": "money", "gte": 10000 }, "lockedText": "Needs ₦10,000", "effects": [{ "stat": "money", "add": -10000 }, { "flag": "strikes", "set": 2 }, { "stat": "stress", "add": 6 }], "result": "Daddy pays. The headmaster finds that he can forgive you after all.", "next": "@resume" }
+        ]
       }
     }
   },
@@ -85,38 +167,39 @@
         "speaker": "Bolaji",
         "text": "Inter-school quiz at a 'big' school in Maitama. A convoy rolls in: two Prados, one siren. Out steps Bolaji Danjuma-Adeyemi, son of (fictional) Senator Danjuma-Adeyemi. He scans your team. \"You guys came by bus? Respect, honestly.\"",
         "choices": [
-          { "text": "Introduce yourself and swap numbers", "effects": [{ "npc": "bolaji", "rel": 15, "remember": { "what": "You introduced yourself at school, no fear", "say": "\"You were the only one in that school who talked to me like a normal person. Not my father's son. Me.\"", "tone": "warm", "weight": 3 } }, { "stat": "network", "add": 6 }, { "flag": "knows_bolaji", "set": true }, { "log": "Met Bolaji, a Nepo Baby, at a quiz in Maitama." }], "result": "He gives you his number. And his driver's number, 'in case'.", "next": "peer" },
-          { "text": "Beat his team in the quiz", "effects": [{ "skill": "education", "add": 5 }, { "stat": "reputation", "add": 6 }, { "npc": "bolaji", "rel": 5 }, { "flag": "beat_bolaji", "set": true }, { "log": "Beat the Maitama school in a quiz. Bolaji clapped." }], "result": "You win. Bolaji claps, genuinely. His father's aide does not.", "next": "peer" },
-          { "text": "Ignore him. Not your mate.", "effects": [{ "stat": "stress", "add": -3 }], "result": "Pride is free. For now.", "next": "peer" }
+          { "text": "Introduce yourself and swap numbers", "effects": [{ "npc": "bolaji", "rel": 15, "remember": { "what": "You introduced yourself at school, no fear", "say": "\"You were the only one in that school who talked to me like a normal person. Not my father's son. Me.\"", "tone": "warm", "weight": 3 } }, { "stat": "network", "add": 6 }, { "flag": "knows_bolaji", "set": true }, { "log": "Met Bolaji, a Nepo Baby, at a quiz in Maitama." }], "result": "He gives you his number. And his driver's number, 'in case'.", "next": "hustle_hostel" },
+          { "text": "Beat his team in the quiz", "effects": [{ "skill": "education", "add": 5 }, { "stat": "reputation", "add": 6 }, { "npc": "bolaji", "rel": 5 }, { "flag": "beat_bolaji", "set": true }, { "log": "Beat the Maitama school in a quiz. Bolaji clapped." }], "result": "You win. Bolaji claps, genuinely. His father's aide does not.", "next": "hustle_hostel" },
+          { "text": "Ignore him. Not your mate.", "effects": [{ "stat": "stress", "add": -3 }], "result": "Pride is free. For now.", "next": "hustle_hostel" }
         ]
       },
       "peer": {
         "speaker": "Slim",
         "text": "Slim finds you after school. New iPhone, school shirt untucked. \"My guy, there's this runs. You just go collect package for one oga for Lugbe, bring am come. ₦10k per trip. No questions.\"",
         "choices": [
-          { "text": "Do the runs", "effects": [{ "stat": "money", "add": 20000 }, { "stat": "heat", "add": 8 }, { "npc": "slim", "rel": 15, "remember": { "what": "You did runs for them in secondary school", "say": "\"You did those runs for me back in school and never talked. That kind of loyalty, I remember.\"", "tone": "story", "weight": 3 } }, { "flag": "slim_runs", "set": true }, { "log": "Did 'no questions' runs for Slim at fifteen." }], "result": "Two trips, ₦20k. The second package was heavier. You did not ask.", "next": "socials" },
-          { "text": "Refuse and tell Tunde", "effects": [{ "npc": "tunde", "rel": 10, "remember": { "what": "You told them the truth about Slim's runs", "say": "\"You told me the truth about Slim back then, when it would have been easier to keep quiet.\"", "tone": "warm", "weight": 3 } }, { "npc": "slim", "rel": -10, "remember": { "what": "You snitched to Tunde about their runs", "say": "\"I haven't forgotten you went and told Tunde my business back in school. Water under the bridge… mostly.\"", "tone": "hurt", "weight": 3 } }], "result": "Tunde says, \"Guy, that one na trouble.\" Slim calls you 'Pastor' for a month.", "next": "socials" }
+          { "text": "Do the runs", "effects": [{ "stat": "money", "add": 20000 }, { "stat": "heat", "add": 8 }, { "npc": "slim", "rel": 15, "remember": { "what": "You did runs for them in secondary school", "say": "\"You did those runs for me back in school and never talked. That kind of loyalty, I remember.\"", "tone": "story", "weight": 3 } }, { "flag": "slim_runs", "set": true }, { "log": "Did 'no questions' runs for Slim at fifteen." }], "result": "Two trips, ₦20k. The second package was heavier. You did not ask.", "next": "senior" },
+          { "text": "Refuse and tell Tunde", "effects": [{ "npc": "tunde", "rel": 10, "remember": { "what": "You told them the truth about Slim's runs", "say": "\"You told me the truth about Slim back then, when it would have been easier to keep quiet.\"", "tone": "warm", "weight": 3 } }, { "npc": "slim", "rel": -10, "remember": { "what": "You snitched to Tunde about their runs", "say": "\"I haven't forgotten you went and told Tunde my business back in school. Water under the bridge… mostly.\"", "tone": "hurt", "weight": 3 } }], "result": "Tunde says, \"Guy, that one na trouble.\" Slim calls you 'Pastor' for a month.", "next": "senior" }
         ]
       },
       "socials": {
         "text": "Everyone is on Tiklok now. Your classmate's skit about Nigerian mothers and slippers has 300k views. You open the app.",
         "choices": [
-          { "text": "Make skits about school life", "effects": [{ "skill": "content", "add": 8 }, { "flag": "early_creator", "set": true }], "result": "Your third video (\"POV: NEPA takes light during WAEC revision\") gets 40k views. You understand the algorithm a little.", "next": "crush" },
-          { "text": "Just scroll", "effects": [{ "stat": "stress", "add": -4 }, { "skill": "education", "add": -1 }], "result": "Four hours vanish. You learn nothing. It was lovely.", "next": "crush" }
+          { "text": "Make skits about school life", "effects": [{ "skill": "content", "add": 8 }, { "flag": "early_creator", "set": true }], "result": "Your third video (\"POV: NEPA takes light during WAEC revision\") gets 40k views. You understand the algorithm a little.", "next": "interhouse_sec" },
+          { "text": "Just scroll", "effects": [{ "stat": "stress", "add": -4 }, { "skill": "education", "add": -1 }], "result": "Four hours vanish. You learn nothing. It was lovely.", "next": "interhouse_sec" }
         ]
       },
       "crush": {
         "text": "There is someone in SS2 who laughs at your jokes. Innocent butterflies. You consider writing a note.",
         "choices": [
-          { "text": "Write the note", "effects": [{ "stat": "stress", "add": 4 }, { "stat": "reputation", "add": 2 }], "result": "They reply: \"You're funny.\" You re-read it 400 times.", "next": "waec" },
-          { "text": "Focus. WAEC is coming.", "effects": [{ "skill": "education", "add": 3 }], "result": "Love can wait. WAEC cannot.", "next": "waec" }
+          { "text": "Write the note", "effects": [{ "stat": "stress", "add": 4 }, { "stat": "reputation", "add": 2 }], "result": "They reply: \"You're funny.\" You re-read it 400 times.", "next": "expo_market" },
+          { "text": "Focus. WAEC is coming.", "effects": [{ "skill": "education", "add": 3 }], "result": "Love can wait. WAEC cannot.", "next": "expo_market" }
         ]
       },
       "waec": {
         "text": "WAEC season. 'Expo' is selling on WhatsApp: ₦5,000 for 'verified' answers. Half the class has bought it.",
         "choices": [
           { "text": "Study properly, late nights included", "effects": [{ "stat": "stress", "add": 8 }, { "chance": 0.55, "then": [{ "cert": "waec" }, { "skill": "education", "add": 5 }, { "toast": "WAEC: 5 credits including Maths and English!" }], "else": [{ "flag": "waec_failed", "set": true }, { "toast": "WAEC: Maths missed by one mark." }] }], "next": "dropout", "result": "You read by candlelight. Results come out." },
-          { "text": "Buy the expo", "effects": [{ "stat": "money", "add": -5000 }, { "chance": 0.4, "then": [{ "cert": "waec" }, { "toast": "The expo was real. Somehow." }], "else": [{ "flag": "waec_failed", "set": true }, { "toast": "The expo was for last year's paper. Of course." }] }], "next": "dropout", "result": "You pay. You pray." }
+          { "text": "Buy the expo", "effects": [{ "stat": "money", "add": -5000 }, { "chance": 0.4, "then": [{ "cert": "waec" }, { "toast": "The expo was real. Somehow." }], "else": [{ "flag": "waec_failed", "set": true }, { "toast": "The expo was for last year's paper. Of course." }] }], "next": "dropout", "result": "You pay. You pray." },
+          { "text": "Write with the miracle centre's 'assistance'", "if": { "flag": "miracle_centre" }, "effects": [{ "chance": 0.75, "then": [{ "cert": "waec" }, { "toast": "WAEC: all credits. You didn't write half of them." }], "else": [{ "flag": "waec_failed", "set": true }, { "stat": "heat", "add": 3 }, { "toast": "WAEC cancels the whole centre's results." }] }], "result": "Answers whispered through the window, a supervisor who looks away.", "next": "dropout" }
         ]
       },
       "dropout": {
@@ -131,6 +214,100 @@
         "text": "JAMB day. The CBT centre in Garki has three working computers and four hundred candidates.",
         "choices": [
           { "text": "Sit the exam", "effects": [{ "chance": 0.7, "then": [{ "flag": "admitted", "set": true }, { "toast": "Admission: University of Abuja!" }], "else": [{ "age": 1 }, { "flag": "admitted", "set": true }, { "toast": "Missed the cut-off. Tried again next year and got in." }] }], "result": "Results drop at midnight. Your phone shakes in your hand.", "next": "@chapter:university" }
+        ]
+      },
+      "hustle_hostel": {
+        "text": "Money is moving in this school, and none of it is yours yet. Phones need charging, juniors need help, and everybody is hungry after prep.",
+        "choices": [
+          { "text": "Run a phone-charging point from the staff room socket (₦100 a charge)", "effects": [{ "skill": "hustle", "add": 3 }, { "chance": 0.3, "then": [{ "discipline": 1 }, { "stat": "money", "add": -500 }, { "toast": "The bursar finds your extension box. Confiscated, with a warning." }], "else": [{ "stat": "money", "add": 3000 }] }], "result": "Ten phones a night, ₦100 each. The staff room has never been so popular.", "next": "peer" },
+          { "text": "Teach JSS1 maths after prep (₦500 a week each)", "effects": [{ "stat": "money", "add": 2000 }, { "skill": "education", "add": 3 }, { "stat": "reputation", "add": 2 }], "result": "The juniors call you 'Teacher'. Their parents pay on time.", "next": "peer" },
+          { "text": "Sell Indomie and Milo at 'hostel prices'", "effects": [{ "stat": "money", "add": 4000 }, { "skill": "trade", "add": 4 }], "result": "Buy at the market, sell at midnight. Demand is infinite after lights out.", "next": "peer" },
+          { "text": "Write love letters for SS1 boys (₦200 a letter)", "effects": [{ "stat": "money", "add": 1500 }, { "skill": "content", "add": 2 }], "result": "\"My heart beats for you like Mama's pestle.\" Business is booming.", "next": "peer" },
+          { "text": "Forge exeat slips for students who want to sneak out (₦1,000 each)", "effects": [{ "stat": "money", "add": 5000 }, { "chance": 0.45, "then": [{ "discipline": 3 }, { "stat": "reputation", "add": -5 }, { "toast": "A forged exeat is found on a student at the bus stop. It has your handwriting." }] }], "result": "The principal's signature is easy once you've practised it fifty times.", "next": "peer" }
+        ]
+      },
+      "senior": {
+        "speaker": "Senior Chuka",
+        "text": "Senior Chuka and his 'squad' run the junior block. Every junior pays a 'protection fee'. Today Chuka is standing in front of you, holding out his hand.",
+        "choices": [
+          { "text": "Pay the ₦1,000", "effects": [{ "stat": "money", "add": -1000 }, { "stat": "stress", "add": 3 }], "result": "He pockets it without looking. Next week, he'll be back.", "next": "socials" },
+          { "text": "Report him to the principal", "effects": [{ "stat": "reputation", "add": 3 }, { "chance": 0.5, "then": [{ "stat": "health", "add": -6 }, { "stat": "stress", "add": 6 }, { "toast": "Chuka finds out who reported him. Your shin finds out too." }], "else": [{ "toast": "Chuka is suspended. The junior block breathes again." }] }], "result": "You knock on the principal's door, heart pounding.", "next": "socials" },
+          { "text": "Join his squad and collect from the JSS1s", "effects": [{ "stat": "money", "add": 3000 }, { "stat": "heat", "add": 3 }, { "npc": "tunde", "rel": -5, "remember": { "what": "You bullied juniors for money in secondary school", "tone": "hurt", "weight": 2, "say": "\"You used to collect 'protection' from the small boys. I didn't like that version of you.\"" } }, { "chance": 0.4, "then": [{ "discipline": 2 }, { "toast": "A JSS1's father turns out to be a police officer. The principal is not amused." }] }], "result": "The JSS1s look at you the way you used to look at Chuka.", "next": "socials" },
+          { "text": "Stand your ground", "effects": [{ "chance": 0.5, "then": [{ "stat": "reputation", "add": 5 }, { "toast": "Chuka blinks first. Word spreads: you are not to be touched." }], "else": [{ "stat": "health", "add": -10 }, { "toast": "It does not go well. But Chuka never asks you again." }] }], "result": "\"No.\"", "next": "socials" }
+        ]
+      },
+      "interhouse_sec": {
+        "speaker": "Sports master",
+        "text": "Inter-house sports, secondary school edition: real tracks, starting blocks, and the principal in sunglasses. Houses are drawn at random. Which colour are you this time?",
+        "choices": [
+          { "text": "Red House", "effects": [{ "flag": "house", "set": "red" }, { "flag": "house_pts", "set": 0 }], "result": "Red vest, red ribbon, red face paint. Your house captain hugs you like you have already won.", "next": "interhouse_sec_events" },
+          { "text": "Blue House", "effects": [{ "flag": "house", "set": "blue" }, { "flag": "house_pts", "set": 0 }], "result": "Blue House: the house of serious people and loud drummers.", "next": "interhouse_sec_events" },
+          { "text": "Green House", "effects": [{ "flag": "house", "set": "green" }, { "flag": "house_pts", "set": 0 }], "result": "Green House. The colour of the flag, the colour of victory, says your house master.", "next": "interhouse_sec_events" },
+          { "text": "Yellow House", "effects": [{ "flag": "house", "set": "yellow" }, { "flag": "house_pts", "set": 0 }], "result": "Yellow House. Bright vests, brighter mouths. Your house sings the loudest.", "next": "interhouse_sec_events" }
+        ]
+      },
+      "interhouse_sec_events": {
+        "text": "Day one on the track. Your house captain has your name against an event.",
+        "choices": [
+          { "text": "Run the 4 × 100m relay", "game": { "kind": "relay", "level": 2, "win": [{ "flag": "house_pts", "add": 2 }, { "stat": "reputation", "add": 3 }, { "stat": "stress", "add": -3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "Clean passes, fast legs: your relay team wins it by a stride!", "loseText": "A dropped baton on the third leg. The whole house groans." }, "next": "interhouse_sec_events2" },
+          { "text": "Run the 200m", "game": { "kind": "sprint", "level": 2, "win": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 3 }, { "stat": "stress", "add": -3 }, { "stat": "health", "add": 2 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "You lean at the line and take it by a chest!", "loseText": "Third. Not bad. Not points." }, "next": "interhouse_sec_events2" },
+          { "text": "Slip the timekeeper ₦2,000 to 'adjust' your house's times", "if": { "stat": "money", "gte": 2000 }, "lockedText": "Needs ₦2,000", "effects": [{ "stat": "money", "add": -2000 }, { "chance": 0.5, "then": [{ "discipline": 2 }, { "stat": "reputation", "add": -5 }, { "toast": "The timekeeper panics and confesses to the sports master. Your name comes up." }], "else": [{ "flag": "house_pts", "add": 2 }, { "flag": "bribed_timekeeper", "set": true }, { "toast": "Your house's times look suspiciously good." }] }], "result": "You fold the notes small.", "next": "interhouse_sec_events2" },
+          { "text": "Sell cold drinks and gala to the crowd", "effects": [{ "stat": "money", "add": 6000 }, { "skill": "trade", "add": 3 }], "result": "A cooler, ice from the kitchen and a loud voice. ₦6,000.", "next": "interhouse_sec_events2" }
+        ]
+      },
+      "interhouse_sec_events2": {
+        "text": "Day two. The field events and the old favourites.",
+        "choices": [
+          { "text": "Pull in the tug of war final", "game": { "kind": "tug", "level": 2, "win": [{ "flag": "house_pts", "add": 2 }, { "stat": "reputation", "add": 3 }, { "stat": "stress", "add": -3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "Your house heaves together and drags them over the line!", "loseText": "They were heavier. They were also louder. You land in the sand." }, "next": "interhouse_sec_end" },
+          { "text": "Win the egg-and-spoon for your house's juniors", "game": { "kind": "egg", "level": 2, "win": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 2 }, { "stat": "stress", "add": -3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "Steady hands. The egg crosses the line unbroken.", "loseText": "The egg goes one way. You go the other." }, "next": "interhouse_sec_end" },
+          { "text": "Help the sack race juniors", "game": { "kind": "sack", "level": 2, "win": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 2 }, { "stat": "stress", "add": -3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "You show the juniors how it's done, and win!", "loseText": "The juniors laugh at you. Then with you." }, "next": "interhouse_sec_end" }
+        ]
+      },
+      "interhouse_sec_end": {
+        "text": "Closing ceremony. Medals, march-past, and the points table on the board.",
+        "branch": [
+          { "if": { "flag": "house_pts", "gte": 3 }, "next": "interhouse_sec_cup" },
+          { "next": "interhouse_sec_close" }
+        ]
+      },
+      "interhouse_sec_cup": {
+        "text": "Your house wins the cup! The principal shakes your hand. Somebody films the celebration and it goes round every class WhatsApp group.",
+        "choices": [
+          { "text": "Lift the cup", "effects": [{ "stat": "reputation", "add": 5 }, { "stat": "network", "add": 3 }, { "stat": "stress", "add": -6 }, { "log": "Won the inter-house sports cup in secondary school." }], "next": "crush" }
+        ]
+      },
+      "interhouse_sec_close": {
+        "text": "Your house finishes off the podium. Your house master gives a speech about 'character'. Everybody knows what that means.",
+        "choices": [
+          { "text": "There's always next year", "effects": [{ "stat": "stress", "add": 2 }], "next": "crush" }
+        ]
+      },
+      "expo_market": {
+        "speaker": "Slim",
+        "text": "WAEC is weeks away and the expo trade is in full swing. Slim has 'the plug': answers that arrive on WhatsApp the night before each paper. He wants agents.",
+        "choices": [
+          { "text": "Become an expo agent and resell to your class (₦2,000 a paper)", "effects": [{ "stat": "money", "add": 15000 }, { "stat": "heat", "add": 5 }, { "flag": "expo_agent", "set": true }, { "flag": "fraud_school", "set": true }, { "npc": "slim", "rel": 4, "remember": { "what": "You sold expo for them in secondary school", "tone": "story", "weight": 2 } }, { "chance": 0.5, "then": [{ "discipline": 5 }, { "toast": "WAEC officials trace the answers to your phone. The principal has the screenshots." }] }], "result": "Every night, a new PDF. Every morning, a queue at your bunk.", "next": "waec" },
+          { "text": "Register at a 'miracle centre' for WAEC (₦15,000)", "if": { "stat": "money", "gte": 15000 }, "lockedText": "Needs ₦15,000", "effects": [{ "stat": "money", "add": -15000 }, { "flag": "miracle_centre", "set": true }], "result": "The centre promises 'special assistance' in the exam hall. You don't ask what that means.", "next": "waec" },
+          { "text": "Report the expo ring to the principal", "effects": [{ "stat": "reputation", "add": 4 }, { "npc": "slim", "rel": -10, "remember": { "what": "You reported their expo business", "tone": "hurt", "weight": 3, "say": "\"You snitched on my expo business. I remember.\"" } }], "result": "The principal thanks you. Slim does not.", "next": "waec" },
+          { "text": "Ignore it and study", "effects": [{ "skill": "education", "add": 3 }, { "stat": "stress", "add": 3 }], "result": "Past questions, a torchlight and stubbornness.", "next": "waec" }
+        ]
+      },
+      "suspended": {
+        "speaker": "Principal",
+        "text": "\"Two weeks' suspension, and your parents must come and see me.\" You carry your box out through the gate while the whole class watches from the windows.",
+        "choices": [
+          { "text": "Work at the market while you're home", "effects": [{ "stat": "money", "add": 3000 }, { "skill": "hustle", "add": 3 }, { "stat": "stress", "add": 4 }], "result": "Two weeks carrying loads in Wuse Market. You come back with money and sore shoulders.", "next": "@resume" },
+          { "text": "Study hard and write an apology letter", "effects": [{ "skill": "education", "add": 3 }, { "discipline": -1 }, { "stat": "reputation", "add": 1 }], "result": "The principal reads the letter twice. Something in his face softens.", "next": "@resume" },
+          { "text": "Hang around the street corner", "effects": [{ "stat": "heat", "add": 3 }, { "stat": "network", "add": 2 }], "result": "The corner boys have a lot of free time and a lot of ideas.", "next": "@resume" }
+        ]
+      },
+      "expelled": {
+        "speaker": "Principal",
+        "text": "\"You are hereby expelled.\" The letter is on school paper, with a stamp. Your parents read it twice. WAEC is still ahead of you, but not at this school.",
+        "choices": [
+          { "text": "Write WAEC as a private candidate (₦25,000)", "if": { "stat": "money", "gte": 25000 }, "lockedText": "Needs ₦25,000", "effects": [{ "stat": "money", "add": -25000 }, { "skill": "education", "add": -2 }, { "stat": "stress", "add": 8 }, { "flag": "expelled_secondary", "set": true }, { "log": "Expelled from secondary school; wrote WAEC privately." }], "result": "Lesson centre by day, past questions by night.", "next": "@resume" },
+          { "text": "Go to a 'miracle centre' instead (₦10,000)", "if": { "stat": "money", "gte": 10000 }, "lockedText": "Needs ₦10,000", "effects": [{ "stat": "money", "add": -10000 }, { "flag": "miracle_centre", "set": true }, { "flag": "expelled_secondary", "set": true }, { "stat": "heat", "add": 3 }, { "log": "Expelled from secondary school; went to a miracle centre for WAEC." }], "result": "Cheaper, faster, and very illegal.", "next": "@resume" },
+          { "text": "Forget school and start hustling now", "effects": [{ "flag": "dropout", "set": true }, { "flag": "expelled_secondary", "set": true }, { "log": "Expelled from secondary school and started hustling." }], "result": "You fold your uniform for the last time.", "next": "@adult" }
         ]
       }
     }
@@ -153,17 +330,17 @@
       "strike": {
         "text": "ASUU is on strike. Again. Indefinitely. \"Go home, students.\" Your four-year course is now a five-year course, minimum.",
         "choices": [
-          { "text": "Learn to code from free videos", "effects": [{ "skill": "tech", "add": 10 }, { "stat": "money", "add": -8000 }], "result": "Data costs more than food, but by month six you build your first website.", "next": "cult" },
-          { "text": "Run a POS stand in Gwagwalada", "effects": [{ "skill": "hustle", "add": 6 }, { "stat": "money", "add": 40000 }, { "skill": "trade", "add": 3 }], "result": "Withdrawal charges are a goldmine. You learn the true face of Nigerian banking.", "next": "cult" },
-          { "text": "Follow Slim to the 'lab' in Lugbe", "effects": [{ "flag": "yahoo_intro", "set": true }, { "npc": "slim", "rel": 15, "remember": { "what": "You followed them to the 'lab' in Lugbe", "say": "\"Lugbe days! You followed me to the lab when nobody believed in me.\"", "tone": "story", "weight": 3 } }, { "stat": "money", "add": 60000 }, { "stat": "heat", "add": 12 }, { "log": "Learned 'the format' in Slim's yahoo lab during an ASUU strike." }], "result": "Ring lights, three laptops, and 'the format'. You make ₦60k in a week. Your stomach turns a little.", "next": "cult" }
+          { "text": "Learn to code from free videos", "effects": [{ "skill": "tech", "add": 10 }, { "stat": "money", "add": -8000 }], "result": "Data costs more than food, but by month six you build your first website.", "next": "hustle_uni" },
+          { "text": "Run a POS stand in Gwagwalada", "effects": [{ "skill": "hustle", "add": 6 }, { "stat": "money", "add": 40000 }, { "skill": "trade", "add": 3 }], "result": "Withdrawal charges are a goldmine. You learn the true face of Nigerian banking.", "next": "hustle_uni" },
+          { "text": "Follow Slim to the 'lab' in Lugbe", "effects": [{ "flag": "yahoo_intro", "set": true }, { "npc": "slim", "rel": 15, "remember": { "what": "You followed them to the 'lab' in Lugbe", "say": "\"Lugbe days! You followed me to the lab when nobody believed in me.\"", "tone": "story", "weight": 3 } }, { "stat": "money", "add": 60000 }, { "stat": "heat", "add": 12 }, { "log": "Learned 'the format' in Slim's yahoo lab during an ASUU strike." }], "result": "Ring lights, three laptops, and 'the format'. You make ₦60k in a week. Your stomach turns a little.", "next": "hustle_uni" }
         ]
       },
       "cult": {
         "text": "Strike over. On campus, two groups are recruiting. One wears berets and uses words like 'protection'. The other is the Rotaract club, which mostly does fundraisers.",
         "choices": [
-          { "text": "Join the 'protection' group", "effects": [{ "flag": "cult", "set": true }, { "stat": "heat", "add": 10 }, { "chance": 0.35, "then": [{ "stat": "health", "add": -25 }, { "toast": "A rival group attacks. You spend two weeks in the clinic." }, { "log": "Joined a campus cult. Got hurt for it." }], "else": [{ "stat": "reputation", "add": -5 }] }], "result": "Initiation is not a party. It is a lesson in how fast bad decisions get serious.", "next": "mentor" },
-          { "text": "Join the club with fundraisers", "effects": [{ "stat": "network", "add": 6 }, { "stat": "reputation", "add": 5 }], "result": "You organise a charity football match. Even the VC shows up.", "next": "mentor" },
-          { "text": "Stay neutral", "next": "mentor" }
+          { "text": "Join the 'protection' group", "effects": [{ "flag": "cult", "set": true }, { "stat": "heat", "add": 10 }, { "chance": 0.35, "then": [{ "stat": "health", "add": -25 }, { "toast": "A rival group attacks. You spend two weeks in the clinic." }, { "log": "Joined a campus cult. Got hurt for it." }], "else": [{ "stat": "reputation", "add": -5 }] }], "result": "Initiation is not a party. It is a lesson in how fast bad decisions get serious.", "next": "sorting" },
+          { "text": "Join the club with fundraisers", "effects": [{ "stat": "network", "add": 6 }, { "stat": "reputation", "add": 5 }], "result": "You organise a charity football match. Even the VC shows up.", "next": "sorting" },
+          { "text": "Stay neutral", "next": "sorting" }
         ]
       },
       "mentor": {
@@ -178,9 +355,9 @@
         "speaker": "Prophet Profit",
         "text": "Your timeline is full of Prophet Profit, standing beside a Lamborghini (rented). \"Forex mentorship: ₦50,000. 95% win rate. Students only discount!\"",
         "choices": [
-          { "text": "Pay for the course", "effects": [{ "stat": "money", "add": -50000 }, { "skill": "trading", "add": 2 }, { "flag": "guru_victim", "set": true }, { "log": "Paid a forex guru ₦50k for a course." }], "result": "The 'course' is four YouTube links and a Telegram group where he sells a second course.", "next": "nepo_party" },
-          { "text": "Learn trading from free books instead", "effects": [{ "skill": "trading", "add": 6 }], "result": "Boring, slow, and actually useful.", "next": "nepo_party" },
-          { "text": "Scroll past", "next": "nepo_party" }
+          { "text": "Pay for the course", "effects": [{ "stat": "money", "add": -50000 }, { "skill": "trading", "add": 2 }, { "flag": "guru_victim", "set": true }, { "log": "Paid a forex guru ₦50k for a course." }], "result": "The 'course' is four YouTube links and a Telegram group where he sells a second course.", "next": "ponzi" },
+          { "text": "Learn trading from free books instead", "effects": [{ "skill": "trading", "add": 6 }], "result": "Boring, slow, and actually useful.", "next": "ponzi" },
+          { "text": "Scroll past", "next": "ponzi" }
         ]
       },
       "nepo_party": {
@@ -196,8 +373,8 @@
         "speaker": "{love}",
         "text": "At a friend's birthday, you meet {love}. Sharp, funny, studying law, and completely unimpressed by fake people. (Both of you are over 18.)",
         "choices": [
-          { "text": "Talk all night", "effects": [{ "npc": "love", "rel": 20, "remember": { "what": "You talked all night the first time you met", "say": "\"Sometimes I think about that first night we just talked until morning.\"", "tone": "warm", "weight": 3 } }, { "flag": "met_love", "set": true }, { "log": "Met {love} at a birthday party." }], "result": "You walk them to the gate at 2 a.m. and forget your own name on the way back.", "next": "final" },
-          { "text": "Focus on yourself for now", "next": "final" }
+          { "text": "Talk all night", "effects": [{ "npc": "love", "rel": 20, "remember": { "what": "You talked all night the first time you met", "say": "\"Sometimes I think about that first night we just talked until morning.\"", "tone": "warm", "weight": 3 } }, { "flag": "met_love", "set": true }, { "log": "Met {love} at a birthday party." }], "result": "You walk them to the gate at 2 a.m. and forget your own name on the way back.", "next": "yahoo_hostel" },
+          { "text": "Focus on yourself for now", "next": "yahoo_hostel" }
         ]
       },
       "final": {
@@ -205,6 +382,62 @@
         "choices": [
           { "text": "Finish strong and graduate", "effects": [{ "cert": "degree" }, { "skill": "education", "add": 6 }, { "log": "Graduated from the University of Abuja." }], "result": "Second Class Upper. Your mother tells the whole street.", "next": "@chapter:nysc" },
           { "text": "Drop out: time is money", "effects": [{ "flag": "dropout", "set": "university" }, { "log": "Dropped out of university." }], "next": "@adult" }
+        ]
+      },
+      "hustle_uni": {
+        "text": "Back on campus. Your allowance won't last the month, and everyone in the hostel has a side hustle.",
+        "choices": [
+          { "text": "Typing and printing business in the hostel (₦150 a page)", "effects": [{ "stat": "money", "add": 25000 }, { "skill": "trade", "add": 3 }, { "skill": "tech", "add": 2 }], "result": "One second-hand printer, one extension cord, and every final-year student's project.", "next": "cult" },
+          { "text": "Barbing or braiding in your room", "effects": [{ "stat": "money", "add": 18000 }, { "skill": "hustle", "add": 3 }, { "stat": "network", "add": 2 }], "result": "Your room becomes a salon. Your roommate charges a 'standing fee'.", "next": "cult" },
+          { "text": "Resell data bundles and airtime", "effects": [{ "stat": "money", "add": 12000 }, { "skill": "trade", "add": 2 }], "result": "You buy in bulk, sell by the gig. Small, steady money.", "next": "cult" },
+          { "text": "Write assignments and projects for rich kids (₦5,000 each)", "effects": [{ "stat": "money", "add": 40000 }, { "skill": "education", "add": 3 }, { "chance": 0.3, "then": [{ "discipline": 2 }, { "toast": "A lecturer notices three 'different' students writing in your exact style." }] }], "result": "Your own grades suffer a little. Your bank account doesn't.", "next": "cult" },
+          { "text": "Be a 'picker' for the Yahoo boys: collect their money at the bank for 10%", "effects": [{ "stat": "money", "add": 60000 }, { "stat": "heat", "add": 12 }, { "flag": "fraud", "set": true }, { "flag": "fraud_school", "set": true }, { "chance": 0.3, "then": [{ "stat": "money", "add": -40000 }, { "stat": "heat", "add": 15 }, { "discipline": 3 }, { "toast": "The bank flags the account. Police at the hostel. 'Bail' costs ₦40,000 and the school hears about it." }] }], "result": "You walk into banks with other people's names and a straight face.", "next": "cult" }
+        ]
+      },
+      "sorting": {
+        "speaker": "Dr. Ekene's boy",
+        "text": "Rumour says Dr. Ekene fails half his class unless you 'sort'. His 'boy' is going round collecting ₦20,000 per student.",
+        "choices": [
+          { "text": "Pay to sort", "if": { "stat": "money", "gte": 20000 }, "lockedText": "Needs ₦20,000", "effects": [{ "stat": "money", "add": -20000 }, { "skill": "education", "add": -2 }, { "chance": 0.3, "then": [{ "discipline": 3 }, { "toast": "It's an anti-corruption sting. Your name is on the list of students who paid." }] }], "result": "You hand over the envelope behind the faculty building.", "next": "mentor" },
+          { "text": "Report it to the anti-corruption desk", "effects": [{ "stat": "reputation", "add": 5 }, { "chance": 0.4, "then": [{ "skill": "education", "add": -3 }, { "toast": "Dr. Ekene fails you anyway. You carry the course over." }], "else": [{ "toast": "Dr. Ekene is suspended pending investigation. Half the class owes you a drink." }] }], "result": "You write it all down and sign your name.", "next": "mentor" },
+          { "text": "Study harder and take your chances", "effects": [{ "skill": "education", "add": 4 }, { "stat": "stress", "add": 5 }], "result": "You read his old exam papers until you can predict his questions.", "next": "mentor" },
+          { "text": "Sell fake 'sorting slots' to classmates and keep the money", "effects": [{ "stat": "money", "add": 50000 }, { "flag": "fraud_school", "set": true }, { "chance": 0.5, "then": [{ "discipline": 5 }, { "stat": "reputation", "add": -6 }, { "toast": "Twenty classmates fail anyway, and all twenty know your room number." }] }], "result": "If people are paying anyway, why not to you?", "next": "mentor" }
+        ]
+      },
+      "ponzi": {
+        "text": "'Naija Wealth Circle' is all over campus: put in money, get 30% a month. Your roommate's cousin made ₦200,000. There's a WhatsApp group with 4,000 people.",
+        "choices": [
+          { "text": "Invest ₦20,000", "if": { "stat": "money", "gte": 20000 }, "lockedText": "Needs ₦20,000", "effects": [{ "stat": "money", "add": -20000 }, { "chance": 0.4, "then": [{ "stat": "money", "add": 40000 }, { "toast": "It pays! ₦40,000 back. For now." }], "else": [{ "toast": "The website goes down. The WhatsApp admin leaves the group. Your ₦20,000 is gone." }] }], "result": "You click 'Provide Help'.", "next": "nepo_party" },
+          { "text": "Become an 'upline': recruit classmates for a 10% cut", "effects": [{ "stat": "money", "add": 80000 }, { "stat": "heat", "add": 8 }, { "flag": "ponzi_upline", "set": true }, { "flag": "fraud_school", "set": true }, { "chance": 0.5, "then": [{ "stat": "reputation", "add": -8 }, { "discipline": 2 }, { "npc": "roommate", "rel": -10, "remember": { "what": "You recruited them into the Ponzi scheme that crashed", "tone": "hurt", "weight": 3, "say": "\"I still haven't recovered the money from that your 'Wealth Circle'.\"" } }, { "toast": "The scheme crashes. Your downlines want their money, from you." }] }], "result": "You post screenshots of 'returns' every hour.", "next": "nepo_party" },
+          { "text": "Warn people on the class group chat", "effects": [{ "stat": "reputation", "add": 3 }, { "stat": "network", "add": 2 }], "result": "Half the class calls you a hater. The other half thanks you three months later.", "next": "nepo_party" },
+          { "text": "Ignore it", "result": "You scroll past. Your money stays yours.", "next": "nepo_party" }
+        ]
+      },
+      "yahoo_hostel": {
+        "speaker": "Chairman Tobi",
+        "text": "Room 14 never sleeps: laptops, ring lights, three phones each. 'Chairman' Tobi corners you. \"Format don change. Romance, crypto, billing. You get brain. Join us.\"",
+        "choices": [
+          { "text": "Learn the romance-scam format", "effects": [{ "stat": "money", "add": 100000 }, { "skill": "tech", "add": 3 }, { "stat": "heat", "add": 15 }, { "flag": "fraud", "set": true }, { "flag": "yahoo", "set": true }, { "chance": 0.25, "then": [{ "discipline": 5 }, { "stat": "heat", "add": 20 }, { "toast": "EFCC raids the hostel at 3 a.m. Your laptop is in the evidence bag." }] }], "result": "\"Hello dear, I am a US Army doctor on a peacekeeping mission…\"", "next": "final" },
+          { "text": "Do 'billing' only: chat for them for ₦30,000 a month", "effects": [{ "stat": "money", "add": 30000 }, { "stat": "heat", "add": 6 }, { "flag": "fraud", "set": true }], "result": "You type sweet things to strangers in other time zones. It doesn't feel like nothing.", "next": "final" },
+          { "text": "Report Room 14 to the hall warden", "effects": [{ "stat": "reputation", "add": 3 }, { "chance": 0.5, "then": [{ "stat": "stress", "add": 10 }, { "toast": "Someone slips a note under your door: 'We know your room.'" }] }], "result": "The warden nods slowly. Too slowly.", "next": "final" },
+          { "text": "Not your business", "result": "You put in your earphones and walk past Room 14 every night.", "next": "final" }
+        ]
+      },
+      "suspended": {
+        "speaker": "Dean of Students",
+        "text": "\"Suspended for one semester.\" Your name is on the notice board. Your classmates will graduate a semester before you.",
+        "choices": [
+          { "text": "Hustle full-time for the semester", "effects": [{ "stat": "money", "add": 40000 }, { "skill": "hustle", "add": 4 }, { "stat": "stress", "add": 4 }], "result": "A semester of business. You come back richer and behind.", "next": "@resume" },
+          { "text": "Write an apology and study at home", "effects": [{ "skill": "education", "add": 3 }, { "discipline": -1 }], "result": "The Dean accepts the letter. Your record keeps the stain.", "next": "@resume" }
+        ]
+      },
+      "expelled": {
+        "speaker": "Disciplinary committee",
+        "text": "\"Rusticated.\" The disciplinary committee's letter is short. Four years, gone. Outside the senate building, a man in a cap waits for students like you.",
+        "choices": [
+          { "text": "Buy a degree certificate from 'a connect' in Area 1 (₦150,000)", "if": { "stat": "money", "gte": 150000 }, "lockedText": "Needs ₦150,000", "effects": [{ "stat": "money", "add": -150000 }, { "cert": "degree" }, { "flag": "fake_degree", "set": true }, { "flag": "fraud", "set": true }, { "stat": "heat", "add": 10 }, { "log": "Bought a fake degree certificate after being rusticated." }], "result": "Embossed, signed, 'verifiable'. You pray nobody ever verifies it.", "next": "@chapter:nysc" },
+          { "text": "Transfer to a private university (₦300,000)", "if": { "stat": "money", "gte": 300000 }, "lockedText": "Needs ₦300,000", "effects": [{ "stat": "money", "add": -300000 }, { "skill": "education", "add": -2 }, { "stat": "stress", "add": 8 }, { "log": "Rusticated, then finished at a private university." }], "result": "Dollar fees, air-conditioned classrooms, and a fresh start.", "next": "@resume" },
+          { "text": "Leave school and hustle in Abuja", "effects": [{ "flag": "dropout", "set": true }, { "log": "Rusticated from university." }], "result": "No degree, no waiting.", "next": "@adult" }
         ]
       }
     }
@@ -227,7 +460,7 @@
                 "set": true
               }
             ],
-            "next": "camp"
+            "next": "verify"
           },
           {
             "text": "Skip NYSC",
@@ -296,7 +529,7 @@
               }
             ],
             "result": "Two weeks of HTML, Excel and a certificate from a man who calls computers 'the system'. It's a start.",
-            "next": "lecture1"
+            "next": "camp_hustle"
           },
           {
             "text": "SAED: learn fashion design or catering",
@@ -315,7 +548,7 @@
               }
             ],
             "result": "You leave with a skill people will always pay for.",
-            "next": "lecture1"
+            "next": "camp_hustle"
           },
           {
             "text": "Join the Man O' War drills",
@@ -334,7 +567,7 @@
               }
             ],
             "result": "Rope climbs, mud crawls, river crossings. You come out tougher.",
-            "next": "lecture1"
+            "next": "camp_hustle"
           },
           {
             "text": "Join the cultural troupe",
@@ -349,7 +582,7 @@
               }
             ],
             "result": "You learn three dances and thirty new friends.",
-            "next": "lecture1"
+            "next": "camp_hustle"
           }
         ]
       },
@@ -534,7 +767,8 @@
             ],
             "result": "No trophies, lots of laughs.",
             "next": "lecture2"
-          }
+          },
+          { "text": "Anchor your platoon in the tug-of-war final", "game": { "kind": "tug", "level": 3, "win": [{ "stat": "reputation", "add": 4 }, { "stat": "network", "add": 3 }, { "log": "Won the NYSC camp tug-of-war final." }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "Your platoon drags them over the line! The commandant shakes your hand.", "loseText": "The other platoon was all Man O' War boys. You land in a heap." }, "next": "lecture2" }
         ]
       },
       "lecture2": {
@@ -768,7 +1002,7 @@
               }
             ],
             "result": "Your CDS group paints a primary school and runs a free health check. The community remembers you.",
-            "next": "service2"
+            "next": "ghost"
           },
           {
             "text": "Skip CDS and hustle on the side",
@@ -803,7 +1037,7 @@
               }
             ],
             "result": "₦40,000 extra from your side hustle.",
-            "next": "service2"
+            "next": "ghost"
           }
         ]
       },
@@ -829,7 +1063,7 @@
               }
             ],
             "result": "Garri and groundnut for dinner, but your savings grow.",
-            "next": "service3"
+            "next": "cds_funds"
           },
           {
             "text": "Enjoy it: you're young once",
@@ -848,7 +1082,7 @@
               }
             ],
             "result": "Owambes, new clothes and suya every weekend. ₦150,000 gone, no regrets. Mostly.",
-            "next": "service3"
+            "next": "cds_funds"
           },
           {
             "text": "Start a small side business",
@@ -883,7 +1117,7 @@
                 ]
               }
             ],
-            "next": "service3"
+            "next": "cds_funds"
           }
         ]
       },
@@ -966,6 +1200,64 @@
             ],
             "next": "@adult"
           }
+        ]
+      },
+      "verify": {
+        "text": "Registration day. An official checks every certificate against the universities' lists.",
+        "branch": [
+          { "if": { "flag": "fake_degree" }, "next": "fake_caught" },
+          { "next": "camp" }
+        ]
+      },
+      "fake_caught": {
+        "speaker": "NYSC official",
+        "text": "The official looks at your certificate, then at his list, then at you. \"This university says you never graduated.\" Two soldiers move closer.",
+        "choices": [
+          { "text": "Bribe the official (₦100,000)", "if": { "stat": "money", "gte": 100000 }, "lockedText": "Needs ₦100,000", "effects": [{ "stat": "money", "add": -100000 }, { "chance": 0.6, "then": [{ "toast": "He folds the money into his file. 'Next!'" }], "else": [{ "stat": "heat", "add": 20 }, { "flag": "fraud", "set": true }, { "toast": "He takes the money and calls the police anyway." }] }], "result": "You lean in and lower your voice.", "next": "camp" },
+          { "text": "Run before they call the police", "effects": [{ "stat": "heat", "add": 15 }, { "flag": "no_nysc", "set": true }, { "log": "Fled NYSC camp when a fake degree was caught." }], "result": "You leave your mattress and your future at the gate.", "next": "@adult" }
+        ]
+      },
+      "camp_hustle": {
+        "text": "Camp has a parade ground, a clinic and, most importantly, a market. Corpers have allowance money and nothing to spend it on.",
+        "choices": [
+          { "text": "Charge phones with a solar panel (₦200 a phone)", "effects": [{ "stat": "money", "add": 8000 }, { "skill": "hustle", "add": 2 }], "result": "One panel, twelve sockets, a queue every evening.", "next": "lecture1" },
+          { "text": "Sell the liquid soap you made in SAED", "effects": [{ "stat": "money", "add": 6000 }, { "skill": "trade", "add": 2 }], "result": "Lemon-scented, slightly too thick. Sold out in a day.", "next": "lecture1" },
+          { "text": "Run a POS point at Mammy market (5% per withdrawal)", "effects": [{ "stat": "money", "add": 15000 }, { "skill": "hustle", "add": 3 }, { "skill": "trade", "add": 2 }], "result": "Everybody wants cash. You are the bank now.", "next": "lecture1" },
+          { "text": "Sell fake 'Abuja posting guaranteed' slots to desperate corpers", "effects": [{ "stat": "money", "add": 120000 }, { "stat": "heat", "add": 15 }, { "flag": "fraud", "set": true }, { "chance": 0.4, "then": [{ "discipline": 5 }, { "toast": "A corper you sold a 'slot' to is the son of an army colonel." }] }], "result": "\"My uncle is in the posting committee.\" You have no uncle.", "next": "lecture1" },
+          { "text": "Bribe a soldier to skip 4:30 a.m. drills (₦2,000)", "effects": [{ "stat": "money", "add": -2000 }, { "stat": "stress", "add": -5 }, { "chance": 0.3, "then": [{ "discipline": 2 }, { "toast": "The commandant does a surprise headcount." }] }], "result": "Sleep is the best investment in camp.", "next": "lecture1" }
+        ]
+      },
+      "ghost": {
+        "speaker": "Mr. Audu (LGI)",
+        "text": "Your Local Government Inspector, Mr. Audu, makes you an offer over tea. \"₦10,000 a month and I mark you present. You can stay in Abuja and do your business.\"",
+        "choices": [
+          { "text": "Become a 'ghost corper'", "effects": [{ "stat": "money", "add": 150000 }, { "skill": "hustle", "add": 5 }, { "stat": "heat", "add": 5 }, { "flag": "ghost_corper", "set": true }, { "chance": 0.3, "then": [{ "flag": "skipped_cds", "set": true }, { "discipline": 3 }, { "toast": "A surprise monitoring visit finds your desk empty for the third time." }] }], "result": "Allowance in one pocket, Abuja hustle in the other.", "next": "service2" },
+          { "text": "Decline and serve properly", "effects": [{ "stat": "reputation", "add": 2 }], "result": "Mr. Audu shrugs and pours more tea.", "next": "service2" },
+          { "text": "Report Mr. Audu", "effects": [{ "stat": "reputation", "add": 4 }, { "chance": 0.5, "then": [{ "stat": "stress", "add": 8 }, { "toast": "You're 'redeployed' to the most remote school in the local government." }] }], "result": "You write to the state coordinator.", "next": "service2" }
+        ]
+      },
+      "cds_funds": {
+        "text": "Your CDS group raised ₦400,000 for a borehole in the village where you serve. You're the treasurer. The contractor winks: \"I can write ₦550,000 on the quote. We share the difference.\"",
+        "choices": [
+          { "text": "Build the borehole properly", "effects": [{ "stat": "reputation", "add": 8 }, { "stat": "network", "add": 5 }, { "log": "Built a borehole with my CDS group." }], "result": "Clean water on commissioning day. The village chief gives you a title.", "next": "service3" },
+          { "text": "Inflate the quote and keep ₦150,000", "effects": [{ "stat": "money", "add": 150000 }, { "stat": "heat", "add": 8 }, { "flag": "fraud", "set": true }, { "chance": 0.35, "then": [{ "discipline": 5 }, { "toast": "Your CDS secretary checks the contractor's real price." }] }], "result": "The borehole works. Mostly. For now.", "next": "service3" },
+          { "text": "Hand the money to the LGA chairman 'for supervision'", "effects": [{ "stat": "reputation", "add": -2 }], "result": "The money disappears into 'supervision'. The borehole never comes.", "next": "service3" }
+        ]
+      },
+      "suspended": {
+        "speaker": "State Coordinator",
+        "text": "The State Coordinator summons you. \"You will be queried, and your allowance stopped for two months.\" The letter goes in your file forever.",
+        "choices": [
+          { "text": "Accept the query and keep serving", "effects": [{ "stat": "money", "add": -20000 }, { "stat": "stress", "add": 6 }, { "discipline": -1 }], "result": "Two months of no allowance. You learn to cook beans fifteen ways.", "next": "@resume" },
+          { "text": "Lean on a 'connect' to make it disappear (₦30,000)", "if": { "stat": "money", "gte": 30000 }, "lockedText": "Needs ₦30,000", "effects": [{ "stat": "money", "add": -30000 }, { "stat": "heat", "add": 3 }], "result": "The query is lost. Like a lot of things.", "next": "@resume" }
+        ]
+      },
+      "expelled": {
+        "speaker": "NYSC Director",
+        "text": "\"Your service is cancelled.\" Decamped. No certificate this year. You'll have to remobilise next year, if they let you.",
+        "choices": [
+          { "text": "Remobilise and serve again next year", "effects": [{ "age": 1 }, { "stat": "stress", "add": 10 }, { "discipline": -5 }, { "log": "NYSC service cancelled; remobilised the next year." }], "result": "A year later, white shorts again. The soldiers remember you.", "next": "@resume" },
+          { "text": "Forget NYSC and go straight to Abuja", "effects": [{ "flag": "no_nysc", "set": true }, { "log": "Decamped from NYSC and never went back." }], "result": "No certificate. Some doors close. Others never cared.", "next": "@adult" }
         ]
       }
     }

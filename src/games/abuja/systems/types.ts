@@ -139,6 +139,8 @@ export type Effect = {
   efcc?: string;
   /** Learn a recipe (someone teaches you). */
   recipe?: string;
+  /** Strikes against you at school: three get you suspended, five expelled. Negative to clear one. */
+  discipline?: number;
   /** Something the person in `npc` will remember about you. */
   remember?: { what: string; say?: string; tone: Tone; weight: 1 | 2 | 3 };
   /** Something the person in `npc` lets go of (by its `what`). */
@@ -203,8 +205,23 @@ export type Task = {
   haggle: { offer: number; passenger: string } | null;
 };
 
+export type GameKind = "sprint" | "sack" | "egg" | "relay" | "tug";
+
+/** A sports-day event you play: win or lose decides which effects apply. */
+export type GameDef = {
+  kind: GameKind;
+  /** 1 easy to 3 hard. */
+  level?: number;
+  win?: Effect[];
+  lose?: Effect[];
+  winText?: string;
+  loseText?: string;
+};
+
 export type Choice = {
   text: string;
+  /** Play a mini-game first; its result is shown, then the story moves on to `next`. */
+  game?: GameDef;
   if?: Cond;
   /** Shown greyed out with this reason when `if` fails, instead of hidden. */
   lockedText?: string;
@@ -369,6 +386,8 @@ export type GameState = {
   savedAt?: number;
   /** Which city map the positions in this save refer to (missing: the original map). */
   mapVersion?: number;
+  /** A sports-day mini-game being played, and where the story goes after it. */
+  minigame?: (GameDef & { next?: string }) | null;
   /** What people remember about you, by person (an NPC id, or a city person's id). */
   memories?: Record<string, Memory[]>;
   /** Stories filed in the Abuja Daily that happened once (the rest follow from the state). */

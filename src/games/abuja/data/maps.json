@@ -21,9 +21,10 @@
       "home": { "x": 260, "y": 330, "label": "Home" },
       "assembly": { "x": 1030, "y": 820, "label": "Assembly ground" },
       "playground": { "x": 1340, "y": 930, "label": "Playground" },
+      "pitch": { "x": 300, "y": 830, "label": "Sports field" },
       "gate": { "x": 710, "y": 470, "label": "School gate" }
     },
-    "beats": { "home_lapo": "home", "home_average": "home", "fees": "assembly", "friends": "playground", "end": "gate" }
+    "beats": { "home_lapo": "home", "home_average": "home", "fees": "assembly", "friends": "playground", "end": "gate", "sweets": "playground", "interhouse": "pitch", "interhouse_events": "pitch", "interhouse_events2": "pitch", "common_entrance": "assembly" }
   },
   "secondary": {
     "width": 1700, "height": 1150, "spawn": { "x": 300, "y": 420 },
@@ -46,9 +47,10 @@
       "corner": { "x": 330, "y": 900, "label": "Street corner" },
       "home": { "x": 260, "y": 330, "label": "Home" },
       "exam": { "x": 1400, "y": 300, "label": "Exam hall" },
-      "cbt": { "x": 450, "y": 1050, "label": "CBT centre" }
+      "cbt": { "x": 450, "y": 1050, "label": "CBT centre" },
+      "sports": { "x": 1100, "y": 480, "label": "Sports ground" }
     },
-    "beats": { "lapo_school": "classroom", "average_school": "classroom", "big_event": "hall", "peer": "corner", "socials": "home", "crush": "classroom", "waec": "exam", "dropout": "home", "jamb": "cbt" }
+    "beats": { "lapo_school": "classroom", "average_school": "classroom", "big_event": "hall", "peer": "corner", "socials": "home", "crush": "classroom", "waec": "exam", "dropout": "home", "jamb": "cbt", "hustle_hostel": "classroom", "senior": "corner", "interhouse_sec": "sports", "interhouse_sec_events": "sports", "interhouse_sec_events2": "sports", "expo_market": "corner" }
   },
   "university": {
     "width": 1800, "height": 1200, "spawn": { "x": 320, "y": 400 },
@@ -73,7 +75,7 @@
       "lawn": { "x": 950, "y": 450, "label": "Faculty lawn" },
       "theatre": { "x": 950, "y": 330, "label": "Lecture theatre" }
     },
-    "beats": { "start": "hostel", "strike": "hostel", "cult": "field", "mentor": "office", "guru": "hostel", "nepo_party": "party", "love": "lawn", "final": "theatre" }
+    "beats": { "start": "hostel", "strike": "hostel", "cult": "field", "mentor": "office", "guru": "hostel", "nepo_party": "party", "love": "lawn", "final": "theatre", "hustle_uni": "hostel", "sorting": "theatre", "ponzi": "lawn", "yahoo_hostel": "hostel" }
   },
   "nysc": {
     "width": 1700, "height": 1150, "spawn": { "x": 260, "y": 300 },
@@ -102,6 +104,6 @@
       "clinic_back": { "x": 1520, "y": 670, "label": "Behind the clinic" },
       "board": { "x": 700, "y": 420, "label": "Posting board" }
     },
-    "beats": { "camp": "parade", "activities": "saed", "lecture1": "lecture", "games": "sports", "lecture2": "lecture", "mammy": "mammy", "posting_talk": "hostels", "fixers": "clinic_back", "abuja_posting": "board", "away_posting": "board", "pass_out": "parade" }
+    "beats": { "camp": "parade", "activities": "saed", "lecture1": "lecture", "games": "sports", "lecture2": "lecture", "mammy": "mammy", "posting_talk": "hostels", "fixers": "clinic_back", "abuja_posting": "board", "away_posting": "board", "pass_out": "parade", "camp_hustle": "mammy", "fake_caught": "gate" }
   }
 }

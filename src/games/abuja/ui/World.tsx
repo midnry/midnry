@@ -26,15 +26,17 @@ import {
   takeOffer,
   talk,
   memoryKey,
+  finishGame,
 } from "../systems/engine";
 import { onTheirMind } from "../systems/memory";
+import { MiniGame } from "./MiniGame";
 import { ACT_ONE, storyGoal } from "../systems/story";
 import { hasCar, isDriving } from "../systems/drive";
 import { blocked } from "../systems/negotiate/core";
 import { deal as dealDef } from "../systems/negotiate/deals";
 import { isDirty, lifeOf } from "../systems/life";
 import { personLook } from "../systems/peoplelook";
-import { SLOTS, check, debt, fill, lockReason, naira } from "../systems/rules";
+import { SLOTS, beatKey, check, debt, fill, lockReason, naira } from "../systems/rules";
 import { bus, getState, input, loadControls, saveControls, type Controls, type NearThing } from "../systems/store";
 import type { GameState } from "../systems/types";
 import { Phone, type PhoneApp } from "./Phone";
@@ -281,6 +283,15 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
     return () => window.clearTimeout(timer);
   }, [state.toast]);
 
+  // The city sleeps behind a sports-day mini-game, so the game gets the whole device.
+  const playing = Boolean(state.minigame);
+  useEffect(() => {
+    const g = game.current;
+    if (!g) return;
+    if (playing) g.loop.sleep();
+    else g.loop.wake();
+  }, [playing]);
+
   useEffect(() => {
     if (!blocked) return;
     const timer = window.setTimeout(() => setBlocked(null), 4000);
@@ -523,7 +534,8 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       {state.event ? <EventModal state={state} /> : null}
       {kitchenOpen && !state.event && !negotiation ? <KitchenScreen state={state} open={kitchenOpen} onClose={() => setKitchenOpen(null)} /> : null}
       {negotiation && !state.event ? <NegotiationScreen key={`${negotiation.deal}-${negotiation.npc}`} state={state} n={negotiation} /> : null}
-      {story ? (
+      {state.minigame ? <MiniGame key={`${state.minigame.kind}-${state.scene}`} kind={state.minigame.kind} level={state.minigame.level} house={String(state.flags.house ?? "")} onDone={finishGame} /> : null}
+      {story && !state.minigame ? (
         <div className="absolute inset-0 z-40 overflow-y-auto bg-black/55 px-3 py-6 backdrop-blur-[2px] sm:py-12">
           <StoryPanel state={state} />
         </div>
@@ -913,7 +925,7 @@ function TalkModal({ state, personKey, onClose }: { state: GameState; personKey:
           <ReplyButton looks={myLooks(state)} adult={adult} onClick={onClose}>
             {offer ? "Not now 👋" : "Bye 👋"}
           </ReplyButton>
-          {state.flags[`insulted_${personKey}`] !== state.day ? (
+          {state.flags[`insulted_${personKey}`] !== beatKey(state) ? (
             <ReplyButton
               looks={myLooks(state)}
               adult={adult}
