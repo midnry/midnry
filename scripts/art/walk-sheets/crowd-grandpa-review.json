@@ -1,0 +1,46 @@
+{
+  "id": "crowd-grandpa",
+  "original": "crowd-grandpa-sheet-original.png",
+  "corrected": "crowd-grandpa-sheet-corrected.png",
+  "original_sha256": "01d26d5149ce6446d20e073ce0ef56524e250f5c74a85cb5146100606c942933",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated passing knees and side contact pose; regenerate opposite phases while preserving the cane and continuous kaftan.",
+      "source": "/workspace/generated_images/exec-d87a6cb8-9a26-4615-b51d-d7ef19861671.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Front-2 still lifted the knee from front-4; regenerate one pose with the opposite knee under the continuous kaftan.",
+      "source": "/workspace/generated_images/exec-26233412-0919-4ce4-a71d-94936a94af9c.png"
+    },
+    {
+      "attempt": 4,
+      "reason": "Back-4 still repeated the knee from back-2; regenerate the opposite knee while keeping the cane and continuous kaftan.",
+      "source": "/workspace/generated_images/exec-283afa00-0e94-423c-8c81-8c8bc445a610.png"
+    },
+    {
+      "attempt": 5,
+      "reason": "Back-4 still repeats the same raised shoe as back-2; regenerate that single opposite-leg pose.",
+      "source": "/workspace/generated_images/exec-f34c0024-f5a8-4694-90d2-a0f52d7bdd62.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "crowd-grandpa",
+      "view": "back",
+      "frame": 1,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1442,
+      "x0": 33,
+      "x1": 255,
+      "reflection_axis_twice": 292
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
