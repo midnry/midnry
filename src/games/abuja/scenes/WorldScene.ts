@@ -511,7 +511,31 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private sizeVignette() {
-    this.vignette?.setDisplaySize(this.scale.width, this.scale.height);
+    this.overlayFit = "";
+    this.fitOverlays();
+  }
+
+  private overlayFit = "";
+
+  /**
+   * The light, weather and vignette layers are pinned to the screen, but the
+   * camera zoom still scales them about the middle of the view. Size them to
+   * the view at the current zoom so they cover it exactly, never a square in
+   * the middle when zoomed out.
+   */
+  private fitOverlays() {
+    const cam = this.cameras.main;
+    const z = cam.zoom || 1;
+    const key = `${cam.width}x${cam.height}@${z.toFixed(4)}`;
+    if (key === this.overlayFit || !this.night) return;
+    this.overlayFit = key;
+    const w = cam.width / z + 4;
+    const h = cam.height / z + 4;
+    const x = cam.width / 2 - w / 2;
+    const y = cam.height / 2 - h / 2;
+    for (const r of [this.night, this.sun, this.haze, this.flash]) r?.setPosition(x, y).setSize(w, h);
+    this.rain?.setPosition(x, y).setSize(w, h);
+    this.vignette?.setPosition(x, y).setDisplaySize(w, h);
   }
 
   private fitZoom() {
@@ -524,11 +548,19 @@ export class WorldScene extends Phaser.Scene {
     } catch {
       /* storage blocked: use the default */
     }
-    this.cameras.main.setZoom(Phaser.Math.Clamp(saved || fallback, MIN_ZOOM, MAX_ZOOM));
+    this.cameras.main.setZoom(Phaser.Math.Clamp(saved || fallback, this.minZoom(), MAX_ZOOM));
+  }
+
+  /** Never zoom out past the edges of the map: it always fills the screen. */
+  private minZoom() {
+    const cam = this.cameras.main;
+    const b = cam.getBounds();
+    const fill = b.width > 0 && b.height > 0 ? Math.max(cam.width / b.width, cam.height / b.height) : 0;
+    return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, fill));
   }
 
   private setZoom(zoom: number) {
-    const z = Phaser.Math.Clamp(zoom, MIN_ZOOM, MAX_ZOOM);
+    const z = Phaser.Math.Clamp(zoom, this.minZoom(), MAX_ZOOM);
     this.cameras.main.setZoom(z);
     try {
       localStorage.setItem(ZOOM_KEY, z.toFixed(2));
@@ -1213,6 +1245,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   update(time: number, deltaMs: number) {
+    this.fitOverlays();
     const dt = Math.min(0.05, deltaMs / 1000);
     const state = getState();
     if (!state || input.paused) return;
