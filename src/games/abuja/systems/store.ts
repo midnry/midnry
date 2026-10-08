@@ -275,6 +275,10 @@ type BusEvents = {
   sceneLoadError: null;
   /** A room has finished loading (the loading screen can go). */
   roomReady: null;
+  /** Decorating your room: furniture can be dragged about while this is on. */
+  decorEdit: boolean;
+  /** Which piece of furniture is picked (its index in the room), or none. */
+  decorPick: number | null;
   /** Open the kitchen screen: at home, from a market, or from the phone. */
   kitchen: { at: "home" | null; market: string | null; tab: "cook" | "shop" | "school" | "business" };
 };

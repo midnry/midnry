@@ -2,7 +2,7 @@ import { LoadingScreen } from "./LoadingScreen";
 import { GameLoadingContext } from "./loading-context";
 import { myLooks } from "../systems/painted";
 import { useContext, useEffect, useRef, useState } from "react";
-import { Brain, CarFront, ChevronRight, DoorOpen, Droplet, Hand, Heart, LocateFixed, Map as MapIcon, MapPin, MessageCircle, Minus, Moon, Pause, Play, Plus, Search, Siren, Smartphone, SquareParking, Star, Sunrise, Utensils, Zap } from "lucide-react";
+import { Brain, CarFront, ChevronRight, DoorOpen, Droplet, Hand, Heart, LocateFixed, Map as MapIcon, MapPin, MessageCircle, Minus, Moon, Pause, Play, Plus, Search, Siren, Smartphone, Sofa, SquareParking, Star, Sunrise, Utensils, Zap } from "lucide-react";
 import type { Game as PhaserGame } from "phaser";
 import { EVENTS, chapter, place } from "../systems/data";
 import {
@@ -41,6 +41,8 @@ import { LotPanel } from "./LotPanel";
 import { KitchenScreen, type KitchenOpen } from "./kitchen/Kitchen";
 import { StoryPanel } from "./StoryView";
 import { WardrobePanel } from "./Wardrobe";
+import { DecorPanel } from "./Decor";
+import { isMyRoom } from "../systems/decor";
 import { GAME_FONT, actionBtn, btnGhost, btnPrimary, glass, iconBtn, panel } from "./theme";
 
 /** The walkable game: story chapters and adult Abuja share this view. */
@@ -55,6 +57,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const [blocked, setBlocked] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
   const [wardrobe, setWardrobe] = useState(false);
+  const [decorating, setDecorating] = useState(false);
   const [exploring, setExploring] = useState(false);
   const [controls, setControls] = useState<Controls>("joystick");
   useEffect(() => {
@@ -87,6 +90,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
     setLoading({ title: `Entering ${info.name}`, icon: ROOM_ICON[info.type] });
     setOpen(null);
     setTalking(null);
+    setDecorating(false);
     insideRef.current = info;
     setInside(info);
     scheduleTransition(() => {
@@ -100,6 +104,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
     setLoading({ title: "Heading back outside", icon: "🚪" });
     setOpen(null);
     setTalking(null);
+    setDecorating(false);
     scheduleTransition(() => {
       g.scene.stop("room");
       g.scene.wake("world");
@@ -114,6 +119,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
     setLoading({ title: info.parent ? `Into the ${info.name.toLowerCase()}` : `Back to ${info.name}`, icon: ROOM_ICON[info.type] });
     setOpen(null);
     setTalking(null);
+    setDecorating(false);
     insideRef.current = info;
     setInside(info);
     scheduleTransition(() => {
@@ -208,10 +214,10 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
 
   // The world stands still while the pause menu is open. Esc or P toggles it.
   useEffect(() => {
-    input.paused = paused || wardrobe || Boolean(negotiation) || Boolean(kitchenOpen) || isLoading;
+    input.paused = paused || wardrobe || decorating || Boolean(negotiation) || Boolean(kitchenOpen) || isLoading;
     input.x = 0;
     input.y = 0;
-  }, [paused, wardrobe, negotiation, kitchenOpen, isLoading]);
+  }, [paused, wardrobe, decorating, negotiation, kitchenOpen, isLoading]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (isLoading) return;
@@ -412,7 +418,20 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           Ride
         </button>
       ) : null}
-      {!inStory ? (
+      {inside && isMyRoom(state, inside) && !decorating ? (
+        <button
+          type="button"
+          onClick={() => setDecorating(true)}
+          className={`${actionBtn} absolute right-4 bottom-[6.25rem] z-10 border border-amber-300/40 bg-gradient-to-b from-[#b7791f] to-[#8a5a12] text-white hover:brightness-110`}
+          style={{ fontFamily: GAME_FONT }}
+          aria-label="Decorate your room"
+        >
+          <Sofa className="size-7" strokeWidth={2.4} aria-hidden />
+          Decorate
+        </button>
+      ) : null}
+      {decorating && inside ? <DecorPanel state={state} info={inside} onClose={() => setDecorating(false)} /> : null}
+      {!inStory && !decorating ? (
         <button
           type="button"
           onClick={() => setPhone("home")}

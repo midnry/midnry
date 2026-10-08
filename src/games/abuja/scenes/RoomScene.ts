@@ -9,8 +9,9 @@ import { blocked } from "../systems/citymap";
 import { peopleOn, personKey } from "../systems/engine";
 import { FURNITURE } from "../systems/furniture";
 import { personLook } from "../systems/peoplelook";
-import { LAYOUTS, ROOM, type RoomInfo } from "../systems/rooms";
-import { bus, getState, input } from "../systems/store";
+import { ROOM, type RoomInfo, type RoomLayout } from "../systems/rooms";
+import { ON_WALL, isFixed, isMyRoom, moveDecor, roomLayout } from "../systems/decor";
+import { bus, getState, input, subscribe } from "../systems/store";
 import type { MapRect } from "../systems/types";
 import { INK, animateWalk, pose, figure, furnitureKey, makeArt, queueCharacters, queueFurniture, tileKey, type Figure } from "./art";
 
@@ -18,8 +19,6 @@ const SPEED = 135;
 const RADIUS = 12;
 const NEAR = 80;
 const FURN_RES = 1.6;
-/** Things that hang on the wall: drawn flat, nothing to bump into. */
-const ON_WALL = new Set(["window", "picture", "clock", "blackboard", "whiteboard", "walldoor", "bathmirror", "wallshelf"]);
 
 type Spot = { kind: "place" | "person" | "exit" | "door" | "item"; id: string; label: string; x: number; y: number };
 
@@ -35,6 +34,13 @@ export class RoomScene extends Phaser.Scene {
   private stillSince = 0;
   private target: { x: number; y: number } | null = null;
   private keys!: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d" | "e" | "space", Phaser.Input.Keyboard.Key>;
+  /** The floor, walls and furniture: redrawn when you redecorate. */
+  private decorObjs: Phaser.GameObjects.GameObject[] = [];
+  private furniture: { img: Phaser.GameObjects.Image; index: number }[] = [];
+  private layout!: RoomLayout;
+  private editing = false;
+  private picked: number | null = null;
+  private pickBox: Phaser.GameObjects.Graphics | null = null;
 
   constructor() {
     super("room");
@@ -48,6 +54,11 @@ export class RoomScene extends Phaser.Scene {
     this.staff = [];
     this.near = null;
     this.target = null;
+    this.decorObjs = [];
+    this.furniture = [];
+    this.editing = false;
+    this.picked = null;
+    this.pickBox = null;
   }
 
   private staffHere() {
@@ -58,7 +69,7 @@ export class RoomScene extends Phaser.Scene {
 
   preload() {
     startSceneLoading(this, `Entering ${this.info.name}`);
-    const layout = LAYOUTS[this.info.type];
+    const layout = roomLayout(getState(), this.info);
     queueFurniture(this, layout.items);
     const state = getState();
     queueCharacters(this, [{ look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18, stage: stageOf(state?.age ?? 0), painted: playerPainted(state) }, ...this.staffHere().map(personLook)]);
@@ -66,20 +77,13 @@ export class RoomScene extends Phaser.Scene {
 
   create() {
     makeArt(this);
-    const layout = LAYOUTS[this.info.type];
+    this.layout = roomLayout(getState(), this.info);
+    const layout = this.layout;
     const { w: W, h: H, wall: WALL, door } = ROOM;
     this.cameras.main.setBackgroundColor("#0b1726");
-
-    // Floor, back wall and a skirting board.
-    const floorTile = layout.floor === "tile" ? "floor" : layout.floor;
-    this.add.tileSprite(0, WALL, W, H - WALL, tileKey(floorTile)).setOrigin(0);
-    const g = this.add.graphics();
-    g.fillStyle(Phaser.Display.Color.HexStringToColor(layout.wall).color, 1).fillRect(0, 0, W, WALL);
-    g.fillStyle(0xffffff, 0.08);
-    for (let x = 0; x < W; x += 32) g.fillRect(x, 0, 14, WALL);
-    g.fillStyle(0x6b4426, 1).fillRect(0, WALL - 10, W, 10);
-    g.lineStyle(2, INK, 1).lineBetween(0, WALL, W, WALL);
-    // Walls around the room, with a doorway at the bottom.
+    this.drawDecor();
+    // The room's frame: walls around it, with a doorway at the bottom.
+    const g = this.add.graphics().setDepth(0.5);
     g.fillStyle(0x3b2a1f, 1).fillRect(-14, -14, 14, H + 28).fillRect(W, -14, 14, H + 28).fillRect(-14, -14, W + 28, 14);
     g.fillRect(-14, H - 10, door.x - 40 + 14, 24).fillRect(door.x + 40, H - 10, W - door.x - 40 + 14, 24);
     g.fillStyle(0x23624f, 1).fillRoundedRect(door.x - 34, H - 22, 68, 18, 5);
@@ -95,17 +99,7 @@ export class RoomScene extends Phaser.Scene {
       .setResolution(2)
       .setOrigin(0.5, 0)
       .setDepth(3);
-
-    // Furniture, sorted by where it meets the floor; the bottom of each is solid.
-    for (const it of layout.items) {
-      const def = FURNITURE[it.id]!;
-      const img = this.add.image(it.x - 2, it.y - 2, furnitureKey(it.id, it.accent)).setOrigin(0).setScale(1 / FURN_RES);
-      const bottom = it.y + def.h;
-      img.setDepth(ON_WALL.has(it.id) ? 1 : it.id === "rug" ? 1.5 : 5 + bottom / 10000);
-      if (def.foot && !ON_WALL.has(it.id)) this.solids.push({ x: it.x + 4, y: bottom - def.h * def.foot, w: def.w - 8, h: def.h * def.foot });
-      // Somewhere to sit: just in front of seats.
-      if (SEATS.test(it.id)) this.seats.push({ x: it.x + def.w / 2, y: bottom + 8 });
-    }
+    this.watchDecor();
 
     // The people who work here.
     const state = getState();
@@ -157,7 +151,7 @@ export class RoomScene extends Phaser.Scene {
     this.keys = kb.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D", e: "E", space: "SPACE" }) as typeof this.keys;
     kb.disableGlobalCapture();
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
-      if (input.controls === "tap") this.target = { x: p.worldX, y: p.worldY };
+      if (!this.editing && input.controls === "tap" && p.downElement === this.game.canvas) this.target = { x: p.worldX, y: p.worldY };
     });
     this.events.once("shutdown", () => {
       this.scale.off("resize", this.fit, this);
@@ -167,7 +161,120 @@ export class RoomScene extends Phaser.Scene {
     bus.emit("roomReady", null);
     finishSceneLoading(this);
     // Development only: lets automated browser tests move the player.
-    if (import.meta.env.DEV) (window as unknown as { __room?: unknown }).__room = { place: (x: number, y: number) => this.player.setPosition(x, y) };
+    if (import.meta.env.DEV) (window as unknown as { __room?: unknown }).__room = { place: (x: number, y: number) => void this.player.setPosition(x, y), screen: (x: number, y: number) => { const c = this.cameras.main; return [(x - c.worldView.x) * c.zoom, (y - c.worldView.y) * c.zoom]; } };
+  }
+
+  /** Floor, back wall and furniture, from the room's layout as it is now. */
+  private drawDecor() {
+    this.decorObjs.forEach((o) => o.destroy());
+    this.decorObjs = [];
+    this.furniture = [];
+    this.solids = [];
+    this.seats = [];
+    const layout = this.layout;
+    const { w: W, h: H, wall: WALL } = ROOM;
+    const floorTile = layout.floor === "tile" ? "floor" : layout.floor;
+    this.decorObjs.push(this.add.tileSprite(0, WALL, W, H - WALL, tileKey(floorTile)).setOrigin(0));
+    const g = this.add.graphics();
+    g.fillStyle(Phaser.Display.Color.HexStringToColor(layout.wall).color, 1).fillRect(0, 0, W, WALL);
+    g.fillStyle(0xffffff, 0.08);
+    for (let x = 0; x < W; x += 32) g.fillRect(x, 0, 14, WALL);
+    g.fillStyle(0x6b4426, 1).fillRect(0, WALL - 10, W, 10);
+    g.lineStyle(2, INK, 1).lineBetween(0, WALL, W, WALL);
+    this.decorObjs.push(g);
+    // Furniture, sorted by where it meets the floor; the bottom of each is solid.
+    layout.items.forEach((it, index) => {
+      const def = FURNITURE[it.id]!;
+      const img = this.add.image(it.x - 2, it.y - 2, furnitureKey(it.id, it.accent)).setOrigin(0).setScale(1 / FURN_RES);
+      const bottom = it.y + def.h;
+      img.setDepth(ON_WALL.has(it.id) ? 1 : it.id.startsWith("rug") ? 1.5 : 5 + bottom / 10000);
+      if (def.foot && !ON_WALL.has(it.id)) this.solids.push({ x: it.x + 4, y: bottom - def.h * def.foot, w: def.w - 8, h: def.h * def.foot });
+      // Somewhere to sit: just in front of seats.
+      if (SEATS.test(it.id)) this.seats.push({ x: it.x + def.w / 2, y: bottom + 8 });
+      this.decorObjs.push(img);
+      this.furniture.push({ img, index });
+    });
+    this.setEditing(this.editing);
+  }
+
+  /** In your own home: redraw as you redecorate, and let furniture be dragged while decorating. */
+  private watchDecor() {
+    if (!isMyRoom(getState(), this.info)) return;
+    const type = this.info.type;
+    let last = JSON.stringify(getState()?.decor?.[type] ?? null);
+    const unsub = subscribe(() => {
+      const s = getState();
+      const now = JSON.stringify(s?.decor?.[type] ?? null);
+      if (now === last || !this.sys?.isActive()) return;
+      last = now;
+      this.layout = roomLayout(s, this.info);
+      // New furniture needs its picture loaded first.
+      queueFurniture(this, this.layout.items);
+      if (this.load.list.size > 0) {
+        this.load.once("complete", () => this.drawDecor());
+        this.load.start();
+      } else this.drawDecor();
+    });
+    const found = (obj: Phaser.GameObjects.GameObject) => this.furniture.find((f) => f.img === obj);
+    this.input.dragDistanceThreshold = 6;
+    // Phaser also hears presses on the panels over the canvas: only presses that start on the room count.
+    const onRoom = (p: Phaser.Input.Pointer) => p.downElement === this.game.canvas;
+    this.input.on("gameobjectdown", (p: Phaser.Input.Pointer, obj: Phaser.GameObjects.GameObject) => {
+      const f = this.editing && onRoom(p) ? found(obj) : undefined;
+      if (!f) return;
+      this.picked = f.index;
+      bus.emit("decorPick", f.index);
+      this.showPick();
+    });
+    this.input.on("drag", (p: Phaser.Input.Pointer, obj: Phaser.GameObjects.Image, x: number, y: number) => {
+      if (!onRoom(p)) return;
+      obj.setPosition(x, y).setAlpha(0.85);
+      this.showPick();
+    });
+    this.input.on("dragend", (p: Phaser.Input.Pointer, obj: Phaser.GameObjects.Image) => {
+      const f = found(obj);
+      obj.setAlpha(1);
+      if (f && onRoom(p)) moveDecor(type, f.index, obj.x + 2, obj.y + 2);
+    });
+    const offs = [bus.on("decorEdit", (on) => this.setEditing(on)), bus.on("decorPick", (i) => ((this.picked = i), this.showPick()))];
+    this.events.once("shutdown", () => {
+      unsub();
+      offs.forEach((off) => off());
+    });
+  }
+
+  private setEditing(on: boolean) {
+    // Decorating shows the whole room; walking about follows you again.
+    if (on !== this.editing) {
+      if (on) {
+        const { width, height } = this.scale;
+        const zoom = Phaser.Math.Clamp(Math.min(width / (ROOM.w + 20), height / (ROOM.h + 20)), 0.4, 1.8);
+        this.cameras.main.setZoom(zoom);
+        // On a phone the shop sheet covers the bottom half: show the room in the space above it.
+        this.cameras.main.centerOn(ROOM.w / 2, ROOM.h / 2 + (width < 640 ? (height * 0.2) / zoom : 0));
+      } else this.fit();
+    }
+    this.editing = on;
+    for (const { img, index } of this.furniture) {
+      const it = this.layout.items[index]!;
+      if (on && !isFixed(it.id)) {
+        img.setInteractive({ draggable: true, useHandCursor: true, pixelPerfect: false });
+        this.input.setDraggable(img, true);
+      } else img.disableInteractive();
+    }
+    if (!on) this.picked = null;
+    this.showPick();
+  }
+
+  /** A gold outline round the piece you've picked. */
+  private showPick() {
+    this.pickBox?.destroy();
+    this.pickBox = null;
+    if (!this.editing || this.picked == null) return;
+    const f = this.furniture.find((x) => x.index === this.picked);
+    if (!f) return;
+    const b = f.img.getBounds();
+    this.pickBox = this.add.graphics().setDepth(40).lineStyle(3, 0xf5b81c, 1).strokeRoundedRect(b.x - 4, b.y - 4, b.width + 8, b.height + 8, 8);
   }
 
   /** Follow you, but keep the room centred on any side where it fits on screen. */

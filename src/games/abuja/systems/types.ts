@@ -404,4 +404,6 @@ export type GameState = {
   kitchen?: Kitchen;
   /** Property you own and buildings you've changed in the city. */
   city?: CityState;
+  /** How you've decorated your own rooms, by room type: furniture, wall colour, floor. */
+  decor?: Partial<Record<string, { wall?: string; floor?: "wood" | "tile" | "carpet" | "concrete"; items: { id: string; x: number; y: number; accent?: string; paid?: number }[] }>>;
 };

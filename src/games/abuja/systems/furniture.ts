@@ -309,6 +309,41 @@ export const FURNITURE: Record<string, Item> = {
       rect(0, 0, 96, 8, WOOD_DARK, 2),
   },
   picture: { w: 56, h: 44, draw: (a) => rect(4, 4, 48, 36, WOOD, 3) + rect(10, 10, 36, 24, "#bfdbfe", 1) + shape("M10 34 L22 20 L30 28 L36 22 L46 34 Z", a) },
+  // ── Things to decorate your own home with ──
+  /** A standing lamp with a fabric shade. */
+  floorlamp: {
+    w: 44,
+    h: 128,
+    foot: 0.08,
+    draw: (a) =>
+      `<ellipse cx="22" cy="120" rx="15" ry="5" fill="${WOOD_DARK}" ${LINE}/>` +
+      rect(20, 40, 4, 80, METAL, 1) +
+      shape("M8 40 L36 40 L30 8 L14 8 Z", a) +
+      `<path d="M12 33 L32 33" ${thin(tone(a, 1.3), 2)}/>` +
+      `<ellipse cx="22" cy="42" rx="12" ry="3" fill="#fff4c2" opacity="0.9"/>`,
+  },
+  /** A brass wall light. */
+  walllamp: {
+    w: 34,
+    h: 44,
+    draw: () =>
+      rect(13, 22, 8, 16, GOLD, 2) +
+      shape("M5 22 L29 22 L23 4 L11 4 Z", "#fdf3d1") +
+      `<ellipse cx="17" cy="23" rx="10" ry="2.5" fill="#fff7d6" opacity="0.9"/>`,
+  },
+  /** The National Mosque, the City Gate and Aso Rock: a print of the skyline. */
+  poster: {
+    w: 60,
+    h: 76,
+    draw: (a) =>
+      rect(4, 4, 52, 68, "#1f2937", 3) +
+      rect(8, 8, 44, 52, "#fde7c4", 1) +
+      shape("M8 48 Q18 34 26 42 Q34 30 44 40 L52 36 L52 60 L8 60 Z", tone(a, 0.8)) +
+      shape("M22 60 L24 38 L28 38 L30 60 Z M34 60 L36 38 L40 38 L42 60 Z", "#f8fafc") +
+      rect(22, 34, 20, 5, "#f8fafc", 1) +
+      `<circle cx="44" cy="18" r="5" fill="#f59e0b"/>` +
+      `<text x="30" y="68" text-anchor="middle" font-family="Arial" font-weight="900" font-size="8" fill="#f8fafc">ABUJA</text>`,
+  },
   clock: { w: 36, h: 36, draw: () => `<circle cx="18" cy="18" r="15" fill="#ffffff" ${LINE}/><path d="M18 18 L18 9 M18 18 L24 21" ${thin(INK, 2.4)}/>` },
   blackboard: { w: 200, h: 90, draw: () => rect(4, 4, 192, 76, WOOD, 4) + rect(12, 10, 176, 62, "#14532d", 2) + `<path d="M26 26 L80 26 M26 40 L110 40 M26 54 L64 54" ${thin("#e2e8f0", 2.4)}/><path d="M130 50 Q150 20 170 50" ${thin("#fde68a", 2.4)}/>` + rect(60, 78, 80, 8, WOOD_DARK, 2) },
   whiteboard: { w: 150, h: 80, draw: () => rect(4, 4, 142, 70, "#94a3b8", 4) + rect(10, 10, 130, 58, "#ffffff", 2) + `<path d="M22 50 L44 34 L64 42 L88 22 L112 30" ${thin("#16a34a", 3)}/><path d="M22 58 L130 58" ${thin(INK, 1.4)}/>` },
