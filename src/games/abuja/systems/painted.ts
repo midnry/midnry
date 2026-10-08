@@ -179,6 +179,7 @@ export const WALK_FRAMES = new Set<string>([
   "agbero",
   "civil_servant",
   "commandant",
+  "felix",
 ]);
 
 /** Named people from the school, university and camp chapters, with their heights against a grown-up. */
