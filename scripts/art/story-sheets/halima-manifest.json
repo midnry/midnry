@@ -1,0 +1,270 @@
+{
+  "id": "halima",
+  "walk_generation_attempt": 4,
+  "compression": "libimagequant maximum 256 colors, no dithering; highest quality target 70\u2013100 fitting 10 KiB; PNG optimize/compress_level=9 and lossless oxipng level 4",
+  "pixel_corrections": [
+    {
+      "view": "front",
+      "frame": 3,
+      "boundary_y": 351,
+      "region": [
+        351,
+        521,
+        536,
+        765
+      ],
+      "change": "Mirrored only existing trouser-leg and shoe pixels below mid-thigh, reversing the repeated contact step (front-3/back-1) or raised knee (back-4). Blended twelve source-pixel rows at leg joins using samples from those same existing leg pixels. Cleared faint stray background in the edited leg region. Face, headwrap, torso, arms, hands, phone, bag, badge and upper thighs unchanged."
+    },
+    {
+      "view": "back",
+      "frame": 1,
+      "boundary_y": 1337,
+      "region": [
+        1337,
+        1506,
+        17,
+        245
+      ],
+      "change": "Mirrored only existing trouser-leg and shoe pixels below mid-thigh, reversing the repeated contact step (front-3/back-1) or raised knee (back-4). Blended twelve source-pixel rows at leg joins using samples from those same existing leg pixels. Cleared faint stray background in the edited leg region. Face, headwrap, torso, arms, hands, phone, bag, badge and upper thighs unchanged."
+    },
+    {
+      "view": "back",
+      "frame": 4,
+      "boundary_y": 1339,
+      "region": [
+        1339,
+        1508,
+        790,
+        1000
+      ],
+      "change": "Mirrored only existing trouser-leg and shoe pixels below mid-thigh, reversing the repeated contact step (front-3/back-1) or raised knee (back-4). Blended twelve source-pixel rows at leg joins using samples from those same existing leg pixels. Cleared faint stray background in the edited leg region. Face, headwrap, torso, arms, hands, phone, bag, badge and upper thighs unchanged."
+    }
+  ],
+  "standing_canvas": "Shorter views padded at top to 220px; artwork proportions unchanged.",
+  "frames": [
+    {
+      "file": "halima-front.png",
+      "size": [
+        99,
+        220
+      ],
+      "mode": "P",
+      "colors": 147,
+      "bytes": 9544,
+      "rgba_bytes": 9544,
+      "quantization_quality_target": 100,
+      "sha256": "27cbc057ccaf7e9d63778f0dfb7d63f626d4f437f4c8f51c32e1d146ee09ade6"
+    },
+    {
+      "file": "halima-side.png",
+      "size": [
+        62,
+        220
+      ],
+      "mode": "P",
+      "colors": 255,
+      "bytes": 8032,
+      "rgba_bytes": 8032,
+      "quantization_quality_target": 100,
+      "sha256": "b4f7ba63e01ffbbbc2ab808d1e784bd430666abe81b63195c353f394d0a33e36"
+    },
+    {
+      "file": "halima-back.png",
+      "size": [
+        93,
+        220
+      ],
+      "mode": "P",
+      "colors": 149,
+      "bytes": 9473,
+      "rgba_bytes": 9473,
+      "quantization_quality_target": 100,
+      "sha256": "4d156c1a8c4d6c44aaa00eafb954c9ce1d94282fcaf48d4dcad3ac9a3dc84c94"
+    },
+    {
+      "file": "halima-walk-front-1.png",
+      "size": [
+        108,
+        220
+      ],
+      "mode": "P",
+      "colors": 255,
+      "bytes": 9525,
+      "rgba_bytes": 27351,
+      "quantization_quality_target": 100,
+      "sha256": "486bfa902f365c0afe5296277275cf1ad04b41c37ed3d811e13922636ed94282"
+    },
+    {
+      "file": "halima-walk-front-2.png",
+      "size": [
+        104,
+        220
+      ],
+      "mode": "P",
+      "colors": 256,
+      "bytes": 9454,
+      "rgba_bytes": 26701,
+      "quantization_quality_target": 100,
+      "sha256": "5d488915f79f0794c16bdef0a4ce6ac9b3aa8cd9650d1bce1dda7cd4df6b277f"
+    },
+    {
+      "file": "halima-walk-front-3.png",
+      "size": [
+        108,
+        220
+      ],
+      "mode": "P",
+      "colors": 256,
+      "bytes": 9878,
+      "rgba_bytes": 27454,
+      "quantization_quality_target": 100,
+      "sha256": "10b71e871a2685112e06158d4b7c2e06e9bb535e594a878625a0f1f6044572d5"
+    },
+    {
+      "file": "halima-walk-front-4.png",
+      "size": [
+        102,
+        220
+      ],
+      "mode": "P",
+      "colors": 256,
+      "bytes": 9650,
+      "rgba_bytes": 26938,
+      "quantization_quality_target": 100,
+      "sha256": "193807f2424eb3a634aec22ce6889ee5f5180c9b02d71a7a9a927615e33d735f"
+    },
+    {
+      "file": "halima-walk-side-1.png",
+      "size": [
+        140,
+        220
+      ],
+      "mode": "P",
+      "colors": 137,
+      "bytes": 9434,
+      "rgba_bytes": 31415,
+      "quantization_quality_target": 80,
+      "sha256": "26aa400461ab365a4bb913826883557ec269b83c0bbde29b9d3ec64b13b9a1e8"
+    },
+    {
+      "file": "halima-walk-side-2.png",
+      "size": [
+        118,
+        220
+      ],
+      "mode": "P",
+      "colors": 256,
+      "bytes": 9824,
+      "rgba_bytes": 27589,
+      "quantization_quality_target": 100,
+      "sha256": "05a52bccef2cab6ee85ef398a6a26b6963c1a8432d461652d708b0295d250d74"
+    },
+    {
+      "file": "halima-walk-side-3.png",
+      "size": [
+        138,
+        220
+      ],
+      "mode": "P",
+      "colors": 139,
+      "bytes": 9816,
+      "rgba_bytes": 32257,
+      "quantization_quality_target": 80,
+      "sha256": "15c9dc47fb3477413b8c0d2b87694253df77bdba452bee7a6fee7423c2f99354"
+    },
+    {
+      "file": "halima-walk-side-4.png",
+      "size": [
+        96,
+        220
+      ],
+      "mode": "P",
+      "colors": 255,
+      "bytes": 9766,
+      "rgba_bytes": 26547,
+      "quantization_quality_target": 100,
+      "sha256": "87cee4bcc80d9e9995658ccfd45e83db9d1dedfa9cdc150bf959d944983a0a32"
+    },
+    {
+      "file": "halima-walk-back-1.png",
+      "size": [
+        108,
+        220
+      ],
+      "mode": "P",
+      "colors": 256,
+      "bytes": 9905,
+      "rgba_bytes": 26216,
+      "quantization_quality_target": 100,
+      "sha256": "aa25e15e8fc69953a1141dcd3fca6889eefce8c85c3b94749e0102713b6581c3"
+    },
+    {
+      "file": "halima-walk-back-2.png",
+      "size": [
+        106,
+        220
+      ],
+      "mode": "P",
+      "colors": 255,
+      "bytes": 9236,
+      "rgba_bytes": 24855,
+      "quantization_quality_target": 100,
+      "sha256": "f7f09c561f2d346a0b6a11eb0496e5efd68008f6fd05c0ac46928ddc8aed6491"
+    },
+    {
+      "file": "halima-walk-back-3.png",
+      "size": [
+        108,
+        220
+      ],
+      "mode": "P",
+      "colors": 256,
+      "bytes": 9842,
+      "rgba_bytes": 26168,
+      "quantization_quality_target": 100,
+      "sha256": "f9bff872fb3d5a76a232db079e662d0b213dfe83b122ed1db2bb4509316a05a0"
+    },
+    {
+      "file": "halima-walk-back-4.png",
+      "size": [
+        106,
+        220
+      ],
+      "mode": "P",
+      "colors": 254,
+      "bytes": 9353,
+      "rgba_bytes": 25411,
+      "quantization_quality_target": 100,
+      "sha256": "91e5c949b843ec2243b4f5adfc254d71159af97b13c5f5af202dd203436f48a1"
+    }
+  ],
+  "regeneration_history": [
+    {
+      "attempt": 1,
+      "result": "Rejected: repeated gait phases."
+    },
+    {
+      "attempt": 2,
+      "result": "Rejected: repeated contact/passing poses and missing visible phone grips."
+    },
+    {
+      "attempt": 3,
+      "result": "Accepted side stride phases after targeted regeneration; contact/back passing poses still needed leg correction."
+    },
+    {
+      "attempt": 4,
+      "result": "Regenerated front-2/front-4/side-2 phone grips; final source for permitted leg corrections."
+    }
+  ],
+  "visual_review": {
+    "standing": "Complete front, right-facing side and back; same suit, patterned hijab, phone, left-shoulder bag and press lanyard.",
+    "walking": "Opposite forward feet in 1/3 and opposite knees in 2/4; all side views face right; phone stays in right hand and bag on left shoulder.",
+    "compression": "All fifteen paletted PNGs visually reviewed after compression; 220px canvas, transparent background and feet at bottom."
+  },
+  "checks": {
+    "typecheck": "passed",
+    "build": "passed",
+    "existing_files": "unchanged",
+    "cutter": "unchanged"
+  }
+}
