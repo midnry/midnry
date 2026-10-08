@@ -27,6 +27,7 @@ import {
   talk,
   memoryKey,
   finishGame,
+  steal,
 } from "../systems/engine";
 import { onTheirMind } from "../systems/memory";
 import { MiniGame } from "./MiniGame";
@@ -936,6 +937,19 @@ function TalkModal({ state, personKey, onClose }: { state: GameState; personKey:
               }}
             >
               Insult them 😤
+            </ReplyButton>
+          ) : null}
+          {!person.story && state.flags[`stole_${personKey}`] !== beatKey(state) ? (
+            <ReplyButton
+              looks={myLooks(state)}
+              adult={adult}
+              note={state.chapter ? "If you're caught, you pay for it, and the school punishes you" : "If you're caught, you pay for it, and the police may come"}
+              onClick={() => {
+                steal(personKey);
+                onClose();
+              }}
+            >
+              Steal from them 🫳
             </ReplyButton>
           ) : null}
         </div>

@@ -1105,6 +1105,103 @@ const COMEBACKS = [
   "\"Ehn? Say that one again!\" People hold them back. You leave quickly.",
 ];
 
+/** Caught at school outside a story scene: the suspension or expulsion scene plays now. */
+function schoolTrouble(s: GameState) {
+  if (!s.chapter || !s.flags.discipline_due || !s.scene) return;
+  const detour = disciplineDetour(s, s.scene);
+  if (detour && detour !== s.scene) goScene(s, detour);
+}
+
+type Loot = { what: string; value: number; kind: "food" | "money" | "item" };
+
+/** What there is to steal from someone, by where you are in life. */
+const LOOT: Record<string, Loot[]> = {
+  primary: [
+    { what: "their lunch", value: 300, kind: "food" },
+    { what: "₦200 from their school bag", value: 200, kind: "money" },
+    { what: "their new pencil case", value: 600, kind: "item" },
+  ],
+  secondary: [
+    { what: "their provisions (Milo, Peak milk, Indomie)", value: 3000, kind: "food" },
+    { what: "₦2,000 from their locker", value: 2000, kind: "money" },
+    { what: "their phone", value: 15000, kind: "item" },
+  ],
+  university: [
+    { what: "their foodstuff from the hostel kitchen", value: 5000, kind: "food" },
+    { what: "₦10,000 from their wallet", value: 10000, kind: "money" },
+    { what: "their laptop charger", value: 8000, kind: "item" },
+  ],
+  nysc: [
+    { what: "their provisions", value: 3000, kind: "food" },
+    { what: "₦8,000 of their allawee", value: 8000, kind: "money" },
+    { what: "their NYSC kit", value: 6000, kind: "item" },
+  ],
+  city: [
+    { what: "food from their stall", value: 2500, kind: "food" },
+    { what: "₦12,000 from their wallet", value: 12000, kind: "money" },
+    { what: "their phone", value: 40000, kind: "item" },
+  ],
+};
+
+/**
+ * Steal from someone. Get away with it and you keep it (things you sell for
+ * half). Get caught and the punishment fits the theft: buy food for everyone
+ * you took food from, pay money back double, pay the full worth of a thing;
+ * at school, strikes by how much it was worth; in the city, the police.
+ */
+export function steal(key: string) {
+  update((s) => {
+    const p = findPerson(key);
+    if (!p || p.story) return;
+    if (s.flags[`stole_${key}`] === beatKey(s)) return toast(s, "They're holding their things tight now. Not today.");
+    s.flags[`stole_${key}`] = beatKey(s);
+    const table = LOOT[p.map] ?? LOOT.city!;
+    const loot = table[Math.floor(Math.random() * table.length)]!;
+    const who = memoryKey(p);
+    const odds = Math.min(0.75, 0.4 + s.skills.hustle / 250);
+    if (Math.random() < odds) {
+      const gain = loot.kind === "money" ? loot.value : loot.kind === "item" ? Math.round(loot.value / 2) : 0;
+      if (gain) withoutBankCheck(() => addStat(s, "money", gain));
+      else addStat(s, "stress", -3);
+      if (!s.chapter) addStat(s, "heat", 2);
+      s.flags.thefts = Number(s.flags.thefts ?? 0) + 1;
+      toast(s, `You take ${loot.what} and nobody sees. ${gain ? `+${naira(gain)}${loot.kind === "item" ? " when you sell it." : "."}` : "It tastes like guilt."}`);
+      return;
+    }
+    // Caught.
+    const cost = loot.kind === "money" ? loot.value * 2 : loot.kind === "food" ? loot.value * 3 : loot.value;
+    const how =
+      loot.kind === "food"
+        ? `You're made to buy food for everyone you took from: ${naira(cost)}.`
+        : loot.kind === "money"
+          ? `You pay it back double: ${naira(cost)}.`
+          : `It goes back, and you pay its full worth: ${naira(cost)}.`;
+    addStat(s, "money", -Math.min(cost, Math.max(0, s.stats.money)));
+    if (p.npc) {
+      const n = s.npcs[p.npc] ?? { rel: 0, met: true, lastSeen: s.day };
+      s.npcs[p.npc] = { ...n, rel: clamp(n.rel - 15), met: true };
+    }
+    remember(s, who, { what: "You stole from them", say: "\"Keep your hands where I can see them. I haven't forgotten what you did.\"", tone: "hurt", weight: 2 });
+    const lines: string[] = [`Caught taking ${loot.what}! ${how}`];
+    if (s.chapter) {
+      // At school: strikes by how much it was worth, enough for a suspension when it's big.
+      const strikes = loot.value >= 10000 ? 3 : loot.value >= 1000 ? 2 : 1;
+      lines.push(...apply(s, [{ discipline: strikes }]));
+      if (s.stage === "primary") lines.push("And you sweep the classroom every day for a week.");
+    } else {
+      lines.push(offense(s, "steal"));
+      addStat(s, "heat", Math.ceil(loot.value / 2000));
+      if (loot.value >= 20000 && Math.random() < 0.5) {
+        s.flags.arrested = true;
+        lines.push("Someone calls the police.");
+      }
+    }
+    toast(s, lines.join(" "));
+    schoolTrouble(s);
+    checkEndings(s);
+  });
+}
+
 /** Insult someone: people remember, and so does your reputation. */
 export function insult(key: string) {
   update((s) => {
@@ -1138,11 +1235,7 @@ export function takeOffer(key: string, choice: Choice) {
     s.flags[`offer_${key}`] = beatKey(s);
     const rel = (choice.effects ?? []).reduce((sum, e) => sum + (e.npc ? (e.rel ?? 0) : 0), 0);
     const toasts = apply(s, choice.effects);
-    // Caught at school through a conversation: the suspension or expulsion scene plays now.
-    if (s.chapter && s.flags.discipline_due && s.scene) {
-      const detour = disciplineDetour(s, s.scene);
-      if (detour && detour !== s.scene) goScene(s, detour);
-    }
+    schoolTrouble(s);
     // A conversation can lead straight into a story scene.
     const forced = s.flags.force_event;
     if (typeof forced === "string" && forced) {

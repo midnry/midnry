@@ -91,6 +91,8 @@ export type Cond = {
   noAsset?: string;
   /** The electricity hasn't been cut off. */
   powered?: boolean;
+  /** Who your crushes and love interest are: by the gender you're drawn to. */
+  loveGender?: Gender;
   /** Has (true) or lacks (false) a driver's licence. */
   license?: boolean;
   any?: Cond[];
@@ -141,6 +143,8 @@ export type Effect = {
   recipe?: string;
   /** Strikes against you at school: three get you suspended, five expelled. Negative to clear one. */
   discipline?: number;
+  /** Caught at something the school suspends for on the spot (a second time this school, more strikes). */
+  suspend?: boolean;
   /** Something the person in `npc` will remember about you. */
   remember?: { what: string; say?: string; tone: Tone; weight: 1 | 2 | 3 };
   /** Something the person in `npc` lets go of (by its `what`). */

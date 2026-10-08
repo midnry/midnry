@@ -90,5 +90,29 @@
     "class": "lapo",
     "color": "#a16207",
     "bio": "His family farmed in Guzape long before Abuja was a capital. Now he sleeps in a church hall and waits."
+  },
+  {
+    "id": "pcrush",
+    "name": "Ifeoma",
+    "nameByGender": {
+      "female": "Ifeoma",
+      "male": "Chidi"
+    },
+    "role": "Primary school crush",
+    "class": "ordinary",
+    "color": "#f472b6",
+    "bio": "Sat two rows in front of you in primary school. Neatest handwriting in class. Laughed at your jokes, mostly."
+  },
+  {
+    "id": "scrush",
+    "name": "Zainab",
+    "nameByGender": {
+      "female": "Zainab",
+      "male": "Femi"
+    },
+    "role": "Secondary school sweetheart",
+    "class": "ordinary",
+    "color": "#fb7185",
+    "bio": "Your first real crush in secondary school. Strict parents, quick laugh, terrible at keeping secrets."
   }
 ]

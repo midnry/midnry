@@ -68,6 +68,7 @@ export function check(state: GameState, cond: Cond | undefined): boolean {
   if (cond.notFlag && state.flags[cond.notFlag]) return false;
   if (cond.background && state.background !== cond.background) return false;
   if (cond.gender && state.gender !== cond.gender) return false;
+  if (cond.loveGender && state.loveGender !== cond.loveGender) return false;
   if (cond.cert && !state.certs[cond.cert]) return false;
   if (cond.noCert && state.certs[cond.noCert]) return false;
   if (cond.npc && rel(state, cond.npc) < (cond.rel ?? 1)) return false;
@@ -116,6 +117,25 @@ export function addLog(state: GameState, text: string): void {
   state.log.push({ age: Math.floor(state.age), text: fill(state, text) });
 }
 
+/** School prefect posts, by the flag value the story sets. */
+export const PREFECTS: Record<string, string> = {
+  head: "Head Boy",
+  food: "Food Prefect",
+  sports: "Sports Prefect",
+  labour: "Labour Prefect",
+  library: "Library Prefect",
+  chapel: "Chapel and Mosque Prefect",
+  social: "Social Prefect",
+  captain: "Class Captain",
+  timekeeper: "Time Keeper",
+};
+
+export function prefectTitle(state: GameState): string {
+  const role = String(state.flags.prefect ?? "");
+  if (role === "head") return state.gender === "female" ? "Head Girl" : "Head Boy";
+  return PREFECTS[role] ?? "prefect";
+}
+
 const STRIKE_LINES = [
   "",
   "Your name goes into the black book. One more and your parents get a letter.",
@@ -156,6 +176,12 @@ export function apply(state: GameState, effects: Effect[] | undefined, toasts: s
     if (effect.flag && effect.add != null && !effect.stat && !effect.skill) state.flags[effect.flag] = Number(state.flags[effect.flag] ?? 0) + effect.add;
     else if (effect.flag) state.flags[effect.flag] = effect.set ?? true;
     if (effect.discipline) discipline(state, effect.discipline, toasts);
+    if (effect.suspend) {
+      // On the spot: suspended now, or if already suspended at this school, two more strikes.
+      const ch = state.chapter ?? "";
+      if (state.flags[`suspended_${ch}`]) discipline(state, 2, toasts);
+      else discipline(state, Math.max(1, 3 - Number(state.flags.strikes ?? 0)), toasts);
+    }
     if (effect.npc) {
       const current = state.npcs[effect.npc] ?? { rel: 0, met: false, lastSeen: state.day };
       state.npcs[effect.npc] = { rel: clamp(current.rel + (effect.rel ?? 0)), met: true, lastSeen: state.day };
@@ -202,6 +228,10 @@ export function fill(state: GameState, text: string): string {
   return text
     .replace(/\{name\}/g, state.name)
     .replace(/\{love\}/g, npcName(state, "love"))
+    .replace(/\{pcrush\}/g, npcName(state, "pcrush"))
+    .replace(/\{scrush\}/g, npcName(state, "scrush"))
+    .replace(/\{headrole\}/g, state.gender === "female" ? "Head Girl" : "Head Boy")
+    .replace(/\{prefect\}/g, prefectTitle(state))
     .replace(/\{state\}/g, state.postingState ?? "")
     .replace(/\{state_blurb\}/g, posted?.blurb ?? "")
     .replace(/\{state_event\}/g, posted?.events[eventIndex]?.text ?? "")

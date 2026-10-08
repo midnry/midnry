@@ -24,7 +24,7 @@
       "pitch": { "x": 300, "y": 830, "label": "Sports field" },
       "gate": { "x": 710, "y": 470, "label": "School gate" }
     },
-    "beats": { "home_lapo": "home", "home_average": "home", "fees": "assembly", "friends": "playground", "end": "gate", "sweets": "playground", "interhouse": "pitch", "interhouse_events": "pitch", "interhouse_events2": "pitch", "common_entrance": "assembly" }
+    "beats": { "home_lapo": "home", "home_average": "home", "fees": "assembly", "friends": "playground", "end": "gate", "sweets": "playground", "interhouse": "pitch", "interhouse_events": "pitch", "interhouse_events2": "pitch", "common_entrance": "assembly", "crush_note": "playground" }
   },
   "secondary": {
     "width": 1700, "height": 1150, "spawn": { "x": 300, "y": 420 },
@@ -50,7 +50,7 @@
       "cbt": { "x": 450, "y": 1050, "label": "CBT centre" },
       "sports": { "x": 1100, "y": 480, "label": "Sports ground" }
     },
-    "beats": { "lapo_school": "classroom", "average_school": "classroom", "big_event": "hall", "peer": "corner", "socials": "home", "crush": "classroom", "waec": "exam", "dropout": "home", "jamb": "cbt", "hustle_hostel": "classroom", "senior": "corner", "interhouse_sec": "sports", "interhouse_sec_events": "sports", "interhouse_sec_events2": "sports", "expo_market": "corner" }
+    "beats": { "lapo_school": "classroom", "average_school": "classroom", "big_event": "hall", "peer": "corner", "socials": "home", "crush": "classroom", "waec": "exam", "dropout": "home", "jamb": "cbt", "hustle_hostel": "classroom", "senior": "corner", "interhouse_sec": "sports", "interhouse_sec_events": "sports", "interhouse_sec_events2": "sports", "expo_market": "corner", "date": "corner", "kiss_moment": "classroom", "prefect_campaign": "hall", "campaign": "hall", "campaign2": "hall" }
   },
   "university": {
     "width": 1800, "height": 1200, "spawn": { "x": 320, "y": 400 },
@@ -75,7 +75,7 @@
       "lawn": { "x": 950, "y": 450, "label": "Faculty lawn" },
       "theatre": { "x": 950, "y": 330, "label": "Lecture theatre" }
     },
-    "beats": { "start": "hostel", "strike": "hostel", "cult": "field", "mentor": "office", "guru": "hostel", "nepo_party": "party", "love": "lawn", "final": "theatre", "hustle_uni": "hostel", "sorting": "theatre", "ponzi": "lawn", "yahoo_hostel": "hostel" }
+    "beats": { "start": "hostel", "strike": "hostel", "cult": "field", "mentor": "office", "guru": "hostel", "nepo_party": "party", "love": "lawn", "final": "theatre", "hustle_uni": "hostel", "sorting": "theatre", "ponzi": "lawn", "yahoo_hostel": "hostel", "uni_romance": "lawn", "uni_romance2": "party" }
   },
   "nysc": {
     "width": 1700, "height": 1150, "spawn": { "x": 260, "y": 300 },
