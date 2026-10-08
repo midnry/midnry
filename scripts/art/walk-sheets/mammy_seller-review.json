@@ -1,0 +1,61 @@
+{
+  "id": "mammy_seller",
+  "original": "mammy_seller-sheet-original.png",
+  "corrected": "mammy_seller-sheet-corrected.png",
+  "original_sha256": "08e2924405f3c86e27a450b950411630aed973a097fc22e82058d30a93b658f5",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated side contacts/passing poses and robe-hem knee poses; regenerate opposite limbs with continuous dress hem and apron.",
+      "source": "/workspace/generated_images/exec-268d7125-1785-4628-8d8b-79c290d6bf75.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Side passing frames2 and4 repeat instead of lifting opposite knees with opposite free arm swing.",
+      "source": "/workspace/generated_images/exec-bef2c25d-b887-4de9-ae82-9df21da5d982.png"
+    },
+    {
+      "attempt": 4,
+      "reason": "Repeated side contact/passing poses: regenerate opposite near/far knees and free arm swing.",
+      "source": "/workspace/generated_images/exec-7577160e-4300-45d0-a3aa-70cb1f95380e.png"
+    },
+    {
+      "attempt": 5,
+      "reason": "Previous regeneration retained repeated side2/4 arm/knee pose; regenerate from appearance references plus distinct female pose guide.",
+      "source": "/workspace/generated_images/exec-667aa5bb-66ca-4e8f-befd-65b882dce38f.png"
+    },
+    {
+      "attempt": 6,
+      "reason": "Front/back passing knees and garment hems repeat; regenerate opposite knees with continuous swinging hem, retaining successful side row.",
+      "source": "/workspace/generated_images/exec-683b5ad9-1b7b-4bf6-aa05-eaa5177887f3.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "mammy_seller",
+      "view": "front",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+      "boundary_y": 445,
+      "x0": 540,
+      "x1": 744,
+      "reflection_axis_twice": 1283
+    },
+    {
+      "id": "mammy_seller",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+      "boundary_y": 1444,
+      "x0": 524,
+      "x1": 743,
+      "reflection_axis_twice": 1278
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
