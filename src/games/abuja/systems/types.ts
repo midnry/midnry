@@ -6,6 +6,7 @@ import type { NegLife } from "./negotiate/types";
 import type { Kitchen } from "./cooking/types";
 import type { CityState } from "./city/sim";
 import type { Memory, Tone } from "./memory";
+import type { Social } from "./social";
 import type { NewsTag, Story } from "./news";
 
 export type Background = "lapo" | "average";
@@ -390,6 +391,10 @@ export type GameState = {
   savedAt?: number;
   /** Which city map the positions in this save refer to (missing: the original map). */
   mapVersion?: number;
+  /** Your Instaflex page, once you make one (secondary school onwards). */
+  social?: Social | null;
+  /** Things you've stolen and not sold yet. */
+  stash?: { what: string; value: number; from: string; day: number }[];
   /** A sports-day mini-game being played, and where the story goes after it. */
   minigame?: (GameDef & { next?: string }) | null;
   /** What people remember about you, by person (an NPC id, or a city person's id). */

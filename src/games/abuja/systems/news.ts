@@ -120,6 +120,9 @@ function peopleStories(s: GameState): Story[] {
     out.push({ id: "pp-rising", tag: "People", icon: "⭐", day: s.day, you: true, headline: `Rising star: ${s.name} is the name on Abuja's lips`, body: "From the hustle to the boardroom, people are talking. Who's next to knock on that door?" });
   if (insulted)
     out.push({ id: "pp-viral", tag: "People", icon: "📱", day: s.day, you: true, headline: "Video of public shouting match goes viral", body: `A clip of a young person trading insults in public has hit 200k views. Commenters say they recognise ${s.name}. 'Home training is free,' says one.` });
+  const so = s.social;
+  if (so && so.followers >= 50000)
+    out.push({ id: "pp-influencer", tag: "People", icon: "📸", day: s.day, you: true, headline: `Instaflex star @${so.handle} passes ${Math.floor(so.followers / 10000) * 10}K followers`, body: `${s.name}'s page is one of Abuja's fastest-growing. Brands are queueing up${so.bought > so.followers * 0.3 ? ", though some say the numbers look a little too good" : ""}.` });
   for (const b of life.businesses) {
     const def = BUSINESSES.find((d) => d.id === b.id);
     if (!def) continue;

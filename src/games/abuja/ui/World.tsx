@@ -28,9 +28,13 @@ import {
   memoryKey,
   finishGame,
   steal,
+  sellStash,
+  stashOffer,
 } from "../systems/engine";
 import { onTheirMind } from "../systems/memory";
 import { MiniGame } from "./MiniGame";
+import { SocialApp } from "./Social";
+import { canJoin } from "../systems/social";
 import { ACT_ONE, storyGoal } from "../systems/story";
 import { hasCar, isDriving } from "../systems/drive";
 import { blocked } from "../systems/negotiate/core";
@@ -85,6 +89,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const negotiation = state.life?.neg?.active ?? null;
   const [kitchenOpen, setKitchenOpen] = useState<KitchenOpen | null>(null);
   // Inside a building: which room, and the loading screen between outside and in.
+  const [socialOpen, setSocialOpen] = useState(false);
   const [inside, setInside] = useState<RoomInfo | null>(null);
   const insideRef = useRef<RoomInfo | null>(null);
   const [loading, setLoading] = useState<{ title: string; icon: string; progress?: number; error?: string } | null>({ title: "Loading your next chapter", icon: "✦" });
@@ -535,6 +540,35 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       {state.event ? <EventModal state={state} /> : null}
       {kitchenOpen && !state.event && !negotiation ? <KitchenScreen state={state} open={kitchenOpen} onClose={() => setKitchenOpen(null)} /> : null}
       {negotiation && !state.event ? <NegotiationScreen key={`${negotiation.deal}-${negotiation.npc}`} state={state} n={negotiation} /> : null}
+      {inStory && socialOpen ? (
+        <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setSocialOpen(false)}>
+          <div className={`${panel} flex h-[88dvh] w-full max-w-md flex-col sm:h-[min(44rem,92dvh)]`} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Instaflex">
+            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+              <p className="font-semibold">Instaflex</p>
+              <button type="button" className="min-h-11 rounded-xl px-3 text-sm" onClick={() => setSocialOpen(false)} aria-label="Close Instaflex">
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <SocialApp state={state} />
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {inStory && !story && canJoin(state) && !socialOpen ? (
+        <button
+          type="button"
+          onClick={() => setSocialOpen(true)}
+          className={`${actionBtn} absolute right-4 bottom-6 z-10 bg-gradient-to-br from-fuchsia-600 to-rose-500 text-white`}
+          style={{ fontFamily: GAME_FONT }}
+          aria-label="Open Instaflex"
+        >
+          <span className="text-2xl" aria-hidden>
+            📸
+          </span>
+          Instaflex
+        </button>
+      ) : null}
       {state.minigame ? <MiniGame key={`${state.minigame.kind}-${state.scene}`} kind={state.minigame.kind} level={state.minigame.level} house={String(state.flags.house ?? "")} onDone={finishGame} /> : null}
       {story && !state.minigame ? (
         <div className="absolute inset-0 z-40 overflow-y-auto bg-black/55 px-3 py-6 backdrop-blur-[2px] sm:py-12">
@@ -895,6 +929,7 @@ function TalkModal({ state, personKey, onClose }: { state: GameState; personKey:
   const them = personLook(person);
   const adult = state.age >= 18;
   const mind = onTheirMind(state, memoryKey(person));
+  const sale = stashOffer(state, personKey);
   return (
     <div className="absolute inset-x-2 bottom-2 z-30 max-h-[80dvh] overflow-y-auto sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-[26rem]" role="dialog" aria-label={`Talking to ${person.name}`}>
       <div className="grid gap-4 pb-1">
@@ -937,6 +972,19 @@ function TalkModal({ state, personKey, onClose }: { state: GameState; personKey:
               }}
             >
               Insult them 😤
+            </ReplyButton>
+          ) : null}
+          {sale ? (
+            <ReplyButton
+              looks={myLooks(state)}
+              adult={adult}
+              note={sale.risk > 0.2 ? "They might report you" : "They don't ask questions"}
+              onClick={() => {
+                sellStash(personKey);
+                onClose();
+              }}
+            >
+              Sell them your stolen goods ({naira(sale.pay)}) 🎒
             </ReplyButton>
           ) : null}
           {!person.story && state.flags[`stole_${personKey}`] !== beatKey(state) ? (

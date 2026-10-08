@@ -60,6 +60,8 @@ import {
 } from "./romance";
 import type { Choice, EndingId, GameState, PersonDef, Scene, TaskStep } from "./types";
 import { report } from "./news";
+import * as SO from "./social";
+import { nightlySocial } from "./social";
 import { storyEvent } from "./story";
 import { fadeMemories, forget, memoriesOf, recalled, remember, sinceWhen } from "./memory";
 
@@ -757,6 +759,8 @@ function sleep(s: GameState) {
   if (!s.event) s.event = nightlyCase(s);
   if (!s.event) s.event = dailyRomance(s);
   neglect(s);
+  const fund = nightlySocial(s);
+  if (fund) s.toast = `${s.toast ? `${s.toast} ` : ""}${fund}`;
   fadeMemories(s);
   pickEvent(s);
   checkEndings(s);
@@ -1160,12 +1164,12 @@ export function steal(key: string) {
     const who = memoryKey(p);
     const odds = Math.min(0.75, 0.4 + s.skills.hustle / 250);
     if (Math.random() < odds) {
-      const gain = loot.kind === "money" ? loot.value : loot.kind === "item" ? Math.round(loot.value / 2) : 0;
-      if (gain) withoutBankCheck(() => addStat(s, "money", gain));
+      if (loot.kind === "money") withoutBankCheck(() => addStat(s, "money", loot.value));
+      else if (loot.kind === "item") (s.stash ??= []).push({ what: loot.what.replace(/^their /, ""), value: loot.value, from: key, day: s.day });
       else addStat(s, "stress", -3);
       if (!s.chapter) addStat(s, "heat", 2);
       s.flags.thefts = Number(s.flags.thefts ?? 0) + 1;
-      toast(s, `You take ${loot.what} and nobody sees. ${gain ? `+${naira(gain)}${loot.kind === "item" ? " when you sell it." : "."}` : "It tastes like guilt."}`);
+      toast(s, `You take ${loot.what} and nobody sees. ${loot.kind === "money" ? `+${naira(loot.value)}.` : loot.kind === "item" ? "It's in your bag. Now find someone to sell it to." : "It tastes like guilt."}`);
       return;
     }
     // Caught.
@@ -1199,6 +1203,77 @@ export function steal(key: string) {
     toast(s, lines.join(" "));
     schoolTrouble(s);
     checkEndings(s);
+  });
+}
+
+/** People who buy stolen things without asking questions: better prices, less risk. */
+const FENCES = new Set(["slim", "agbero", "okada", "tobi", "chuka", "kiosk", "pos_agent", "hawker"]);
+
+/** What someone would pay for your stash, and whether they might turn you in. */
+export function stashOffer(s: GameState, key: string): { pay: number; risk: number; owner: boolean } | null {
+  const p = findPerson(key);
+  if (!p || p.story || !s.stash?.length) return null;
+  const owner = s.stash.some((x) => x.from === key);
+  const fence = FENCES.has(p.id) || FENCES.has(p.npc ?? "");
+  const worth = s.stash.reduce((n, x) => n + x.value, 0);
+  return { pay: Math.round((worth * (fence ? 0.6 : 0.4)) / 50) * 50, risk: owner ? 1 : fence ? 0.08 : 0.3, owner };
+}
+
+/** Sell everything you've stolen to this person. Some will turn you in; never try it on the owner. */
+export function sellStash(key: string) {
+  update((s) => {
+    const offer = stashOffer(s, key);
+    const p = findPerson(key);
+    if (!offer || !p || !s.stash) return;
+    if (Math.random() < offer.risk) {
+      const worth = s.stash.reduce((n, x) => n + x.value, 0);
+      const theirs = s.stash.find((x) => x.from === key)?.what ?? "thing";
+      s.stash = [];
+      addStat(s, "money", -Math.min(worth, Math.max(0, s.stats.money)));
+      remember(s, memoryKey(p), { what: "You tried to sell them stolen goods", say: "\"You tried to sell me stolen things. Do I look like a thief to you?\"", tone: "hurt", weight: 2 });
+      const lines = [offer.owner ? `"That's MY ${theirs}!" You tried to sell it back to its owner.` : `${p.name} recognises the goods as stolen and reports you.`, `Everything is taken back, and you pay its full worth: ${naira(worth)}.`];
+      if (s.chapter) lines.push(...apply(s, [{ discipline: 2 }]));
+      else {
+        lines.push(offense(s, "steal"));
+        addStat(s, "heat", 6);
+      }
+      toast(s, lines.join(" "));
+      schoolTrouble(s);
+      return;
+    }
+    const n = s.stash.length;
+    s.stash = [];
+    withoutBankCheck(() => addStat(s, "money", offer.pay));
+    if (!s.chapter) addStat(s, "heat", 2);
+    toast(s, `${p.name} looks over the ${n > 1 ? `${n} things` : "goods"}, asks no questions, and pays ${naira(offer.pay)}.`);
+  });
+}
+
+// ── Instaflex ────────────────────────────────────────────────────────────────
+
+export const socialCreate = (handle: string) => update((s) => toast(s, SO.createAccount(s, handle)));
+export function socialPost(kind: SO.ContentKind, collab?: string) {
+  update((s) => {
+    const r = SO.post(s, kind, collab);
+    toast(s, [r.text, ...(r.strike ? apply(s, [{ discipline: 1 }]) : [])].join(" "));
+    schoolTrouble(s);
+  });
+}
+export const socialBuyFollowers = (n: number, price: number) => update((s) => toast(s, SO.buyFollowers(s, n, price)));
+export const socialBuyLikes = () => update((s) => toast(s, SO.buyLikes(s)));
+export function socialReply(id: string, how: Parameters<typeof SO.reply>[2]) {
+  update((s) => {
+    const line = SO.reply(s, id, how);
+    if (line) toast(s, line);
+  });
+}
+export const socialAddFriend = (id: string) => update((s) => toast(s, SO.addFriend(s, id)));
+export function socialDeal(id: string, take: boolean) {
+  update((s) => {
+    if (!take) return SO.declineDeal(s, id);
+    const r = SO.takeDeal(s, id);
+    toast(s, [r.text, ...(r.strike ? apply(s, [{ discipline: 2 }]) : [])].join(" "));
+    schoolTrouble(s);
   });
 }
 

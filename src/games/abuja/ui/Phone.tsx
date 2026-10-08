@@ -3,6 +3,7 @@ import { CityApp } from "./CityApp";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
 import { borrow, business, callContact, driveTo, negotiate, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
 import { arrivalOf } from "../systems/citymap";
+import { SocialApp } from "./Social";
 import { ago, memoriesOf, TONE_ICON } from "../systems/memory";
 import { olderNews, todaysNews, type NewsTag, type Story } from "../systems/news";
 import { MONTHS, SEASON_NAMES, seasonOf, monthOf } from "../systems/weather";
@@ -23,11 +24,12 @@ import { btnGhost, btnPrimary } from "./theme";
 import { Trade } from "./Trade";
 import { WardrobePanel } from "./Wardrobe";
 
-export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen" | "city" | "news";
+export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen" | "city" | "news" | "social";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "wallet", label: "Wallet", icon: "💳", tint: "bg-blue-600" },
   { id: "news", label: "Abuja Daily", icon: "📰", tint: "bg-stone-600" },
+  { id: "social", label: "Instaflex", icon: "📸", tint: "bg-fuchsia-600" },
   { id: "food", label: "ChopNow", icon: "🍲", tint: "bg-amber-600" },
   { id: "kitchen", label: "Kitchen", icon: "🍳", tint: "bg-orange-600" },
   { id: "bills", label: "Bills", icon: "🧾", tint: "bg-cyan-700" },
@@ -45,7 +47,7 @@ const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "settings", label: "Settings", icon: "⚙️", tint: "bg-slate-600" },
 ];
 
-const SOON = ["Tiklok", "Instaflex", "Zoom ride-hailing", "Elections", "Inheritance"];
+const SOON = ["Zoom ride-hailing", "Elections", "Inheritance"];
 
 export function Phone({ state, app, onApp, onClose }: { state: GameState; app: PhoneApp; onApp: (app: PhoneApp) => void; onClose: () => void }) {
   const current = APPS.find((item) => item.id === app);
@@ -75,6 +77,7 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
           {app === "home" ? <Home onApp={onApp} /> : null}
           {app === "wallet" ? <Wallet state={state} /> : null}
           {app === "news" ? <NewsApp state={state} /> : null}
+          {app === "social" ? <SocialApp state={state} /> : null}
           {app === "food" ? <FoodApp state={state} /> : null}
           {app === "bills" ? <Bills state={state} /> : null}
           {app === "business" ? <BusinessApp state={state} /> : null}
