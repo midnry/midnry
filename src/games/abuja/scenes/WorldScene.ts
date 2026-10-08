@@ -8,6 +8,7 @@ import type { RideMode } from "../systems/rides";
 import { personLook } from "../systems/peoplelook";
 import { roomForBuilding } from "../systems/rooms";
 import { RoomScene } from "./RoomScene";
+import { DriveScene } from "./DriveScene";
 import { isDirty } from "../systems/life";
 import { injured, type HitBy } from "../systems/health";
 import { CAR_COLOR, frscSpots, isDriving } from "../systems/drive";
@@ -1554,7 +1555,7 @@ export function createGame(parent: HTMLElement): Phaser.Game {
     backgroundColor: "#05070c",
     scale: { mode: Phaser.Scale.RESIZE, width: parent.clientWidth, height: parent.clientHeight },
     render: { antialias: true },
-    scene: [WorldScene, RoomScene],
+    scene: [WorldScene, RoomScene, DriveScene],
     input: { keyboard: true, touch: true },
   });
 }

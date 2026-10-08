@@ -91,8 +91,8 @@ export function nightlyCar(s: GameState): string[] {
 }
 
 /** FRSC stop: only when you're driving, once a day. Returns the event to open. */
-export function frscStop(s: GameState): string | null {
-  if (!isDriving(s) || s.flags.frsc_day === s.day || s.event) return null;
+export function frscStop(s: GameState, onTrip = false): string | null {
+  if (!(onTrip || isDriving(s)) || s.flags.frsc_day === s.day || s.event) return null;
   s.flags.frsc_day = s.day;
   return lifeOf(s).license ? "frsc_ok" : "frsc_nolicense";
 }

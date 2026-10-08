@@ -256,6 +256,22 @@ export function saveControls(controls: Controls): void {
 /** Something you can use: a place, a person, a story spot, a door, the way out of a room, or a thing in a room. */
 export type NearThing = { kind: "place" | "person" | "beat" | "door" | "exit" | "item" | "lot"; id: string; label: string };
 
+/** What the driving view tells the dashboard. */
+export type DriveHud = {
+  kmh: number;
+  /** Kilometres left to go. */
+  left: number;
+  /** Where you are on the city map, and which way you're heading. */
+  at: { x: number; y: number };
+  heading: { x: number; y: number };
+  turn: { dir: "left" | "right"; road: string; metres: number } | null;
+  road: string;
+  reverse: boolean;
+};
+
+/** The pedals, wheel and gear, from the on-screen controls (the keyboard works too). */
+export const driveInput = { steer: 0, throttle: 0, brake: 0, reverse: false, skip: false };
+
 type BusEvents = {
   teleport: { x: number; y: number };
   /** A ride across the city: the world animates the trip along the roads. */
@@ -275,6 +291,14 @@ type BusEvents = {
   sceneLoadError: null;
   /** A room has finished loading (the loading screen can go). */
   roomReady: null;
+  /** Drive yourself somewhere: the behind-the-car view along the route. */
+  chaseDrive: { from: { x: number; y: number }; to: { x: number; y: number }; name: string };
+  /** The driving view's dashboard, a few times a second. */
+  driveHud: DriveHud;
+  /** You've arrived (or skipped ahead): back to the map. */
+  driveDone: null;
+  /** A knock on the road, to show as a warning. */
+  driveBump: string;
   /** Decorating your room: furniture can be dragged about while this is on. */
   decorEdit: boolean;
   /** Which piece of furniture is picked (its index in the room), or none. */

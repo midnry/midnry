@@ -4,7 +4,7 @@ import { myLooks } from "../systems/painted";
 import { useContext, useEffect, useRef, useState } from "react";
 import { Brain, CarFront, ChevronRight, DoorOpen, Droplet, Hand, Heart, LocateFixed, Map as MapIcon, MapPin, MessageCircle, Minus, Moon, Pause, Play, Plus, Search, Siren, Smartphone, Sofa, SquareParking, Star, Sunrise, Utensils, Zap } from "lucide-react";
 import type { Game as PhaserGame } from "phaser";
-import { EVENTS, chapter, place } from "../systems/data";
+import { EVENTS, chapter, districtAt, place } from "../systems/data";
 import {
   abandonTask,
   clearToast,
@@ -19,6 +19,7 @@ import {
   reachBeat,
   freshenUp,
   resolveEvent,
+  savePosition,
   skipToMorning,
   skipToNight,
   storyOpen,
@@ -42,6 +43,7 @@ import { KitchenScreen, type KitchenOpen } from "./kitchen/Kitchen";
 import { StoryPanel } from "./StoryView";
 import { WardrobePanel } from "./Wardrobe";
 import { DecorPanel } from "./Decor";
+import { DriveHudView } from "./DriveHud";
 import { isMyRoom } from "../systems/decor";
 import { GAME_FONT, actionBtn, btnGhost, btnPrimary, glass, iconBtn, panel } from "./theme";
 
@@ -58,6 +60,9 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const [paused, setPaused] = useState(false);
   const [wardrobe, setWardrobe] = useState(false);
   const [decorating, setDecorating] = useState(false);
+  /** Driving yourself somewhere: the behind-the-car view is on. */
+  const [trip, setTrip] = useState<{ from: { x: number; y: number }; to: { x: number; y: number }; name: string } | null>(null);
+  const tripRef = useRef<typeof trip>(null);
   const [exploring, setExploring] = useState(false);
   const [controls, setControls] = useState<Controls>("joystick");
   useEffect(() => {
@@ -127,8 +132,43 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       g.scene.start("room", info);
     });
   };
-  const roomActions = useRef({ enterRoom, leaveRoom, switchRoom });
-  roomActions.current = { enterRoom, leaveRoom, switchRoom };
+  /** Behind the wheel: out of any room, the map asleep, the driving view on. */
+  const startDrive = (t: { from: { x: number; y: number }; to: { x: number; y: number }; name: string }) => {
+    const g = game.current;
+    if (!g) return;
+    setOpen(null);
+    setTalking(null);
+    setDecorating(false);
+    setPhone(null);
+    setNear(null);
+    tripRef.current = t;
+    setTrip(t);
+    scheduleTransition(() => {
+      if (insideRef.current) {
+        g.scene.stop("room");
+        insideRef.current = null;
+        setInside(null);
+      } else g.scene.sleep("world");
+      g.scene.start("drive", t);
+    });
+  };
+  /** Arrived: back on the map, standing where you parked. */
+  const endDrive = () => {
+    const g = game.current;
+    if (!g) return;
+    g.scene.stop("drive");
+    g.scene.wake("world");
+    // Out of the car by the kerb at the destination (the map may have saved your old spot meanwhile).
+    const t = tripRef.current;
+    tripRef.current = null;
+    setTrip(null);
+    if (t) {
+      bus.emit("teleport", t.to);
+      savePosition(t.to.x, t.to.y, districtAt(t.to.x, t.to.y)?.id ?? getState()?.district ?? "");
+    }
+  };
+  const roomActions = useRef({ enterRoom, leaveRoom, switchRoom, startDrive, endDrive });
+  roomActions.current = { enterRoom, leaveRoom, switchRoom, startDrive, endDrive };
 
   useEffect(() => {
     let cancel = false;
@@ -201,6 +241,8 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       }),
       // A ride leaves from the street: step outside first.
       bus.on("ride", () => roomActions.current.leaveRoom()),
+      bus.on("chaseDrive", (t) => roomActions.current.startDrive(t)),
+      bus.on("driveDone", () => roomActions.current.endDrive()),
     ];
     return () => {
       cancel = true;
@@ -334,7 +376,8 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       {state.task && !inStory ? <TaskPanel state={state} /> : null}
       {state.task?.haggle ? <HaggleModal state={state} /> : null}
 
-      {!story && controls === "joystick" ? <Joystick /> : null}
+      {!story && controls === "joystick" && !trip ? <Joystick /> : null}
+      {trip ? <DriveHudView trip={trip} /> : null}
       <button
         type="button"
         onClick={() => setPaused(true)}
@@ -343,7 +386,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       >
         <Pause className="size-5" fill="currentColor" strokeWidth={0} aria-hidden />
       </button>
-      <div className={`absolute top-24 right-3 z-10 flex-col gap-2 sm:top-20 lg:top-3 ${inside ? "hidden" : "flex"}`}>
+      <div className={`absolute top-24 right-3 z-10 flex-col gap-2 sm:top-20 lg:top-3 ${inside || trip ? "hidden" : "flex"}`}>
         <MapButton label="Zoom in" onClick={() => bus.emit("camera", "in")}>
           <Plus className="size-5" strokeWidth={3} aria-hidden />
         </MapButton>
@@ -394,7 +437,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           </div>
         </div>
       ) : null}
-      {!inStory && !inside && hasCar(state) ? (
+      {!inStory && !inside && !trip && hasCar(state) ? (
         <button
           type="button"
           onClick={drive}
@@ -406,7 +449,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           {isDriving(state) ? "Park" : "Drive"}
         </button>
       ) : null}
-      {!inStory && !inside ? (
+      {!inStory && !inside && !trip ? (
         <button
           type="button"
           onClick={() => setPhone("map")}
@@ -431,7 +474,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         </button>
       ) : null}
       {decorating && inside ? <DecorPanel state={state} info={inside} onClose={() => setDecorating(false)} /> : null}
-      {!inStory && !decorating ? (
+      {!inStory && !decorating && !trip ? (
         <button
           type="button"
           onClick={() => setPhone("home")}
@@ -464,9 +507,11 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       ) : null}
       </div>
       {loading ? <LoadingScreen overlay title={loading.title} icon={loading.icon} progress={loading.progress} error={loading.error} /> : null}
-      <p className="pointer-events-none absolute bottom-2 left-1/2 hidden -translate-x-1/2 text-xs text-slate-400 sm:block">
-        WASD or arrows to move · {controls === "tap" ? "click to walk" : "joystick to walk"} · E to interact
-      </p>
+      {trip ? null : (
+        <p className="pointer-events-none absolute bottom-2 left-1/2 hidden -translate-x-1/2 text-xs text-slate-400 sm:block">
+          WASD or arrows to move · {controls === "tap" ? "click to walk" : "joystick to walk"} · E to interact
+        </p>
+      )}
     </div>
   );
 }

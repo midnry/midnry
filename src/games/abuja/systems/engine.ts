@@ -610,9 +610,10 @@ export function fuel(px: number) {
 }
 
 /** Driving past an FRSC checkpoint. */
-export function frsc() {
+/** FRSC at a checkpoint: on the map while driving, or on a drive somewhere (`onTrip`). */
+export function frsc(onTrip = false) {
   update((s) => {
-    const ev = frscStop(s);
+    const ev = frscStop(s, onTrip);
     if (ev) s.event = ev;
   });
 }
@@ -634,12 +635,8 @@ export function driveTo(placeId: string) {
     s.pos = to;
     s.district = p.district;
     toast(s, `You drive yourself to ${p.name}. Fuel: ${naira(cost)}.`);
-    bus.emit("ride", { mode: "car", from, to });
-    // No licence? FRSC might be on the way.
-    if (!life(s).license && Math.random() < 0.3 && s.flags.frsc_day !== s.day && !s.event) {
-      s.flags.frsc_day = s.day;
-      s.event = "frsc_nolicense";
-    }
+    // Behind the wheel the whole way (FRSC may be on the route).
+    bus.emit("chaseDrive", { from, to, name: p.name });
   });
 }
 
