@@ -1,0 +1,25 @@
+{
+  "id": "crowd-footballer",
+  "original": "crowd-footballer-sheet-original.png",
+  "corrected": "crowd-footballer-sheet-corrected.png",
+  "original_sha256": "97a8b9063cd5aa89539961fce9a5aec586d7700fcf181bc3059b5626f78bff44",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated side passing knee poses; regenerate side row rather than painting a new side stride.",
+      "source": "/workspace/generated_images/exec-e09f75b6-3624-4ce9-87c1-d75947a94559.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Front-4 and back-4 repeated the same knee as frame-2; regenerate opposite knee while preserving jersey and shorts numbers.",
+      "source": "/workspace/generated_images/exec-6deac895-e8a5-4fab-aa72-bbda2bf7ca4d.png"
+    }
+  ],
+  "corrections": [],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}

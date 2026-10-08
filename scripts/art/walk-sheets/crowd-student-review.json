@@ -1,0 +1,25 @@
+{
+  "id": "crowd-student",
+  "original": "crowd-student-sheet-original.png",
+  "corrected": "crowd-student-sheet-corrected.png",
+  "original_sha256": "6a12ca25da31417c371feaf32ce74ee165228b9434c9002b34e41ddf6922c2b1",
+  "regenerations": [],
+  "corrections": [
+    {
+      "id": "crowd-student",
+      "view": "front",
+      "frame": 3,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 299,
+      "x0": 549,
+      "x1": 749,
+      "reflection_axis_twice": 1298
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}

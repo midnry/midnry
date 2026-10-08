@@ -1,0 +1,20 @@
+{
+  "id": "prophet",
+  "original": "prophet-sheet-original.png",
+  "corrected": "prophet-sheet-corrected.png",
+  "original_sha256": "51b4730c1d700f3c0bc7c34b4ec874d0cbbc35fa730ad43acf92df1d9872cb67",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated side passing poses: frames2 and4 do not counter-swing the free arm on opposite knees; regenerate side row.",
+      "source": "/workspace/generated_images/exec-3bacbdaf-25d4-4f5a-9597-9332ab937508.png"
+    }
+  ],
+  "corrections": [],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}

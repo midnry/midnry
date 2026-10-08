@@ -1,0 +1,35 @@
+{
+  "id": "crowd-nurse",
+  "original": "crowd-nurse-sheet-original.png",
+  "corrected": "crowd-nurse-sheet-corrected.png",
+  "original_sha256": "dd12024bd05b85566f13a738ee1553aadca6ad1fc6524c2d03856fa0eb2b6472",
+  "regenerations": [],
+  "corrections": [
+    {
+      "id": "crowd-nurse",
+      "view": "front",
+      "frame": 1,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 271,
+      "x0": 51,
+      "x1": 216,
+      "reflection_axis_twice": 259
+    },
+    {
+      "id": "crowd-nurse",
+      "view": "back",
+      "frame": 1,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1291,
+      "x0": 33,
+      "x1": 208,
+      "reflection_axis_twice": 259
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}

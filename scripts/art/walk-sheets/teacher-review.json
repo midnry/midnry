@@ -1,0 +1,56 @@
+{
+  "id": "teacher",
+  "original": "teacher-sheet-original.png",
+  "corrected": "teacher-sheet-corrected.png",
+  "original_sha256": "ffab343a0600b7eb89d21714f2eb62e1be8548d6e46024cb921262f33a63079d",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated side contact/passing poses: regenerate opposite near/far knees and free arm swing.",
+      "source": "/workspace/generated_images/exec-fd566817-8102-4f58-9029-38ffcfffb34b.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Side free left arm remained behind body in every pose; regenerate alternating free-arm and near/far leg phases, retaining raised right-finger gesture.",
+      "source": "/workspace/generated_images/exec-34b2bc62-8178-482b-8f82-65948f13bc52.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "teacher",
+      "view": "front",
+      "frame": 4,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 262,
+      "x0": 797,
+      "x1": 997,
+      "reflection_axis_twice": 1816
+    },
+    {
+      "id": "teacher",
+      "view": "back",
+      "frame": 4,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1266,
+      "x0": 793,
+      "x1": 997,
+      "reflection_axis_twice": 1789
+    },
+    {
+      "id": "teacher",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1266,
+      "x0": 522,
+      "x1": 743,
+      "reflection_axis_twice": 1279
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}

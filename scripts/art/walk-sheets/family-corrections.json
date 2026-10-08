@@ -1,0 +1,92 @@
+[
+  {
+    "id": "tunde",
+    "view": "front",
+    "frame": 2,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 181,
+    "x0": 491,
+    "x1": 666,
+    "reflection_axis_twice": 1157
+  },
+  {
+    "id": "tunde",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 897,
+    "x0": 799,
+    "x1": 969,
+    "reflection_axis_twice": 1769
+  },
+  {
+    "id": "tunde-9",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 960,
+    "x0": 804,
+    "x1": 974,
+    "reflection_axis_twice": 1784
+  },
+  {
+    "id": "tunde-15",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 881,
+    "x0": 798,
+    "x1": 971,
+    "reflection_axis_twice": 1769
+  },
+  {
+    "id": "tunde-15",
+    "view": "front",
+    "frame": 2,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 166,
+    "x0": 511,
+    "x1": 687,
+    "reflection_axis_twice": 1202
+  },
+  {
+    "id": "bolaji",
+    "view": "back",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 915,
+    "x0": 1110,
+    "x1": 1302,
+    "reflection_axis_twice": 2413
+  },
+  {
+    "id": "bolaji-15",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 163,
+    "x0": 833,
+    "x1": 1020,
+    "reflection_axis_twice": 1852
+  },
+  {
+    "id": "bolaji-15",
+    "view": "front",
+    "frame": 2,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 164,
+    "x0": 541,
+    "x1": 724,
+    "reflection_axis_twice": 1272
+  },
+  {
+    "id": "okafor",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 271,
+    "x0": 824,
+    "x1": 1010,
+    "reflection_axis_twice": 1836
+  }
+]

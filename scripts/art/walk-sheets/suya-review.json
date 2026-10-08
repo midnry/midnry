@@ -1,0 +1,41 @@
+{
+  "id": "suya",
+  "original": "suya-sheet-original.png",
+  "corrected": "suya-sheet-corrected.png",
+  "original_sha256": "8a8083dbf1ac27c45dbd62038ef2e2064687db106bff7b1438452051d0a094bd",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Front/back passing knees and garment hems repeat; regenerate opposite knees with continuous swinging hem, retaining successful side row.",
+      "source": "/workspace/generated_images/exec-ff5017ef-142c-49e3-a400-48ed080546ac.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "suya",
+      "view": "front",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+      "boundary_y": 430,
+      "x0": 549,
+      "x1": 749,
+      "reflection_axis_twice": 1282
+    },
+    {
+      "id": "suya",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+      "boundary_y": 1443,
+      "x0": 538,
+      "x1": 756,
+      "reflection_axis_twice": 1310
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}

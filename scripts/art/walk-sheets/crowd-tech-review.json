@@ -1,0 +1,71 @@
+{
+  "id": "crowd-tech",
+  "original": "crowd-tech-sheet-original.png",
+  "corrected": "crowd-tech-sheet-corrected.png",
+  "original_sha256": "206816e42929b972375bbe55598eb29efe99d3a2eb9204286dcdb8a321635c6a",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Briefcase was absent in side-2; back shoulder bag changed sides. Regenerate props and the repeated front passing knee.",
+      "source": "/workspace/generated_images/exec-d4054d15-095d-48d1-a2ab-a0248fbbfa3f.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Back-2 and back-4 shoulder bags still swapped sides. Regenerate them to match the original back PNG.",
+      "source": "/workspace/generated_images/exec-00d9d79a-7569-4ff9-8364-456666b0a3c2.png"
+    },
+    {
+      "attempt": 4,
+      "reason": "Leg-only correction trials left gaps beside props and were discarded. Regenerate opposite front passing and front/back contact legs while preserving both bags.",
+      "source": "/workspace/generated_images/exec-bae4fc1c-3b02-4d2d-8a6c-6d1d83adc3c2.png"
+    },
+    {
+      "attempt": 5,
+      "reason": "Front-2 still repeated front-4. Regenerate only that passing knee, preserving both bags.",
+      "source": "/workspace/generated_images/exec-794c4cf4-3538-47b8-9a5f-ee84db1486ff.png"
+    },
+    {
+      "attempt": 6,
+      "reason": "Passing knees now alternate; front/back contact-3 still repeat contact-1. Regenerate only those contact feet.",
+      "source": "/workspace/generated_images/exec-9e7deb2e-1761-4020-b005-3be6f25a28fc.png"
+    },
+    {
+      "attempt": 7,
+      "reason": "Front/back contact-3 still repeated contact-1; regenerate those contact poses with legs reversed while all props remain unchanged.",
+      "source": "/workspace/generated_images/exec-9d8bd05c-b4c1-4403-aa2b-9430f13f5e16.png"
+    },
+    {
+      "attempt": 8,
+      "reason": "Contact-3 became a passing knee pose. Regenerate heel-down contact strides using a verified contact pose guide.",
+      "source": "/workspace/generated_images/exec-3398c84f-d04d-4059-8914-c240cd5b4bbf.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "crowd-tech",
+      "view": "front",
+      "frame": 3,
+      "boundary_y": 419,
+      "x0": 534,
+      "x1": 751,
+      "reflection_axis_twice": 1294,
+      "change": "Reflected only this frame\u2019s existing lower-leg and shoe pixels below the knees and below both bag bottoms, around the lower-leg attachment midpoint, to reverse the repeated contact step. All upper legs, torso, arms, hands, bags, face and hair pixels unchanged. Smoothed eight source-pixel rows at each lower-leg join using samples of the same existing leg pixels; removed faint background pixels in the edited region."
+    },
+    {
+      "id": "crowd-tech",
+      "view": "back",
+      "frame": 3,
+      "boundary_y": 1440,
+      "x0": 547,
+      "x1": 774,
+      "reflection_axis_twice": 1295,
+      "change": "Reflected only this frame\u2019s existing lower-leg and shoe pixels below the knees and below both bag bottoms, around the lower-leg attachment midpoint, to reverse the repeated contact step. All upper legs, torso, arms, hands, bags, face and hair pixels unchanged. Smoothed eight source-pixel rows at each lower-leg join using samples of the same existing leg pixels; removed faint background pixels in the edited region."
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}

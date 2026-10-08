@@ -1,0 +1,382 @@
+[
+  {
+    "id": "crowd-banker",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose.",
+    "boundary_y": 374,
+    "x0": 553,
+    "x1": 747,
+    "reflection_axis_twice": 1303
+  },
+  {
+    "id": "crowd-banker",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose.",
+    "boundary_y": 1366,
+    "x0": 549,
+    "x1": 757,
+    "reflection_axis_twice": 1307
+  },
+  {
+    "id": "crowd-grandma",
+    "view": "back",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1451,
+    "x0": 22,
+    "x1": 256,
+    "reflection_axis_twice": 276
+  },
+  {
+    "id": "crowd-grandpa",
+    "view": "back",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1442,
+    "x0": 33,
+    "x1": 255,
+    "reflection_axis_twice": 292
+  },
+  {
+    "id": "crowd-hairdresser",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 392,
+    "x0": 526,
+    "x1": 758,
+    "reflection_axis_twice": 1292
+  },
+  {
+    "id": "crowd-hairdresser",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1377,
+    "x0": 529,
+    "x1": 757,
+    "reflection_axis_twice": 1281
+  },
+  {
+    "id": "crowd-hijab",
+    "view": "front",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 470,
+    "x0": 33,
+    "x1": 260,
+    "reflection_axis_twice": 302
+  },
+  {
+    "id": "crowd-hijab",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1453,
+    "x0": 515,
+    "x1": 762,
+    "reflection_axis_twice": 1270
+  },
+  {
+    "id": "crowd-labourer",
+    "view": "front",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 243,
+    "x0": 52,
+    "x1": 226,
+    "reflection_axis_twice": 284
+  },
+  {
+    "id": "crowd-labourer",
+    "view": "front",
+    "frame": 4,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 241,
+    "x0": 810,
+    "x1": 987,
+    "reflection_axis_twice": 1805
+  },
+  {
+    "id": "crowd-labourer",
+    "view": "back",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1252,
+    "x0": 40,
+    "x1": 226,
+    "reflection_axis_twice": 270
+  },
+  {
+    "id": "crowd-labourer",
+    "view": "back",
+    "frame": 4,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1250,
+    "x0": 804,
+    "x1": 997,
+    "reflection_axis_twice": 1808
+  },
+  {
+    "id": "crowd-littleboy",
+    "view": "front",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 387,
+    "x0": 69,
+    "x1": 254,
+    "reflection_axis_twice": 321
+  },
+  {
+    "id": "crowd-littleboy",
+    "view": "back",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1400,
+    "x0": 43,
+    "x1": 240,
+    "reflection_axis_twice": 298
+  },
+  {
+    "id": "crowd-littlegirl",
+    "view": "front",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 397,
+    "x0": 42,
+    "x1": 255,
+    "reflection_axis_twice": 327
+  },
+  {
+    "id": "crowd-littlegirl",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1391,
+    "x0": 531,
+    "x1": 743,
+    "reflection_axis_twice": 1273
+  },
+  {
+    "id": "crowd-mother",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 440,
+    "x0": 530,
+    "x1": 736,
+    "reflection_axis_twice": 1278
+  },
+  {
+    "id": "crowd-mother",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1432,
+    "x0": 529,
+    "x1": 748,
+    "reflection_axis_twice": 1265
+  },
+  {
+    "id": "crowd-nurse",
+    "view": "front",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 271,
+    "x0": 51,
+    "x1": 216,
+    "reflection_axis_twice": 259
+  },
+  {
+    "id": "crowd-nurse",
+    "view": "back",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1291,
+    "x0": 33,
+    "x1": 208,
+    "reflection_axis_twice": 259
+  },
+  {
+    "id": "crowd-office",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 255,
+    "x0": 560,
+    "x1": 737,
+    "reflection_axis_twice": 1308
+  },
+  {
+    "id": "crowd-office",
+    "view": "back",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1264,
+    "x0": 35,
+    "x1": 227,
+    "reflection_axis_twice": 265
+  },
+  {
+    "id": "crowd-schoolboy",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1362,
+    "x0": 543,
+    "x1": 743,
+    "reflection_axis_twice": 1273
+  },
+  {
+    "id": "crowd-schoolgirl",
+    "view": "front",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 376,
+    "x0": 49,
+    "x1": 240,
+    "reflection_axis_twice": 278
+  },
+  {
+    "id": "crowd-schoolgirl",
+    "view": "back",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1369,
+    "x0": 34,
+    "x1": 218,
+    "reflection_axis_twice": 256
+  },
+  {
+    "id": "crowd-security",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 266,
+    "x0": 543,
+    "x1": 756,
+    "reflection_axis_twice": 1304
+  },
+  {
+    "id": "crowd-security",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1275,
+    "x0": 535,
+    "x1": 766,
+    "reflection_axis_twice": 1295
+  },
+  {
+    "id": "crowd-student",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 299,
+    "x0": 549,
+    "x1": 749,
+    "reflection_axis_twice": 1298
+  },
+  {
+    "id": "crowd-tech",
+    "view": "front",
+    "frame": 3,
+    "boundary_y": 419,
+    "x0": 534,
+    "x1": 751,
+    "reflection_axis_twice": 1294,
+    "change": "Reflected only this frame\u2019s existing lower-leg and shoe pixels below the knees and below both bag bottoms, around the lower-leg attachment midpoint, to reverse the repeated contact step. All upper legs, torso, arms, hands, bags, face and hair pixels unchanged. Smoothed eight source-pixel rows at each lower-leg join using samples of the same existing leg pixels; removed faint background pixels in the edited region."
+  },
+  {
+    "id": "crowd-tech",
+    "view": "back",
+    "frame": 3,
+    "boundary_y": 1440,
+    "x0": 547,
+    "x1": 774,
+    "reflection_axis_twice": 1295,
+    "change": "Reflected only this frame\u2019s existing lower-leg and shoe pixels below the knees and below both bag bottoms, around the lower-leg attachment midpoint, to reverse the repeated contact step. All upper legs, torso, arms, hands, bags, face and hair pixels unchanged. Smoothed eight source-pixel rows at each lower-leg join using samples of the same existing leg pixels; removed faint background pixels in the edited region."
+  },
+  {
+    "id": "crowd-teenboy",
+    "view": "front",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 268,
+    "x0": 86,
+    "x1": 245,
+    "reflection_axis_twice": 334
+  },
+  {
+    "id": "crowd-teenboy",
+    "view": "front",
+    "frame": 4,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 267,
+    "x0": 783,
+    "x1": 947,
+    "reflection_axis_twice": 1719
+  },
+  {
+    "id": "crowd-teenboy",
+    "view": "back",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1261,
+    "x0": 76,
+    "x1": 235,
+    "reflection_axis_twice": 312
+  },
+  {
+    "id": "crowd-teengirl",
+    "view": "front",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 322,
+    "x0": 68,
+    "x1": 249,
+    "reflection_axis_twice": 321
+  },
+  {
+    "id": "crowd-teengirl",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 321,
+    "x0": 552,
+    "x1": 720,
+    "reflection_axis_twice": 1284
+  },
+  {
+    "id": "crowd-teengirl",
+    "view": "back",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1326,
+    "x0": 47,
+    "x1": 225,
+    "reflection_axis_twice": 287
+  },
+  {
+    "id": "crowd-trader",
+    "view": "front",
+    "frame": 1,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 408,
+    "x0": 39,
+    "x1": 239,
+    "reflection_axis_twice": 274
+  },
+  {
+    "id": "crowd-trader",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1400,
+    "x0": 529,
+    "x1": 755,
+    "reflection_axis_twice": 1284
+  }
+]

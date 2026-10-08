@@ -1,0 +1,238 @@
+[
+  {
+    "id": "you-k-f-light-teen",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 942,
+    "x0": 798,
+    "x1": 950,
+    "reflection_axis_twice": 1749
+  },
+  {
+    "id": "you-k-f-brown-child",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 956,
+    "x0": 790,
+    "x1": 963,
+    "reflection_axis_twice": 1750
+  },
+  {
+    "id": "you-k-f-brown-teen",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 955,
+    "x0": 834,
+    "x1": 982,
+    "reflection_axis_twice": 1812
+  },
+  {
+    "id": "you-k-f-brown-teen",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 254,
+    "x0": 833,
+    "x1": 987,
+    "reflection_axis_twice": 1826
+  },
+  {
+    "id": "you-k-f-dark-child",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 956,
+    "x0": 800,
+    "x1": 977,
+    "reflection_axis_twice": 1772
+  },
+  {
+    "id": "you-k-f-dark-teen",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 950,
+    "x0": 813,
+    "x1": 982,
+    "reflection_axis_twice": 1802
+  },
+  {
+    "id": "you-k-m-light-child",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 959,
+    "x0": 803,
+    "x1": 974,
+    "reflection_axis_twice": 1772
+  },
+  {
+    "id": "you-k-m-light-teen",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 881,
+    "x0": 810,
+    "x1": 971,
+    "reflection_axis_twice": 1776
+  },
+  {
+    "id": "you-k-m-light-teen",
+    "view": "front",
+    "frame": 2,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 165,
+    "x0": 526,
+    "x1": 691,
+    "reflection_axis_twice": 1219
+  },
+  {
+    "id": "you-k-m-brown-child",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 965,
+    "x0": 800,
+    "x1": 976,
+    "reflection_axis_twice": 1777
+  },
+  {
+    "id": "you-k-m-brown-teen",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 879,
+    "x0": 807,
+    "x1": 966,
+    "reflection_axis_twice": 1776
+  },
+  {
+    "id": "you-k-m-brown-teen",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 164,
+    "x0": 802,
+    "x1": 967,
+    "reflection_axis_twice": 1773
+  },
+  {
+    "id": "you-k-m-brown-teen",
+    "view": "front",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 164,
+    "x0": 1104,
+    "x1": 1263,
+    "reflection_axis_twice": 2360
+  },
+  {
+    "id": "you-k-m-dark-child",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 959,
+    "x0": 786,
+    "x1": 963,
+    "reflection_axis_twice": 1734
+  },
+  {
+    "id": "you-nysc-f-light",
+    "view": "back",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 884,
+    "x0": 1065,
+    "x1": 1237,
+    "reflection_axis_twice": 2304
+  },
+  {
+    "id": "you-nysc-f-light",
+    "view": "front",
+    "frame": 2,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 176,
+    "x0": 519,
+    "x1": 686,
+    "reflection_axis_twice": 1229
+  },
+  {
+    "id": "you-nysc-f-brown",
+    "view": "front",
+    "frame": 2,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 172,
+    "x0": 522,
+    "x1": 695,
+    "reflection_axis_twice": 1216
+  },
+  {
+    "id": "you-nysc-f-brown",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 882,
+    "x0": 790,
+    "x1": 968,
+    "reflection_axis_twice": 1758
+  },
+  {
+    "id": "you-nysc-f-dark",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 887,
+    "x0": 794,
+    "x1": 964,
+    "reflection_axis_twice": 1761
+  },
+  {
+    "id": "you-nysc-m-light",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 175,
+    "x0": 796,
+    "x1": 977,
+    "reflection_axis_twice": 1771
+  },
+  {
+    "id": "you-nysc-m-light",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 882,
+    "x0": 793,
+    "x1": 969,
+    "reflection_axis_twice": 1760
+  },
+  {
+    "id": "you-nysc-m-brown",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 887,
+    "x0": 773,
+    "x1": 969,
+    "reflection_axis_twice": 1744
+  },
+  {
+    "id": "you-nysc-m-brown",
+    "view": "back",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 887,
+    "x0": 1050,
+    "x1": 1245,
+    "reflection_axis_twice": 2297
+  },
+  {
+    "id": "you-nysc-m-brown",
+    "view": "front",
+    "frame": 3,
+    "change": "Copied only the generated trouser legs and boots from front1 in this original sheet, reflected at their waist attachment, to replace the repeated passing pose with the opposite heel-contact stride. Removed residual pixels from the replaced leg silhouette. Head, torso, NYSC text/badge and arms untouched."
+  }
+]

@@ -1,0 +1,40 @@
+{
+  "id": "crowd-fashion",
+  "original": "crowd-fashion-sheet-original.png",
+  "corrected": "crowd-fashion-sheet-corrected.png",
+  "original_sha256": "b52cbbf74728a6b741268e53a9118fe5dc4d51d9a0ee98dd29b2938278ad8dc1",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated side strides; regenerate side row rather than painting a new side stride.",
+      "source": "/workspace/generated_images/exec-16da5deb-7c54-4c27-b34b-988e14b99e96.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Side regeneration created a second handbag in side-1 and repeated passing leg; regenerate those cells, preserving original prop side.",
+      "source": "/workspace/generated_images/exec-1b9b48c0-29e9-4252-b3e1-07aa9c030dc8.png"
+    },
+    {
+      "attempt": 4,
+      "reason": "Repeated front/back legs overlap long braids and handbag; discard unsafe pixel edits and regenerate those rows.",
+      "source": "/workspace/generated_images/exec-3d3d996e-4aa2-4bf4-8e45-0b1604b6c7f9.png"
+    },
+    {
+      "attempt": 5,
+      "reason": "Back-2 still repeated the knee from back-4; regenerate that one pose with the opposite knee.",
+      "source": "/workspace/generated_images/exec-83c474db-e390-44dc-86b3-81886d27cdb0.png"
+    },
+    {
+      "attempt": 6,
+      "reason": "Front-3 repeated the contact leg from front-1. Regenerate it because pixel isolation could affect overlapping braids and the handbag.",
+      "source": "/workspace/generated_images/exec-77e6cf97-aca8-49f1-b284-e1e0e099b2d0.png"
+    }
+  ],
+  "corrections": [],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}

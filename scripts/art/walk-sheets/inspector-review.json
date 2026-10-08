@@ -1,0 +1,71 @@
+{
+  "id": "inspector",
+  "original": "inspector-sheet-original.png",
+  "corrected": "inspector-sheet-corrected.png",
+  "original_sha256": "312d6a5551bfaaf0b0416809449e873ad854142e3c3eb3866c92638a85ce6a56",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Back frames 1/3 placed book opposite the BACK reference (standing front and back both show book on viewer right); side4 repeated passing arm swing.",
+      "source": "/workspace/generated_images/exec-0ea63660-eee1-4db9-bc2b-a4685f4dc74e.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Generated FRONT book is on viewer LEFT instead of reference viewer RIGHT; regenerate to preserve per-view accessory placement.",
+      "source": "/workspace/generated_images/exec-4c389dda-b0d1-48ef-9b45-414317c1a1ee.png"
+    },
+    {
+      "attempt": 4,
+      "reason": "Repeated side passing/contact pose; regenerate opposite near/far leg phases and free-arm swing while preserving held prop.",
+      "source": "/workspace/generated_images/exec-7655e448-3f43-462b-a5d6-3ff04b3af3b8.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "inspector",
+      "view": "front",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 328,
+      "x0": 533,
+      "x1": 754,
+      "reflection_axis_twice": 1288
+    },
+    {
+      "id": "inspector",
+      "view": "front",
+      "frame": 4,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 327,
+      "x0": 788,
+      "x1": 1010,
+      "reflection_axis_twice": 1793
+    },
+    {
+      "id": "inspector",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1317,
+      "x0": 534,
+      "x1": 749,
+      "reflection_axis_twice": 1288
+    },
+    {
+      "id": "inspector",
+      "view": "back",
+      "frame": 4,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1315,
+      "x0": 791,
+      "x1": 1005,
+      "reflection_axis_twice": 1805
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}

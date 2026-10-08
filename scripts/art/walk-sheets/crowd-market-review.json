@@ -1,0 +1,14 @@
+{
+  "id": "crowd-market",
+  "original": "crowd-market-sheet-original.png",
+  "corrected": "crowd-market-sheet-corrected.png",
+  "original_sha256": "d76c0e1c9ea42bc9bdbd49782a4af84194281708935d69e6881bb4f4ffe72d93",
+  "regenerations": [],
+  "corrections": [],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "id": "civil_servant",
+  "original": "civil_servant-sheet-original.png",
+  "corrected": "civil_servant-sheet-corrected.png",
+  "original_sha256": "a5dbae44b20818233ff52d98106ff55a53772c0d1d3c41e24ab0a7f4d558191c",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated front passing knee/robe-hem pose in frames 2/4; regenerate opposite knee and hem swing without mirroring clothing or watch.",
+      "source": "/workspace/generated_images/exec-d2802b94-9fc2-45a8-bcb3-b27675984dff.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "civil_servant",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+      "boundary_y": 995,
+      "x0": 818,
+      "x1": 1015,
+      "reflection_axis_twice": 1851
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}

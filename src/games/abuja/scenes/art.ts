@@ -325,18 +325,33 @@ const bodyKey = (stage: LifeStage) => (stage === "child" ? "c" : stage === "teen
 const charKey = (p: Person) => (p.painted && PAINTED[p.painted] ? `pt_${p.painted}` : `ch_${lookKey(p.look)}${bodyKey(bodyOf(p))}`);
 const PARTS = ["front", "back", "side", "arm", "leg", "legSide"] as const;
 
-/** Queue the textures for these people in the scene's loader (call from preload). */
-export function queueCharacters(scene: Phaser.Scene, people: Person[]) {
+/** Walk-cycle frames held back until the scene is up (see loadDeferredWalks). */
+const deferredWalks = new WeakMap<Phaser.Scene, { key: string; url: string }[]>();
+
+/**
+ * Queue the textures for these people in the scene's loader (call from preload).
+ * Walk cycles (twelve images each) load now only for the first `walksNow`
+ * people; the rest wait for loadDeferredWalks, so they never hold up the start.
+ * Until a walk cycle arrives, a painted person steps as a cut-out.
+ */
+export function queueCharacters(scene: Phaser.Scene, people: Person[], walksNow = Infinity) {
   const urls: string[] = [];
   const seen = new Set<string>();
-  for (const person of people) {
+  for (const [i, person] of people.entries()) {
     const key = charKey(person);
     if (seen.has(key) || scene.textures.exists(`${key}_front`)) continue;
     seen.add(key);
     if (person.painted && PAINTED[person.painted]) {
       for (const view of PAINTED[person.painted]!.views) scene.load.image(`${key}_${view}`, `/abuja/people/${person.painted}-${view}.png`);
-      if (WALK_FRAMES.has(person.painted))
-        for (const view of ["front", "side", "back"]) for (let n = 1; n <= 4; n++) scene.load.image(`${key}_walk_${view}_${n}`, `/abuja/people/${person.painted}-walk-${view}-${n}.png`);
+      if (WALK_FRAMES.has(person.painted)) {
+        const later = i >= walksNow ? (deferredWalks.get(scene) ?? deferredWalks.set(scene, []).get(scene)!) : null;
+        for (const view of ["front", "side", "back"])
+          for (let n = 1; n <= 4; n++) {
+            const frame = { key: `${key}_walk_${view}_${n}`, url: `/abuja/people/${person.painted}-walk-${view}-${n}.png` };
+            if (later) later.push(frame);
+            else scene.load.image(frame.key, frame.url);
+          }
+      }
       continue;
     }
     const parts = characterParts(person.look, bodyOf(person), RES);
@@ -347,6 +362,15 @@ export function queueCharacters(scene: Phaser.Scene, people: Person[]) {
     }
   }
   if (urls.length) scene.load.once("complete", () => urls.forEach((url) => URL.revokeObjectURL(url)));
+}
+
+/** Load the walk cycles queueCharacters held back, in the background. */
+export function loadDeferredWalks(scene: Phaser.Scene) {
+  const frames = deferredWalks.get(scene);
+  deferredWalks.delete(scene);
+  if (!frames?.length) return;
+  for (const f of frames) if (!scene.textures.exists(f.key)) scene.load.image(f.key, f.url);
+  scene.load.start();
 }
 
 /** Add people after loading (a crowd that grows as you explore): textures arrive, then `ready` runs. */
@@ -714,7 +738,9 @@ function animate(f: Figure, time: number, motion: Motion) {
 /** Switch a painted figure between its walk-cycle frames and its standing cut-out. Returns whether frames are in use. */
 function walkFrames(f: Figure, on: boolean): boolean {
   const p = f.parts!;
-  const has = on && p.body.scene.textures.exists(`pt_${f.painted}_walk_${f.facing}_1`);
+  // All four frames of this view, since they may still be arriving in the background.
+  const tex = p.body.scene.textures;
+  const has = on && [1, 2, 3, 4].every((n) => tex.exists(`pt_${f.painted}_walk_${f.facing}_${n}`));
   if (has === Boolean(f.walking)) return has;
   f.walking = has;
   if (has) {

@@ -1,0 +1,95 @@
+{
+  "ids": [
+    "mama",
+    "daddy",
+    "tunde",
+    "tunde-9",
+    "tunde-15",
+    "slim",
+    "slim-9",
+    "slim-15",
+    "bolaji",
+    "bolaji-15",
+    "okafor",
+    "corper"
+  ],
+  "regenerated_sheets": {
+    "mama": "Regenerated repeated feet and side passing arm swing; retained one continuous swinging floral kaftan hem.",
+    "daddy": "Regenerated repeated feet and side2 arm swing; retained continuous blue kaftan above the trousers.",
+    "slim": "Regenerated repeated heel-contact/passing legs and arm swings.",
+    "slim-9": "Regenerated repeated steps and side4 incorrectly repeating a heel-contact stride; restored passing knee lift.",
+    "slim-15": "Regenerated repeated heel-contact/passing legs and arm swings.",
+    "bolaji": "Regenerated repeated heel-contact/passing legs and arm swings.",
+    "bolaji-15": "Regenerated repeated heel-contact/passing legs and arm swings.",
+    "okafor": "Regenerated repeated heel-contact/passing legs and arm swings.",
+    "corper": "Regenerated repeated front/back poses and side2 repeated arm swing; preserved NYSC text and bun."
+  },
+  "sources": {
+    "mama": {
+      "original_sha256": "454c6107fabee49b97d3ee43d55161d1b4579e6df8d4adf949c4448172b00d90",
+      "original": "mama-sheet-original.png",
+      "corrected": "mama-sheet-corrected.png"
+    },
+    "daddy": {
+      "original_sha256": "842bbe098291c5851c2be7aa78f56f02bcd7c8d9d85dcf4bb03800c6f285069c",
+      "original": "daddy-sheet-original.png",
+      "corrected": "daddy-sheet-corrected.png"
+    },
+    "tunde": {
+      "original_sha256": "130814f953c5258b8c4c7980c2a9ef229c36cd6429801f39155ef842b5880c84",
+      "original": "tunde-sheet-original.png",
+      "corrected": "tunde-sheet-corrected.png"
+    },
+    "tunde-9": {
+      "original_sha256": "47997db1465fd3154211318c1a9d3699dcd06cd087862b560b6c49fd882d4a1d",
+      "original": "tunde-9-sheet-original.png",
+      "corrected": "tunde-9-sheet-corrected.png"
+    },
+    "tunde-15": {
+      "original_sha256": "65a72aaad7b175bab9316647403cb3437b52b44ce5eb84a29785a86f4198ad64",
+      "original": "tunde-15-sheet-original.png",
+      "corrected": "tunde-15-sheet-corrected.png"
+    },
+    "slim": {
+      "original_sha256": "25a61579b593ccd1373b4c03f8cd3707afe5360101abf2856f879d06f11ad285",
+      "original": "slim-sheet-original.png",
+      "corrected": "slim-sheet-corrected.png"
+    },
+    "slim-9": {
+      "original_sha256": "c376c1bd5fb8bc6eea5f4bb4c93c400d619413893bca8a5be1e308ad1fa46867",
+      "original": "slim-9-sheet-original.png",
+      "corrected": "slim-9-sheet-corrected.png"
+    },
+    "slim-15": {
+      "original_sha256": "61bff999b373df00ff52c7d1d6aed3fc054ab8a0e009d2419e7e1c7c35a9b07f",
+      "original": "slim-15-sheet-original.png",
+      "corrected": "slim-15-sheet-corrected.png"
+    },
+    "bolaji": {
+      "original_sha256": "ef5707163e9b684ee3907695bda2641df58ed4332570306f04e747f52fc874cf",
+      "original": "bolaji-sheet-original.png",
+      "corrected": "bolaji-sheet-corrected.png"
+    },
+    "bolaji-15": {
+      "original_sha256": "9b78316db7686c9b8df5ee9b196c1695a432b549fabd2ac3f28cc1264230d96e",
+      "original": "bolaji-15-sheet-original.png",
+      "corrected": "bolaji-15-sheet-corrected.png"
+    },
+    "okafor": {
+      "original_sha256": "fd7f3b27707d18510f2c779a5fc7de47bb256c5127e37afaab8277de9c9205ba",
+      "original": "okafor-sheet-original.png",
+      "corrected": "okafor-sheet-corrected.png"
+    },
+    "corper": {
+      "original_sha256": "d6e88440c713b1a41895cb7a977a64282b42bf8c348f67988ffea7eea83904e2",
+      "original": "corper-sheet-original.png",
+      "corrected": "corper-sheet-corrected.png"
+    }
+  },
+  "checks": [
+    "Unchanged cut_sheet.py walk command; all sheets split 4/4/4",
+    "All cuts opened beside standing references; opposite legs and passing knees, right-facing side poses, whole bodies, transparent backgrounds",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}

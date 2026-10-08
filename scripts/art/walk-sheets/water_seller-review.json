@@ -1,0 +1,46 @@
+{
+  "id": "water_seller",
+  "original": "water_seller-sheet-original.png",
+  "corrected": "water_seller-sheet-corrected.png",
+  "original_sha256": "b7ad5be47bdd38da81ce675a4020a9178df402d924efb69241e42b6c7b36f364",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Front/back passing knees and garment hems repeat; regenerate opposite knees with continuous swinging hem, retaining successful side row.",
+      "source": "/workspace/generated_images/exec-1b0ce436-5284-4e2f-9841-7eb7e718ece1.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Passing2 knees still repeat passing4 after regeneration; regenerate only front2/back2 knee and continuous wrapper hem.",
+      "source": "/workspace/generated_images/exec-d50cf801-c494-4edb-b510-2c6f75aa5935.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "water_seller",
+      "view": "front",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+      "boundary_y": 424,
+      "x0": 540,
+      "x1": 736,
+      "reflection_axis_twice": 1286
+    },
+    {
+      "id": "water_seller",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+      "boundary_y": 1439,
+      "x0": 539,
+      "x1": 740,
+      "reflection_axis_twice": 1279
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}

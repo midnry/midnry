@@ -27,7 +27,7 @@ import { playerPainted } from "../systems/painted";
 import { building as buildingInfo } from "../systems/city/catalog";
 import { fullLook, lookKey, randomLook, stageOf, type Look } from "../systems/character";
 import { ChunkedGraphics, type CullBounds } from "./chunkedGraphics";
-import { INK, animateWalk, pose, building, lotKey, placeBuilding, queueBuildings, faceVehicle, figure, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
+import { INK, animateWalk, pose, building, lotKey, placeBuilding, queueBuildings, faceVehicle, figure, loadDeferredWalks, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
 
 // A brisk walk: a little over two body-lengths a second, as people move in a life sim.
 // Running is about 1.7× that; cars travel separately at road speed.
@@ -241,7 +241,8 @@ export class WorldScene extends Phaser.Scene {
     const people: Person[] = [playerOf(state)];
     if (state) people.push(...peopleOn(state, mapId).map(personOf));
     if (mapId === "city") people.push(...crowdStarters(state?.day ?? 0), POLICE, FRSC);
-    queueCharacters(this, people);
+    // Only your own walk cycle holds up the start; everyone else's follows in the background.
+    queueCharacters(this, people, 1);
     if (mapId === "city") {
       queueVehicles(this);
       // Only the buildings around you hold up the start; the rest load block by block (wakeBlocks).
@@ -256,6 +257,8 @@ export class WorldScene extends Phaser.Scene {
     this.mapId = state ? mapIdFor(state) : "city";
     makeArt(this);
     makeDecorTextures(this);
+    // Other people's walk cycles, once the street is on screen.
+    this.time.delayedCall(1500, () => loadDeferredWalks(this));
     this.rail = null;
     this.seats = [];
     this.zones = null;

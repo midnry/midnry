@@ -1,0 +1,20 @@
+{
+  "id": "hawker",
+  "original": "hawker-sheet-original.png",
+  "corrected": "hawker-sheet-corrected.png",
+  "original_sha256": "5d45c48c243c0a26093644a608cf84c9f28f3da734290874d4329800bcd530c6",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated side contact and passing poses; regenerated with female adult pose guide while preserving appearance refs.",
+      "source": "/workspace/generated_images/exec-047e9eea-601c-40a1-993d-671da5d8e612.png"
+    }
+  ],
+  "corrections": [],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}

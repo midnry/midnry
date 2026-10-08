@@ -1,0 +1,41 @@
+{
+  "id": "crowd-schoolboy",
+  "original": "crowd-schoolboy-sheet-original.png",
+  "corrected": "crowd-schoolboy-sheet-corrected.png",
+  "original_sha256": "a9056253b1247ac4f5f76591d02fdcc4921ba3007ded09cf7ef3a50bf70c5d05",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Pose guide enlarged the child's head and changed school-age proportions. Regenerate from standing references alone to retain reference anatomy.",
+      "source": "/workspace/generated_images/exec-caf47469-e0b8-4f17-b1e9-1166ee373283.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Front-2 and back-4 repeated the other passing knee. Regenerate only these two poses.",
+      "source": "/workspace/generated_images/exec-5ac69134-080a-4a4a-9b6d-79ca5017e09f.png"
+    },
+    {
+      "attempt": 4,
+      "reason": "Front contact legs needed the opposite phases; attempted below-hem corrections left visible joins, so regenerate those contact poses.",
+      "source": "/workspace/generated_images/exec-2e66e6be-1c41-4d87-8624-9a3acfa924eb.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "crowd-schoolboy",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1362,
+      "x0": 543,
+      "x1": 743,
+      "reflection_axis_twice": 1273
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
