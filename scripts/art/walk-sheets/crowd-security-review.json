@@ -1,0 +1,35 @@
+{
+  "id": "crowd-security",
+  "original": "crowd-security-sheet-original.png",
+  "corrected": "crowd-security-sheet-corrected.png",
+  "original_sha256": "c06c5ca156340c1470db64b9adb9069ef23ba1906af41c6314059a2326355b77",
+  "regenerations": [],
+  "corrections": [
+    {
+      "id": "crowd-security",
+      "view": "front",
+      "frame": 3,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 266,
+      "x0": 543,
+      "x1": 756,
+      "reflection_axis_twice": 1304
+    },
+    {
+      "id": "crowd-security",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1275,
+      "x0": 535,
+      "x1": 766,
+      "reflection_axis_twice": 1295
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
