@@ -1,0 +1,55 @@
+{
+  "id": "crowd-labourer",
+  "original": "crowd-labourer-sheet-original.png",
+  "corrected": "crowd-labourer-sheet-corrected.png",
+  "original_sha256": "c0e7ebc83a0ecac74de1afd167130ddf3fb202880f62097d034fcd10d87b591a",
+  "regenerations": [],
+  "corrections": [
+    {
+      "id": "crowd-labourer",
+      "view": "front",
+      "frame": 1,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 243,
+      "x0": 52,
+      "x1": 226,
+      "reflection_axis_twice": 284
+    },
+    {
+      "id": "crowd-labourer",
+      "view": "front",
+      "frame": 4,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 241,
+      "x0": 810,
+      "x1": 987,
+      "reflection_axis_twice": 1805
+    },
+    {
+      "id": "crowd-labourer",
+      "view": "back",
+      "frame": 1,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1252,
+      "x0": 40,
+      "x1": 226,
+      "reflection_axis_twice": 270
+    },
+    {
+      "id": "crowd-labourer",
+      "view": "back",
+      "frame": 4,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the trouser waist, preserving arms, hair and props to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1250,
+      "x0": 804,
+      "x1": 997,
+      "reflection_axis_twice": 1808
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
