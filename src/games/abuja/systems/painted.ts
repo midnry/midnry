@@ -210,6 +210,7 @@ export const WALK_FRAMES = new Set<string>([
   "crowd-market",
   "crowd-security",
   "crowd-student",
+  "crowd-littlegirl",
 ]);
 
 /** Named people from the school, university and camp chapters, with their heights against a grown-up. */

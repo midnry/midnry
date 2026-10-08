@@ -1,0 +1,46 @@
+{
+  "id": "crowd-littlegirl",
+  "original": "crowd-littlegirl-sheet-original.png",
+  "corrected": "crowd-littlegirl-sheet-corrected.png",
+  "original_sha256": "f5ee304ef3f1e6729530e109f1ee4f8bb5e89bea3a92c42b7e1a8255c02e2e91",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Front-2 repeats the lifted knee from front-4; regenerate that one skirt pose while preserving child proportions.",
+      "source": "/workspace/generated_images/exec-767c3f67-20e2-4761-9163-99fe6122d15b.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Side contact poses repeated. Regenerate side-1 with the opposite near-leg contact and arm swing.",
+      "source": "/workspace/generated_images/exec-1307369c-87e7-4979-b92e-935784746d61.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "crowd-littlegirl",
+      "view": "front",
+      "frame": 1,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 397,
+      "x0": 42,
+      "x1": 255,
+      "reflection_axis_twice": 327
+    },
+    {
+      "id": "crowd-littlegirl",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected only this frame\u2019s existing leg pixels below the continuous garment hem, preserving the garment and all upper-body pixels to alternate the repeated leg pose. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1391,
+      "x0": 531,
+      "x1": 743,
+      "reflection_axis_twice": 1273
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
