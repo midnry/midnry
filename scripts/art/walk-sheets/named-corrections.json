@@ -1,0 +1,392 @@
+[
+  {
+    "id": "civil_servant",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 995,
+    "x0": 818,
+    "x1": 1015,
+    "reflection_axis_twice": 1851
+  },
+  {
+    "id": "commandant",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 364,
+    "x0": 523,
+    "x1": 744,
+    "reflection_axis_twice": 1271
+  },
+  {
+    "id": "commandant",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1307,
+    "x0": 528,
+    "x1": 745,
+    "reflection_axis_twice": 1276
+  },
+  {
+    "id": "felix",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 182,
+    "x0": 769,
+    "x1": 958,
+    "reflection_axis_twice": 1734
+  },
+  {
+    "id": "felix",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 892,
+    "x0": 770,
+    "x1": 964,
+    "reflection_axis_twice": 1734
+  },
+  {
+    "id": "frsc",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 907,
+    "x0": 793,
+    "x1": 972,
+    "reflection_axis_twice": 1773
+  },
+  {
+    "id": "headmaster",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 313,
+    "x0": 531,
+    "x1": 761,
+    "reflection_axis_twice": 1300
+  },
+  {
+    "id": "headmaster",
+    "view": "front",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 313,
+    "x0": 778,
+    "x1": 1005,
+    "reflection_axis_twice": 1787
+  },
+  {
+    "id": "headmaster",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1287,
+    "x0": 527,
+    "x1": 765,
+    "reflection_axis_twice": 1283
+  },
+  {
+    "id": "headmaster",
+    "view": "back",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1284,
+    "x0": 787,
+    "x1": 1017,
+    "reflection_axis_twice": 1791
+  },
+  {
+    "id": "inspector",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 328,
+    "x0": 533,
+    "x1": 754,
+    "reflection_axis_twice": 1288
+  },
+  {
+    "id": "inspector",
+    "view": "front",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 327,
+    "x0": 788,
+    "x1": 1010,
+    "reflection_axis_twice": 1793
+  },
+  {
+    "id": "inspector",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1317,
+    "x0": 534,
+    "x1": 749,
+    "reflection_axis_twice": 1288
+  },
+  {
+    "id": "inspector",
+    "view": "back",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1315,
+    "x0": 791,
+    "x1": 1005,
+    "reflection_axis_twice": 1805
+  },
+  {
+    "id": "mammy_seller",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 445,
+    "x0": 540,
+    "x1": 744,
+    "reflection_axis_twice": 1283
+  },
+  {
+    "id": "mammy_seller",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 1444,
+    "x0": 524,
+    "x1": 743,
+    "reflection_axis_twice": 1278
+  },
+  {
+    "id": "okada",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 286,
+    "x0": 547,
+    "x1": 766,
+    "reflection_axis_twice": 1307
+  },
+  {
+    "id": "okada",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1288,
+    "x0": 527,
+    "x1": 750,
+    "reflection_axis_twice": 1287
+  },
+  {
+    "id": "okada",
+    "view": "back",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1287,
+    "x0": 779,
+    "x1": 999,
+    "reflection_axis_twice": 1782
+  },
+  {
+    "id": "police",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 279,
+    "x0": 523,
+    "x1": 758,
+    "reflection_axis_twice": 1281
+  },
+  {
+    "id": "police",
+    "view": "front",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 279,
+    "x0": 804,
+    "x1": 1020,
+    "reflection_axis_twice": 1816
+  },
+  {
+    "id": "police",
+    "view": "back",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1286,
+    "x0": 795,
+    "x1": 1013,
+    "reflection_axis_twice": 1809
+  },
+  {
+    "id": "pos_lady",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 417,
+    "x0": 535,
+    "x1": 768,
+    "reflection_axis_twice": 1309
+  },
+  {
+    "id": "pos_lady",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 1437,
+    "x0": 520,
+    "x1": 766,
+    "reflection_axis_twice": 1276
+  },
+  {
+    "id": "recruiter",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 278,
+    "x0": 549,
+    "x1": 743,
+    "reflection_axis_twice": 1291
+  },
+  {
+    "id": "recruiter",
+    "view": "front",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 279,
+    "x0": 791,
+    "x1": 983,
+    "reflection_axis_twice": 1768
+  },
+  {
+    "id": "recruiter",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1284,
+    "x0": 540,
+    "x1": 748,
+    "reflection_axis_twice": 1289
+  },
+  {
+    "id": "roommate",
+    "view": "front",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 318,
+    "x0": 773,
+    "x1": 981,
+    "reflection_axis_twice": 1762
+  },
+  {
+    "id": "roommate",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1312,
+    "x0": 521,
+    "x1": 727,
+    "reflection_axis_twice": 1246
+  },
+  {
+    "id": "saed",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 440,
+    "x0": 532,
+    "x1": 738,
+    "reflection_axis_twice": 1272
+  },
+  {
+    "id": "saed",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 1453,
+    "x0": 531,
+    "x1": 766,
+    "reflection_axis_twice": 1274
+  },
+  {
+    "id": "soldier",
+    "view": "front",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 309,
+    "x0": 796,
+    "x1": 1004,
+    "reflection_axis_twice": 1796
+  },
+  {
+    "id": "suya",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 430,
+    "x0": 549,
+    "x1": 749,
+    "reflection_axis_twice": 1282
+  },
+  {
+    "id": "suya",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 1443,
+    "x0": 538,
+    "x1": 756,
+    "reflection_axis_twice": 1310
+  },
+  {
+    "id": "teacher",
+    "view": "front",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 262,
+    "x0": 797,
+    "x1": 997,
+    "reflection_axis_twice": 1816
+  },
+  {
+    "id": "teacher",
+    "view": "back",
+    "frame": 4,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1266,
+    "x0": 793,
+    "x1": 997,
+    "reflection_axis_twice": 1789
+  },
+  {
+    "id": "teacher",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+    "boundary_y": 1266,
+    "x0": 522,
+    "x1": 743,
+    "reflection_axis_twice": 1279
+  },
+  {
+    "id": "water_seller",
+    "view": "front",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 424,
+    "x0": 540,
+    "x1": 736,
+    "reflection_axis_twice": 1286
+  },
+  {
+    "id": "water_seller",
+    "view": "back",
+    "frame": 3,
+    "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+    "boundary_y": 1439,
+    "x0": 539,
+    "x1": 740,
+    "reflection_axis_twice": 1279
+  }
+]
