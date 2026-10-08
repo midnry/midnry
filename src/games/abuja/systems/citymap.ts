@@ -4,7 +4,7 @@ import type { MapRect } from "./types";
 // The city's physical layout: roads and the buildings you can't walk through.
 // Built the same way every time, so the map, collisions and task targets agree.
 
-import { LANE, LAKE, ROADS, lotSolids, road } from "./city/layout";
+import { LANE, LAKE, ROADS, cityLots, lotSolids, road } from "./city/layout";
 
 export { LAKE, ROADS };
 
@@ -172,4 +172,27 @@ export function routeLength(route: Pt[]): number {
   let total = 0;
   for (let i = 1; i < route.length; i += 1) total += Math.hypot(route[i]!.x - route[i - 1]!.x, route[i]!.y - route[i - 1]!.y);
   return total;
+}
+
+/**
+ * Where you stand when you arrive at a place: in front of its signpost, on
+ * open ground that isn't inside a building or hidden behind one (buildings
+ * are drawn rising above their footprint, so the strip just north of one is
+ * behind its walls). Worked out once per place.
+ */
+const arrivals = new Map<string, { x: number; y: number }>();
+const ARRIVE_AT = [[0, 60], [0, 95], [-80, 45], [80, 45], [-80, 75], [80, 75], [0, 130]] as const;
+
+export function arrivalOf(p: { id?: string; x: number; y: number }): { x: number; y: number } {
+  const key = p.id ?? `${p.x},${p.y}`;
+  const known = arrivals.get(key);
+  if (known) return known;
+  const lots = cityLots().filter((l) => l.solid && Math.abs(l.x + l.w / 2 - p.x) < 400 && Math.abs(l.y + l.h / 2 - p.y) < 400);
+  const solids = citySolids();
+  const clear = (x: number, y: number) =>
+    !blocked(x, y, 18, solids) &&
+    !lots.some((l) => x > l.x - 14 && x < l.x + l.w + 14 && y > l.y - (40 + l.floors * 12) && y < l.y + l.h + 6);
+  const spot = ARRIVE_AT.map(([dx, dy]) => ({ x: p.x + dx, y: p.y + dy })).find((s) => clear(s.x, s.y)) ?? freePoint(p.x, p.y + 60, solids);
+  arrivals.set(key, spot);
+  return spot;
 }

@@ -1,5 +1,5 @@
 import { CHAPTERS, EVENTS, FIXERS, HOMES, JOBS, LOANS, MAPS, PEOPLE, PLACES, POSTING_STATES, chapter, district, job, place } from "./data";
-import { citySolids, freePoint } from "./citymap";
+import { arrivalOf, citySolids, freePoint } from "./citymap";
 import type { Look } from "./character";
 import { RIDE_INFO, fare, fuelCost, rideBan, type RideMode } from "./rides";
 import { rainSurge, weatherOf } from "./weather";
@@ -186,7 +186,7 @@ function startAdulthood(s: GameState) {
   addStat(s, "money", s.background === "lapo" ? 15000 : 60000);
   const home = place(HOMES[s.background])!;
   s.district = home.district;
-  s.pos = { x: home.x, y: home.y + 95 };
+  s.pos = { ...arrivalOf(home) };
   s.flags.adult_day0 = s.day;
   ensureMarket(s);
   syncPeople(s);
@@ -514,7 +514,7 @@ export function travel(placeId: string, mode: RideMode) {
     if (shutOut(s, p.district)) return toast(s, d!.gate!.message);
     const banned = rideBan(mode, s.district, p.district);
     if (banned) return toast(s, banned);
-    const to = { x: p.x, y: p.y + 95 };
+    const to = arrivalOf(p);
     const cost = fare(mode, s.pos, to, rainSurge(weatherOf(s.day, s.slot)));
     const name = RIDE_INFO[mode].label.toLowerCase();
     if (s.stats.money < cost) return toast(s, `You need ${naira(cost)} for the ${name}.`);
@@ -647,7 +647,7 @@ export function driveTo(placeId: string) {
     if (injured(s) === "fracture") return toast(s, "You can't drive with your leg in a cast.");
     const d = district(p.district);
     if (shutOut(s, p.district)) return toast(s, d!.gate!.message);
-    const to = { x: p.x, y: p.y + 95 };
+    const to = arrivalOf(p);
     const cost = fuelCost(s.pos, to);
     if (s.stats.money < cost) return toast(s, `You need ${naira(cost)} for fuel.`);
     addStat(s, "money", -cost);
@@ -689,7 +689,7 @@ function sleep(s: GameState) {
     note(s, `Your clothes haven't been washed in ${daysUnwashed(s)} days and it shows.`, offense(s, "dirty"), "Wash them at home or a laundry.");
   }
   const home = place(HOMES[s.background])!;
-  s.pos = { x: home.x, y: home.y + 95 };
+  s.pos = { ...arrivalOf(home) };
   s.district = home.district;
   bus.emit("teleport", s.pos);
   const adultDays = s.day - Number(s.flags.adult_day0 ?? s.day);
@@ -834,7 +834,7 @@ export function resolveEvent(choice: Choice) {
       s.flags.escort = false;
       s.flags.trespass_secs = 0;
       const home = place(HOMES[s.background])!;
-      s.pos = { x: home.x, y: home.y + 95 };
+      s.pos = { ...arrivalOf(home) };
       s.district = home.district;
       bus.emit("teleport", s.pos);
     }
@@ -939,6 +939,13 @@ export function syncRomance() {
 }
 
 // ── Phone: trading ───────────────────────────────────────────────────────────
+
+/** Set up the trading account for a grown-up who doesn't have one yet. */
+export function openTrading() {
+  update((s) => {
+    if (s.stage === "adult" && !s.chapter) ensureMarket(s);
+  });
+}
 
 export function trade(action: { kind: "open"; asset: string; side: "long" | "short"; margin: number; leverage: number } | { kind: "close"; id: string } | { kind: "deposit" | "withdraw"; amount: number }) {
   update((s) => {
@@ -1191,7 +1198,7 @@ function openSpots(s: GameState) {
     if (!check(s, (p as { if?: never }).if)) return false;
     const d = district(p.district);
     return !d?.gate || check(s, d.gate.if);
-  }).map((p) => ({ ...freePoint(p.x, p.y + 95, solids), label: p.name }));
+  }).map((p) => ({ ...arrivalOf(p), label: p.name }));
 }
 
 /** Seconds allowed for a leg: a fair walk (or ride) by road, plus a little slack. */
@@ -1204,7 +1211,7 @@ function startTask(s: GameState, kind: "delivery" | "hawk" | "ride", app?: "zoom
   const steps: TaskStep[] = [];
   if (kind === "delivery") {
     const hub = place("garki_hub")!;
-    const pickup = { ...freePoint(hub.x, hub.y + 95, citySolids()), label: "Garki Delivery Hub" };
+    const pickup = { ...arrivalOf(hub), label: "Garki Delivery Hub" };
     // Drops around the hub's side of town, not across the whole city.
     const nearHub = spots.filter((sp) => sp.label !== "Garki Delivery Hub" && Math.hypot(sp.x - pickup.x, sp.y - pickup.y) < 1875);
     for (const drop of (nearHub.length >= 3 ? nearHub : spots.filter((sp) => sp.label !== "Garki Delivery Hub")).slice(0, 3)) {

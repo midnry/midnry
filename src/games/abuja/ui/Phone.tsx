@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CityApp } from "./CityApp";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
 import { borrow, business, callContact, driveTo, negotiate, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
+import { arrivalOf } from "../systems/citymap";
 import { ago, memoriesOf, TONE_ICON } from "../systems/memory";
 import { olderNews, todaysNews, type NewsTag, type Story } from "../systems/news";
 import { MONTHS, SEASON_NAMES, seasonOf, monthOf } from "../systems/weather";
@@ -659,7 +660,7 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
           const unwelcome = d?.gate && !check(state, d.gate.if);
           const surge = rainSurge(weatherOf(state.day, state.slot));
           const locked = unwelcome && d?.gate?.hard;
-          const to = { x: p.x, y: p.y + 95 };
+          const to = arrivalOf(p);
           return (
             <div key={p.id} className="rounded-xl bg-white/5 p-3">
               <p className="font-semibold">

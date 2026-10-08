@@ -2,7 +2,7 @@ import { startSceneLoading, finishSceneLoading } from "./loading";
 import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
 import { DISTRICTS, MAPS, PLACES, WORLD, chapter, districtAt } from "../systems/data";
-import { LAKE, ROADS, blocked, freePoint, inLane, roadRoute, sizeOf, solidsFor } from "../systems/citymap";
+import { LAKE, ROADS, arrivalOf, blocked, freePoint, inLane, roadRoute, sizeOf, solidsFor } from "../systems/citymap";
 import { FLEET, HIT_AS, KEKE_COLORS, OKADA_COLORS, TAXI_COLOR, type VehicleStyle } from "../systems/vehicles";
 import type { RideMode } from "../systems/rides";
 import { personLook } from "../systems/peoplelook";
@@ -27,16 +27,19 @@ import { playerPainted } from "../systems/painted";
 import { building as buildingInfo } from "../systems/city/catalog";
 import { fullLook, lookKey, randomLook, stageOf, type Look } from "../systems/character";
 import { ChunkedGraphics, type CullBounds } from "./chunkedGraphics";
-import { INK, animateWalk, pose, building, lotKey, placeBuilding, queueBuildings, faceVehicle, figure, loadDeferredWalks, makeArt, queueCharacters, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
+import { INK, animateWalk, pose, building, lotKey, placeBuilding, queueBuildings, faceVehicle, figure, labelScale, loadDeferredWalks, makeArt, queueCharacters, setPeopleScale, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
 
 // A brisk walk: a little over two body-lengths a second, as people move in a life sim.
 // Running is about 1.7× that; cars travel separately at road speed.
 const SPEED = 125;
 const CAR_SPEED = 560;
 // v2: the closer default camera from the style guide (an older saved zoom is ignored once).
-const ZOOM_KEY = "abuja-hustle.zoom.v2";
-const MIN_ZOOM = 0.7;
-const MAX_ZOOM = 3;
+const ZOOM_KEY = "abuja-hustle.zoom.v3";
+/** People are drawn smaller than in rooms, so a car is a bit over two people long; the camera sits closer to make up for it. */
+const PEOPLE_SCALE = 0.65;
+const ZOOM_BOOST = 1.25;
+const MIN_ZOOM = 0.7 * ZOOM_BOOST;
+const MAX_ZOOM = 3 * ZOOM_BOOST;
 const NEAR = 105;
 const RADIUS = 14;
 const color = (hex: string) => Phaser.Display.Color.HexStringToColor(hex).color;
@@ -255,6 +258,8 @@ export class WorldScene extends Phaser.Scene {
   create() {
     const state = getState();
     this.mapId = state ? mapIdFor(state) : "city";
+    // Streets: people at true scale against cars and lanes, seen a little closer.
+    setPeopleScale(PEOPLE_SCALE, 1 / ZOOM_BOOST);
     makeArt(this);
     makeDecorTextures(this);
     // Other people's walk cycles, once the street is on screen.
@@ -450,7 +455,7 @@ export class WorldScene extends Phaser.Scene {
     if (this.mapId !== "city") return MAPS[this.mapId]!.spawn;
     // Older saves may stand where the lake or a building now is.
     if (state?.pos.x) return freePoint(state.pos.x, state.pos.y, this.solids);
-    return { x: PLACES[0]!.x, y: PLACES[0]!.y + 95 };
+    return arrivalOf(PLACES[0]!);
   }
 
   /** Can the player stand here? Walls, the map edge and locked districts say no. */
@@ -512,7 +517,7 @@ export class WorldScene extends Phaser.Scene {
   private fitZoom() {
     const { width, height } = this.scale;
     const small = Math.min(width, height);
-    const fallback = small < 520 ? 1.85 : small < 800 ? 1.9 : 2.05;
+    const fallback = (small < 520 ? 1.85 : small < 800 ? 1.9 : 2.05) * ZOOM_BOOST;
     let saved = 0;
     try {
       saved = Number(localStorage.getItem(ZOOM_KEY)) || 0;
@@ -973,7 +978,8 @@ export class WorldScene extends Phaser.Scene {
     }
     // Markets spill out into the street: stalls around every market.
     for (const p of PLACES.filter((q) => /market/i.test(q.id))) {
-      for (const [dx, dy] of [[-95, 40], [95, 40], [-95, -50], [95, -50], [0, 95]] as const) {
+      // Never on the spot where you arrive (just below the signpost).
+      for (const [dx, dy] of [[-95, 40], [95, 40], [-95, -50], [95, -50], [-170, 95]] as const) {
         const sx = p.x + dx;
         const sy = p.y + dy;
         if (blocked(sx, sy, 30, this.solids) || onLot(sx, sy, 24)) continue;
@@ -1034,9 +1040,10 @@ export class WorldScene extends Phaser.Scene {
       const at = personAt(p);
       const body = figure(this, at.x, at.y, personOf(p), { name: p.name });
       body.setDepth(5 + at.y / 10000);
-      const bubble = this.add.image(p.name.length * 2.9 + 12, body.headTop - 10, "talkbubble").setOrigin(0, 1).setScale(0.8);
+      const k = labelScale;
+      const bubble = this.add.image((p.name.length * 2.9 + 12) * k, body.headTop - 10 * k, "talkbubble").setOrigin(0, 1).setScale(0.8 * k);
       body.add(bubble);
-      this.tweens.add({ targets: bubble, y: body.headTop - 14, duration: 900, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
+      this.tweens.add({ targets: bubble, y: body.headTop - 14 * k, duration: 900, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
       this.people.push({ kind: "person", id: personKey(p), label: p.name, x: at.x, y: at.y, body, home: at, vx: 0, vy: 0 });
     }
   }

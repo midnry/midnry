@@ -13,7 +13,7 @@ import { ROOM, type RoomInfo, type RoomLayout } from "../systems/rooms";
 import { ON_WALL, isFixed, isMyRoom, moveDecor, roomLayout } from "../systems/decor";
 import { bus, getState, input, subscribe } from "../systems/store";
 import type { MapRect } from "../systems/types";
-import { INK, animateWalk, pose, figure, furnitureKey, makeArt, queueCharacters, queueFurniture, tileKey, type Figure } from "./art";
+import { INK, animateWalk, pose, figure, furnitureKey, makeArt, queueCharacters, setPeopleScale, queueFurniture, tileKey, type Figure } from "./art";
 
 const SPEED = 135;
 const RADIUS = 12;
@@ -76,6 +76,7 @@ export class RoomScene extends Phaser.Scene {
   }
 
   create() {
+    setPeopleScale(1);
     makeArt(this);
     this.layout = roomLayout(getState(), this.info);
     const layout = this.layout;
@@ -93,12 +94,12 @@ export class RoomScene extends Phaser.Scene {
       .setResolution(2)
       .setOrigin(0.5)
       .setDepth(2);
-    // A name plate on the wall.
+    // The room's name on the bottom edge beside the way out, clear of anything on the wall or floor.
     this.add
-      .text(W / 2, WALL - 30, this.info.name, { fontFamily: GAME_FONT, fontSize: "13px", fontStyle: "bold", color: "#f7edda", backgroundColor: "#0b1f3d", padding: { x: 8, y: 3 } })
+      .text(door.x + 110, H - 13, this.info.name, { fontFamily: GAME_FONT, fontSize: "11px", fontStyle: "bold", color: "#f7edda" })
       .setResolution(2)
-      .setOrigin(0.5, 0)
-      .setDepth(3);
+      .setOrigin(0, 0.5)
+      .setDepth(2);
     this.watchDecor();
 
     // The people who work here.

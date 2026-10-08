@@ -422,10 +422,25 @@ const FEET = 10; // feet sit this many pixels below the figure's position
 /** New bodies are drawn taller (natural proportions); this keeps people the same size on screen. */
 const NORM = 0.8;
 
+/**
+ * How big people are drawn against the world, set per scene. Streets use a
+ * smaller figure so cars, lanes and buildings keep true proportions (a car
+ * about 2.5 people long); rooms keep the full size.
+ */
+let peopleScale = 1;
+/** Name tags, talk bubbles and signposts, scaled against the camera zoom so they read the same on screen. */
+export let labelScale = 1;
+/** Smaller people take quicker steps for the same speed, so their feet keep up with the ground. */
+const stepPace = () => Math.max(0.6, peopleScale);
+export function setPeopleScale(k: number, labels = 1) {
+  peopleScale = k;
+  labelScale = labels;
+}
+
 /** A person. `unit` is pixels per drawing unit: about 0.2 for people, smaller for crowds. */
 export function figure(scene: Phaser.Scene, x: number, y: number, person: Person, opts: { name?: string; nameColor?: string; unit?: number } = {}): Figure {
   if (person.painted && PAINTED[person.painted] && scene.textures.exists(paintedKey(person.painted, "front"))) return paintedFigure(scene, x, y, person.painted, opts);
-  const unit = (opts.unit ?? 0.2) * NORM;
+  const unit = (opts.unit ?? 0.2) * NORM * peopleScale;
   const key = charKey(person);
   const d = dims(person.look, bodyOf(person));
   const img = (part: string, ox: number, oy: number) => scene.add.image(0, 0, `${key}_${part}`).setOrigin(ox, oy).setScale(1 / RES);
@@ -442,7 +457,7 @@ export function figure(scene: Phaser.Scene, x: number, y: number, person: Person
   const items: Phaser.GameObjects.GameObject[] = [shadow, rig];
   if (opts.name) {
     const you = opts.name === "YOU";
-    items.push(pill(scene, 0, headTop - (you ? 16 : 12), opts.name, { size: you ? 11 : 10, color: you ? "#ffffff" : (opts.nameColor ?? "#ffffff"), pointer: you ? 0x3b82f6 : undefined }));
+    items.push(pill(scene, 0, headTop - (you ? 16 : 12) * labelScale, opts.name, { size: you ? 11 : 10, color: you ? "#ffffff" : (opts.nameColor ?? "#ffffff"), pointer: you ? 0x3b82f6 : undefined }).setScale(labelScale));
   }
   const c = scene.add.container(x, y, items) as Figure;
   Object.assign(c, { rig, legs: [legA, legB], arms: [armA, armB], armBack, upper, shadow, headTop, key, dims: d, unit, rigY, action: null, facing: "side" });
@@ -452,7 +467,7 @@ export function figure(scene: Phaser.Scene, x: number, y: number, person: Person
 
 /** A hand-painted person: one image per view, standing on its feet at the figure's position. */
 function paintedFigure(scene: Phaser.Scene, x: number, y: number, id: string, opts: { name?: string; nameColor?: string; unit?: number }): Figure {
-  const unit = (opts.unit ?? 0.2) * NORM;
+  const unit = (opts.unit ?? 0.2) * NORM * peopleScale;
   // As tall as a drawn grown-up of the same unit.
   const ref = dims(fullLook({}), "adult");
   const height = (ref.height - ref.headTop) * unit * (PAINTED[id]!.scale ?? 1);
@@ -471,7 +486,7 @@ function paintedFigure(scene: Phaser.Scene, x: number, y: number, id: string, op
   const items: Phaser.GameObjects.GameObject[] = [shadow, rig];
   if (opts.name) {
     const you = opts.name === "YOU";
-    items.push(pill(scene, 0, headTop - (you ? 16 : 12), opts.name, { size: you ? 11 : 10, color: you ? "#ffffff" : (opts.nameColor ?? "#ffffff"), pointer: you ? 0x3b82f6 : undefined }));
+    items.push(pill(scene, 0, headTop - (you ? 16 : 12) * labelScale, opts.name, { size: you ? 11 : 10, color: you ? "#ffffff" : (opts.nameColor ?? "#ffffff"), pointer: you ? 0x3b82f6 : undefined }).setScale(labelScale));
   }
   const c = scene.add.container(x, y, items) as Figure;
   Object.assign(c, { rig, legs: [hidden(), hidden()], arms: [hidden(), hidden()], armBack: hidden(), upper: body, shadow, headTop, key: `pt_${id}`, dims: ref, unit, rigY: FEET, action: null, facing: "front", painted: id, bodyScale: k, parts });
@@ -656,7 +671,7 @@ function animate(f: Figure, time: number, motion: Motion) {
     case "enter":
     case "exit": {
       const run = motion === "run";
-      const ph = time / (run ? 62 : 92);
+      const ph = time / ((run ? 62 : 92) * stepPace());
       const swing = Math.sin(ph);
       const bob = Math.abs(Math.sin(ph)) * (run ? 6 : 3.5);
       if (side) {
@@ -785,14 +800,14 @@ function animatePainted(f: Figure, time: number, motion: Motion) {
       const run = motion === "run";
       if (walkFrames(f, true)) {
         // A hand-drawn walk cycle: four frames, faster when running.
-        const n = (Math.floor(time / (run ? 95 : 140)) % 4) + 1;
+        const n = (Math.floor(time / ((run ? 95 : 140) * stepPace())) % 4) + 1;
         p.body.setTexture(`pt_${f.painted}_walk_${f.facing}_${n}`);
         f.rig.y = f.rigY - (n % 2 === 0 ? tall * 0.012 : 0);
         if (motion === "enter") f.alpha = Math.max(0, 1 - t * 1.6);
         if (motion === "exit") f.alpha = Math.min(1, t * 1.6);
         return;
       }
-      const ph = time / (run ? 70 : 105);
+      const ph = time / ((run ? 70 : 105) * stepPace());
       const swing = Math.sin(ph);
       if (side) {
         // Scissor: the front leg reaches forward as the back one pushes off, each lifting as it passes.
@@ -1268,7 +1283,7 @@ export function signpost(scene: Phaser.Scene, x: number, y: number, name: string
   ring.lineStyle(2, 0xffd27a, 0.95).strokeEllipse(0, 0, 54, 17);
   scene.tweens.add({ targets: ring, scaleX: 1.07, scaleY: 1.07, alpha: 0.7, duration: 1300, yoyo: true, repeat: -1, ease: "Sine.easeInOut" });
   // Boards stand a little taller than a person, no more.
-  const c = scene.add.container(x, y, [g, glyph, text]).setScale(0.82).setDepth(5 + (y + ground) / 10000) as Phaser.GameObjects.Container & { ring: typeof ring };
+  const c = scene.add.container(x, y, [g, glyph, text]).setScale(0.82 * labelScale).setDepth(5 + (y + ground) / 10000) as Phaser.GameObjects.Container & { ring: typeof ring };
   g.setPosition(0, ground * 0.22);
   glyph.y += ground * 0.22;
   text.y += ground * 0.22;

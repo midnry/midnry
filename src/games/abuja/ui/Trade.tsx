@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { trade } from "../systems/engine";
+import { useEffect, useState } from "react";
+import { openTrading, trade } from "../systems/engine";
 import { ASSETS, LEVERAGE, asset, equity, insight, pnl } from "../systems/market";
 import { naira } from "../systems/rules";
 import type { Candle, GameState, MarketState } from "../systems/types";
@@ -28,7 +28,12 @@ export function Trade({ state }: { state: GameState }) {
   const m = state.market;
   const [selected, setSelected] = useState("USDNGN");
   const [tab, setTab] = useState<"market" | "positions" | "account">("market");
-  if (!m) return <p className="text-sm text-slate-400">The trading app opens in adulthood.</p>;
+  const grown = state.stage === "adult" && !state.chapter;
+  // Grown-ups from saves made before trading existed get their account on first open.
+  useEffect(() => {
+    if (!m && grown) openTrading();
+  }, [m, grown]);
+  if (!m) return <p className="text-sm text-slate-400">{grown ? "Opening your trading account…" : "The trading app opens in adulthood."}</p>;
   const eq = equity(m);
   return (
     <div>
