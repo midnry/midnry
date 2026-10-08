@@ -2,7 +2,7 @@ import { startSceneLoading, finishSceneLoading } from "./loading";
 import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
 import { DISTRICTS, MAPS, PLACES, WORLD, chapter, districtAt } from "../systems/data";
-import { LAKE, ROADS, blocked, freePoint, roadRoute, sizeOf, solidsFor } from "../systems/citymap";
+import { LAKE, ROADS, blocked, freePoint, inLane, roadRoute, sizeOf, solidsFor } from "../systems/citymap";
 import { FLEET, HIT_AS, KEKE_COLORS, OKADA_COLORS, TAXI_COLOR, type VehicleStyle } from "../systems/vehicles";
 import type { RideMode } from "../systems/rides";
 import { personLook } from "../systems/peoplelook";
@@ -16,7 +16,7 @@ import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
 import { findPath, type Point } from "../systems/path";
 import type { GameState, MapRect } from "../systems/types";
-import { lotDoor, type Lot } from "../systems/city/layout";
+import { ALL_ROADS, LANE, SIDEWALK, halfWidth, laneOffsets, lotDoor, reach, road, type Lot, type Road } from "../systems/city/layout";
 import { drawBridge, drawMedians, drawRail, drawStreetFurniture, makeDecorTextures, zoneOverlay } from "./cityDecor";
 import { lotsFor } from "../systems/city/sim";
 import { CityLife, crowdStarters } from "./cityLife";
@@ -136,6 +136,9 @@ const DISTRICT_PROPS: Record<string, string[]> = {
 };
 
 /** Where the player stood when the scene redraws in place (say, after a change of outfit). */
+/** A rectangle as the arguments to fillRect. */
+const rect = (r: { x: number; y: number; w: number; h: number }) => [r.x, r.y, r.w, r.h] as const;
+
 /** How far around you (each way) buildings must be drawn before the city opens. */
 const NEAR_LOTS = 800;
 /** The city is woken and put to sleep in blocks this size (see wakeBlocks). */
@@ -535,7 +538,13 @@ export class WorldScene extends Phaser.Scene {
     this.drawLamps();
     this.spawnTraffic();
     // District names sit above the scenery.
-    for (const d of DISTRICTS) title(this, d.x + 18, d.y + 12, `${d.name}${d.gate?.hard ? " 🔒" : d.gate ? " 🛡️" : ""}`, 22).setOrigin(0, 0).setDepth(3);
+    // In the district's top-left corner, nudged off any road that runs along its edge.
+    for (const d of DISTRICTS) {
+      let [lx, ly] = [d.x + 18, d.y + 12];
+      for (const x of ROADS.xs) if (Math.abs(lx - x) < reach(road("x", x))) lx = x + reach(road("x", x)) + 12;
+      for (const y of ROADS.ys) if (ly + 30 > y - reach(road("y", y)) && ly < y + reach(road("y", y))) ly = y + reach(road("y", y)) + 12;
+      title(this, lx, ly, `${d.name}${d.gate?.hard ? " 🔒" : d.gate ? " 🛡️" : ""}`, 22).setOrigin(0, 0).setDepth(3);
+    }
   }
 
   private drawLake() {
@@ -558,67 +567,97 @@ export class WorldScene extends Phaser.Scene {
 
   private drawRoads() {
     const { width, height } = WORLD;
-    // Sidewalks of small pale tiles either side of every road.
-    ROADS.xs.forEach((x) => this.add.tileSprite(x - 38, 0, 76, height, tileKey("sidewalk")).setOrigin(0));
-    ROADS.ys.forEach((y) => this.add.tileSprite(0, y - 38, width, 76, tileKey("sidewalk")).setOrigin(0));
-    // The outer edge of the sidewalk: a soft line where it meets the block.
+    const len = (r: Road) => (r.axis === "x" ? height : width);
+    // A rectangle along a road: from `a` to `b` along it, from `p` to `q` across it (offsets from the centre line).
+    const band = (r: Road, a: number, b: number, p: number, q: number) =>
+      r.axis === "x" ? { x: r.at + Math.min(p, q), y: a, w: Math.abs(q - p), h: b - a } : { x: a, y: r.at + Math.min(p, q), w: b - a, h: Math.abs(q - p) };
+    const tile = (key: string, rect: { x: number; y: number; w: number; h: number }) => this.add.tileSprite(rect.x, rect.y, rect.w, rect.h, tileKey(key)).setOrigin(0);
+    // The stretches of a road between the junctions it crosses, each end kept clear by `pad`.
+    const stretches = (r: Road, pad: number) => {
+      const cross = (r.axis === "x" ? ROADS.ys.map((y) => road("y", y)) : ROADS.xs.map((x) => road("x", x))).sort((m, n) => m.at - n.at);
+      const out: [number, number][] = [];
+      let from = 0;
+      for (const c of cross) {
+        out.push([from, c.at - halfWidth(c) - pad]);
+        from = c.at + halfWidth(c) + pad;
+      }
+      out.push([from, len(r)]);
+      return out.filter(([a, b]) => b - a > 4);
+    };
+    // Pavements of small pale tiles either side, then the asphalt.
+    for (const r of ALL_ROADS) {
+      const h = halfWidth(r);
+      tile("sidewalk", band(r, 0, len(r), -reach(r), -h));
+      tile("sidewalk", band(r, 0, len(r), h, reach(r)));
+    }
     const edge = this.add.graphics();
     edge.lineStyle(2, 0x8f8676, 0.45);
-    ROADS.xs.forEach((x) => edge.lineBetween(x - 38, 0, x - 38, height).lineBetween(x + 38, 0, x + 38, height));
-    ROADS.ys.forEach((y) => edge.lineBetween(0, y - 38, width, y - 38).lineBetween(0, y + 38, width, y + 38));
-    // Asphalt.
-    ROADS.xs.forEach((x) => this.add.tileSprite(x - 24, 0, 48, height, tileKey("asphalt")).setOrigin(0));
-    ROADS.ys.forEach((y) => this.add.tileSprite(0, y - 24, width, 48, tileKey("asphalt")).setOrigin(0));
-    // Kerbs: a pale concrete lip with a shadow on the road side.
-    const kerb = this.add.graphics();
-    const junction = (v: number, list: number[]) => list.some((c) => Math.abs(v - c) < 25);
-    const run = (list: number[], max: number, draw: (a: number, b: number) => void) => {
-      let from = 0;
-      for (const c of [...list].sort((a, b) => a - b)) {
-        draw(from, c - 24);
-        from = c + 24;
+    for (const r of ALL_ROADS) {
+      for (const side of [-1, 1]) {
+        const o = r.at + side * reach(r);
+        if (r.axis === "x") edge.lineBetween(o, 0, o, height);
+        else edge.lineBetween(0, o, width, o);
       }
-      draw(from, max);
-    };
-    ROADS.xs.forEach((x) =>
-      run(ROADS.ys, height, (a, b) => {
-        kerb.fillStyle(0x000000, 0.22).fillRect(x - 24, a, 3, b - a).fillRect(x + 21, a, 3, b - a);
-        kerb.fillStyle(0xeae4d8, 1).fillRect(x - 28, a, 4, b - a).fillRect(x + 24, a, 4, b - a);
-        kerb.fillStyle(0x9d9585, 1).fillRect(x - 25, a, 1, b - a).fillRect(x + 24, a, 1, b - a);
-      }),
-    );
-    ROADS.ys.forEach((y) =>
-      run(ROADS.xs, width, (a, b) => {
-        kerb.fillStyle(0x000000, 0.22).fillRect(a, y - 24, b - a, 3).fillRect(a, y + 21, b - a, 3);
-        kerb.fillStyle(0xeae4d8, 1).fillRect(a, y - 28, b - a, 4).fillRect(a, y + 24, b - a, 4);
-        kerb.fillStyle(0x9d9585, 1).fillRect(a, y - 25, b - a, 1).fillRect(a, y + 24, b - a, 1);
-      }),
-    );
-    // Re-pave the junctions over the sidewalk tiles.
-    for (const x of ROADS.xs) for (const y of ROADS.ys) this.add.tileSprite(x - 24, y - 24, 48, 48, tileKey("asphalt")).setOrigin(0);
-    const near = (v: number, list: number[]) => list.some((c) => Math.abs(v - c) < 50);
-    // Tiled, so only the markings near the camera are drawn each frame.
+    }
+    for (const r of ALL_ROADS) tile("asphalt", band(r, 0, len(r), -halfWidth(r), halfWidth(r)));
+    // Junctions: one sheet of asphalt where two roads cross.
+    for (const x of ROADS.xs) {
+      for (const y of ROADS.ys) {
+        const hx = halfWidth(road("x", x));
+        const hy = halfWidth(road("y", y));
+        this.add.tileSprite(x - hx, y - hy, hx * 2, hy * 2, tileKey("asphalt")).setOrigin(0);
+      }
+    }
+    // Kerbs: a pale concrete lip with a shadow on the road side, broken at the junctions.
+    const kerb = new ChunkedGraphics(this);
+    for (const r of ALL_ROADS) {
+      const h = halfWidth(r);
+      for (const [a, b] of stretches(r, 0)) {
+        for (const side of [-1, 1]) {
+          kerb.fillStyle(0x000000, 0.22).fillRect(...rect(band(r, a, b, side * (h - 3), side * h)));
+          kerb.fillStyle(0xeae4d8, 1).fillRect(...rect(band(r, a, b, side * h, side * (h + 4))));
+          kerb.fillStyle(0x9d9585, 1).fillRect(...rect(band(r, a, b, side * (h + 1), side * (h + 2))));
+        }
+      }
+    }
+    // Markings: dashed lines between lanes going the same way, a solid edge line, and a
+    // dashed centre line on the local roads that have no median.
     const lines = new ChunkedGraphics(this);
-    // Centre dashes, and faint solid edge lines.
-    lines.fillStyle(0xf8f6f0, 0.92);
-    ROADS.xs.forEach((x) => {
-      for (let y = 0; y < height; y += 44) if (!near(y + 11, ROADS.ys)) lines.fillRect(x - 1.5, y, 3, 22);
-    });
-    ROADS.ys.forEach((y) => {
-      for (let x = 0; x < width; x += 44) if (!near(x + 11, ROADS.xs)) lines.fillRect(x, y - 1.5, 22, 3);
-    });
-    lines.fillStyle(0xf8f6f0, 0.35);
-    ROADS.xs.forEach((x) => run(ROADS.ys, height, (a, b) => b - a > 60 && lines.fillRect(x - 19, a + 30, 1.5, b - a - 60).fillRect(x + 17.5, a + 30, 1.5, b - a - 60)));
-    ROADS.ys.forEach((y) => run(ROADS.xs, width, (a, b) => b - a > 60 && lines.fillRect(a + 30, y - 19, b - a - 60, 1.5).fillRect(a + 30, y + 17.5, b - a - 60, 1.5)));
-    // Zebra crossings on every side of each junction, with a stop line.
+    for (const r of ALL_ROADS) {
+      const h = halfWidth(r);
+      for (const [a, b] of stretches(r, 34)) {
+        lines.fillStyle(0xf8f6f0, 0.92);
+        const dashes = (o: number) => {
+          for (let t = a; t + 22 <= b; t += 44) lines.fillRect(...rect(band(r, t, t + 22, o - 1.5, o + 1.5)));
+        };
+        if (r.median === 0) dashes(0);
+        for (let i = 1; i < r.lanes; i++) for (const side of [-1, 1]) dashes(side * (r.median / 2 + LANE * i));
+        lines.fillStyle(0xf8f6f0, 0.5);
+        for (const side of [-1, 1]) lines.fillRect(...rect(band(r, a, b, side * (h - 7), side * (h - 5))));
+        // Yellow lines along the median.
+        if (r.median) {
+          lines.fillStyle(0xf2c230, 0.85);
+          for (const side of [-1, 1]) lines.fillRect(...rect(band(r, a, b, side * (r.median / 2 + 3), side * (r.median / 2 + 5))));
+        }
+      }
+    }
+    // Zebra crossings on every arm of every junction, with a stop line before them.
     lines.fillStyle(0xffffff, 0.88);
     for (const x of ROADS.xs) {
       for (const y of ROADS.ys) {
-        for (let i = -20; i <= 16; i += 8) {
-          lines.fillRect(x + i, y - 46, 5, 16).fillRect(x + i, y + 30, 5, 16);
-          lines.fillRect(x - 46, y + i, 16, 5).fillRect(x + 30, y + i, 16, 5);
+        const rx = road("x", x);
+        const ry = road("y", y);
+        const hx = halfWidth(rx);
+        const hy = halfWidth(ry);
+        for (let t = -hx + 4; t + 6 <= hx - 4; t += 11) {
+          lines.fillRect(x + t, y - hy - 24, 6, 18).fillRect(x + t, y + hy + 6, 6, 18);
         }
-        lines.fillRect(x - 22, y - 50, 44, 2).fillRect(x - 22, y + 48, 44, 2).fillRect(x - 50, y - 22, 2, 44).fillRect(x + 48, y - 22, 2, 44);
+        for (let t = -hy + 4; t + 6 <= hy - 4; t += 11) {
+          lines.fillRect(x - hx - 24, y + t, 18, 6).fillRect(x + hx + 6, y + t, 18, 6);
+        }
+        // Stop lines across the lanes coming into the junction (traffic keeps right).
+        lines.fillRect(x - hx, y - hy - 30, hx - rx.median / 2, 3).fillRect(x + rx.median / 2, y + hy + 27, hx - rx.median / 2, 3);
+        lines.fillRect(x + hx + 27, y - hy, 3, hy - ry.median / 2).fillRect(x - hx - 30, y + ry.median / 2, 3, hy - ry.median / 2);
       }
     }
     // Storm drains along the kerbs, and the odd manhole cover.
@@ -630,21 +669,23 @@ export class WorldScene extends Phaser.Scene {
       d.lineStyle(1, 0x55555c, 1);
       for (let k = -6; k <= 6; k += 3) vertical ? d.lineBetween(gx - 2, gy + k, gx + 2, gy + k) : d.lineBetween(gx + k, gy - 2, gx + k, gy + 2);
     };
-    const r = rand(4242);
-    ROADS.xs.forEach((x) => {
-      for (let y = 120; y < height; y += 210) if (!junction(y, ROADS.ys) && !near(y, ROADS.ys)) grate(x + (r() < 0.5 ? -20 : 20), y, true);
-    });
-    ROADS.ys.forEach((y) => {
-      for (let x = 120; x < width; x += 210) if (!junction(x, ROADS.xs) && !near(x, ROADS.xs)) grate(x, y + (r() < 0.5 ? -20 : 20), false);
-    });
-    for (let i = 0; i < 14; i += 1) {
-      const vertical = i % 2 === 0;
-      const line = vertical ? ROADS.xs[i % ROADS.xs.length]! : ROADS.ys[i % ROADS.ys.length]!;
-      const along = 80 + r() * ((vertical ? height : width) - 160);
-      if (near(along, vertical ? ROADS.ys : ROADS.xs)) continue;
-      const [mx, my] = vertical ? [line + 10, along] : [along, line + 10];
-      d.fillStyle(0x34343a, 1).fillCircle(mx, my, 6);
-      d.lineStyle(1.2, 0x6b6b72, 1).strokeCircle(mx, my, 6).strokeCircle(mx, my, 3.5);
+    const r0 = rand(4242);
+    for (const r of ALL_ROADS) {
+      const h = halfWidth(r);
+      for (const [a, b] of stretches(r, 40)) {
+        for (let t = a + 60; t < b - 30; t += 210) {
+          const side = r0() < 0.5 ? -1 : 1;
+          if (r.axis === "x") grate(r.at + side * (h - 9), t, true);
+          else grate(t, r.at + side * (h - 9), false);
+        }
+        if (r0() < 0.5) {
+          const t = a + (b - a) * (0.2 + r0() * 0.6);
+          const o = (r.median ? r.median / 2 + LANE * 0.5 : LANE * 0.5) * (r0() < 0.5 ? -1 : 1);
+          const [mx, my] = r.axis === "x" ? [r.at + o, t] : [t, r.at + o];
+          d.fillStyle(0x34343a, 1).fillCircle(mx, my, 6);
+          d.lineStyle(1.2, 0x6b6b72, 1).strokeCircle(mx, my, 6).strokeCircle(mx, my, 3.5);
+        }
+      }
     }
   }
 
@@ -844,22 +885,23 @@ export class WorldScene extends Phaser.Scene {
     const onLot = (x: number, y: number, pad: number) => lots.some((l) => x > l.x - pad && x < l.x + l.w + pad && y > l.y - pad && y < l.y + l.h + pad);
     const nearPlace = (x: number, y: number, d: number) => PLACES.some((p) => Math.hypot(p.x - x, p.y - y + 10) < d);
     const free = (x: number, y: number, rad: number) => !blocked(x, y, rad, this.solids) && !onLot(x, y, rad) && !nearPlace(x, y, 70) && x > 30 && y > 30 && x < WORLD.width - 30 && y < WORLD.height - 30 && Math.hypot((x - LAKE.x) / (LAKE.rx + 60), (y - LAKE.y) / (LAKE.ry + 60)) > 1;
-    const clearOfJunctions = (v: number, list: number[]) => list.every((c) => Math.abs(v - c) > 90);
+    // Clear of the junctions: past the crossing road's pavement and its zebra crossing.
+    const clearOfJunctions = (v: number, axis: "x" | "y") => (axis === "x" ? ROADS.xs : ROADS.ys).every((c) => Math.abs(v - c) > reach(road(axis, c)) + 40);
     const paved = (x: number, y: number) => ["pavement", "plaza"].includes(DISTRICT_TILE[districtAt(x, y)?.id ?? ""] ?? "");
     const put = (key: string, x: number, y: number, scale = 1) => {
       this.add.image(x, y, key).setOrigin(0.5, 0.92).setScale(scale).setDepth(5 + y / 10000);
       this.solids.push({ x: x - 12 * scale, y: y - 8, w: 24 * scale, h: 10 });
     };
-    // Parked cars: side on, in a white-lined bay just off the road.
+    // Parked cars: side on, in a white-lined lay-by just beyond the pavement.
     const bays = this.add.graphics().setDepth(1.5);
     const parked = FLEET.filter((f) => f.kind === "car" || f.kind === "taxi");
     let k = 0;
     for (const y of ROADS.ys) {
       for (let x = 110; x < WORLD.width - 80; x += 140) {
-        if (!clearOfJunctions(x, ROADS.xs)) continue;
+        if (!clearOfJunctions(x, "x")) continue;
         for (const side of [-1, 1] as const) {
-          const by = y + side * 58 + (side > 0 ? 12 : 0);
-          if (ROADS.ys.some((o) => o !== y && Math.abs(o - by) < 130)) continue;
+          const by = y + side * (reach(road("y", y)) + 22) + (side > 0 ? 12 : 0);
+          if (ROADS.ys.some((o) => o !== y && Math.abs(o - by) < reach(road("y", o)) + 40)) continue;
           if (r() < 0.45 || !free(x, by - 6, 40) || !free(x - 34, by - 6, 12) || !free(x + 34, by - 6, 12)) continue;
           bays.fillStyle(0x000000, 0.06).fillRect(x - 44, by - 22, 88, 30);
           bays.fillStyle(0xffffff, 0.75).fillRect(x - 44, by - 22, 2, 30).fillRect(x + 42, by - 22, 2, 30);
@@ -872,10 +914,11 @@ export class WorldScene extends Phaser.Scene {
     }
     // Trees and planters lining the streets of the paved districts, greenery elsewhere.
     for (const x of ROADS.xs) {
+      const h = halfWidth(road("x", x));
       for (let y = 90; y < WORLD.height - 40; y += 120) {
-        if (!clearOfJunctions(y, ROADS.ys)) continue;
+        if (!clearOfJunctions(y, "y")) continue;
         for (const side of [-1, 1] as const) {
-          const px = x + side * 52;
+          const px = x + side * (h + SIDEWALK - 8);
           if (!free(px, y, 18)) continue;
           const roll = r();
           if (paved(px, y)) put(roll < 0.5 ? "planter" : "tree3", px, y, roll < 0.5 ? 0.8 : 0.7);
@@ -884,10 +927,11 @@ export class WorldScene extends Phaser.Scene {
       }
     }
     for (const y of ROADS.ys) {
+      const h = halfWidth(road("y", y));
       for (let x = 60; x < WORLD.width - 40; x += 120) {
-        if (!clearOfJunctions(x, ROADS.xs)) continue;
+        if (!clearOfJunctions(x, "x")) continue;
         for (const side of [-1, 1] as const) {
-          const py = y + side * 52 + (side > 0 ? 14 : 0);
+          const py = y + side * (h + SIDEWALK - 8) + (side > 0 ? 14 : 0);
           if (!free(x, py, 18)) continue;
           const roll = r();
           if (paved(x, py)) put(roll < 0.55 ? "planter" : "tree3", x, py, roll < 0.55 ? 0.8 : 0.7);
@@ -913,13 +957,28 @@ export class WorldScene extends Phaser.Scene {
       this.add.image(x, y, "lamp").setOrigin(0.5, 0.95).setDepth(5 + y / 10000);
       this.glows.push(this.add.image(x, y - 61, "glow").setDepth(31).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc46b).setAlpha(0));
     };
-    const clear = (v: number, list: number[]) => list.every((c) => Math.abs(v - c) > 70);
-    for (const x of ROADS.xs) for (let y = 80; y < WORLD.height; y += 340) if (clear(y, ROADS.ys)) lamp(x + 32, y);
-    for (const y of ROADS.ys) for (let x = 120; x < WORLD.width; x += 380) if (clear(x, ROADS.xs)) lamp(x, y - 30);
+    const clear = (v: number, axis: "x" | "y") => (axis === "x" ? ROADS.xs : ROADS.ys).every((c) => Math.abs(v - c) > reach(road(axis, c)) + 30);
+    // Along the kerb on one side, and down the median of the expressways.
+    for (const x of ROADS.xs) {
+      const rd = road("x", x);
+      for (let y = 80; y < WORLD.height; y += 340) {
+        if (!clear(y, "y")) continue;
+        lamp(x + halfWidth(rd) + 6, y);
+        if (rd.kind === "expressway") lamp(x, y + 170);
+      }
+    }
+    for (const y of ROADS.ys) {
+      const rd = road("y", y);
+      for (let x = 120; x < WORLD.width; x += 380) {
+        if (!clear(x, "x")) continue;
+        lamp(x, y - halfWidth(rd) - 6);
+        if (rd.kind === "expressway") lamp(x + 190, y + 4);
+      }
+    }
     // A traffic light on the corner of every junction.
     for (const x of ROADS.xs) {
       for (const y of ROADS.ys) {
-        for (const [px, py, axis] of [[x + 33, y - 32, "x"]] as const) {
+        for (const [px, py, axis] of [[x + halfWidth(road("x", x)) + 9, y - halfWidth(road("y", y)) - 8, "x"]] as const) {
           if (blocked(px, py, 8, this.solids)) continue;
           this.add.image(px, py, "trafficlight").setOrigin(0.5, 0.95).setDepth(5 + py / 10000);
           const img = this.add.image(px, py - 64, "signal").setDepth(5 + py / 10000 + 0.00001);
@@ -951,17 +1010,31 @@ export class WorldScene extends Phaser.Scene {
   }
 
   private spawnTraffic() {
-    for (let i = 0; i < 26; i += 1) {
-      const axis = i % 2 ? "x" : "y";
-      const style = FLEET[(i * 7) % FLEET.length]!;
-      const lane = (i % 4 < 2 ? -1 : 1) * 11;
-      const roadLine = axis === "x" ? ROADS.ys[i % ROADS.ys.length]! : ROADS.xs[i % ROADS.xs.length]!;
-      const pos = Math.random() * (axis === "x" ? WORLD.width : WORLD.height);
-      const heavy = style.kind === "bus" || style.kind === "truck" || style.kind === "mixer" || style.kind === "firetruck";
-      const speed = (lane < 0 ? -1 : 1) * (heavy ? 75 + Math.random() * 15 : style.kind === "ambulance" || style.kind === "police" ? 170 + Math.random() * 40 : 110 + Math.random() * 90);
-      const body = vehicle(this, axis === "x" ? pos : roadLine + lane, axis === "x" ? roadLine + lane : pos, style);
-      faceVehicle(body, axis === "x" ? speed : 0, axis === "y" ? speed : 0);
-      this.cars.push({ body, axis, speed, kind: HIT_AS[style.kind] });
+    // Every lane of every road gets its share, about one vehicle per 4,000 px of lane.
+    // Heavy vehicles keep to the kerbside lane; the inner lanes are faster.
+    const r = rand(707);
+    const heavy = FLEET.filter((f) => ["bus", "truck", "mixer"].includes(f.kind));
+    const light = FLEET.filter((f) => !["bus", "truck", "mixer", "firetruck"].includes(f.kind));
+    for (const rd of ALL_ROADS) {
+      const length = rd.axis === "x" ? WORLD.height : WORLD.width;
+      for (const lane of laneOffsets(rd)) {
+        // 0 for the lane by the median, up to lanes-1 for the kerbside lane.
+        const rank = Math.round((Math.abs(lane.offset) - rd.median / 2 - LANE / 2) / LANE);
+        const kerbside = rank === rd.lanes - 1;
+        const count = Math.max(1, Math.round(length / 4000));
+        for (let i = 0; i < count; i++) {
+          const style = kerbside && r() < 0.45 ? heavy[Math.floor(r() * heavy.length)]! : light[Math.floor(r() * light.length)]!;
+          const base = rd.lanes === 1 ? 120 : [175, 140, 100][Math.min(2, rank + (3 - rd.lanes))]!;
+          const speed = lane.dir * (base + r() * 12);
+          const pos = ((i + r() * 0.6) / count) * length;
+          const line = rd.at + lane.offset;
+          // A car on an "x" road (running north–south) moves along y.
+          const moves = rd.axis === "x" ? "y" : "x";
+          const body = vehicle(this, moves === "x" ? pos : line, moves === "x" ? line : pos, style);
+          faceVehicle(body, moves === "x" ? speed : 0, moves === "y" ? speed : 0);
+          this.cars.push({ body, axis: moves, speed, kind: HIT_AS[style.kind] });
+        }
+      }
     }
   }
 
@@ -1044,12 +1117,9 @@ export class WorldScene extends Phaser.Scene {
     // Police set up checkpoints when your Heat is high.
     const wantPolice = this.mapId === "city" && state.stats.heat >= 40;
     if (wantPolice && this.police.length === 0) {
-      for (const [x, y] of [
-        [1000, 1000],
-        [1500, 600],
-        [800, 500],
-        [1600, 1100],
-      ] as const) {
+      // On the pavement at the corner of four big junctions.
+      const corners = ROADS.xs.filter((x) => road("x", x).kind !== "street").flatMap((x) => ROADS.ys.map((y) => [x + reach(road("x", x)) - 10, y + reach(road("y", y)) + 26] as const));
+      for (const [x, y] of [0, 5, 10, 15].map((i) => corners[(i + state.day) % corners.length]!)) {
         const barrier = this.add.image(x, y, "barrier").setDepth(7);
         const officer = figure(this, x + 34, y - 34, POLICE, { name: "POLICE", nameColor: "#93c5fd" });
         officer.setDepth(5 + (y - 34) / 10000);
@@ -1063,11 +1133,15 @@ export class WorldScene extends Phaser.Scene {
         p.barrier.destroy();
       });
       this.frscDay = state.day;
+      // Just past the junction: a barrier in the kerbside lane, the officer on the pavement.
       this.frscPosts = frscSpots(state.day).map(({ x, y }) => {
-        const barrier = this.add.image(x + 30, y + 30, "barrier").setDepth(7);
-        const officer = figure(this, x + 64, y + 4, FRSC, { name: "FRSC", nameColor: "#fde047" });
-        officer.setDepth(5 + (y + 4) / 10000);
-        return { officer, barrier, x: x + 30, y: y + 30 };
+        const hx = halfWidth(road("x", x));
+        const by = y + halfWidth(road("y", y)) + 80;
+        const bx = x + hx - LANE / 2;
+        const barrier = this.add.image(bx, by, "barrier").setDepth(5 + by / 10000);
+        const officer = figure(this, x + hx + SIDEWALK / 2, by - 6, FRSC, { name: "FRSC", nameColor: "#fde047" });
+        officer.setDepth(5 + (by - 6) / 10000);
+        return { officer, barrier, x: bx, y: by };
       });
     }
     if (!wantPolice && this.police.length) {
@@ -1368,7 +1442,8 @@ export class WorldScene extends Phaser.Scene {
       mode === "car" ? { kind: "car", color: CAR_COLOR } : mode === "taxi" ? { kind: "taxi", color: TAXI_COLOR } : mode === "okada" ? { kind: "okada", color: OKADA_COLORS.red } : mode === "keke" ? { kind: "keke", color: KEKE_COLORS.yellow } : { kind: "bus", color: "#f5c518" };
     // You hop in at the nearest road and get dropped at the roadside closest to where you're going.
     const full = roadRoute({ x: this.player.x, y: this.player.y }, to);
-    const route = full.length > 2 ? full.slice(1, -1) : [to];
+    // Along the roads in the right-hand lane: the kerbside one for the bus, okada and keke.
+    const route = full.length > 2 ? inLane(full.slice(1, -1), mode === "bus" || mode === "okada" || mode === "keke") : [to];
     const curb = route[route.length - 1]!;
     const away = Math.hypot(to.x - curb.x, to.y - curb.y);
     const step = Math.min(40, away);

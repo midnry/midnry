@@ -27,8 +27,8 @@ export function rideBan(mode: RideMode, fromDistrict: string, toDistrict: string
   return `${RIDE_INFO[mode].label}s are banned in the city centre. Take a taxi or the bus.`;
 }
 
-/** About 160 map pixels to a kilometre: Nyanya to the CBD is roughly 15 km by road. */
-const PX_PER_KM = 160;
+/** About 200 map pixels to a kilometre: Nyanya to the CBD is roughly 15 km by road. */
+const PX_PER_KM = 200;
 
 const roundUp = (n: number) => Math.ceil(n / 50) * 50;
 

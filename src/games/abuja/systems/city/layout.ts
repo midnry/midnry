@@ -14,15 +14,63 @@ import { BUILDINGS, building, type BuildingDef, type Zone } from "./catalog";
 // pair at x 1100/1200) down the west, the Airport Road – Nnamdi Azikiwe –
 // Keffi Road expressway (the pair at y 1900/2000) across the middle, and the
 // avenues in between.
-export const ROADS = { xs: [550, 1100, 1200, 2000, 2700, 3400, 4100, 4450], ys: [700, 1300, 1900, 2000, 2600, 3100] };
+export const ROADS = { xs: [690, 1440, 2500, 3375, 4250, 5125, 5560], ys: [875, 1625, 2440, 3250, 3875] };
+
+/**
+ * How big each road is. Expressways carry three lanes each way either side of
+ * a planted median, the main avenues two lanes each way with a kerbed strip,
+ * and local roads a lane each way. Traffic keeps right, as in Nigeria.
+ */
+export type RoadKind = "expressway" | "avenue" | "street";
+export const LANE = 32;
+export const SIDEWALK = 28;
+const SPEC: Record<RoadKind, { lanes: number; median: number }> = {
+  expressway: { lanes: 3, median: 26 },
+  avenue: { lanes: 2, median: 10 },
+  street: { lanes: 1, median: 0 },
+};
+const KINDS: Record<string, RoadKind> = {
+  x690: "street", x1440: "expressway", x2500: "avenue", x3375: "avenue", x4250: "avenue", x5125: "expressway", x5560: "street",
+  y875: "expressway", y1625: "avenue", y2440: "expressway", y3250: "avenue", y3875: "avenue",
+};
 /** Road names for street signs, by line. */
 export const ROAD_NAMES: Record<string, string> = {
-  x550: "Gado Nasko Road", x1100: "Kubwa Expressway", x1200: "Kubwa Expressway", x2000: "Ahmadu Bello Way", x2700: "Shehu Shagari Way", x3400: "Constitution Ave", x4100: "Keffi Road", x4450: "Karu Road",
-  y700: "Outer Northern Expressway", y1300: "Aminu Kano Cres", y1900: "Airport Road Expressway", y2000: "Nnamdi Azikiwe Expressway", y2600: "Ring Road I", y3100: "Ring Road II",
+  x690: "Gado Nasko Road", x1440: "Kubwa Expressway", x2500: "Ahmadu Bello Way", x3375: "Shehu Shagari Way", x4250: "Constitution Ave", x5125: "Keffi Road", x5560: "Karu Road",
+  y875: "Outer Northern Expressway", y1625: "Aminu Kano Cres", y2440: "Nnamdi Azikiwe Expressway", y3250: "Ring Road I", y3875: "Ring Road II",
 };
-export const LAKE = { x: 1450, y: 1600, rx: 160, ry: 115 };
+
+/** A road by its line: "x" roads run north–south at that x, "y" roads east–west at that y. */
+export type Road = { axis: "x" | "y"; at: number; kind: RoadKind; lanes: number; median: number; name: string };
+export function road(axis: "x" | "y", at: number): Road {
+  const kind = KINDS[`${axis}${at}`] ?? "street";
+  return { axis, at, kind, ...SPEC[kind], name: ROAD_NAMES[`${axis}${at}`] ?? "" };
+}
+export const ALL_ROADS: Road[] = [...ROADS.xs.map((x) => road("x", x)), ...ROADS.ys.map((y) => road("y", y))];
+
+/** From the centre line to the kerb. */
+export const halfWidth = (r: Road) => r.lanes * LANE + r.median / 2;
+/** From the centre line to the far edge of the pavement: where buildings may start. */
+export const reach = (r: Road) => halfWidth(r) + SIDEWALK;
+export const reachX = (x: number) => reach(road("x", x));
+export const reachY = (y: number) => reach(road("y", y));
+
+/**
+ * The lanes, as offsets from the centre line and the way traffic goes in them
+ * (+1: towards larger x or y). Keep right: eastbound traffic on the south side,
+ * southbound on the west side.
+ */
+export function laneOffsets(r: Road): { offset: number; dir: 1 | -1 }[] {
+  const out: { offset: number; dir: 1 | -1 }[] = [];
+  for (let i = 0; i < r.lanes; i++) {
+    const d = r.median / 2 + LANE * (i + 0.5);
+    if (r.axis === "y") out.push({ offset: d, dir: 1 }, { offset: -d, dir: -1 });
+    else out.push({ offset: -d, dir: 1 }, { offset: d, dir: -1 });
+  }
+  return out;
+}
+export const LAKE = { x: 1810, y: 2000, rx: 200, ry: 144 };
 /** The light rail along the south edge, and its station in Garki. */
-export const RAIL = { y: 3572, station: { x: 2525, y: 3572 } };
+export const RAIL = { y: 4465, station: { x: 3156, y: 4465 } };
 
 const CELL = { w: 100, h: 95 };
 const GAP = { w: 16, h: 23 };
@@ -108,41 +156,41 @@ const ZONE_DEFAULT: Record<Zone, string[]> = {
 
 /** Landmarks and city utilities: where they'd like to be. */
 const FIXED: { def: string; district: string; near?: { x: number; y: number } }[] = [
-  { def: "stadium", district: "lugbe", near: { x: 852, y: 3211 } },
-  { def: "skyscraper", district: "cbd", near: { x: 3244, y: 2040 } },
-  { def: "mosque", district: "cbd", near: { x: 2467, y: 2012 } },
-  { def: "church", district: "cbd", near: { x: 3167, y: 2516 } },
-  { def: "museum", district: "garki", near: { x: 2450, y: 3175 } },
-  { def: "monument", district: "maitama", near: { x: 2700, y: 1204 } },
-  { def: "hospital_bld", district: "garki", near: { x: 2100, y: 3475 } },
-  { def: "power_plant", district: "nyanya", near: { x: 4722, y: 3343 } },
-  { def: "solar_farm", district: "lugbe", near: { x: 138, y: 3406 } },
-  { def: "water_tower", district: "kubwa", near: { x: 176, y: 312 } },
-  { def: "water_tower", district: "nyanya", near: { x: 4722, y: 2006 } },
-  { def: "water_tower", district: "asokoro", near: { x: 4012, y: 1560 } },
-  { def: "waste_depot", district: "nyanya", near: { x: 4256, y: 3394 } },
-  { def: "school", district: "nyanya", near: { x: 4567, y: 3189 } },
-  { def: "school", district: "kubwa", near: { x: 264, y: 1092 } },
-  { def: "fire_station", district: "cbd", near: { x: 2311, y: 2558 } },
-  { def: "police", district: "nyanya", near: { x: 4256, y: 2700 } },
-  { def: "substation", district: "gwarinpa", near: { x: 1910, y: 312 } },
-  { def: "substation", district: "maitama", near: { x: 3283, y: 844 } },
-  { def: "logistics", district: "lugbe", near: { x: 165, y: 2021 } },
-  { def: "community", district: "kubwa", near: { x: 924, y: 312 } },
-  { def: "clinic", district: "nyanya", near: { x: 4722, y: 2700 } },
+  { def: "stadium", district: "lugbe", near: { x: 1065, y: 4014 } },
+  { def: "skyscraper", district: "cbd", near: { x: 4055, y: 2550 } },
+  { def: "mosque", district: "cbd", near: { x: 3084, y: 2515 } },
+  { def: "church", district: "cbd", near: { x: 3959, y: 3145 } },
+  { def: "museum", district: "garki", near: { x: 3062, y: 3969 } },
+  { def: "monument", district: "maitama", near: { x: 3375, y: 1505 } },
+  { def: "hospital_bld", district: "garki", near: { x: 2625, y: 4344 } },
+  { def: "power_plant", district: "nyanya", near: { x: 5902, y: 4179 } },
+  { def: "solar_farm", district: "lugbe", near: { x: 172, y: 4258 } },
+  { def: "water_tower", district: "kubwa", near: { x: 220, y: 390 } },
+  { def: "water_tower", district: "nyanya", near: { x: 5902, y: 2508 } },
+  { def: "water_tower", district: "asokoro", near: { x: 5015, y: 1950 } },
+  { def: "waste_depot", district: "nyanya", near: { x: 5320, y: 4242 } },
+  { def: "school", district: "nyanya", near: { x: 5709, y: 3986 } },
+  { def: "school", district: "kubwa", near: { x: 330, y: 1365 } },
+  { def: "fire_station", district: "cbd", near: { x: 2889, y: 3198 } },
+  { def: "police", district: "nyanya", near: { x: 5320, y: 3375 } },
+  { def: "substation", district: "gwarinpa", near: { x: 2388, y: 390 } },
+  { def: "substation", district: "maitama", near: { x: 4104, y: 1055 } },
+  { def: "logistics", district: "lugbe", near: { x: 206, y: 2526 } },
+  { def: "community", district: "kubwa", near: { x: 1155, y: 390 } },
+  { def: "clinic", district: "nyanya", near: { x: 5902, y: 3375 } },
   // The new districts' landmarks.
-  { def: "government", district: "threearms", near: { x: 3750, y: 650 } },
-  { def: "government", district: "threearms", near: { x: 3600, y: 1100 } },
-  { def: "monument", district: "threearms", near: { x: 3900, y: 200 } },
-  { def: "mosque", district: "mpape", near: { x: 3050, y: 500 } },
-  { def: "church", district: "karu", near: { x: 4300, y: 900 } },
-  { def: "school", district: "karu", near: { x: 4600, y: 1500 } },
-  { def: "clinic", district: "mpape", near: { x: 2850, y: 200 } },
-  { def: "school", district: "lokogoma", near: { x: 1650, y: 3300 } },
-  { def: "police", district: "apo", near: { x: 3200, y: 2800 } },
-  { def: "water_tower", district: "lokogoma", near: { x: 1250, y: 3450 } },
-  { def: "substation", district: "deidei", near: { x: 300, y: 1450 } },
-  { def: "mall", district: "utako", near: { x: 2200, y: 1500 } },
+  { def: "government", district: "threearms", near: { x: 4688, y: 812 } },
+  { def: "government", district: "threearms", near: { x: 4500, y: 1375 } },
+  { def: "monument", district: "threearms", near: { x: 4875, y: 250 } },
+  { def: "mosque", district: "mpape", near: { x: 3812, y: 625 } },
+  { def: "church", district: "karu", near: { x: 5375, y: 1125 } },
+  { def: "school", district: "karu", near: { x: 5750, y: 1875 } },
+  { def: "clinic", district: "mpape", near: { x: 3562, y: 250 } },
+  { def: "school", district: "lokogoma", near: { x: 2062, y: 4125 } },
+  { def: "police", district: "apo", near: { x: 4000, y: 3500 } },
+  { def: "water_tower", district: "lokogoma", near: { x: 1562, y: 4312 } },
+  { def: "substation", district: "deidei", near: { x: 375, y: 1812 } },
+  { def: "mall", district: "utako", near: { x: 2750, y: 1875 } },
 ];
 
 /** What each place you can visit looks like. */
@@ -215,7 +263,7 @@ export function cityLots(): Lot[] {
   if (cache) return cache;
   const lots: Lot[] = [];
   const taken: MapRect[] = [];
-  const roadClear = (r: MapRect) => !ROADS.xs.some((x) => r.x < x + 44 && x - 44 < r.x + r.w) && !ROADS.ys.some((y) => r.y < y + 44 && y - 44 < r.y + r.h);
+  const roadClear = (r: MapRect) => !ROADS.xs.some((x) => r.x < x + reachX(x) + 6 && x - reachX(x) - 6 < r.x + r.w) && !ROADS.ys.some((y) => r.y < y + reachY(y) + 6 && y - reachY(y) - 6 < r.y + r.h);
   const lakeClear = (r: MapRect) => Math.hypot((r.x + r.w / 2 - LAKE.x) / (LAKE.rx + 70 + r.w / 2), (r.y + r.h / 2 - LAKE.y) / (LAKE.ry + 70 + r.h / 2)) > 1;
   const railClear = (r: MapRect) => r.y + r.h < RAIL.y - 26;
   const inDistrict = (r: MapRect, d: (typeof DISTRICTS)[number]) => r.x >= d.x + 12 && r.y >= d.y + 48 && r.x + r.w <= d.x + d.w - 12 && r.y + r.h <= d.y + d.h - 12;
@@ -300,14 +348,14 @@ export function cityLots(): Lot[] {
   }
 
   // Everything else: plots in rows inside every city block (the land between the main roads), zoned in clusters.
-  const spans = (cuts: number[], size: number) => {
-    const edges = [0, ...cuts.flatMap((c) => [c - 44, c + 44]), size];
+  const spans = (cuts: number[], size: number, edge: (c: number) => number) => {
+    const edges = [0, ...cuts.flatMap((c) => [c - edge(c) - 6, c + edge(c) + 6]), size];
     const out: [number, number][] = [];
     for (let i = 0; i < edges.length; i += 2) if (edges[i + 1]! - edges[i]! > 90) out.push([edges[i]!, edges[i + 1]!]);
     return out;
   };
-  for (const [x0, x1] of spans(ROADS.xs, WORLD.width)) {
-    for (const [y0, y1] of spans(ROADS.ys, WORLD.height)) {
+  for (const [x0, x1] of spans(ROADS.xs, WORLD.width, reachX)) {
+    for (const [y0, y1] of spans(ROADS.ys, WORLD.height, reachY)) {
       const cols = Math.floor((x1 - x0 - 8) / CELL.w);
       const rows = Math.floor((y1 - y0 - 8) / CELL.h);
       const ox = x0 + (x1 - x0 - cols * CELL.w) / 2 + GAP.w / 2;

@@ -1,3 +1,4 @@
+import { ROADS, road } from "./city/layout";
 import { injured } from "./health";
 import { life, lifeOf } from "./life";
 import type { GameState } from "./types";
@@ -98,16 +99,8 @@ export function frscStop(s: GameState): string | null {
 
 /** Where FRSC sets up today: different junctions on different days. */
 export function frscSpots(day: number): { x: number; y: number }[] {
-  // Junctions on the big roads: the expressways and the avenues into town.
-  const all = [
-    { x: 1200, y: 1900 },
-    { x: 2700, y: 2000 },
-    { x: 2000, y: 1300 },
-    { x: 3400, y: 1900 },
-    { x: 4100, y: 2000 },
-    { x: 1100, y: 1000 },
-    { x: 2350, y: 2600 },
-    { x: 3050, y: 700 },
-  ];
+  // Junctions where an expressway meets another big road.
+  const big = (axis: "x" | "y", at: number) => road(axis, at).kind !== "street";
+  const all = ROADS.xs.flatMap((x) => ROADS.ys.filter((y) => big("x", x) && big("y", y) && (road("x", x).kind === "expressway" || road("y", y).kind === "expressway")).map((y) => ({ x, y })));
   return [all[day % all.length]!, all[(day + 3) % all.length]!];
 }

@@ -5,7 +5,7 @@ import { blocked, freePoint } from "../systems/citymap";
 import { findPath, type Point } from "../systems/path";
 import { building } from "../systems/city/catalog";
 import { BEAT_MS, ageOn, citizens, crowdIndex, doing, isOut, lookOf, planFor, rng, type Activity, type Citizen } from "../systems/city/citizens";
-import { RAIL, ROADS, lotDoor, type Lot } from "../systems/city/layout";
+import { RAIL, ROADS, laneOffsets, lotDoor, road, type Lot } from "../systems/city/layout";
 import { FLEET } from "../systems/vehicles";
 import type { GameState, MapRect } from "../systems/types";
 import { animateWalk, characterReady, faceVehicle, figure, loadCharacters, pose, vehicle, type Figure, type Person, type Vehicle } from "./art";
@@ -466,8 +466,10 @@ export class CityLife {
     const ny = ROADS.ys.reduce((b, y) => (Math.abs(y - door.y) < Math.abs(b - door.y) ? y : b));
     const axis: "x" | "y" = Math.abs(ny - door.y) <= Math.abs(nx - door.x) ? "x" : "y";
     const dir = Math.random() < 0.5 ? 1 : -1;
-    const lane = dir * 11;
-    const line = (axis === "x" ? ny : nx) + lane;
+    // Pull up in the kerbside lane on the right-hand side of the road.
+    const along = axis === "x" ? road("y", ny) : road("x", nx);
+    const kerbLane = laneOffsets(along).filter((l) => l.dir === dir).sort((a, b) => Math.abs(b.offset) - Math.abs(a.offset))[0]!;
+    const line = along.at + kerbLane.offset;
     const stopAt = axis === "x" ? door.x : door.y;
     // Siren vehicles leave from the station; deliveries come in from off screen.
     const start = siren ? stopAt : stopAt - dir * ((axis === "x" ? view.width : view.height) / 2 + 160);

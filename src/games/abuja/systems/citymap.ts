@@ -4,7 +4,7 @@ import type { MapRect } from "./types";
 // The city's physical layout: roads and the buildings you can't walk through.
 // Built the same way every time, so the map, collisions and task targets agree.
 
-import { LAKE, ROADS, lotSolids } from "./city/layout";
+import { LANE, LAKE, ROADS, lotSolids, road } from "./city/layout";
 
 export { LAKE, ROADS };
 
@@ -134,6 +134,37 @@ export function roadRoute(from: Pt, to: Pt): Pt[] {
     if (q && r && ((q.x === p.x && p.x === r.x) || (q.y === p.y && p.y === r.y))) return false;
     return true;
   });
+}
+
+/**
+ * A road route moved off the centre lines into a lane on the right-hand side,
+ * as traffic keeps right: the inner lane for cars, or the kerbside lane
+ * (`kerb`) for buses and anything that stops at the roadside.
+ */
+export function inLane(route: Pt[], kerb = false): Pt[] {
+  if (route.length < 2) return route;
+  const segs = route.slice(1).map((b, i) => {
+    const a = route[i]!;
+    const horizontal = Math.abs(b.y - a.y) < 0.5;
+    const line = horizontal ? a.y : a.x;
+    const known = horizontal ? ROADS.ys.includes(line) : ROADS.xs.includes(line);
+    const r = known ? road(horizontal ? "y" : "x", line) : null;
+    const off = r ? r.median / 2 + LANE * (kerb ? r.lanes - 0.5 : 0.5) : 0;
+    // The right-hand side of the direction of travel (y grows downwards).
+    const sign = horizontal ? Math.sign(b.x - a.x) || 1 : -(Math.sign(b.y - a.y) || 1);
+    return { horizontal, shifted: line + sign * off };
+  });
+  const out: Pt[] = [];
+  const at = (p: Pt, s: (typeof segs)[number]) => (s.horizontal ? { x: p.x, y: s.shifted } : { x: s.shifted, y: p.y });
+  out.push(at(route[0]!, segs[0]!));
+  for (let i = 1; i < route.length - 1; i++) {
+    const a = segs[i - 1]!;
+    const b = segs[i]!;
+    if (a.horizontal !== b.horizontal) out.push(a.horizontal ? { x: b.shifted, y: a.shifted } : { x: a.shifted, y: b.shifted });
+    else out.push(at(route[i]!, a));
+  }
+  out.push(at(route[route.length - 1]!, segs[segs.length - 1]!));
+  return out;
 }
 
 /** Length of a route in map pixels. */

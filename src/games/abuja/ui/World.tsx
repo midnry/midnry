@@ -2,7 +2,7 @@ import { LoadingScreen } from "./LoadingScreen";
 import { GameLoadingContext } from "./loading-context";
 import { myLooks } from "../systems/painted";
 import { useContext, useEffect, useRef, useState } from "react";
-import { Brain, CarFront, ChevronRight, DoorOpen, Droplet, Hand, Heart, LocateFixed, Map as MapIcon, MapPin, MessageCircle, Minus, Moon, Pause, Play, Plus, Search, Siren, Smartphone, SquareParking, Star, Utensils, Zap } from "lucide-react";
+import { Brain, CarFront, ChevronRight, DoorOpen, Droplet, Hand, Heart, LocateFixed, Map as MapIcon, MapPin, MessageCircle, Minus, Moon, Pause, Play, Plus, Search, Siren, Smartphone, SquareParking, Star, Sunrise, Utensils, Zap } from "lucide-react";
 import type { Game as PhaserGame } from "phaser";
 import { EVENTS, chapter, place } from "../systems/data";
 import {
@@ -19,6 +19,7 @@ import {
   reachBeat,
   freshenUp,
   resolveEvent,
+  skipToMorning,
   skipToNight,
   storyOpen,
   takeOffer,
@@ -349,6 +350,11 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         {!inStory && state.slot < SLOTS.length - 1 ? (
           <MapButton label="Skip to night" onClick={skipToNight}>
             <Moon className="size-5 text-amber-300" fill="currentColor" strokeWidth={2} aria-hidden />
+          </MapButton>
+        ) : null}
+        {!inStory && state.slot >= SLOTS.length - 1 ? (
+          <MapButton label="Sleep till morning" onClick={skipToMorning}>
+            <Sunrise className="size-5 text-amber-300" strokeWidth={2.4} aria-hidden />
           </MapButton>
         ) : null}
       </div>

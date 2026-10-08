@@ -2,7 +2,7 @@ import { GAME_FONT } from "../ui/theme";
 import * as Phaser from "phaser";
 import { ZONE_COLORS } from "../systems/city/catalog";
 import { building } from "../systems/city/catalog";
-import { LAKE, RAIL, ROADS, ROAD_NAMES, type Lot } from "../systems/city/layout";
+import { ALL_ROADS, LAKE, RAIL, ROADS, ROAD_NAMES, SIDEWALK, halfWidth, reach, road, type Lot } from "../systems/city/layout";
 import { WORLD } from "../systems/data";
 import type { MapRect } from "../systems/types";
 import { INK, rand } from "./art";
@@ -114,26 +114,38 @@ export function makeDecorTextures(scene: Phaser.Scene) {
   });
 }
 
-/** Grass medians with palms between the paired roads: Abuja's expressways. */
+/**
+ * The central reservations: a planted grass median with palms down the
+ * expressways, a kerbed concrete strip with shrubs down the avenues. Each
+ * stops short of the junctions so the crossings stay clear.
+ */
 export function drawMedians(scene: Phaser.Scene) {
   const g = scene.add.graphics().setDepth(1.5);
-  const pairs = (list: number[]) => list.flatMap((a, i) => list.slice(i + 1).filter((b) => b - a <= 120).map((b) => [a, b] as const));
   const r = rand(4242);
-  for (const [a, b] of pairs(ROADS.ys)) {
-    const top = a + 37;
-    const h = b - a - 74;
-    if (h < 10) continue;
-    g.fillStyle(0x4f9a37, 1).fillRect(0, top, WORLD.width, h);
-    g.lineStyle(2, 0xd6d0c4, 1).strokeRect(-2, top, WORLD.width + 4, h);
-    for (let x = 30; x < WORLD.width; x += 90) if (ROADS.xs.every((rx) => Math.abs(rx - x) > 70)) scene.add.image(x + r() * 20, top + h / 2 + 4, r() < 0.5 ? "palm" : "bush").setOrigin(0.5, 0.85).setScale(0.55).setDepth(5 + (top + h) / 10000);
-  }
-  for (const [a, b] of pairs(ROADS.xs)) {
-    const left = a + 37;
-    const w = b - a - 74;
-    if (w < 10) continue;
-    g.fillStyle(0x4f9a37, 1).fillRect(left, 0, w, WORLD.height);
-    g.lineStyle(2, 0xd6d0c4, 1).strokeRect(left, -2, w, WORLD.height + 4);
-    for (let y = 40; y < WORLD.height; y += 100) if (ROADS.ys.every((ry) => Math.abs(ry - y) > 70)) scene.add.image(left + w / 2, y + r() * 20, r() < 0.5 ? "palm" : "bush").setOrigin(0.5, 0.85).setScale(0.55).setDepth(5 + y / 10000);
+  for (const rd of ALL_ROADS) {
+    if (!rd.median) continue;
+    const cross = (rd.axis === "x" ? ROADS.ys.map((y) => road("y", y)) : ROADS.xs.map((x) => road("x", x))).sort((m, n) => m.at - n.at);
+    const total = rd.axis === "x" ? WORLD.height : WORLD.width;
+    let from = 0;
+    const stretches: [number, number][] = [];
+    for (const c of cross) {
+      stretches.push([from, c.at - halfWidth(c) - 36]);
+      from = c.at + halfWidth(c) + 36;
+    }
+    stretches.push([from, total]);
+    const grass = rd.kind === "expressway";
+    const m = rd.median;
+    for (const [a, b] of stretches) {
+      if (b - a < 20) continue;
+      const box = rd.axis === "x" ? { x: rd.at - m / 2, y: a, w: m, h: b - a } : { x: a, y: rd.at - m / 2, w: b - a, h: m };
+      g.fillStyle(grass ? 0x4f9a37 : 0xd6d0c4, 1).fillRect(box.x, box.y, box.w, box.h);
+      g.lineStyle(2, grass ? 0xd6d0c4 : 0x9d9585, 1).strokeRect(box.x, box.y, box.w, box.h);
+      for (let t = a + 40; t < b - 20; t += grass ? 110 : 150) {
+        const [px, py] = rd.axis === "x" ? [rd.at, t + r() * 20] : [t + r() * 20, rd.at + 4];
+        const key = grass ? (r() < 0.6 ? "palm" : "bush") : "bush";
+        scene.add.image(px, py, key).setOrigin(0.5, 0.85).setScale(grass ? 0.55 : 0.4).setDepth(5 + py / 10000);
+      }
+    }
   }
 }
 
@@ -148,9 +160,9 @@ export function drawRail(scene: Phaser.Scene) {
   g.lineStyle(2, INK, 0.5).lineBetween(0, y - 17, WORLD.width, y - 17);
   // Level crossings where the roads cross the line.
   g.fillStyle(0x3d3b40, 1);
-  for (const x of ROADS.xs) g.fillRect(x - 24, y - 16, 48, 32);
+  for (const x of ROADS.xs) g.fillRect(x - halfWidth(road("x", x)), y - 16, halfWidth(road("x", x)) * 2, 32);
   g.fillStyle(0xffffff, 0.9);
-  for (const x of ROADS.xs) for (let i = 0; i < 4; i++) g.fillRect(x - 22 + i * 12, y - 20, 6, 3);
+  for (const x of ROADS.xs) for (let t = -halfWidth(road("x", x)) + 2; t < halfWidth(road("x", x)) - 6; t += 12) g.fillRect(x + t, y - 20, 6, 3);
   // Station: a platform and a canopy.
   const s = RAIL.station;
   g.fillStyle(0xd6d3d1, 1).fillRect(s.x - 90, y - 30, 180, 12);
@@ -207,7 +219,8 @@ export function drawStreetFurniture(scene: Phaser.Scene, solids: MapRect[], lots
   const stops: { x: number; y: number }[] = [];
   const r = rand(9090);
   const clearOf = (x: number, y: number, rad: number) => !solids.some((s) => x > s.x - rad && x < s.x + s.w + rad && y > s.y - rad && y < s.y + s.h + rad) && !lots.some((l) => x > l.x - rad && x < l.x + l.w + rad && y > l.y - 20 && y < l.y + l.h + rad);
-  const awayFromJunction = (v: number, list: number[]) => list.every((c) => Math.abs(v - c) > 90);
+  // Clear of the junctions: past the crossing road's pavement and its zebra crossing.
+  const awayFromJunction = (v: number, axis: "x" | "y") => (axis === "x" ? ROADS.xs : ROADS.ys).every((c) => Math.abs(v - c) > reach(road(axis, c)) + 40);
   const put = (key: string, x: number, y: number, scale = 1, solid?: { w: number; h: number }) => {
     if (!clearOf(x, y, 10)) return false;
     scene.add.image(x, y, key).setOrigin(0.5, 0.95).setScale(scale).setDepth(5 + y / 10000);
@@ -219,16 +232,17 @@ export function drawStreetFurniture(scene: Phaser.Scene, solids: MapRect[], lots
   // Along every road, on the sidewalk: a rotation of bus stop, bench, bin and billboard.
   const kinds = ["busstop", "bench", "bin", "billboard", "bench", "sign"] as const;
   for (const x of ROADS.xs) {
+    const h = halfWidth(road("x", x));
     for (let y = 170; y < WORLD.height - 60; y += 230) {
-      if (!awayFromJunction(y, ROADS.ys) || Math.abs(y - RAIL.y) < 60) continue;
+      if (!awayFromJunction(y, "y") || Math.abs(y - RAIL.y) < 60) continue;
       for (const side of [-1, 1] as const) {
         const kind = kinds[k++ % kinds.length]!;
-        const px = x + side * 31;
+        const px = x + side * (h + SIDEWALK / 2);
         if (kind === "bench" && put("bench", px, y, 0.9)) seats.push({ x: px, y: y + 6 });
         if (kind === "bin") put("bin", px, y);
-        if (kind === "busstop" && put("busstop", x + side * 52, y + 10, 0.8, { w: 34, h: 8 })) stops.push({ x: x + side * 31, y: y + 16 });
+        if (kind === "busstop" && put("busstop", x + side * (h + SIDEWALK / 2 + 4), y + 10, 0.8, { w: 34, h: 8 })) stops.push({ x: x + side * (h + 8), y: y + 16 });
         if (kind === "billboard") {
-          const bx = x + side * 60;
+          const bx = x + side * (reach(road("x", x)) + 20);
           if (put(`billboard${ad % ADS.length}`, bx, y, 0.9, { w: 40, h: 8 })) {
             scene.add.text(bx, y - 41, ADS[ad % ADS.length]!.text, { fontFamily: GAME_FONT, fontSize: "7px", fontStyle: "bold", color: "#ffffff" }).setOrigin(0.5).setResolution(2).setDepth(5 + y / 10000 + 0.0001);
             ad += 1;
@@ -238,14 +252,15 @@ export function drawStreetFurniture(scene: Phaser.Scene, solids: MapRect[], lots
     }
   }
   for (const y of ROADS.ys) {
+    const h = halfWidth(road("y", y));
     for (let x = 140; x < WORLD.width - 60; x += 260) {
-      if (!awayFromJunction(x, ROADS.xs)) continue;
+      if (!awayFromJunction(x, "x")) continue;
       for (const side of [-1, 1] as const) {
         const kind = kinds[k++ % kinds.length]!;
-        const py = y + side * 31 + (side > 0 ? 8 : 0);
+        const py = y + side * (h + SIDEWALK / 2) + (side > 0 ? 8 : 0);
         if (kind === "bench" && put("bench", x, py, 0.9)) seats.push({ x, y: py + 6 });
         if (kind === "bin") put("bin", x + 20, py);
-        if (kind === "busstop" && put("busstop", x, y + side * 50 + (side > 0 ? 16 : 0), 0.8, { w: 34, h: 8 })) stops.push({ x: x + 24, y: y + side * 31 + (side > 0 ? 14 : 0) });
+        if (kind === "busstop" && put("busstop", x, y + side * (h + SIDEWALK / 2 + 2) + (side > 0 ? 16 : 0), 0.8, { w: 34, h: 8 })) stops.push({ x: x + 24, y: y + side * (h + 8) + (side > 0 ? 14 : 0) });
       }
     }
   }
@@ -256,8 +271,8 @@ export function drawStreetFurniture(scene: Phaser.Scene, solids: MapRect[], lots
     for (const y of ROADS.ys) {
       const name = ni++ % 2 ? ROAD_NAMES[`x${x}`] : ROAD_NAMES[`y${y}`];
       if (!name) continue;
-      const sx = x - 36;
-      const sy = y - 36;
+      const sx = x - reach(road("x", x)) + 8;
+      const sy = y - reach(road("y", y)) + 8;
       if (!clearOf(sx, sy, 4)) continue;
       scene.add.image(sx, sy, "streetsign").setOrigin(0.5, 1).setScale(1.25, 1).setDepth(5 + sy / 10000);
       scene.add.text(sx, sy - 26, name, { fontFamily: GAME_FONT, fontSize: "6.5px", fontStyle: "bold", color: "#ffffff" }).setOrigin(0.5).setResolution(3).setDepth(5 + sy / 10000 + 0.0001);

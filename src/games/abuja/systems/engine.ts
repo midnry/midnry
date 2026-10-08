@@ -227,6 +227,16 @@ export function skipToNight() {
   });
 }
 
+/** At night: head home and sleep through to the next morning. */
+export function skipToMorning() {
+  update((s) => {
+    if (s.chapter || s.ending || s.event) return;
+    if (s.slot < SLOTS.length - 1) return toast(s, "It's not night yet. Skip to night first, or keep hustling.");
+    toast(s, "You head home and sleep. ☀️ Good morning, Abuja.");
+    sleep(s);
+  });
+}
+
 /** New outfit or hairstyle from the wardrobe. */
 export function changeLooks(look: Look, painted?: string) {
   update((s) => {
@@ -1126,7 +1136,7 @@ function openSpots(s: GameState) {
 
 /** Seconds allowed for a leg: a fair walk (or ride) by road, plus a little slack. */
 function stepLimit(from: { x: number; y: number }, to: { x: number; y: number }): number {
-  return Math.round((Math.abs(to.x - from.x) + Math.abs(to.y - from.y)) / 95 + 15);
+  return Math.round((Math.abs(to.x - from.x) + Math.abs(to.y - from.y)) / 119 + 15);
 }
 
 function startTask(s: GameState, kind: "delivery" | "hawk" | "ride", app?: "zoom" | "ownprice") {
@@ -1136,7 +1146,7 @@ function startTask(s: GameState, kind: "delivery" | "hawk" | "ride", app?: "zoom
     const hub = place("garki_hub")!;
     const pickup = { ...freePoint(hub.x, hub.y + 95, citySolids()), label: "Garki Delivery Hub" };
     // Drops around the hub's side of town, not across the whole city.
-    const nearHub = spots.filter((sp) => sp.label !== "Garki Delivery Hub" && Math.hypot(sp.x - pickup.x, sp.y - pickup.y) < 1500);
+    const nearHub = spots.filter((sp) => sp.label !== "Garki Delivery Hub" && Math.hypot(sp.x - pickup.x, sp.y - pickup.y) < 1875);
     for (const drop of (nearHub.length >= 3 ? nearHub : spots.filter((sp) => sp.label !== "Garki Delivery Hub")).slice(0, 3)) {
       steps.push({ ...pickup, kind: "pickup" }, { ...drop, label: `Deliver to ${drop.label}`, kind: "dropoff" });
     }

@@ -2,11 +2,13 @@ import { DISTRICTS } from "./data";
 import { citySolids, freePoint } from "./citymap";
 import { building } from "./city/catalog";
 import { cityLots } from "./city/layout";
-import oldLots from "../data/oldlots-v1.json";
+import oldLotsV1 from "../data/oldlots-v1.json";
+import oldLotsV2 from "../data/oldlots-v2.json";
 import type { GameState } from "./types";
 
-// Saves from before the city was redrawn to match Abuja (map version 1): move
-// the player, and any property they own, to the same spot in the new city.
+// Saves from older maps: move the player, and any property they own, to the
+// same spot in today's city. Version 1 was the first small map; version 2 the
+// Abuja layout before the roads were widened and the city grew by a quarter.
 
 /** District rectangles on the old map. */
 const OLD: Record<string, [number, number, number, number]> = {
@@ -22,23 +24,34 @@ const OLD: Record<string, [number, number, number, number]> = {
   nyanya: [1500, 1100, 900, 700],
 };
 
-export const MAP_VERSION = 2;
+export const MAP_VERSION = 3;
 
-/** A point on the old map, at the same place within its district on the new one. */
-function movePoint(x: number, y: number): { x: number; y: number; district: string } {
+/** Version 2 to 3: everything a quarter further out. */
+const GROW = 1.25;
+
+/** A point on the first map, at the same place within its district on the version 2 map. */
+function fromV1(x: number, y: number): { x: number; y: number } {
   const id = Object.keys(OLD).find((k) => {
     const [ox, oy, ow, oh] = OLD[k]!;
     return x >= ox && x < ox + ow && y >= oy && y < oy + oh;
   }) ?? "wuse";
   const [ox, oy, ow, oh] = OLD[id]!;
+  // District rectangles on the version 2 map (today's, shrunk back).
   const d = DISTRICTS.find((n) => n.id === id)!;
-  return { x: d.x + ((x - ox) / ow) * d.w, y: d.y + ((y - oy) / oh) * d.h, district: id };
+  return { x: (d.x + ((x - ox) / ow) * d.w) / GROW, y: (d.y + ((y - oy) / oh) * d.h) / GROW };
+}
+
+/** A point on a map of the given version, on today's map. */
+function movePoint(x: number, y: number, version: number): { x: number; y: number } {
+  const v2 = version <= 1 ? fromV1(x, y) : { x, y };
+  return { x: v2.x * GROW, y: v2.y * GROW };
 }
 
 export function migrateSave(s: GameState): GameState {
-  if ((s.mapVersion ?? 1) >= MAP_VERSION) return s;
+  const version = s.mapVersion ?? 1;
+  if (version >= MAP_VERSION) return s;
   if (s.pos) {
-    const p = movePoint(s.pos.x, s.pos.y);
+    const p = movePoint(s.pos.x, s.pos.y, version);
     s.pos = freePoint(Math.round(p.x), Math.round(p.y), citySolids());
   }
   // Property: the building of the same kind nearest to where it stood.
@@ -51,10 +64,12 @@ export function migrateSave(s: GameState): GameState {
         moved[id] = own;
         continue;
       }
-      const old = (oldLots as unknown as Record<string, [string, string, number, number]>)[id];
+      const old = ((version <= 1 ? oldLotsV1 : oldLotsV2) as unknown as Record<string, [string, string, number, number]>)[id];
       if (!old) continue;
-      const [def, district, cx, cy] = old;
-      const at = movePoint(cx, cy);
+      const [def, oldDistrict, cx, cy] = old;
+      const at = movePoint(cx, cy, version);
+      // The district the spot falls in now; the old one if it lands between districts.
+      const district = DISTRICTS.find((d) => at.x >= d.x && at.x < d.x + d.w && at.y >= d.y && at.y < d.y + d.h)?.id ?? oldDistrict;
       const zone = building(def)?.zone;
       const pick = (ok: (l: (typeof lots)[number]) => boolean) =>
         lots.filter((l) => !l.place && !taken.has(l.id) && ok(l)).sort((a, b) => Math.hypot(a.x - at.x, a.y - at.y) - Math.hypot(b.x - at.x, b.y - at.y))[0];
