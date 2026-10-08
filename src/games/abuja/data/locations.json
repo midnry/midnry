@@ -131,6 +131,9 @@
             {
               "npc": "bolaji",
               "rel": 40
+            },
+            {
+              "flag": "cap_invited"
             }
           ]
         },
@@ -275,6 +278,9 @@
             {
               "stat": "network",
               "gte": 80
+            },
+            {
+              "flag": "guzape_pass"
             }
           ]
         },

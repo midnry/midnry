@@ -103,6 +103,8 @@ export type Effect = {
   stat?: StatKey;
   skill?: SkillKey;
   add?: number;
+  /** Money handed over in cash: it never goes near the bank, so it can't be frozen. */
+  cash?: boolean;
   flag?: string;
   set?: boolean | number | string;
   npc?: string;
@@ -141,6 +143,8 @@ export type Effect = {
   remember?: { what: string; say?: string; tone: Tone; weight: 1 | 2 | 3 };
   /** Something the person in `npc` lets go of (by its `what`). */
   forget?: string;
+  /** Schedule a story scene for the morning `days` from now (1 = tomorrow). */
+  story?: { event: string; days?: number };
   /** File a story in the Abuja Daily. */
   news?: { tag: NewsTag; headline: string; body: string; icon?: string; you?: boolean };
 };
@@ -175,6 +179,8 @@ export type PersonDef = {
   /** A story character: talking raises this relationship a little. */
   npc?: string;
   if?: Cond;
+  /** Only there for a story: keeps no space in the city layout, so adding one never moves buildings. */
+  story?: boolean;
   lines: string[];
   talks?: { if?: Cond; text: string; choices: Choice[] }[];
 };

@@ -66,5 +66,29 @@
     "class": "relative",
     "color": "#64748b",
     "bio": "Appears only when there is money, a burial, or land. Has never once brought a gift."
+  },
+  {
+    "id": "danjuma",
+    "name": "Senator Danjuma-Adeyemi",
+    "role": "Bolaji's father",
+    "class": "nepo",
+    "color": "#ca8a04",
+    "bio": "(Fictional) Senator, landlord of half of Maitama, builder of Guzape Hills. Never raises his voice. Never has to."
+  },
+  {
+    "id": "halima",
+    "name": "Halima Bello",
+    "role": "Journalist, Abuja Daily",
+    "class": "ordinary",
+    "color": "#0ea5e9",
+    "bio": "Investigative reporter with three phones and no fear. Has been threatened by better-connected people than you."
+  },
+  {
+    "id": "yakubu",
+    "name": "Baba Yakubu",
+    "role": "Garamajiji village elder",
+    "class": "lapo",
+    "color": "#a16207",
+    "bio": "His family farmed in Guzape long before Abuja was a capital. Now he sleeps in a church hall and waits."
   }
 ]

@@ -13,6 +13,7 @@ import { DriveScene } from "./DriveScene";
 import { isDirty } from "../systems/life";
 import { injured, type HitBy } from "../systems/health";
 import { CAR_COLOR, frscSpots, isDriving } from "../systems/drive";
+import { storyGoal } from "../systems/story";
 import { bump, caughtInRain, checkpoint, frsc, leftRichArea, shutOut, trespass, welcome, fuel, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
 import { check } from "../systems/rules";
 import { bus, getState, input, subscribe } from "../systems/store";
@@ -355,7 +356,7 @@ export class WorldScene extends Phaser.Scene {
         const state = getState();
         if (!state) return;
         const step = this.mapId === "city" ? state.task?.steps[state.task.index] : undefined;
-        const goal = step ?? currentBeat(state)?.spot;
+        const goal = step ?? currentBeat(state)?.spot ?? this.storySpot(state);
         if (goal) this.walkTo(goal);
       }),
     );
@@ -1136,8 +1137,10 @@ export class WorldScene extends Phaser.Scene {
     }
     this.grime?.setVisible(isDirty(state));
     const beat = currentBeat(state);
-    this.beatMarker.setVisible(Boolean(beat));
-    if (beat) this.beatMarker.setPosition(beat.spot.x, beat.spot.y);
+    // People the story sends you to wear their own name tag; the beacon would hide them.
+    const marked = beat?.spot ?? (this.mapId === "city" && !state.task && !storyGoal(state)?.person ? storyGoal(state)?.spot : undefined);
+    this.beatMarker.setVisible(Boolean(marked));
+    if (marked) this.beatMarker.setPosition(marked.x, marked.y);
     const step = state.task?.steps[state.task.index];
     this.taskMarker.setVisible(Boolean(step) && this.mapId === "city");
     if (step) this.taskMarker.setPosition(step.x, step.y);
@@ -1377,7 +1380,8 @@ export class WorldScene extends Phaser.Scene {
     let best: Interactable | null = null;
     let bestDist = NEAR;
     for (const o of options) {
-      const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, o.x, o.y) - (o.kind === "beat" ? 30 : 0);
+      // Story spots and people win over a building right behind them.
+      const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, o.x, o.y) - (o.kind === "beat" ? 30 : o.kind === "person" ? 25 : 0);
       if (dist < bestDist) {
         best = o;
         bestDist = dist;
@@ -1456,11 +1460,18 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** Where The Capital wants you next, on the city map, when no job or chapter is pointing elsewhere. */
+  private storySpot(state: GameState) {
+    if (this.mapId !== "city" || state.task) return undefined;
+    return storyGoal(state)?.spot;
+  }
+
   private pointArrow() {
     const state = getState()!;
     const beat = currentBeat(state);
     const step = this.mapId === "city" ? state.task?.steps[state.task.index] : undefined;
-    const goal = step ?? beat?.spot;
+    const story = step || beat ? undefined : this.storySpot(state);
+    const goal = step ?? beat?.spot ?? story;
     if (!goal) {
       this.arrow.setVisible(false);
       return;
@@ -1471,7 +1482,7 @@ export class WorldScene extends Phaser.Scene {
     const angle = Math.atan2(dy, dx);
     this.arrow.setPosition(this.player.x + Math.cos(angle) * 64, this.player.y + Math.sin(angle) * 64);
     this.arrow.setRotation(angle + Math.PI / 2);
-    this.arrow.setFillStyle(step ? 0x38bdf8 : 0x70d3ad);
+    this.arrow.setFillStyle(step ? 0x38bdf8 : story ? 0xfbbf24 : 0x70d3ad);
   }
 
   // ── Rides ─────────────────────────────────────────────────────────────────

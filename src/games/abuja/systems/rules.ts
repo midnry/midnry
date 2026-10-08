@@ -1,6 +1,6 @@
 import { NPCS, POSTING_STATES } from "./data";
 import { drink, feed, offense, wash } from "./life";
-import { answerEfcc, bankCredit, frozenAmount } from "./bank";
+import { answerEfcc, bankCredit, frozenAmount, withoutBankCheck } from "./bank";
 import { bizWorth } from "./business";
 import { equity, shock } from "./market";
 import { learn } from "./cooking/cook";
@@ -106,7 +106,10 @@ export function apply(state: GameState, effects: Effect[] | undefined, toasts: s
       apply(state, Math.random() < effect.chance ? effect.then : effect.else, toasts);
       continue;
     }
-    if (effect.stat) addStat(state, effect.stat, effect.add ?? 0);
+    if (effect.stat) {
+      if (effect.cash) withoutBankCheck(() => addStat(state, effect.stat!, effect.add ?? 0));
+      else addStat(state, effect.stat, effect.add ?? 0);
+    }
     if (effect.skill) addSkill(state, effect.skill, effect.add ?? 0);
     if (effect.flag) state.flags[effect.flag] = effect.set ?? true;
     if (effect.npc) {
@@ -116,6 +119,10 @@ export function apply(state: GameState, effects: Effect[] | undefined, toasts: s
     }
     if (effect.npc && effect.remember) remember(state, effect.npc, effect.remember);
     if (effect.npc && effect.forget) forget(state, effect.npc, effect.forget);
+    if (effect.story) {
+      state.flags.story_next = effect.story.event;
+      state.flags.story_day = state.day + (effect.story.days ?? 1);
+    }
     if (effect.news) report(state, { ...effect.news, headline: fill(state, effect.news.headline), body: fill(state, effect.news.body) });
     if (effect.cert) state.certs[effect.cert] = true;
     if (effect.asset && !state.assets.includes(effect.asset)) state.assets.push(effect.asset);

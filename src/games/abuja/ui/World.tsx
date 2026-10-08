@@ -28,6 +28,7 @@ import {
   memoryKey,
 } from "../systems/engine";
 import { onTheirMind } from "../systems/memory";
+import { ACT_ONE, storyGoal } from "../systems/story";
 import { hasCar, isDriving } from "../systems/drive";
 import { blocked } from "../systems/negotiate/core";
 import { deal as dealDef } from "../systems/negotiate/deals";
@@ -288,6 +289,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
 
   const story = inStory && storyOpen(state);
   const beat = currentBeat(state);
+  const goal = !inStory && !state.task ? storyGoal(state) : null;
   const here = near && near.kind === "place" ? place(near.id) : undefined;
   const panelOpen = Boolean(here && open === here.id);
   const showEnter = near && !lotOpen && !isLoading && !exploring && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
@@ -314,6 +316,24 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
               Go to <span className="text-sky-300">{beat.spot.label}</span>
             </span>
             <span className="block text-[11px] font-semibold text-slate-400">Tap to walk there</span>
+          </span>
+        </button>
+      ) : null}
+
+      {goal && !beat && !inside && !state.event ? (
+        <button
+          type="button"
+          onClick={() => bus.emit("goto", null)}
+          className={`${glass} absolute top-24 left-1/2 z-10 flex w-max max-w-[min(calc(100vw-8.5rem),26rem)] -translate-x-1/2 items-center gap-2.5 rounded-2xl py-2 pr-4 pl-2.5 text-left text-sm hover:bg-[#1e2740]/90 sm:top-[5.5rem]`}
+          style={{ fontFamily: GAME_FONT }}
+          aria-label={`${ACT_ONE}: ${goal.text}. Walk there`}
+        >
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-amber-400 text-slate-950 shadow-[inset_0_-2px_0_rgba(0,0,0,0.2)]">
+            <MapPin className="size-[18px]" strokeWidth={2.6} aria-hidden />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-[11px] font-bold tracking-wide text-amber-300 uppercase">{ACT_ONE}</span>
+            <span className="block font-bold text-pretty">{goal.text}</span>
           </span>
         </button>
       ) : null}

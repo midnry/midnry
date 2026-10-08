@@ -1342,5 +1342,548 @@
         ]
       }
     ]
+  },
+  {
+    "id": "cap_invite",
+    "weight": 0,
+    "title": "The Capital",
+    "text": "Your phone buzzes before you're properly awake. Bolaji: \"My dad is hosting people at the house in Maitama. Big men, bigger money. Come through, I've put your name at the gate. Abeg don't wear slippers 😂\"",
+    "choices": [
+      {
+        "text": "\"I'll be there\"",
+        "effects": [
+          {
+            "flag": "cap_invited",
+            "set": true
+          },
+          {
+            "npc": "bolaji",
+            "rel": 3
+          }
+        ],
+        "result": "Your name is on the gate list at the Danjuma-Adeyemi mansion in Maitama. Estate security will let you through."
+      },
+      {
+        "text": "\"Not really my crowd…\"",
+        "effects": [
+          {
+            "flag": "cap_invited",
+            "set": true
+          },
+          {
+            "npc": "bolaji",
+            "rel": -2
+          }
+        ],
+        "result": "\"Ten minutes. Just come and eat small chops,\" he replies. Your name is on the gate list anyway."
+      }
+    ]
+  },
+  {
+    "id": "cap_senator",
+    "weight": 0,
+    "title": "Senator Danjuma-Adeyemi",
+    "text": "The Senator doesn't stand up. Rings on four fingers, agbada the colour of money. \"So you're the one who knows the street. Good. I'm building Guzape Hills: two hundred luxury homes. Some villagers from Garamajiji are making noise about land that was never theirs. I need a young person they'll trust to calm things down. Community liaison. ₦250,000 a week, cash.\"",
+    "choices": [
+      {
+        "text": "Take the job",
+        "effects": [
+          {
+            "flag": "cap_met_senator",
+            "set": true
+          },
+          {
+            "flag": "cap_liaison",
+            "set": true
+          },
+          {
+            "flag": "guzape_pass",
+            "set": true
+          },
+          {
+            "stat": "money",
+            "add": 250000,
+            "cash": true
+          },
+          {
+            "npc": "danjuma",
+            "rel": 10,
+            "remember": {
+              "what": "You took their job at Guzape Hills",
+              "tone": "story",
+              "weight": 2,
+              "say": "\"My liaison! How are my villagers? Calm, I hope.\""
+            }
+          },
+          {
+            "story": {
+              "event": "cap_halima",
+              "days": 2
+            }
+          }
+        ],
+        "result": "He smiles for the first time. An aide hands you an envelope and a lanyard: GUZAPE HILLS · COMMUNITY LIAISON. ₦250,000, counted. Security at Guzape will wave you through now."
+      },
+      {
+        "text": "\"Let me think about it, sir\"",
+        "effects": [
+          {
+            "flag": "cap_met_senator",
+            "set": true
+          },
+          {
+            "npc": "danjuma",
+            "rel": 0
+          },
+          {
+            "story": {
+              "event": "cap_halima",
+              "days": 2
+            }
+          }
+        ],
+        "result": "\"Don't think too long. Opportunity is like NEPA light: it comes, it goes.\" He turns back to a man in a fila who has been waiting to laugh at his jokes."
+      },
+      {
+        "text": "\"Bulldozing a village isn't my thing\"",
+        "effects": [
+          {
+            "flag": "cap_met_senator",
+            "set": true
+          },
+          {
+            "flag": "cap_refused",
+            "set": true
+          },
+          {
+            "stat": "reputation",
+            "add": 2
+          },
+          {
+            "npc": "danjuma",
+            "rel": -10,
+            "remember": {
+              "what": "You turned down their offer to their face",
+              "tone": "hurt",
+              "weight": 2,
+              "say": "\"Ah. The principled one. Principles don't pay rent in Abuja, you know.\""
+            }
+          },
+          {
+            "story": {
+              "event": "cap_halima",
+              "days": 2
+            }
+          }
+        ],
+        "result": "The room goes quiet. Bolaji laughs too loudly. The Senator just looks at you, the way you'd look at a pothole you'll deal with later."
+      }
+    ]
+  },
+  {
+    "id": "cap_halima",
+    "weight": 0,
+    "title": "Unknown number",
+    "text": "\"Good morning. My name is Halima Bello, I write for Abuja Daily. You were at the Danjuma house on Saturday. Last month, bulldozers flattened Garamajiji village to make way for Guzape Hills. Forty-eight hours' notice. The elders say the compensation never came, and the workers say the concrete is mostly sand. I need someone who can get close. Can we meet at Jabi Lake Mall?\"",
+    "choices": [
+      {
+        "text": "\"I'll meet you\"",
+        "effects": [
+          {
+            "flag": "cap_halima",
+            "set": true
+          },
+          {
+            "flag": "cap_meet",
+            "set": true
+          },
+          {
+            "npc": "halima",
+            "rel": 5
+          }
+        ],
+        "result": "\"Afternoons, by the suya man. I'll be the one with three phones.\""
+      },
+      {
+        "text": "Block the number",
+        "effects": [
+          {
+            "flag": "cap_halima",
+            "set": true
+          },
+          {
+            "flag": "cap_blocked",
+            "set": true
+          },
+          {
+            "npc": "halima",
+            "rel": -5
+          },
+          {
+            "story": {
+              "event": "cap_quiet",
+              "days": 3
+            }
+          }
+        ],
+        "result": "Not your wahala. You block her and go about your day. The name Garamajiji sticks in your head anyway."
+      }
+    ]
+  },
+  {
+    "id": "cap_choice",
+    "weight": 0,
+    "title": "What you know",
+    "text": "Twenty photos and an old man's story sit on your phone. Halima wants them. The Senator would pay a lot to make them disappear. And Bolaji… Bolaji has no idea what his father is building on top of a village.",
+    "choices": [
+      {
+        "text": "Send everything to Halima",
+        "if": {
+          "notFlag": "cap_blocked"
+        },
+        "lockedText": "You blocked Halima's number",
+        "effects": [
+          {
+            "flag": "cap_truth",
+            "set": true
+          },
+          {
+            "stat": "reputation",
+            "add": 8
+          },
+          {
+            "stat": "heat",
+            "add": 10
+          },
+          {
+            "stat": "stress",
+            "add": 6
+          },
+          {
+            "npc": "halima",
+            "rel": 20,
+            "remember": {
+              "what": "You gave her the Guzape Hills story",
+              "tone": "warm",
+              "weight": 3,
+              "say": "\"The Guzape story is still the most-read thing we've ever published. I owe you.\""
+            }
+          },
+          {
+            "npc": "yakubu",
+            "rel": 20,
+            "remember": {
+              "what": "You told the world what happened to Garamajiji",
+              "tone": "warm",
+              "weight": 3,
+              "say": "\"My grandchildren saw our village in the newspaper. Thank you, my child.\""
+            }
+          },
+          {
+            "npc": "danjuma",
+            "rel": -40,
+            "remember": {
+              "what": "They suspect you leaked the Guzape photos",
+              "tone": "hurt",
+              "weight": 3,
+              "say": "\"I know it was you. I don't need proof. In this city, I am the proof.\""
+            }
+          },
+          {
+            "npc": "bolaji",
+            "rel": -20,
+            "remember": {
+              "what": "Their father's scandal came from your phone",
+              "tone": "hurt",
+              "weight": 3,
+              "say": "\"You could have come to me first. You know that, right?\""
+            }
+          },
+          {
+            "news": {
+              "tag": "Politics",
+              "headline": "Guzape Hills: a village bulldozed, foundations 'mostly sand'",
+              "body": "An Abuja Daily investigation by Halima Bello reveals that Garamajiji families were evicted with 48 hours' notice for Senator Danjuma-Adeyemi's luxury estate, and that photos from the site show crumbling concrete. The Senator's office calls the story 'mischief'.",
+              "icon": "🗞️",
+              "you": true
+            }
+          },
+          {
+            "flag": "cap_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act One: Guzape Hills."
+          }
+        ],
+        "result": "The story runs the next morning. By noon it's trending. By evening, a black jeep is parked across from your house for a very long time. — End of Act One."
+      },
+      {
+        "text": "Sell the photos to the Senator (₦1,500,000)",
+        "effects": [
+          {
+            "flag": "cap_sold",
+            "set": true
+          },
+          {
+            "stat": "money",
+            "add": 1500000,
+            "cash": true
+          },
+          {
+            "stat": "stress",
+            "add": 4
+          },
+          {
+            "npc": "danjuma",
+            "rel": 25,
+            "remember": {
+              "what": "They paid you to bury the Guzape photos",
+              "tone": "debt",
+              "weight": 3,
+              "say": "\"Discretion is a rare gift. The Senator remembers his friends… and what they know.\""
+            }
+          },
+          {
+            "npc": "halima",
+            "rel": -25,
+            "remember": {
+              "what": "You sold out the Guzape story",
+              "tone": "hurt",
+              "weight": 3,
+              "say": "\"I hope the money was worth it. Those families are still sleeping in a church.\""
+            }
+          },
+          {
+            "npc": "yakubu",
+            "rel": -20,
+            "remember": {
+              "what": "You took their story to the Senator",
+              "tone": "hurt",
+              "weight": 3
+            }
+          },
+          {
+            "news": {
+              "tag": "Business",
+              "headline": "Danjuma Crest: Guzape Hills 'fully compliant'",
+              "body": "The developer of the Guzape Hills estate says all approvals are in place and compensation was paid 'in full'. Residents of Garamajiji could not be reached for comment.",
+              "icon": "🏗️"
+            }
+          },
+          {
+            "flag": "cap_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act One: Guzape Hills."
+          }
+        ],
+        "result": "The Senator's aide counts the money twice. \"The Senator appreciates discretion. He'll remember this.\" So will you. — End of Act One."
+      },
+      {
+        "text": "Show Bolaji first",
+        "if": {
+          "npc": "bolaji",
+          "rel": 40
+        },
+        "lockedText": "You're not close enough to Bolaji",
+        "effects": [
+          {
+            "flag": "cap_bolaji",
+            "set": true
+          },
+          {
+            "stat": "reputation",
+            "add": 4
+          },
+          {
+            "npc": "bolaji",
+            "rel": 15,
+            "remember": {
+              "what": "You came to them first about their father",
+              "tone": "warm",
+              "weight": 3,
+              "say": "\"You came to me first about my father. Nobody does that for me. They just want something.\""
+            }
+          },
+          {
+            "npc": "danjuma",
+            "rel": -10,
+            "remember": {
+              "what": "You turned their son against the Guzape deal",
+              "tone": "hurt",
+              "weight": 3,
+              "say": "\"My son has started asking questions at dinner. I wonder who taught him.\""
+            }
+          },
+          {
+            "npc": "yakubu",
+            "rel": 10,
+            "remember": {
+              "what": "Compensation finally came, thanks to you",
+              "tone": "warm",
+              "weight": 3,
+              "say": "\"The cheque was small, but it came. They say a young person pushed for it.\""
+            }
+          },
+          {
+            "news": {
+              "tag": "Politics",
+              "headline": "Senator promises 'fresh review' of Guzape compensation",
+              "body": "In a surprise statement, Senator Danjuma-Adeyemi says Garamajiji families will receive 'additional support'. His son, Bolaji, was seen at the site this week.",
+              "icon": "🏛️"
+            }
+          },
+          {
+            "flag": "cap_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act One: Guzape Hills."
+          }
+        ],
+        "result": "Bolaji goes very quiet scrolling the photos. \"I'll talk to him.\" Two days later, Garamajiji families get their first compensation cheques. Small, late, real. The concrete is still sand. — End of Act One."
+      }
+    ]
+  },
+  {
+    "id": "cap_liaison_done",
+    "weight": 0,
+    "title": "The Senator is pleased",
+    "text": "An aide calls. \"The Senator says Garamajiji has gone quiet. Good work. There's more where that came from: he has a project in Lugbe, a road contract in Kubwa… He needs people who know how things work.\"",
+    "choices": [
+      {
+        "text": "\"Tell him I'm available\"",
+        "effects": [
+          {
+            "flag": "cap_senator_man",
+            "set": true
+          },
+          {
+            "stat": "money",
+            "add": 250000,
+            "cash": true
+          },
+          {
+            "stat": "reputation",
+            "add": -3
+          },
+          {
+            "npc": "danjuma",
+            "rel": 15,
+            "remember": {
+              "what": "You did their dirty work in Guzape",
+              "tone": "story",
+              "weight": 3,
+              "say": "\"My most reliable young person! Come, come.\""
+            }
+          },
+          {
+            "news": {
+              "tag": "City",
+              "headline": "Garamajiji villagers accept relocation package",
+              "body": "Families displaced by the Guzape Hills estate have accepted ₦50,000 each to relocate, the developer says. 'A young liaison made it happen,' a spokesperson added.",
+              "icon": "🏗️"
+            }
+          },
+          {
+            "flag": "cap_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act One: Guzape Hills."
+          }
+        ],
+        "result": "Another envelope. You're on the inside now. — End of Act One."
+      },
+      {
+        "text": "\"I think I'm done with this, sir\"",
+        "effects": [
+          {
+            "flag": "cap_quit_senator",
+            "set": true
+          },
+          {
+            "stat": "stress",
+            "add": -4
+          },
+          {
+            "npc": "danjuma",
+            "rel": -5
+          },
+          {
+            "flag": "cap_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act One: Guzape Hills."
+          }
+        ],
+        "result": "A long pause. \"As you like.\" The line goes dead. You keep the money. You keep the memory of Baba Yakubu's face, too. — End of Act One."
+      }
+    ]
+  },
+  {
+    "id": "cap_quiet",
+    "weight": 0,
+    "title": "Garamajiji",
+    "text": "Tunde sends you a video: old men and women standing in front of a bulldozer in Guzape, holding up a hand-painted sign. GARAMAJIJI IS OUR HOME. \"Did you see this? Na wa for this city.\"",
+    "choices": [
+      {
+        "text": "\"It's not our fight\"",
+        "effects": [
+          {
+            "npc": "tunde",
+            "rel": -2
+          },
+          {
+            "news": {
+              "tag": "City",
+              "headline": "Garamajiji villagers protest at Guzape Hills site",
+              "body": "Dozens of displaced residents blocked bulldozers on Tuesday. Police dispersed the crowd. The developer, linked to Senator Danjuma-Adeyemi, did not respond.",
+              "icon": "✊"
+            }
+          },
+          {
+            "flag": "cap_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act One: Guzape Hills."
+          }
+        ],
+        "result": "Tunde sends back a single 💔. You stayed out of it. In Abuja, that's a choice too. — End of Act One."
+      },
+      {
+        "text": "Share the video",
+        "effects": [
+          {
+            "stat": "reputation",
+            "add": 2
+          },
+          {
+            "npc": "tunde",
+            "rel": 3
+          },
+          {
+            "news": {
+              "tag": "City",
+              "headline": "Garamajiji villagers protest at Guzape Hills site",
+              "body": "Dozens of displaced residents blocked bulldozers on Tuesday. A video of the standoff has been shared thousands of times.",
+              "icon": "✊"
+            }
+          },
+          {
+            "flag": "cap_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act One: Guzape Hills."
+          }
+        ],
+        "result": "Forty retweets and a lot of angry emojis. It isn't much. It isn't nothing. — End of Act One."
+      }
+    ]
   }
 ]

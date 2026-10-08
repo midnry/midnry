@@ -275,7 +275,7 @@ export function cityLots(): Lot[] {
   ]);
   // People who stand by a place or a spot in the city keep a little space.
   for (const person of PEOPLE) {
-    if (person.map !== "city") continue;
+    if (person.map !== "city" || person.story) continue;
     const at = person.place ? PLACES.find((pl) => pl.id === person.place) : undefined;
     const px = at ? at.x + (person.dx ?? 0) : person.x;
     const py = at ? at.y + (person.dy ?? 40) : person.y;

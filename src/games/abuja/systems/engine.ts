@@ -59,6 +59,7 @@ import {
 } from "./romance";
 import type { Choice, EndingId, GameState, PersonDef, Scene, TaskStep } from "./types";
 import { report } from "./news";
+import { storyEvent } from "./story";
 import { fadeMemories, forget, memoriesOf, recalled, remember, sinceWhen } from "./memory";
 
 // ── Story ────────────────────────────────────────────────────────────────────
@@ -721,6 +722,11 @@ function weeklyBills(s: GameState) {
   // Food is now bought meal by meal; this is transport and data.
   const living = 3000 + 1500;
   addStat(s, "money", -(rent + living));
+  // The Senator's envelope, every week you're still his liaison.
+  if (s.flags.cap_liaison && !s.flags.cap_quit_senator && !s.flags.cap_truth && !s.flags.cap_bolaji) {
+    withoutBankCheck(() => addStat(s, "money", 250000));
+    toast(s, "An aide drops off the Senator's envelope: ₦250,000, cash.");
+  }
   const lines = [`Weekly bills: ${prepaid ? "rent already paid ahead" : `rent ${naira(rent)}`}, transport and data ${naira(living)}.`];
   if (neg?.staff) {
     if (s.stats.money >= neg.staff.salary) {
@@ -790,6 +796,7 @@ function neglect(s: GameState) {
 
 function pickEvent(s: GameState) {
   if (s.event || s.ending) return;
+  if (storyEvent(s)) return;
   if (s.stats.heat >= 100) {
     s.flags.arrested = true;
     return;
@@ -1077,6 +1084,12 @@ export function takeOffer(key: string, choice: Choice) {
     s.flags[`offer_${key}`] = s.day;
     const rel = (choice.effects ?? []).reduce((sum, e) => sum + (e.npc ? (e.rel ?? 0) : 0), 0);
     const toasts = apply(s, choice.effects);
+    // A conversation can lead straight into a story scene.
+    const forced = s.flags.force_event;
+    if (typeof forced === "string" && forced) {
+      s.flags.force_event = "";
+      s.event = forced;
+    }
     if (p.npc && !(choice.effects ?? []).some((e) => e.remember)) {
       if (rel >= 4) remember(s, memoryKey(p), { what: "You came through for them", say: "\"You came through for me that time. I won't forget it.\"", tone: "warm", weight: rel >= 10 ? 2 : 1 });
       else if (rel <= -4) remember(s, memoryKey(p), { what: "You let them down", say: "\"Last time, you let me down. Let's see about today.\"", tone: "hurt", weight: rel <= -10 ? 2 : 1 });
