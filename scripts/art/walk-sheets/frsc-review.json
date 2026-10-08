@@ -1,0 +1,31 @@
+{
+  "id": "frsc",
+  "original": "frsc-sheet-original.png",
+  "corrected": "frsc-sheet-corrected.png",
+  "original_sha256": "77c73f7c781f337df8ef6dc10b2253c511d8b570a2c7a4a8f96797e5aa4f27a0",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated side passing arm swing in 2/4.",
+      "source": "/workspace/generated_images/exec-c902e256-538e-470b-b01f-0ba140806900.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "frsc",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 907,
+      "x0": 793,
+      "x1": 972,
+      "reflection_axis_twice": 1773
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
