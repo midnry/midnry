@@ -182,6 +182,7 @@ export const WALK_FRAMES = new Set<string>([
   "felix",
   "frsc",
   "hawker",
+  "headmaster",
 ]);
 
 /** Named people from the school, university and camp chapters, with their heights against a grown-up. */

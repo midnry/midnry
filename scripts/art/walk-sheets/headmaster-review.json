@@ -1,0 +1,76 @@
+{
+  "id": "headmaster",
+  "original": "headmaster-sheet-original.png",
+  "corrected": "headmaster-sheet-corrected.png",
+  "original_sha256": "10214cf52f8cd26cef6b3f996bec0293ddc23a7a4c467a3739343ca49387eba7",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Repeated side contacts and passing poses; regenerate free left-arm swing and opposite legs while cane remains in right hand and watch on left wrist.",
+      "source": "/workspace/generated_images/exec-a619da95-a4c8-4f63-936c-95e49ac813ca.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Side passing frames2 and4 repeat instead of lifting opposite knees with opposite free arm swing.",
+      "source": "/workspace/generated_images/exec-4ed1e921-d329-4fea-b448-7e87bc562acc.png"
+    },
+    {
+      "attempt": 4,
+      "reason": "Remaining repeated side contact/passing poses; regenerate original sheet with explicit free-arm and near/far knee changes.",
+      "source": "/workspace/generated_images/exec-72dff12f-0d0d-43dc-9a75-75eaa641b459.png"
+    },
+    {
+      "attempt": 5,
+      "reason": "Repeated side passing/contact pose; regenerate opposite near/far leg phases and free-arm swing while preserving held prop.",
+      "source": "/workspace/generated_images/exec-d6a466aa-7e15-4972-86c1-54584527bb28.png"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "headmaster",
+      "view": "front",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 313,
+      "x0": 531,
+      "x1": 761,
+      "reflection_axis_twice": 1300
+    },
+    {
+      "id": "headmaster",
+      "view": "front",
+      "frame": 4,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 313,
+      "x0": 778,
+      "x1": 1005,
+      "reflection_axis_twice": 1787
+    },
+    {
+      "id": "headmaster",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1287,
+      "x0": 527,
+      "x1": 765,
+      "reflection_axis_twice": 1283
+    },
+    {
+      "id": "headmaster",
+      "view": "back",
+      "frame": 4,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1284,
+      "x0": 787,
+      "x1": 1017,
+      "reflection_axis_twice": 1791
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
