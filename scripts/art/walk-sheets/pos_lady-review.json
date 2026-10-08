@@ -1,0 +1,35 @@
+{
+  "id": "pos_lady",
+  "original": "pos_lady-sheet-original.png",
+  "corrected": "pos_lady-sheet-corrected.png",
+  "original_sha256": "a3fb406e0015766e9ea7c8b1350f21aea2dabb565303ef239c26329c7834d548",
+  "regenerations": [],
+  "corrections": [
+    {
+      "id": "pos_lady",
+      "view": "front",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+      "boundary_y": 417,
+      "x0": 535,
+      "x1": 768,
+      "reflection_axis_twice": 1309
+    },
+    {
+      "id": "pos_lady",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below garment hem to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged.",
+      "boundary_y": 1437,
+      "x0": 520,
+      "x1": 766,
+      "reflection_axis_twice": 1276
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
