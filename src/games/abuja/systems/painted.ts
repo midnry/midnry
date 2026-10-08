@@ -188,6 +188,7 @@ export const WALK_FRAMES = new Set<string>([
   "okada",
   "police",
   "pos_lady",
+  "prophet",
 ]);
 
 /** Named people from the school, university and camp chapters, with their heights against a grown-up. */
