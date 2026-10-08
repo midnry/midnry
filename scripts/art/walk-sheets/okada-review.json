@@ -1,0 +1,45 @@
+{
+  "id": "okada",
+  "original": "okada-sheet-original.png",
+  "corrected": "okada-sheet-corrected.png",
+  "original_sha256": "6bfd91ee044493c5866199484ffe48852f0a38d181e400880875d57a3f0d5a7f",
+  "regenerations": [],
+  "corrections": [
+    {
+      "id": "okada",
+      "view": "front",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 286,
+      "x0": 547,
+      "x1": 766,
+      "reflection_axis_twice": 1307
+    },
+    {
+      "id": "okada",
+      "view": "back",
+      "frame": 3,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1288,
+      "x0": 527,
+      "x1": 750,
+      "reflection_axis_twice": 1287
+    },
+    {
+      "id": "okada",
+      "view": "back",
+      "frame": 4,
+      "change": "Reflected this frame\u2019s existing leg pixels only, below trouser waist, inside the leg rectangle between the arms to alternate the repeated leg pose; upper body, arms, garment above boundary and appearance unchanged. Blended four pixels at the leg/body attachment to hide the seam.",
+      "boundary_y": 1287,
+      "x0": 779,
+      "x1": 999,
+      "reflection_axis_twice": 1782
+    }
+  ],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
