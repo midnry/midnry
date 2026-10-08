@@ -6,6 +6,7 @@ import { equity, shock } from "./market";
 import { learn } from "./cooking/cook";
 import { recipe } from "./cooking/recipes";
 import { forget, remember, sinceWhen } from "./memory";
+import { report } from "./news";
 import { partnerName, pregnancyText, romanceEffect } from "./romance";
 import type { Cond, Effect, GameState, SkillKey, StatKey } from "./types";
 
@@ -115,6 +116,7 @@ export function apply(state: GameState, effects: Effect[] | undefined, toasts: s
     }
     if (effect.npc && effect.remember) remember(state, effect.npc, effect.remember);
     if (effect.npc && effect.forget) forget(state, effect.npc, effect.forget);
+    if (effect.news) report(state, { ...effect.news, headline: fill(state, effect.news.headline), body: fill(state, effect.news.body) });
     if (effect.cert) state.certs[effect.cert] = true;
     if (effect.asset && !state.assets.includes(effect.asset)) state.assets.push(effect.asset);
     if (effect.removeAsset) state.assets = state.assets.filter((item) => item !== effect.removeAsset);

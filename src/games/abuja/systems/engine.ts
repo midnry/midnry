@@ -58,6 +58,7 @@ import {
   weeklyRomance,
 } from "./romance";
 import type { Choice, EndingId, GameState, PersonDef, Scene, TaskStep } from "./types";
+import { report } from "./news";
 import { fadeMemories, forget, memoriesOf, recalled, remember, sinceWhen } from "./memory";
 
 // ── Story ────────────────────────────────────────────────────────────────────
@@ -858,6 +859,7 @@ function checkEndings(s: GameState) {
     addStat(s, "stress", 20);
     s.stats.heat = 20;
     toast(s, "Arrested and held for two days. No charges stuck, but 'bail' cost ₦100,000.");
+    report(s, { tag: "Crime", icon: "🚓", you: true, headline: "Young Abuja resident released after police detention", body: `${s.name} was held for two days and released without charge. Family members say 'bail' was paid. Police say bail is free.` });
   }
   if (s.stats.health <= 15) collapse(s);
   if (netWorth(s) >= FREEDOM_TARGET && debt(s) === 0) {

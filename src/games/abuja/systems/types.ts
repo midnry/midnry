@@ -6,6 +6,7 @@ import type { NegLife } from "./negotiate/types";
 import type { Kitchen } from "./cooking/types";
 import type { CityState } from "./city/sim";
 import type { Memory, Tone } from "./memory";
+import type { NewsTag, Story } from "./news";
 
 export type Background = "lapo" | "average";
 export type Gender = "male" | "female";
@@ -140,6 +141,8 @@ export type Effect = {
   remember?: { what: string; say?: string; tone: Tone; weight: 1 | 2 | 3 };
   /** Something the person in `npc` lets go of (by its `what`). */
   forget?: string;
+  /** File a story in the Abuja Daily. */
+  news?: { tag: NewsTag; headline: string; body: string; icon?: string; you?: boolean };
 };
 
 export type MapRect = { x: number; y: number; w: number; h: number; label?: string; color?: string; gapFrom?: number; gapTo?: number; kind?: "water" };
@@ -362,6 +365,8 @@ export type GameState = {
   mapVersion?: number;
   /** What people remember about you, by person (an NPC id, or a city person's id). */
   memories?: Record<string, Memory[]>;
+  /** Stories filed in the Abuja Daily that happened once (the rest follow from the state). */
+  news?: Story[];
   name: string;
   gender: Gender;
   background: Background;

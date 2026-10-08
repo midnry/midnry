@@ -3,6 +3,8 @@ import { CityApp } from "./CityApp";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
 import { borrow, business, callContact, driveTo, negotiate, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
 import { ago, memoriesOf, TONE_ICON } from "../systems/memory";
+import { olderNews, todaysNews, type NewsTag, type Story } from "../systems/news";
+import { MONTHS, SEASON_NAMES, seasonOf, monthOf } from "../systems/weather";
 import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, netWorth, npcName } from "../systems/rules";
 import { RIDE_INFO, RIDE_MODES, fare, fuelCost, rideBan, rideKm } from "../systems/rides";
 import { rainSurge, weatherOf } from "../systems/weather";
@@ -20,10 +22,11 @@ import { btnGhost, btnPrimary } from "./theme";
 import { Trade } from "./Trade";
 import { WardrobePanel } from "./Wardrobe";
 
-export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen" | "city";
+export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen" | "city" | "news";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "wallet", label: "Wallet", icon: "💳", tint: "bg-blue-600" },
+  { id: "news", label: "Abuja Daily", icon: "📰", tint: "bg-stone-600" },
   { id: "food", label: "ChopNow", icon: "🍲", tint: "bg-amber-600" },
   { id: "kitchen", label: "Kitchen", icon: "🍳", tint: "bg-orange-600" },
   { id: "bills", label: "Bills", icon: "🧾", tint: "bg-cyan-700" },
@@ -70,6 +73,7 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
         <div className="flex-1 overflow-y-auto p-4">
           {app === "home" ? <Home onApp={onApp} /> : null}
           {app === "wallet" ? <Wallet state={state} /> : null}
+          {app === "news" ? <NewsApp state={state} /> : null}
           {app === "food" ? <FoodApp state={state} /> : null}
           {app === "bills" ? <Bills state={state} /> : null}
           {app === "business" ? <BusinessApp state={state} /> : null}
@@ -549,6 +553,70 @@ function Contacts({ state }: { state: GameState }) {
         );
       })}
       <p className="mt-2 text-xs text-slate-500">People remember what you do for them, and to them. Friends you don't see or call for three weeks drift away.</p>
+    </div>
+  );
+}
+
+const TAG_TINT: Record<NewsTag, string> = {
+  Weather: "bg-sky-500/20 text-sky-200",
+  Markets: "bg-emerald-500/20 text-emerald-200",
+  City: "bg-amber-500/20 text-amber-200",
+  Crime: "bg-red-500/20 text-red-200",
+  Business: "bg-lime-500/20 text-lime-200",
+  People: "bg-violet-500/20 text-violet-200",
+  Politics: "bg-orange-500/20 text-orange-200",
+};
+const SERIF = { fontFamily: "Newsreader, Georgia, 'Times New Roman', serif" };
+
+function StoryCard({ story, lead }: { story: Story; lead?: boolean }) {
+  return (
+    <article className={`rounded-xl p-3 ${story.you ? "bg-amber-400/10 ring-1 ring-amber-300/30" : "bg-white/5"}`}>
+      <div className="flex items-center gap-2 text-[11px] font-semibold tracking-wide uppercase">
+        <span className={`rounded-full px-2 py-0.5 ${TAG_TINT[story.tag]}`}>{story.tag}</span>
+        {story.you ? <span className="text-amber-200">About you</span> : null}
+      </div>
+      <h3 className={`mt-2 leading-snug font-semibold text-slate-50 ${lead ? "text-xl" : "text-base"}`} style={SERIF}>
+        <span aria-hidden className="mr-1.5">{story.icon}</span>
+        {story.headline}
+      </h3>
+      <p className="mt-1 text-sm leading-relaxed text-slate-300">{story.body}</p>
+    </article>
+  );
+}
+
+function NewsApp({ state }: { state: GameState }) {
+  const today = todaysNews(state);
+  const older = olderNews(state);
+  return (
+    <div>
+      <header className="border-b border-white/15 pb-3 text-center">
+        <p className="text-2xl font-bold tracking-tight" style={SERIF}>
+          Abuja Daily
+        </p>
+        <p className="mt-1 text-xs text-slate-400">
+          Day {state.day} · {MONTHS[monthOf(state.day)]} · {SEASON_NAMES[seasonOf(state.day)]}
+        </p>
+      </header>
+      <div className="mt-3 grid gap-2">
+        {today.map((story, i) => (
+          <StoryCard key={story.id} story={story} lead={i === 0} />
+        ))}
+      </div>
+      {older.length ? (
+        <>
+          <p className="mt-5 mb-2 text-xs font-semibold tracking-wide text-slate-400 uppercase">From the archive</p>
+          <div className="grid gap-2">
+            {older.map((story) => (
+              <div key={story.id} className="rounded-xl bg-white/5 p-3 text-sm">
+                <p className="text-xs text-slate-500">Day {story.day}</p>
+                <p className="font-semibold" style={SERIF}>
+                  {story.icon} {story.headline}
+                </p>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }
