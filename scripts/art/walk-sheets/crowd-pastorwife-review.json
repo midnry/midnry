@@ -1,0 +1,35 @@
+{
+  "id": "crowd-pastorwife",
+  "original": "crowd-pastorwife-sheet-original.png",
+  "corrected": "crowd-pastorwife-sheet-corrected.png",
+  "original_sha256": "afef657546f4c9dd7dabaa3fc80b4d4a1f9861eacc370f084715cc1cf8b6d606",
+  "regenerations": [
+    {
+      "attempt": 2,
+      "reason": "Gold clutch disappeared from several frames and back passing knees repeated. Regenerate while preserving the original left-hand clutch.",
+      "source": "/workspace/generated_images/exec-530089ac-1787-4d56-a8c5-9c9b14890213.png"
+    },
+    {
+      "attempt": 3,
+      "reason": "Gold clutch still absent from several views. Regenerate the missing accessory without moving original shawl or changing lace.",
+      "source": "/workspace/generated_images/exec-a5e7a800-13e5-4f85-aa0d-c039aa07aa40.png"
+    },
+    {
+      "attempt": 4,
+      "reason": "Back-1 and back-4 clutch still swapped sides; contact strides repeated and far shoes were hidden. Regenerate those details.",
+      "source": "/workspace/generated_images/exec-9cfa679e-e318-4e64-a1ff-7ac133e30bdd.png"
+    },
+    {
+      "attempt": 5,
+      "reason": "Back-1 clutch still remained on the wrong side; front/back contact strides need clearly opposite forward feet.",
+      "source": "/workspace/generated_images/exec-b034d83c-d83d-4692-a8c1-24d9b1cc24bc.png"
+    }
+  ],
+  "corrections": [],
+  "checks": [
+    "Unchanged python3 scripts/art/cut_sheet.py walk command: 4/4/4 poses",
+    "All 12 cuts opened beside references: whole bodies, transparent background, alternating contact/passing legs, all side poses face right",
+    "npm run typecheck passed",
+    "npm run build passed"
+  ]
+}
