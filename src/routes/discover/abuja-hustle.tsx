@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Shell } from "@/components/shell";
 import { BrowserFrame, PhoneFrame } from "@/components/showcase";
+import "@fontsource/nunito/latin-800.css";
+import "@fontsource/nunito/latin-900.css";
 
 export const Route = createFileRoute("/discover/abuja-hustle")({
   head: () => ({
@@ -15,6 +17,11 @@ export const Route = createFileRoute("/discover/abuja-hustle")({
   }),
   component: GamePage,
 });
+
+/** The game's own look: dusk over Abuja, mint buttons, amber signposts, and its rounded font. */
+const DUSK = "bg-[radial-gradient(ellipse_90%_45%_at_50%_100%,rgba(240,160,75,0.55),transparent_70%),linear-gradient(to_bottom,#0b0f2a_0%,#1d1a4f_34%,#43276a_60%,#86395f_84%,#c8604f_100%)]";
+const GAME_FONT = { fontFamily: '"Nunito", "Outfit", system-ui, sans-serif' };
+const STARS = "pointer-events-none absolute inset-0 bg-[radial-gradient(#f7edda_1px,transparent_1px)] [background-size:22px_22px] opacity-[0.12] [mask-image:linear-gradient(to_bottom,black,transparent_55%)]";
 
 /** Bump when the screenshots are retaken, so browsers and the CDN fetch the new ones. */
 const SHOTS_VERSION = "2026-10-09";
@@ -127,10 +134,10 @@ const FEATURES: { title: string; text: string; image: string; phone?: boolean; a
 function PlayButtons() {
   return (
     <div className="flex flex-col gap-3 sm:flex-row">
-      <Link to="/games/abuja-hustle" className="inline-flex min-h-12 items-center justify-center rounded-full bg-blue-600 px-6 text-base font-semibold text-white hover:bg-blue-500">
+      <Link to="/games/abuja-hustle" className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#70d3ad] px-6 text-base font-extrabold text-[#06251b] shadow-[0_8px_24px_-8px_rgba(112,211,173,0.7)] hover:bg-[#8be0bf]" style={GAME_FONT}>
         Play free now
       </Link>
-      <Link to="/apps" className="inline-flex min-h-12 items-center justify-center rounded-full px-6 text-base font-semibold text-white ring-1 ring-white/40 hover:bg-white/10">
+      <Link to="/apps" className="inline-flex min-h-12 items-center justify-center rounded-full px-6 text-base font-bold text-[#f7edda] ring-1 ring-[#f7edda]/40 hover:bg-white/10" style={GAME_FONT}>
         See the apps
       </Link>
     </div>
@@ -148,18 +155,19 @@ function GamePage() {
         <span>Abuja Hustle</span>
       </nav>
 
-      <section className="mt-6 overflow-hidden rounded-[2rem] bg-[radial-gradient(ellipse_at_top_left,#11265c,#05070c_70%)] p-6 text-white sm:p-10">
-        <div className="grid items-center gap-10 lg:grid-cols-[1fr_1.1fr]">
+      <section className={`relative mt-6 overflow-hidden rounded-[2rem] ${DUSK} p-6 text-[#f7edda] sm:p-10`}>
+        <div className={STARS} aria-hidden />
+        <div className="relative grid items-center gap-10 lg:grid-cols-[1fr_1.1fr]">
           <div>
             <div className="flex items-center gap-3">
               <img src="/abuja-hustle-192.png" alt="" className="size-14 rounded-2xl" />
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold tracking-widest text-sky-300 uppercase">Free game · 18+</span>
+              <span className="rounded-full bg-black/25 px-3 py-1 text-xs font-extrabold tracking-widest text-[#edc584] uppercase ring-1 ring-[#edc584]/30" style={GAME_FONT}>Free game · 18+</span>
             </div>
-            <h1 className="mt-5 font-display text-5xl tracking-tight text-balance sm:text-6xl">Abuja Hustle</h1>
-            <p className="mt-4 max-w-xl text-xl text-pretty text-slate-200">
+            <h1 className="mt-5 text-5xl font-black tracking-tight text-balance drop-shadow-[0_2px_12px_rgba(10,13,36,0.6)] sm:text-6xl" style={GAME_FONT}>Abuja Hustle</h1>
+            <p className="mt-4 max-w-xl text-xl text-pretty text-[#f7edda]">
               Grow up in Abuja, from primary school to adult life. Build a career, a business or a following, make friends in high places, and chase financial freedom without ending up in Kuje.
             </p>
-            <p className="mt-3 max-w-xl text-pretty text-slate-300">
+            <p className="mt-3 max-w-xl text-pretty text-[#f7edda]/80">
               A satirical life sim you play in your browser, on your phone or computer. Sign in to save your progress.
             </p>
             <div className="mt-8">
@@ -174,11 +182,11 @@ function GamePage() {
         {FEATURES.map((f, i) => (
           <section key={f.title} className={`grid items-center gap-10 md:grid-cols-2 ${i % 2 ? "md:[&>*:first-child]:order-2" : ""}`}>
             <div>
-              <p className="text-sm font-semibold tracking-widest text-pine uppercase">
-                {String(i + 1).padStart(2, "0")}
-                {f.isNew ? <span className="ml-2 rounded-full bg-pine/10 px-2 py-0.5 text-[11px] tracking-normal normal-case">New</span> : null}
+              <p className="flex items-center gap-2 text-sm font-extrabold tracking-widest text-[#a45a12] uppercase" style={GAME_FONT}>
+                <span className="inline-flex h-7 min-w-9 items-center justify-center rounded-lg bg-[#1a1745] px-2 text-[#edc584] shadow-sm">{String(i + 1).padStart(2, "0")}</span>
+                {f.isNew ? <span className="rounded-full bg-[#70d3ad]/25 px-2.5 py-0.5 text-[11px] tracking-normal text-[#0f5c44] normal-case">New</span> : null}
               </p>
-              <h2 className="mt-2 font-display text-3xl tracking-tight text-balance sm:text-4xl">{f.title}</h2>
+              <h2 className="mt-3 text-3xl font-black tracking-tight text-balance text-[#1a1745] sm:text-4xl" style={GAME_FONT}>{f.title}</h2>
               <p className="mt-3 max-w-lg text-lg text-pretty text-muted">{f.text}</p>
             </div>
             {f.phone ? <PhoneFrame src={shot(f.image)} alt={f.alt} dark /> : <BrowserFrame src={shot(f.image)} alt={f.alt} />}
@@ -186,8 +194,8 @@ function GamePage() {
         ))}
       </div>
 
-      <section className="mt-20 rounded-3xl bg-card p-6 shadow-line sm:p-8">
-        <h2 className="font-display text-3xl tracking-tight">Your phone runs your life</h2>
+      <section className="mt-20 rounded-3xl bg-[linear-gradient(160deg,#0b1c2b,#050b14)] p-6 text-[#f7edda] sm:p-8">
+        <h2 className="text-3xl font-black tracking-tight" style={GAME_FONT}>Your phone runs your life</h2>
         <ul className="mt-6 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
           {[
             ["🎯 Missions", "Your path to financial freedom, one step at a time."],
@@ -199,20 +207,23 @@ function GamePage() {
             ["⚖️ Legal", "The evidence against you: destroy it, or lay low and keep the perks."],
             ["💸 QuickKash", "Loans when you're desperate. Read the terms. Felix won't."],
           ].map(([title, text]) => (
-            <li key={title} className="rounded-2xl bg-paper p-4">
-              <p className="font-semibold">{title}</p>
-              <p className="mt-1 text-pretty text-muted">{text}</p>
+            <li key={title} className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+              <p className="font-extrabold text-[#edc584]" style={GAME_FONT}>{title}</p>
+              <p className="mt-1 text-pretty text-[#a0b6bd]">{text}</p>
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="mt-16 flex flex-col gap-6 rounded-3xl bg-[radial-gradient(ellipse_at_top_left,#11265c,#05070c_70%)] p-8 text-white sm:flex-row sm:items-center sm:justify-between sm:p-10">
-        <div className="max-w-lg">
-          <h2 className="font-display text-3xl tracking-tight">Your life in Abuja starts now</h2>
-          <p className="mt-2 text-pretty text-slate-300">Free to play. For adults 18 and over: it deals with money, debt, crime and relationships.</p>
+      <section className={`relative mt-16 flex flex-col gap-6 overflow-hidden rounded-3xl ${DUSK} p-8 text-[#f7edda] sm:flex-row sm:items-center sm:justify-between sm:p-10`}>
+        <div className={STARS} aria-hidden />
+        <div className="relative max-w-lg">
+          <h2 className="text-3xl font-black tracking-tight" style={GAME_FONT}>Your life in Abuja starts now</h2>
+          <p className="mt-2 text-pretty text-[#f7edda]/85">Free to play. For adults 18 and over: it deals with money, debt, crime and relationships.</p>
         </div>
-        <PlayButtons />
+        <div className="relative">
+          <PlayButtons />
+        </div>
       </section>
     </Shell>
   );

@@ -9,6 +9,7 @@ import { Favorites } from "@/components/spotlight";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
 import { buttonClass, Skeleton } from "@/components/ui";
+import "@fontsource/nunito/latin-900.css";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -135,19 +136,19 @@ function FeaturedSix() {
         })}
         <Link
           to="/discover/abuja-hustle"
-          className="group flex flex-col rounded-3xl bg-[radial-gradient(ellipse_at_top_left,#11265c,#05070c_70%)] p-5 text-white shadow-line transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="group flex flex-col rounded-3xl bg-[radial-gradient(ellipse_90%_45%_at_50%_100%,rgba(240,160,75,0.5),transparent_70%),linear-gradient(to_bottom,#0b0f2a_0%,#1d1a4f_38%,#43276a_66%,#86395f_100%)] p-5 text-[#f7edda] shadow-line transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <div className="flex items-center gap-3">
             <img src="/abuja-hustle-192.png" alt="" className="size-12 shrink-0 rounded-2xl" />
             <div className="min-w-0">
-              <p className="font-display text-xl tracking-tight">Abuja Hustle</p>
-              <p className="text-xs font-semibold tracking-widest text-sky-300 uppercase">Free game · 18+ · Updated</p>
+              <p className="text-xl font-black tracking-tight" style={{ fontFamily: '"Nunito", "Outfit", system-ui, sans-serif' }}>Abuja Hustle</p>
+              <p className="text-xs font-semibold tracking-widest text-[#edc584] uppercase">Free game · 18+ · Updated</p>
             </div>
           </div>
-          <p className="mt-3 flex-1 text-sm text-pretty text-slate-200">
+          <p className="mt-3 flex-1 text-sm text-pretty text-[#f7edda]/90">
             A life sim. Grow up in a hand-painted Abuja, build a banking career, make friends in high places, and chase financial freedom.
           </p>
-          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-blue-300">
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#8be0bf]">
             See the game <span aria-hidden className="transition group-hover:translate-x-0.5">→</span>
           </span>
         </Link>
