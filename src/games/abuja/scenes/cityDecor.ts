@@ -29,6 +29,30 @@ const ADS = [
 ];
 
 export function makeDecorTextures(scene: Phaser.Scene) {
+  make(scene, "bank_atm_kiosk", 30, 44, (g) => {
+    const ink = 0x2b1d14;
+    g.fillStyle(0x1a0f08, 0.18).fillEllipse(15, 41, 28, 5);
+    g.fillStyle(0xb8b3a6, 1).fillRect(7, 9, 18, 31);
+    g.fillStyle(0xe8ddc7, 1).fillRect(5, 10, 17, 30);
+    g.fillStyle(0x294d45, 1).fillRect(5, 10, 17, 5);
+    g.fillStyle(0x293f45, 1).fillRect(8, 17, 11, 10);
+    g.fillStyle(0x88d5c9, 0.22).fillRoundedRect(5, 14, 17, 16, 3);
+    g.fillStyle(0x88d5c9, 1).fillRect(10, 19, 7, 6);
+    g.fillStyle(0xd7fff1, 1).fillRect(11, 20, 5, 1);
+    g.fillStyle(0xc9ced6, 1).fillRect(8, 29, 8, 4);
+    g.fillStyle(ink, 1).fillRect(18, 29, 3, 1).fillRect(9, 35, 10, 2);
+    for (let row = 0; row < 2; row++) for (let col = 0; col < 3; col++) g.fillRect(9 + col * 2, 30 + row * 1.5, 1, 0.8);
+    g.lineStyle(1.3, ink, 1).strokeRect(5, 10, 17, 30).strokeRect(8, 17, 11, 10).strokeRect(8, 29, 8, 4);
+    g.fillStyle(0x45695e, 1).fillTriangle(2, 7, 5, 2, 27, 2).fillTriangle(2, 7, 27, 2, 28, 7);
+    g.fillStyle(0x294d45, 1).fillRect(2, 7, 26, 4);
+    g.lineStyle(1.3, ink, 1).lineBetween(2, 7, 5, 2).lineBetween(5, 2, 27, 2).lineBetween(27, 2, 28, 7).strokeRect(2, 7, 26, 4);
+  });
+  make(scene, "bank_signpost", 36, 38, (g) => {
+    g.fillStyle(0x1a0f08, 0.18).fillEllipse(18, 35, 14, 4);
+    g.fillStyle(0xc9ced6, 1).fillRect(16, 11, 3, 25);
+    g.fillStyle(0x45695e, 1).fillRect(2, 2, 27, 11).fillTriangle(29, 2, 35, 7.5, 29, 13);
+    g.lineStyle(1.3, 0x2b1d14, 1).strokeRect(16, 13, 3, 23).strokeRect(2, 2, 27, 11);
+  });
   make(scene, "bench", 30, 18, (g) => {
     g.fillStyle(0x000000, 0.2).fillEllipse(15, 15, 28, 5);
     g.fillStyle(0x8b5a2b, 1).fillRect(2, 4, 26, 4).fillRect(2, 9, 26, 3);
@@ -276,6 +300,23 @@ export function drawStreetFurniture(scene: Phaser.Scene, solids: MapRect[], lots
       if (!clearOf(sx, sy, 4)) continue;
       scene.add.image(sx, sy, "streetsign").setOrigin(0.5, 1).setScale(1.25, 1).setDepth(5 + sy / 10000);
       scene.add.text(sx, sy - 26, name, { fontFamily: GAME_FONT, fontSize: "6.5px", fontStyle: "bold", color: "#ffffff" }).setOrigin(0.5).setResolution(3).setDepth(5 + sy / 10000 + 0.0001);
+    }
+  }
+  // Bankers' Row only: three visual props at the outer pavement edge.
+  // Leave the inner 20px walking strip and the signpost/entrance approach clear.
+  const bankLot = lots.find((l) => l.place === "cbd_bank");
+  if (bankLot) {
+    const cx = bankLot.x + bankLot.w / 2, cy = bankLot.y + bankLot.h / 2;
+    const nearest = [...ALL_ROADS].sort((a, b) => Math.abs((a.axis === "x" ? cx : cy) - a.at) - Math.abs((b.axis === "x" ? cx : cy) - b.at))[0]!;
+    const side = (nearest.axis === "x" ? cx : cy) > nearest.at ? 1 : -1;
+    const edge = nearest.at + side * (reach(nearest) - 4);
+    for (const [offset, key] of [[-42, "bank_atm_kiosk"], [0, "bank_signpost"], [42, "bank_atm_kiosk"]] as const) {
+      const px = nearest.axis === "x" ? edge : cx + offset;
+      const py = nearest.axis === "x" ? cy + offset : edge;
+      if (!awayFromJunction(nearest.axis === "x" ? py : px, nearest.axis === "x" ? "y" : "x")) continue;
+      if (put(key, px, py, 0.7) && key === "bank_signpost") {
+        scene.add.text(px - 1, py - 21, "BANK", { fontFamily: GAME_FONT, fontSize: "5px", fontStyle: "bold", color: "#fff3db" }).setOrigin(0.5).setResolution(3).setDepth(5 + py / 10000 + 0.0001);
+      }
     }
   }
   // Parks get benches you can sit on too.

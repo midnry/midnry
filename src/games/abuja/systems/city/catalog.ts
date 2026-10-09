@@ -15,7 +15,7 @@ export type Service = "power" | "water" | "waste" | "health" | "safety" | "fire"
 /** The drawing style. Several buildings can share one (a shop and a pharmacy). */
 export type ArtKind =
   | "house" | "bighouse" | "duplex" | "townhouse" | "apartment" | "highrise" | "villa"
-  | "shop" | "restaurant" | "cafe" | "office" | "mall" | "supermarket" | "tower" | "cinema" | "hotel"
+  | "shop" | "restaurant" | "cafe" | "office" | "mall" | "supermarket" | "tower" | "bank" | "cinema" | "hotel"
   | "factory" | "warehouse" | "plant" | "powerplant" | "construction" | "logistics"
   | "school" | "hospital" | "clinic" | "police" | "firestation" | "government" | "library" | "community"
   | "watertower" | "substation" | "waste" | "solar"
@@ -121,6 +121,7 @@ export const BUILDINGS: BuildingDef[] = [
   },
   { id: "mall", name: "Shopping centre", category: "commercial", zone: "commercial", art: "mall", cells: [2, 1], floors: [2, 3], palette: [["#eef2f7", "#1e3a8a"], ["#f1ece4", "#7c2d12"]], jobs: 150, visitors: 200, hours: [0, 3], revenue: 15_000_000, costs: 11_000_000, value: 2_500_000_000, power: 20, water: 8, attract: 4, levels: 2, blurb: "Shops, a food court, a cinema and air-con for the whole afternoon." },
   { id: "business_tower", name: "Business tower", category: "commercial", zone: "commercial", art: "tower", cells: [1, 1], floors: [14, 24], palette: GLASS, jobs: 400, visitors: 30, hours: [0, 2], revenue: 20_000_000, costs: 15_000_000, value: 6_000_000_000, power: 30, water: 10, attract: 2, levels: 2, blurb: "Glass tower of oil companies, banks and telcos." },
+  { id: "bank_hq", name: "Bank headquarters", category: "commercial", zone: "commercial", art: "bank", cells: [1, 1], floors: [6, 10], palette: [["#eee2cc", "#294d45"], ["#e7ddcd", "#293f59"]], jobs: 400, visitors: 30, hours: [0, 2], revenue: 20_000_000, costs: 15_000_000, value: 6_000_000_000, power: 30, water: 10, attract: 2, levels: 2, blurb: "Stone banking halls beneath a glass office tower." },
   {
     id: "cinema", name: "Cinema and arcade", category: "commercial", zone: "commercial", art: "cinema", cells: [1, 1], floors: [2, 2], palette: [["#1f2937", "#e11d48"], ["#312e81", "#f59e0b"]], jobs: 20, visitors: 80, hours: [1, 3], revenue: 1_400_000, costs: 1_000_000, value: 180_000_000, power: 8, water: 2, attract: 3, levels: 2,
     actions: [{ id: "movie", label: "Watch a film (₦4,000)", slots: 1, energy: -4, cost: 4000, effects: [...rest(12), { stat: "network", add: 1 }], open: true }],

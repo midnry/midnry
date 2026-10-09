@@ -416,6 +416,58 @@ const DRAW: Record<ArtKind, Draw> = {
     p.rect(x + 10, back + 4, W * 0.3, D * 0.25, "#c7d2fe", { rx: 2 });
     for (let i = 0; i < 6; i++) car(p, x + 6 + i * 26, p.H - 2, ["#dc2626", "#e5e7eb", "#2563eb", "#111827", "#16a34a", "#f59e0b"][i]!);
   },
+  bank: (p, o) => {
+    ground(p, o.w, o.h, "#cfc7b8");
+    const { D, S, yb, x, W } = frame(o, p.H, 6);
+    const base = yb - 12, podium = 30;
+    const tx = x + W * 0.16, tw = W * 0.68;
+    const tb = base - podium - 4, tf = Math.max(4, o.floors - 2) * 10;
+    box(p, x, base, W, podium, D * 0.65, S, o.wall, shade(o.wall, 1.15));
+    // Set-back curtain-wall tower, with individual framed panes and night lights.
+    box(p, tx, tb, tw, tf, D * 0.45, S * 0.65, o.trim, shade(o.trim, 1.25));
+    windows(p, tx, tb - tf + 2, tw, tf - 4, Math.max(4, o.floors - 2), { ww: 5, wh: 6, gap: 3 });
+    p.rect(tx - 1, tb - tf - 2, tw + 2, 3, shade(o.wall, 1.1));
+    for (let row = 0; row < Math.max(4, o.floors - 2); row++) {
+      const sy = tb - tf + 3 + row * 10;
+      p.poly([[tx + tw + 2, sy], [tx + tw + S * 0.65 - 1, sy - D * 0.45 + 3], [tx + tw + S * 0.65 - 1, sy - D * 0.45 + 8], [tx + tw + 2, sy + 5]], "url(#glass)");
+    }
+    // Stone courses, tall lobby glazing and a double glass entrance.
+    for (let j = 1; j < 4; j++) p.line(x + 1, base - j * 7, x + W - 1, base - j * 7, shade(o.wall, 0.87), 0.5);
+    for (const q of [0.09, 0.73]) {
+      const wx = x + W * q;
+      p.rect(wx, base - 21, W * 0.18, 19, "url(#glass)");
+      p.light(wx, base - 21, W * 0.18, 19);
+    }
+    const cx = x + W / 2;
+    door(p, cx, base, 16, 19, "#80b4c6");
+    p.line(cx, base - 18, cx, base - 1, o.trim, 1.2);
+    p.line(cx - 2, base - 10, cx - 2, base - 6, "#f3e8c9", 1);
+    p.line(cx + 2, base - 10, cx + 2, base - 6, "#f3e8c9", 1);
+    p.light(cx - 8, base - 19, 8, 18); p.light(cx, base - 19, 8, 18);
+    for (const q of [0.04, 0.3, 0.66, 0.94]) {
+      const col = x + W * q - 2;
+      p.rect(col - 1, base - 23, 6, 3, shade(o.wall, 1.25));
+      p.rect(col, base - 20, 4, 18, shade(o.wall, 1.18));
+      p.line(col + 1, base - 19, col + 1, base - 3, "#fff6e5", 0.7);
+      p.rect(col - 1, base - 3, 6, 3, shade(o.wall, 0.92));
+    }
+    sign(p, cx, base - 27, o.label ?? "BANKERS' ROW", o.trim, "#fff3db", Math.min(4.5, (W - 8) / ((o.label ?? "BANKERS' ROW").length * 0.66)));
+    // Four independent blank brand plaques, with abstract marks only.
+    ["#596c7b", "#916653", "#67714d", "#776482"].forEach((c, i) => {
+      const px = x + 3 + i * ((W - 6) / 4);
+      p.rect(px, base - 36, (W - 10) / 4, 5, c, { rx: 1 });
+      p.circle(px + (W - 10) / 8, base - 33.5, 1.1, "#eee4cc", false);
+    });
+    for (let step = 0; step < 3; step++) p.rect(cx - 14 - step * 3, base + step * 3, 28 + step * 6, 3, shade(o.wall, 1.12 - step * 0.09));
+    for (const px of [x + 5, x + W - 5]) {
+      flag(p, px, yb - 1);
+      p.rect(px - 4, yb - 5, 8, 5, shade(o.wall, 0.9));
+      bush(p, px, yb - 7, 0.45);
+    }
+    box(p, x + W + 2, yb - 1, 8, 12, 6, 2, o.wall, o.trim);
+    p.rect(x + W + 3, yb - 11, 6, 5, "url(#glass)");
+    p.light(x + W + 3, yb - 11, 6, 5);
+  },
   tower: (p, o) => {
     ground(p, o.w, o.h, "#c9c2b6");
     const { D, S, yb, x, W } = frame(o, p.H, 8);
@@ -826,7 +878,7 @@ const DRAW: Record<ArtKind, Draw> = {
 export function buildingArt(kind: ArtKind, o: BuildingArtOpts): BuildingArt {
   // Tall buildings and towers need room above their footprint.
   const rise: Partial<Record<ArtKind, number>> = {
-    tower: 20 + o.floors * 9, skyscraper: 90 + o.floors * 8, highrise: 18 + o.floors * 10, hotel: 20 + o.floors * 10, office: 16 + o.floors * 11, apartment: 16 + o.floors * 12,
+    bank: 44 + o.floors * 10, tower: 20 + o.floors * 9, skyscraper: 90 + o.floors * 8, highrise: 18 + o.floors * 10, hotel: 20 + o.floors * 10, office: 16 + o.floors * 11, apartment: 16 + o.floors * 12,
     hospital: 30 + o.floors * 11, government: 40 + o.floors * 11, factory: 60, powerplant: 70, construction: 70 + o.floors * 12, logistics: 46, plant: 40, mosque: 80, church: 80, monument: 80,
     watertower: 60, substation: 44, stadium: 30, museum: 40, school: 30, firestation: 50, townhouse: 30 + o.floors * 11, bighouse: 34, duplex: 34, house: 24, villa: 30,
   };

@@ -58,6 +58,93 @@ const plantPot = (x: number, y: number, s = 1) =>
 type Item = { w: number; h: number; draw: (accent: string) => string; /** Solid footprint at the bottom, as a fraction of height. */ foot?: number };
 
 export const FURNITURE: Record<string, Item> = {
+  teller_counter: {
+    w: 230, h: 96, foot: 0.55,
+    draw: (a) => {
+      let out = box(4, 42, 222, 50, 13, tone(a, 0.85), "#eee5d6");
+      for (let i = 0; i < 3; i++) {
+        const x = 12 + i * 73;
+        out += rect(x, 62, 60, 23, a, 2) + rect(x, 4, 60, 39, "#cfe8f5", 2);
+        out += `<path d="M${x + 7} 28 L${x + 26} 9 M${x + 35} 36 L${x + 51} 20" ${thin("#f4f6f8", 3)}/>`;
+        out += rect(x + 18, 31, 24, 12, "#eef5f5", 5) + rect(x + 17, 46, 27, 10, "#f4ece0", 2);
+        out += `<text x="${x + 30.5}" y="53.5" text-anchor="middle" font-family="Nunito, sans-serif" font-size="7" font-weight="800" fill="${INK}">CASH</text>`;
+      }
+      return out + rect(210, 36, 8, 9, METAL, 2) + `<path d="M214 37 L218 27 M214 43 Q204 40 207 34" ${thin(INK, 1.5)}/>`;
+    },
+  },
+  hr_desk: {
+    w: 150, h: 96, foot: 0.45,
+    draw: (a) =>
+      box(4, 43, 142, 49, 15, tone(a, 0.85), "#eee5d6") + rect(13, 65, 124, 20, a, 3) +
+      rect(12, 34, 32, 12, METAL, 2) + shape("M15 34 L18 26 L41 26 L43 34 Z", "#f4f6f8") +
+      `<path d="M20 29 L36 29 M18 39 L38 39" ${thin("#7c8ba1", 1.5)}/>` +
+      rect(54, 34, 29, 9, "#916653", 2) + rect(56, 27, 29, 9, "#c9b795", 2) + rect(58, 21, 29, 8, "#eee5d6", 2) +
+      `<text x="73" y="27" text-anchor="middle" font-family="Nunito, sans-serif" font-size="5" fill="${INK}">CV</text>` +
+      shape("M103 33 L126 33 L132 44 L99 44 Z", SCREEN) + rect(100, 25, 31, 8, "#4b5563", 4) +
+      `<path d="M108 38 L120 38 M127 31 Q139 31 133 43" ${thin(METAL, 1.5)}/>` +
+      shape("M87 45 L110 45 L108 37 L90 37 Z", GOLD) + `<path d="M93 41 L104 41" ${thin(INK, 1)}/>`,
+  },
+  vacancy_board: {
+    w: 120, h: 110, foot: 0.2,
+    draw: (a) => {
+      let out = shape("M25 65 L17 106 L25 106 L35 66 Z", WOOD_DARK) + shape("M86 65 L96 106 L104 106 L96 65 Z", WOOD_DARK);
+      out += rect(5, 4, 110, 80, WOOD, 4) + rect(11, 10, 98, 68, "#d8bd8b", 2) + rect(11, 10, 98, 18, a, 2);
+      out += `<text x="60" y="23" text-anchor="middle" font-family="Nunito, sans-serif" font-size="11" font-weight="800" fill="#fff3db">VACANCIES</text>`;
+      [20, 50, 80].forEach((x, i) => {
+        out += rect(x, 34 + i % 2 * 4, 22, 34, "#fff9e9", 1);
+        out += `<circle cx="${x + 11}" cy="${36 + i % 2 * 4}" r="2.5" fill="${["#b96651", "#557f94", "#739151"][i]}" ${LINE}/>`;
+        out += `<path d="M${x + 4} 46 L${x + 18} 46 M${x + 4} 52 L${x + 16} 52 M${x + 4} 58 L${x + 14} 58" ${thin("#9b9182", 1.3)}/>`;
+      });
+      return out + `<path d="M24 96 L97 96" ${thin(WOOD_DARK, 4)}/>`;
+    },
+  },
+  queue_stand: {
+    w: 60, h: 70, foot: 0.25,
+    draw: (a) =>
+      `<ellipse cx="10" cy="63" rx="8" ry="4" fill="${METAL}" ${LINE}/><ellipse cx="50" cy="63" rx="8" ry="4" fill="${METAL}" ${LINE}/>` +
+      rect(7, 10, 6, 51, METAL, 3) + rect(47, 10, 6, 51, METAL, 3) +
+      `<path d="M9 17 L9 58 M49 17 L49 58" ${thin("#ffffff", 1.5)}/>` +
+      shape("M12 16 Q30 21 48 16 L48 23 Q30 28 12 23 Z", a) +
+      `<circle cx="10" cy="10" r="5" fill="${METAL}" ${LINE}/><circle cx="50" cy="10" r="5" fill="${METAL}" ${LINE}/>`,
+  },
+  atm: {
+    w: 56, h: 100, foot: 0.35,
+    draw: (a) =>
+      box(4, 4, 48, 92, 8, "#b8bdc2", "#e4e7eb") + rect(8, 14, 40, 77, "#e6e2d8", 2) +
+      rect(8, 14, 40, 8, a, 2) + rect(13, 27, 30, 24, SCREEN, 2) + rect(17, 31, 22, 16, "#88d5c9", 1) +
+      `<path d="M20 36 L35 36 M20 41 L30 41" ${thin("#e7fff4", 1.5)}/>` +
+      rect(31, 55, 12, 4, SCREEN, 1) + shape("M12 55 L26 55 L29 68 L10 68 Z", METAL) +
+      [0, 1, 2].map((i) => `<path d="M14 ${58 + i * 3} L24 ${58 + i * 3}" ${thin(INK, 1.3)}/>`).join("") +
+      `<path d="M17 57 L17 65 M21 57 L21 65" ${thin(INK, 1)}/>` +
+      rect(14, 76, 28, 6, SCREEN, 1) + `<path d="M18 78 L38 78" ${thin(METAL, 1)}/>`,
+  },
+  exec_desk: {
+    w: 170, h: 100, foot: 0.45,
+    draw: (a) =>
+      box(4, 46, 162, 50, 17, BATH_WOOD, WOOD_DARK) + drawers(12, 68, 31, 2, 12) + drawers(127, 68, 31, 2, 12) +
+      shape(`M49 49 L113 49 L118 60 L44 60 Z`, a) + rect(58, 6, 54, 33, SCREEN, 3) +
+      rect(63, 11, 44, 23, "#7c8ba1", 2) + `<path d="M69 16 L91 16 M69 22 L100 22" ${thin("#dce8f2", 2)}/>` +
+      rect(79, 39, 12, 8, METAL, 1) + rect(64, 48, 43, 6, "#c9ced6", 2) +
+      rect(119, 48, 20, 6, GOLD, 2) + `<path d="M124 48 L121 32 M132 48 L134 32" ${thin(INK, 2)}/>` +
+      rect(18, 45, 20, 5, WOOD_DARK, 2) + `<path d="M28 45 L28 13" ${thin(GOLD, 2)}/>` +
+      shape("M29 14 Q38 9 45 14 L45 29 Q37 23 29 29 Z", "#739179") + `<path d="M36 14 L36 26" ${thin("#f4f6f8", 3)}/>`,
+  },
+  projector_screen: {
+    w: 140, h: 90,
+    draw: (a) =>
+      rect(7, 9, 126, 69, "#f4f6f8", 1) + rect(3, 3, 134, 8, METAL, 3) +
+      `<path d="M27 29 L27 64 L115 64" ${thin("#7c8ba1", 2)}/>` +
+      rect(38, 45, 16, 18, tone(a, 1.25), 1) + rect(65, 34, 16, 29, a, 1) + rect(92, 22, 16, 41, tone(a, 0.8), 1) +
+      rect(6, 76, 128, 5, METAL, 2) + `<path d="M70 81 L70 87" ${thin(INK, 1.5)}/><circle cx="70" cy="87" r="1.5" fill="${INK}"/>`,
+  },
+  bank_logo_sign: {
+    w: 120, h: 40,
+    draw: (a) =>
+      box(3, 3, 114, 34, 5, tone(a, 0.8), tone(a, 1.18)) + rect(7, 9, 106, 23, a, 8) +
+      `<circle cx="49" cy="20" r="7" fill="#f4ece0" ${LINE}/>` +
+      shape("M33 27 Q60 29 86 13 Q71 35 33 27 Z", "#f4ece0"),
+  },
+
   bed: {
     w: 130,
     h: 96,

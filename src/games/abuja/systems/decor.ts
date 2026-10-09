@@ -56,7 +56,7 @@ export const CATALOGUE: DecorDef[] = [
 export const catalogueItem = (id: string) => CATALOGUE.find((c) => c.id === id);
 
 /** Hang on the wall rather than stand on the floor. */
-export const ON_WALL = new Set(["window", "picture", "clock", "blackboard", "whiteboard", "walldoor", "bathmirror", "wallshelf", "walllamp", "poster"]);
+export const ON_WALL = new Set(["window", "picture", "clock", "blackboard", "whiteboard", "walldoor", "bathmirror", "wallshelf", "walllamp", "poster", "projector_screen", "bank_logo_sign"]);
 /** Built in: doors and the kitchen stay where they are. */
 const FIXED = new Set(["walldoor", "window", "sink", "stove", "fridge", "bucket", "broom"]);
 export const isFixed = (id: string) => FIXED.has(id);
