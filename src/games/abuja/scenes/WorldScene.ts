@@ -27,6 +27,7 @@ import { playerPainted } from "../systems/painted";
 import { building as buildingInfo } from "../systems/city/catalog";
 import { fullLook, lookKey, randomLook, stageOf, type Look } from "../systems/character";
 import { ChunkedGraphics, type CullBounds } from "./chunkedGraphics";
+import { NightLight, generator, outage, type Light } from "./nightLight";
 import { INK, animateWalk, pose, building, lotKey, placeBuilding, queueBuildings, faceVehicle, figure, labelScale, loadDeferredWalks, makeArt, queueCharacters, setPeopleScale, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
 
 // A brisk walk: a little over two body-lengths a second, as people move in a life sim.
@@ -196,6 +197,13 @@ export class WorldScene extends Phaser.Scene {
   private towers: { g: Phaser.GameObjects.Components.Alpha; face: { x: number; y: number; w: number; h: number }; base: number }[] = [];
   /** Lit windows of the city's buildings, faded in at night. */
   private nightWindows: Phaser.GameObjects.Image[] = [];
+  /** Which district and plot each lit-windows picture belongs to (for power cuts). */
+  private litInfo = new Map<Phaser.GameObjects.Image, { district: string; id: string }>();
+  /** Real darkness with light cut out of it. */
+  private nightFx: NightLight | null = null;
+  /** Street lamps, and kiosks and stalls with a bulb or lantern, for the night. */
+  private lampSpots: { x: number; y: number; district: string }[] = [];
+  private warmSpots: { x: number; y: number }[] = [];
   private signals: { img: Phaser.GameObjects.Image; x: number; y: number; axis: "x" | "y" }[] = [];
   private boat: Phaser.GameObjects.Image | null = null;
   private beatMarker!: Phaser.GameObjects.Container;
@@ -282,6 +290,9 @@ export class WorldScene extends Phaser.Scene {
     this.riding = null;
     this.towers = [];
     this.nightWindows = [];
+    this.litInfo = new Map();
+    this.lampSpots = [];
+    this.warmSpots = [];
     this.signals = [];
     this.windowLights = this.add.graphics().setDepth(31).setAlpha(0);
     this.exploring = false;
@@ -301,6 +312,7 @@ export class WorldScene extends Phaser.Scene {
     this.taskMarker = this.makeMarker(0x38bdf8, "★");
     this.arrow = this.add.triangle(0, 0, 0, -12, 9, 8, -9, 8, 0x70d3ad).setDepth(20).setVisible(false);
     this.night = this.add.rectangle(0, 0, 4000, 4000, 0x0b1330, 0).setOrigin(0).setScrollFactor(0).setDepth(30);
+    this.nightFx = new NightLight(this);
     // Warm sunlight over everything by day, and a soft vignette to pull the eye to the middle.
     this.sun = this.add.rectangle(0, 0, 4000, 4000, 0xffc978, 0).setOrigin(0).setScrollFactor(0).setDepth(29.5);
     this.vignette = this.add.image(0, 0, this.makeVignette()).setOrigin(0).setScrollFactor(0).setDepth(29.6);
@@ -816,6 +828,8 @@ export class WorldScene extends Phaser.Scene {
     if (b.lit) {
       b.lit.setAlpha(this.litLevel);
       this.nightWindows.push(b.lit);
+      this.litInfo.set(b.lit, { district: l.district, id: l.id });
+      b.lit.setVisible(this.powered(b.lit));
     }
     // Walk behind a building and it fades so you can still see yourself.
     const tower = l.solid ? { g: { setAlpha: (a: number) => (b.img.setAlpha(a), b.lit?.setAlpha(Math.min(a, b.lit.alpha)), b.img) } as unknown as Phaser.GameObjects.Components.Alpha, face: { x: l.x, y: b.top, w: l.w, h: l.y + l.h - b.top }, base: l.y + l.h } : null;
@@ -831,7 +845,10 @@ export class WorldScene extends Phaser.Scene {
     p.img.destroy();
     p.lit?.destroy();
     p.key?.destroy();
-    if (p.lit) this.nightWindows = this.nightWindows.filter((w) => w !== p.lit);
+    if (p.lit) {
+      this.nightWindows = this.nightWindows.filter((w) => w !== p.lit);
+      this.litInfo.delete(p.lit);
+    }
     if (p.tower) this.towers = this.towers.filter((t) => t !== p.tower);
     if (![...this.placed.values()].some((o) => o.texture === p.texture)) {
       this.textures.remove(p.texture);
@@ -937,6 +954,7 @@ export class WorldScene extends Phaser.Scene {
       const options = (city ? DISTRICT_PROPS[districtAt(x, y)?.id ?? ""] : undefined) ?? PROPS_ON[ground] ?? PROPS_ON.grass!;
       const key = options[Math.floor(pick * options.length)]!;
       const img = this.add.image(x, y, key).setOrigin(0.5, 0.9).setDepth(5 + y / 10000);
+      if (city && (key === "kiosk" || key === "stall")) this.warmSpots.push({ x, y });
       const isTree = key.startsWith("tree") || key === "palm" || key === "boulders";
       if (isTree) img.setScale(key.startsWith("tree") ? 0.85 + r() * 0.3 : 0.8 + r() * 0.35);
       // Big things are solid at their base, so you walk around them.
@@ -1016,6 +1034,7 @@ export class WorldScene extends Phaser.Scene {
         const sy = p.y + dy;
         if (blocked(sx, sy, 30, this.solids) || onLot(sx, sy, 24)) continue;
         this.add.image(sx, sy, "stall").setOrigin(0.5, 0.92).setScale(0.85).setDepth(5 + sy / 10000);
+        this.warmSpots.push({ x: sx, y: sy });
         this.solids.push({ x: sx - 26, y: sy - 10, w: 52, h: 12 });
       }
     }
@@ -1025,6 +1044,7 @@ export class WorldScene extends Phaser.Scene {
     const lamp = (x: number, y: number) => {
       if (blocked(x, y, 12, this.solids)) return;
       this.add.image(x, y, "lamp").setOrigin(0.5, 0.95).setDepth(5 + y / 10000);
+      this.lampSpots.push({ x, y, district: districtAt(x, y)?.id ?? "" });
       this.glows.push(this.add.image(x, y - 61, "glow").setDepth(31).setBlendMode(Phaser.BlendModes.ADD).setTint(0xffc46b).setAlpha(0));
     };
     const clear = (v: number, axis: "x" | "y") => (axis === "x" ? ROADS.xs : ROADS.ys).every((c) => Math.abs(v - c) > reach(road(axis, c)) + 30);
@@ -1152,6 +1172,51 @@ export class WorldScene extends Phaser.Scene {
     return this.add.container(0, 0, [...stains, ...stink, ...flies]).setVisible(false);
   }
 
+  /** The power cut already mentioned (day and district). */
+  private cutNoted = "";
+  /** The last time of day drawn (null before the first), to fade rather than jump. */
+  private lastDusk: number | null = null;
+
+  /** A building's windows stay lit tonight unless a power cut hit its district and it has no generator. */
+  private powered(img: Phaser.GameObjects.Image) {
+    const info = this.litInfo.get(img);
+    const day = getState()?.day ?? 0;
+    return !info || !outage(info.district, day) || generator(info.id, info.district);
+  }
+
+  /** Every light in the city this frame: lamps, kiosks, signposts, you, and the traffic. */
+  private drawNight() {
+    const fx = this.nightFx;
+    if (!fx || this.mapId !== "city") {
+      fx?.render([], []);
+      return;
+    }
+    if (fx.level < 0.01) return fx.render([], []);
+    const day = getState()?.day ?? 0;
+    const lights: Light[] = [];
+    for (const l of this.lampSpots) {
+      if (outage(l.district, day)) continue;
+      lights.push({ x: l.x, y: l.y - 4, r: 150, a: 0.92, sy: 0.6, glow: 0xffb45c, ga: 0.42, gr: 105 });
+      lights.push({ x: l.x, y: l.y - 61, r: 30, a: 1, glow: 0xffe0a0, ga: 0.95, gr: 34 });
+    }
+    // Kiosks and stalls light up with a bulb or a lantern, power or no power.
+    for (const k of this.warmSpots) lights.push({ x: k.x, y: k.y - 10, r: 85, a: 0.85, sy: 0.75, glow: 0xff8a2a, ga: 0.5, gr: 60 });
+    for (const p of PLACES) {
+      lights.push({ x: p.x, y: p.y - 24, r: 75, a: 0.75, glow: 0xffe3a3, ga: 0.22, gr: 50 });
+    }
+    // Headlights ahead and tail lights behind every moving car.
+    for (const car of this.cars) {
+      const dir = car.axis === "x" ? (car.speed > 0 ? 0 : Math.PI) : car.speed > 0 ? Math.PI / 2 : -Math.PI / 2;
+      const cx = Math.cos(dir);
+      const cy = Math.sin(dir);
+      lights.push({ x: car.body.x + cx * 70, y: car.body.y - 8 + cy * 70, r: 62, sx: 2.3, sy: 0.75, rot: dir, a: 0.9, glow: 0xfff3c4, ga: 0.3 });
+      lights.push({ x: car.body.x - cx * 30, y: car.body.y - 10 - cy * 30, r: 16, a: 0.4, glow: 0xff2a2a, ga: 0.95, gr: 15 });
+    }
+    // A little light around you, so you can always see where you walk.
+    if (this.player) lights.push({ x: this.player.x, y: this.player.y - 18, r: 110, a: 0.55 });
+    fx.render(lights, this.nightWindows);
+  }
+
   private makeMarker(tint: number, glyph: string) {
     const ring = this.add.circle(0, 0, 34, tint, 0.2).setStrokeStyle(3, tint, 1);
     const sign = this.add
@@ -1230,22 +1295,30 @@ export class WorldScene extends Phaser.Scene {
     this.rain.setVisible(w.wet).setAlpha(w.sky === "storm" ? 0.95 : 0.7);
     this.haze.setFillStyle(0xd8c9a3, w.sky === "haze" ? (state.slot === 0 ? 0.32 : 0.22) : 0);
     const gloom = w.sky === "storm" ? 0.28 : w.sky === "rain" ? 0.16 : w.sky === "cloudy" ? 0.06 : 0;
-    const alpha = Math.min(0.75, (this.mapId !== "city" ? 0 : [0, 0.06, 0.24, 0.62][Math.min(state.slot, 3)]!) + gloom);
-    this.night.setFillStyle(state.slot === 2 ? 0x7c2d12 : 0x050b24, alpha);
+    // Evening and night: real darkness (nightLight.ts) with lamps, windows and headlights cut through it.
+    // The flat shade only adds the day's gloom and a touch of sunset colour.
+    const city = this.mapId === "city";
+    const dusk = Math.min(state.slot, 3);
+    const darkness = !city ? 0 : dusk === 3 ? 0.84 + gloom * 0.3 : dusk === 2 ? 0.36 + gloom * 0.4 : 0;
+    this.nightFx?.set(Math.min(0.93, darkness), dusk === 2 ? 0x2a1640 : 0x040920, this.lastDusk === null);
+    this.lastDusk = dusk;
+    const alpha = Math.min(0.75, (city ? [0, 0.06, 0.1, 0][dusk]! : 0) + (dusk >= 2 ? gloom * 0.3 : gloom));
+    this.night.setFillStyle(dusk === 2 ? 0x7c2d12 : 0x050b24, alpha);
     // Golden morning, bright afternoon, orange evening; the vignette deepens at night.
     const slot = Math.min(state.slot, 3);
     this.sun.setFillStyle(slot === 2 ? 0xff9d4d : 0xffc978, this.mapId !== "city" ? 0.03 : [0.07, 0.045, 0.08, 0][slot]!);
     this.vignette.setAlpha([0.8, 0.7, 0.9, 1][slot]!);
-    const glow = this.mapId !== "city" ? 0 : [0, 0, 0.2, 0.4][Math.min(state.slot, 3)]!;
-    this.glows.forEach((g) => g.setAlpha(glow));
+    // Lamp heads are drawn by the night light now (and go dark in a power cut).
+    this.glows.forEach((g) => g.setAlpha(0));
     this.windowLights?.setAlpha(this.mapId !== "city" ? 0 : [0, 0, 0.45, 0.95][Math.min(state.slot, 3)]!);
-    const lit = this.mapId !== "city" ? 0 : [0, 0, 0.55, 1][Math.min(state.slot, 3)]!;
+    const lit = this.mapId !== "city" ? 0 : [0, 0, 0.7, 1][Math.min(state.slot, 3)]!;
     this.litLevel = lit;
-    this.nightWindows.forEach((l) => l.setAlpha(lit));
+    this.nightWindows.forEach((l) => l.setAlpha(lit).setVisible(this.powered(l)));
   }
 
   update(time: number, deltaMs: number) {
     this.fitOverlays();
+    this.drawNight();
     const dt = Math.min(0.05, deltaMs / 1000);
     const state = getState();
     if (!state || input.paused) return;
@@ -1339,6 +1412,12 @@ export class WorldScene extends Phaser.Scene {
     if (this.mapId === "city" && time - this.lastTrespass > 1000) {
       this.lastTrespass = time;
       const here = districtAt(this.player.x, this.player.y);
+      // A power cut tonight: say so the first time you walk into the dark.
+      const cutKey = here ? `${state.day}:${here.id}` : "";
+      if (here && state.slot >= 2 && cutKey !== this.cutNoted && outage(here.id, state.day)) {
+        this.cutNoted = cutKey;
+        bus.emit("blocked", `⚡ NEPA has taken light in ${here.name} tonight. Only the generators are humming.`);
+      }
       const unwelcome = here && !welcome(state, here.id) ? here : null;
       if (unwelcome) {
         if (this.trespassIn !== unwelcome.id && unwelcome.gate) bus.emit("blocked", `⚠️ ${unwelcome.gate.message}`);

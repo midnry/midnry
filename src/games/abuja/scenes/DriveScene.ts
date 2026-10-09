@@ -106,6 +106,33 @@ export class DriveScene extends Phaser.Scene {
   private keys!: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d", Phaser.Input.Keyboard.Key>;
   /** The wheel, pedals and gear: the keyboard, or the on-screen controls. */
   private controls = { steer: 0, throttle: 0, brake: 0, reverse: false };
+  /** Your headlights at night. */
+  private beam: Phaser.GameObjects.Image | null = null;
+  /** Scenery and traffic in moonlight (0 by day). */
+  private nightTint = 0;
+
+  /** A soft cone of light from the car up the road. */
+  private beamTexture() {
+    const key = "drive_beam";
+    if (!this.textures.exists(key)) {
+      const tex = this.textures.createCanvas(key, 512, 384)!;
+      const ctx = tex.getContext();
+      const g = ctx.createRadialGradient(256, 384, 10, 256, 384, 380);
+      g.addColorStop(0, "rgba(255,240,200,0.9)");
+      g.addColorStop(0.5, "rgba(255,230,180,0.35)");
+      g.addColorStop(1, "rgba(255,230,180,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(150, 384);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(512, 0);
+      ctx.lineTo(362, 384);
+      ctx.closePath();
+      ctx.fill();
+      tex.refresh();
+    }
+    return key;
+  }
 
   constructor() {
     super("drive");
@@ -121,6 +148,8 @@ export class DriveScene extends Phaser.Scene {
     this.frscZ = null;
     this.lastRoad = null;
     this.easeTo = null;
+    this.beam = null;
+    this.nightTint = 0;
     Object.assign(driveInput, { steer: 0, throttle: 0, brake: 0, reverse: false, skip: false });
   }
 
@@ -244,10 +273,26 @@ export class DriveScene extends Phaser.Scene {
     if (w.wet && this.textures.exists("rainstreaks")) this.rain = this.add.tileSprite(0, 0, width, height, "rainstreaks").setOrigin(0).setScrollFactor(0).setDepth(999).setAlpha(w.sky === "storm" ? 0.95 : 0.75).setScale(1.4);
     if (w.sky === "haze") this.add.rectangle(0, 0, width, height, 0xd8c9a3, 0.22).setOrigin(0).setScrollFactor(0).setDepth(998);
     if (w.wet || w.sky === "haze") this.add.rectangle(0, 0, width, height, 0x1e293b, w.sky === "storm" ? 0.22 : w.sky === "haze" ? 0 : 0.12).setOrigin(0).setScrollFactor(0).setDepth(997);
+    // Evening and night on the road: a darker world, stars, and your headlights on the tarmac ahead.
+    const slot = Math.min(3, st?.slot ?? 0);
+    if (slot >= 2) {
+      const night = slot === 3;
+      this.sky.setTint(night ? 0x1b2550 : 0xb07a8e);
+      this.hills.setTint(night ? 0x232a48 : 0x8a6a80);
+      this.add.rectangle(0, 0, width, height, night ? 0x040a22 : 0x3a1d4a, night ? 0.5 : 0.22).setOrigin(0).setScrollFactor(0).setDepth(996);
+      this.nightTint = night ? 0x7884b4 : 0xd6b4c4;
+      if (night) {
+        const stars = this.add.graphics().setDepth(996.5).setScrollFactor(0);
+        for (let i = 0; i < 70; i++) stars.fillStyle(0xffffff, 0.4 + Math.random() * 0.6).fillCircle(Math.random() * width, Math.random() * height * 0.42, Math.random() < 0.15 ? 1.6 : 0.9);
+        stars.fillStyle(0xfdf6d8, 0.95).fillCircle(width * 0.78, height * 0.12, 16);
+        this.beam = this.add.image(width / 2, height, this.beamTexture()).setOrigin(0.5, 1).setDepth(997.5).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.55);
+      }
+    }
     this.placeScenery();
     this.spawnTraffic();
     const myKey = `${vehicleKey(this.myStyle())}_back`;
     this.me = this.add.image(width / 2, height - 30, myKey).setOrigin(0.5, 1).setDepth(1000);
+    if (slot === 3) this.me.setTint(0x9aa6c8);
     this.label = this.add
       .text(width / 2, height * 0.18, "", { fontFamily: GAME_FONT, fontSize: "22px", fontStyle: "bold", color: "#ffffff", stroke: "#0b1f3d", strokeThickness: 6 })
       .setOrigin(0.5)
@@ -279,6 +324,7 @@ export class DriveScene extends Phaser.Scene {
       const w = phone ? width * 0.44 : Math.min(width * 0.34, height * 0.42);
       this.me.setPosition(width / 2, this.carY());
       this.me.setScale(w / this.me.width);
+      this.beam?.setPosition(width / 2, this.carY() - this.me.displayHeight * 0.55).setDisplaySize(w * 2.4, height * 0.5);
     }
   }
 
@@ -684,6 +730,8 @@ export class DriveScene extends Phaser.Scene {
     const dw = w * s.p.w1;
     if (dw < 1.5 || dw > this.scale.width * 3) return void img.setVisible(false);
     img.setVisible(true).setPosition(sx, s.p.y1).setScale(dw / img.width).setDepth(10 + (DRAW - (s.i - this.segAt(this.pos).i)) + (vehicle ? 0.5 : 0));
+    if (this.nightTint) img.setTint(this.nightTint);
+    else img.clearTint();
     // Hidden behind the brow of a hill.
     const top = s.p.y1 - img.displayHeight;
     if (top > s.clip) img.setVisible(false);
