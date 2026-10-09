@@ -5,6 +5,7 @@ import { characterParts, dims, fullLook, lookKey, type LifeStage, type Look } fr
 import { furnitureSvg } from "../systems/furniture";
 import { building as buildingDef } from "../systems/city/catalog";
 import { buildingArt } from "../systems/city/buildingArt";
+import paintedBuildingsJson from "../data/paintedBuildings.json";
 import { lotLabel, type Lot } from "../systems/city/layout";
 import { FLEET, vehicleBox, vehicleKey, vehicleSvg, vehicleSvgLeft, type VehicleKind, type VehicleStyle, type VehicleView } from "../systems/vehicles";
 
@@ -863,8 +864,24 @@ function animatePainted(f: Figure, time: number, motion: Motion) {
 
 const BRES = 2.2;
 
-/** The texture for a lot's building: lots that look alike share one. */
-export const lotKey = (l: Lot) => `bld_${l.def}_${l.w}x${l.h}_${l.floors}_${l.palette}_${l.seed % 3}${lotLabel(l) ? `_${lotLabel(l)!.replace(/\W/g, "")}` : ""}`;
+type PaintedBuilding = { variant: string; floors: number; sign: { x: number; y: number; w: number } | null };
+const PAINTED_BUILDINGS: Record<string, PaintedBuilding[]> = paintedBuildingsJson;
+const SVG_FALLBACKS = new WeakSet<Phaser.Textures.Texture>();
+
+function paintedBuilding(l: Lot) {
+  const kind = buildingDef(l.def)?.art;
+  const name = `${kind}-${l.w}x${l.h}`;
+  const variants = PAINTED_BUILDINGS[name];
+  if (!variants?.length) return null;
+  const variant = variants[((l.seed + l.palette) >>> 0) % variants.length]!;
+  return { ...variant, file: `${name}-${variant.variant}` };
+}
+
+/** Painted lots share their fixed-height variant; unpainted keys stay unchanged. */
+export const lotKey = (l: Lot) => {
+  const painted = paintedBuilding(l);
+  return painted ? `bld_painted_${painted.file}${lotLabel(l) ? `_${lotLabel(l)!.replace(/\W/g, "")}` : ""}` : `bld_${l.def}_${l.w}x${l.h}_${l.floors}_${l.palette}_${l.seed % 3}${lotLabel(l) ? `_${lotLabel(l)!.replace(/\W/g, "")}` : ""}`;
+};
 
 function lotArt(l: Lot) {
   const def = buildingDef(l.def)!;
@@ -872,27 +889,51 @@ function lotArt(l: Lot) {
   return buildingArt(def.art, { w: l.w, h: l.h, floors: l.floors, wall, trim, seed: l.seed % 3, label: lotLabel(l) });
 }
 
-/** Queue every building texture for these lots (call from preload). */
 /** Queue the building pictures not loaded yet. Returns the keys that also have a night-lights picture. */
 export function queueBuildings(scene: Phaser.Scene, lots: Lot[]): Set<string> {
   const urls: string[] = [];
   const seen = new Set<string>();
   const lit = new Set<string>();
+  const fallbacks = new Map<string, { lot: Lot; lights: boolean }>();
+  const svgTexture = (key: string, svg: string) => {
+    if (!svg) return;
+    const scaled = svg.replace(/width="([\d.]+)" height="([\d.]+)"/, (_m, w, h) => `width="${Math.round(Number(w) * BRES)}" height="${Math.round(Number(h) * BRES)}"`);
+    const url = URL.createObjectURL(new Blob([scaled], { type: "image/svg+xml" }));
+    urls.push(url);
+    scene.load.svg(key, url);
+  };
   for (const l of lots) {
     const key = lotKey(l);
     if (seen.has(key) || scene.textures.exists(key)) continue;
     seen.add(key);
-    const art = lotArt(l);
-    if (art.lights) lit.add(key);
-    const scaled = (svg: string) => svg.replace(/width="([\d.]+)" height="([\d.]+)"/, (_m, w, h) => `width="${Math.round(Number(w) * BRES)}" height="${Math.round(Number(h) * BRES)}"`);
-    for (const [k, svg] of [[key, art.svg], [`${key}_lit`, art.lights]] as const) {
-      if (!svg) continue;
-      const url = URL.createObjectURL(new Blob([scaled(svg)], { type: "image/svg+xml" }));
-      urls.push(url);
-      scene.load.svg(k, url);
+    const painted = paintedBuilding(l);
+    if (painted) {
+      lit.add(key);
+      scene.load.image(key, `/abuja/buildings/${painted.file}.webp`);
+      scene.load.image(`${key}_lit`, `/abuja/buildings/${painted.file}-lit.webp`);
+      fallbacks.set(key, { lot: l, lights: false });
+      fallbacks.set(`${key}_lit`, { lot: l, lights: true });
+    } else {
+      const art = lotArt(l);
+      if (art.lights) lit.add(key);
+      svgTexture(key, art.svg);
+      svgTexture(`${key}_lit`, art.lights);
     }
   }
-  if (urls.length) scene.load.once("complete", () => urls.forEach((url) => URL.revokeObjectURL(url)));
+  // A missing painting still yields a drawable building during asset rollouts.
+  const onError = (file: Phaser.Loader.File) => {
+    const fallback = fallbacks.get(file.key);
+    if (!fallback) return;
+    fallbacks.delete(file.key);
+    const art = lotArt(fallback.lot);
+    scene.load.once(`filecomplete-svg-${file.key}`, () => { SVG_FALLBACKS.add(scene.textures.get(file.key)); });
+    svgTexture(file.key, fallback.lights ? art.lights : art.svg);
+  };
+  if (fallbacks.size) scene.load.on("loaderror", onError);
+  if (seen.size) scene.load.once("complete", () => {
+    urls.forEach((url) => URL.revokeObjectURL(url));
+    scene.load.off("loaderror", onError);
+  });
   return lit;
 }
 
@@ -902,8 +943,26 @@ export function placeBuilding(scene: Phaser.Scene, l: Lot) {
   const base = l.y + l.h;
   // Parks and farms are ground you walk on; buildings sort by where they meet the ground.
   const depth = l.solid ? 5 + base / 10000 : 3;
-  const img = scene.add.image(l.x, base, key).setOrigin(0, 1).setScale(1 / BRES).setDepth(depth);
-  const lit = scene.textures.exists(`${key}_lit`) ? scene.add.image(l.x, base, `${key}_lit`).setOrigin(0, 1).setScale(1 / BRES).setDepth(depth + 0.00001).setAlpha(0) : null;
+  const painted = paintedBuilding(l);
+  const img = scene.add.image(l.x, base, key).setOrigin(0, 1).setDepth(depth);
+  const scale = painted ? l.w / img.width : 1 / BRES;
+  img.setScale(scale);
+  const lightsMatch = !painted || SVG_FALLBACKS.has(img.texture) === SVG_FALLBACKS.has(scene.textures.get(`${key}_lit`));
+  const lit = lightsMatch && scene.textures.exists(`${key}_lit`) ? scene.add.image(l.x, base, `${key}_lit`).setOrigin(0, 1).setDepth(depth + 0.00001).setAlpha(0) : null;
+  // Width-based scale also works if a missing WebP loaded the SVG fallback.
+  if (lit) lit.setScale(painted ? l.w / lit.width : scale);
+  const label = lotLabel(l);
+  if (painted?.sign && label && !SVG_FALLBACKS.has(img.texture)) {
+    const band = painted.sign;
+    // Manifest positions are at 3× world resolution, independent of actual fallback texture size.
+    const unit = 1 / 3;
+    const fontSize = 18;
+    const sign = scene.add.text(l.x + band.x * unit, base - img.displayHeight + band.y * unit, label, { fontFamily: GAME_FONT, fontSize: `${fontSize}px`, fontStyle: "bold", color: "#ffffff" }).setOrigin(0.5).setDepth(depth + 0.00002);
+    sign.setScale(Math.min(1 / 3, band.w * unit / Math.max(1, sign.width)));
+    const sync = () => sign.setAlpha(img.alpha).setVisible(img.visible).setPosition(img.x + band.x * unit, img.y - img.displayHeight + band.y * unit);
+    scene.events.on("preupdate", sync);
+    img.once("destroy", () => { scene.events.off("preupdate", sync); sign.destroy(); });
+  }
   return { img, lit, top: base - img.displayHeight };
 }
 

@@ -1,0 +1,314 @@
+{
+  "house-84x72": [
+    {
+      "variant": "a",
+      "floors": 1,
+      "sign": null
+    },
+    {
+      "variant": "b",
+      "floors": 1,
+      "sign": null
+    }
+  ],
+  "house-64x56": [
+    {
+      "variant": "a",
+      "floors": 1,
+      "sign": null
+    },
+    {
+      "variant": "b",
+      "floors": 1,
+      "sign": null
+    }
+  ],
+  "apartment-84x72": [
+    {
+      "variant": "a",
+      "floors": 4,
+      "sign": null
+    },
+    {
+      "variant": "b",
+      "floors": 4,
+      "sign": null
+    }
+  ],
+  "townhouse-84x72": [
+    {
+      "variant": "a",
+      "floors": 2,
+      "sign": null
+    },
+    {
+      "variant": "b",
+      "floors": 2,
+      "sign": null
+    }
+  ],
+  "bighouse-84x72": [
+    {
+      "variant": "a",
+      "floors": 2,
+      "sign": null
+    },
+    {
+      "variant": "b",
+      "floors": 2,
+      "sign": null
+    }
+  ],
+  "duplex-84x72": [
+    {
+      "variant": "a",
+      "floors": 2,
+      "sign": null
+    },
+    {
+      "variant": "b",
+      "floors": 2,
+      "sign": null
+    }
+  ],
+  "shop-84x72": [
+    {
+      "variant": "a",
+      "floors": 1,
+      "sign": {
+        "x": 102.6,
+        "y": 255,
+        "w": 57.6
+      }
+    },
+    {
+      "variant": "b",
+      "floors": 1,
+      "sign": {
+        "x": 102.6,
+        "y": 255,
+        "w": 57.6
+      }
+    }
+  ],
+  "shop-64x56": [
+    {
+      "variant": "a",
+      "floors": 1,
+      "sign": {
+        "x": 77.7,
+        "y": 207,
+        "w": 57.6
+      }
+    },
+    {
+      "variant": "b",
+      "floors": 1,
+      "sign": {
+        "x": 77.7,
+        "y": 207,
+        "w": 57.6
+      }
+    }
+  ],
+  "restaurant-84x72": [
+    {
+      "variant": "a",
+      "floors": 2,
+      "sign": {
+        "x": 102.6,
+        "y": 189,
+        "w": 117
+      }
+    },
+    {
+      "variant": "b",
+      "floors": 2,
+      "sign": {
+        "x": 102.6,
+        "y": 189,
+        "w": 117
+      }
+    }
+  ],
+  "office-84x72": [
+    {
+      "variant": "a",
+      "floors": 6,
+      "sign": {
+        "x": 102.6,
+        "y": 210,
+        "w": 77.4
+      }
+    },
+    {
+      "variant": "b",
+      "floors": 6,
+      "sign": {
+        "x": 102.6,
+        "y": 210,
+        "w": 77.4
+      }
+    }
+  ],
+  "tower-84x72": [
+    {
+      "variant": "a",
+      "floors": 16,
+      "sign": {
+        "x": 102.6,
+        "y": 216,
+        "w": 67.5
+      }
+    },
+    {
+      "variant": "b",
+      "floors": 16,
+      "sign": {
+        "x": 102.6,
+        "y": 216,
+        "w": 67.5
+      }
+    }
+  ],
+  "bank-84x72": [
+    {
+      "variant": "a",
+      "floors": 8,
+      "sign": {
+        "x": 102.6,
+        "y": 453,
+        "w": 124.8
+      }
+    },
+    {
+      "variant": "b",
+      "floors": 8,
+      "sign": {
+        "x": 102.6,
+        "y": 453,
+        "w": 124.8
+      }
+    }
+  ],
+  "hotel-84x72": [
+    {
+      "variant": "a",
+      "floors": 8,
+      "sign": {
+        "x": 102,
+        "y": 456,
+        "w": 84
+      }
+    },
+    {
+      "variant": "b",
+      "floors": 8,
+      "sign": {
+        "x": 102,
+        "y": 456,
+        "w": 84
+      }
+    }
+  ],
+  "police-84x72": [
+    {
+      "variant": "a",
+      "floors": 2,
+      "sign": {
+        "x": 102,
+        "y": 192,
+        "w": 168
+      }
+    },
+    {
+      "variant": "b",
+      "floors": 2,
+      "sign": {
+        "x": 102,
+        "y": 192,
+        "w": 168
+      }
+    }
+  ],
+  "government-184x72": [
+    {
+      "variant": "a",
+      "floors": 4,
+      "sign": {
+        "x": 252.6,
+        "y": 255,
+        "w": 117
+      }
+    },
+    {
+      "variant": "b",
+      "floors": 4,
+      "sign": {
+        "x": 252.6,
+        "y": 255,
+        "w": 117
+      }
+    }
+  ],
+  "mall-184x72": [
+    {
+      "variant": "a",
+      "floors": 3,
+      "sign": {
+        "x": 252.6,
+        "y": 113.1,
+        "w": 132
+      }
+    },
+    {
+      "variant": "b",
+      "floors": 3,
+      "sign": {
+        "x": 252.6,
+        "y": 113.1,
+        "w": 132
+      }
+    }
+  ],
+  "hospital-184x72": [
+    {
+      "variant": "a",
+      "floors": 4,
+      "sign": {
+        "x": 276.6,
+        "y": 240,
+        "w": 105
+      }
+    },
+    {
+      "variant": "b",
+      "floors": 4,
+      "sign": {
+        "x": 276.6,
+        "y": 240,
+        "w": 105
+      }
+    }
+  ],
+  "school-184x72": [
+    {
+      "variant": "a",
+      "floors": 2,
+      "sign": {
+        "x": 182.1,
+        "y": 150,
+        "w": 83.4
+      }
+    },
+    {
+      "variant": "b",
+      "floors": 2,
+      "sign": {
+        "x": 182.1,
+        "y": 150,
+        "w": 83.4
+      }
+    }
+  ]
+}
