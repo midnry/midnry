@@ -74,6 +74,10 @@ export const RAIL = { y: 4465, station: { x: 3156, y: 4465 } };
 
 const CELL = { w: 100, h: 95 };
 const GAP = { w: 16, h: 23 };
+/** Spacing of the plot grid: wider than a building so there's room to walk between them. */
+const PITCH = { w: 122, h: 116 };
+/** Clear space kept around ordinary plots, so streets between buildings stay walkable. */
+const ROOM = 22;
 
 export type Lot = {
   id: string;
@@ -347,6 +351,7 @@ export function cityLots(): Lot[] {
     if (best) make(def, best, districtOf(best.x + best.w / 2, best.y + best.h / 2), hash(`${f.def}${f.district}`));
   }
 
+  const roomy = (r: MapRect) => !taken.some((t) => overlaps(r, t, ROOM));
   // Everything else: plots in rows inside every city block (the land between the main roads), zoned in clusters.
   const spans = (cuts: number[], size: number, edge: (c: number) => number) => {
     const edges = [0, ...cuts.flatMap((c) => [c - edge(c) - 6, c + edge(c) + 6]), size];
@@ -356,27 +361,27 @@ export function cityLots(): Lot[] {
   };
   for (const [x0, x1] of spans(ROADS.xs, WORLD.width, reachX)) {
     for (const [y0, y1] of spans(ROADS.ys, WORLD.height, reachY)) {
-      const cols = Math.floor((x1 - x0 - 8) / CELL.w);
-      const rows = Math.floor((y1 - y0 - 8) / CELL.h);
-      const ox = x0 + (x1 - x0 - cols * CELL.w) / 2 + GAP.w / 2;
-      const oy = y0 + (y1 - y0 - rows * CELL.h) / 2 + GAP.h / 2;
+      const cols = Math.floor((x1 - x0 - 8) / PITCH.w);
+      const rows = Math.floor((y1 - y0 - 8) / PITCH.h);
+      const ox = x0 + (x1 - x0 - cols * PITCH.w) / 2 + (PITCH.w - (CELL.w - GAP.w)) / 2;
+      const oy = y0 + (y1 - y0 - rows * PITCH.h) / 2 + (PITCH.h - (CELL.h - GAP.h)) / 2;
       for (let gy = 0; gy < rows; gy++) {
         for (let gx = 0; gx < cols; gx++) {
-          const x = Math.round(ox + gx * CELL.w);
-          const y = Math.round(oy + gy * CELL.h);
+          const x = Math.round(ox + gx * PITCH.w);
+          const y = Math.round(oy + gy * PITCH.h);
           const d = districtOf(x + CELL.w / 2, y + CELL.h / 2);
           const mix = DISTRICT_ZONES[d] ?? { residential: 1 };
           // A zone per 2×2 block of plots, so neighbourhoods hang together.
           const zr = rng(hash(`${d}:${Math.floor(x / 200)}:${Math.floor(y / 190)}`));
           const zone = weighted(zr, mix);
           const r = rng(hash(`${d}:${x}:${y}`));
-          if (r() < 0.06) continue; // open plots
+          if (r() < 0.1) continue; // open plots
           const options = DISTRICT_KINDS[d]?.[zone] ?? ZONE_DEFAULT[zone];
           const pickDef = building(options[Math.floor(r() * options.length)]!) ?? building("small_house")!;
           const tryDefs = [pickDef, ...options.map((id) => building(id)!).filter((b) => b.cells[0] === 1 && b.cells[1] === 1)];
           for (const def of tryDefs) {
             const rect = { x, y, w: def.cells[0] * CELL.w - GAP.w, h: def.cells[1] * CELL.h - GAP.h };
-            if (rect.x + rect.w <= x1 && rect.y + rect.h <= y1 && anywhere(rect)) {
+            if (rect.x + rect.w <= x1 && rect.y + rect.h <= y1 && anywhere(rect) && roomy(rect)) {
               make(def, rect, d, hash(`${d}${x}${y}`));
               break;
             }
@@ -391,10 +396,10 @@ export function cityLots(): Lot[] {
   for (let y = 44; y + S.h < WORLD.height; y += S.h + 18) {
     for (let x = 14; x + S.w < WORLD.width; x += S.w + 14) {
       const rect = { x, y, w: S.w, h: S.h };
-      if (!anywhere(rect)) continue;
+      if (!anywhere(rect) || !roomy(rect)) continue;
       const d = districtOf(x + S.w / 2, y + S.h / 2);
       const r = rng(hash(`s${d}:${x}:${y}`));
-      if (r() < 0.35) continue;
+      if (r() < 0.6) continue;
       const zone = weighted(rng(hash(`${d}:${Math.floor(x / 200)}:${Math.floor(y / 190)}`)), DISTRICT_ZONES[d] ?? { residential: 1 });
       const options = SMALL[zone];
       const def = building(options[Math.floor(r() * options.length)] ?? "park") ?? building("park")!;

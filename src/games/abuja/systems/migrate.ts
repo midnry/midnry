@@ -4,11 +4,13 @@ import { building } from "./city/catalog";
 import { cityLots } from "./city/layout";
 import oldLotsV1 from "../data/oldlots-v1.json";
 import oldLotsV2 from "../data/oldlots-v2.json";
+import oldLotsV3 from "../data/oldlots-v3.json";
 import type { GameState } from "./types";
 
 // Saves from older maps: move the player, and any property they own, to the
 // same spot in today's city. Version 1 was the first small map; version 2 the
-// Abuja layout before the roads were widened and the city grew by a quarter.
+// Abuja layout before the roads were widened and the city grew by a quarter;
+// version 3 the same city with buildings packed closer together.
 
 /** District rectangles on the old map. */
 const OLD: Record<string, [number, number, number, number]> = {
@@ -24,7 +26,7 @@ const OLD: Record<string, [number, number, number, number]> = {
   nyanya: [1500, 1100, 900, 700],
 };
 
-export const MAP_VERSION = 3;
+export const MAP_VERSION = 4;
 
 /** Version 2 to 3: everything a quarter further out. */
 const GROW = 1.25;
@@ -43,6 +45,8 @@ function fromV1(x: number, y: number): { x: number; y: number } {
 
 /** A point on a map of the given version, on today's map. */
 function movePoint(x: number, y: number, version: number): { x: number; y: number } {
+  // From version 3 on, places and roads stay put; only the buildings between them moved.
+  if (version >= 3) return { x, y };
   const v2 = version <= 1 ? fromV1(x, y) : { x, y };
   return { x: v2.x * GROW, y: v2.y * GROW };
 }
@@ -64,7 +68,7 @@ export function migrateSave(s: GameState): GameState {
         moved[id] = own;
         continue;
       }
-      const old = ((version <= 1 ? oldLotsV1 : oldLotsV2) as unknown as Record<string, [string, string, number, number]>)[id];
+      const old = ((version <= 1 ? oldLotsV1 : version === 2 ? oldLotsV2 : oldLotsV3) as unknown as Record<string, [string, string, number, number]>)[id];
       if (!old) continue;
       const [def, oldDistrict, cx, cy] = old;
       const at = movePoint(cx, cy, version);

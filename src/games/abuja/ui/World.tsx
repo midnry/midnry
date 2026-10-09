@@ -81,7 +81,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const [wardrobe, setWardrobe] = useState(false);
   const [decorating, setDecorating] = useState(false);
   /** Driving yourself somewhere: the behind-the-car view is on. */
-  const [trip, setTrip] = useState<{ from: { x: number; y: number }; to: { x: number; y: number }; name: string } | null>(null);
+  const [trip, setTrip] = useState<{ from: { x: number; y: number }; to: { x: number; y: number }; name: string; ride?: "okada" | "keke" | "taxi" | "bus" } | null>(null);
   const tripRef = useRef<typeof trip>(null);
   const [exploring, setExploring] = useState(false);
   const [controls, setControls] = useState<Controls>("joystick");
@@ -159,7 +159,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
     });
   };
   /** Behind the wheel: out of any room, the map asleep, the driving view on. */
-  const startDrive = (t: { from: { x: number; y: number }; to: { x: number; y: number }; name: string }) => {
+  const startDrive = (t: NonNullable<typeof trip>) => {
     const g = game.current;
     if (!g) return;
     setOpen(null);

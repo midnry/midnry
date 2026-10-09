@@ -7,7 +7,7 @@ import { lotsFor } from "../systems/city/sim";
 import { CAR_COLOR, frscSpots } from "../systems/drive";
 import { lifeOf } from "../systems/life";
 import { frsc } from "../systems/engine";
-import { FLEET, vehicleKey, vehicleSvg, type VehicleStyle } from "../systems/vehicles";
+import { FLEET, KEKE_COLORS, OKADA_COLORS, TAXI_COLOR, vehicleKey, vehicleSvg, type VehicleStyle } from "../systems/vehicles";
 import { bus, driveInput, getState, input } from "../systems/store";
 import { lotKey, queueBuildings, queueVehicles } from "./art";
 import { GAME_FONT } from "../ui/theme";
@@ -20,7 +20,15 @@ import { weatherOf, type Weather } from "../systems/weather";
 // sprites scaled by distance.
 
 type Pt = { x: number; y: number };
-export type DriveTrip = { from: Pt; to: Pt; name: string };
+export type DriveTrip = { from: Pt; to: Pt; name: string; ride?: "okada" | "keke" | "taxi" | "bus" };
+
+/** Public transport: what you ride in, and how fast the driver likes to go (world units a second). */
+const RIDES = {
+  okada: { style: { kind: "okada", color: OKADA_COLORS.red } as VehicleStyle, cruise: 820, word: "okada" },
+  keke: { style: { kind: "keke", color: KEKE_COLORS.yellow } as VehicleStyle, cruise: 540, word: "keke" },
+  taxi: { style: { kind: "taxi", color: TAXI_COLOR } as VehicleStyle, cruise: 760, word: "taxi" },
+  bus: { style: { kind: "bus", color: "#f5c518" } as VehicleStyle, cruise: 460, word: "bus" },
+};
 
 const SEG = 200; // length of a road segment, in world units
 const PX = 6; // world units per map pixel along the route
@@ -117,12 +125,13 @@ export class DriveScene extends Phaser.Scene {
   }
 
   preload() {
-    startSceneLoading(this, `Driving to ${this.trip.name}`);
+    const ride = this.trip.ride ? RIDES[this.trip.ride] : null;
+    startSceneLoading(this, ride ? `Riding the ${ride.word} to ${this.trip.name}` : `Driving to ${this.trip.name}`);
     queueVehicles(this);
-    const mine: VehicleStyle = { kind: "car", color: CAR_COLOR };
+    const mine = this.myStyle();
     const key = `${vehicleKey(mine)}_back`;
     if (!this.textures.exists(key)) {
-      const url = URL.createObjectURL(new Blob([vehicleSvg("car", CAR_COLOR, "back", 2.4)], { type: "image/svg+xml" }));
+      const url = URL.createObjectURL(new Blob([vehicleSvg(mine.kind, mine.color, "back", 2.4)], { type: "image/svg+xml" }));
       this.load.svg(key, url);
       this.load.once("complete", () => URL.revokeObjectURL(url));
     }
@@ -237,7 +246,7 @@ export class DriveScene extends Phaser.Scene {
     if (w.wet || w.sky === "haze") this.add.rectangle(0, 0, width, height, 0x1e293b, w.sky === "storm" ? 0.22 : w.sky === "haze" ? 0 : 0.12).setOrigin(0).setScrollFactor(0).setDepth(997);
     this.placeScenery();
     this.spawnTraffic();
-    const myKey = `${vehicleKey({ kind: "car", color: CAR_COLOR })}_back`;
+    const myKey = `${vehicleKey(this.myStyle())}_back`;
     this.me = this.add.image(width / 2, height - 30, myKey).setOrigin(0.5, 1).setDepth(1000);
     this.label = this.add
       .text(width / 2, height * 0.18, "", { fontFamily: GAME_FONT, fontSize: "22px", fontStyle: "bold", color: "#ffffff", stroke: "#0b1f3d", strokeThickness: 6 })
@@ -249,7 +258,8 @@ export class DriveScene extends Phaser.Scene {
     this.keys = this.input.keyboard!.addKeys({ up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D" }) as typeof this.keys;
     this.input.keyboard!.disableGlobalCapture();
     // No licence and no checkpoint on the way? FRSC might still be out.
-    if (this.frscZ == null && !lifeOf(getState()!).license && Math.random() < 0.3) this.frscZ = this.length * (0.3 + Math.random() * 0.4);
+    if (this.trip.ride) this.frscZ = null;
+    else if (this.frscZ == null && !lifeOf(getState()!).license && Math.random() < 0.3) this.frscZ = this.length * (0.3 + Math.random() * 0.4);
     this.scale.on("resize", this.layout, this);
     this.events.once("shutdown", () => this.scale.off("resize", this.layout, this));
     this.layout();
@@ -412,6 +422,37 @@ export class DriveScene extends Phaser.Scene {
     return car.oncoming ? -x : x;
   }
 
+  /** Your own car, or the public transport you're riding. */
+  private myStyle(): VehicleStyle {
+    return this.trip.ride ? RIDES[this.trip.ride].style : { kind: "car", color: CAR_COLOR };
+  }
+
+  /** As a passenger: the driver steers, keeps a steady speed and brakes for traffic. */
+  private autopilot(dt: number) {
+    const ride = RIDES[this.trip.ride!];
+    const playerZ = CAM_H * DEPTH;
+    const me = this.pos + playerZ;
+    const seg = this.segAt(me);
+    // Only a slower car close ahead, in the same lane, makes the driver brake.
+    const ahead = this.cars.some((car) => !car.oncoming && car.z > me && car.z - me < 650 && car.speed < this.speed && Math.abs(this.laneX(car, this.segAt(car.z).road) - this.x) < 380);
+    const drive = this.controls;
+    drive.steer = 0;
+    drive.reverse = false;
+    drive.throttle = !ahead && this.speed < ride.cruise ? 1 : 0;
+    drive.brake = ahead ? 0.4 : 0;
+    // Okada riders change lanes for fun; everyone else holds their lane.
+    if (this.trip.ride === "okada" && this.easeTo == null && Math.random() < dt * 0.4) {
+      const c = carriage(seg.road);
+      const lanes = Array.from({ length: seg.road.lanes }, (_, k) => c.m + c.lane * (k + 0.5));
+      this.easeTo = lanes[Math.floor(Math.random() * lanes.length)]!;
+    }
+    if (ahead && this.trip.ride !== "bus" && this.easeTo == null && Math.random() < dt * 1.5) {
+      const c = carriage(seg.road);
+      const lanes = Array.from({ length: seg.road.lanes }, (_, k) => c.m + c.lane * (k + 0.5)).filter((l) => Math.abs(l - this.x) > c.lane * 0.5);
+      if (lanes.length) this.easeTo = lanes[Math.floor(Math.random() * lanes.length)]!;
+    }
+  }
+
   private segAt(z: number) {
     return this.segs[Math.max(0, Math.min(this.segs.length - 1, Math.floor(z / SEG)))]!;
   }
@@ -434,10 +475,13 @@ export class DriveScene extends Phaser.Scene {
     const k = this.keys;
     const kSteer = (k.right.isDown || k.d.isDown ? 1 : 0) - (k.left.isDown || k.a.isDown ? 1 : 0);
     const drive = this.controls;
-    drive.steer = kSteer || driveInput.steer;
-    drive.throttle = k.up.isDown || k.w.isDown ? 1 : driveInput.throttle;
-    drive.brake = k.down.isDown || k.s.isDown ? 1 : driveInput.brake;
-    drive.reverse = driveInput.reverse;
+    if (this.trip.ride) this.autopilot(dt);
+    else {
+      drive.steer = kSteer || driveInput.steer;
+      drive.throttle = k.up.isDown || k.w.isDown ? 1 : driveInput.throttle;
+      drive.brake = k.down.isDown || k.s.isDown ? 1 : driveInput.brake;
+      drive.reverse = driveInput.reverse;
+    }
     const playerZ = CAM_H * DEPTH;
     const seg = this.segAt(this.pos + playerZ);
     const c = carriage(seg.road);
@@ -473,8 +517,8 @@ export class DriveScene extends Phaser.Scene {
       const target = lanes.reduce((best, l) => (Math.abs(l - this.x) < Math.abs(best - this.x) ? l : best), lanes[0]!);
       this.x += (target - this.x) * Math.min(1, dt * 1.2);
     }
-    // A bend pulls you to the outside.
-    this.x -= seg.curve * pct * pct * dt * 450;
+    // A bend pulls you to the outside (a public-transport driver steers through it).
+    if (!this.trip.ride) this.x -= seg.curve * pct * pct * dt * 450;
     this.x = Phaser.Math.Clamp(this.x, -c.c - SIDEWALK * W, c.c + SIDEWALK * W);
     this.pos = Phaser.Math.Clamp(this.pos + this.speed * dt, 0, this.length - playerZ - SEG);
     this.sky.tilePositionX += seg.curve * pct * 12 * dt * 60 * 0.1;
@@ -490,7 +534,7 @@ export class DriveScene extends Phaser.Scene {
           this.bumpAt = this.time.now;
           this.speed = car.oncoming ? 0 : Math.min(this.speed, car.speed * 0.6);
           this.cameras.main.shake(180, 0.008);
-          bus.emit("driveBump", car.oncoming ? "Wrong side of the road! Keep right." : "Bumped the car in front. Easy!");
+          bus.emit("driveBump", this.trip.ride ? "Your driver brakes hard and shouts at the car in front!" : car.oncoming ? "Wrong side of the road! Keep right." : "Bumped the car in front. Easy!");
         }
         if (!car.oncoming) car.z = me + 300;
       }

@@ -599,7 +599,8 @@ export function travel(placeId: string, mode: RideMode) {
       bus: `You squeeze onto the bus to ${p.name}. It takes forever.`,
     };
     toast(s, lines[mode]);
-    bus.emit("ride", { mode, from, to });
+    // Ride along, seen from behind the okada, keke, taxi or bus.
+    bus.emit("chaseDrive", { from, to, name: p.name, ride: mode });
   });
 }
 

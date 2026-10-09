@@ -110,7 +110,8 @@ function Pedal({ label, onChange, children, className }: { label: string; onChan
 }
 
 /** The dashboard over the driving view. */
-export function DriveHudView({ trip }: { trip: { from: Pt; to: Pt; name: string } }) {
+export function DriveHudView({ trip }: { trip: { from: Pt; to: Pt; name: string; ride?: string } }) {
+  const passenger = Boolean(trip.ride);
   const [hud, setHud] = useState<DriveHud | null>(null);
   const [warn, setWarn] = useState<string | null>(null);
   const [reverse, setReverse] = useState(false);
@@ -139,7 +140,7 @@ export function DriveHudView({ trip }: { trip: { from: Pt; to: Pt; name: string 
         <div className={`${panel} flex max-w-[15rem] items-center gap-2 px-3 py-2`}>
           <MapPin className="size-5 shrink-0 text-sky-300" aria-hidden />
           <p className="min-w-0 text-sm leading-tight">
-            <span className="block text-xs text-slate-400">Drive to</span>
+            <span className="block text-xs text-slate-400">{passenger ? `Riding the ${trip.ride} to` : "Drive to"}</span>
             <span className="block truncate font-semibold">{trip.name}</span>
           </p>
           <span className="ml-auto shrink-0 text-xs text-slate-300">{hud ? `${hud.left.toFixed(1)} km` : ""}</span>
@@ -168,31 +169,36 @@ export function DriveHudView({ trip }: { trip: { from: Pt; to: Pt; name: string 
           </p>
           <p className="text-[10px] text-slate-300">km/h</p>
         </div>
-        <div className={`${glass} pointer-events-auto flex flex-col overflow-hidden rounded-2xl`} role="radiogroup" aria-label="Gear">
+        {passenger ? null : <div className={`${glass} pointer-events-auto flex flex-col overflow-hidden rounded-2xl`} role="radiogroup" aria-label="Gear">
           <button type="button" role="radio" aria-checked={!reverse} onClick={() => gear(false)} className={`px-4 py-2 text-lg font-black ${!reverse ? "bg-emerald-500 text-white" : "text-slate-300"}`}>
             D
           </button>
           <button type="button" role="radio" aria-checked={reverse} onClick={() => gear(true)} className={`px-4 py-2 text-lg font-black ${reverse ? "bg-amber-500 text-white" : "text-slate-300"}`}>
             R
           </button>
-        </div>
+        </div>}
         <button type="button" onClick={() => (driveInput.skip = true)} className={`${glass} pointer-events-auto flex items-center gap-1 rounded-xl px-2.5 py-2 text-xs font-semibold`}>
           <FastForward className="size-4" aria-hidden /> Skip
         </button>
       </div>
 
-      <div className="absolute bottom-4 left-4">
+      {passenger ? (
+        <p className={`${panel} absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 text-center text-sm font-semibold`}>
+          Sit back: your driver knows the way. <span className="text-slate-400">Skip to arrive now.</span>
+        </p>
+      ) : null}
+      {passenger ? null : <div className="absolute bottom-4 left-4">
         <Wheel />
-      </div>
-      <div className="absolute right-4 bottom-4 flex items-end gap-3">
+      </div>}
+      {passenger ? null : <div className="absolute right-4 bottom-4 flex items-end gap-3">
         <Pedal label="Brake" onChange={(v) => (driveInput.brake = v ? 1 : 0)} className="h-20 w-20 sm:h-24 sm:w-24">
           <span className="block h-10 w-8 -skew-x-12 rounded-md bg-white/90" aria-hidden />
         </Pedal>
         <Pedal label="Accelerate" onChange={(v) => (driveInput.throttle = v ? 1 : 0)} className="h-28 w-24 sm:h-32 sm:w-28">
           <ChevronsUp className="size-14" strokeWidth={3} aria-hidden />
         </Pedal>
-      </div>
-      <p className="absolute bottom-1 left-1/2 hidden -translate-x-1/2 text-[11px] text-white/80 sm:block">W / ↑ accelerate · S / ↓ brake · A D / ← → steer</p>
+      </div>}
+      {passenger ? null : <p className="absolute bottom-1 left-1/2 hidden -translate-x-1/2 text-[11px] text-white/80 sm:block">W / ↑ accelerate · S / ↓ brake · A D / ← → steer</p>}
     </div>
   );
 }

@@ -292,7 +292,7 @@ type BusEvents = {
   /** A room has finished loading (the loading screen can go). */
   roomReady: null;
   /** Drive yourself somewhere: the behind-the-car view along the route. */
-  chaseDrive: { from: { x: number; y: number }; to: { x: number; y: number }; name: string };
+  chaseDrive: { from: { x: number; y: number }; to: { x: number; y: number }; name: string; ride?: "okada" | "keke" | "taxi" | "bus" };
   /** The driving view's dashboard, a few times a second. */
   driveHud: DriveHud;
   /** You've arrived (or skipped ahead): back to the map. */
