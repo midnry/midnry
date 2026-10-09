@@ -69,6 +69,7 @@ import * as NE from "./nepo";
 import * as BT from "./betting";
 import * as MI from "./missions";
 import * as EK from "./emeka";
+import * as PH from "./phones";
 import { storyEvent } from "./story";
 import { fadeMemories, forget, memoriesOf, recalled, remember, sinceWhen } from "./memory";
 
@@ -827,6 +828,8 @@ function weeklyBills(s: GameState) {
     toast(s, "An aide drops off the Senator's envelope: ₦250,000, cash.");
   }
   const lines = [`Weekly bills: ${prepaid ? "rent already paid ahead" : `rent ${naira(rent)}`}, transport and data ${naira(living)}.`];
+  const flex = PH.weeklyPhone(s);
+  if (flex) lines.push(flex);
   if (neg?.staff) {
     if (s.stats.money >= neg.staff.salary) {
       addStat(s, "money", -neg.staff.salary);
@@ -2124,3 +2127,8 @@ export function emekaAct(a: EK.EmekaAct) {
     if (!s.chapter && (a === "date" || a === "hang") && s.slot < SLOTS.length) spend(s, 1, -5);
   });
 }
+
+// ── Phones ───────────────────────────────────────────────────────────────────
+
+export const buyPhone = (id: PH.PhoneId) => update((s) => toast(s, PH.buyPhone(s, id)));
+export const usePhone = (id: PH.PhoneId) => update((s) => toast(s, PH.switchPhone(s, id)));

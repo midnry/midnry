@@ -35,6 +35,15 @@ export function EmekaPanel({ state }: { state: GameState }) {
   if (!e || e.met < 0) return <p className="text-sm text-slate-300">You haven't met Emeka D.</p>;
   const b = band(state);
   const dating = e.stage === "dating";
+  if (e.ignored)
+    return (
+      <div className="grid gap-3 text-sm">
+        {state.toast ? <p className="rounded-xl bg-white/10 p-3 font-semibold">{state.toast}</p> : null}
+        <p className="rounded-2xl bg-white/5 p-3">
+          <b>{PROFILE.name}</b> is ignoring you. The last thing he said was "cheap copy".
+        </p>
+      </div>
+    );
   return (
     <div className="grid gap-3 text-sm">
       {state.toast ? <p className="rounded-xl bg-white/10 p-3 font-semibold">{state.toast}</p> : null}

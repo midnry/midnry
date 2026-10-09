@@ -11,6 +11,7 @@ import type { Justice } from "./justice";
 import type { Betting } from "./betting";
 import type { Missions } from "./missions";
 import type { Emeka } from "./emeka";
+import type { Phones } from "./phones";
 import type { Banking } from "./banking";
 import type { NewsTag, Story } from "./news";
 
@@ -406,6 +407,8 @@ export type GameState = {
   betting?: Betting;
   /** Your chosen path to financial freedom and the steps done. */
   missions?: Missions;
+  /** The phones you own and the one in your pocket. */
+  phones?: Phones;
   /** Emeka D: how things stand with him. */
   emeka?: Emeka;
   /** Emeka D has just walked in, waiting for how you react. */

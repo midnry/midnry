@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { LegalApp } from "./Justice";
+import { PHONES, PHONE_IDS, currentPhone } from "../systems/phones";
 import { ConnectsApp } from "./Nepo";
 import { MissionsApp, OddsApp } from "./Missions";
 import { EmekaPanel } from "./Emeka";
 import { CityApp } from "./CityApp";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
-import { borrow, business, callContact, driveTo, negotiate, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
+import { buyPhone, usePhone, borrow, business, callContact, driveTo, negotiate, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
 import { arrivalOf } from "../systems/citymap";
 import { SocialApp } from "./Social";
 import { ago, memoriesOf, TONE_ICON } from "../systems/memory";
@@ -28,7 +29,7 @@ import { btnGhost, btnPrimary } from "./theme";
 import { Trade } from "./Trade";
 import { WardrobePanel } from "./Wardrobe";
 
-export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen" | "city" | "news" | "social" | "careers" | "legal" | "connects" | "missions" | "odds" | "emeka";
+export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen" | "city" | "news" | "social" | "careers" | "legal" | "connects" | "missions" | "odds" | "emeka" | "gadgets";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "missions", label: "Missions", icon: "🎯", tint: "bg-amber-600" },
@@ -49,6 +50,7 @@ const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "connects", label: "Connects", icon: "💎", tint: "bg-sky-700" },
   { id: "odds", label: "OddsNaija", icon: "⚽", tint: "bg-green-700" },
   { id: "emeka", label: "Emeka D", icon: "💌", tint: "bg-pink-600" },
+  { id: "gadgets", label: "Gadgets", icon: "🛍️", tint: "bg-zinc-600" },
   { id: "contacts", label: "Contacts", icon: "👥", tint: "bg-violet-600" },
   { id: "map", label: "Rides", icon: "🛺", tint: "bg-blue-600" },
   { id: "stats", label: "Life", icon: "📊", tint: "bg-teal-600" },
@@ -57,22 +59,25 @@ const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "settings", label: "Settings", icon: "⚙️", tint: "bg-slate-600" },
 ];
 
-const SOON = ["Zoom ride-hailing", "Elections", "Inheritance"];
 
 export function Phone({ state, app, onApp, onClose }: { state: GameState; app: PhoneApp; onApp: (app: PhoneApp) => void; onClose: () => void }) {
   const current = APPS.find((item) => item.id === app);
+  const model = currentPhone(state);
   return (
     <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div
-        className="flex h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[2rem] border border-white/15 bg-[#05070c] text-slate-100 shadow-2xl sm:h-[min(48rem,92dvh)] sm:rounded-[2.5rem]"
+        className={`flex h-[92dvh] w-full flex-col overflow-hidden text-slate-100 shadow-2xl sm:h-[min(48rem,92dvh)] ${model.look.width} ${model.look.frame}`}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Phone"
       >
-        <div className="flex items-center justify-between gap-2 border-b border-white/10 px-4 py-3">
+        <div className={`flex items-center justify-between gap-2 px-4 py-3 ${model.look.bar}`}>
           {app === "home" ? (
-            <span className="text-sm text-slate-400">Day {state.day}</span>
+            <span className="text-sm text-slate-400">
+              {model.layout === "dock" ? <span className="mr-2 inline-block h-4 w-16 rounded-full bg-black align-middle" aria-hidden /> : null}
+              Day {state.day}
+            </span>
           ) : (
             <button type="button" className="min-h-11 rounded-xl px-2 text-sm" onClick={() => onApp("home")}>
               ‹ Home
@@ -83,8 +88,9 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
             ✕
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className={`flex-1 overflow-y-auto p-4 ${app === "home" ? model.look.screen : ""}`}>
           {app === "home" ? <Home state={state} onApp={onApp} /> : null}
+          {app === "gadgets" ? <GadgetsApp state={state} /> : null}
           {app === "wallet" ? <Wallet state={state} /> : null}
           {app === "news" ? <NewsApp state={state} /> : null}
           {app === "social" ? <SocialApp state={state} /> : null}
@@ -114,19 +120,120 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
 }
 
 function Home({ state, onApp }: { state: GameState; onApp: (app: PhoneApp) => void }) {
-  return (
-    <div>
-      <div className="grid grid-cols-4 gap-4">
-        {APPS.filter((item) => item.id !== "emeka" || (state.emeka?.met ?? -1) >= 0).map((item) => (
-          <button key={item.id} type="button" onClick={() => onApp(item.id)} className="flex flex-col items-center gap-1.5 text-xs">
-            <span className={`flex size-14 items-center justify-center rounded-2xl text-2xl ${item.tint}`} aria-hidden>
-              {item.icon}
-            </span>
+  const model = currentPhone(state);
+  const apps = APPS.filter((item) => item.id !== "emeka" || (state.emeka?.met ?? -1) >= 0);
+  const icon = (item: (typeof APPS)[number], size = "size-14 text-2xl") => (
+    <span className={`flex shrink-0 items-center justify-center ${size} ${model.look.icon} ${item.tint}`} aria-hidden>
+      {item.icon}
+    </span>
+  );
+  const tile = (item: (typeof APPS)[number], size?: string) => (
+    <button key={item.id} type="button" onClick={() => onApp(item.id)} className="flex flex-col items-center gap-1.5 text-xs">
+      {icon(item, size)}
+      {item.label}
+    </button>
+  );
+  const clock = (
+    <div className="mb-4 text-center">
+      <p className="text-5xl font-thin tracking-tight">{["08:15", "13:40", "18:05", "22:30"][Math.min(3, state.slot)]}</p>
+      <p className="text-xs text-slate-300">Day {state.day} · {naira(state.stats.money)}</p>
+    </div>
+  );
+  // A basic phone: a plain menu list.
+  if (model.layout === "list")
+    return (
+      <div className="grid gap-1 font-mono text-sm">
+        <p className="mb-1 text-xs text-zinc-400">MENU</p>
+        {apps.map((item, n) => (
+          <button key={item.id} type="button" onClick={() => onApp(item.id)} className="flex items-center gap-3 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-2 text-left hover:bg-zinc-700">
+            <span className="w-5 text-right text-xs text-zinc-500">{n + 1}</span>
+            {icon(item, "size-7 text-base")}
             {item.label}
           </button>
         ))}
       </div>
-      <p className="mt-8 text-xs text-slate-500">Coming in the next updates: {SOON.join(", ")}.</p>
+    );
+  if (model.layout === "grid3") return <div className="grid grid-cols-3 gap-5">{apps.map((item) => tile(item, "size-16 text-3xl"))}</div>;
+  if (model.layout === "grid4")
+    return (
+      <div>
+        {clock}
+        <div className="grid grid-cols-4 gap-4">{apps.map((item) => tile(item))}</div>
+      </div>
+    );
+  if (model.layout === "dock") {
+    const dock = ["wallet", "social", "missions", "map"];
+    return (
+      <div className="flex min-h-full flex-col">
+        {clock}
+        <div className="grid grid-cols-4 gap-4">{apps.filter((a) => !dock.includes(a.id)).map((item) => tile(item))}</div>
+        <div className="sticky bottom-0 mt-6 grid grid-cols-4 gap-3 rounded-[1.75rem] border border-white/15 bg-white/10 p-3 backdrop-blur">
+          {apps.filter((a) => dock.includes(a.id)).map((item) => (
+            <button key={item.id} type="button" onClick={() => onApp(item.id)} className="flex justify-center" aria-label={item.label}>
+              {icon(item)}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  // The fold: a wide two-pane screen with widgets beside the apps.
+  return (
+    <div className="grid gap-4 sm:grid-cols-[13rem_1fr]">
+      <div className="grid content-start gap-2">
+        <div className="rounded-2xl bg-white/10 p-3">
+          <p className="text-3xl font-thin">{["08:15", "13:40", "18:05", "22:30"][Math.min(3, state.slot)]}</p>
+          <p className="text-xs text-slate-300">Day {state.day}</p>
+        </div>
+        <div className="rounded-2xl bg-white/10 p-3 text-sm">
+          <p className="text-xs text-slate-400">Balance</p>
+          <p className="font-bold">{naira(state.stats.money)}</p>
+          <p className="mt-1 text-xs text-slate-400">Reputation {state.stats.reputation}</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-4 gap-4 sm:grid-cols-6">{apps.map((item) => tile(item))}</div>
+    </div>
+  );
+}
+
+/** The gadget store: buy a new phone, or switch to one you own. */
+function GadgetsApp({ state }: { state: GameState }) {
+  const mine = state.phones?.owned ?? ["kpakpa"];
+  const current = state.phones?.current ?? "kpakpa";
+  return (
+    <div className="grid gap-3 text-sm">
+      {state.toast ? <p className="rounded-xl bg-white/10 p-3 font-semibold">{state.toast}</p> : null}
+      <p className="text-slate-400">New phones look different and lay out your apps differently. The expensive ones raise your reputation.</p>
+      {PHONE_IDS.map((id) => {
+        const p = PHONES[id];
+        const owned = mine.includes(id);
+        return (
+          <div key={id} className={`rounded-2xl border p-3 ${current === id ? "border-emerald-400" : "border-white/10"} bg-white/5`}>
+            <div className="flex items-center gap-3">
+              <span className={`flex h-16 w-9 shrink-0 items-center justify-center ${p.look.frame}`} aria-hidden>
+                <span className={`h-12 w-6 rounded ${p.look.screen}`} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-bold">{p.name}</p>
+                <p className="text-xs text-slate-400">{p.blurb}</p>
+                <p className="mt-1 text-xs text-amber-300">
+                  {p.price ? naira(p.price) : "Your starter phone"}
+                  {p.rep ? ` · reputation +${p.rep}` : ""}
+                  {p.weekly ? ` and +${p.weekly} a week` : ""}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={current === id || (!owned && state.stats.money < p.price)}
+              onClick={() => (owned ? usePhone(id) : buyPhone(id))}
+              className={`${owned ? btnGhost : btnPrimary} mt-2 min-h-10 w-full disabled:opacity-50`}
+            >
+              {current === id ? "In your pocket" : owned ? "Use this phone" : `Buy (${naira(p.price)})`}
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

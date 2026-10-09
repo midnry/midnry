@@ -35,7 +35,7 @@ export function isHisOne(s: GameState): boolean {
 }
 
 export type EmekaStage = "none" | "friends" | "crush" | "dating";
-export type Emeka = { stage: EmekaStage; rel: number; met: number; since?: number; beats: number; lastAllowance: number; turnedDown?: boolean };
+export type Emeka = { stage: EmekaStage; rel: number; met: number; since?: number; beats: number; lastAllowance: number; turnedDown?: boolean; asks?: number; ignored?: boolean };
 
 export function emeka(s: GameState): Emeka {
   s.emeka ??= { stage: "none", rel: 0, met: -1, beats: 0, lastAllowance: -1 };
@@ -86,11 +86,27 @@ export function allowance(s: GameState): number {
   return b === "school" ? 3_000 : b === "campus" ? 25_000 : 150_000;
 }
 
-const REJECT = [
-  "Emeka smiles, kindly. \"You're amazing, honestly. But my heart is already spoken for. Friends?\"",
-  "\"I like you a lot, just not like that. There's someone I'm waiting for.\" He still saves you a meat pie.",
-  "Emeka laughs, not unkindly. \"You and I are better as friends. Trust me on this one.\"",
+/** Anyone else who asks him out: all he wants to know is where Eunice is. */
+const ASK_EUNICE = [
+  "Emeka barely hears you. \"Sorry, have you seen Eunice? Tall, laughs loud, the best person in any room?\"",
+  "\"That's sweet, but... have you seen Eunice today? She was supposed to be here.\"",
+  "Emeka smiles kindly and looks past you. \"Has Eunice passed this way? Tell her I'm looking for her.\"",
+  "\"You're nice. But I'm waiting for Eunice. Have you seen her? Anybody?\"",
+  "He checks his phone again. \"Eunice hasn't replied. You haven't seen her, have you?\"",
 ];
+/** Small talk with him always wanders back to her. */
+const EUNICE_ASIDES = [
+  " Then: \"By the way, have you seen Eunice?\"",
+  " He asks if you've seen Eunice around. Twice.",
+  " \"If you see Eunice, tell her I said hi.\"",
+];
+/** Calling yourself Eunice to fool him. */
+const CHEAP_COPY = "Emeka looks you up and down. \"Eunice? You? Please. You're a cheap copy.\" He turns his back and doesn't look at you again.";
+const IGNORED = ["Emeka looks straight through you.", "Emeka puts in his earphones as you walk up.", "\"Cheap copy,\" Emeka mutters, and walks off."];
+
+/** Named Eunice, but not her: someone trying to fool him. */
+const impostor = (s: GameState) => s.name.trim().toLowerCase() === NAME && !isHisOne(s);
+
 
 /** First meeting. */
 export function meet(s: GameState, how: "friend" | "interest" | "ignore"): string {
@@ -112,10 +128,18 @@ export function meet(s: GameState, how: "friend" | "interest" | "ignore"): strin
 export function askOut(s: GameState): string {
   const e = emeka(s);
   if (e.stage === "dating") return "You're already together.";
+  if (e.ignored) return IGNORED[Math.floor(Math.random() * IGNORED.length)]!;
+  if (impostor(s)) {
+    e.ignored = true;
+    e.stage = "none";
+    e.rel = 0;
+    return CHEAP_COPY;
+  }
   if (!isHisOne(s)) {
     e.turnedDown = true;
     e.stage = "friends";
-    return REJECT[Math.floor(Math.random() * REJECT.length)]!;
+    e.asks = (e.asks ?? 0) + 1;
+    return ASK_EUNICE[(e.asks - 1) % ASK_EUNICE.length]!;
   }
   e.stage = "dating";
   e.since = s.day;
@@ -133,6 +157,14 @@ export function act(s: GameState, a: EmekaAct): string {
   const e = emeka(s);
   if (e.met < 0) return "";
   if (a === "ask") return askOut(s);
+  if (e.ignored) return IGNORED[Math.floor(Math.random() * IGNORED.length)]!;
+  const line = actLine(s, a);
+  // With anyone but her, the conversation keeps drifting back to Eunice.
+  return !isHisOne(s) && Math.random() < 0.5 ? `${line}${EUNICE_ASIDES[Math.floor(Math.random() * EUNICE_ASIDES.length)]}` : line;
+}
+
+function actLine(s: GameState, a: EmekaAct): string {
+  const e = emeka(s);
   const dating = e.stage === "dating";
   const b = band(s);
   if (a === "hang") {
