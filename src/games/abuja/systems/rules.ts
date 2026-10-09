@@ -73,7 +73,7 @@ export function check(state: GameState, cond: Cond | undefined): boolean {
   if (cond.noCert && state.certs[cond.noCert]) return false;
   if (cond.npc && rel(state, cond.npc) < (cond.rel ?? 1)) return false;
   if (cond.job !== undefined && state.job !== cond.job) return false;
-  if (cond.hasJob != null && Boolean(state.job) !== cond.hasJob) return false;
+  if (cond.hasJob != null && Boolean(state.job || state.banking?.job) !== cond.hasJob) return false;
   if (cond.asset && !state.assets.includes(cond.asset)) return false;
   if (cond.noAsset && state.assets.includes(cond.noAsset)) return false;
   if (cond.powered && state.life?.power.cut) return false;

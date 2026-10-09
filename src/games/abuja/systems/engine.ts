@@ -62,6 +62,8 @@ import type { Choice, EndingId, GameState, PersonDef, Scene, TaskStep } from "./
 import { report } from "./news";
 import * as SO from "./social";
 import { nightlySocial } from "./social";
+import * as BK from "./banking";
+import { nightlyBanking } from "./banking";
 import { storyEvent } from "./story";
 import { fadeMemories, forget, memoriesOf, recalled, remember, sinceWhen } from "./memory";
 
@@ -472,6 +474,7 @@ function applyForJob(s: GameState, jobId: string) {
   const def = job(jobId);
   if (!def) return;
   if (s.job === jobId) return toast(s, `You already work as ${def.title}.`);
+  if (s.banking?.job) return toast(s, "You work at a bank. Resign in the Careers app first."); 
   const missing = def.requires.filter((cond) => !check(s, cond));
   if (missing.length) {
     toast(s, `Not hired. Needs: ${def.requiresText}`);
@@ -759,6 +762,8 @@ function sleep(s: GameState) {
   if (!s.event) s.event = nightlyCase(s);
   if (!s.event) s.event = dailyRomance(s);
   neglect(s);
+  const bankLines = nightlyBanking(s);
+  if (bankLines.length) s.toast = `${s.toast ? `${s.toast} ` : ""}${bankLines.join(" ")}`;
   const fund = nightlySocial(s);
   if (fund) s.toast = `${s.toast ? `${s.toast} ` : ""}${fund}`;
   fadeMemories(s);
@@ -929,7 +934,7 @@ function checkEndings(s: GameState) {
     return end(s, "broke");
   }
   if (s.age >= END_AGE) {
-    const salaried = job(s.job)?.salaried;
+    const salaried = job(s.job)?.salaried || Boolean(s.banking?.job);
     if (netWorth(s) >= FREEDOM_TARGET) return end(s, s.background === "lapo" ? "grass" : "freedom");
     if (salaried && netWorth(s) > 0) return end(s, "ninefive");
     return end(s, netWorth(s) > 500000 ? "ninefive" : "broke");
@@ -1248,6 +1253,32 @@ export function sellStash(key: string) {
     toast(s, `${p.name} looks over the ${n > 1 ? `${n} things` : "goods"}, asks no questions, and pays ${naira(offer.pay)}.`);
   });
 }
+
+// ── Banking careers ──────────────────────────────────────────────────────────
+
+/** Run a banking action and show its line. Actions that take time spend slots and energy. */
+function bankDo(fn: (s: GameState) => string, slots = 0, energy = 0) {
+  update((s) => {
+    if (s.chapter || s.ending) return;
+    if (slots && s.slot + slots > SLOTS.length) return toast(s, "It's too late for that today. Come back tomorrow morning.");
+    const line = fn(s);
+    if (line) toast(s, line);
+    if (slots) spend(s, slots, energy);
+    checkEndings(s);
+  });
+}
+export const bankApply = (v: BK.Vacancy) => bankDo((s) => BK.apply(s, v), 1, -5);
+export const bankAutoStage = (id: string) => bankDo((s) => BK.runAutoStage(s, id), 1, -5);
+export const bankSubmitStage = (id: string, score: number, conduct: number) => bankDo((s) => BK.submitStage(s, id, score, conduct), 1, -5);
+export const bankWithdraw = (id: string) => bankDo((s) => (BK.withdraw(s, id), "Application withdrawn."));
+export const bankAccept = (id: string) => bankDo((s) => BK.acceptOffer(s, id));
+export const bankTraining = (correct: number, of: number) => bankDo((s) => BK.finishTraining(s, correct, of), 1, -10);
+export const bankWorkday = (results: BK.TaskResult[]) => bankDo((s) => BK.finishWorkday(s, results), 2, -25);
+export const bankLeave = () => bankDo((s) => BK.takeLeave(s), SLOTS.length - 1, 0);
+export const bankFinance = (amount: number, item: string) => bankDo((s) => BK.takeFinance(s, amount, item));
+export const bankPromotion = (score: number) => bankDo((s) => BK.promotionPanel(s, score), 1, -5);
+export const bankAppointment = (accept: boolean) => bankDo((s) => BK.respondAppointment(s, accept));
+export const bankResign = () => bankDo((s) => BK.resign(s));
 
 // ── Instaflex ────────────────────────────────────────────────────────────────
 

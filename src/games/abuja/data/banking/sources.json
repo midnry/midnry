@@ -1,0 +1,154 @@
+{
+ "note": "Published information used by the banking career system, with source URLs and verification dates. Only facts listed here may be labelled 'Published information' in the game.",
+ "sources": {
+  "access_graduate": {
+   "title": "Access Bank careers: Entry Level Training Programme steps",
+   "url": "https://careers.accessbankplc.com/careers",
+   "verifiedOn": "2026-10-09",
+   "facts": [
+    "Stages: Application; Online Assessments; Physical Assessments; Document & Eligibility Verification; Interview stages (panel and top management); Medical Fitness Assessment; 6-month training period."
+   ],
+   "caveat": "Stage titles read from the official page; the page's descriptions were placeholders. Training school name not verified."
+  },
+  "gtb_graduate": {
+   "title": "GTBank careers: Entry Level Programme",
+   "url": "https://www.gtbank.com/about/careers/career-opportunities",
+   "verifiedOn": "2026-10-09",
+   "facts": [
+    "Stages: online assessment; informal HR chat with documents (possibly an essay); competency-based panel interview; final interview with an executive; four-month Entry Level Programme."
+   ],
+   "caveat": "Official page could not be loaded directly; sequence taken from summaries of that page. Four-month length medium confidence."
+  },
+  "legit_2026_recap": {
+   "title": "Banks that met the CBN recapitalisation thresholds (list)",
+   "url": "https://www.legit.ng/business-economy/money/1702230-full-list-34-banks-scale-recapitalisation-hurdle-cbn-deadline/",
+   "date": "2026-03-23",
+   "verifiedOn": "2026-10-09",
+   "caveat": "Press list; no final CBN list found."
+  },
+  "union_titan": {
+   "title": "Union Bank completes merger with Titan Trust Bank",
+   "url": "https://nairametrics.com/2025/09/01/union-bank-completes-merger-with-titan-trust-bank/",
+   "date": "2025-09-01",
+   "verifiedOn": "2026-10-09"
+  },
+  "union_board": {
+   "title": "Union Bank board dispute as recapitalisation ends",
+   "url": "https://businessday.ng/big-read/article/union-bank-caught-in-board-tussle-as-recapitalisation-ends/",
+   "date": "2026-03",
+   "verifiedOn": "2026-10-09"
+  },
+  "unity_providus": {
+   "title": "Supreme Court sanctions Unity Bank and Providus Bank merger",
+   "url": "https://nairametrics.com/2026/06/01/breaking-supreme-court-sanctions-unity-bank-and-providus-bank-merger/",
+   "date": "2026-06-01",
+   "verifiedOn": "2026-10-09"
+  },
+  "providus_name": {
+   "title": "Two Nigerian banks complete merger",
+   "url": "https://www.legit.ng/business-economy/industry/1716710-two-nigerian-banks-complete-merger-unveil-operations-begin/",
+   "date": "2026-06-29",
+   "verifiedOn": "2026-10-09"
+  },
+  "heritage_2024": {
+   "title": "CBN revokes Heritage Bank licence",
+   "url": "https://www.cbn.gov.ng/Out/2024/CCD/CBN%20Press%20Release%20Heritage%20030624.pdf",
+   "date": "2024-06-03",
+   "verifiedOn": "2026-10-09"
+  },
+  "sterling_2026": {
+   "title": "Sterling HoldCo confirms recapitalisation of Sterling Bank and AltBank",
+   "url": "https://nairametrics.com/2026/02/17/sterling-holdco-confirms-full-recapitalisation-of-sterling-bank-altbank/",
+   "date": "2026-02-17",
+   "verifiedOn": "2026-10-09"
+  },
+  "stanchart_2026": {
+   "title": "Standard Chartered Nigeria switches focus to affluent clients",
+   "url": "https://www.tradingview.com/news/reuters.com,2026-04-06:newsml_ZawqY5H:0-zawya-nigeria-standard-chartered-switches-focus-to-affluent-class/",
+   "date": "2026-04-06",
+   "verifiedOn": "2026-10-09"
+  },
+  "keystone_2026": {
+   "title": "Keystone Bank seeks approval to sell KBL Insurance stake",
+   "url": "https://nairametrics.com/2026/09/12/keystone-bank-seeks-approval-to-sell-66-54-kbl-insurance-stake/",
+   "date": "2026-09-12",
+   "verifiedOn": "2026-10-09"
+  },
+  "polaris_2026": {
+   "title": "CBN and Polaris Bank refute liquidation rumours",
+   "url": "https://www.premiumtimesng.com/business/business-news/870486-cbn-polaris-bank-refute-liquidation-rumors.html",
+   "date": "2026-04",
+   "verifiedOn": "2026-10-09"
+  },
+  "nova_2023": {
+   "title": "NOVA Merchant Bank gets approval to become a commercial bank",
+   "url": "https://thecable.ng/nova-merchant-bank-gets-shareholder-approval-for-transition-into-commercial-banking",
+   "date": "2023-07",
+   "verifiedOn": "2026-10-09"
+  },
+  "tatum_2026": {
+   "title": "Tatum Bank meets CBN recapitalisation milestone",
+   "url": "https://nairametrics.com/2026/03/10/tatum-bank-meets-cbn-recapitalization-milestone-strengthening-position-for-growth/",
+   "date": "2026-03-10",
+   "verifiedOn": "2026-10-09"
+  },
+  "summit_2025": {
+   "title": "Summit Bank launches interest-free banking",
+   "url": "https://www.financialafrik.com/en/2025/11/11/nigeria-summit-bank-launches-operations-with-interest-free-banking-services/",
+   "date": "2025-11-11",
+   "verifiedOn": "2026-10-09"
+  },
+  "mfb_national_2026": {
+   "title": "Kuda and Moniepoint national microfinance licences",
+   "url": "https://allafrica.com/stories/202601270102.html",
+   "date": "2026-01-27",
+   "verifiedOn": "2026-10-09"
+  },
+  "lapo_2026": {
+   "title": "LAPO MFB bond listing",
+   "url": "https://msmeafricaonline.com/lapo-mfb-raises-n4-46bn-bond-to-expand-sme-financing-digital-services/",
+   "date": "2026-08",
+   "verifiedOn": "2026-10-09"
+  },
+  "ab_mfb": {
+   "title": "Agusto rating report: AB Microfinance Bank",
+   "url": "https://www.agusto.com/?p=11158",
+   "verifiedOn": "2026-10-09",
+   "caveat": "Report undated."
+  },
+  "dfi_2026": {
+   "title": "CBN annual report: DFI assets",
+   "url": "https://newtelegraphng.com/cbn-total-assets-of-boi-others-hit-n8-91trn-in-2025/",
+   "date": "2026",
+   "verifiedOn": "2026-10-09"
+  },
+  "dfi_review_2026": {
+   "title": "CBN eyes recapitalisation exercise for DFIs",
+   "url": "https://www.thecable.ng/cbn-eyes-recapitalisation-exercise-for-development-finance-institutions",
+   "date": "2026-04",
+   "verifiedOn": "2026-10-09"
+  },
+  "boa_2025": {
+   "title": "Bank of Agriculture recapitalised with ₦1.5tn",
+   "url": "https://nairametrics.com/2025/06/22/nigeria-recapitalizes-bank-of-agriculture-with-n1-5-trillion-eyes-regional-food-security-leadership/",
+   "date": "2025-06-22",
+   "verifiedOn": "2026-10-09"
+  },
+  "fmbn_2026": {
+   "title": "Federal Mortgage Bank targets ₦750bn recapitalisation",
+   "url": "https://nairametrics.com/2026/02/19/federal-mortgage-bank-targets-n750bn-recapitalisation-to-boost-housing-finance/",
+   "date": "2026-02-19",
+   "verifiedOn": "2026-10-09"
+  },
+  "pension_act": {
+   "title": "Pension Reform Act 2014: minimum contributions (employer 10%, employee 8%)",
+   "url": "https://www.pwc.com/ng/en/assets/pdf/tax-bites-july-2014.pdf",
+   "date": "2014-07",
+   "verifiedOn": "2026-10-09",
+   "facts": [
+    "Section 4(1): employer at least 10% and employee at least 8% of monthly emoluments."
+   ],
+   "caveat": "Summary from a professional firm; check the gazetted Act and current PenCom guidance."
+  }
+ }
+}

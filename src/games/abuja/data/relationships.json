@@ -6,7 +6,7 @@
     { "id": "kemi", "where": "jabi_mall", "names": { "female": "Kemi", "male": "Kunle" }, "nepo": false,
       "blurb": "Instaflex lifestyle creator. 80k followers, always filming, always 'on'." },
     { "id": "hauwa", "where": "cbd_bank", "names": { "female": "Hauwa", "male": "Haruna" }, "nepo": false,
-      "blurb": "Works at Union Capital Bank. Organised, ambitious, has a five-year plan in a notebook." },
+      "blurb": "Works at Zuma Capital Bank. Organised, ambitious, has a five-year plan in a notebook." },
     { "id": "ify", "where": "bolaji_house", "names": { "female": "Ifeoma", "male": "Ifeanyi" }, "nepo": true,
       "blurb": "Child of (fictional) Chief Okonkwo-Bassey. Generous, glamorous, and used to the best of everything." },
     { "id": "zee", "where": "tech_hub", "names": { "female": "Zainab", "male": "Zayd" }, "nepo": false,

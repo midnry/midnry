@@ -1038,8 +1038,8 @@
   {
     "id": "bank_fine",
     "weight": 2,
-    "title": "Union Capital Bank fined",
-    "text": "The (fictional) Central Bank fines Union Capital Bank for 'irregular forex dealings'. Its shares slide.",
+    "title": "Zuma Capital Bank fined",
+    "text": "The (fictional) Central Bank fines Zuma Capital Bank for 'irregular forex dealings'. Its shares slide.",
     "choices": [
       {
         "text": "Noted",
@@ -1060,7 +1060,7 @@
     "id": "bank_frozen",
     "weight": 0,
     "title": "Account frozen",
-    "text": "Union Capital Bank has put a Post No Debit restriction on your account. A credit far above your usual range was flagged by compliance. ₦{amount} is on hold. Bring your BVN and explain where the money came from at Union Capital Bank HQ in the CBD. Reviews take two days.",
+    "text": "Zuma Capital Bank has put a Post No Debit restriction on your account. A credit far above your usual range was flagged by compliance. ₦{amount} is on hold. Bring your BVN and explain where the money came from at Bankers' Row in the CBD. Reviews take two days.",
     "choices": [
       {
         "text": "Ugh. I'll go to the bank.",

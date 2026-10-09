@@ -1,0 +1,1051 @@
+{
+ "note": "Editable employer roster. 'name' is the fictional in-game name. 'reference' records the real institution each employer is loosely inspired by, its status and sources, for editors only: it is never shown in the game. Titan Trust Bank (merged into Union Bank, 2025), Unity Bank (merged with Providus Bank, 2026) and Heritage Bank (licence revoked, 2024) are deliberately not separate employers.",
+ "excluded": [
+  {
+   "name": "Titan Trust Bank",
+   "why": "Merged into Union Bank of Nigeria; completed September 2025.",
+   "source": "union_titan",
+   "verifiedOn": "2026-10-09"
+  },
+  {
+   "name": "Unity Bank",
+   "why": "Merged with Providus Bank; Supreme Court sanction 1 June 2026, completion 28 June 2026. Status flagged for re-verification.",
+   "source": "unity_providus",
+   "verifiedOn": "2026-10-09",
+   "needsVerification": true
+  },
+  {
+   "name": "Heritage Bank",
+   "why": "Licence revoked by the CBN on 3 June 2024.",
+   "source": "heritage_2024",
+   "verifiedOn": "2026-10-09"
+  }
+ ],
+ "banks": [
+  {
+   "id": "accela",
+   "name": "Accela Bank",
+   "category": "commercial",
+   "archetype": "tier1",
+   "color": "#ef7d22",
+   "process": "access_graduate",
+   "programme": "Accela School of Banking (fictional)",
+   "culture": "Big, fast-growing and proud of its training school. Graduate intakes are large and structured.",
+   "perk": "Accela Learning Hub: extra course credit",
+   "signature": "learning",
+   "motto": "More than banking, in the game.",
+   "reference": {
+    "inspiredBy": "Access Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap",
+     "access_graduate"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "firstline",
+   "name": "Firstline Bank",
+   "category": "commercial",
+   "archetype": "tier1",
+   "color": "#0b2d5b",
+   "process": "generic_graduate",
+   "programme": "Firstline Heritage Academy (fictional)",
+   "culture": "The old elephant of the sector: long traditions, steady careers, formal culture.",
+   "perk": "Long-service award every review cycle you stay",
+   "signature": "stability",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "First Bank of Nigeria",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "trueguard",
+   "name": "TrueGuard Bank",
+   "category": "commercial",
+   "archetype": "tier1",
+   "color": "#e4560f",
+   "process": "gtb_graduate",
+   "programme": "TrueGuard Entry Programme (fictional)",
+   "culture": "Sharp, image-conscious and digital-first. Interviews reward polish and clear thinking.",
+   "perk": "Smart-dress Fridays and a digital skills bonus",
+   "signature": "digital",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Guaranty Trust Bank (GTBank)",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap",
+     "gtb_graduate"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "uab",
+   "name": "United African Bank",
+   "category": "commercial",
+   "archetype": "tier1",
+   "color": "#d71920",
+   "process": "generic_graduate",
+   "programme": "UAB Leadership Institute (fictional)",
+   "culture": "Pan-African footprint: postings and products across many countries.",
+   "perk": "Cross-border exposure: faster learning in RM",
+   "signature": "pan_african",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "United Bank for Africa (UBA)",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "pinnacle",
+   "name": "Pinnacle Bank",
+   "category": "commercial",
+   "archetype": "tier1",
+   "color": "#c8102e",
+   "process": "generic_graduate",
+   "programme": "Pinnacle Graduate School (fictional)",
+   "culture": "A strong business-development culture with big corporate clients. Targets are real; so is the reward.",
+   "perk": "Higher bonus share at strong ratings",
+   "signature": "sales",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Zenith Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "loyalty",
+   "name": "Loyalty Bank",
+   "category": "commercial",
+   "archetype": "tier1",
+   "color": "#1f4e9c",
+   "process": "generic_graduate",
+   "programme": "Loyalty Academy (fictional)",
+   "culture": "Growing quickly and hiring steadily, with a big focus on small businesses.",
+   "perk": "More vacancies open each cycle",
+   "signature": "growth",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Fidelity Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "monument",
+   "name": "Monument City Bank",
+   "category": "commercial",
+   "archetype": "tier1",
+   "color": "#5c2d91",
+   "process": "generic_graduate",
+   "programme": "Monument Learning Centre (fictional)",
+   "culture": "Customer-experience obsessed: service scores matter a lot here.",
+   "perk": "Service stars count towards promotion",
+   "signature": "service",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "First City Monument Bank (FCMB)",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "wellspring",
+   "name": "Wellspring Bank",
+   "category": "commercial",
+   "archetype": "challenger",
+   "color": "#7b1fa2",
+   "process": "generic_graduate",
+   "programme": "Wellspring Digital Academy (fictional)",
+   "culture": "An old name with a young digital arm. Product and app teams move fast.",
+   "perk": "Digital skills bonus",
+   "signature": "digital",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Wema Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "silverline",
+   "name": "Silverline Bank",
+   "category": "commercial",
+   "archetype": "challenger",
+   "color": "#e2231a",
+   "process": "generic_graduate",
+   "programme": "Silverline One Academy (fictional)",
+   "culture": "Focused on health, education, agriculture, energy and transport. Mission-driven projects.",
+   "perk": "Sector projects give extra learning",
+   "signature": "sectors",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Sterling Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap",
+     "sterling_2026"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "alliance",
+   "name": "Alliance Bank of Nigeria",
+   "category": "commercial",
+   "archetype": "tier1",
+   "color": "#00a3e0",
+   "process": "generic_graduate",
+   "programme": "Alliance Institute (fictional)",
+   "culture": "An established bank in a period of change. Systems are being modernised.",
+   "perk": "Steady pay reviews",
+   "signature": "stability",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Union Bank of Nigeria",
+    "status": "operating; absorbed Titan Trust Bank (Sept 2025); board and ownership matters before the courts in 2026",
+    "note": "Titan Trust Bank is not a separate employer: it merged into Union Bank in 2025.",
+    "sources": [
+     "legit_2026_recap",
+     "union_titan",
+     "union_board"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": true
+   }
+  },
+  {
+   "id": "panafrica",
+   "name": "Pan-Africa Bank",
+   "category": "commercial",
+   "archetype": "tier1",
+   "color": "#005eb8",
+   "process": "generic_graduate",
+   "programme": "Pan-Africa Academy (fictional)",
+   "culture": "Part of a group across many African countries. Strong on trade and payments.",
+   "perk": "Cross-border exposure",
+   "signature": "pan_african",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Ecobank Nigeria",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "stanbridge",
+   "name": "Stanbridge Bank",
+   "category": "commercial",
+   "archetype": "international",
+   "color": "#0033a1",
+   "process": "generic_graduate",
+   "programme": "Stanbridge Learning (fictional)",
+   "culture": "Banking, pensions and asset management under one roof.",
+   "perk": "Bigger pension top-up",
+   "signature": "wealth",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Stanbic IBTC Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "metropolis",
+   "name": "Metropolis Bank Nigeria",
+   "category": "commercial",
+   "archetype": "international",
+   "color": "#056dae",
+   "process": "generic_graduate",
+   "programme": "Metropolis Analyst Programme (fictional)",
+   "culture": "Small, corporate-focused and global. Very selective.",
+   "perk": "Global standards training",
+   "signature": "global",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Citibank Nigeria",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "royalcharter",
+   "name": "Royal Charter Bank Nigeria",
+   "category": "commercial",
+   "archetype": "international",
+   "color": "#0473ea",
+   "process": "generic_graduate",
+   "programme": "Royal Charter Graduate Programme (fictional)",
+   "culture": "Few branches, global processes, wealth and corporate clients.",
+   "perk": "Global standards training",
+   "signature": "global",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Standard Chartered Bank Nigeria",
+    "status": "operating; scaled back retail branches in 2026, focusing on affluent and wealth clients",
+    "note": "",
+    "sources": [
+     "legit_2026_recap",
+     "stanchart_2026"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": true
+   }
+  },
+  {
+   "id": "cornerstone",
+   "name": "Cornerstone Bank",
+   "category": "commercial",
+   "archetype": "challenger",
+   "color": "#00897b",
+   "process": "generic_graduate",
+   "programme": "Cornerstone Academy (fictional)",
+   "culture": "Steady and conservative, serving businesses and the public sector.",
+   "perk": "Steady pay reviews",
+   "signature": "stability",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Keystone Bank",
+    "status": "operating under CBN-appointed management (2026)",
+    "note": "",
+    "sources": [
+     "legit_2026_recap",
+     "keystone_2026"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": true
+   }
+  },
+  {
+   "id": "northstar",
+   "name": "North Star Bank",
+   "category": "commercial",
+   "archetype": "challenger",
+   "color": "#6a1b9a",
+   "process": "generic_graduate",
+   "programme": "North Star Academy (fictional)",
+   "culture": "Pushing hard on digital banking and small businesses.",
+   "perk": "Digital skills bonus",
+   "signature": "digital",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Polaris Bank",
+    "status": "operating under CBN-appointed management (2026)",
+    "note": "",
+    "sources": [
+     "legit_2026_recap",
+     "polaris_2026"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": true
+   }
+  },
+  {
+   "id": "orbis",
+   "name": "Orbis Bank",
+   "category": "commercial",
+   "archetype": "challenger",
+   "color": "#f28c28",
+   "process": "generic_graduate",
+   "programme": "Orbis Academy (fictional)",
+   "culture": "A younger national bank expanding branches and corporate clients.",
+   "perk": "More vacancies open each cycle",
+   "signature": "growth",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Globus Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "providentunity",
+   "name": "Provident Unity Bank",
+   "category": "commercial",
+   "archetype": "challenger",
+   "color": "#8c1d40",
+   "process": "generic_graduate",
+   "programme": "Provident Academy",
+   "culture": "A freshly merged bank bringing two teams together. Lots of change, lots of openings.",
+   "perk": "Integration projects: fast exposure",
+   "signature": "merger",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "ProvidusUnity Bank (Providus Bank merged with Unity Bank, June 2026)",
+    "status": "operating as the merged bank from June 2026",
+    "note": "Unity Bank is no longer a separate employer after its June 2026 merger with Providus. The merged bank's exact legal name and licence tier need verification.",
+    "sources": [
+     "legit_2026_recap",
+     "unity_providus",
+     "providus_name"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": true
+   }
+  },
+  {
+   "id": "platinumtrust",
+   "name": "Platinum Trust Bank",
+   "category": "commercial",
+   "archetype": "challenger",
+   "color": "#b8860b",
+   "process": "generic_graduate",
+   "programme": "Platinum Trust Academy (fictional)",
+   "culture": "A new national bank growing quickly.",
+   "perk": "More vacancies open each cycle",
+   "signature": "growth",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "PremiumTrust Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "parallax",
+   "name": "Parallax Bank",
+   "category": "commercial",
+   "archetype": "challenger",
+   "color": "#7a1f2b",
+   "process": "generic_graduate",
+   "programme": "Parallax Academy (fictional)",
+   "culture": "Regional, personal service, small teams.",
+   "perk": "Service stars count towards promotion",
+   "signature": "service",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Parallex Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "suncrest",
+   "name": "SunCrest Bank",
+   "category": "commercial",
+   "archetype": "challenger",
+   "color": "#f9a825",
+   "process": "generic_graduate",
+   "programme": "SunCrest Academy (fictional)",
+   "culture": "Small and digital, with lean teams.",
+   "perk": "Digital skills bonus",
+   "signature": "digital",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "SunTrust Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "nebula",
+   "name": "Nebula Bank",
+   "category": "commercial",
+   "archetype": "challenger",
+   "color": "#4a148c",
+   "process": "generic_graduate",
+   "programme": "Nebula Academy (fictional)",
+   "culture": "Converted from a merchant bank: corporate roots, retail ambitions.",
+   "perk": "More vacancies open each cycle",
+   "signature": "growth",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Nova Bank (formerly NOVA Merchant Bank)",
+    "status": "operating; commercial since 2023",
+    "note": "",
+    "sources": [
+     "legit_2026_recap",
+     "nova_2023"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "optima",
+   "name": "Optima Bank",
+   "category": "commercial",
+   "archetype": "challenger",
+   "color": "#2e7d32",
+   "process": "generic_graduate",
+   "programme": "Optima Academy (fictional)",
+   "culture": "A new bank built around digital products.",
+   "perk": "Digital skills bonus",
+   "signature": "digital",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Optimus Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "autograph",
+   "name": "Autograph Bank",
+   "category": "commercial",
+   "archetype": "challenger",
+   "color": "#1a237e",
+   "process": "generic_graduate",
+   "programme": "Autograph Academy (fictional)",
+   "culture": "A small, relationship-led bank.",
+   "perk": "Service stars count towards promotion",
+   "signature": "service",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Signature Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "alphameridian",
+   "name": "Alpha Meridian Bank",
+   "category": "commercial",
+   "archetype": "challenger",
+   "color": "#0d47a1",
+   "process": "generic_graduate",
+   "programme": "Alpha Meridian Academy (fictional)",
+   "culture": "Wealth and private banking roots.",
+   "perk": "Bigger pension top-up",
+   "signature": "wealth",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Alpha Morgan Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "tatton",
+   "name": "Tatton Bank",
+   "category": "commercial",
+   "archetype": "challenger",
+   "color": "#00796b",
+   "process": "generic_graduate",
+   "programme": "Tatton Academy (fictional)",
+   "culture": "The newest bank in town: everything is being built for the first time.",
+   "perk": "More vacancies open each cycle",
+   "signature": "growth",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Tatum Bank",
+    "status": "operating; began operating in 2025",
+    "note": "",
+    "sources": [
+     "legit_2026_recap",
+     "tatum_2026"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "mubah",
+   "name": "Mubah Bank",
+   "category": "noninterest",
+   "archetype": "noninterest",
+   "color": "#1b5e20",
+   "process": "generic_graduate",
+   "programme": "Mubah Institute (fictional)",
+   "culture": "Non-interest banking: profit-sharing accounts and trade-based financing.",
+   "perk": "Ethical finance certification",
+   "signature": "ethics",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Jaiz Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "iklil",
+   "name": "Iklil Bank",
+   "category": "noninterest",
+   "archetype": "noninterest",
+   "color": "#6a1b9a",
+   "process": "generic_graduate",
+   "programme": "Iklil Academy (fictional)",
+   "culture": "Young non-interest bank with a strong digital push.",
+   "perk": "Ethical finance certification",
+   "signature": "ethics",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "TAJBank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "waterlily",
+   "name": "Waterlily Bank",
+   "category": "noninterest",
+   "archetype": "noninterest",
+   "color": "#d81b60",
+   "process": "generic_graduate",
+   "programme": "Waterlily Academy (fictional)",
+   "culture": "Non-interest banking for individuals and SMEs.",
+   "perk": "Ethical finance certification",
+   "signature": "ethics",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Lotus Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "otherbank",
+   "name": "The Other Bank",
+   "category": "noninterest",
+   "archetype": "noninterest",
+   "color": "#4527a0",
+   "process": "generic_graduate",
+   "programme": "The Other Academy (fictional)",
+   "culture": "A non-interest bank with a modern, lifestyle-led brand.",
+   "perk": "Ethical finance certification",
+   "signature": "ethics",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "The Alternative Bank (AltBank)",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap",
+     "sterling_2026"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "highland",
+   "name": "Highland Bank",
+   "category": "noninterest",
+   "archetype": "noninterest",
+   "color": "#2e7d32",
+   "process": "generic_graduate",
+   "programme": "Highland Academy (fictional)",
+   "culture": "The newest non-interest bank, building its first teams.",
+   "perk": "Ethical finance certification",
+   "signature": "ethics",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Summit Bank",
+    "status": "operating; launched November 2025 (regional non-interest licence)",
+    "note": "",
+    "sources": [
+     "summit_2025"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": true
+   }
+  },
+  {
+   "id": "coronet",
+   "name": "Coronet Merchant Bank",
+   "category": "merchant",
+   "archetype": "merchant",
+   "color": "#7b1e3c",
+   "process": "generic_graduate",
+   "programme": "Coronet Analyst Programme (fictional)",
+   "culture": "Corporate finance and treasury, small expert teams.",
+   "perk": "Specialist pay premium",
+   "signature": "global",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Coronation Merchant Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "firstdale",
+   "name": "Firstdale Merchant Bank",
+   "category": "merchant",
+   "archetype": "merchant",
+   "color": "#1565c0",
+   "process": "generic_graduate",
+   "programme": "Firstdale Analyst Programme (fictional)",
+   "culture": "Investment and corporate banking with a long track record.",
+   "perk": "Bigger pension top-up",
+   "signature": "wealth",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "FSDH Merchant Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "greenmeridian",
+   "name": "Greenmeridian Merchant Bank",
+   "category": "merchant",
+   "archetype": "merchant",
+   "color": "#2e7d32",
+   "process": "generic_graduate",
+   "programme": "Greenmeridian Analyst Programme (fictional)",
+   "culture": "Deal-driven investment banking for corporates.",
+   "perk": "Higher bonus share at strong ratings",
+   "signature": "sales",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Greenwich Merchant Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "shilling",
+   "name": "Shilling Merchant Bank",
+   "category": "merchant",
+   "archetype": "merchant",
+   "color": "#00838f",
+   "process": "generic_graduate",
+   "programme": "Shilling Analyst Programme (fictional)",
+   "culture": "Part of a large African financial group; corporate and investment banking.",
+   "perk": "Global standards training",
+   "signature": "global",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Rand Merchant Bank Nigeria",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "legit_2026_recap"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "owo",
+   "name": "Owo Microfinance Bank",
+   "category": "microfinance",
+   "archetype": "microfinance",
+   "color": "#40196d",
+   "process": "generic_graduate",
+   "programme": "Owo Product School (fictional)",
+   "culture": "An app-only bank: no branches, all product and support.",
+   "perk": "Digital skills bonus",
+   "signature": "digital",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Kuda Microfinance Bank",
+    "status": "operating; national microfinance licence (2025/26)",
+    "note": "",
+    "sources": [
+     "mfb_national_2026"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": true
+   }
+  },
+  {
+   "id": "cashpoint",
+   "name": "CashPoint Microfinance Bank",
+   "category": "microfinance",
+   "archetype": "microfinance",
+   "color": "#0357ee",
+   "process": "generic_graduate",
+   "programme": "CashPoint Academy (fictional)",
+   "culture": "Payments for businesses through agents and POS terminals. Field and support work.",
+   "perk": "Field allowance",
+   "signature": "field",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Moniepoint Microfinance Bank",
+    "status": "operating; national microfinance licence (2025/26)",
+    "note": "",
+    "sources": [
+     "mfb_national_2026"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": true
+   }
+  },
+  {
+   "id": "lift",
+   "name": "LIFT Microfinance Bank",
+   "category": "microfinance",
+   "archetype": "microfinance",
+   "color": "#2e7d32",
+   "process": "generic_graduate",
+   "programme": "LIFT Field School (fictional)",
+   "culture": "Small loans to market women and farmers. Lots of field visits.",
+   "perk": "Field allowance",
+   "signature": "field",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "LAPO Microfinance Bank",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "lapo_2026"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": true
+   }
+  },
+  {
+   "id": "abundance",
+   "name": "Abundance Microfinance Bank",
+   "category": "microfinance",
+   "archetype": "microfinance",
+   "color": "#ef6c00",
+   "process": "generic_graduate",
+   "programme": "Abundance Academy (fictional)",
+   "culture": "Small-business lending with a focus on loan officers in the field.",
+   "perk": "Field allowance",
+   "signature": "field",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "AB Microfinance Bank Nigeria",
+    "status": "operating; national microfinance bank",
+    "note": "",
+    "sources": [
+     "ab_mfb"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": true
+   }
+  },
+  {
+   "id": "fedindustry",
+   "name": "Federal Industry Bank",
+   "category": "development",
+   "archetype": "development",
+   "color": "#1e3a8a",
+   "process": "generic_graduate",
+   "programme": "Federal Industry Institute (fictional)",
+   "culture": "Long-term finance for factories and industry. Project appraisal over sales.",
+   "perk": "Project appraisal training",
+   "signature": "projects",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Bank of Industry",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "dfi_2026"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "agriccredit",
+   "name": "Agric Credit Bank",
+   "category": "development",
+   "archetype": "development",
+   "color": "#33691e",
+   "process": "generic_graduate",
+   "programme": "Agric Credit Institute (fictional)",
+   "culture": "Farm and agribusiness lending, in the middle of a restructure.",
+   "perk": "Project appraisal training",
+   "signature": "projects",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Bank of Agriculture",
+    "status": "operating; being restructured and recapitalised (2025–26)",
+    "note": "",
+    "sources": [
+     "boa_2025"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": true
+   }
+  },
+  {
+   "id": "natdev",
+   "name": "National Development Finance",
+   "category": "development",
+   "archetype": "development",
+   "color": "#004d40",
+   "process": "generic_graduate",
+   "programme": "NDF Institute (fictional)",
+   "culture": "Wholesale lending to small businesses through other banks.",
+   "perk": "Project appraisal training",
+   "signature": "projects",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Development Bank of Nigeria",
+    "status": "operating (presumed; no 2026 change found)",
+    "note": "",
+    "sources": [
+     "dfi_review_2026"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": true
+   }
+  },
+  {
+   "id": "exportcredit",
+   "name": "Export Credit Bank",
+   "category": "development",
+   "archetype": "development",
+   "color": "#01579b",
+   "process": "generic_graduate",
+   "programme": "Export Credit Institute (fictional)",
+   "culture": "Finance for exporters and trade.",
+   "perk": "Project appraisal training",
+   "signature": "projects",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Nigerian Export-Import Bank (NEXIM)",
+    "status": "operating",
+    "note": "",
+    "sources": [
+     "dfi_2026"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  },
+  {
+   "id": "fedhousing",
+   "name": "Federal Housing Bank",
+   "category": "development",
+   "archetype": "development",
+   "color": "#5d4037",
+   "process": "generic_graduate",
+   "programme": "Federal Housing Institute (fictional)",
+   "culture": "Housing finance and the National Housing Fund.",
+   "perk": "Project appraisal training",
+   "signature": "projects",
+   "motto": "",
+   "reference": {
+    "inspiredBy": "Federal Mortgage Bank of Nigeria",
+    "status": "operating; seeking recapitalisation (2026)",
+    "note": "",
+    "sources": [
+     "fmbn_2026"
+    ],
+    "verifiedOn": "2026-10-09",
+    "needsVerification": false
+   }
+  }
+ ]
+}

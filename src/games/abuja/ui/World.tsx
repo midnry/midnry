@@ -50,6 +50,7 @@ import { ChatBubble, ReplyButton } from "./Chat";
 import { NegotiationScreen } from "./Negotiation";
 import { LotPanel } from "./LotPanel";
 import { KitchenScreen, type KitchenOpen } from "./kitchen/Kitchen";
+import { Careers, type Spot as CareerSpot } from "./Careers";
 import { StoryPanel } from "./StoryView";
 import { WardrobePanel } from "./Wardrobe";
 import { DecorPanel } from "./Decor";
@@ -90,6 +91,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const [kitchenOpen, setKitchenOpen] = useState<KitchenOpen | null>(null);
   // Inside a building: which room, and the loading screen between outside and in.
   const [socialOpen, setSocialOpen] = useState(false);
+  const [careers, setCareers] = useState<{ at: CareerSpot } | null>(null);
   const [inside, setInside] = useState<RoomInfo | null>(null);
   const insideRef = useRef<RoomInfo | null>(null);
   const [loading, setLoading] = useState<{ title: string; icon: string; progress?: number; error?: string } | null>({ title: "Loading your next chapter", icon: "✦" });
@@ -224,6 +226,10 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           else if (!insideRef.current?.placeId?.startsWith("home_") && !insideRef.current?.parent?.placeId?.startsWith("home_")) bus.emit("blocked", "This isn't your kitchen. Cook at home.");
           else setKitchenOpen({ at: "home", market: null, tab: "cook" });
         }
+        else if (["vacancies", "hr", "training", "workstation", "manager"].includes(thing.id)) {
+          if (getState()?.chapter) bus.emit("blocked", "Bank jobs are for grown-ups. Finish growing up first.");
+          else setCareers({ at: thing.id === "vacancies" ? null : (thing.id as CareerSpot) });
+        }
         else if (getState()?.chapter) bus.emit("blocked", "Your phone can wait. You're in the middle of growing up.");
         else setPhone(thing.id === "laptop" ? "jobs" : "home");
       }
@@ -268,10 +274,10 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
 
   // The world stands still while the pause menu is open. Esc or P toggles it.
   useEffect(() => {
-    input.paused = paused || wardrobe || decorating || Boolean(negotiation) || Boolean(kitchenOpen) || isLoading;
+    input.paused = paused || wardrobe || decorating || Boolean(negotiation) || Boolean(kitchenOpen) || Boolean(careers) || isLoading;
     input.x = 0;
     input.y = 0;
-  }, [paused, wardrobe, decorating, negotiation, kitchenOpen, isLoading]);
+  }, [paused, wardrobe, decorating, negotiation, kitchenOpen, careers, isLoading]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (isLoading) return;
@@ -531,12 +537,17 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           state={state}
           app={phone}
           onApp={(app) => {
+            if (app === "careers") {
+              setPhone(null);
+              return setCareers({ at: null });
+            }
             if (app !== "kitchen") return setPhone(app);
             setPhone(null);
             setKitchenOpen({ at: null, market: null, tab: "shop" });
           }}
           onClose={() => setPhone(null)}
         /> : null}
+      {careers && !inStory && !state.event ? <Careers state={state} at={careers.at} onClose={() => setCareers(null)} /> : null}
       {state.event ? <EventModal state={state} /> : null}
       {kitchenOpen && !state.event && !negotiation ? <KitchenScreen state={state} open={kitchenOpen} onClose={() => setKitchenOpen(null)} /> : null}
       {negotiation && !state.event ? <NegotiationScreen key={`${negotiation.deal}-${negotiation.npc}`} state={state} n={negotiation} /> : null}
@@ -596,6 +607,10 @@ const ROOM_ICON: Record<RoomInfo["type"], string> = {
   mansion: "🏰",
   office: "🏢",
   bank: "🏦",
+  bank_hr: "🗂️",
+  bank_training: "🎓",
+  bank_work: "💻",
+  bank_manager: "📈",
   clinic: "🏥",
   shop: "🛍️",
   classroom: "🏫",

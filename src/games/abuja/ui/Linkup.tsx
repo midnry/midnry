@@ -45,7 +45,7 @@ export function Linkup({ state }: { state: GameState }) {
       ) : null}
       {people.length === 0 ? (
         <p className="mt-4 text-sm text-slate-400">
-          Nobody yet. Meet people at Jabi Lake Mall, the Wuse Tech Hub, Union Capital Bank, or Bolaji's mansion: choose “Talk to someone new”.
+          Nobody yet. Meet people at Jabi Lake Mall, the Wuse Tech Hub, Zuma Capital Bank, or Bolaji's mansion: choose “Talk to someone new”.
         </p>
       ) : (
         <div className="mt-4 grid gap-2">

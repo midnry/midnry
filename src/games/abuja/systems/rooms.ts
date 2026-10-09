@@ -12,6 +12,10 @@ export type RoomType =
   | "mansion"
   | "office"
   | "bank"
+  | "bank_hr"
+  | "bank_training"
+  | "bank_work"
+  | "bank_manager"
   | "clinic"
   | "shop"
   | "classroom"
@@ -22,7 +26,7 @@ export const ROOM = { w: 640, h: 440, wall: 112, door: { x: 320, y: 418 } };
 
 export type RoomItem = { id: string; x: number; y: number; accent?: string };
 
-export type RoomAction = "phone" | "laptop" | "freshen" | "kitchen";
+export type RoomAction = "phone" | "laptop" | "freshen" | "kitchen" | "vacancies" | "hr" | "training" | "workstation" | "manager";
 
 export type RoomLayout = {
   wall: string;
@@ -232,9 +236,89 @@ export const LAYOUTS: Record<RoomType, RoomLayout> = {
       { id: "bench", x: 40, y: 320, accent: "#1f6fd1" },
       { id: "bench", x: 460, y: 320, accent: "#1f6fd1" },
       { id: "cooler", x: 590, y: 200 },
+      { id: "walldoor", x: 40, y: 6, accent: "#1e3a8a" },
+      { id: "walldoor", x: 130, y: 6, accent: "#1e3a8a" },
+      { id: "walldoor", x: 440, y: 6, accent: "#1e3a8a" },
+      { id: "walldoor", x: 530, y: 6, accent: "#1e3a8a" },
     ],
     use: { x: 320, y: 250, label: "The counter" },
+    doors: [
+      { x: 73, label: "HR desk", to: "bank_hr" },
+      { x: 163, label: "Training room", to: "bank_training" },
+      { x: 473, label: "Workstations", to: "bank_work" },
+      { x: 563, label: "Manager's office", to: "bank_manager" },
+    ],
+    spots: [{ x: 320, y: 330, label: "📋 Vacancy board", action: "vacancies" }],
     staff: [{ x: 300, y: 120 }],
+  },
+  // ── Bankers' Row offices: each one opens the careers screen at its desk ──
+  bank_hr: {
+    wall: "#e0e7ff",
+    floor: "carpet",
+    items: [
+      { id: "window", x: 30, y: 18, accent: "#3730a3" },
+      { id: "picture", x: 230, y: 30, accent: "#16a34a" },
+      { id: "clock", x: 330, y: 30 },
+      { id: "filing", x: 470, y: 96 },
+      { id: "filing", x: 530, y: 96 },
+      { id: "desk", x: 240, y: 150 },
+      { id: "chair", x: 270, y: 236, accent: "#3730a3" },
+      { id: "bench", x: 40, y: 320, accent: "#3730a3" },
+      { id: "plant", x: 594, y: 352 },
+    ],
+    spots: [{ x: 300, y: 300, label: "🗂️ HR desk: applications & interviews", action: "hr" }],
+    staff: [{ x: 300, y: 130 }],
+  },
+  bank_training: {
+    wall: "#ecfccb",
+    floor: "tile",
+    items: [
+      { id: "blackboard", x: 180, y: 22 },
+      { id: "window", x: 30, y: 18, accent: "#3f6212" },
+      { id: "window", x: 510, y: 18, accent: "#3f6212" },
+      { id: "schooldesk", x: 120, y: 190 },
+      { id: "schooldesk", x: 270, y: 190 },
+      { id: "schooldesk", x: 420, y: 190 },
+      { id: "schooldesk", x: 120, y: 290 },
+      { id: "schooldesk", x: 420, y: 290 },
+      { id: "plant", x: 594, y: 352 },
+    ],
+    spots: [{ x: 320, y: 320, label: "🎓 Join a training session", action: "training" }],
+    staff: [{ x: 320, y: 130 }],
+  },
+  bank_work: {
+    wall: "#e2e8f0",
+    floor: "tile",
+    items: [
+      { id: "window", x: 30, y: 18, accent: "#1e3a8a" },
+      { id: "whiteboard", x: 200, y: 22 },
+      { id: "clock", x: 400, y: 34 },
+      { id: "filing", x: 540, y: 96 },
+      { id: "desk_laptop", x: 110, y: 150 },
+      { id: "desk_laptop", x: 265, y: 150 },
+      { id: "desk_laptop", x: 420, y: 150 },
+      { id: "chair", x: 140, y: 236, accent: "#1f2937" },
+      { id: "chair", x: 450, y: 236, accent: "#1f2937" },
+      { id: "plant", x: 20, y: 352 },
+    ],
+    spots: [{ x: 320, y: 300, label: "💻 Your workstation", action: "workstation" }],
+    staff: [{ x: 170, y: 300 }, { x: 480, y: 300 }],
+  },
+  bank_manager: {
+    wall: "#fef3c7",
+    floor: "carpet",
+    items: [
+      { id: "window", x: 30, y: 18, accent: "#92400e" },
+      { id: "picture", x: 250, y: 30, accent: "#b45309" },
+      { id: "window", x: 510, y: 18, accent: "#92400e" },
+      { id: "bookshelf", x: 30, y: 86 },
+      { id: "desk", x: 260, y: 150 },
+      { id: "chair", x: 290, y: 236, accent: "#78350f" },
+      { id: "sofa", x: 430, y: 290, accent: "#78350f" },
+      { id: "plant", x: 594, y: 352 },
+    ],
+    spots: [{ x: 320, y: 300, label: "📈 Reviews & promotion panel", action: "manager" }],
+    staff: [{ x: 320, y: 130 }],
   },
   clinic: {
     wall: "#eef6f8",

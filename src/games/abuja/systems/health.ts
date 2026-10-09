@@ -1,4 +1,5 @@
 import { life, lifeOf } from "./life";
+import { hmoCover } from "./banking";
 import type { GameState, InjuryKind } from "./types";
 
 // Road accidents, the hospital and its bills, and the electricity bill.
@@ -87,9 +88,12 @@ export function treat(s: GameState): string {
   if (!inj || (inj.healsOn != null && s.day >= inj.healsOn)) return "The doctor checks you over. \"You're fine. Go home.\"";
   if (inj.healsOn != null && inj.kind !== "minor") return "Your treatment is done. It just needs time to heal.";
   const info = INJURY[inj.kind];
-  const paid = Math.min(info.bill, Math.max(0, s.stats.money));
+  // Your employer's health plan (HMO) covers part of the bill.
+  const cover = hmoCover(s);
+  const bill = Math.round(info.bill * (1 - cover));
+  const paid = Math.min(bill, Math.max(0, s.stats.money));
   s.stats.money -= paid;
-  const owed = info.bill - paid;
+  const owed = bill - paid;
   l.hospitalBill += owed;
   s.stats.health = Math.min(100, s.stats.health + Math.round(info.health * 0.6));
   l.injury = { ...inj, healsOn: s.day + Math.max(1, info.heal) };

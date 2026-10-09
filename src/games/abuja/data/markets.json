@@ -5,7 +5,7 @@
     { "id": "EURUSD", "kind": "forex", "name": "EUR/USD", "price": 1.08, "volatility": 0.004, "trend": 0 },
     { "id": "NAIJ", "kind": "crypto", "name": "NaijaCoin", "price": 42000, "volatility": 0.03, "trend": 0.001 },
     { "id": "JOLLOF", "kind": "crypto", "name": "JollofInu (meme)", "price": 0.002, "volatility": 0.12, "trend": -0.002 },
-    { "id": "UCB", "kind": "stock", "name": "Union Capital Bank", "price": 38, "volatility": 0.015, "trend": 0.0005 },
+    { "id": "UCB", "kind": "stock", "name": "Zuma Capital Bank", "price": 38, "volatility": 0.015, "trend": 0.0005 },
     { "id": "TELCO", "kind": "stock", "name": "Konnect Telecom", "price": 210, "volatility": 0.012, "trend": 0.0006 },
     { "id": "DCOIL", "kind": "stock", "name": "Delta Crest Oil", "price": 640, "volatility": 0.02, "trend": 0.0003 },
     { "id": "AGRO", "kind": "stock", "name": "Benue Harvest Foods", "price": 95, "volatility": 0.01, "trend": 0.0004 }

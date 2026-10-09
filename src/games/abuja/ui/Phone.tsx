@@ -24,7 +24,7 @@ import { btnGhost, btnPrimary } from "./theme";
 import { Trade } from "./Trade";
 import { WardrobePanel } from "./Wardrobe";
 
-export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen" | "city" | "news" | "social";
+export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen" | "city" | "news" | "social" | "careers";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "wallet", label: "Wallet", icon: "💳", tint: "bg-blue-600" },
@@ -39,6 +39,7 @@ const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "linkup", label: "Linkup", icon: "💗", tint: "bg-pink-600" },
   { id: "loans", label: "QuickKash", icon: "💸", tint: "bg-red-600" },
   { id: "jobs", label: "Jobs", icon: "💼", tint: "bg-sky-600" },
+  { id: "careers", label: "Bank Careers", icon: "🏦", tint: "bg-blue-800" },
   { id: "contacts", label: "Contacts", icon: "👥", tint: "bg-violet-600" },
   { id: "map", label: "Rides", icon: "🛺", tint: "bg-blue-600" },
   { id: "stats", label: "Life", icon: "📊", tint: "bg-teal-600" },
@@ -392,16 +393,16 @@ function Wallet({ state }: { state: GameState }) {
       </div>
       {frozen ? (
         <div className="mt-3 rounded-2xl border border-red-400/40 bg-red-500/15 p-3 text-sm">
-          <p className="font-semibold text-red-300">🔒 {naira(frozen.amount)} frozen by Union Capital Bank</p>
+          <p className="font-semibold text-red-300">🔒 {naira(frozen.amount)} frozen by Zuma Capital Bank</p>
           <p className="mt-1 text-slate-300">
             Since day {frozen.day}.{" "}
             {frozen.dirty
               ? "The bank linked it to fraud and told the EFCC."
               : frozen.proof
-                ? `Take your BVN and the ${frozen.proof} to Union Capital Bank HQ in the CBD: they can release it on the spot.`
+                ? `Take your BVN and the ${frozen.proof} to Bankers' Row in the CBD: they can release it on the spot.`
               : state.day - frozen.day < REVIEW_DAYS
-                ? `Compliance is reviewing it. Go to Union Capital Bank HQ in the CBD from day ${frozen.day + REVIEW_DAYS}.`
-                : "The review is done. Go to Union Capital Bank HQ in the CBD to get it released."}
+                ? `Compliance is reviewing it. Go to Bankers' Row in the CBD from day ${frozen.day + REVIEW_DAYS}.`
+                : "The review is done. Go to Bankers' Row in the CBD to get it released."}
           </p>
         </div>
       ) : null}
@@ -500,12 +501,15 @@ function Jobs({ state }: { state: GameState }) {
       ) : (
         <p className="mb-4 text-sm text-slate-300">No job yet. Walk to a workplace and apply in person.</p>
       )}
+      <p className="mb-4 rounded-xl bg-blue-900/40 p-3 text-sm text-slate-200">
+        🏦 Banking careers (44 fictional employers) live in the <b>Bank Careers</b> app and at Bankers' Row in the CBD.
+      </p>
       {(["entry", "mid", "top"] as const).map((tier) => (
         <div key={tier} className="mb-5">
           <p className="text-xs font-semibold tracking-widest text-slate-400 uppercase">{tier === "entry" ? "Entry" : tier === "mid" ? "Mid-level" : "Top"}</p>
           <div className="mt-2 grid gap-2">
             {list
-              .filter((item) => item.def.tier === tier)
+              .filter((item) => item.def.tier === tier && (item.def.id !== "bank_staff" || item.current))
               .map(({ def, ok, current }) => (
                 <div key={def.id} className={`rounded-xl border p-3 text-sm ${current ? "border-sky-400" : "border-white/10"} bg-white/5`}>
                   <div className="flex items-center justify-between gap-2">

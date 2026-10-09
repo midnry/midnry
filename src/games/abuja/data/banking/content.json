@@ -1,0 +1,1057 @@
+{
+  "note": "Game content for the banking career: original puzzles, interview questions, training quizzes and workday scenarios. All characters and situations are fictional.",
+  "aptitude": [
+    {
+      "q": "A customer deposits ₦45,000 and withdraws ₦12,500. What is the net change?",
+      "a": [
+        "₦32,500",
+        "₦57,500",
+        "₦33,500",
+        "₦22,500"
+      ],
+      "k": 0
+    },
+    {
+      "q": "15% of ₦80,000 is…",
+      "a": [
+        "₦12,000",
+        "₦8,000",
+        "₦15,000",
+        "₦1,200"
+      ],
+      "k": 0
+    },
+    {
+      "q": "Next in the sequence: 3, 6, 12, 24, …",
+      "a": [
+        "48",
+        "36",
+        "30",
+        "42"
+      ],
+      "k": 0
+    },
+    {
+      "q": "A loan of ₦100,000 at 10% simple interest for 2 years costs how much interest?",
+      "a": [
+        "₦20,000",
+        "₦10,000",
+        "₦21,000",
+        "₦12,000"
+      ],
+      "k": 0
+    },
+    {
+      "q": "If all tellers are staff, and some staff are managers, then…",
+      "a": [
+        "Some tellers may be managers",
+        "All managers are tellers",
+        "No teller is a manager",
+        "All staff are tellers"
+      ],
+      "k": 0
+    },
+    {
+      "q": "Which word is closest in meaning to 'prudent'?",
+      "a": [
+        "Careful",
+        "Generous",
+        "Quick",
+        "Proud"
+      ],
+      "k": 0
+    },
+    {
+      "q": "₦1,550 to the dollar: how many naira is $40?",
+      "a": [
+        "₦62,000",
+        "₦6,200",
+        "₦60,500",
+        "₦38,750"
+      ],
+      "k": 0
+    },
+    {
+      "q": "A branch serves 240 customers in 8 hours. How many per hour?",
+      "a": [
+        "30",
+        "24",
+        "32",
+        "28"
+      ],
+      "k": 0
+    },
+    {
+      "q": "Odd one out:",
+      "a": [
+        "Overdraft",
+        "Deposit",
+        "Savings",
+        "Current account"
+      ],
+      "k": 0
+    },
+    {
+      "q": "Ada is older than Bayo. Chidi is younger than Bayo. Who is youngest?",
+      "a": [
+        "Chidi",
+        "Bayo",
+        "Ada",
+        "Can't tell"
+      ],
+      "k": 0
+    },
+    {
+      "q": "Which number is missing? 2, 5, 10, 17, __, 37",
+      "a": [
+        "26",
+        "24",
+        "27",
+        "25"
+      ],
+      "k": 0
+    },
+    {
+      "q": "A fee rises from ₦50 to ₦65. What is the percentage increase?",
+      "a": [
+        "30%",
+        "15%",
+        "25%",
+        "35%"
+      ],
+      "k": 0
+    },
+    {
+      "q": "Choose the correctly spelt word.",
+      "a": [
+        "Accommodate",
+        "Acommodate",
+        "Accomodate",
+        "Acomodate"
+      ],
+      "k": 0
+    },
+    {
+      "q": "₦250,000 shared in the ratio 3:2 gives the larger share as…",
+      "a": [
+        "₦150,000",
+        "₦125,000",
+        "₦100,000",
+        "₦175,000"
+      ],
+      "k": 0
+    },
+    {
+      "q": "If 4 tellers clear a queue in 30 minutes, how long would 6 tellers take (same pace)?",
+      "a": [
+        "20 minutes",
+        "45 minutes",
+        "25 minutes",
+        "15 minutes"
+      ],
+      "k": 0
+    },
+    {
+      "q": "'Reconcile' most nearly means…",
+      "a": [
+        "Make two records agree",
+        "Close an account",
+        "Approve a loan",
+        "Count cash quickly"
+      ],
+      "k": 0
+    },
+    {
+      "q": "Which is largest?",
+      "a": [
+        "0.6",
+        "5/9",
+        "0.55",
+        "11/20"
+      ],
+      "k": 0
+    },
+    {
+      "q": "A customer's balance is −₦3,000 after a ₦10,000 withdrawal. What was it before?",
+      "a": [
+        "₦7,000",
+        "₦13,000",
+        "₦3,000",
+        "−₦7,000"
+      ],
+      "k": 0
+    }
+  ],
+  "interview": [
+    {
+      "q": "Tell us about yourself.",
+      "a": [
+        {
+          "t": "A short story: my studies, what I've done to earn and learn, and why banking now.",
+          "s": 3
+        },
+        {
+          "t": "I'm hardworking, honest and a fast learner.",
+          "s": 1
+        },
+        {
+          "t": "Everything from primary school until today, in detail.",
+          "s": 0
+        },
+        {
+          "t": "My uncle works here, so I know the bank well.",
+          "s": -1,
+          "c": -5
+        }
+      ]
+    },
+    {
+      "q": "A customer insists on a product that you know doesn't suit them. What do you do?",
+      "a": [
+        {
+          "t": "Explain the risks clearly, suggest what fits, and record that they were advised.",
+          "s": 3,
+          "c": 3
+        },
+        {
+          "t": "Sell it: they asked, and it helps my target.",
+          "s": -1,
+          "c": -8
+        },
+        {
+          "t": "Refuse to serve them.",
+          "s": 0
+        },
+        {
+          "t": "Ask my supervisor to decide.",
+          "s": 1
+        }
+      ]
+    },
+    {
+      "q": "Why do you want to work here?",
+      "a": [
+        {
+          "t": "I've read about what you do and where you're going, and here's where I fit.",
+          "s": 3
+        },
+        {
+          "t": "Banks pay well.",
+          "s": 0
+        },
+        {
+          "t": "I applied everywhere.",
+          "s": -1
+        },
+        {
+          "t": "My family wants me in a bank.",
+          "s": 0
+        }
+      ]
+    },
+    {
+      "q": "Your teammate is taking cash from the till. What do you do?",
+      "a": [
+        {
+          "t": "Report it through the proper channel, even if it's uncomfortable.",
+          "s": 3,
+          "c": 5
+        },
+        {
+          "t": "Talk to them privately and keep it between us.",
+          "s": 0,
+          "c": -3
+        },
+        {
+          "t": "Ignore it. Not my business.",
+          "s": -2,
+          "c": -6
+        },
+        {
+          "t": "Ask for a share.",
+          "s": -5,
+          "c": -20
+        }
+      ]
+    },
+    {
+      "q": "Describe a time you worked under pressure.",
+      "a": [
+        {
+          "t": "The situation, what I did, and the result, with numbers.",
+          "s": 3
+        },
+        {
+          "t": "I always work well under pressure.",
+          "s": 0
+        },
+        {
+          "t": "I don't really get pressured.",
+          "s": -1
+        },
+        {
+          "t": "During exams, I read all night.",
+          "s": 1
+        }
+      ]
+    },
+    {
+      "q": "Where do you see yourself in five years?",
+      "a": [
+        {
+          "t": "Skilled in my track, trusted with more, and ready to lead a team.",
+          "s": 3
+        },
+        {
+          "t": "In your seat.",
+          "s": 1
+        },
+        {
+          "t": "Abroad, honestly.",
+          "s": -1
+        },
+        {
+          "t": "I haven't thought about it.",
+          "s": -1
+        }
+      ]
+    },
+    {
+      "q": "What would you do if you made a mistake that cost a customer money?",
+      "a": [
+        {
+          "t": "Own it, tell my supervisor, fix it for the customer and log it so it doesn't repeat.",
+          "s": 3,
+          "c": 3
+        },
+        {
+          "t": "Fix it quietly before anyone notices.",
+          "s": 0,
+          "c": -3
+        },
+        {
+          "t": "Blame the system.",
+          "s": -1,
+          "c": -2
+        },
+        {
+          "t": "Hope the customer doesn't notice.",
+          "s": -3,
+          "c": -6
+        }
+      ]
+    },
+    {
+      "q": "Do you have any questions for us?",
+      "a": [
+        {
+          "t": "What does success look like in the first six months in this role?",
+          "s": 3
+        },
+        {
+          "t": "How much is the salary?",
+          "s": 0
+        },
+        {
+          "t": "No questions.",
+          "s": 0
+        },
+        {
+          "t": "How soon can I be promoted?",
+          "s": 1
+        }
+      ]
+    }
+  ],
+  "practical": {
+    "ops": "Reconcile today's ledger against the statement and find the mismatch.",
+    "cs": "Handle a difficult customer request correctly.",
+    "rm": "Advise a customer on a product, suitably.",
+    "credit": "Appraise a small loan request.",
+    "risk": "Check a customer's identity documents.",
+    "tech": "Diagnose a support ticket.",
+    "lead": "Organise a team's day."
+  },
+  "training": [
+    {
+      "q": "A customer can't explain where a large cash deposit came from. You should…",
+      "a": [
+        "Ask, record, and escalate it under AML procedure",
+        "Accept it: deposits are good",
+        "Refuse and say nothing",
+        "Tell the customer you're reporting them"
+      ],
+      "k": 0
+    },
+    {
+      "q": "KYC stands for…",
+      "a": [
+        "Know Your Customer",
+        "Keep Your Cash",
+        "Key Yield Calculation",
+        "Know Your Credit"
+      ],
+      "k": 0
+    },
+    {
+      "q": "Mis-selling means…",
+      "a": [
+        "Selling a product that doesn't suit the customer",
+        "Selling below target",
+        "Selling to staff",
+        "Selling online"
+      ],
+      "k": 0
+    },
+    {
+      "q": "The four-eyes principle means…",
+      "a": [
+        "A second person checks key transactions",
+        "Wearing glasses at work",
+        "Four signatures on every form",
+        "Two cameras per teller"
+      ],
+      "k": 0
+    },
+    {
+      "q": "In a Murabaha, the bank…",
+      "a": [
+        "Buys the asset and sells it to you at an agreed mark-up",
+        "Lends cash at interest",
+        "Shares the customer's salary",
+        "Gives the asset for free"
+      ],
+      "k": 0
+    },
+    {
+      "q": "A debt-to-income ratio of 60% suggests the borrower is…",
+      "a": [
+        "Probably over-stretched",
+        "Very safe",
+        "Too rich for a loan",
+        "Exactly average"
+      ],
+      "k": 0
+    },
+    {
+      "q": "A colleague asks for your login 'just for today'. You…",
+      "a": [
+        "Refuse and remind them of policy",
+        "Share it once",
+        "Write it down for them",
+        "Change it after sharing"
+      ],
+      "k": 0
+    },
+    {
+      "q": "Good feedback to a team member is…",
+      "a": [
+        "Specific, timely and about behaviour",
+        "Public and loud",
+        "Saved for the annual review",
+        "Only positive"
+      ],
+      "k": 0
+    },
+    {
+      "q": "An operational risk event is…",
+      "a": [
+        "A loss from failed processes, people, systems or outside events",
+        "A drop in share price",
+        "A customer complaint only",
+        "A good investment"
+      ],
+      "k": 0
+    },
+    {
+      "q": "Before approving a loan, the most important check is…",
+      "a": [
+        "Whether the borrower can repay",
+        "Whether they're a VIP",
+        "Whether the branch target is met",
+        "Their phone model"
+      ],
+      "k": 0
+    }
+  ],
+  "requests": [
+    {
+      "who": "Mrs. Adaeze (retired teacher)",
+      "ask": "\"My pension came in, but the app says the money is not there. My grandson says I've been scammed.\"",
+      "a": [
+        {
+          "t": "Check her statement with her, show the credit, and help her set up her app safely.",
+          "acc": 1,
+          "sat": 2,
+          "con": 1
+        },
+        {
+          "t": "Tell her to call the call centre.",
+          "acc": 0,
+          "sat": -1,
+          "con": 0
+        },
+        {
+          "t": "Offer her a fixed deposit while she's here.",
+          "acc": 0,
+          "sat": 0,
+          "con": -1,
+          "sale": 1,
+          "missell": true
+        }
+      ]
+    },
+    {
+      "who": "Emeka (small trader)",
+      "ask": "\"I want to break my fixed deposit early. My shop needs stock.\"",
+      "a": [
+        {
+          "t": "Explain the early-break charge and options (like a deposit-backed loan), then let him choose.",
+          "acc": 1,
+          "sat": 2,
+          "con": 1,
+          "sale": 1
+        },
+        {
+          "t": "Break it immediately without explaining charges.",
+          "acc": 0,
+          "sat": 0,
+          "con": -1
+        },
+        {
+          "t": "Refuse: it's not due yet.",
+          "acc": 0,
+          "sat": -2,
+          "con": 0
+        }
+      ]
+    },
+    {
+      "who": "Hauwa (student)",
+      "ask": "\"Someone called saying they're from the bank and asked for my OTP. I gave it. Now ₦40,000 is gone!\"",
+      "a": [
+        {
+          "t": "Block the card and app now, log a fraud claim, and explain how to stay safe.",
+          "acc": 1,
+          "sat": 2,
+          "con": 1
+        },
+        {
+          "t": "Tell her it's her fault for sharing the OTP.",
+          "acc": 0,
+          "sat": -2,
+          "con": 0
+        },
+        {
+          "t": "Promise she'll get the money back today.",
+          "acc": 0,
+          "sat": 1,
+          "con": -1
+        }
+      ]
+    },
+    {
+      "who": "Mr. Bello (business owner)",
+      "ask": "\"I'll open an account with ₦50 million today if you skip the ID checks. I'm in a hurry.\"",
+      "a": [
+        {
+          "t": "Politely insist on full KYC. A big deposit doesn't change the rules.",
+          "acc": 1,
+          "sat": 0,
+          "con": 2,
+          "sale": 1
+        },
+        {
+          "t": "Open it now and collect the documents later.",
+          "acc": 0,
+          "sat": 1,
+          "con": -3,
+          "sale": 2,
+          "missell": true
+        },
+        {
+          "t": "Send him away.",
+          "acc": 0,
+          "sat": -2,
+          "con": 0
+        }
+      ]
+    },
+    {
+      "who": "Funmi (nurse)",
+      "ask": "\"Can I get a loan for my wedding? My salary comes into this account.\"",
+      "a": [
+        {
+          "t": "Check her income and existing debts, and offer what she can comfortably repay.",
+          "acc": 1,
+          "sat": 1,
+          "con": 1,
+          "sale": 1
+        },
+        {
+          "t": "Offer the maximum: bigger loan, bigger target.",
+          "acc": 0,
+          "sat": 1,
+          "con": -2,
+          "sale": 2,
+          "missell": true
+        },
+        {
+          "t": "Tell her weddings are a waste of money.",
+          "acc": 0,
+          "sat": -2,
+          "con": 0
+        }
+      ]
+    },
+    {
+      "who": "Alhaji Musa (farmer)",
+      "ask": "\"My son wants me to put all my savings in a crypto plan he saw. Should I move my money through your bank?\"",
+      "a": [
+        {
+          "t": "Explain the risks of unregulated investments, and offer to show regulated options.",
+          "acc": 1,
+          "sat": 2,
+          "con": 1,
+          "sale": 1
+        },
+        {
+          "t": "Process the transfer; it's his money.",
+          "acc": 0,
+          "sat": 0,
+          "con": 0
+        },
+        {
+          "t": "Sell him the bank's highest-fee investment fund instead.",
+          "acc": 0,
+          "sat": 0,
+          "con": -1,
+          "sale": 2,
+          "missell": true
+        }
+      ]
+    }
+  ],
+  "tickets": [
+    {
+      "t": "The mobile app crashes for every user on one Android version since last night's release.",
+      "a": [
+        "Roll back the release and fix it in testing",
+        "Ask users to reinstall",
+        "Restart the server",
+        "Wait for more complaints"
+      ],
+      "k": 0
+    },
+    {
+      "t": "A branch printer won't print customer statements. Other branches are fine.",
+      "a": [
+        "Check the branch printer's driver and queue",
+        "Rebuild the core banking system",
+        "Disable statements bank-wide",
+        "Buy a new printer immediately"
+      ],
+      "k": 0
+    },
+    {
+      "t": "Transfers are timing out between 9 and 10 a.m. every day.",
+      "a": [
+        "Check capacity and queues at peak hours",
+        "Tell customers to transfer at night",
+        "Delete old transactions",
+        "Increase transfer fees"
+      ],
+      "k": 0
+    },
+    {
+      "t": "A staff member says they clicked a link in an email and now their screen is locked with a ransom note.",
+      "a": [
+        "Isolate the computer from the network and alert security",
+        "Pay the ransom",
+        "Restart it and carry on",
+        "Forward the email to colleagues as a warning"
+      ],
+      "k": 0
+    },
+    {
+      "t": "The daily report shows 0 transactions for a busy branch.",
+      "a": [
+        "Check the data feed from that branch before trusting the report",
+        "Close the branch",
+        "Publish the report anyway",
+        "Assume it was a holiday"
+      ],
+      "k": 0
+    }
+  ],
+  "supervision": [
+    {
+      "t": "Two tellers are off sick and the queue is out of the door.",
+      "a": [
+        {
+          "t": "Move a back-office officer to the counter and open the express queue for deposits.",
+          "ok": 2
+        },
+        {
+          "t": "Tell customers to come back tomorrow.",
+          "ok": -1
+        },
+        {
+          "t": "Make the remaining tellers skip the second check on cash.",
+          "ok": -2,
+          "con": -2
+        }
+      ]
+    },
+    {
+      "t": "Your best officer has missed their target for the first time and looks worried.",
+      "a": [
+        {
+          "t": "Talk privately, find out why, and agree a plan together.",
+          "ok": 2
+        },
+        {
+          "t": "Warn them in front of the team.",
+          "ok": -1
+        },
+        {
+          "t": "Ignore it; one bad month is fine.",
+          "ok": 0
+        }
+      ]
+    },
+    {
+      "t": "A team member is pushing customers into products to hit targets.",
+      "a": [
+        {
+          "t": "Stop it, review the sales, and retrain them on suitability.",
+          "ok": 2,
+          "con": 2
+        },
+        {
+          "t": "Let it go: the numbers look good.",
+          "ok": -1,
+          "con": -3
+        },
+        {
+          "t": "Transfer them to another branch.",
+          "ok": 0
+        }
+      ]
+    },
+    {
+      "t": "Two staff want the same leave week during the festive season.",
+      "a": [
+        {
+          "t": "Agree a fair rule (like who asked first, or rotating years) and explain it.",
+          "ok": 2
+        },
+        {
+          "t": "Give it to your favourite.",
+          "ok": -1,
+          "con": -1
+        },
+        {
+          "t": "Cancel both.",
+          "ok": -1
+        }
+      ]
+    }
+  ],
+  "signatureQuestions": {
+    "learning": {
+      "q": "{bank} invests heavily in training. What will you do with it?",
+      "a": [
+        {
+          "t": "Use every module, apply it on the job, and teach what I learn to the next intake.",
+          "s": 3
+        },
+        {
+          "t": "Learn as much as I can.",
+          "s": 1
+        },
+        {
+          "t": "Pass the exams.",
+          "s": 0
+        },
+        {
+          "t": "Training is boring; I learn on the job.",
+          "s": -1
+        }
+      ]
+    },
+    "stability": {
+      "q": "{bank} has served customers for generations. How would you respect that while improving things?",
+      "a": [
+        {
+          "t": "Learn why things are done as they are, then suggest small, tested improvements.",
+          "s": 3
+        },
+        {
+          "t": "Follow the rules.",
+          "s": 1
+        },
+        {
+          "t": "Modernise everything quickly.",
+          "s": 0
+        },
+        {
+          "t": "Old banks need shaking up.",
+          "s": -1
+        }
+      ]
+    },
+    "digital": {
+      "q": "Our customers live on their phones. How would you make {bank}'s app better?",
+      "a": [
+        {
+          "t": "Watch where customers get stuck, fix the biggest pain first, and measure it.",
+          "s": 3
+        },
+        {
+          "t": "Add more features.",
+          "s": 1
+        },
+        {
+          "t": "Copy what other apps do.",
+          "s": 0
+        },
+        {
+          "t": "I don't really use banking apps.",
+          "s": -1
+        }
+      ]
+    },
+    "pan_african": {
+      "q": "{bank} works across many countries. How would you serve a customer trading across borders?",
+      "a": [
+        {
+          "t": "Understand their trade cycle and currencies, then offer the right payment and trade products.",
+          "s": 3
+        },
+        {
+          "t": "Open them a domiciliary account.",
+          "s": 1
+        },
+        {
+          "t": "Refer them to another branch.",
+          "s": 0
+        },
+        {
+          "t": "Tell them to use cash.",
+          "s": -1
+        }
+      ]
+    },
+    "sales": {
+      "q": "{bank} has ambitious business targets. How do you hit yours without cutting corners?",
+      "a": [
+        {
+          "t": "Know my customers well, offer what genuinely fits, and never trade compliance for a sale.",
+          "s": 3
+        },
+        {
+          "t": "Work long hours.",
+          "s": 1
+        },
+        {
+          "t": "Push the products with the best commission.",
+          "s": 0
+        },
+        {
+          "t": "Whatever it takes.",
+          "s": -1
+        }
+      ]
+    },
+    "growth": {
+      "q": "{bank} is growing fast. How do you handle constant change?",
+      "a": [
+        {
+          "t": "Stay organised, ask questions early, and help new colleagues settle in.",
+          "s": 3
+        },
+        {
+          "t": "I adapt.",
+          "s": 1
+        },
+        {
+          "t": "I prefer things to stay the same.",
+          "s": 0
+        },
+        {
+          "t": "I'll leave if it's too much.",
+          "s": -1
+        }
+      ]
+    },
+    "service": {
+      "q": "A customer has waited 40 minutes and is angry. You're the next free officer at {bank}. What do you do?",
+      "a": [
+        {
+          "t": "Apologise sincerely, fix their issue, then flag what caused the delay.",
+          "s": 3
+        },
+        {
+          "t": "Serve them quickly.",
+          "s": 1
+        },
+        {
+          "t": "Ask them to calm down first.",
+          "s": 0
+        },
+        {
+          "t": "Tell them everyone has been waiting.",
+          "s": -1
+        }
+      ]
+    },
+    "sectors": {
+      "q": "{bank} focuses on health, education, agriculture, energy and transport. Which interests you, and why?",
+      "a": [
+        {
+          "t": "Pick one, give a real example of its financing needs, and how the bank could help.",
+          "s": 3
+        },
+        {
+          "t": "All of them.",
+          "s": 1
+        },
+        {
+          "t": "The one that pays most.",
+          "s": 0
+        },
+        {
+          "t": "I don't mind.",
+          "s": -1
+        }
+      ]
+    },
+    "wealth": {
+      "q": "A client of {bank} wants to grow their savings safely. What do you ask first?",
+      "a": [
+        {
+          "t": "Their goals, timeline and risk tolerance, before suggesting anything.",
+          "s": 3
+        },
+        {
+          "t": "How much they have.",
+          "s": 1
+        },
+        {
+          "t": "Whether they've heard of our funds.",
+          "s": 0
+        },
+        {
+          "t": "Nothing; I'd show the top-performing fund.",
+          "s": -1
+        }
+      ]
+    },
+    "global": {
+      "q": "{bank} follows global compliance standards. A big client wants an exception 'just this once'. Your answer?",
+      "a": [
+        {
+          "t": "No exceptions: explain the rule, offer what's possible, and escalate if needed.",
+          "s": 3
+        },
+        {
+          "t": "Ask my manager.",
+          "s": 1
+        },
+        {
+          "t": "Allow it if it's small.",
+          "s": 0
+        },
+        {
+          "t": "Big clients get exceptions.",
+          "s": -1
+        }
+      ]
+    },
+    "merger": {
+      "q": "{bank} has just merged two banks. How would you help two teams become one?",
+      "a": [
+        {
+          "t": "Learn both ways of working, keep customers informed, and build trust with new colleagues.",
+          "s": 3
+        },
+        {
+          "t": "Do my own job well.",
+          "s": 1
+        },
+        {
+          "t": "Stick with my old team.",
+          "s": 0
+        },
+        {
+          "t": "Wait and see who stays.",
+          "s": -1
+        }
+      ]
+    },
+    "ethics": {
+      "q": "At a non-interest bank like {bank}, how is financing different from a conventional loan?",
+      "a": [
+        {
+          "t": "It's trade or partnership based, like Murabaha, with the profit agreed upfront and no interest.",
+          "s": 3
+        },
+        {
+          "t": "It's interest-free.",
+          "s": 1
+        },
+        {
+          "t": "It's the same with a different name.",
+          "s": 0
+        },
+        {
+          "t": "I'm not sure.",
+          "s": -1
+        }
+      ]
+    },
+    "field": {
+      "q": "{bank} serves small traders and farmers. How would you assess a market woman with no payslip?",
+      "a": [
+        {
+          "t": "Visit her business, look at her daily sales and records, and talk to her group members.",
+          "s": 3
+        },
+        {
+          "t": "Ask for a payslip.",
+          "s": 1
+        },
+        {
+          "t": "Lend small and hope.",
+          "s": 0
+        },
+        {
+          "t": "Decline: no payslip, no loan.",
+          "s": -1
+        }
+      ]
+    },
+    "projects": {
+      "q": "{bank} finances big projects for national development. What makes a project worth funding?",
+      "a": [
+        {
+          "t": "Clear demand, a sound plan, capable promoters, and cash flows that can repay.",
+          "s": 3
+        },
+        {
+          "t": "If the government supports it.",
+          "s": 1
+        },
+        {
+          "t": "If it's big.",
+          "s": 0
+        },
+        {
+          "t": "If the promoter is well connected.",
+          "s": -1
+        }
+      ]
+    }
+  }
+}

@@ -137,7 +137,7 @@ export class RoomScene extends Phaser.Scene {
         .setOrigin(0.5, 0)
         .setDepth(3);
     }
-    this.spots.push({ kind: "exit", id: "door", label: this.info.parent ? "Back to the living room" : "Leave", x: door.x, y: door.y });
+    this.spots.push({ kind: "exit", id: "door", label: this.info.parent ? (this.info.type.startsWith("bank_") ? "Back to the banking hall" : "Back to the living room") : "Leave", x: door.x, y: door.y });
 
     // You come in at the door.
     this.player = figure(this, door.x, door.y - 30, { look: fullLook(state?.looks ?? {}), adult: (state?.age ?? 0) >= 18, stage: stageOf(state?.age ?? 0), painted: playerPainted(state) }, { name: "YOU", nameColor: "#60a5fa", unit: 0.28 });

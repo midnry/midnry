@@ -1472,23 +1472,13 @@
     {
       "id": "cbd_bank",
       "icon": "🏦",
-      "name": "Union Capital Bank HQ",
+      "name": "Bankers' Row",
       "district": "cbd",
       "x": 2908,
       "y": 2754,
       "color": "#60a5fa",
-      "blurb": "Fictional bank, very real dress code. Your shoes must shine.",
+      "blurb": "Every bank's careers office in one CBD street, plus Zuma Capital Bank's counter. Your shoes must shine.",
       "actions": [
-        {
-          "id": "apply_bank",
-          "label": "Apply: bank staff",
-          "slots": 1,
-          "energy": -5,
-          "kind": "apply",
-          "job": "bank_staff",
-          "effects": [],
-          "text": ""
-        },
         {
           "id": "work_bank",
           "label": "Work a shift",
@@ -1497,7 +1487,10 @@
           "kind": "work",
           "job": "bank_staff",
           "effects": [],
-          "text": ""
+          "text": "",
+          "if": {
+            "job": "bank_staff"
+          }
         },
         {
           "id": "meet",

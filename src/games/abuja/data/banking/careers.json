@@ -1,0 +1,137 @@
+{
+  "note": "Editable career model for the banking system. 'label' fields say what kind of information each block is: 'published' (from a cited public source, see sources.json), 'model' (a general career model, not any bank's real structure) or 'simulation' (fictional game balancing). Every salary, threshold, chance and duration here is a simulation value.",
+  "grades": {
+    "label": "model",
+    "about": "A representative Nigerian bank ladder. Real banks name and number their grades differently. Grade is separate from job title.",
+    "ladder": [
+      { "id": "intern", "name": "Intern / NYSC", "pay": 30000, "minDays": 0, "skill": 0, "courses": [], "scope": "trainee" },
+      { "id": "gt", "name": "Graduate Trainee", "pay": 60000, "minDays": 0, "skill": 0, "courses": [], "scope": "trainee" },
+      { "id": "et", "name": "Executive Trainee", "pay": 72000, "minDays": 14, "skill": 15, "courses": ["induction"], "scope": "officer" },
+      { "id": "abo", "name": "Assistant Banking Officer", "pay": 88000, "minDays": 21, "skill": 25, "courses": ["induction", "aml"], "scope": "officer" },
+      { "id": "bo", "name": "Banking Officer", "pay": 108000, "minDays": 28, "skill": 35, "courses": ["aml", "product"], "scope": "officer" },
+      { "id": "sbo", "name": "Senior Banking Officer", "pay": 132000, "minDays": 35, "skill": 45, "courses": ["product", "risk"], "scope": "officer" },
+      { "id": "am", "name": "Assistant Manager", "pay": 162000, "minDays": 42, "skill": 55, "courses": ["risk", "people1"], "scope": "manager" },
+      { "id": "dm", "name": "Deputy Manager", "pay": 198000, "minDays": 49, "skill": 62, "courses": ["people1", "credit2"], "scope": "manager" },
+      { "id": "mgr", "name": "Manager", "pay": 242000, "minDays": 56, "skill": 70, "courses": ["people2"], "scope": "manager" },
+      { "id": "sm", "name": "Senior Manager", "pay": 296000, "minDays": 63, "skill": 77, "courses": ["people2", "strategy"], "scope": "senior" },
+      { "id": "agm", "name": "Assistant General Manager", "pay": 365000, "minDays": 70, "skill": 83, "courses": ["strategy"], "scope": "senior" },
+      { "id": "dgm", "name": "Deputy General Manager", "pay": 450000, "minDays": 84, "skill": 88, "courses": ["board"], "scope": "senior" },
+      { "id": "gm", "name": "General Manager", "pay": 550000, "minDays": 98, "skill": 92, "courses": ["board"], "scope": "senior" }
+    ],
+    "appointments": {
+      "label": "simulation",
+      "about": "Executive Director and CEO are board appointments, not promotions. They open rarely and need a separate selection.",
+      "roles": [
+        { "id": "ed", "name": "Executive Director", "pay": 900000, "fromGrade": "gm", "chance": 0.08, "needs": { "rating": 4.5, "conduct": 90, "skill": 92, "network": 60 } },
+        { "id": "ceo", "name": "Managing Director / CEO", "pay": 1500000, "fromAppointment": "ed", "chance": 0.05, "needs": { "rating": 4.7, "conduct": 95, "skill": 95, "network": 75 } }
+      ]
+    }
+  },
+  "tracks": {
+    "label": "model",
+    "list": [
+      { "id": "ops", "name": "Operations", "icon": "🗂️", "goal": "Accuracy and speed: reconcile, process, keep the books clean.", "tasks": ["reconcile", "kyc", "request"], "weights": { "accuracy": 0.45, "productivity": 0.3, "conduct": 0.15, "satisfaction": 0.1 },
+        "titles": ["Operations Intern", "Operations Trainee", "Teller", "Teller", "Operations Officer", "Senior Operations Officer", "Head of Operations (Branch)", "Head of Operations (Branch)", "Regional Operations Manager", "Regional Operations Manager", "Head, Operations", "Head, Operations", "Chief Operations Executive"] },
+      { "id": "cs", "name": "Customer service", "icon": "🤝", "goal": "Resolve customers' problems properly and kindly. Fast is good; right is better.", "tasks": ["request", "kyc", "request"], "weights": { "satisfaction": 0.45, "accuracy": 0.25, "conduct": 0.2, "productivity": 0.1 },
+        "titles": ["Customer Service Intern", "Customer Service Trainee", "Customer Service Officer", "Customer Service Officer", "Senior Customer Service Officer", "Customer Experience Lead", "Customer Experience Manager", "Customer Experience Manager", "Head, Customer Experience (Region)", "Head, Customer Experience (Region)", "Head, Customer Experience", "Head, Customer Experience", "Chief Customer Officer"] },
+      { "id": "rm", "name": "Relationship management", "icon": "💼", "goal": "Grow good business with customers, without mis-selling. Sales only count when they're suitable and compliant.", "tasks": ["request", "credit", "request"], "weights": { "sales": 0.35, "satisfaction": 0.25, "conduct": 0.25, "accuracy": 0.15 },
+        "titles": ["Business Development Intern", "Relationship Trainee", "Relationship Officer", "Relationship Officer", "Relationship Manager", "Senior Relationship Manager", "Business Manager", "Business Manager", "Branch Business Manager", "Zonal Head", "Regional Director", "Regional Director", "Group Head, Business"] },
+      { "id": "credit", "name": "Credit", "icon": "📊", "goal": "Lend wisely: the right customers, the right amounts, documented.", "tasks": ["credit", "kyc", "reconcile"], "weights": { "accuracy": 0.45, "conduct": 0.25, "productivity": 0.2, "satisfaction": 0.1 },
+        "titles": ["Credit Intern", "Credit Trainee", "Credit Analyst", "Credit Analyst", "Senior Credit Analyst", "Credit Risk Officer", "Credit Manager", "Credit Manager", "Head, Credit Analysis", "Head, Credit Analysis", "Chief Credit Officer (Deputy)", "Chief Credit Officer (Deputy)", "Chief Credit Officer"] },
+      { "id": "risk", "name": "Risk and compliance", "icon": "🛡️", "goal": "Catch what others miss. Customer protection and the rules come first.", "tasks": ["kyc", "reconcile", "credit"], "weights": { "conduct": 0.35, "accuracy": 0.4, "productivity": 0.15, "satisfaction": 0.1 },
+        "titles": ["Compliance Intern", "Compliance Trainee", "Compliance Officer", "Compliance Officer", "AML Analyst", "Senior AML Analyst", "Compliance Manager", "Compliance Manager", "Head, Financial Crime", "Head, Financial Crime", "Chief Compliance Officer (Deputy)", "Chief Compliance Officer (Deputy)", "Chief Compliance Officer"] },
+      { "id": "tech", "name": "Technology and data", "icon": "💻", "goal": "Keep systems running and make data useful. Fix the root cause, not just the symptom.", "tasks": ["software", "reconcile", "software"], "weights": { "accuracy": 0.4, "productivity": 0.3, "learning": 0.2, "conduct": 0.1 },
+        "titles": ["IT Intern", "Technology Trainee", "Support Analyst", "Support Analyst", "Software Engineer", "Senior Software Engineer", "Engineering Lead", "Engineering Lead", "Engineering Manager", "Principal Engineer", "Head of Engineering", "Head of Engineering", "Chief Technology Officer"] },
+      { "id": "lead", "name": "Leadership", "icon": "🧭", "goal": "Get the best from your team: fair rotas, coaching, and no shortcuts.", "tasks": ["supervise", "request", "kyc"], "weights": { "satisfaction": 0.25, "productivity": 0.25, "conduct": 0.3, "accuracy": 0.2 },
+        "titles": ["Management Intern", "Management Trainee", "Team Assistant", "Team Lead", "Team Lead", "Senior Team Lead", "Branch Service Manager", "Branch Service Manager", "Branch Manager", "Area Manager", "Regional Manager", "Regional Manager", "Divisional Head"] }
+    ]
+  },
+  "routes": {
+    "label": "model",
+    "list": [
+      { "id": "graduate", "name": "Graduate programme", "needs": { "degree": true, "nysc": true }, "startGrade": "gt", "contract": "direct", "about": "For new graduates with an NYSC discharge or exemption certificate. Training before you start." },
+      { "id": "internship", "name": "Internship / NYSC placement", "needs": { "degree": false, "nysc": false }, "startGrade": "intern", "contract": "direct", "about": "Short placements for students, corps members and recent school leavers. Fixed term." },
+      { "id": "experienced", "name": "Experienced hire", "needs": { "degree": true, "nysc": true, "months": 1 }, "startGrade": "abo", "contract": "direct", "about": "For people already working in banking. Starts at your current grade or one above." },
+      { "id": "specialist", "name": "Specialist hire", "needs": { "degree": true, "nysc": true, "skill": 45 }, "startGrade": "bo", "contract": "direct", "tracks": ["tech", "risk", "credit"], "about": "Technology, risk and credit specialists. A practical test matters most." },
+      { "id": "agency", "name": "Agency role (outsourced)", "needs": { "degree": false, "nysc": false }, "startGrade": "intern", "contract": "agency", "tracks": ["ops", "cs"], "about": "Employed and paid by a staffing agency, working at the bank. Fewer benefits; strong reviews can lead to a direct contract." }
+    ]
+  },
+  "processes": {
+    "access_graduate": { "label": "published", "source": "access_graduate", "stages": ["application", "online_assessment", "physical_assessment", "document_verification", "panel_interview", "medical"], "training": { "published": "Six months", "sessions": 6 } },
+    "gtb_graduate": { "label": "published", "source": "gtb_graduate", "stages": ["application", "online_assessment", "hr_discussion", "panel_interview", "executive_interview"], "training": { "published": "Four months", "sessions": 4 } },
+    "generic_graduate": { "label": "model", "stages": ["application", "online_assessment", "panel_interview", "document_verification"], "training": { "sessions": 4 } },
+    "internship": { "label": "model", "stages": ["application", "hr_discussion"], "training": { "sessions": 1 } },
+    "experienced": { "label": "model", "stages": ["application", "hr_discussion", "practical_task", "panel_interview", "document_verification"], "training": { "sessions": 1 } },
+    "specialist": { "label": "model", "stages": ["application", "practical_task", "panel_interview", "document_verification"], "training": { "sessions": 1 } },
+    "agency": { "label": "model", "stages": ["application", "hr_discussion", "document_verification"], "training": { "sessions": 1 } }
+  },
+  "stages": {
+    "application": { "name": "Application", "icon": "📝", "wait": 1 },
+    "online_assessment": { "name": "Online assessment", "icon": "🧮", "wait": 2 },
+    "physical_assessment": { "name": "Physical (in-person) assessment", "icon": "✍️", "wait": 2 },
+    "document_verification": { "name": "Document verification", "icon": "📂", "wait": 1 },
+    "hr_discussion": { "name": "Documentation and HR discussion", "icon": "🗣️", "wait": 1 },
+    "panel_interview": { "name": "Panel interview", "icon": "👥", "wait": 2 },
+    "executive_interview": { "name": "Executive interview", "icon": "🎩", "wait": 2 },
+    "practical_task": { "name": "Practical task", "icon": "🛠️", "wait": 1 },
+    "medical": { "name": "Medical assessment", "icon": "🩺", "wait": 1 }
+  },
+  "courses": {
+    "label": "simulation",
+    "list": [
+      { "id": "induction", "name": "Induction and code of conduct" },
+      { "id": "aml", "name": "Anti-money laundering and KYC" },
+      { "id": "product", "name": "Products and suitability" },
+      { "id": "risk", "name": "Operational risk" },
+      { "id": "credit2", "name": "Credit appraisal" },
+      { "id": "people1", "name": "Leading a team" },
+      { "id": "people2", "name": "Managing managers" },
+      { "id": "strategy", "name": "Strategy and finance" },
+      { "id": "board", "name": "Governance and the board" }
+    ]
+  },
+  "benefits": {
+    "label": "simulation",
+    "about": "Benefits in this game are fictional contract terms, not any bank's real package. Higher grades raise some limits.",
+    "list": [
+      { "id": "salary", "name": "Salary", "about": "Paid every pay cycle (7 game days)." },
+      { "id": "training", "name": "Training", "about": "Courses at the training room count towards promotion." },
+      { "id": "health", "name": "Healthcare (HMO)", "about": "Covers part of hospital bills.", "cover": { "direct": 0.7, "agency": 0.3 } },
+      { "id": "leave", "name": "Leave", "about": "Paid days off; a day off lowers stress.", "days": { "direct": 3, "agency": 1 }, "perGrade": 0.25 },
+      { "id": "pension", "name": "Retirement contributions", "about": "Saved into your pension account each pay cycle. The rates follow published law (see sources).", "employer": 0.1, "employee": 0.08 },
+      { "id": "bonus", "name": "Performance bonus", "about": "Paid after a good performance review, as a share of salary.", "byRating": { "3": 0.25, "4": 0.6, "5": 1.0 }, "agency": false },
+      { "id": "finance", "name": "Staff finance", "about": "A staff loan (or Murabaha financing at non-interest banks) repaid from salary. Repayments are capped at a share of pay.", "multiple": 4, "perGrade": 0.5, "rate": 0.12, "markup": 0.12, "cycles": 12, "maxShare": 0.33, "agency": false },
+      { "id": "dependants", "name": "Dependant cover", "about": "Healthcare extends to your children.", "fromGrade": "abo" },
+      { "id": "allowance", "name": "Senior allowance", "about": "A fictional leadership allowance at senior grades.", "fromGrade": "am", "share": 0.15 }
+    ]
+  },
+  "archetypes": {
+    "label": "simulation",
+    "about": "Game personalities for employers. They shape the in-game experience only and make no claim about any real bank's workplace.",
+    "list": {
+      "tier1": { "name": "Big commercial bank", "pay": 1.1, "intake": 0.5, "difficulty": 0.65, "vacancy": 0.45, "tracks": ["ops", "cs", "rm", "credit", "risk", "tech", "lead"], "pace": "busy", "about": "Large branch network, structured training, lots of colleagues." },
+      "international": { "name": "International bank", "pay": 1.25, "intake": 0.2, "difficulty": 0.8, "vacancy": 0.3, "tracks": ["risk", "credit", "tech", "rm", "ops"], "pace": "measured", "about": "Small intake, global standards, heavy on compliance." },
+      "challenger": { "name": "Newer commercial bank", "pay": 0.95, "intake": 0.6, "difficulty": 0.5, "vacancy": 0.6, "tracks": ["rm", "cs", "ops", "tech", "credit"], "pace": "fast", "about": "Fewer layers, more responsibility early." },
+      "noninterest": { "name": "Non-interest bank", "pay": 1.0, "intake": 0.4, "difficulty": 0.6, "vacancy": 0.4, "tracks": ["ops", "cs", "rm", "risk", "credit"], "pace": "steady", "about": "Profit-sharing and trade-based products; staff financing is Murabaha, not an interest loan.", "finance": "murabaha" },
+      "merchant": { "name": "Merchant bank", "pay": 1.3, "intake": 0.15, "difficulty": 0.85, "vacancy": 0.25, "tracks": ["credit", "risk", "tech", "rm"], "pace": "intense", "about": "Corporate and treasury clients, small specialist teams, no retail branches." },
+      "microfinance": { "name": "Microfinance / digital bank", "pay": 0.85, "intake": 0.7, "difficulty": 0.45, "vacancy": 0.65, "tracks": ["cs", "ops", "tech", "rm"], "pace": "fast", "about": "Small businesses, agents and apps. Field work or product work." },
+      "development": { "name": "Development finance institution", "pay": 0.95, "intake": 0.3, "difficulty": 0.7, "vacancy": 0.3, "tracks": ["credit", "risk", "ops", "lead"], "pace": "steady", "about": "Government-owned lenders for industry, agriculture, exports and housing. Project appraisal over sales." }
+    }
+  },
+  "balance": {
+    "label": "simulation",
+    "payCycleDays": 7,
+    "reviewEveryDays": 21,
+    "rejectCooldownDays": 10,
+    "workdaysExpected": 4,
+    "noticeDays": 3,
+    "trainingStipendShare": 0.6,
+    "agencyPayShare": 0.65,
+    "agencyConvertAfterReviews": 2,
+    "payRiseByRating": { "1": 0, "2": 0, "3": 0.03, "4": 0.06, "5": 0.1 },
+    "promotionRating": 3.6,
+    "promotionConduct": 70,
+    "dismissConduct": 25,
+    "lateralGradeBonus": 1
+  }
+}
