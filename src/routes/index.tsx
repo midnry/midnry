@@ -141,11 +141,11 @@ function FeaturedSix() {
             <img src="/abuja-hustle-192.png" alt="" className="size-12 shrink-0 rounded-2xl" />
             <div className="min-w-0">
               <p className="font-display text-xl tracking-tight">Abuja Hustle</p>
-              <p className="text-xs font-semibold tracking-widest text-sky-300 uppercase">New game · 18+</p>
+              <p className="text-xs font-semibold tracking-widest text-sky-300 uppercase">Free game · 18+ · Updated</p>
             </div>
           </div>
           <p className="mt-3 flex-1 text-sm text-pretty text-slate-200">
-            A life sim. Grow up in Abuja without privilege, dodge QuickKash, and chase financial freedom.
+            A life sim. Grow up in a hand-painted Abuja, build a banking career, make friends in high places, and chase financial freedom.
           </p>
           <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-blue-300">
             See the game <span aria-hidden className="transition group-hover:translate-x-0.5">→</span>
