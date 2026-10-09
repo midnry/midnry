@@ -316,13 +316,14 @@ export class WorldScene extends Phaser.Scene {
     // Warm sunlight over everything by day, and a soft vignette to pull the eye to the middle.
     this.sun = this.add.rectangle(0, 0, 4000, 4000, 0xffc978, 0).setOrigin(0).setScrollFactor(0).setDepth(29.5);
     this.vignette = this.add.image(0, 0, this.makeVignette()).setOrigin(0).setScrollFactor(0).setDepth(29.6);
-    this.sizeVignette();
-    this.scale.on("resize", this.sizeVignette, this);
     // The weather: rain streaks, harmattan dust and lightning, over the whole view.
     this.makeRainTexture();
     this.haze = this.add.rectangle(0, 0, 4000, 4000, 0xd8c9a3, 0).setOrigin(0).setScrollFactor(0).setDepth(29.55);
     this.rain = this.add.tileSprite(0, 0, 2400, 2400, "rainstreaks").setOrigin(0).setScrollFactor(0).setDepth(29.7).setVisible(false);
     this.flash = this.add.rectangle(0, 0, 4000, 4000, 0xffffff, 0).setOrigin(0).setScrollFactor(0).setDepth(30.5);
+    // Only once every layer is new: after a chapter change the old ones are already destroyed.
+    this.sizeVignette();
+    this.scale.on("resize", this.sizeVignette, this);
 
     this.cameras.main.setBounds(0, 0, width, height);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
@@ -545,9 +546,10 @@ export class WorldScene extends Phaser.Scene {
     const h = cam.height / z + 4;
     const x = cam.width / 2 - w / 2;
     const y = cam.height / 2 - h / 2;
-    for (const r of [this.night, this.sun, this.haze, this.flash]) r?.setPosition(x, y).setSize(w, h);
-    this.rain?.setPosition(x, y).setSize(w, h);
-    this.vignette?.setPosition(x, y).setDisplaySize(w, h);
+    // Skip anything left over from the scene's last run (destroyed objects have no scene).
+    for (const r of [this.night, this.sun, this.haze, this.flash]) if (r?.scene) r.setPosition(x, y).setSize(w, h);
+    if (this.rain?.scene) this.rain.setPosition(x, y).setSize(w, h);
+    if (this.vignette?.scene) this.vignette.setPosition(x, y).setDisplaySize(w, h);
   }
 
   private fitZoom() {
