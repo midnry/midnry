@@ -16,7 +16,9 @@ export const Route = createFileRoute("/discover/abuja-hustle")({
   component: GamePage,
 });
 
-const shot = (name: string) => `/shots/abuja-hustle/${name}.jpg`;
+/** Bump when the screenshots are retaken, so browsers and the CDN fetch the new ones. */
+const SHOTS_VERSION = "2026-10-09";
+const shot = (name: string) => `/shots/abuja-hustle/${name}.jpg?v=${SHOTS_VERSION}`;
 
 const FEATURES: { title: string; text: string; image: string; phone?: boolean; alt: string; isNew?: boolean }[] = [
   {
@@ -28,10 +30,10 @@ const FEATURES: { title: string; text: string; image: string; phone?: boolean; a
   },
   {
     title: "Grow up, chapter by chapter",
-    text: "Primary school, secondary school, university and youth service. Crushes, prefect elections, interhouse sports, side hustles, and choices that can get you suspended or expelled.",
+    text: "Primary school, secondary school, university and youth service. New classmates, crushes, prefect elections, interhouse sports, side hustles, and choices that can get you suspended or expelled.",
     image: "chapter",
     phone: true,
-    alt: "A school chapter with a story speech bubble",
+    alt: "Secondary school: a new classmate arrives in a black Prado",
   },
   {
     title: "A hand-painted Abuja to walk around",
@@ -44,14 +46,14 @@ const FEATURES: { title: string; text: string; image: string; phone?: boolean; a
     title: "Go inside, from a one-room flat to a banking hall",
     text: "Walk into homes, offices, the hospital and the mall. Decorate your own place, down to the Peak milk on the stool.",
     image: "bedroom",
-    alt: "A furnished bedroom inside a home",
+    alt: "A furnished bedroom inside a Gwarinpa flat",
   },
   {
     title: "Talk to the people of Abuja",
     text: "Mama, Tunde, Mrs. Okafor, the agbero at the motor park. Everyone remembers how you treated them, and some of them have offers you can take or refuse.",
     image: "chat",
     phone: true,
-    alt: "A conversation shown in a speech bubble with the speaker's face",
+    alt: "Talking to Mama POS at POS Junction, with choices to reply",
   },
   {
     title: "Build a banking career",
@@ -164,7 +166,7 @@ function GamePage() {
               <PlayButtons />
             </div>
           </div>
-          <BrowserFrame src={shot("city")} alt="Abuja Hustle: walking through the city" />
+          <BrowserFrame src={shot("ride-view")} alt="Abuja Hustle: riding a taxi through Abuja" />
         </div>
       </section>
 
