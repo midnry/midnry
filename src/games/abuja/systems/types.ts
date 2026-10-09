@@ -10,6 +10,7 @@ import type { Social } from "./social";
 import type { Justice } from "./justice";
 import type { Betting } from "./betting";
 import type { Missions } from "./missions";
+import type { Emeka } from "./emeka";
 import type { Banking } from "./banking";
 import type { NewsTag, Story } from "./news";
 
@@ -405,6 +406,10 @@ export type GameState = {
   betting?: Betting;
   /** Your chosen path to financial freedom and the steps done. */
   missions?: Missions;
+  /** Emeka D: how things stand with him. */
+  emeka?: Emeka;
+  /** Emeka D has just walked in, waiting for how you react. */
+  emekaMeet?: boolean;
   /** Your Instaflex page, once you make one (secondary school onwards). */
   social?: Social | null;
   /** Things you've stolen and not sold yet. */

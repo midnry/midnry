@@ -68,6 +68,7 @@ import * as JU from "./justice";
 import * as NE from "./nepo";
 import * as BT from "./betting";
 import * as MI from "./missions";
+import * as EK from "./emeka";
 import { storyEvent } from "./story";
 import { fadeMemories, forget, memoriesOf, recalled, remember, sinceWhen } from "./memory";
 
@@ -106,6 +107,11 @@ function goScene(s: GameState, sceneId: string) {
     s.scene = target;
     apply(s, scene.effects);
     if (!s.nepoMeet) s.nepoMeet = NE.schoolBump(s);
+    // Emeka D walks in on your second scene of secondary school.
+    if (s.chapter === "secondary") s.flags.sec_scenes = Number(s.flags.sec_scenes ?? 0) + 1;
+    if (EK.shouldAppear(s) && Number(s.flags.sec_scenes ?? 0) >= 2 && !s.nepoMeet) s.emekaMeet = true;
+    const pocket = EK.payAllowance(s, true);
+    if (pocket) s.result = s.result ? `${s.result}\n\n${pocket}` : pocket;
     if (scene.special === "fixers" && s.fixers.length === 0) rollFixers(s);
     return;
   }
@@ -779,6 +785,7 @@ function sleep(s: GameState) {
   note(s, JU.layLowNight(s) ?? "");
   note(s, JU.fugitiveNight(s) ?? "");
   note(s, BT.settleBets(s) ?? "");
+  note(s, EK.payAllowance(s) ?? "");
   note(s, ...MI.checkMissions(s));
   pickEvent(s);
   checkEndings(s);
@@ -2103,3 +2110,16 @@ export const refreshMissions = () =>
     const lines = MI.checkMissions(s);
     if (lines.length) toast(s, lines.join(" "));
   });
+
+// ── Emeka D ──────────────────────────────────────────────────────────────────
+
+export const emekaMeet = (how: "friend" | "interest" | "ignore") => update((s) => toast(s, EK.meet(s, how)));
+export function emekaAct(a: EK.EmekaAct) {
+  update((s) => {
+    const line = EK.act(s, a);
+    if (!line) return;
+    toast(s, line);
+    // Grown-up dates take an evening.
+    if (!s.chapter && (a === "date" || a === "hang") && s.slot < SLOTS.length) spend(s, 1, -5);
+  });
+}

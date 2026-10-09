@@ -57,6 +57,7 @@ import type * as JU from "../systems/justice";
 import { Court, PrisonPanel, type PrisonView } from "./Justice";
 import { NepoMeet } from "./Nepo";
 import { PathChooser } from "./Missions";
+import { EmekaMeet, EmekaSheet } from "./Emeka";
 import { nextStep, PATHS } from "../systems/missions";
 import { StoryPanel } from "./StoryView";
 import { WardrobePanel } from "./Wardrobe";
@@ -100,6 +101,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const [socialOpen, setSocialOpen] = useState(false);
   const [careers, setCareers] = useState<{ at: CareerSpot } | null>(null);
   const [prisonView, setPrisonView] = useState<PrisonView | null>(null);
+  const [emekaOpen, setEmekaOpen] = useState(false);
   const jailed = Boolean(state.justice?.prison);
   const inCourt = Boolean(state.justice?.case);
   const [inside, setInside] = useState<RoomInfo | null>(null);
@@ -607,6 +609,22 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         /> : null}
       {inCourt && !state.event ? <Court state={state} /> : null}
       {!inStory && state.stage === "adult" && !state.flags.missions_seen && !state.missions?.path && !jailed && !inCourt && !state.event && !state.nepoMeet && !story && !isLoading ? <PathChooser state={state} /> : null}
+      {state.emekaMeet && !state.nepoMeet && !state.event && !state.result && !state.minigame ? <EmekaMeet /> : null}
+      {emekaOpen ? <EmekaSheet state={state} onClose={() => setEmekaOpen(false)} /> : null}
+      {inStory && !story && (state.emeka?.met ?? -1) >= 0 && !emekaOpen && !socialOpen ? (
+        <button
+          type="button"
+          onClick={() => setEmekaOpen(true)}
+          className={`${actionBtn} absolute right-4 bottom-[6.25rem] z-10 bg-gradient-to-br from-pink-600 to-rose-500 text-white`}
+          style={{ fontFamily: GAME_FONT }}
+          aria-label="Emeka D"
+        >
+          <span className="text-2xl" aria-hidden>
+            💌
+          </span>
+          Emeka
+        </button>
+      ) : null}
       {state.nepoMeet && !inCourt && !state.event && !state.result && !state.minigame ? <NepoMeet state={state} /> : null}
       {prisonView && jailed && !inCourt ? <PrisonPanel state={state} view={prisonView} onClose={() => setPrisonView(null)} /> : null}
       {careers && !inStory && !state.event ? <Careers state={state} at={careers.at} onClose={() => setCareers(null)} /> : null}

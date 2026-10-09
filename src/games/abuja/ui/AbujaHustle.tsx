@@ -7,6 +7,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { loadGame, saveGame } from "../save.functions";
 import { startGame } from "../systems/engine";
+import { setViewerEmail } from "../systems/emeka";
 import { AGE_KEY, SLOT_IDS, deleteSave, flushSave, getSlot, lastSlot, loadSaves, newGame, newestSave, parseSave, replace, setCloudSaver, setSlot, type Slot } from "../systems/store";
 import type { GameState } from "../systems/types";
 import { EndScreen } from "./EndScreen";
@@ -21,6 +22,11 @@ export function AbujaHustle() {
   const state = useGame();
   const { user, isPending } = useCurrentUserState();
   const userId = user?.id ?? null;
+  const email = user?.primaryEmail ?? null;
+  // Who's signed in matters to one character (see systems/emeka.ts): only a hash is kept.
+  useEffect(() => {
+    void setViewerEmail(email);
+  }, [email]);
   const [ready, setReady] = useState(false);
   const [ageOk, setAgeOk] = useState(false);
   /** The slot a new life is being made for. */
