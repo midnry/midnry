@@ -873,7 +873,9 @@ function paintedBuilding(l: Lot) {
   const name = `${kind}-${l.w}x${l.h}`;
   const variants = PAINTED_BUILDINGS[name];
   if (!variants?.length) return null;
-  const variant = variants[((l.seed + l.palette) >>> 0) % variants.length]!;
+  const distance = Math.min(...variants.map((v) => Math.abs(v.floors - l.floors)));
+  const closest = variants.filter((v) => Math.abs(v.floors - l.floors) === distance);
+  const variant = closest[((l.seed + l.palette) >>> 0) % closest.length]!;
   return { ...variant, file: `${name}-${variant.variant}` };
 }
 
@@ -957,7 +959,7 @@ export function placeBuilding(scene: Phaser.Scene, l: Lot) {
     // Manifest positions are at 3× world resolution, independent of actual fallback texture size.
     const unit = 1 / 3;
     const fontSize = 18;
-    const sign = scene.add.text(l.x + band.x * unit, base - img.displayHeight + band.y * unit, label, { fontFamily: GAME_FONT, fontSize: `${fontSize}px`, fontStyle: "bold", color: "#ffffff" }).setOrigin(0.5).setDepth(depth + 0.00002);
+    const sign = scene.add.text(l.x + band.x * unit, base - img.displayHeight + band.y * unit, label, { fontFamily: GAME_FONT, fontSize: `${fontSize}px`, fontStyle: "bold", color: "#ffffff", stroke: "#2b1d14", strokeThickness: 1.5 }).setOrigin(0.5).setDepth(depth + 0.00002);
     sign.setScale(Math.min(1 / 3, band.w * unit / Math.max(1, sign.width)));
     const sync = () => sign.setAlpha(img.alpha).setVisible(img.visible).setPosition(img.x + band.x * unit, img.y - img.displayHeight + band.y * unit);
     scene.events.on("preupdate", sync);
