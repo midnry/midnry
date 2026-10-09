@@ -175,10 +175,9 @@ function GamePage() {
             </div>
           </div>
           <div className="relative flex justify-center pt-2 pb-4">
-            {/* Warm light behind her, and her shadow on the ground. */}
+            {/* Warm light behind them. */}
             <div className="absolute top-1/2 left-1/2 size-[19rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(240,160,75,0.45),rgba(194,86,106,0.18)_45%,transparent_70%)] sm:size-[26rem]" aria-hidden />
-            <div className="absolute bottom-3 left-1/2 h-5 w-36 -translate-x-1/2 rounded-[50%] bg-black/35 blur-md sm:w-44" aria-hidden />
-            <img src={`/shots/abuja-hustle/hero-girl.png?v=${SHOTS_VERSION}`} alt="An Abuja Hustle character: a smiling young woman in a pink hoodie and white wide-leg trousers" className="relative h-72 w-auto drop-shadow-[0_12px_24px_rgba(10,13,36,0.45)] sm:h-[26rem]" />
+                        <img src={`/shots/abuja-hustle/hero-family.png?v=${SHOTS_VERSION}`} alt="Abuja Hustle characters: a smiling young woman in a pink hoodie and wide-leg trousers, with a schoolgirl and a schoolboy in front of her" className="relative h-80 w-auto drop-shadow-[0_12px_24px_rgba(10,13,36,0.45)] sm:h-[27rem]" />
           </div>
         </div>
       </section>
