@@ -174,7 +174,7 @@ function GamePage() {
               <PlayButtons />
             </div>
           </div>
-          <BrowserFrame src={shot("ride-view")} alt="Abuja Hustle: riding a taxi through Abuja" />
+          <BrowserFrame src={shot("creator-wide")} alt="Abuja Hustle: creating your character, a grown-up Amara in an Ankara dress" />
         </div>
       </section>
 
