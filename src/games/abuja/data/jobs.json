@@ -18,7 +18,7 @@
     "requires": [{ "cert": "degree" }, { "cert": "nysc" }, { "skill": "education", "gte": 45 }, { "stat": "network", "gte": 50 }], "requiresText": "Degree, NYSC, Education 45, Network 50.",
     "shift": [{ "skill": "education", "add": 1 }, { "stat": "network", "add": 1 }, { "stat": "stress", "add": 6 }] },
   { "id": "oil_gas", "title": "Oil & gas associate", "tier": "top", "place": "oil_hq", "pay": 55000, "salaried": true,
-    "requires": [{ "cert": "degree" }, { "cert": "nysc" }, { "any": [{ "npc": "okafor", "rel": 60 }, { "flag": "bolaji_connect" }] }], "requiresText": "Degree, NYSC, and a referral: Mrs. Okafor (relationship 60) or a connect from Bolaji.",
+    "requires": [{ "cert": "degree" }, { "cert": "nysc" }, { "any": [{ "npc": "okafor", "rel": 60 }, { "flag": "bolaji_connect" }, { "flag": "oil_connect" }] }], "requiresText": "Degree, NYSC, and a referral: Mrs. Okafor (relationship 60), a connect from Bolaji, or a word from Temi Briggs.",
     "shift": [{ "stat": "network", "add": 1 }, { "stat": "stress", "add": 5 }] },
   { "id": "gov_contract", "title": "Government contractor", "tier": "top", "place": "ministry", "pay": 90000, "salaried": false,
     "requires": [{ "any": [{ "flag": "bolaji_connect" }, { "stat": "network", "gte": 85 }] }], "requiresText": "A connect from Bolaji, or Network 85. Nepo Babies get this for free.",

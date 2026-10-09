@@ -7,6 +7,9 @@ import type { Kitchen } from "./cooking/types";
 import type { CityState } from "./city/sim";
 import type { Memory, Tone } from "./memory";
 import type { Social } from "./social";
+import type { Justice } from "./justice";
+import type { Betting } from "./betting";
+import type { Missions } from "./missions";
 import type { Banking } from "./banking";
 import type { NewsTag, Story } from "./news";
 
@@ -394,6 +397,14 @@ export type GameState = {
   mapVersion?: number;
   /** Your banking career: applications, the job, benefits and history. */
   banking?: Banking;
+  /** Court cases, prison, escapes, your record and evidence you've dealt with. */
+  justice?: Justice;
+  /** A nepo friend you've just bumped into, waiting for how you react. */
+  nepoMeet?: string | null;
+  /** Your OddsNaija bets. */
+  betting?: Betting;
+  /** Your chosen path to financial freedom and the steps done. */
+  missions?: Missions;
   /** Your Instaflex page, once you make one (secondary school onwards). */
   social?: Social | null;
   /** Things you've stolen and not sold yet. */

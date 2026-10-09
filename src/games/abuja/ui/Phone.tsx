@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { LegalApp } from "./Justice";
+import { ConnectsApp } from "./Nepo";
+import { MissionsApp, OddsApp } from "./Missions";
 import { CityApp } from "./CityApp";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
 import { borrow, business, callContact, driveTo, negotiate, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
@@ -24,9 +27,10 @@ import { btnGhost, btnPrimary } from "./theme";
 import { Trade } from "./Trade";
 import { WardrobePanel } from "./Wardrobe";
 
-export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen" | "city" | "news" | "social" | "careers";
+export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen" | "city" | "news" | "social" | "careers" | "legal" | "connects" | "missions" | "odds";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
+  { id: "missions", label: "Missions", icon: "🎯", tint: "bg-amber-600" },
   { id: "wallet", label: "Wallet", icon: "💳", tint: "bg-blue-600" },
   { id: "news", label: "Abuja Daily", icon: "📰", tint: "bg-stone-600" },
   { id: "social", label: "Instaflex", icon: "📸", tint: "bg-fuchsia-600" },
@@ -40,6 +44,9 @@ const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "loans", label: "QuickKash", icon: "💸", tint: "bg-red-600" },
   { id: "jobs", label: "Jobs", icon: "💼", tint: "bg-sky-600" },
   { id: "careers", label: "Bank Careers", icon: "🏦", tint: "bg-blue-800" },
+  { id: "legal", label: "Legal", icon: "⚖️", tint: "bg-slate-700" },
+  { id: "connects", label: "Connects", icon: "💎", tint: "bg-sky-700" },
+  { id: "odds", label: "OddsNaija", icon: "⚽", tint: "bg-green-700" },
   { id: "contacts", label: "Contacts", icon: "👥", tint: "bg-violet-600" },
   { id: "map", label: "Rides", icon: "🛺", tint: "bg-blue-600" },
   { id: "stats", label: "Life", icon: "📊", tint: "bg-teal-600" },
@@ -85,6 +92,10 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
           {app === "deals" ? <DealsApp state={state} onClose={onClose} /> : null}
           {app === "loans" ? <Loans state={state} /> : null}
           {app === "jobs" ? <Jobs state={state} /> : null}
+          {app === "legal" ? <LegalApp state={state} /> : null}
+          {app === "connects" ? <ConnectsApp state={state} /> : null}
+          {app === "missions" ? <MissionsApp state={state} /> : null}
+          {app === "odds" ? <OddsApp state={state} /> : null}
           {app === "contacts" ? <Contacts state={state} /> : null}
           {app === "map" ? <MapApp state={state} onDone={onClose} /> : null}
           {app === "stats" ? <Life state={state} /> : null}

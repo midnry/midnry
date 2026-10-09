@@ -16,6 +16,14 @@ export type RoomType =
   | "bank_training"
   | "bank_work"
   | "bank_manager"
+  | "prison_block"
+  | "prison_yard"
+  | "prison_mess"
+  | "prison_workshop"
+  | "prison_library"
+  | "prison_chapel"
+  | "prison_infirmary"
+  | "prison_visit"
   | "clinic"
   | "shop"
   | "classroom"
@@ -26,7 +34,7 @@ export const ROOM = { w: 640, h: 440, wall: 112, door: { x: 320, y: 418 } };
 
 export type RoomItem = { id: string; x: number; y: number; accent?: string };
 
-export type RoomAction = "phone" | "laptop" | "freshen" | "kitchen" | "vacancies" | "hr" | "training" | "workstation" | "manager";
+export type RoomAction = "phone" | "laptop" | "freshen" | "kitchen" | "vacancies" | "hr" | "training" | "workstation" | "manager" | `p_${string}`;
 
 export type RoomLayout = {
   wall: string;
@@ -406,6 +414,151 @@ export const LAYOUTS: Record<RoomType, RoomLayout> = {
     ],
     use: { x: 320, y: 230, label: "The party" },
     staff: [{ x: 320, y: 160 }],
+  },
+  // ── Kuje custodial centre: the cell block and what's around it ──
+  prison_block: {
+    wall: "#cbd5e1",
+    floor: "concrete",
+    items: [
+      { id: "walldoor", x: 40, y: 6, accent: "#475569" },
+      { id: "walldoor", x: 130, y: 6, accent: "#475569" },
+      { id: "walldoor", x: 235, y: 6, accent: "#475569" },
+      { id: "walldoor", x: 345, y: 6, accent: "#475569" },
+      { id: "walldoor", x: 440, y: 6, accent: "#475569" },
+      { id: "walldoor", x: 530, y: 6, accent: "#475569" },
+      { id: "bunk", x: 16, y: 170, accent: "#b45309" },
+      { id: "bunk", x: 504, y: 170, accent: "#475569" },
+      { id: "bucket", x: 150, y: 270 },
+      { id: "fan_rusty", x: 440, y: 260 },
+    ],
+    doors: [
+      { x: 73, label: "Yard", to: "prison_yard" },
+      { x: 163, label: "Mess hall", to: "prison_mess" },
+      { x: 268, label: "Workshop", to: "prison_workshop" },
+      { x: 378, label: "Library", to: "prison_library" },
+      { x: 473, label: "Chapel & mosque", to: "prison_chapel" },
+      { x: 563, label: "Infirmary", to: "prison_infirmary" },
+    ],
+    spots: [
+      { x: 90, y: 330, label: "🛏️ Your bunk: sleep or serve time", action: "p_bunk" },
+      { x: 320, y: 250, label: "📋 Your sentence and plans", action: "p_status" },
+    ],
+    staff: [{ x: 320, y: 360 }],
+  },
+  prison_yard: {
+    wall: "#a8a29e",
+    floor: "concrete",
+    items: [
+      { id: "cell_bars", x: 20, y: 14 },
+      { id: "cell_bars", x: 140, y: 14 },
+      { id: "cell_bars", x: 260, y: 14 },
+      { id: "cell_bars", x: 380, y: 14 },
+      { id: "walldoor", x: 530, y: 6, accent: "#475569" },
+      { id: "guard_post", x: 300, y: 120, accent: "#b91c1c" },
+      { id: "bench", x: 40, y: 330, accent: "#475569" },
+      { id: "bench", x: 460, y: 330, accent: "#475569" },
+    ],
+    doors: [{ x: 563, label: "Visiting room", to: "prison_visit" }],
+    spots: [
+      { x: 90, y: 200, label: "🧱 The east wall: make your escape", action: "p_escape" },
+      { x: 220, y: 290, label: "🏃 Exercise in the yard", action: "p_exercise" },
+      { x: 430, y: 270, label: "👴 Listen to the old-timers", action: "p_intel" },
+    ],
+    staff: [{ x: 330, y: 230 }, { x: 520, y: 260 }],
+  },
+  prison_mess: {
+    wall: "#e7e5e4",
+    floor: "concrete",
+    items: [
+      { id: "counter", x: 30, y: 116, accent: "#64748b" },
+      { id: "washer", x: 520, y: 100 },
+      { id: "mess_table", x: 60, y: 240, accent: "#94a3b8" },
+      { id: "mess_table", x: 300, y: 240, accent: "#94a3b8" },
+      { id: "basket", x: 470, y: 130 },
+    ],
+    spots: [
+      { x: 140, y: 225, label: "🍲 Eat (two meals a day)", action: "p_eat" },
+      { x: 540, y: 230, label: "🧺 Laundry duty", action: "p_laundry" },
+    ],
+    staff: [{ x: 130, y: 110 }],
+  },
+  prison_workshop: {
+    wall: "#d6d3d1",
+    floor: "concrete",
+    items: [
+      { id: "workbench", x: 30, y: 130, accent: "#b91c1c" },
+      { id: "workbench", x: 250, y: 130, accent: "#1d4ed8" },
+      { id: "workbench", x: 460, y: 130, accent: "#15803d" },
+      { id: "schooldesk", x: 80, y: 290 },
+      { id: "schooldesk", x: 460, y: 290 },
+    ],
+    spots: [
+      { x: 320, y: 290, label: "🪚 Work a shift (₦1,500)", action: "p_work" },
+      { x: 540, y: 250, label: "🔩 Pocket a tool", action: "p_tool" },
+    ],
+    staff: [{ x: 200, y: 300 }],
+  },
+  prison_library: {
+    wall: "#fef3c7",
+    floor: "wood",
+    items: [
+      { id: "bookshelf", x: 30, y: 86 },
+      { id: "bookshelf", x: 120, y: 86 },
+      { id: "bookshelf", x: 460, y: 86 },
+      { id: "bookshelf", x: 550, y: 86 },
+      { id: "schooldesk", x: 240, y: 200 },
+      { id: "schooldesk", x: 340, y: 200 },
+    ],
+    spots: [
+      { x: 230, y: 330, label: "📚 Study", action: "p_study" },
+      { x: 430, y: 330, label: "⚖️ Read law books for your appeal", action: "p_lawbooks" },
+    ],
+    staff: [{ x: 320, y: 140 }],
+  },
+  prison_chapel: {
+    wall: "#ede9fe",
+    floor: "tile",
+    items: [
+      { id: "picture", x: 280, y: 30, accent: "#7c3aed" },
+      { id: "teacherdesk", x: 250, y: 110 },
+      { id: "bench", x: 40, y: 230, accent: "#78350f" },
+      { id: "bench", x: 460, y: 230, accent: "#78350f" },
+      { id: "bench", x: 40, y: 330, accent: "#78350f" },
+      { id: "bench", x: 460, y: 330, accent: "#78350f" },
+    ],
+    spots: [{ x: 320, y: 300, label: "🙏 Pray, sit and breathe", action: "p_pray" }],
+    staff: [{ x: 320, y: 130 }],
+  },
+  prison_infirmary: {
+    wall: "#ecfeff",
+    floor: "tile",
+    items: [
+      { id: "hospitalbed", x: 20, y: 130 },
+      { id: "hospitalbed", x: 170, y: 130 },
+      { id: "filing", x: 540, y: 96 },
+      { id: "desk", x: 400, y: 160 },
+    ],
+    spots: [{ x: 450, y: 300, label: "🩺 See the nurse", action: "p_nurse" }],
+    staff: [{ x: 470, y: 150 }],
+  },
+  prison_visit: {
+    wall: "#e2e8f0",
+    floor: "tile",
+    items: [
+      { id: "cell_bars", x: 120, y: 14 },
+      { id: "cell_bars", x: 260, y: 14 },
+      { id: "cell_bars", x: 400, y: 14 },
+      { id: "counter", x: 210, y: 120, accent: "#64748b" },
+      { id: "chair", x: 150, y: 230, accent: "#1f2937" },
+      { id: "chair", x: 450, y: 230, accent: "#1f2937" },
+    ],
+    spots: [
+      { x: 120, y: 330, label: "⚖️ See your lawyer about an appeal", action: "p_lawyer" },
+      { x: 260, y: 330, label: "👪 Family visit", action: "p_visit" },
+      { x: 400, y: 330, label: "📞 Call in a connection", action: "p_connection" },
+      { x: 530, y: 330, label: "💸 Bribe a warder", action: "p_warder" },
+    ],
+    staff: [{ x: 320, y: 110 }],
   },
 };
 

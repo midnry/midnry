@@ -571,6 +571,52 @@ export const FURNITURE: Record<string, Item> = {
       shape("M10 34 L124 34 L126 52 L8 52 Z", "#f1e8d8") + rect(16, 24, 34, 14, "#e7dccb", 7) + rect(84, 24, 34, 14, "#e7dccb", 7) + rect(40, 30, 22, 12, a, 4) + rect(66, 30, 22, 12, "#1e3a8a", 4) +
       shape("M8 44 L126 44 L128 70 L6 70 Z", "#8a5a1e") + ankara(10, 46, 116, 22, a) + rect(4, 82, 8, 14, WOOD_DARK, 2) + rect(122, 82, 8, 14, WOOD_DARK, 2),
   },
+  // ── Custodial centre ──
+  bunk: {
+    w: 120,
+    h: 130,
+    foot: 0.4,
+    draw: (a) =>
+      `<path d="M8 6 L8 126 M112 6 L112 126" ${thin(INK, 7)}/><path d="M8 6 L8 126 M112 6 L112 126" ${thin("#64748b", 4)}/>` +
+      box(6, 30, 108, 22, 8, "#64748b", "#94a3b8") + shape("M12 30 L108 30 L106 40 L14 40 Z", tone(a, 1.1)) + rect(14, 24, 26, 10, "#e2e8f0", 4) +
+      box(6, 92, 108, 24, 8, "#64748b", "#94a3b8") + shape("M12 92 L108 92 L106 102 L14 102 Z", a) + rect(14, 86, 26, 10, "#e2e8f0", 4) +
+      `<path d="M24 52 L24 92 M40 52 L40 92" ${thin("#475569", 2.4)}/>`,
+  },
+  cell_bars: {
+    w: 120,
+    h: 92,
+    draw: () =>
+      rect(2, 2, 116, 88, "#1f2937", 3) +
+      [14, 30, 46, 62, 78, 94, 110].map((x) => `<path d="M${x} 4 L${x} 88" ${thin(INK, 6)}/><path d="M${x} 4 L${x} 88" ${thin("#94a3b8", 3.4)}/>`).join("") +
+      `<path d="M4 30 L116 30 M4 62 L116 62" ${thin(INK, 5)}/><path d="M4 30 L116 30 M4 62 L116 62" ${thin("#94a3b8", 2.6)}/>`,
+  },
+  mess_table: {
+    w: 180,
+    h: 70,
+    foot: 0.6,
+    draw: (a) =>
+      rect(8, 50, 164, 12, "#475569", 3) + box(4, 14, 172, 30, 10, "#94a3b8", "#cbd5e1") +
+      [30, 70, 110, 150].map((x) => `<ellipse cx="${x}" cy="20" rx="11" ry="5" fill="${a}" ${LINE}/><ellipse cx="${x}" cy="19" rx="7" ry="3" fill="#f5deb3"/>`).join("") +
+      rect(10, 42, 7, 24, "#475569", 2) + rect(163, 42, 7, 24, "#475569", 2),
+  },
+  workbench: {
+    w: 150,
+    h: 96,
+    foot: 0.5,
+    draw: (a) =>
+      box(4, 40, 142, 50, 12, WOOD_DARK, WOOD) + rect(16, 62, 40, 24, tone(WOOD_DARK, 0.85), 2) + rect(94, 62, 40, 24, tone(WOOD_DARK, 0.85), 2) +
+      rect(20, 18, 50, 26, "#e5d3b3", 2) + `<path d="M24 22 L66 22 M24 30 L58 30" ${thin(WOOD_DARK, 2)}/>` +
+      `<path d="M92 40 L120 14" ${thin(INK, 5)}/><path d="M92 40 L120 14" ${thin("#cbd5e1", 3)}/>` + rect(116, 8, 16, 10, a, 2) +
+      `<path d="M78 46 L86 30" ${thin(INK, 4)}/><path d="M78 46 L86 30" ${thin("#a16207", 2.4)}/>`,
+  },
+  guard_post: {
+    w: 70,
+    h: 120,
+    foot: 0.3,
+    draw: (a) =>
+      box(6, 40, 58, 78, 8, "#475569", "#64748b") + rect(14, 52, 42, 26, "#93c5fd", 2) + shape("M2 44 L35 18 L68 44 Z", a) +
+      `<circle cx="35" cy="10" r="7" fill="#fde68a" ${LINE}/>`,
+  },
   bed_single: {
     w: 112,
     h: 94,

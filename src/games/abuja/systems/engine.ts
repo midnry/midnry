@@ -64,6 +64,10 @@ import * as SO from "./social";
 import { nightlySocial } from "./social";
 import * as BK from "./banking";
 import { nightlyBanking } from "./banking";
+import * as JU from "./justice";
+import * as NE from "./nepo";
+import * as BT from "./betting";
+import * as MI from "./missions";
 import { storyEvent } from "./story";
 import { fadeMemories, forget, memoriesOf, recalled, remember, sinceWhen } from "./memory";
 
@@ -101,6 +105,7 @@ function goScene(s: GameState, sceneId: string) {
     }
     s.scene = target;
     apply(s, scene.effects);
+    if (!s.nepoMeet) s.nepoMeet = NE.schoolBump(s);
     if (scene.special === "fixers" && s.fixers.length === 0) rollFixers(s);
     return;
   }
@@ -301,7 +306,7 @@ export function skipToMorning() {
   update((s) => {
     if (s.chapter || s.ending || s.event) return;
     if (s.slot < SLOTS.length - 1) return toast(s, "It's not night yet. Skip to night first, or keep hustling.");
-    toast(s, "You head home and sleep. ☀️ Good morning, Abuja.");
+    toast(s, JU.jailed(s) ? "Lights out. You lie on your bunk and count the ceiling cracks." : "You head home and sleep. ☀️ Good morning, Abuja.");
     sleep(s);
   });
 }
@@ -416,6 +421,8 @@ export function doAction(placeId: string, actionId: string): "loans" | "business
     if (a.kind === "apply") return applyForJob(s, a.job!);
     if (a.kind === "drivetest" || a.kind === "rentcar" || a.kind === "buycar") {
       if (a.kind === "buycar" && life(s).car === "owned") return toast(s, "You already own a car.");
+      const quiet = a.kind === "buycar" ? JU.layLowBlocks(s, "spend", a.cost ?? 0) : null;
+      if (quiet) return toast(s, quiet);
       if (a.kind === "drivetest" && life(s).license) return toast(s, "You already have your licence.");
       if (a.cost) addStat(s, "money", -a.cost);
       toast(s, a.kind === "drivetest" ? drivingTest(s) : a.kind === "rentcar" ? rentCar(s) : buyCar(s));
@@ -455,6 +462,7 @@ export function doAction(placeId: string, actionId: string): "loans" | "business
 }
 
 function spend(s: GameState, slots: number, energy: number) {
+  note(s, ...MI.checkMissions(s));
   s.slot += slots;
   addStat(s, "energy", energy);
   note(s, ...burn(s, slots));
@@ -717,6 +725,7 @@ export function driveTo(placeId: string) {
 const RENT: Record<string, number> = { lapo: 8000, average: 15000 };
 
 function sleep(s: GameState) {
+  if (JU.jailed(s)) return prisonSleep(s);
   s.day += 1;
   s.slot = 0;
   const restore = 100 - Math.round(s.stats.stress / 4);
@@ -767,8 +776,34 @@ function sleep(s: GameState) {
   const fund = nightlySocial(s);
   if (fund) s.toast = `${s.toast ? `${s.toast} ` : ""}${fund}`;
   fadeMemories(s);
+  note(s, JU.layLowNight(s) ?? "");
+  note(s, JU.fugitiveNight(s) ?? "");
+  note(s, BT.settleBets(s) ?? "");
+  note(s, ...MI.checkMissions(s));
   pickEvent(s);
   checkEndings(s);
+}
+
+/** A night in the custodial centre: no bills, no city, just the count. */
+function prisonSleep(s: GameState) {
+  s.day += 1;
+  s.slot = 0;
+  s.stats.energy = clamp(100 - Math.round(s.stats.stress / 4));
+  addStat(s, "stress", s.stats.stress > 40 ? -2 : 2);
+  note(s, ...overnight(s));
+  const lines = JU.prisonNight(s);
+  note(s, ...lines);
+  if (!JU.jailed(s)) bus.emit("teleport", s.pos);
+  const adultDays = s.day - Number(s.flags.adult_day0 ?? s.day);
+  if (adultDays > 0 && adultDays % DAYS_PER_YEAR === 0) {
+    s.age += 1;
+    note(s, `Happy birthday. You are ${s.age}, behind bars.`);
+  }
+  fadeMemories(s);
+  if (s.stats.health <= 15) {
+    s.stats.health = 40;
+    note(s, "You collapse in the cell and wake up in the infirmary.");
+  }
 }
 
 function weeklyBills(s: GameState) {
@@ -862,8 +897,9 @@ function pickEvent(s: GameState) {
     return;
   }
   if (Math.random() > 0.4) return;
+  const quiet = JU.layingLow(s) || JU.fugitive(s);
   const pool = EVENTS.filter(
-    (item) => item.weight > 0 && check(s, item.if) && !(item.once && s.usedEvents.includes(item.id)),
+    (item) => item.weight > 0 && check(s, item.if) && !(item.once && s.usedEvents.includes(item.id)) && !(quiet && item.id.startsWith("fraud_")),
   );
   const total = pool.reduce((sum, item) => sum + item.weight, 0);
   let roll = Math.random() * total;
@@ -882,7 +918,9 @@ export function resolveEvent(choice: Choice) {
     if (!ev || !canPick(s, choice)) return;
     if (ev.once || ev.id.startsWith("doubleup")) s.usedEvents.push(ev.id);
     s.event = null;
+    const wasClean = !s.flags.fraud;
     const toasts = apply(s, choice.effects);
+    if (s.flags.fraud && (wasClean || ev.id.startsWith("fraud_"))) JU.freshFraud(s);
     const line = [choice.result ? fill(s, choice.result) : "", ...toasts].filter(Boolean).join(" ");
     if (line) toast(s, line);
     // Escorted out: you end up back home.
@@ -913,9 +951,10 @@ function end(s: GameState, id: EndingId) {
 function checkEndings(s: GameState) {
   if (s.ending) return;
   if (s.flags.arrested) {
-    if (s.flags.fraud || Number(s.stats.heat) >= 90) {
-      addLog(s, "Arrested by the EFCC. The evidence was on your laptop.");
-      return end(s, "jail");
+    const charge = JU.chargeFor(s);
+    if (charge) {
+      note(s, JU.arrest(s, charge));
+      return;
     }
     s.flags.arrested = false;
     addStat(s, "money", -100000);
@@ -1202,6 +1241,7 @@ export function steal(key: string) {
       addStat(s, "heat", Math.ceil(loot.value / 2000));
       if (loot.value >= 20000 && Math.random() < 0.5) {
         s.flags.arrested = true;
+        s.flags.arrest_theft = true;
         lines.push("Someone calls the police.");
       }
     }
@@ -1285,6 +1325,8 @@ export const bankResign = () => bankDo((s) => BK.resign(s));
 export const socialCreate = (handle: string) => update((s) => toast(s, SO.createAccount(s, handle)));
 export function socialPost(kind: SO.ContentKind, collab?: string) {
   update((s) => {
+    const quiet = JU.layLowBlocks(s, "post");
+    if (quiet) return toast(s, quiet);
     const r = SO.post(s, kind, collab);
     toast(s, [r.text, ...(r.strike ? apply(s, [{ discipline: 1 }]) : [])].join(" "));
     schoolTrouble(s);
@@ -1935,7 +1977,7 @@ export function venueService(vid: string, you: boolean): V.ServiceReport {
 
 // ── City property and buildings ─────────────────────────────────────────────
 
-export const buyProperty = (id: string) => venueDo((s) => buyLot(s, id));
+export const buyProperty = (id: string) => venueDo((s) => JU.layLowBlocks(s, "spend", 1_000_000) ?? buyLot(s, id));
 export const sellProperty = (id: string) => venueDo((s) => sellLot(s, id));
 export const upgradeProperty = (id: string) => venueDo((s) => upgradeLot(s, id));
 export const redevelopProperty = (id: string, def: string) => venueDo((s) => redevelop(s, id, def));
@@ -1963,3 +2005,101 @@ export function openKitchen() {
     kitchen(s);
   });
 }
+
+// ── Court, prison and evidence ───────────────────────────────────────────────
+
+export const courtHire = (id: JU.LawyerId) => update((s) => toast(s, JU.hireLawyer(s, id)));
+export const courtSettle = () => update((s) => toast(s, JU.settleCourt(s).line));
+export function courtPlead(guilty: boolean) {
+  update((s) => {
+    const v = JU.plead(s, guilty);
+    toast(s, v.line);
+    bus.emit("teleport", s.pos);
+  });
+}
+
+export function prisonDo(act: JU.PrisonAct) {
+  update((s) => {
+    if (!JU.jailed(s)) return;
+    const a = JU.ACTS[act];
+    if (a.slots && s.slot + a.slots > SLOTS.length) return toast(s, "Lock-up. Back to your cell and sleep.");
+    if (a.energy < 0 && s.stats.energy < -a.energy) return toast(s, "You're too tired. Sleep on your bunk.");
+    const { line, took } = JU.prisonAct(s, act);
+    toast(s, line);
+    if (!JU.jailed(s)) {
+      bus.emit("teleport", s.pos);
+      return;
+    }
+    if (a.slots && took) spend(s, a.slots, a.energy);
+  });
+}
+
+/** Rest on your bunk until morning, or let a whole week pass. */
+export function prisonSleepNow(days = 1) {
+  update((s) => {
+    if (!JU.jailed(s)) return;
+    toast(s, days > 1 ? `You keep your head down for ${days} days.` : "Lights out on the bunk.");
+    for (let i = 0; i < days && JU.jailed(s); i += 1) {
+      // A quiet day: the routine of meals, a shift and the yard.
+      if (days > 1) {
+        JU.prisonAct(s, "eat");
+        JU.prisonAct(s, "eat");
+        JU.prisonAct(s, "work");
+        JU.prisonAct(s, "exercise");
+      }
+      sleep(s);
+    }
+    if (days > 1) s.toast = s.toast?.split(" ").slice(0, 120).join(" ") ?? null;
+  });
+}
+
+export function escapeDone(ok: boolean, stage: string) {
+  update((s) => {
+    toast(s, JU.escapeResult(s, ok, stage));
+    if (ok) bus.emit("teleport", s.pos);
+  });
+}
+
+export function acceptLifeSentence() {
+  update((s) => {
+    if (!JU.acceptLife(s)) return;
+    addLog(s, "Accepted a life sentence at Kuje.");
+    end(s, "jail");
+  });
+}
+
+export const evidenceClear = (id: string) => update((s) => toast(s, JU.clearEvidence(s, id)));
+export const layLow = () => update((s) => toast(s, JU.startLayLow(s)));
+export const endLayLow = () => update((s) => toast(s, JU.stopLayLow(s)));
+export const turnIn = () => update((s) => toast(s, JU.surrenderFugitive(s)));
+
+// ── Nepo friends ─────────────────────────────────────────────────────────────
+
+/** Visiting a place in town: a nepo friend might be there. */
+export function bumpInto(placeId: string) {
+  update((s) => {
+    const who = NE.townBump(s, placeId);
+    if (who) s.nepoMeet = who;
+  });
+}
+export const nepoMeet = (how: NE.MeetChoice) => update((s) => toast(s, NE.meet(s, how)));
+export const nepoHang = (id: NE.NepoId) => update((s) => toast(s, NE.hangOut(s, id)));
+export function nepoFavour(id: NE.NepoId, favour: string) {
+  update((s) => {
+    const r = NE.askFavour(s, id, favour);
+    toast(s, r.line);
+  });
+}
+
+// ── Betting and missions ─────────────────────────────────────────────────────
+
+export const placeBet = (picks: { fixture: string; pick: BT.Pick }[], stake: number) => update((s) => toast(s, BT.placeBet(s, picks, stake)));
+export const setBetLimit = (limit: number | null) => update((s) => toast(s, BT.setLimit(s, limit)));
+export const choosePath = (path: MI.PathId) => update((s) => toast(s, MI.choosePath(s, path)));
+export const skipPaths = () => update((s) => { s.flags.missions_seen = true; });
+/** Opening the Missions app: tick off anything already done. */
+export const refreshMissions = () =>
+  update((s) => {
+    const lines = MI.checkMissions(s);
+    if (lines.length) toast(s, lines.join(" "));
+  });

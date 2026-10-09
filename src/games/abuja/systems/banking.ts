@@ -277,6 +277,15 @@ export function apply(s: GameState, v: Vacancy): string {
   const app: BankApp = { id: `${v.id}-${bk.apps.length}`, bank: v.bank, route: v.route, track: v.track, stage: 0, status: "active", readyDay: s.day, scores: [], applied: s.day, grade };
   bk.apps.unshift(app);
   if (bk.apps.length > 20) bk.apps.length = 20;
+  // A referral from a well-connected friend skips the paper screen and the assessments.
+  if (s.flags.bank_referral) {
+    s.flags.bank_referral = false;
+    const at = processOf(app).stages.findIndex((st) => /interview|hr_discussion/.test(st));
+    if (at > 0) {
+      app.stage = at - 1;
+      return `Referred! ${advance(s, app)}`;
+    }
+  }
   // The application itself is screened on paper.
   const paper = clamp(0.3 + s.skills.education / 120 + trackSkill(s, v.track) / 200 + s.stats.reputation / 400 + (s.flags.fake_degree ? 0.1 : 0), 0, 1);
   if (paper < difficulty(b, v.route) - 0.25 && r() < 0.6) return reject(s, app, "Your application didn't make the shortlist. Build your education and track skills, then apply again.");

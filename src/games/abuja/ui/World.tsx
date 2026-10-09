@@ -18,6 +18,8 @@ import {
   offerFor,
   reachBeat,
   freshenUp,
+  prisonDo,
+  bumpInto,
   resolveEvent,
   savePosition,
   skipToMorning,
@@ -51,6 +53,11 @@ import { NegotiationScreen } from "./Negotiation";
 import { LotPanel } from "./LotPanel";
 import { KitchenScreen, type KitchenOpen } from "./kitchen/Kitchen";
 import { Careers, type Spot as CareerSpot } from "./Careers";
+import type * as JU from "../systems/justice";
+import { Court, PrisonPanel, type PrisonView } from "./Justice";
+import { NepoMeet } from "./Nepo";
+import { PathChooser } from "./Missions";
+import { nextStep, PATHS } from "../systems/missions";
 import { StoryPanel } from "./StoryView";
 import { WardrobePanel } from "./Wardrobe";
 import { DecorPanel } from "./Decor";
@@ -92,6 +99,9 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   // Inside a building: which room, and the loading screen between outside and in.
   const [socialOpen, setSocialOpen] = useState(false);
   const [careers, setCareers] = useState<{ at: CareerSpot } | null>(null);
+  const [prisonView, setPrisonView] = useState<PrisonView | null>(null);
+  const jailed = Boolean(state.justice?.prison);
+  const inCourt = Boolean(state.justice?.case);
   const [inside, setInside] = useState<RoomInfo | null>(null);
   const insideRef = useRef<RoomInfo | null>(null);
   const [loading, setLoading] = useState<{ title: string; icon: string; progress?: number; error?: string } | null>({ title: "Loading your next chapter", icon: "✦" });
@@ -196,6 +206,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
     });
     const interact = (thing: NearThing) => {
       if (thing.kind === "place") {
+        bumpInto(thing.id);
         const room = roomForPlace(thing.id);
         if (room && !insideRef.current) roomActions.current.enterRoom({ type: room, name: place(thing.id)?.name ?? thing.label, placeId: thing.id });
         else setOpen(thing.id);
@@ -214,12 +225,22 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         }
       }
       if (thing.kind === "exit") {
+        if (insideRef.current?.type === "prison_block") {
+          bus.emit("blocked", "The main gate is locked, and the warder on it has a rifle. Serve your time, appeal, or find another way out.");
+          return;
+        }
         const parent = insideRef.current?.parent;
         if (parent) roomActions.current.switchRoom(parent);
         else roomActions.current.leaveRoom();
       }
       if (thing.kind === "item") {
         const poor = insideRef.current ? isPoorRoom(insideRef.current.type) : false;
+        if (thing.id.startsWith("p_")) {
+          const act = thing.id.slice(2);
+          if (act === "bunk" || act === "status" || act === "escape") setPrisonView(act === "bunk" ? "bunk" : act === "escape" ? "escape" : "status");
+          else prisonDo(act as JU.PrisonAct);
+          return;
+        }
         if (thing.id === "freshen") freshenUp(poor);
         else if (thing.id === "kitchen") {
           if (getState()?.chapter) bus.emit("blocked", "Mama's kitchen, Mama's rules. You'll cook for yourself when you're grown.");
@@ -274,10 +295,30 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
 
   // The world stands still while the pause menu is open. Esc or P toggles it.
   useEffect(() => {
-    input.paused = paused || wardrobe || decorating || Boolean(negotiation) || Boolean(kitchenOpen) || Boolean(careers) || isLoading;
+    input.paused = paused || wardrobe || decorating || Boolean(negotiation) || Boolean(kitchenOpen) || Boolean(careers) || Boolean(prisonView) || inCourt || isLoading;
     input.x = 0;
     input.y = 0;
-  }, [paused, wardrobe, decorating, negotiation, kitchenOpen, careers, isLoading]);
+  }, [paused, wardrobe, decorating, negotiation, kitchenOpen, careers, prisonView, inCourt, isLoading]);
+
+  // Custody: into the cell block when you're sent down, out through the gate when you're released.
+  useEffect(() => {
+    if (isLoading || !game.current) return;
+    const here = insideRef.current;
+    const prisonInfo = { type: "prison_block" as const, name: "Kuje Custodial Centre", placeId: "prison" };
+    if (jailed && !here?.type.startsWith("prison_")) {
+      setPhone(null);
+      setCareers(null);
+      if (here) roomActions.current.switchRoom(prisonInfo);
+      else roomActions.current.enterRoom(prisonInfo);
+    } else if (!jailed && here?.type.startsWith("prison_")) {
+      setPrisonView(null);
+      roomActions.current.leaveRoom();
+      window.setTimeout(() => {
+        const pos = getState()?.pos;
+        if (pos) bus.emit("teleport", pos);
+      }, 400);
+    }
+  }, [jailed, isLoading]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (isLoading) return;
@@ -313,6 +354,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const story = inStory && storyOpen(state);
   const beat = currentBeat(state);
   const goal = !inStory && !state.task ? storyGoal(state) : null;
+  const mission = nextStep(state);
   const here = near && near.kind === "place" ? place(near.id) : undefined;
   const panelOpen = Boolean(here && open === here.id);
   const showEnter = near && !lotOpen && !isLoading && !exploring && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
@@ -357,6 +399,22 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           <span className="min-w-0">
             <span className="block text-[11px] font-bold tracking-wide text-amber-300 uppercase">{ACT_ONE}</span>
             <span className="block font-bold text-pretty">{goal.text}</span>
+          </span>
+        </button>
+      ) : null}
+
+      {!goal && !inStory && !inside && !state.event && !state.task && !jailed && !state.toast && !blocked && mission ? (
+        <button
+          type="button"
+          onClick={() => setPhone("missions")}
+          className={`${glass} absolute top-24 left-1/2 z-10 flex w-max max-w-[min(calc(100vw-8.5rem),26rem)] -translate-x-1/2 items-center gap-2.5 rounded-2xl py-2 pr-4 pl-2.5 text-left text-sm hover:bg-[#1e2740]/90 sm:top-[5.5rem]`}
+          style={{ fontFamily: GAME_FONT }}
+          aria-label={`Mission: ${mission.step.text}. Open Missions`}
+        >
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-amber-400 text-base text-slate-950">{PATHS[mission.path].icon}</span>
+          <span className="min-w-0">
+            <span className="block text-[11px] font-bold tracking-wide text-amber-300 uppercase">Mission · {PATHS[mission.path].name}</span>
+            <span className="block font-bold text-pretty">{mission.step.text}</span>
           </span>
         </button>
       ) : null}
@@ -495,7 +553,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           {isDriving(state) ? "Park" : "Drive"}
         </button>
       ) : null}
-      {!inStory && !inside && !trip ? (
+      {!inStory && !inside && !trip && !jailed ? (
         <button
           type="button"
           onClick={() => setPhone("map")}
@@ -520,7 +578,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         </button>
       ) : null}
       {decorating && inside ? <DecorPanel state={state} info={inside} onClose={() => setDecorating(false)} /> : null}
-      {!inStory && !decorating && !trip ? (
+      {!inStory && !decorating && !trip && !jailed ? (
         <button
           type="button"
           onClick={() => setPhone("home")}
@@ -547,6 +605,10 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           }}
           onClose={() => setPhone(null)}
         /> : null}
+      {inCourt && !state.event ? <Court state={state} /> : null}
+      {!inStory && state.stage === "adult" && !state.flags.missions_seen && !state.missions?.path && !jailed && !inCourt && !state.event && !state.nepoMeet && !story && !isLoading ? <PathChooser state={state} /> : null}
+      {state.nepoMeet && !inCourt && !state.event && !state.result && !state.minigame ? <NepoMeet state={state} /> : null}
+      {prisonView && jailed && !inCourt ? <PrisonPanel state={state} view={prisonView} onClose={() => setPrisonView(null)} /> : null}
       {careers && !inStory && !state.event ? <Careers state={state} at={careers.at} onClose={() => setCareers(null)} /> : null}
       {state.event ? <EventModal state={state} /> : null}
       {kitchenOpen && !state.event && !negotiation ? <KitchenScreen state={state} open={kitchenOpen} onClose={() => setKitchenOpen(null)} /> : null}
@@ -611,6 +673,14 @@ const ROOM_ICON: Record<RoomInfo["type"], string> = {
   bank_training: "🎓",
   bank_work: "💻",
   bank_manager: "📈",
+  prison_block: "⛓️",
+  prison_yard: "🧱",
+  prison_mess: "🍲",
+  prison_workshop: "🪚",
+  prison_library: "📚",
+  prison_chapel: "🙏",
+  prison_infirmary: "🩺",
+  prison_visit: "👪",
   clinic: "🏥",
   shop: "🛍️",
   classroom: "🏫",
