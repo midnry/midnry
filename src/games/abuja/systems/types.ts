@@ -219,7 +219,8 @@ export type Task = {
   haggle: { offer: number; passenger: string } | null;
 };
 
-export type GameKind = "sprint" | "sack" | "egg" | "relay" | "tug" | "penalties";
+/** "tourney" stands for whichever sport you play in the interhouse tournament (systems/tournament.ts). */
+export type GameKind = "sprint" | "sack" | "egg" | "relay" | "tug" | "penalties" | "basketball" | "tennis" | "chess" | "tourney";
 
 /** A sports-day event you play: win or lose decides which effects apply. */
 export type GameDef = {
@@ -254,7 +255,7 @@ export type Scene = {
   branch?: { if?: Cond; next: string }[];
   choices?: Choice[];
   /** Special screens handled by the UI, such as the NYSC fixers. */
-  special?: "fixers" | "bracket";
+  special?: "fixers" | "bracket" | "tourney";
   effects?: Effect[];
 };
 

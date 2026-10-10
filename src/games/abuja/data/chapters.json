@@ -91,8 +91,8 @@
       },
       "interhouse_tourney": {
         "speaker": "Games master",
-        "text": "One more thing before the trophy: the inter-house football tournament. Four houses, knockout, and because the pitch is only half a pitch, every match is settled by penalties. {house} plays {semi_rival} in the semi-final.",
-        "special": "bracket",
+        "text": "One more thing before the trophy: the inter-house tournament. Four houses, knockout, in five sports: football, tug of war, basketball, tennis and chess. House captains pick their players: the strongest for the rope and the ball, the cleverest for the chessboard. {house} plays {semi_rival} in the semi-final.",
+        "special": "tourney",
         "effects": [
           {
             "flag": "tourney_semi",
@@ -109,13 +109,17 @@
           {
             "flag": "tourney_semi_won",
             "set": false
+          },
+          {
+            "flag": "tourney_sport",
+            "set": ""
           }
         ],
         "choices": [
           {
-            "text": "Take the penalties for {house}",
+            "text": "Play {sport} for {house} {sport_icon}",
             "game": {
-              "kind": "penalties",
+              "kind": "tourney",
               "level": 1,
               "vs": "semi",
               "win": [
@@ -150,8 +154,8 @@
                   "add": 2
                 }
               ],
-              "winText": "Your last kick hits the net and {house} is through to the final! The drummers go mad.",
-              "loseText": "{semi_rival} win it. Your house captain pats your back. There's still third place to play for."
+              "winText": "{house} is through to the {sport} final! The drummers go mad.",
+              "loseText": "{semi_rival} win the semi-final. Your house captain pats your back. There's still third place to play for."
             },
             "next": "interhouse_tourney_next"
           },
@@ -188,13 +192,13 @@
       },
       "interhouse_tourney_final": {
         "speaker": "Games master",
-        "text": "The final: {house} against {final_rival}. Parents have climbed onto the classroom windows to watch, and the headmaster has taken off his jacket.",
+        "text": "The {sport} final: {house} against {final_rival}. Parents have climbed onto the classroom windows to watch, and the headmaster has taken off his jacket.",
         "special": "bracket",
         "choices": [
           {
-            "text": "Step up for the final",
+            "text": "Step up for the {sport} final",
             "game": {
-              "kind": "penalties",
+              "kind": "tourney",
               "level": 2,
               "vs": "final",
               "win": [
@@ -215,16 +219,16 @@
                   "add": -6
                 },
                 {
-                  "log": "Won the inter-house football tournament in primary school."
+                  "log": "Won an inter-house tournament final in primary school."
                 },
                 {
                   "npc": "tunde",
                   "rel": 3,
                   "remember": {
-                    "what": "You won the inter-house football final together",
+                    "what": "You won the inter-house final together",
                     "tone": "warm",
                     "weight": 3,
-                    "say": "\"That penalty in the primary school final! I still dream about it.\""
+                    "say": "\"That inter-house final in primary school! I still dream about it.\""
                   }
                 }
               ],
@@ -246,8 +250,8 @@
                   "add": 3
                 }
               ],
-              "winText": "The keeper dives the wrong way and the ball rolls in. {house} win the football cup! Tunde runs the length of the pitch with his shirt over his head.",
-              "loseText": "So close. {final_rival} take the cup, but your house claps you off the pitch."
+              "winText": "{house} win the {sport} cup! Tunde runs the length of the field with his shirt over his head.",
+              "loseText": "So close. {final_rival} take the {sport} cup, but your house claps you off."
             },
             "next": "interhouse_tourney_done"
           }
@@ -261,7 +265,7 @@
           {
             "text": "Play for third place",
             "game": {
-              "kind": "penalties",
+              "kind": "tourney",
               "level": 1,
               "vs": "third",
               "win": [
@@ -292,7 +296,7 @@
                   "add": 2
                 }
               ],
-              "winText": "Bronze! Third place goes to {house}, and the medals are made of real tin.",
+              "winText": "Bronze! Third place in {sport} goes to {house}, and the medals are made of real tin.",
               "loseText": "Fourth place. The games master says you all played 'with spirit'."
             },
             "next": "interhouse_tourney_done"
@@ -300,7 +304,7 @@
         ]
       },
       "interhouse_tourney_done": {
-        "text": "The football tournament is over. Here's how it finished.",
+        "text": "The tournament is over. Here's how it finished.",
         "special": "bracket",
         "choices": [
           {
@@ -550,8 +554,8 @@
       },
       "interhouse_sec_tourney": {
         "speaker": "Sports master",
-        "text": "The event the whole school actually cares about: inter-house football. Four houses, knockout, penalties to decide every match because the principal says the grass 'cannot take ninety minutes'. {house} faces {semi_rival} in the semi-final.",
-        "special": "bracket",
+        "text": "The event the whole school actually cares about: the inter-house tournament. Football, tug of war, basketball, tennis and chess, knockout, four houses. The captains pick by strength for the field and by brains for the chessboard. {house} faces {semi_rival} in the semi-final.",
+        "special": "tourney",
         "effects": [
           {
             "flag": "tourney_semi",
@@ -568,13 +572,17 @@
           {
             "flag": "tourney_semi_won",
             "set": false
+          },
+          {
+            "flag": "tourney_sport",
+            "set": ""
           }
         ],
         "choices": [
           {
-            "text": "Take the penalties for {house}",
+            "text": "Play {sport} for {house} {sport_icon}",
             "game": {
-              "kind": "penalties",
+              "kind": "tourney",
               "level": 2,
               "vs": "semi",
               "win": [
@@ -609,7 +617,7 @@
                   "add": 2
                 }
               ],
-              "winText": "Top corner. {house} is in the final and the seniors are already composing songs.",
+              "winText": "{house} is in the {sport} final and the seniors are already composing songs.",
               "loseText": "{semi_rival} go through. You'll play for third place."
             },
             "next": "interhouse_sec_tourney_next"
@@ -647,13 +655,13 @@
       },
       "interhouse_sec_tourney_final": {
         "speaker": "Sports master",
-        "text": "The final: {house} against {final_rival}. The principal is in sunglasses on the touchline, the drummers have come from the town, and someone is selling meat pies at the gate.",
+        "text": "The {sport} final: {house} against {final_rival}. The principal is in sunglasses on the touchline, the drummers have come from the town, and someone is selling meat pies at the gate.",
         "special": "bracket",
         "choices": [
           {
-            "text": "Step up for the final",
+            "text": "Step up for the {sport} final",
             "game": {
-              "kind": "penalties",
+              "kind": "tourney",
               "level": 3,
               "vs": "final",
               "win": [
@@ -674,16 +682,16 @@
                   "add": -6
                 },
                 {
-                  "log": "Won the inter-house football tournament in secondary school."
+                  "log": "Won an inter-house tournament final in secondary school."
                 },
                 {
                   "npc": "tunde",
                   "rel": 3,
                   "remember": {
-                    "what": "You won the secondary school football final",
+                    "what": "You won the secondary school inter-house final",
                     "tone": "warm",
                     "weight": 3,
-                    "say": "\"Inter-house final in secondary school. Top corner! Nobody can take that from you.\""
+                    "say": "\"Inter-house final in secondary school. Nobody can take that from you.\""
                   }
                 }
               ],
@@ -705,8 +713,8 @@
                   "add": 3
                 }
               ],
-              "winText": "You keep your nerve and {house} lift the inter-house football cup! The video is on every class WhatsApp group by evening.",
-              "loseText": "{final_rival} win it on the last kick. Runners-up medals and a long walk back to the hostel."
+              "winText": "{house} lift the {sport} cup! The video is on every class WhatsApp group by evening.",
+              "loseText": "{final_rival} win the {sport} final at the very end. Runners-up medals and a long walk back to the hostel."
             },
             "next": "interhouse_sec_tourney_done"
           }
@@ -720,7 +728,7 @@
           {
             "text": "Play for third place",
             "game": {
-              "kind": "penalties",
+              "kind": "tourney",
               "level": 2,
               "vs": "third",
               "win": [
@@ -751,7 +759,7 @@
                   "add": 2
                 }
               ],
-              "winText": "Third place for {house}. Bronze, and bragging rights over {third_rival} for a whole term.",
+              "winText": "Third place in {sport} for {house}. Bronze, and bragging rights over {third_rival} for a whole term.",
               "loseText": "Fourth. The seniors say nothing, which is worse than shouting."
             },
             "next": "interhouse_sec_tourney_done"
@@ -759,7 +767,7 @@
         ]
       },
       "interhouse_sec_tourney_done": {
-        "text": "The football tournament is over. The final table goes up on the notice board.",
+        "text": "The tournament is over. The final table goes up on the notice board.",
         "special": "bracket",
         "choices": [
           {

@@ -15,6 +15,22 @@ const INFO: Record<GameKind, { title: string; how: string; keys: string }> = {
   egg: { title: "Egg and spoon race", how: "You walk on your own. Keep the egg in the middle of the spoon: lean the other way when it rolls.", keys: "← → or A D" },
   relay: { title: "4 × 100m relay", how: "Your team runs; you pass the baton. Tap Pass when the runner reaches the green zone. Too early or too late costs time.", keys: "Space" },
   tug: { title: "Tug of war", how: "Tap Pull as fast as you can. When the coach shouts HEAVE!, pull on the shout for a big heave.", keys: "Space" },
+  basketball: {
+    title: "Basketball shootout",
+    how: "Five shots each. The power bar slides back and forth: tap Shoot when it's in the green. Close to the edge and it rattles the rim.",
+    keys: "Space",
+  },
+  tennis: {
+    title: "Tennis",
+    how: "First to five points. The ball comes at you: tap Hit when it reaches the yellow zone. The closer to the middle of the zone, the harder it is to return. Too early or too late and you lose the point.",
+    keys: "Space",
+  },
+  chess: {
+    title: "Chess: checkmate in one",
+    how: "Three positions, one move each. You're White: find the move that checkmates. Tap your piece, then the square. Solve two of three to win the match.",
+    keys: "Tap or click",
+  },
+  tourney: { title: "Interhouse tournament", how: "", keys: "" },
   penalties: {
     title: "Penalty shootout",
     how: "Five kicks each. When you shoot, the aim swings across the goal: tap Shoot to strike. Corners are hard to save but easy to miss. When they shoot, pick which way to dive.",
@@ -91,6 +107,9 @@ export function MiniGame({ kind, level = 1, house, rival, onDone }: { kind: Game
           {kind === "relay" ? <Relay {...props} /> : null}
           {kind === "tug" ? <Tug {...props} /> : null}
           {kind === "penalties" ? <Penalties {...props} /> : null}
+          {kind === "basketball" ? <Basketball {...props} /> : null}
+          {kind === "tennis" ? <Tennis {...props} /> : null}
+          {kind === "chess" ? <Chess {...props} /> : null}
           {phase === "count" ? (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <span className="text-6xl font-black text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]">{count > 0 ? count : "Go!"}</span>
@@ -618,6 +637,299 @@ function Penalties({ level, color, rival, playing, onEnd }: GameProps) {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+/** The two score rows used by the shootouts: a dot per attempt, green in, red out. */
+function ScoreRows({ kicks, color, rival }: { kicks: Kick[]; color: string; rival?: { name: string; color: string } }) {
+  const row = (by: "me" | "them") => {
+    const list = kicks.filter((k) => k.by === by);
+    return Array.from({ length: Math.max(5, list.length) }, (_, i) => list[i]);
+  };
+  const score = (by: "me" | "them") => kicks.filter((k) => k.by === by && k.scored).length;
+  return (
+    <div className="mb-2 grid gap-1 rounded-xl bg-black/30 p-2 text-xs font-bold">
+      {(["me", "them"] as const).map((by) => (
+        <div key={by} className="flex items-center gap-2">
+          <span className="size-3 shrink-0 rounded-full border border-white/40" style={{ background: by === "me" ? color : (rival?.color ?? "#94a3b8") }} aria-hidden />
+          <span className="w-16 shrink-0 truncate">{by === "me" ? "You" : (rival?.name.replace(" House", "") ?? "Them")}</span>
+          <span className="flex flex-1 flex-wrap gap-1">
+            {row(by).map((k, i) => (
+              <span key={i} className={`size-4 rounded-full border ${k ? (k.scored ? "border-emerald-300 bg-emerald-400" : "border-rose-300 bg-rose-500") : "border-white/25 bg-white/5"}`} aria-hidden />
+            ))}
+          </span>
+          <span className="w-5 text-right text-base tabular-nums">{score(by)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Basketball: five shots each on a timing bar, then sudden death ─────────
+
+function Basketball({ level, color, rival, playing, onEnd }: GameProps) {
+  const [kicks, setKicks] = useState<Kick[]>([]);
+  const [power, setPower] = useState(0);
+  const [flash, setFlash] = useState<{ text: string; good: boolean; arc: "in" | "rim" | "short" | "long" } | null>(null);
+  const done = useRef(false);
+  const clock = useRef(0);
+  const turn: "me" | "them" = kicks.length % 2 === 0 ? "me" : "them";
+  const zone = { c: 0.72, w: [0, 0.17, 0.13, 0.1][level]! };
+  const speed = [0, 0.75, 0.95, 1.15][level]!;
+  const theirs = [0, 0.42, 0.55, 0.66][level]!;
+
+  useLoop(playing && turn === "me" && !flash, (dt) => {
+    clock.current += dt;
+    setPower(0.5 - 0.5 * Math.cos(clock.current * speed * Math.PI));
+  });
+
+  const resolve = (kick: Kick, view: NonNullable<typeof flash>) => {
+    const next = [...kicks, kick];
+    setKicks(next);
+    setFlash(view);
+    window.setTimeout(() => {
+      setFlash(null);
+      const winner = decided(next);
+      if (winner && !done.current) {
+        done.current = true;
+        onEnd(winner === "me");
+      }
+    }, 1100);
+  };
+
+  // Their shot comes automatically, a moment after yours.
+  useEffect(() => {
+    if (!playing || turn !== "them" || flash || done.current) return;
+    const t = window.setTimeout(() => {
+      const made = Math.random() < theirs;
+      resolve({ by: "them", scored: made }, { text: made ? `${rival?.name.replace(" House", "") ?? "They"} score.` : "They miss!", good: !made, arc: made ? "in" : "rim" });
+    }, 700);
+    return () => window.clearTimeout(t);
+  });
+
+  const shoot = () => {
+    if (!playing || done.current || flash || turn !== "me") return;
+    const off = Math.abs(power - zone.c);
+    const clean = off <= zone.w / 2;
+    const rim = !clean && off <= zone.w / 2 + 0.06;
+    const made = clean || (rim && Math.random() < 0.5);
+    const arc = clean ? "in" : rim ? "rim" : power < zone.c ? "short" : "long";
+    resolve({ by: "me", scored: made }, { text: clean ? "Swish! 🏀" : made ? "Off the rim… and in!" : rim ? "Rattles out!" : power < zone.c ? "Too short." : "Too long.", good: made, arc });
+  };
+  useKeys(playing, (k) => (k === " " ? shoot() : undefined));
+
+  const ball = flash ? { in: { left: "80%", top: "22%" }, rim: { left: "74%", top: "18%" }, short: { left: "58%", top: "58%" }, long: { left: "92%", top: "10%" } }[flash.arc] : { left: "14%", top: "62%" };
+  return (
+    <div>
+      <ScoreRows kicks={kicks} color={color} rival={rival} />
+      <div className="relative h-40 overflow-hidden rounded-xl bg-gradient-to-b from-[#8a5a2b] to-[#6b4321]" aria-live="polite">
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-[#5a3a1d]" />
+        {/* Backboard, hoop and net. */}
+        <div className="absolute top-[10%] right-[6%] h-[34%] w-2 rounded bg-white" />
+        <div className="absolute top-[28%] right-[8%] h-1.5 w-[12%] rounded bg-orange-500" />
+        <div className="absolute top-[30%] right-[9%] h-6 w-[10%] bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.7)_0_2px,transparent_2px_6px)] [clip-path:polygon(0_0,100%_0,80%_100%,20%_100%)]" />
+        <span className="absolute -translate-x-1/2 text-3xl transition-all duration-500 ease-out" style={ball} aria-hidden>
+          🏀
+        </span>
+        {flash ? <p className={`absolute inset-x-0 bottom-1 text-center text-xl font-black drop-shadow ${flash.good ? "text-emerald-200" : "text-rose-200"}`}>{flash.text}</p> : null}
+        {!flash && playing ? <p className="absolute right-2 bottom-1.5 rounded-full bg-black/35 px-2 py-0.5 text-xs font-black text-white">{turn === "me" ? "Your shot" : "Their shot…"}</p> : null}
+      </div>
+      {/* The power bar. */}
+      <div className="relative mt-3 h-6 overflow-hidden rounded-full bg-white/10" aria-hidden>
+        <div className="absolute inset-y-0 bg-emerald-400/70" style={{ left: `${(zone.c - zone.w / 2) * 100}%`, width: `${zone.w * 100}%` }} />
+        <div className="absolute inset-y-0 bg-amber-300/30" style={{ left: `${(zone.c - zone.w / 2 - 0.06) * 100}%`, width: `${(zone.w + 0.12) * 100}%` }} />
+        <div className="absolute inset-y-0 w-1.5 -translate-x-1/2 rounded bg-white shadow" style={{ left: `${power * 100}%` }} />
+      </div>
+      <div className="mt-3 flex">
+        <BigButton onPress={shoot} disabled={!playing || Boolean(flash) || turn !== "me"} wide>
+          Shoot! 🏀
+        </BigButton>
+      </div>
+    </div>
+  );
+}
+
+// ── Tennis: time your hits, first to five points ────────────────────────────
+
+function Tennis({ level, color, rival, playing, onEnd }: GameProps) {
+  const [st, setSt] = useState({ me: 0, them: 0, y: 0, dir: 1 as 1 | -1, speed: [0, 0.85, 1.05, 1.25][level]!, msg: "", wait: 0.8, x: 0.5 });
+  const done = useRef(false);
+  const theirReturn = [0, 0.62, 0.7, 0.78][level]!;
+  const theirColor = rival?.color ?? "#94a3b8";
+
+  const point = (s: typeof st, mine: boolean, msg: string) => {
+    const me = s.me + (mine ? 1 : 0);
+    const them = s.them + (mine ? 0 : 1);
+    if ((me >= 5 || them >= 5) && !done.current) {
+      done.current = true;
+      window.setTimeout(() => onEnd(me > them), 900);
+    }
+    return { ...s, me, them, msg, y: 0, dir: 1 as const, wait: 1.1, speed: [0, 0.85, 1.05, 1.25][level]!, x: 0.3 + Math.random() * 0.4 };
+  };
+
+  useLoop(playing, (dt) => {
+    if (done.current) return;
+    setSt((s) => {
+      if (s.wait > 0) return { ...s, wait: s.wait - dt, msg: s.wait - dt <= 0 ? "" : s.msg };
+      const y = s.y + s.dir * s.speed * dt;
+      // Coming at you and you let it go past: their point.
+      if (s.dir === 1 && y > 1.06) return point(s, false, "Missed it!");
+      // Your shot reaches them: do they get it back?
+      if (s.dir === -1 && y <= 0) {
+        const quality = s.msg === "Perfect!" ? 0.32 : 0.12;
+        if (Math.random() > theirReturn - quality) return point(s, true, "Winner! 🎾");
+        return { ...s, y: 0, dir: 1, speed: Math.min(2.2, s.speed * 1.08), x: 0.25 + Math.random() * 0.5, msg: "" };
+      }
+      return { ...s, y };
+    });
+  });
+
+  const hit = () => {
+    if (!playing || done.current) return;
+    setSt((s) => {
+      if (s.wait > 0 || s.dir !== 1) return s;
+      if (s.y < 0.74) return point(s, false, "Too early!");
+      const off = Math.abs(s.y - 0.88);
+      return { ...s, dir: -1, speed: s.speed * 1.05, msg: off < 0.05 ? "Perfect!" : "Good hit", x: 0.2 + Math.random() * 0.6 };
+    });
+  };
+  useKeys(playing, (k) => (k === " " ? hit() : undefined));
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between rounded-xl bg-black/30 px-3 py-2 text-sm font-black">
+        <span className="flex items-center gap-2">
+          <span className="size-3 rounded-full border border-white/40" style={{ background: color }} aria-hidden /> You {st.me}
+        </span>
+        <span className="text-xs text-slate-400">First to 5</span>
+        <span className="flex items-center gap-2">
+          {st.them} {rival?.name.replace(" House", "") ?? "Them"} <span className="size-3 rounded-full border border-white/40" style={{ background: theirColor }} aria-hidden />
+        </span>
+      </div>
+      <div className="relative mx-auto h-56 max-w-xs overflow-hidden rounded-xl border-2 border-white/80 bg-[#2f7a5a]" aria-live="polite">
+        <div className="absolute inset-x-[12%] inset-y-0 border-x border-white/60" />
+        <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 bg-white/90 shadow" />
+        {/* Your hitting zone. */}
+        <div className="absolute inset-x-0 bg-amber-300/25" style={{ top: `${0.74 * 100}%`, height: `${0.28 * 100}%` }} />
+        <div className="absolute inset-x-0 h-0.5 bg-amber-300" style={{ top: `${0.88 * 100}%` }} />
+        {/* Players. */}
+        <div className="absolute top-1 h-6 w-6 -translate-x-1/2 rounded-full border-2 border-black/30" style={{ left: `${st.x * 100}%`, background: theirColor }} aria-hidden />
+        <div className="absolute bottom-1 h-6 w-6 -translate-x-1/2 rounded-full border-2 border-white" style={{ left: `${st.x * 100}%`, background: color }} aria-hidden />
+        <span className="absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#d9f99d] shadow-[0_0_6px_rgba(217,249,157,0.9)]" style={{ left: `${st.x * 100}%`, top: `${Math.min(1.04, st.y) * 100}%` }} aria-hidden />
+        {st.msg ? <p className="absolute inset-x-0 top-[38%] text-center text-xl font-black text-white drop-shadow">{st.msg}</p> : null}
+      </div>
+      <div className="mt-3 flex">
+        <BigButton onPress={hit} disabled={!playing} wide>
+          Hit! 🎾
+        </BigButton>
+      </div>
+    </div>
+  );
+}
+
+// ── Chess: checkmate in one, three positions ────────────────────────────────
+
+/** White to move and mate in one; every mating move is listed (each checked to be the only one). */
+const PUZZLES: { pieces: Record<string, string>; mates: string[]; hint: string }[] = [
+  { pieces: { g1: "K", a1: "R", f2: "P", g2: "P", h2: "P", g8: "k", f7: "p", g7: "p", h7: "p" }, mates: ["a1a8"], hint: "Their king is trapped behind its own pawns." },
+  { pieces: { g6: "K", d1: "Q", h8: "k" }, mates: ["d1d8"], hint: "Your king already guards g7 and h7." },
+  { pieces: { c3: "K", g1: "R", a2: "R", h8: "k" }, mates: ["a2h2"], hint: "One rook holds the g-file. The other gives check." },
+  { pieces: { c1: "K", g5: "N", h8: "k", g8: "r", g7: "p", h7: "p" }, mates: ["g5f7"], hint: "The king has smothered itself." },
+  { pieces: { g1: "K", h5: "Q", d3: "B", g8: "k", f8: "r", f7: "p", g7: "p" }, mates: ["h5h7"], hint: "The bishop backs up the queen." },
+];
+const GLYPH: Record<string, string> = { k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟" };
+const FILES = "abcdefgh";
+
+function Chess({ level, rival, playing, onEnd }: GameProps) {
+  const set = [[0, 1, 2], [1, 2, 3], [2, 3, 4]][level - 1]!;
+  const limit = [0, 45, 35, 30][level]!;
+  const [n, setN] = useState(0);
+  const [pick, setPick] = useState<string | null>(null);
+  const [results, setResults] = useState<boolean[]>([]);
+  const [left, setLeft] = useState(limit);
+  const [msg, setMsg] = useState<{ text: string; good: boolean } | null>(null);
+  const done = useRef(false);
+  const puzzle = PUZZLES[set[n] ?? 0]!;
+
+  const answer = (ok: boolean, text: string) => {
+    const next = [...results, ok];
+    setResults(next);
+    setMsg({ text, good: ok });
+    setPick(null);
+    window.setTimeout(() => {
+      setMsg(null);
+      const wins = next.filter(Boolean).length;
+      const losses = next.length - wins;
+      if ((wins >= 2 || losses >= 2) && !done.current) {
+        done.current = true;
+        onEnd(wins >= 2);
+        return;
+      }
+      setN((x) => x + 1);
+      setLeft(limit);
+    }, 1400);
+  };
+
+  useLoop(playing && !msg, (dt) => {
+    if (done.current) return;
+    setLeft((t) => {
+      const v = t - dt;
+      if (v <= 0 && t > 0) window.setTimeout(() => answer(false, "Time's up!"), 0);
+      return Math.max(0, v);
+    });
+  });
+
+  const tap = (sq: string) => {
+    if (!playing || msg || done.current) return;
+    const piece = puzzle.pieces[sq];
+    if (piece && piece === piece.toUpperCase()) {
+      setPick(sq);
+      return;
+    }
+    if (!pick) return;
+    const ok = puzzle.mates.includes(`${pick}${sq}`);
+    answer(ok, ok ? "Checkmate! ♛" : `Not mate. ${rival?.name.replace(" House", "") ?? "They"} escape.`);
+  };
+
+  const squares: string[] = [];
+  for (let r = 8; r >= 1; r -= 1) for (let f = 0; f < 8; f += 1) squares.push(`${FILES[f]}${r}`);
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between rounded-xl bg-black/30 px-3 py-2 text-sm font-black">
+        <span>
+          Position {Math.min(n + 1, 3)} of 3 · {results.filter(Boolean).length} solved
+        </span>
+        <span className={`tabular-nums ${left < 10 ? "text-rose-300" : "text-slate-300"}`}>⏱ {Math.ceil(left)}s</span>
+      </div>
+      <div className="mx-auto grid aspect-square w-full max-w-[20rem] grid-cols-8 grid-rows-8 overflow-hidden rounded-lg border-2 border-[#3b2a1a]" role="grid" aria-label="Chess board">
+        {squares.map((sq, i) => {
+          const dark = (Math.floor(i / 8) + (i % 8)) % 2 === 1;
+          const p = puzzle.pieces[sq];
+          const white = p && p === p.toUpperCase();
+          return (
+            <button
+              key={sq}
+              type="button"
+              onClick={() => tap(sq)}
+              aria-label={`${sq}${p ? ` ${white ? "white" : "black"} ${p.toLowerCase()}` : ""}`}
+              className={`relative flex items-center justify-center text-[clamp(1.2rem,7vw,2rem)] leading-none ${dark ? "bg-[#b58863]" : "bg-[#f0d9b5]"} ${pick === sq ? "ring-4 ring-inset ring-amber-400" : ""}`}
+            >
+              {p ? (
+                <span className={white ? "text-white [text-shadow:0_0_2px_#000,0_0_2px_#000,0_1px_1px_#000]" : "text-[#111]"} aria-hidden>
+                  {GLYPH[p.toLowerCase()]}
+                  {"︎"}
+                </span>
+              ) : null}
+              {i % 8 === 0 ? <span className="absolute top-0 left-0.5 text-[8px] font-bold text-black/50">{sq[1]}</span> : null}
+              {i >= 56 ? <span className="absolute right-0.5 bottom-0 text-[8px] font-bold text-black/50">{sq[0]}</span> : null}
+            </button>
+          );
+        })}
+      </div>
+      <p className={`mt-2 min-h-6 text-center text-sm font-bold ${msg ? (msg.good ? "text-emerald-300" : "text-rose-300") : "text-slate-400"}`}>
+        {msg ? msg.text : pick ? "Now tap the square to move to." : `White to move and mate. Hint: ${puzzle.hint}`}
+      </p>
     </div>
   );
 }

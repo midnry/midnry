@@ -54,3 +54,45 @@ export function rivalFor(s: GameState, round: "semi" | "final" | "third"): strin
 }
 
 export const houseName = (id: string) => HOUSES[id]?.name ?? "the other house";
+
+// ── Which sport you play: the house captain picks by strength or brains ─────
+
+export type SportId = "football" | "tug" | "basketball" | "tennis" | "chess";
+export type SportGame = "penalties" | "tug" | "basketball" | "tennis" | "chess";
+
+export const SPORTS: Record<SportId, { name: string; icon: string; game: SportGame; reason: string; locked: string }> = {
+  football: { name: "football", icon: "⚽", game: "penalties", reason: "you're strong and you don't panic under pressure", locked: "The captain wants stronger legs for football." },
+  tug: { name: "tug of war", icon: "🪢", game: "tug", reason: "you're one of the strongest in your class", locked: "Not strong enough yet for the tug-of-war team." },
+  basketball: { name: "basketball", icon: "🏀", game: "basketball", reason: "you're strong and you've got the reach", locked: "The basketball coach wants more strength and height." },
+  tennis: { name: "tennis", icon: "🎾", game: "tennis", reason: "you've got quick hands and a cool head", locked: "Tennis needs quicker hands and a sharper head." },
+  chess: { name: "chess", icon: "♟️", game: "chess", reason: "you're the sharpest mind in the house", locked: "The chess team only takes the brainiest. Study more." },
+};
+export const SPORT_IDS = Object.keys(SPORTS) as SportId[];
+
+/** Strength: how healthy and tough you are (0–100). */
+export const strength = (s: GameState) => Math.round((s.stats.health + s.stats.resilience) / 2);
+/** Intelligence: what school and screens have taught you (0–100). */
+export const intelligence = (s: GameState) => Math.min(100, Math.round(s.skills.education * 3 + s.skills.tech * 2));
+
+/** How well you suit each sport, 0–100. */
+export function fit(s: GameState, id: SportId): number {
+  const str = strength(s);
+  const iq = intelligence(s);
+  const older = s.chapter === "secondary" ? 12 : 0;
+  const v = { football: str * 0.8 + 12, tug: str, basketball: str * 0.75 + older, tennis: str * 0.45 + iq * 0.35 + 15, chess: iq }[id];
+  return Math.max(0, Math.min(100, Math.round(v)));
+}
+
+/** The captain's pick (your best sport), and every sport you're good enough to ask for. */
+export function sportOptions(s: GameState): { best: SportId; options: { id: SportId; fit: number; open: boolean }[] } {
+  const scored = SPORT_IDS.map((id) => ({ id, fit: fit(s, id) }));
+  const best = [...scored].sort((a, b) => b.fit - a.fit)[0]!.id;
+  const top = fit(s, best);
+  return { best, options: scored.map((o) => ({ ...o, open: o.id === best || o.fit >= 55 || o.fit >= top - 12 })) };
+}
+
+/** The sport you're playing in this tournament: your choice, or the captain's pick. */
+export function sportOf(s: GameState): SportId {
+  const chosen = String(s.flags.tourney_sport ?? "") as SportId;
+  return SPORTS[chosen] ? chosen : sportOptions(s).best;
+}

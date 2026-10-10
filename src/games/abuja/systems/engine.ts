@@ -74,6 +74,7 @@ import * as EK from "./emeka";
 import * as PH from "./phones";
 import { storyEvent } from "./story";
 import { fadeMemories, forget, memoriesOf, recalled, remember, sinceWhen } from "./memory";
+import { SPORTS, sportOf, sportOptions, type SportId } from "./tournament";
 
 // ── Story ────────────────────────────────────────────────────────────────────
 
@@ -155,7 +156,9 @@ export function choose(choice: Choice) {
     if (s.ending) return;
     // A sports-day event: play it first; finishGame shows the result and moves on.
     if (choice.game) {
-      s.minigame = { ...choice.game, next: choice.next };
+      // A tournament match is played in your sport (picked once, at the first match).
+      const kind = choice.game.kind === "tourney" ? SPORTS[(s.flags.tourney_sport = sportOf(s))].game : choice.game.kind;
+      s.minigame = { ...choice.game, kind, next: choice.next };
       return;
     }
     const next = disciplineDetour(s, choice.next);
@@ -170,6 +173,14 @@ export function choose(choice: Choice) {
 }
 
 /** The end of a sports-day mini-game: apply what winning or losing does, show it, then carry on. */
+/** Ask the house captain for a different sport in the interhouse tournament (only ones you're good enough for). */
+export function pickSport(id: SportId) {
+  update((s) => {
+    const o = sportOptions(s).options.find((x) => x.id === id);
+    if (o?.open) s.flags.tourney_sport = id;
+  });
+}
+
 export function finishGame(won: boolean) {
   update((s) => {
     const g = s.minigame;

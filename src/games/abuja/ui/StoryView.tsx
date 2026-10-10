@@ -1,9 +1,9 @@
 import { myLooks } from "../systems/painted";
 import { chapter } from "../systems/data";
-import { choose, continueStory, payFixer } from "../systems/engine";
+import { choose, continueStory, payFixer, pickSport } from "../systems/engine";
 import { fill, lockReason, naira } from "../systems/rules";
 import type { GameState } from "../systems/types";
-import { HOUSES, bracket } from "../systems/tournament";
+import { HOUSES, SPORTS, bracket, intelligence, sportOf, sportOptions, strength } from "../systems/tournament";
 import { speakerLook } from "../systems/peoplelook";
 import { Avatar } from "./Avatar";
 import { ChatBubble } from "./Chat";
@@ -64,7 +64,8 @@ export function StoryPanel({ state }: { state: GameState }) {
                 <p className="text-lg leading-relaxed text-pretty">{fill(state, scene.text)}</p>
               )}
               {scene.special === "fixers" ? <Fixers state={state} /> : null}
-              {scene.special === "bracket" ? <Bracket state={state} /> : null}
+              {scene.special === "tourney" ? <SportPicker state={state} /> : null}
+              {scene.special === "bracket" || scene.special === "tourney" ? <Bracket state={state} /> : null}
               <div className="mt-6 grid gap-2">
                 {(scene.choices ?? []).map((item) => {
                   const reason = lockReason(state, item);
@@ -139,7 +140,10 @@ function Bracket({ state }: { state: GameState }) {
   );
   const semiWinner = played ? (iWon ? b.mine : b.semiRival) : null;
   return (
-    <div className="mt-5 grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 sm:grid-cols-3" aria-label="Tournament bracket">
+    <div className="mt-5 grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 sm:grid-cols-3" aria-label={`Tournament bracket: ${SPORTS[sportOf(state)].name}`}>
+      <p className="text-xs font-bold tracking-wide text-amber-300 uppercase sm:col-span-3">
+        {SPORTS[sportOf(state)].icon} Inter-house {SPORTS[sportOf(state)].name}
+      </p>
       <div className="grid gap-2">
         <p className="text-[11px] font-bold tracking-wide text-slate-400 uppercase">Semi-finals</p>
         <div className="grid gap-1">
@@ -164,6 +168,54 @@ function Bracket({ state }: { state: GameState }) {
           <Team id={thirds[0]} me={thirds[0] === b.mine} win={b.third === "won" && thirds[0] === b.mine} />
           <Team id={thirds[1]} win={b.third === "lost" && thirds[1] === b.otherLoser} />
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** The house captain's pick: your best sport by strength or brains, and any others you're good enough to ask for. */
+function SportPicker({ state }: { state: GameState }) {
+  const { best, options } = sportOptions(state);
+  const current = sportOf(state);
+  return (
+    <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-3">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-300">
+        <span>
+          💪 Strength <b className="tabular-nums text-white">{strength(state)}</b>
+        </span>
+        <span>
+          🧠 Intelligence <b className="tabular-nums text-white">{intelligence(state)}</b>
+        </span>
+      </div>
+      <p className="mt-2 text-sm text-pretty">
+        The captain picked you for <b>{SPORTS[best].icon} {SPORTS[best].name}</b>: {SPORTS[best].reason}.
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5" role="radiogroup" aria-label="Your sport">
+        {options.map((o) => {
+          const sp = SPORTS[o.id];
+          const on = current === o.id;
+          return (
+            <button
+              key={o.id}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              disabled={!o.open}
+              title={o.open ? undefined : sp.locked}
+              onClick={() => pickSport(o.id)}
+              className={`rounded-xl border p-2 text-left text-xs transition disabled:opacity-45 ${on ? "border-amber-300 bg-amber-300/15" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
+            >
+              <span className="block text-lg leading-none" aria-hidden>
+                {sp.icon}
+              </span>
+              <span className="mt-1 block font-bold first-letter:uppercase">{sp.name}</span>
+              <span className="mt-1 block h-1.5 overflow-hidden rounded-full bg-white/10">
+                <span className="block h-full rounded-full bg-emerald-400" style={{ width: `${o.fit}%` }} />
+              </span>
+              <span className="mt-1 block text-[10px] text-slate-400">{o.open ? (o.id === best ? "Captain's pick" : "You can ask") : "Not picked"}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
