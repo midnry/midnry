@@ -60,6 +60,7 @@ import { Court, PrisonPanel, type PrisonView } from "./Justice";
 import { NepoMeet } from "./Nepo";
 import { PathChooser } from "./Missions";
 import { EmekaMeet, EmekaSheet } from "./Emeka";
+import { MorningCard } from "./Morning";
 import { nextStep, PATHS } from "../systems/missions";
 import { StoryPanel } from "./StoryView";
 import { WardrobePanel } from "./Wardrobe";
@@ -390,7 +391,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       setBlocked("You're all set. Follow the gold mission banner, and check the pause menu for your weekly challenge. Welcome to Abuja!");
     }
   }, [guideStep, story, talking, inStory, isLoading, phone, trip, state.stats.money]);
-  const showGuide = guideStep !== null && !showGift && !story && !isLoading && !paused && !phone && !talking && !state.event && !state.toast && !blocked && !wardrobe;
+  const showGuide = guideStep !== null && !showGift && !story && !isLoading && !paused && !phone && !talking && !state.event && !state.toast && !state.morning && !blocked && !wardrobe;
 
   // Sound: the music and street noise follow where you are and the time of day.
   const chapterId = state.chapter;
@@ -500,6 +501,8 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           </span>
         </button>
       ) : null}
+
+      {state.morning && !state.event && !story && !state.minigame ? <MorningCard state={state} /> : null}
 
       {(state.toast || blocked) && !story ? (
         <button
@@ -928,6 +931,15 @@ function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => v
   const owed = debt(state);
   const l = lifeOf(state);
   const events = eventsNow(state);
+  const bars = [
+    <Bar key="energy" label="Energy" Icon={Zap} value={state.stats.energy} color="#34d399" />,
+    <Bar key="health" label="Health" Icon={Heart} value={state.stats.health} color="#f2547d" />,
+    l.food < 60 ? <Bar key="food" label="Food" Icon={Utensils} value={l.food} color="#f59e0b" warn={l.food < 25} /> : null,
+    l.water < 60 ? <Bar key="water" label="Water" Icon={Droplet} value={l.water} color="#38bdf8" warn={l.water < 25} /> : null,
+    state.stats.stress >= 40 ? <Bar key="stress" label="Stress" Icon={Brain} value={state.stats.stress} color="#c084fc" /> : null,
+    <Bar key="rep" label="Rep" Icon={Star} value={state.stats.reputation} color="#facc15" />,
+    state.stats.heat > 0 ? <Bar key="heat" label="Heat" Icon={Siren} value={state.stats.heat} color="#8b5cf6" /> : null,
+  ].filter(Boolean);
   return (
     <button
       type="button"
@@ -952,18 +964,22 @@ function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => v
           </p>
         ) : null}
       </div>
-      <div className="grid grid-cols-4 gap-x-3 gap-y-1.5 sm:grid-cols-7">
-        <Bar label="Energy" Icon={Zap} value={state.stats.energy} color="#34d399" />
-        <Bar label="Health" Icon={Heart} value={state.stats.health} color="#f2547d" />
-        <Bar label="Food" Icon={Utensils} value={l.food} color="#f59e0b" warn={l.food < 25} />
-        <Bar label="Water" Icon={Droplet} value={l.water} color="#38bdf8" warn={l.water < 25} />
-        <Bar label="Stress" Icon={Brain} value={state.stats.stress} color="#c084fc" />
-        <Bar label="Rep" Icon={Star} value={state.stats.reputation} color="#facc15" />
-        <Bar label="Heat" Icon={Siren} value={state.stats.heat} color="#8b5cf6" />
+      {/* Always: energy, health and reputation. The rest appear only when they need you. */}
+      <div className={`grid gap-x-3 gap-y-1.5 ${HUD_COLS[bars.length] ?? "grid-cols-4 sm:grid-cols-7"}`}>
+        {bars}
       </div>
     </button>
   );
 }
+
+/** Grid columns for the stats bar, by how many bars are showing. */
+const HUD_COLS: Record<number, string> = {
+  3: "grid-cols-3",
+  4: "grid-cols-4",
+  5: "grid-cols-3 sm:grid-cols-5",
+  6: "grid-cols-3 sm:grid-cols-6",
+  7: "grid-cols-4 sm:grid-cols-7",
+};
 
 function PlacePanel({
   state,

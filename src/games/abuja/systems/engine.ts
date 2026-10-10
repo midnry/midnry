@@ -28,8 +28,10 @@ import {
   netWorth,
   rel,
   rollStars,
+  gather,
+  tell,
 } from "./rules";
-import { bus, newGame, replace, update } from "./store";
+import { bus, getState, newGame, replace, update } from "./store";
 import { MENU, DELIVERY_FEE, burn, daysUnwashed, isDirty, life, offense, overnight } from "./life";
 import { caseStatus, nightlyCase, reportScam, resolveFreeze, surrender, withoutBankCheck } from "./bank";
 import { acceptCounter, argue, bluff, closeNegotiation, propose as proposeOffer, setTerms, startNegotiation, walkAway, weeklyNegotiation } from "./negotiate/core";
@@ -74,6 +76,7 @@ import * as NE from "./nepo";
 import * as BT from "./betting";
 import * as MI from "./missions";
 import * as EK from "./emeka";
+import * as AP from "./apps";
 import * as PH from "./phones";
 import { storyEvent } from "./story";
 import { fadeMemories, forget, memoriesOf, recalled, remember, sinceWhen } from "./memory";
@@ -169,6 +172,7 @@ export function startHeir(parent: GameState, childName: string) {
   if (businesses.length || owned) next.heirloom = { from: parent.name, businesses, city: owned ? structuredClone(parent.city) : undefined };
   next.flags.parent_name = parent.name;
   next.flags.guide = 7;
+  next.flags.apps_v = 1;
   next.log.push({ age: 0, text: `Born to ${parent.name}, whose story ended: ${ENDING_TITLES[parent.ending ?? "broke"] ?? "a life lived"}.` });
   replace(next);
   update((s) => enterChapter(s, CHAPTERS[0]!.id));
@@ -178,6 +182,7 @@ export function startGame() {
   update((s) => {
     // A brand-new life: show the guide for the first few minutes.
     s.flags.guide = 0;
+    s.flags.apps_v = 1;
     enterChapter(s, CHAPTERS[0]!.id);
   });
 }
@@ -335,8 +340,7 @@ function toast(s: GameState, text: string) {
 
 /** Add a line after whatever the toast already says. */
 function note(s: GameState, ...lines: string[]) {
-  const text = lines.filter(Boolean).join(" ");
-  if (text) s.toast = `${s.toast ? `${s.toast} ` : ""}${text}`;
+  tell(s, ...lines);
 }
 
 export function clearToast() {
@@ -603,9 +607,9 @@ function spend(s: GameState, slots: number, energy: number) {
   addStat(s, "energy", energy);
   note(s, ...burn(s, slots));
   const crashes = tick(s, slots);
-  if (crashes.length) s.toast = `${s.toast ? `${s.toast} ` : ""}${crashes.join(" ")}`;
+  note(s, ...crashes);
   if (s.slot >= SLOTS.length) {
-    s.toast = `${s.toast ? `${s.toast} ` : ""}It's late. You head home and crash.`;
+    note(s, "It's late. You head home and crash.");
     sleep(s);
   }
 }
@@ -867,7 +871,16 @@ export function driveTo(placeId: string) {
 
 const RENT: Record<string, number> = { lapo: 8000, average: 15000 };
 
+/** Sleep through the night; what happened overnight becomes the morning summary. */
 function sleep(s: GameState) {
+  const lead = s.toast;
+  s.toast = null;
+  const items = gather(() => sleepNight(s));
+  if (items.length) s.morning = { day: s.day, lead: lead ?? undefined, items };
+  else s.toast = lead;
+}
+
+function sleepNight(s: GameState) {
   if (JU.jailed(s)) return prisonSleep(s);
   s.day += 1;
   s.slot = 0;
@@ -890,7 +903,7 @@ function sleep(s: GameState) {
   }
   life(s).driving = false;
   if (isDirty(s)) {
-    note(s, `Your clothes haven't been washed in ${daysUnwashed(s)} days and it shows.`, offense(s, "dirty"), "Wash them at home or a laundry.");
+    note(s, [`Your clothes haven't been washed in ${daysUnwashed(s)} days and it shows.`, offense(s, "dirty"), "Wash them at home or a laundry."].join(" "));
   }
   const home = place(HOMES[s.background])!;
   s.pos = { ...arrivalOf(home) };
@@ -899,14 +912,14 @@ function sleep(s: GameState) {
   const adultDays = s.day - Number(s.flags.adult_day0 ?? s.day);
   if (adultDays > 0 && adultDays % DAYS_PER_YEAR === 0) {
     s.age += 1;
-    s.toast = `${s.toast ? `${s.toast} ` : ""}Happy birthday. You are ${s.age}.`;
+    note(s, `🎂 Happy birthday. You are ${s.age}.`);
   }
   // What Abuja is going through today, and the markets' reaction to today's story.
   const before = new Set(CE.cityEvents(s.day - 1, 3).map((e) => e.id));
   for (const e of CE.cityEvents(s.day, 0)) if (!before.has(e.id) && e.id !== "flood") note(s, `${e.icon} ${e.headline}.`);
   CE.applyViral(s);
   const crashes = closeDay(s);
-  if (crashes.length) s.toast = `${s.toast ? `${s.toast} ` : ""}${crashes.join(" ")}`;
+  note(s, ...crashes);
   if (adultDays > 0 && adultDays % 7 === 0) {
     weeklyBills(s);
     if (!s.event) s.event = weeklyRomance(s);
@@ -920,9 +933,9 @@ function sleep(s: GameState) {
   if (!s.event) s.event = dailyRomance(s);
   neglect(s);
   const bankLines = nightlyBanking(s);
-  if (bankLines.length) s.toast = `${s.toast ? `${s.toast} ` : ""}${bankLines.join(" ")}`;
+  note(s, ...bankLines);
   const fund = nightlySocial(s);
-  if (fund) s.toast = `${s.toast ? `${s.toast} ` : ""}${fund}`;
+  note(s, fund ?? "");
   fadeMemories(s);
   note(s, JU.layLowNight(s) ?? "");
   note(s, JU.fugitiveNight(s) ?? "");
@@ -1017,7 +1030,7 @@ function weeklyBills(s: GameState) {
     addStat(s, "stress", 3);
     lines.push(`The hospital accountant called about your ₦${life(s).hospitalBill.toLocaleString("en")} bill.`);
   }
-  s.toast = `${s.toast ? `${s.toast} ` : ""}${lines.join(" ")}`;
+  note(s, ...lines);
   if (missed) {
     s.event = "collectors";
     addStat(s, "reputation", -4);
@@ -2293,6 +2306,25 @@ export function emekaStep(correct = 0) {
     if (!s.chapter && s.slot < SLOTS.length) spend(s, 1, -5);
   });
 }
+
+// ── Which apps the phone shows (systems/apps.ts) ──
+
+/** The phone home screen shows these: remember them so they stay. */
+export function rememberPhoneApps(ids: string[]) {
+  const s = getState();
+  if (!s) return;
+  const seen = String(s.flags.apps_seen ?? "").split(",");
+  if (s.flags.apps_opened != null && ids.every((id) => seen.includes(id))) return;
+  update((st) => AP.rememberApps(st, ids));
+}
+export function openedApp(id: string) {
+  const s = getState();
+  if (!s || !AP.appIsNew(s, id)) return;
+  update((st) => AP.markOpened(st, id));
+}
+
+export const dismissMorning = () => update((s) => void (s.morning = null));
+export const dismissAppTip = (id: string) => update((s) => AP.dismissTip(s, id));
 
 // ── Phones ───────────────────────────────────────────────────────────────────
 

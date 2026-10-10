@@ -9,6 +9,7 @@ import { btnGhost, btnPrimary } from "./theme";
 export function JapaApp({ state }: { state: GameState }) {
   const j = state.japa ?? { route: null, ielts: 0, status: "none" as const, decisionDay: 0, tries: 0 };
   const [testing, setTesting] = useState(false);
+  const [confirmLeave, setConfirmLeave] = useState(false);
   if (testing) return <IeltsTest state={state} onDone={() => setTesting(false)} />;
   const active = j.route ? ROUTES[j.route] : null;
   return (
@@ -29,9 +30,24 @@ export function JapaApp({ state }: { state: GameState }) {
           <p className="mt-1 text-xs text-slate-300">
             {j.route === "agent" ? "Papers from Uncle Dayo. If you go, you go on borrowed luck." : "Your visa is in your passport."} The flight costs {naira(active.ticket)}. Leaving ends this life in Abuja.
           </p>
-          <button type="button" className={`${btnPrimary} mt-2 min-h-11 w-full`} onClick={() => japaLeave()}>
-            ✈️ Buy the ticket and go
-          </button>
+          {confirmLeave ? (
+            <div className="mt-2 rounded-xl border border-amber-400/40 bg-amber-400/10 p-3" role="alertdialog" aria-label="Leave Abuja?">
+              <p className="font-semibold">Leave for good?</p>
+              <p className="mt-1 text-xs text-slate-300">This ends {state.name}'s life in Abuja and shows how the story ended. You can't come back to this life.</p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button type="button" className={`${btnGhost} min-h-11`} onClick={() => setConfirmLeave(false)} autoFocus>
+                  Stay a bit longer
+                </button>
+                <button type="button" className={`${btnPrimary} min-h-11`} onClick={() => japaLeave()}>
+                  ✈️ Yes, leave
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button type="button" className={`${btnPrimary} mt-2 min-h-11 w-full`} onClick={() => setConfirmLeave(true)}>
+              ✈️ Buy the ticket and go
+            </button>
+          )}
         </div>
       ) : null}
       {j.status === "refused" || j.status === "scammed" ? (

@@ -1,4 +1,4 @@
-import { addLog, addStat, clamp, DAYS_PER_YEAR, naira } from "./rules";
+import { addLog, addStat, clamp, DAYS_PER_YEAR, naira, tell } from "./rules";
 import { withoutBankCheck } from "./bank";
 import type { GameState } from "./types";
 
@@ -117,11 +117,11 @@ export function weeklyFamily(s: GameState): string | null {
       addStat(s, "money", -Math.min(Math.max(0, s.stats.money), 400_000));
       addLog(s, `Lost ${who === "mum" ? "Mum" : "Dad"} at ${age}.`);
       s.eventCtx = { parent: who };
-      if (lines.length) s.toast = `${s.toast ? `${s.toast} ` : ""}${lines.join(" ")}`;
+      tell(s, ...lines);
       return "parent_passing";
     }
   }
-  if (lines.length) s.toast = `${s.toast ? `${s.toast} ` : ""}${lines.join(" ")}`;
+  tell(s, ...lines);
   // The black tax: about every other week, more as they get older.
   const living = p.mum.alive || p.dad.alive;
   if (living && s.day - p.lastAsk >= 7 && Math.random() < 0.45) {

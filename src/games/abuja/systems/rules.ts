@@ -103,6 +103,29 @@ export function lockReason(state: GameState, choice: { if?: Cond; effects?: Effe
   return null;
 }
 
+let tray: string[] | null = null;
+
+/** Tell the player something: added to the message on screen, or, overnight, to the morning summary. */
+export function tell(state: GameState, ...lines: string[]) {
+  for (const line of lines) {
+    if (!line) continue;
+    if (tray) tray.push(line);
+    else state.toast = state.toast ? `${state.toast} ${line}` : line;
+  }
+}
+
+/** Run `fn`, collecting everything it tells the player as separate lines. */
+export function gather(fn: () => void): string[] {
+  const prev = tray;
+  tray = [];
+  try {
+    fn();
+    return tray;
+  } finally {
+    tray = prev;
+  }
+}
+
 export function addStat(state: GameState, key: StatKey, amount: number): void {
   let delta = amount;
   // Resilience softens stress; Lapo Babies start with more of it.

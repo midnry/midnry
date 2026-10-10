@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { APP_TIPS, appIsNew, appVisible, tipDue } from "../systems/apps";
 import { LegalApp } from "./Justice";
 import { PHONES, PHONE_IDS, currentPhone } from "../systems/phones";
 import { ConnectsApp } from "./Nepo";
@@ -6,7 +7,7 @@ import { MissionsApp, OddsApp } from "./Missions";
 import { EmekaPanel } from "./Emeka";
 import { CityApp } from "./CityApp";
 import { LOANS, NPCS, PLACES, district } from "../systems/data";
-import { buyPhone, usePhone, borrow, business, callContact, driveTo, negotiate, orderMeal, payBill, jobStatus, quitJob, repay, retire, travel } from "../systems/engine";
+import { buyPhone, usePhone, borrow, business, callContact, dismissAppTip, driveTo, negotiate, openedApp, orderMeal, payBill, jobStatus, quitJob, rememberPhoneApps, repay, retire, travel } from "../systems/engine";
 import { arrivalOf } from "../systems/citymap";
 import { SocialApp } from "./Social";
 import { ago, memoriesOf, TONE_ICON } from "../systems/memory";
@@ -68,6 +69,12 @@ const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
 export function Phone({ state, app, onApp, onClose }: { state: GameState; app: PhoneApp; onApp: (app: PhoneApp) => void; onClose: () => void }) {
   const current = APPS.find((item) => item.id === app);
   const model = currentPhone(state);
+  const screen = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // Each app opens at its top, not where the last one was scrolled to.
+    screen.current?.scrollTo({ top: 0 });
+    if (app !== "home") openedApp(app);
+  }, [app]);
   return (
     <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div
@@ -93,7 +100,16 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
             ✕
           </button>
         </div>
-        <div className={`flex-1 overflow-y-auto p-4 ${app === "home" ? model.look.screen : ""}`}>
+        <div ref={screen} className={`flex-1 overflow-y-auto p-4 ${app === "home" ? model.look.screen : ""}`}>
+          {app !== "home" && tipDue(state, app) ? (
+            <div className="mb-3 flex items-start gap-3 rounded-2xl border border-sky-400/30 bg-sky-400/10 p-3 text-sm" role="note">
+              <span aria-hidden className="text-xl leading-none">{current?.icon ?? "💡"}</span>
+              <p className="flex-1 text-pretty text-slate-100">{APP_TIPS[app]}</p>
+              <button type="button" className="min-h-9 shrink-0 rounded-lg bg-white/10 px-3 text-xs font-semibold" onClick={() => dismissAppTip(app)}>
+                Got it
+              </button>
+            </div>
+          ) : null}
           {app === "home" ? <Home state={state} onApp={onApp} /> : null}
           {app === "gadgets" ? <GadgetsApp state={state} /> : null}
           {app === "wallet" ? <Wallet state={state} /> : null}
@@ -128,14 +144,20 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
 
 function Home({ state, onApp }: { state: GameState; onApp: (app: PhoneApp) => void }) {
   const model = currentPhone(state);
-  const apps = APPS.filter((item) => item.id !== "emeka" || (state.emeka?.met ?? -1) >= 0);
+  // Apps appear when they become useful (systems/apps.ts); new ones wear a badge until opened.
+  const apps = APPS.filter((item) => appVisible(state, item.id));
+  const ids = apps.map((a) => a.id).join(",");
+  useEffect(() => {
+    rememberPhoneApps(ids.split(","));
+  }, [ids]);
   const icon = (item: (typeof APPS)[number], size = "size-14 text-2xl") => (
-    <span className={`flex shrink-0 items-center justify-center ${size} ${model.look.icon} ${item.tint}`} aria-hidden>
+    <span className={`relative flex shrink-0 items-center justify-center ${size} ${model.look.icon} ${item.tint}`} aria-hidden>
       {item.icon}
+      {appIsNew(state, item.id) ? <span className="absolute -top-1.5 -right-1.5 rounded-full bg-sky-500 px-1.5 py-0.5 text-[9px] leading-none font-black text-white ring-2 ring-black/40">NEW</span> : null}
     </span>
   );
   const tile = (item: (typeof APPS)[number], size?: string) => (
-    <button key={item.id} type="button" onClick={() => onApp(item.id)} className="flex flex-col items-center gap-1.5 text-xs">
+    <button key={item.id} type="button" onClick={() => onApp(item.id)} className="flex flex-col items-center gap-1.5 text-xs" aria-label={appIsNew(state, item.id) ? `${item.label} (new)` : undefined}>
       {icon(item, size)}
       {item.label}
     </button>

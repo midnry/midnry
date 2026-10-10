@@ -479,6 +479,8 @@ export type GameState = {
   parents?: Parents;
   /** Plans to leave the country (systems/japa.ts). */
   japa?: Japa;
+  /** What happened overnight, shown as a list when you wake (most important first). */
+  morning?: { day: number; lead?: string; items: string[] } | null;
   /** Born into a family that left a business or property: held for you until 18. */
   heirloom?: { from: string; businesses: Business[]; city?: CityState };
   /** Who or how much a forced event is about, for {partner} and {amount} in its text. */

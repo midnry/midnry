@@ -1,5 +1,5 @@
 import marketsJson from "../data/markets.json";
-import { addSkill, addStat, naira } from "./rules";
+import { addSkill, addStat, naira, tell } from "./rules";
 import type { GameState, MarketState, Position } from "./types";
 
 // The trading app. Prices of fictional assets move by a random walk with
@@ -101,7 +101,7 @@ export function shock(s: GameState, moves: { asset: string; pct: number }[]) {
     if (price == null) continue;
     setPrice(m, move.asset, price * (1 + move.pct / 100));
   }
-  liquidate(s).forEach((line) => (s.toast = `${s.toast ? `${s.toast} ` : ""}${line}`));
+  tell(s, ...liquidate(s));
 }
 
 export function pnl(m: MarketState, p: Position): number {
