@@ -44,7 +44,7 @@ import { BOOKS, CLASSES, recipe as recipeDef, RECIPES } from "./cooking/recipes"
 import { equipment as equipDef, stats as equipStats } from "./cooking/equipment";
 import { ingredient as ingDef } from "./cooking/ingredients";
 import type { EquipTier, Method, Performance, Storage, Tier } from "./cooking/types";
-import { collect, growBusiness, startBusiness, visitBusiness, weeklyBusiness } from "./business";
+import { bizDef, bizWorth, collect, growBusiness, startBusiness, visitBusiness, weeklyBusiness } from "./business";
 import { buyCar, drivingTest, frscStop, hasCar, nightlyCar, rentCar, toggleDriving, useFuel } from "./drive";
 import { hurt, injured, nightlyHealth, payHospital, payPower, rollHit, tooHurtFor, treat, weeklyPower, type HitBy } from "./health";
 import { closeDay, closePosition, deposit, ensureMarket, insiderTip, openPosition, tick, withdraw } from "./market";
@@ -159,9 +159,14 @@ export function startHeir(parent: GameState, childName: string) {
   const painted = autoOutfit(looks);
   if (painted) looks.painted = painted;
   const worth = netWorth(parent);
+  // The businesses and property pass whole; the trust is the rest of the estate.
+  const businesses = (parent.life?.businesses ?? []).map((b) => ({ ...b }));
+  const owned = Object.values(parent.city?.lots ?? {}).some((l) => l.owned);
+  const estate = worth - bizWorth(parent);
   const next = newGame({ name: child.name, gender, background: parent.background === "lapo" && worth < 5_000_000 ? "lapo" : "average", looks, interest: gender === "female" ? "men" : "women" });
   next.flags.generation = Number(parent.flags.generation ?? 1) + 1;
-  next.flags.inheritance = FA.inheritance(worth);
+  next.flags.inheritance = FA.inheritance(estate);
+  if (businesses.length || owned) next.heirloom = { from: parent.name, businesses, city: owned ? structuredClone(parent.city) : undefined };
   next.flags.parent_name = parent.name;
   next.flags.guide = 7;
   next.log.push({ age: 0, text: `Born to ${parent.name}, whose story ended: ${ENDING_TITLES[parent.ending ?? "broke"] ?? "a life lived"}.` });
@@ -235,7 +240,9 @@ function disciplineDetour(s: GameState, next: string | undefined): string | unde
   // Expelled while already suspended: keep where the story was heading before either.
   const detouring = next === "suspended" || next === "expelled" || next === "@resume";
   if (!detouring) s.flags.resume_next = next ?? "";
-  addLog(s, due === "expelled" ? `Expelled during ${chapter(s.chapter)?.title.split("·")[1]?.trim() ?? "school"}.` : `Suspended during ${chapter(s.chapter)?.title.split("·")[1]?.trim() ?? "school"}.`);
+  const where = chapter(s.chapter)?.title.split("·")[1]?.trim() ?? "school";
+  if (s.chapter === "nysc") addLog(s, due === "expelled" ? "NYSC service cancelled for misconduct." : "Queried by the State Coordinator during NYSC.");
+  else addLog(s, due === "expelled" ? `Expelled during ${where}.` : `Suspended during ${where}.`);
   return due;
 }
 
@@ -303,6 +310,20 @@ function startAdulthood(s: GameState) {
     withoutBankCheck(() => addStat(s, "money", trust));
     addLog(s, `Received an inheritance of ${naira(trust)} from ${String(s.flags.parent_name ?? "your parent")}.`);
     note(s, `💼 The lawyer reads the will: ${naira(trust)} from ${String(s.flags.parent_name ?? "your parent")} is yours now.`);
+  }
+  // The family business and property, run by a manager until now, are handed over.
+  const heir = s.heirloom;
+  if (heir) {
+    s.heirloom = undefined;
+    if (heir.businesses.length) {
+      life(s).businesses = heir.businesses.map((b) => ({ ...b, since: s.day - b.level * 21, lastVisit: s.day, cash: Math.max(0, b.cash) }));
+      s.flags.cac = true;
+    }
+    if (heir.city) s.city = heir.city;
+    const names = heir.businesses.map((b) => bizDef(b.id)?.name).filter(Boolean);
+    const what = [names.length ? `the family ${names.join(", ")}` : "", heir.city ? "the family property" : ""].filter(Boolean).join(" and ");
+    addLog(s, `Took over ${what} from ${heir.from}.`);
+    note(s, `🏢 The manager hands you the keys: ${what} ${names.length + (heir.city ? 1 : 0) > 1 ? "are" : "is"} yours to run now. Check in often.`);
   }
   ensureMarket(s);
   syncPeople(s);
@@ -1327,6 +1348,14 @@ const LOOT: Record<string, Loot[]> = {
   ],
 };
 
+/** The on-the-spot punishment for being caught stealing, by chapter. */
+const CAUGHT_PUNISHMENT: Record<string, string> = {
+  primary: "And you sweep the classroom every day for a week.",
+  secondary: "The labour prefect hands you a cutlass: you clear the school field after classes all week.",
+  university: "Your name goes up on the faculty notice board for everyone to read.",
+  nysc: "The soldiers make you frog-jump round the parade ground in front of your whole platoon, and you're on sanitation duty for a week.",
+};
+
 /**
  * Steal from someone. Get away with it and you keep it (things you sell for
  * half). Get caught and the punishment fits the theft: buy food for everyone
@@ -1368,10 +1397,10 @@ export function steal(key: string) {
     remember(s, who, { what: "You stole from them", say: "\"Keep your hands where I can see them. I haven't forgotten what you did.\"", tone: "hurt", weight: 2 });
     const lines: string[] = [`Caught taking ${loot.what}! ${how}`];
     if (s.chapter) {
-      // At school: strikes by how much it was worth, enough for a suspension when it's big.
+      // At school, university or NYSC: strikes by how much it was worth, enough for a suspension when it's big.
       const strikes = loot.value >= 10000 ? 3 : loot.value >= 1000 ? 2 : 1;
+      lines.push(CAUGHT_PUNISHMENT[s.chapter] ?? "");
       lines.push(...apply(s, [{ discipline: strikes }]));
-      if (s.stage === "primary") lines.push("And you sweep the classroom every day for a week.");
     } else {
       lines.push(offense(s, "steal"));
       addStat(s, "heat", Math.ceil(loot.value / 2000));

@@ -140,16 +140,40 @@ export function prefectTitle(state: GameState): string {
   return PREFECTS[role] ?? "prefect";
 }
 
-const STRIKE_LINES = [
-  "",
-  "Your name goes into the black book. One more and your parents get a letter.",
-  "Second strike. The vice principal now knows your face, and not in a good way.",
-  "",
-  "You're on your final warning. One more thing and you are out of this school.",
-];
+/** What each strike means, by where you are: the class teacher, the vice principal, Student Affairs or the NYSC officials. */
+const STRIKE_LINES: Record<string, string[]> = {
+  primary: [
+    "",
+    "Your name goes into the class teacher's book. One more and your parents are called in.",
+    "Second strike. The headmistress knows your name now, and she is not smiling.",
+    "",
+    "Final warning from the headmistress. One more thing and you are out of this school.",
+  ],
+  secondary: [
+    "",
+    "Your name goes into the black book. One more and your parents get a letter.",
+    "Second strike. The vice principal now knows your face, and not in a good way.",
+    "",
+    "You're on your final warning. One more thing and you are out of this school.",
+  ],
+  university: [
+    "",
+    "Student Affairs opens a file on you. One more and it goes to the disciplinary committee.",
+    "Second strike. A letter from the Student Disciplinary Committee asks you to 'appear in person'.",
+    "",
+    "Final warning from the Dean of Students. One more thing and you are expelled.",
+  ],
+  nysc: [
+    "",
+    "Your name goes into the camp commandant's book. One more and you will be queried.",
+    "Second strike. The Local Government Inspector now knows your face, and your file is getting thick.",
+    "",
+    "Final warning from the State Coordinator. One more thing and your service is cancelled.",
+  ],
+};
 
 /**
- * Discipline at school: strikes add up through a chapter. The third gets you
+ * Discipline at school, university and NYSC: strikes add up through a chapter. The third gets you
  * suspended and the fifth expelled; the story takes a detour through those
  * scenes (see disciplineDetour in the engine).
  */
@@ -162,7 +186,10 @@ export function discipline(state: GameState, n: number, toasts: string[]): void 
   const ch = state.chapter;
   if (after >= 5 && !state.flags[`expelled_${ch}`]) state.flags.discipline_due = "expelled";
   else if (after >= 3 && !state.flags[`suspended_${ch}`]) state.flags.discipline_due = "suspended";
-  else if (STRIKE_LINES[after]) toasts.push(STRIKE_LINES[after]!);
+  else {
+    const lines = STRIKE_LINES[state.stage] ?? STRIKE_LINES[ch] ?? STRIKE_LINES.secondary!;
+    if (lines[after]) toasts.push(lines[after]!);
+  }
 }
 
 /** Apply effects in order. Returns toast lines raised by the effects. */

@@ -9,10 +9,13 @@ import { Screen } from "./Menus";
 import { btnGhost, btnPrimary, panel } from "./theme";
 import { childGender, inheritance } from "../systems/family";
 import { startHeir } from "../systems/engine";
+import { bizDef, bizWorth } from "../systems/business";
 import { ShareLife } from "./Fame";
 
 export function EndScreen({ state, signedIn = false }: { state: GameState; signedIn?: boolean }) {
   const ending = ENDINGS[state.ending ?? "broke"];
+  const familyBiz = (state.life?.businesses ?? []).map((b) => `the ${bizDef(b.id)?.name ?? "business"} (level ${b.level})`);
+  const ownsProperty = Object.values(state.city?.lots ?? {}).some((l) => l.owned);
   const certs = [state.certs.waec && "WAEC", state.certs.degree && "Degree", state.certs.nysc && "NYSC"].filter(Boolean).join(", ") || "None";
   return (
     <Screen>
@@ -75,7 +78,8 @@ export function EndScreen({ state, signedIn = false }: { state: GameState; signe
             <div className="mt-8 rounded-2xl border border-amber-300/30 bg-amber-300/5 p-4">
               <p className="font-display text-xl">Continue the family story</p>
               <p className="mt-1 text-sm text-slate-300">
-                Live on as one of your children, born into this family. They inherit {naira(inheritance(netWorth(state)))}, held in trust until they turn 18.
+                Live on as one of your children, born into this family. They inherit {naira(inheritance(netWorth(state) - bizWorth(state)))}, held in trust until they turn 18.
+                {familyBiz.length || ownsProperty ? ` A manager runs ${[familyBiz.join(", "), ownsProperty ? "the family property" : ""].filter(Boolean).join(" and ")} until then, and it's theirs at 18.` : ""}
               </p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {state.children.map((c) => (
