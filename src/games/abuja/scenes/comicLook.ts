@@ -22,7 +22,7 @@ uniform float uAmount;
 varying vec2 outTexCoord;
 
 float lum(vec3 c) { return dot(c, vec3(0.299, 0.587, 0.114)); }
-float at(vec2 o) { return lum(texture2D(uMainSampler, outTexCoord + o * 1.5 * uTexel).rgb); }
+float at(vec2 o) { return lum(texture2D(uMainSampler, outTexCoord + o * uTexel).rgb); }
 
 void main() {
   vec4 src = texture2D(uMainSampler, outTexCoord);
@@ -32,19 +32,16 @@ void main() {
   float tl = at(vec2(-1.0, -1.0)), t = at(vec2(0.0, -1.0)), tr = at(vec2(1.0, -1.0));
   float l = at(vec2(-1.0, 0.0)), r = at(vec2(1.0, 0.0));
   float bl = at(vec2(-1.0, 1.0)), b = at(vec2(0.0, 1.0)), br = at(vec2(1.0, 1.0));
+  float around = (tl + t + tr + l + r + bl + b + br) / 8.0;
   float gx = -tl - 2.0 * l - bl + tr + 2.0 * r + br;
   float gy = -tl - 2.0 * t - tr + bl + 2.0 * b + br;
-  float edge = smoothstep(0.2, 0.6, sqrt(gx * gx + gy * gy));
+  float edge = smoothstep(0.35, 0.8, sqrt(gx * gx + gy * gy));
   // Only the darker side of an edge takes ink, so light lettering and
   // highlights keep their shape and the line hugs the outside of bright things.
-  float around = (tl + t + tr + l + r + bl + b + br) / 8.0;
   edge *= smoothstep(-0.01, 0.05, around - lum(c));
 
-  // Flatter, cel-style shading: pull brightness towards a few bands.
-  float y = max(lum(c), 0.001);
-  float f = y * 4.0;
-  float band = (floor(f) + smoothstep(0.3, 0.7, fract(f))) / 4.0;
-  c *= mix(1.0, clamp(band / y, 0.6, 1.5), uCel);
+  // Crisper detail: push each pixel away from the average around it.
+  c += (lum(c) - around) * uCel;
 
   // Richer colour and a little more punch.
   float g = lum(c);
@@ -65,11 +62,11 @@ export type Mood = "morning" | "afternoon" | "dusk" | "night" | "inside";
 
 /** Per time of day: shadow and highlight tints (0.5 = neutral), and strengths. */
 const MOODS: Record<Mood, { shadow: [number, number, number]; light: [number, number, number]; tone: number; sat: number; contrast: number; ink: number }> = {
-  morning: { shadow: [0.42, 0.5, 0.62], light: [0.62, 0.55, 0.42], tone: 0.22, sat: 1.32, contrast: 1.08, ink: 0.85 },
-  afternoon: { shadow: [0.38, 0.52, 0.6], light: [0.6, 0.53, 0.45], tone: 0.2, sat: 1.38, contrast: 1.1, ink: 0.85 },
-  dusk: { shadow: [0.48, 0.4, 0.62], light: [0.68, 0.52, 0.44], tone: 0.24, sat: 1.38, contrast: 1.08, ink: 0.8 },
-  night: { shadow: [0.46, 0.46, 0.58], light: [0.62, 0.54, 0.5], tone: 0.14, sat: 1.25, contrast: 1.02, ink: 0.6 },
-  inside: { shadow: [0.44, 0.46, 0.58], light: [0.6, 0.54, 0.45], tone: 0.18, sat: 1.28, contrast: 1.06, ink: 0.8 },
+  morning: { shadow: [0.42, 0.5, 0.62], light: [0.62, 0.55, 0.42], tone: 0.14, sat: 1.2, contrast: 1.05, ink: 0.75 },
+  afternoon: { shadow: [0.38, 0.52, 0.6], light: [0.6, 0.53, 0.45], tone: 0.12, sat: 1.24, contrast: 1.06, ink: 0.75 },
+  dusk: { shadow: [0.48, 0.4, 0.62], light: [0.68, 0.52, 0.44], tone: 0.2, sat: 1.24, contrast: 1.05, ink: 0.7 },
+  night: { shadow: [0.46, 0.46, 0.58], light: [0.62, 0.54, 0.5], tone: 0.14, sat: 1.15, contrast: 1.02, ink: 0.6 },
+  inside: { shadow: [0.44, 0.46, 0.58], light: [0.6, 0.54, 0.45], tone: 0.12, sat: 1.18, contrast: 1.04, ink: 0.7 },
 };
 
 export class ComicFX extends Phaser.Renderer.WebGL.Pipelines.PostFXPipeline {
@@ -98,7 +95,7 @@ export class ComicFX extends Phaser.Renderer.WebGL.Pipelines.PostFXPipeline {
     this.set1f("uInk", n.ink);
     this.set1f("uSat", n.sat);
     this.set1f("uContrast", n.contrast);
-    this.set1f("uCel", 0.22);
+    this.set1f("uCel", 0.55);
     this.set3f("uShadow", ...n.shadow);
     this.set3f("uLight", ...n.light);
     this.set1f("uTone", n.tone);
