@@ -50,16 +50,19 @@ function AppPage() {
 
   return (
     <Shell>
-      <div className="no-print flex items-start justify-between gap-4">
-        <p className="text-sm text-muted">
-          <Link to="/apps" className="hover:text-ink">
-            Desk
-          </Link>
-          <span aria-hidden> / </span>
-          <span className={app.tier === "pass" ? "text-pine" : undefined}>{tierLabel(app.tier)}</span>
-        </p>
-        {user ? <SaveButton slug={app.slug} /> : null}
-      </div>
+      {/* Signed out, the showcase has its own breadcrumb: show just one. */}
+      {user ? (
+        <div className="no-print flex items-center justify-between gap-4">
+          <p className="flex items-center text-sm text-muted">
+            <Link to="/apps" className="-ml-1 inline-flex min-h-11 items-center px-1 hover:text-ink">
+              Desk
+            </Link>
+            <span aria-hidden className="px-1">/</span>
+            <span className={app.tier === "pass" ? "px-1 text-pine" : "px-1"}>{tierLabel(app.tier)}</span>
+          </p>
+          <SaveButton slug={app.slug} />
+        </div>
+      ) : null}
 
       {!user ? (
         <div className="mt-2">

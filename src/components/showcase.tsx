@@ -149,20 +149,20 @@ export function AppShowcase({ app }: { app: AppDef }) {
   const shot = (view: "desktop" | "phone") => `/shots/${app.slug}/${view}.jpg`;
   return (
     <div>
-      <nav className="text-sm text-muted" aria-label="Breadcrumb">
-        <Link to="/" className="hover:text-ink">
+      <nav className="flex items-center text-sm text-muted" aria-label="Breadcrumb">
+        <Link to="/" className="-ml-1 inline-flex min-h-11 items-center px-1 hover:text-ink">
           Home
         </Link>
-        <span aria-hidden> / </span>
-        <Link to="/apps" className="hover:text-ink">
+        <span aria-hidden className="px-1">/</span>
+        <Link to="/apps" className="inline-flex min-h-11 items-center px-1 hover:text-ink">
           Apps
         </Link>
-        <span aria-hidden> / </span>
-        <span>{app.name}</span>
+        <span aria-hidden className="px-1">/</span>
+        <span className="px-1">{app.name}</span>
       </nav>
 
       {/* Hero */}
-      <div className="mt-6 grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="mt-4 grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
         <div>
           <div className="flex items-center gap-3">
             <AppMark slug={app.slug} name={app.name} className="size-14" />
@@ -181,17 +181,17 @@ export function AppShowcase({ app }: { app: AppDef }) {
         <PhoneFrame src={shot("phone")} alt={`${app.name} on a phone`} eager />
       </div>
 
-      {/* The big screenshot */}
-      <section className="mt-16">
+      {/* The big screenshot: computers and tablets only (on a phone it would be too small to read). */}
+      <section className="mt-16 hidden sm:block">
         <p className="mb-4 text-sm font-semibold tracking-widest text-pine uppercase">See it in action</p>
         <BrowserFrame src={shot("desktop")} alt={`${app.name} on a computer, with example data`} />
       </section>
 
       {app.features.length ? (
         <Section title="What you can do">
-          <ul className="grid gap-4 sm:grid-cols-2">
+          <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-card shadow-line">
             {app.features.map((feature) => (
-              <li key={feature} className="flex gap-3 rounded-2xl bg-card p-4 shadow-line">
+              <li key={feature} className="flex gap-3 px-5 py-4">
                 <Tick />
                 <span className="text-pretty">{feature}</span>
               </li>
@@ -202,11 +202,11 @@ export function AppShowcase({ app }: { app: AppDef }) {
 
       {app.guide.length ? (
         <Section title="How it works">
-          <ol className="grid gap-4 md:grid-cols-2">
+          <ol className="divide-y divide-line overflow-hidden rounded-2xl bg-card shadow-line">
             {app.guide.map((step, i) => (
-              <li key={step} className="flex gap-4 rounded-2xl border border-line p-4">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-pine font-semibold text-paper">{i + 1}</span>
-                <span className="pt-1.5 text-pretty">{step}</span>
+              <li key={step} className="flex items-center gap-4 px-5 py-4">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-pine text-sm font-semibold text-paper">{i + 1}</span>
+                <span className="text-pretty">{step}</span>
               </li>
             ))}
           </ol>
@@ -230,7 +230,7 @@ export function AppShowcase({ app }: { app: AppDef }) {
         <Section title={`More for ${genreLabel(section).toLowerCase()}`}>
           <div className="grid gap-4 sm:grid-cols-3">
             {related.map((r) => (
-              <Link key={r.slug} to="/discover/$slug" params={{ slug: r.slug }} className="group rounded-3xl bg-card p-5 shadow-line transition hover:-translate-y-0.5 hover:shadow-lg">
+              <Link key={r.slug} to="/discover/$slug" params={{ slug: r.slug }} className="group rounded-3xl bg-card p-5 shadow-line transition hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98]">
                 <div className="flex items-center gap-3">
                   <AppMark slug={r.slug} name={r.name} className="size-11" />
                   <p className="font-display text-xl tracking-tight">{r.name}</p>
@@ -240,7 +240,7 @@ export function AppShowcase({ app }: { app: AppDef }) {
               </Link>
             ))}
           </div>
-          <Link to="/apps" className="mt-6 inline-block text-sm font-medium underline underline-offset-4">
+          <Link to="/apps" className="mt-4 inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
             Explore all {APPS.length} apps
           </Link>
         </Section>

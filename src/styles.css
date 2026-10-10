@@ -88,6 +88,16 @@ html[data-mode="dark"] .site-logo {
   filter: brightness(1.5) saturate(1.15);
 }
 
+/* Phones: body text closer to Apple's reading sizes (17pt body, 15pt and 13pt for smaller text). */
+@media (max-width: 639px) {
+  .site-shell {
+    --text-base: 1.0625rem;
+    --text-sm: 0.9375rem;
+    --text-sm--line-height: 1.45;
+    --text-xs: 0.8125rem;
+  }
+}
+
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;
@@ -113,6 +123,26 @@ html[data-mode="dark"] .site-logo {
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
+  }
+
+  /* A clear focus ring for keyboard users, in the accent colour (Apple: make focus obvious). */
+  :focus-visible {
+    outline: 2.5px solid var(--color-pine);
+    outline-offset: 2px;
+  }
+
+  /* Press feedback on touch screens: links and cards dim while held, like iOS rows. */
+  @media (hover: none) {
+    a,
+    summary,
+    [role="button"] {
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 120ms ease-out;
+    }
+    a:active,
+    summary:active {
+      opacity: 0.6;
+    }
   }
 
   ::selection {

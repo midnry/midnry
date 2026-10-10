@@ -3,6 +3,7 @@ import { PASS_PRICE_LABEL } from "@/lib/access";
 import { Shell } from "@/components/shell";
 import { AppSearch } from "@/components/desk-list";
 import { AppMark } from "@/components/app-mark";
+import { PhoneFrame } from "@/components/showcase";
 import { APPS, getApp } from "@/lib/catalog";
 import { pitchFor } from "@/lib/pitches";
 import { Favorites } from "@/components/spotlight";
@@ -18,14 +19,21 @@ export const Route = createFileRoute("/")({
 function Home() {
   return (
     <Shell>
-      <section className="max-w-2xl">
-        <h1 className="font-display text-5xl tracking-tight text-balance sm:text-6xl">
-          Simple tools for everyday life.
-        </h1>
-        <p className="mt-4 max-w-lg text-pretty text-lg text-muted">
-          Free apps for school, work, business and home. Start with our favourites below, or explore them all.
-        </p>
-        <HeroActions />
+      <section className="grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="max-w-2xl">
+          <h1 className="font-display text-5xl tracking-tight text-balance sm:text-6xl">
+            Simple tools for everyday life.
+          </h1>
+          <p className="mt-4 max-w-lg text-pretty text-lg text-muted">
+            Free apps for school, work, business and home. Start with our favourites below, or explore them all.
+          </p>
+          <HeroActions />
+        </div>
+        {/* Lead with the product: two of the apps, as they look on a phone (large screens only). */}
+        <div className="relative hidden h-[30rem] lg:block" aria-hidden>
+          <PhoneFrame src="/shots/tasks/phone.jpg" alt="" eager className="!absolute top-0 left-4 !w-[14.5rem] -rotate-3" />
+          <PhoneFrame src="/shots/ledger/phone.jpg" alt="" eager className="!absolute top-10 right-2 !w-[14.5rem] rotate-3" />
+        </div>
       </section>
 
       <FeaturedSix />
@@ -63,7 +71,7 @@ function Home() {
             <p className="font-medium">{PASS_PRICE_LABEL} a month for more</p>
             <p className="mt-1 text-muted">
               Midnry Pass unlocks everything.{" "}
-              <Link to="/pricing" className="text-ink underline underline-offset-4">
+              <Link to="/pricing" className="inline-flex min-h-11 items-center text-ink underline underline-offset-4">
                 See pricing
               </Link>
             </p>
@@ -105,7 +113,7 @@ function FeaturedSix() {
           </h2>
           <p className="mt-1 text-sm text-muted">Our five most useful apps, and a game.</p>
         </div>
-        <Link to="/apps" className="hidden shrink-0 text-sm font-medium text-ink underline underline-offset-4 sm:inline">
+        <Link to="/apps" className="hidden min-h-11 shrink-0 items-center text-sm font-medium text-ink underline underline-offset-4 sm:inline-flex">
           See all apps
         </Link>
       </div>
@@ -118,7 +126,7 @@ function FeaturedSix() {
               key={slug}
               to="/discover/$slug"
               params={{ slug }}
-              className={`group flex flex-col rounded-3xl bg-card bg-gradient-to-br ${tint} to-transparent p-5 shadow-line transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2`}
+              className={`group flex flex-col rounded-3xl bg-card bg-gradient-to-br ${tint} to-transparent p-5 shadow-line transition hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2`}
             >
               <div className="flex items-center gap-3">
                 <AppMark slug={app.slug} name={app.name} className="size-12 shrink-0" />
@@ -136,7 +144,7 @@ function FeaturedSix() {
         })}
         <Link
           to="/discover/abuja-hustle"
-          className="group flex flex-col rounded-3xl bg-[radial-gradient(ellipse_90%_45%_at_50%_100%,rgba(240,160,75,0.5),transparent_70%),linear-gradient(to_bottom,#0b0f2a_0%,#1d1a4f_38%,#43276a_66%,#86395f_100%)] p-5 text-[#f7edda] shadow-line transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2"
+          className="group flex flex-col rounded-3xl bg-[radial-gradient(ellipse_90%_45%_at_50%_100%,rgba(240,160,75,0.5),transparent_70%),linear-gradient(to_bottom,#0b0f2a_0%,#1d1a4f_38%,#43276a_66%,#86395f_100%)] p-5 text-[#f7edda] shadow-line transition hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <div className="flex items-center gap-3">
             <img src="/abuja-hustle-v2-192.png" alt="" className="size-12 shrink-0 rounded-2xl" />
