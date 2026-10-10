@@ -84,15 +84,235 @@
       "interhouse_events2": {
         "text": "Last event of the day: tug of war, house against house. Your captain counts the strongest children twice.",
         "choices": [
-          { "text": "Anchor the rope for your house", "game": { "kind": "tug", "level": 1, "win": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 3 }, { "stat": "stress", "add": -3 }, { "npc": "tunde", "rel": 3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "The rope slides your way, inch by inch… and over the line! Tunde jumps on your back.", "loseText": "Your house ends up in the sand. Together, at least." }, "next": "interhouse_end" },
-          { "text": "Lead the march-past with the house flag", "effects": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 3 }], "result": "Left, right, left. You salute the headmaster like a general. Best march-past: your house.", "next": "interhouse_end" },
-          { "text": "Lead the cheering", "effects": [{ "stat": "stress", "add": -5 }, { "stat": "network", "add": 2 }], "result": "You lose your voice. You gain a reputation for noise.", "next": "interhouse_end" }
+          { "text": "Anchor the rope for your house", "game": { "kind": "tug", "level": 1, "win": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 3 }, { "stat": "stress", "add": -3 }, { "npc": "tunde", "rel": 3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "The rope slides your way, inch by inch… and over the line! Tunde jumps on your back.", "loseText": "Your house ends up in the sand. Together, at least." }, "next": "interhouse_tourney" },
+          { "text": "Lead the march-past with the house flag", "effects": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 3 }], "result": "Left, right, left. You salute the headmaster like a general. Best march-past: your house.", "next": "interhouse_tourney" },
+          { "text": "Lead the cheering", "effects": [{ "stat": "stress", "add": -5 }, { "stat": "network", "add": 2 }], "result": "You lose your voice. You gain a reputation for noise.", "next": "interhouse_tourney" }
+        ]
+      },
+      "interhouse_tourney": {
+        "speaker": "Games master",
+        "text": "One more thing before the trophy: the inter-house football tournament. Four houses, knockout, and because the pitch is only half a pitch, every match is settled by penalties. {house} plays {semi_rival} in the semi-final.",
+        "special": "bracket",
+        "effects": [
+          {
+            "flag": "tourney_semi",
+            "set": ""
+          },
+          {
+            "flag": "tourney_final",
+            "set": ""
+          },
+          {
+            "flag": "tourney_third",
+            "set": ""
+          },
+          {
+            "flag": "tourney_semi_won",
+            "set": false
+          }
+        ],
+        "choices": [
+          {
+            "text": "Take the penalties for {house}",
+            "game": {
+              "kind": "penalties",
+              "level": 1,
+              "vs": "semi",
+              "win": [
+                {
+                  "flag": "tourney_semi",
+                  "set": "won"
+                },
+                {
+                  "flag": "tourney_semi_won",
+                  "set": true
+                },
+                {
+                  "flag": "house_pts",
+                  "add": 1
+                },
+                {
+                  "stat": "reputation",
+                  "add": 2
+                },
+                {
+                  "stat": "stress",
+                  "add": -3
+                }
+              ],
+              "lose": [
+                {
+                  "flag": "tourney_semi",
+                  "set": "lost"
+                },
+                {
+                  "stat": "stress",
+                  "add": 2
+                }
+              ],
+              "winText": "Your last kick hits the net and {house} is through to the final! The drummers go mad.",
+              "loseText": "{semi_rival} win it. Your house captain pats your back. There's still third place to play for."
+            },
+            "next": "interhouse_tourney_next"
+          },
+          {
+            "text": "Cheer from the touchline instead",
+            "effects": [
+              {
+                "stat": "stress",
+                "add": -4
+              },
+              {
+                "stat": "network",
+                "add": 1
+              }
+            ],
+            "result": "You drum on a paint bucket until your hands hurt. Your house still calls you a hero.",
+            "next": "interhouse_end"
+          }
+        ]
+      },
+      "interhouse_tourney_next": {
+        "text": "",
+        "branch": [
+          {
+            "if": {
+              "flag": "tourney_semi_won"
+            },
+            "next": "interhouse_tourney_final"
+          },
+          {
+            "next": "interhouse_tourney_third"
+          }
+        ]
+      },
+      "interhouse_tourney_final": {
+        "speaker": "Games master",
+        "text": "The final: {house} against {final_rival}. Parents have climbed onto the classroom windows to watch, and the headmaster has taken off his jacket.",
+        "special": "bracket",
+        "choices": [
+          {
+            "text": "Step up for the final",
+            "game": {
+              "kind": "penalties",
+              "level": 2,
+              "vs": "final",
+              "win": [
+                {
+                  "flag": "tourney_final",
+                  "set": "won"
+                },
+                {
+                  "flag": "house_pts",
+                  "add": 2
+                },
+                {
+                  "stat": "reputation",
+                  "add": 4
+                },
+                {
+                  "stat": "stress",
+                  "add": -6
+                },
+                {
+                  "log": "Won the inter-house football tournament in primary school."
+                },
+                {
+                  "npc": "tunde",
+                  "rel": 3,
+                  "remember": {
+                    "what": "You won the inter-house football final together",
+                    "tone": "warm",
+                    "weight": 3,
+                    "say": "\"That penalty in the primary school final! I still dream about it.\""
+                  }
+                }
+              ],
+              "lose": [
+                {
+                  "flag": "tourney_final",
+                  "set": "lost"
+                },
+                {
+                  "flag": "house_pts",
+                  "add": 1
+                },
+                {
+                  "stat": "reputation",
+                  "add": 1
+                },
+                {
+                  "stat": "stress",
+                  "add": 3
+                }
+              ],
+              "winText": "The keeper dives the wrong way and the ball rolls in. {house} win the football cup! Tunde runs the length of the pitch with his shirt over his head.",
+              "loseText": "So close. {final_rival} take the cup, but your house claps you off the pitch."
+            },
+            "next": "interhouse_tourney_done"
+          }
+        ]
+      },
+      "interhouse_tourney_third": {
+        "speaker": "Games master",
+        "text": "The match for third place: {house} against {third_rival}. Smaller crowd, same nerves.",
+        "special": "bracket",
+        "choices": [
+          {
+            "text": "Play for third place",
+            "game": {
+              "kind": "penalties",
+              "level": 1,
+              "vs": "third",
+              "win": [
+                {
+                  "flag": "tourney_third",
+                  "set": "won"
+                },
+                {
+                  "flag": "house_pts",
+                  "add": 1
+                },
+                {
+                  "stat": "reputation",
+                  "add": 1
+                },
+                {
+                  "stat": "stress",
+                  "add": -2
+                }
+              ],
+              "lose": [
+                {
+                  "flag": "tourney_third",
+                  "set": "lost"
+                },
+                {
+                  "stat": "stress",
+                  "add": 2
+                }
+              ],
+              "winText": "Bronze! Third place goes to {house}, and the medals are made of real tin.",
+              "loseText": "Fourth place. The games master says you all played 'with spirit'."
+            },
+            "next": "interhouse_tourney_done"
+          }
+        ]
+      },
+      "interhouse_tourney_done": {
+        "text": "The football tournament is over. Here's how it finished.",
+        "special": "bracket",
+        "choices": [
+          {
+            "text": "On to the closing ceremony",
+            "next": "interhouse_end"
+          }
         ]
       },
       "interhouse_end": {
         "text": "The headmaster lifts the trophy. The results are read out.",
         "branch": [
-          { "if": { "flag": "house_pts", "gte": 2 }, "next": "interhouse_cup" },
+          { "if": { "flag": "house_pts", "gte": 3 }, "next": "interhouse_cup" },
           { "next": "interhouse_close" }
         ]
       },
@@ -323,15 +543,235 @@
       "interhouse_sec_events2": {
         "text": "Day two. The field events and the old favourites.",
         "choices": [
-          { "text": "Pull in the tug of war final", "game": { "kind": "tug", "level": 2, "win": [{ "flag": "house_pts", "add": 2 }, { "stat": "reputation", "add": 3 }, { "stat": "stress", "add": -3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "Your house heaves together and drags them over the line!", "loseText": "They were heavier. They were also louder. You land in the sand." }, "next": "interhouse_sec_end" },
-          { "text": "Win the egg-and-spoon for your house's juniors", "game": { "kind": "egg", "level": 2, "win": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 2 }, { "stat": "stress", "add": -3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "Steady hands. The egg crosses the line unbroken.", "loseText": "The egg goes one way. You go the other." }, "next": "interhouse_sec_end" },
-          { "text": "Help the sack race juniors", "game": { "kind": "sack", "level": 2, "win": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 2 }, { "stat": "stress", "add": -3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "You show the juniors how it's done, and win!", "loseText": "The juniors laugh at you. Then with you." }, "next": "interhouse_sec_end" }
+          { "text": "Pull in the tug of war final", "game": { "kind": "tug", "level": 2, "win": [{ "flag": "house_pts", "add": 2 }, { "stat": "reputation", "add": 3 }, { "stat": "stress", "add": -3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "Your house heaves together and drags them over the line!", "loseText": "They were heavier. They were also louder. You land in the sand." }, "next": "interhouse_sec_tourney" },
+          { "text": "Win the egg-and-spoon for your house's juniors", "game": { "kind": "egg", "level": 2, "win": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 2 }, { "stat": "stress", "add": -3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "Steady hands. The egg crosses the line unbroken.", "loseText": "The egg goes one way. You go the other." }, "next": "interhouse_sec_tourney" },
+          { "text": "Help the sack race juniors", "game": { "kind": "sack", "level": 2, "win": [{ "flag": "house_pts", "add": 1 }, { "stat": "reputation", "add": 2 }, { "stat": "stress", "add": -3 }], "lose": [{ "stat": "stress", "add": 2 }], "winText": "You show the juniors how it's done, and win!", "loseText": "The juniors laugh at you. Then with you." }, "next": "interhouse_sec_tourney" }
+        ]
+      },
+      "interhouse_sec_tourney": {
+        "speaker": "Sports master",
+        "text": "The event the whole school actually cares about: inter-house football. Four houses, knockout, penalties to decide every match because the principal says the grass 'cannot take ninety minutes'. {house} faces {semi_rival} in the semi-final.",
+        "special": "bracket",
+        "effects": [
+          {
+            "flag": "tourney_semi",
+            "set": ""
+          },
+          {
+            "flag": "tourney_final",
+            "set": ""
+          },
+          {
+            "flag": "tourney_third",
+            "set": ""
+          },
+          {
+            "flag": "tourney_semi_won",
+            "set": false
+          }
+        ],
+        "choices": [
+          {
+            "text": "Take the penalties for {house}",
+            "game": {
+              "kind": "penalties",
+              "level": 2,
+              "vs": "semi",
+              "win": [
+                {
+                  "flag": "tourney_semi",
+                  "set": "won"
+                },
+                {
+                  "flag": "tourney_semi_won",
+                  "set": true
+                },
+                {
+                  "flag": "house_pts",
+                  "add": 1
+                },
+                {
+                  "stat": "reputation",
+                  "add": 2
+                },
+                {
+                  "stat": "stress",
+                  "add": -3
+                }
+              ],
+              "lose": [
+                {
+                  "flag": "tourney_semi",
+                  "set": "lost"
+                },
+                {
+                  "stat": "stress",
+                  "add": 2
+                }
+              ],
+              "winText": "Top corner. {house} is in the final and the seniors are already composing songs.",
+              "loseText": "{semi_rival} go through. You'll play for third place."
+            },
+            "next": "interhouse_sec_tourney_next"
+          },
+          {
+            "text": "Cheer from the touchline instead",
+            "effects": [
+              {
+                "stat": "stress",
+                "add": -4
+              },
+              {
+                "stat": "network",
+                "add": 1
+              }
+            ],
+            "result": "You lead the singing from the stands. Your whole house loses its voice.",
+            "next": "interhouse_sec_end"
+          }
+        ]
+      },
+      "interhouse_sec_tourney_next": {
+        "text": "",
+        "branch": [
+          {
+            "if": {
+              "flag": "tourney_semi_won"
+            },
+            "next": "interhouse_sec_tourney_final"
+          },
+          {
+            "next": "interhouse_sec_tourney_third"
+          }
+        ]
+      },
+      "interhouse_sec_tourney_final": {
+        "speaker": "Sports master",
+        "text": "The final: {house} against {final_rival}. The principal is in sunglasses on the touchline, the drummers have come from the town, and someone is selling meat pies at the gate.",
+        "special": "bracket",
+        "choices": [
+          {
+            "text": "Step up for the final",
+            "game": {
+              "kind": "penalties",
+              "level": 3,
+              "vs": "final",
+              "win": [
+                {
+                  "flag": "tourney_final",
+                  "set": "won"
+                },
+                {
+                  "flag": "house_pts",
+                  "add": 2
+                },
+                {
+                  "stat": "reputation",
+                  "add": 4
+                },
+                {
+                  "stat": "stress",
+                  "add": -6
+                },
+                {
+                  "log": "Won the inter-house football tournament in secondary school."
+                },
+                {
+                  "npc": "tunde",
+                  "rel": 3,
+                  "remember": {
+                    "what": "You won the secondary school football final",
+                    "tone": "warm",
+                    "weight": 3,
+                    "say": "\"Inter-house final in secondary school. Top corner! Nobody can take that from you.\""
+                  }
+                }
+              ],
+              "lose": [
+                {
+                  "flag": "tourney_final",
+                  "set": "lost"
+                },
+                {
+                  "flag": "house_pts",
+                  "add": 1
+                },
+                {
+                  "stat": "reputation",
+                  "add": 1
+                },
+                {
+                  "stat": "stress",
+                  "add": 3
+                }
+              ],
+              "winText": "You keep your nerve and {house} lift the inter-house football cup! The video is on every class WhatsApp group by evening.",
+              "loseText": "{final_rival} win it on the last kick. Runners-up medals and a long walk back to the hostel."
+            },
+            "next": "interhouse_sec_tourney_done"
+          }
+        ]
+      },
+      "interhouse_sec_tourney_third": {
+        "speaker": "Sports master",
+        "text": "Third place: {house} against {third_rival}. Pride is on the line.",
+        "special": "bracket",
+        "choices": [
+          {
+            "text": "Play for third place",
+            "game": {
+              "kind": "penalties",
+              "level": 2,
+              "vs": "third",
+              "win": [
+                {
+                  "flag": "tourney_third",
+                  "set": "won"
+                },
+                {
+                  "flag": "house_pts",
+                  "add": 1
+                },
+                {
+                  "stat": "reputation",
+                  "add": 1
+                },
+                {
+                  "stat": "stress",
+                  "add": -2
+                }
+              ],
+              "lose": [
+                {
+                  "flag": "tourney_third",
+                  "set": "lost"
+                },
+                {
+                  "stat": "stress",
+                  "add": 2
+                }
+              ],
+              "winText": "Third place for {house}. Bronze, and bragging rights over {third_rival} for a whole term.",
+              "loseText": "Fourth. The seniors say nothing, which is worse than shouting."
+            },
+            "next": "interhouse_sec_tourney_done"
+          }
+        ]
+      },
+      "interhouse_sec_tourney_done": {
+        "text": "The football tournament is over. The final table goes up on the notice board.",
+        "special": "bracket",
+        "choices": [
+          {
+            "text": "On to the closing ceremony",
+            "next": "interhouse_sec_end"
+          }
         ]
       },
       "interhouse_sec_end": {
         "text": "Closing ceremony. Medals, march-past, and the points table on the board.",
         "branch": [
-          { "if": { "flag": "house_pts", "gte": 3 }, "next": "interhouse_sec_cup" },
+          { "if": { "flag": "house_pts", "gte": 4 }, "next": "interhouse_sec_cup" },
           { "next": "interhouse_sec_close" }
         ]
       },

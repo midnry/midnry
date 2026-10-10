@@ -10,6 +10,7 @@ import { report } from "./news";
 import { partnerName, pregnancyText, romanceEffect } from "./romance";
 import type { Cond, Effect, GameState, SkillKey, StatKey } from "./types";
 import { hasCityEvent } from "./cityEvents";
+import { bracket, houseName, rivalFor } from "./tournament";
 
 export const SLOTS = ["Morning", "Afternoon", "Evening", "Night"] as const;
 export const DAYS_PER_YEAR = 28;
@@ -229,6 +230,10 @@ export function fill(state: GameState, text: string): string {
   const eventIndex = Number(state.flags.posting_event ?? 0);
   return text
     .replace(/\{name\}/g, state.name)
+    .replace(/\{house\}/g, houseName(bracket(state).mine))
+    .replace(/\{semi_rival\}/g, houseName(rivalFor(state, "semi")))
+    .replace(/\{final_rival\}/g, houseName(rivalFor(state, "final")))
+    .replace(/\{third_rival\}/g, houseName(rivalFor(state, "third")))
     .replace(/\{love\}/g, npcName(state, "love"))
     .replace(/\{pcrush\}/g, npcName(state, "pcrush"))
     .replace(/\{scrush\}/g, npcName(state, "scrush"))

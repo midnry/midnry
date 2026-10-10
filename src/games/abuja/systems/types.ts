@@ -219,13 +219,15 @@ export type Task = {
   haggle: { offer: number; passenger: string } | null;
 };
 
-export type GameKind = "sprint" | "sack" | "egg" | "relay" | "tug";
+export type GameKind = "sprint" | "sack" | "egg" | "relay" | "tug" | "penalties";
 
 /** A sports-day event you play: win or lose decides which effects apply. */
 export type GameDef = {
   kind: GameKind;
   /** 1 easy to 3 hard. */
   level?: number;
+  /** A tournament match: which round, so the game knows the opposing house. */
+  vs?: "semi" | "final" | "third";
   win?: Effect[];
   lose?: Effect[];
   winText?: string;
@@ -252,7 +254,7 @@ export type Scene = {
   branch?: { if?: Cond; next: string }[];
   choices?: Choice[];
   /** Special screens handled by the UI, such as the NYSC fixers. */
-  special?: "fixers";
+  special?: "fixers" | "bracket";
   effects?: Effect[];
 };
 

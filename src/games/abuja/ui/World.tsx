@@ -74,6 +74,7 @@ import { sound, type Mood } from "../systems/sound";
 import { DailyGift, WeeklyCard } from "./Daily";
 import { GUIDE, GuideTip } from "./Guide";
 import { dailyDue } from "../systems/daily";
+import { rivalFor } from "../systems/tournament";
 
 /** The walkable game: story chapters and adult Abuja share this view. */
 export function World({ state, onQuit }: { state: GameState; onQuit: () => void }) {
@@ -742,7 +743,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           Instaflex
         </button>
       ) : null}
-      {state.minigame ? <MiniGame key={`${state.minigame.kind}-${state.scene}`} kind={state.minigame.kind} level={state.minigame.level} house={String(state.flags.house ?? "")} onDone={finishGame} /> : null}
+      {state.minigame ? <MiniGame key={`${state.minigame.kind}-${state.scene}-${state.minigame.vs ?? ""}`} kind={state.minigame.kind} level={state.minigame.level} house={String(state.flags.house ?? "")} rival={state.minigame.vs ? rivalFor(state, state.minigame.vs) : undefined} onDone={finishGame} /> : null}
       {story && !state.minigame ? (
         <div className="absolute inset-0 z-40 overflow-y-auto bg-black/55 px-3 py-6 backdrop-blur-[2px] sm:py-12">
           <StoryPanel state={state} />

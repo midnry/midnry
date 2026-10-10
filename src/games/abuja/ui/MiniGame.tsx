@@ -1,17 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GameKind } from "../systems/types";
+import { HOUSES } from "../systems/tournament";
 import { GAME_FONT, btnGhost, btnPrimary, panel } from "./theme";
 
 // Sports-day mini-games for interhouse sports. Each is a few seconds of real
 // play: tap or press keys, and the result decides the story. Everything runs
 // on one animation loop; rivals are paced by the level (1 easy to 3 hard).
 
-export const HOUSES: Record<string, { name: string; color: string }> = {
-  red: { name: "Red House", color: "#ef4444" },
-  blue: { name: "Blue House", color: "#3b82f6" },
-  green: { name: "Green House", color: "#22c55e" },
-  yellow: { name: "Yellow House", color: "#eab308" },
-};
+export { HOUSES };
 
 const INFO: Record<GameKind, { title: string; how: string; keys: string }> = {
   sprint: { title: "100m sprint", how: "Tap Left and Right one after the other, as fast as you can. Same foot twice and you stumble.", keys: "← → or A D" },
@@ -19,6 +15,11 @@ const INFO: Record<GameKind, { title: string; how: string; keys: string }> = {
   egg: { title: "Egg and spoon race", how: "You walk on your own. Keep the egg in the middle of the spoon: lean the other way when it rolls.", keys: "← → or A D" },
   relay: { title: "4 × 100m relay", how: "Your team runs; you pass the baton. Tap Pass when the runner reaches the green zone. Too early or too late costs time.", keys: "Space" },
   tug: { title: "Tug of war", how: "Tap Pull as fast as you can. When the coach shouts HEAVE!, pull on the shout for a big heave.", keys: "Space" },
+  penalties: {
+    title: "Penalty shootout",
+    how: "Five kicks each. When you shoot, the aim swings across the goal: tap Shoot to strike. Corners are hard to save but easy to miss. When they shoot, pick which way to dive.",
+    keys: "Shoot: Space · Dive: ← Space →",
+  },
 };
 
 type Phase = "intro" | "count" | "play" | "done";
@@ -43,7 +44,7 @@ function useLoop(on: boolean, step: (dt: number) => void) {
   }, [on]);
 }
 
-export function MiniGame({ kind, level = 1, house, onDone }: { kind: GameKind; level?: number; house?: string; onDone: (won: boolean) => void }) {
+export function MiniGame({ kind, level = 1, house, rival, onDone }: { kind: GameKind; level?: number; house?: string; rival?: string; onDone: (won: boolean) => void }) {
   const [phase, setPhase] = useState<Phase>("intro");
   const [count, setCount] = useState(3);
   const [won, setWon] = useState<boolean | null>(null);
@@ -65,7 +66,7 @@ export function MiniGame({ kind, level = 1, house, onDone }: { kind: GameKind; l
     setPhase("done");
   }, []);
 
-  const props = { level: Math.max(1, Math.min(3, level)), color: mine, playing: phase === "play", onEnd: finish };
+  const props = { level: Math.max(1, Math.min(3, level)), color: mine, rival: HOUSES[rival ?? ""], playing: phase === "play", onEnd: finish };
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-[2px]" role="dialog" aria-label={info.title} style={{ fontFamily: GAME_FONT }}>
       <div className={`${panel} w-full max-w-lg p-4 text-slate-100 sm:p-5`}>
@@ -74,6 +75,13 @@ export function MiniGame({ kind, level = 1, house, onDone }: { kind: GameKind; l
           <span className="flex items-center gap-1.5 text-xs font-bold tracking-wide text-slate-300 uppercase">
             <span className="size-3 rounded-full border border-white/40" style={{ background: mine }} aria-hidden />
             {HOUSES[house ?? ""]?.name ?? "Interhouse sports"}
+            {rival && HOUSES[rival] ? (
+              <>
+                <span className="text-slate-500">vs</span>
+                <span className="size-3 rounded-full border border-white/40" style={{ background: HOUSES[rival].color }} aria-hidden />
+                {HOUSES[rival].name}
+              </>
+            ) : null}
           </span>
         </div>
         <div className="relative mt-3">
@@ -82,6 +90,7 @@ export function MiniGame({ kind, level = 1, house, onDone }: { kind: GameKind; l
           {kind === "egg" ? <Egg {...props} /> : null}
           {kind === "relay" ? <Relay {...props} /> : null}
           {kind === "tug" ? <Tug {...props} /> : null}
+          {kind === "penalties" ? <Penalties {...props} /> : null}
           {phase === "count" ? (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <span className="text-6xl font-black text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]">{count > 0 ? count : "Go!"}</span>
@@ -115,7 +124,7 @@ export function MiniGame({ kind, level = 1, house, onDone }: { kind: GameKind; l
   );
 }
 
-type GameProps = { level: number; color: string; playing: boolean; onEnd: (won: boolean) => void };
+type GameProps = { level: number; color: string; rival?: { name: string; color: string }; playing: boolean; onEnd: (won: boolean) => void };
 
 /** Keyboard keys while playing. */
 function useKeys(playing: boolean, onKey: (key: string) => void) {
@@ -444,6 +453,170 @@ function Tug({ level, color, playing, onEnd }: GameProps) {
         <BigButton onPress={pull} disabled={!playing} wide>
           Pull!
         </BigButton>
+      </div>
+    </div>
+  );
+}
+
+// ── Penalty shootout: shoot five, save five, then sudden death ───────────────
+
+type Zone = 0 | 1 | 2;
+type Kick = { by: "me" | "them"; scored: boolean };
+const ZONE_X = [0.2, 0.5, 0.8];
+const zoneOf = (x: number): Zone => (x < 0.36 ? 0 : x > 0.64 ? 2 : 1);
+const pickZone = (): Zone => {
+  const r = Math.random();
+  return r < 0.4 ? 0 : r < 0.6 ? 1 : 2;
+};
+
+/** Over yet? Five each, stopping early once one side can't catch up; then pairs of sudden death (ten each at most). */
+function decided(kicks: Kick[]): "me" | "them" | null {
+  const mine = kicks.filter((k) => k.by === "me");
+  const theirs = kicks.filter((k) => k.by === "them");
+  const a = mine.filter((k) => k.scored).length;
+  const b = theirs.filter((k) => k.scored).length;
+  if (mine.length <= 5 && theirs.length <= 5) {
+    if (a + (5 - mine.length) < b) return "them";
+    if (b + (5 - theirs.length) < a) return "me";
+    if (mine.length < 5 || theirs.length < 5) return null;
+  }
+  if (mine.length !== theirs.length) return null;
+  if (a !== b) return a > b ? "me" : "them";
+  return mine.length >= 10 ? "them" : null;
+}
+
+function Penalties({ level, color, rival, playing, onEnd }: GameProps) {
+  const [kicks, setKicks] = useState<Kick[]>([]);
+  const [aim, setAim] = useState(0.5);
+  const [shot, setShot] = useState<{ ball: number; keeper: number; text: string; good: boolean } | null>(null);
+  const done = useRef(false);
+  const clock = useRef(0);
+  const turn: "me" | "them" = kicks.length % 2 === 0 ? "me" : "them";
+  const theirColor = rival?.color ?? "#94a3b8";
+  const swing = [0, 0.9, 1.25, 1.6][level]!;
+  const miss = [0, 0.2, 0.13, 0.07][level]!;
+
+  useLoop(playing && turn === "me" && !shot, (dt) => {
+    clock.current += dt;
+    setAim(0.5 + 0.47 * Math.sin(clock.current * swing * Math.PI));
+  });
+
+  const resolve = (kick: Kick, view: { ball: number; keeper: number; text: string; good: boolean }) => {
+    const next = [...kicks, kick];
+    setKicks(next);
+    setShot(view);
+    window.setTimeout(() => {
+      setShot(null);
+      const winner = decided(next);
+      if (winner && !done.current) {
+        done.current = true;
+        onEnd(winner === "me");
+      }
+    }, 1150);
+  };
+
+  const shoot = () => {
+    if (!playing || done.current || shot || turn !== "me") return;
+    const x = aim;
+    const zone = zoneOf(x);
+    const keeper = Math.floor(Math.random() * 3) as Zone;
+    const corner = x < 0.12 || x > 0.88;
+    const wide = (x < 0.05 || x > 0.95) && Math.random() < 0.6;
+    const saved = !wide && keeper === zone && Math.random() < (corner ? 0.3 : zone === 1 ? 0.9 : 0.7) + (level - 1) * 0.05;
+    const scored = !wide && !saved;
+    resolve({ by: "me", scored }, { ball: wide ? (x < 0.5 ? -0.08 : 1.08) : x, keeper: ZONE_X[keeper]!, text: wide ? "Wide!" : saved ? "Saved!" : "GOAL! ⚽", good: scored });
+  };
+
+  const dive = (mine: Zone) => {
+    if (!playing || done.current || shot || turn !== "them") return;
+    const zone = pickZone();
+    const missed = Math.random() < miss;
+    const saved = !missed && mine === zone && Math.random() < (zone === 1 ? 0.85 : 0.72);
+    const scored = !missed && !saved;
+    const ball = missed ? (zone === 0 ? -0.08 : zone === 2 ? 1.08 : 0.5) : ZONE_X[zone]! + (Math.random() - 0.5) * 0.12;
+    resolve({ by: "them", scored }, { ball, keeper: ZONE_X[mine]!, text: missed ? (zone === 1 ? "Over the bar!" : "Wide!") : saved ? "You saved it! 🧤" : "They score.", good: !scored });
+  };
+
+  useKeys(playing, (k) => {
+    if (turn === "me") return k === " " ? shoot() : undefined;
+    if (k === "arrowleft") dive(0);
+    else if (k === "arrowright") dive(2);
+    else if (k === " ") dive(1);
+  });
+
+  const row = (by: "me" | "them") => {
+    const list = kicks.filter((k) => k.by === by);
+    const slots = Math.max(5, list.length);
+    return Array.from({ length: slots }, (_, i) => list[i]);
+  };
+  const score = (by: "me" | "them") => kicks.filter((k) => k.by === by && k.scored).length;
+  const keeperColor = turn === "me" ? theirColor : color;
+
+  return (
+    <div>
+      <div className="mb-2 grid gap-1 rounded-xl bg-black/30 p-2 text-xs font-bold">
+        {(["me", "them"] as const).map((by) => (
+          <div key={by} className="flex items-center gap-2">
+            <span className="size-3 shrink-0 rounded-full border border-white/40" style={{ background: by === "me" ? color : theirColor }} aria-hidden />
+            <span className="w-16 shrink-0 truncate">{by === "me" ? "You" : (rival?.name.replace(" House", "") ?? "Them")}</span>
+            <span className="flex flex-1 gap-1">
+              {row(by).map((k, i) => (
+                <span key={i} className={`size-4 rounded-full border ${k ? (k.scored ? "border-emerald-300 bg-emerald-400" : "border-rose-300 bg-rose-500") : "border-white/25 bg-white/5"}`} aria-hidden />
+              ))}
+            </span>
+            <span className="w-5 text-right text-base tabular-nums">{score(by)}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="relative h-44 overflow-hidden rounded-xl bg-gradient-to-b from-[#2f6f3a] to-[#3f8a47]" aria-live="polite">
+        {/* The goal: posts, bar and net. */}
+        <div className="absolute top-3 left-[8%] h-28 w-[84%] rounded-t-sm border-x-[5px] border-t-[5px] border-white bg-[repeating-linear-gradient(45deg,rgba(255,255,255,0.18)_0_2px,transparent_2px_10px),repeating-linear-gradient(-45deg,rgba(255,255,255,0.18)_0_2px,transparent_2px_10px)]" />
+        <div className="absolute top-[7.6rem] left-0 h-0.5 w-full bg-white/60" />
+        {/* The keeper. */}
+        <div
+          className="absolute top-12 flex h-16 w-10 -translate-x-1/2 flex-col items-center transition-[left] duration-300 ease-out"
+          style={{ left: `${8 + 84 * (shot ? shot.keeper : 0.5)}%` }}
+          aria-hidden
+        >
+          <span className="text-lg leading-none">🧤</span>
+          <span className="mt-0.5 h-11 w-7 rounded-md border-2 border-black/30" style={{ background: keeperColor }} />
+        </div>
+        {/* The aim marker, when it's your kick. */}
+        {turn === "me" && !shot && playing ? <div className="absolute top-3 h-28 w-1 -translate-x-1/2 rounded bg-amber-300 shadow-[0_0_10px_rgba(252,211,77,0.9)]" style={{ left: `${8 + 84 * aim}%` }} aria-hidden /> : null}
+        {/* The ball: on the spot, or flying to where it went. */}
+        <span
+          className="absolute -translate-x-1/2 text-2xl transition-all duration-300 ease-out"
+          style={shot ? { left: `${8 + 84 * shot.ball}%`, top: "2.6rem" } : { left: "50%", top: "8.4rem" }}
+          aria-hidden
+        >
+          ⚽
+        </span>
+        {shot ? (
+          <p className={`absolute inset-x-0 bottom-1 text-center text-2xl font-black drop-shadow-[0_2px_6px_rgba(0,0,0,0.7)] ${shot.good ? "text-emerald-200" : "text-rose-200"}`}>{shot.text}</p>
+        ) : (
+          playing ? <p className="absolute right-2 bottom-1.5 rounded-full bg-black/35 px-2 py-0.5 text-xs font-black text-white">{turn === "me" ? "Your kick" : "Their kick: dive!"}</p> : null
+        )}
+      </div>
+
+      <div className="mt-3 flex gap-2">
+        {turn === "me" ? (
+          <BigButton onPress={shoot} disabled={!playing || Boolean(shot)} wide>
+            Shoot! ⚽
+          </BigButton>
+        ) : (
+          <>
+            <BigButton onPress={() => dive(0)} disabled={!playing || Boolean(shot)}>
+              ◀ Left
+            </BigButton>
+            <BigButton onPress={() => dive(1)} disabled={!playing || Boolean(shot)}>
+              Stay
+            </BigButton>
+            <BigButton onPress={() => dive(2)} disabled={!playing || Boolean(shot)}>
+              Right ▶
+            </BigButton>
+          </>
+        )}
       </div>
     </div>
   );

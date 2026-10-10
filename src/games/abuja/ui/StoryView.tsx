@@ -3,6 +3,7 @@ import { chapter } from "../systems/data";
 import { choose, continueStory, payFixer } from "../systems/engine";
 import { fill, lockReason, naira } from "../systems/rules";
 import type { GameState } from "../systems/types";
+import { HOUSES, bracket } from "../systems/tournament";
 import { speakerLook } from "../systems/peoplelook";
 import { Avatar } from "./Avatar";
 import { ChatBubble } from "./Chat";
@@ -63,6 +64,7 @@ export function StoryPanel({ state }: { state: GameState }) {
                 <p className="text-lg leading-relaxed text-pretty">{fill(state, scene.text)}</p>
               )}
               {scene.special === "fixers" ? <Fixers state={state} /> : null}
+              {scene.special === "bracket" ? <Bracket state={state} /> : null}
               <div className="mt-6 grid gap-2">
                 {(scene.choices ?? []).map((item) => {
                   const reason = lockReason(state, item);
@@ -115,6 +117,54 @@ function Fixers({ state }: { state: GameState }) {
         </div>
       ))}
       <p className="text-xs text-slate-500 sm:col-span-2">Paying a fixer is illegal. It adds a little Heat, whether it works or not.</p>
+    </div>
+  );
+}
+
+/** The interhouse football bracket: semi-finals, the final and the match for third. */
+function Bracket({ state }: { state: GameState }) {
+  const b = bracket(state);
+  const played = Boolean(b.semi);
+  const iWon = b.semi === "won";
+  const finalists = played ? [iWon ? b.mine : b.semiRival, b.otherWinner] : [null, null];
+  const thirds = played ? [iWon ? b.semiRival : b.mine, b.otherLoser] : [null, null];
+  // If you went out in the semi, the final between the others is settled when your third-place match is.
+  const champion = b.final ? (b.final === "won" ? b.mine : b.otherWinner) : b.third ? b.neutralChampion : null;
+  const Team = ({ id, win, me }: { id: string | null; win?: boolean; me?: boolean }) => (
+    <div className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm ${win ? "bg-emerald-500/20 font-bold" : "bg-white/5"} ${me ? "ring-1 ring-amber-300/70" : ""}`}>
+      <span className="size-3 shrink-0 rounded-full border border-white/40" style={{ background: id ? HOUSES[id]?.color : "transparent" }} aria-hidden />
+      <span className="truncate">{id ? HOUSES[id]?.name : "To be decided"}</span>
+      {me ? <span className="ml-auto text-[10px] font-bold text-amber-300 uppercase">You</span> : null}
+    </div>
+  );
+  const semiWinner = played ? (iWon ? b.mine : b.semiRival) : null;
+  return (
+    <div className="mt-5 grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 sm:grid-cols-3" aria-label="Tournament bracket">
+      <div className="grid gap-2">
+        <p className="text-[11px] font-bold tracking-wide text-slate-400 uppercase">Semi-finals</p>
+        <div className="grid gap-1">
+          <Team id={b.mine} me win={semiWinner === b.mine} />
+          <Team id={b.semiRival} win={semiWinner === b.semiRival} />
+        </div>
+        <div className="grid gap-1">
+          <Team id={b.other[0]} win={played && b.otherWinner === b.other[0]} />
+          <Team id={b.other[1]} win={played && b.otherWinner === b.other[1]} />
+        </div>
+      </div>
+      <div className="grid content-start gap-2">
+        <p className="text-[11px] font-bold tracking-wide text-slate-400 uppercase">Final 🏆</p>
+        <div className="grid gap-1">
+          <Team id={finalists[0]} me={finalists[0] === b.mine} win={Boolean(champion) && champion === finalists[0]} />
+          <Team id={finalists[1]} win={Boolean(champion) && champion === finalists[1]} />
+        </div>
+      </div>
+      <div className="grid content-start gap-2">
+        <p className="text-[11px] font-bold tracking-wide text-slate-400 uppercase">Third place 🥉</p>
+        <div className="grid gap-1">
+          <Team id={thirds[0]} me={thirds[0] === b.mine} win={b.third === "won" && thirds[0] === b.mine} />
+          <Team id={thirds[1]} win={b.third === "lost" && thirds[1] === b.otherLoser} />
+        </div>
+      </div>
     </div>
   );
 }
