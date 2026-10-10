@@ -32,6 +32,8 @@ import {
   steal,
   sellStash,
   stashOffer,
+  openDay,
+  setGuide,
 } from "../systems/engine";
 import { onTheirMind } from "../systems/memory";
 import { MiniGame } from "./MiniGame";
@@ -67,6 +69,11 @@ import { MONTHS, SEASON_NAMES, weatherOf } from "../systems/weather";
 import { isMyRoom } from "../systems/decor";
 import { GAME_FONT, actionBtn, btnGhost, btnPrimary, glass, iconBtn, panel } from "./theme";
 import { lookIsComic, setComicLook } from "../systems/look";
+import { eventsNow } from "../systems/cityEvents";
+import { sound, type Mood } from "../systems/sound";
+import { DailyGift, WeeklyCard } from "./Daily";
+import { GUIDE, GuideTip } from "./Guide";
+import { dailyDue } from "../systems/daily";
 
 /** The walkable game: story chapters and adult Abuja share this view. */
 export function World({ state, onQuit }: { state: GameState; onQuit: () => void }) {
@@ -362,8 +369,79 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const panelOpen = Boolean(here && open === here.id);
   const showEnter = near && !lotOpen && !isLoading && !exploring && !story && !panelOpen && !talking && !state.event && !state.task?.haggle;
 
+  // Coming back each day: the gift (once per real day) and this week's challenge.
+  const [giftClosed, setGiftClosed] = useState(false);
+  useEffect(() => openDay(), []);
+  const showGift = dailyDue(state) && !giftClosed && !isLoading && !story && !state.event && !paused && !jailed && !inCourt && !state.nepoMeet && !state.emekaMeet;
+
+  // The guide for a brand-new life: each tip clears once you've done it.
+  const guideStep = typeof state.flags.guide === "number" ? state.flags.guide : null;
+  useEffect(() => bus.on("walked", () => (getState()?.flags.guide === GUIDE.walk ? setGuide(GUIDE.story) : undefined)), []);
+  useEffect(() => {
+    if (guideStep === null || guideStep >= GUIDE.done) return;
+    if (guideStep === GUIDE.story && story) setGuide(GUIDE.talk);
+    else if (guideStep === GUIDE.talk && talking) setGuide(GUIDE.waitCity);
+    else if (guideStep < GUIDE.phone && !inStory && !isLoading) setGuide(GUIDE.phone);
+    else if (guideStep === GUIDE.phone && phone) setGuide(GUIDE.ride);
+    else if (guideStep === GUIDE.ride && (phone === "map" || trip)) setGuide(GUIDE.earn);
+    else if (guideStep === GUIDE.earn && state.stats.money >= Number(state.flags.guide_money ?? 0) + 1000) {
+      setGuide(GUIDE.done);
+      setBlocked("You're all set. Follow the gold mission banner, and check the pause menu for your weekly challenge. Welcome to Abuja!");
+    }
+  }, [guideStep, story, talking, inStory, isLoading, phone, trip, state.stats.money]);
+  const showGuide = guideStep !== null && !showGift && !story && !isLoading && !paused && !phone && !talking && !state.event && !state.toast && !blocked && !wardrobe;
+
+  // Sound: the music and street noise follow where you are and the time of day.
+  const chapterId = state.chapter;
+  const soundMood: Mood = jailed
+    ? "prison"
+    : trip
+      ? "ride"
+      : inside
+        ? "inside"
+        : chapterId
+          ? chapterId === "primary" || chapterId === "secondary"
+            ? "school"
+            : "campus"
+          : state.slot >= 3
+            ? "night"
+            : state.slot === 2
+              ? "dusk"
+              : "city";
+  useEffect(() => {
+    sound.init();
+    return () => sound.setMood("off");
+  }, []);
+  useEffect(() => {
+    if (!isLoading) sound.setMood(soundMood);
+  }, [soundMood, isLoading]);
+  useEffect(() => sound.duck(paused || Boolean(phone) || Boolean(state.event)), [paused, phone, state.event]);
+  useEffect(() => sound.setRain(!inStory && weatherOf(state.day, state.slot).wet), [inStory, state.day, state.slot]);
+  // Little sounds for what just happened: money in or out, the phone, a knock from the police.
+  const heard = useRef({ money: state.stats.money, event: state.event, court: Boolean(state.justice?.case), chapter: state.chapter, inside: Boolean(inside) });
+  useEffect(() => {
+    const was = heard.current;
+    const money = state.stats.money;
+    if (money - was.money >= 500) sound.play("cash");
+    else if (was.money - money >= 2000) sound.play("spend");
+    const court = Boolean(state.justice?.case);
+    if (court && !was.court) sound.play("siren");
+    else if (state.event && state.event !== was.event) sound.play(state.event === "checkpoint" || state.event.startsWith("trespass_police") ? "siren" : "notify");
+    if (state.chapter !== was.chapter) sound.play("chime");
+    if (Boolean(inside) !== was.inside) sound.play("door");
+    heard.current = { money, event: state.event, court, chapter: state.chapter, inside: Boolean(inside) };
+  }, [state.stats.money, state.event, state.justice?.case, state.chapter, inside]);
+  useEffect(() => {
+    if (phone) sound.play("phone");
+  }, [Boolean(phone)]);
+
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#05070c] text-slate-100 select-none">
+    <div
+      className="fixed inset-0 overflow-hidden bg-[#05070c] text-slate-100 select-none"
+      onPointerDownCapture={(event) => {
+        if ((event.target as HTMLElement).closest("button")) sound.play("tap");
+      }}
+    >
       <div className="contents" inert={isLoading}>
       <div ref={host} className="absolute inset-0" />
       {inStory ? <ChapterHud state={state} /> : <Hud state={state} onOpen={setPhone} />}
@@ -524,8 +602,11 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           </button>
         </div>
       ) : null}
+      {showGuide && guideStep !== null ? <GuideTip step={guideStep} /> : null}
+      {showGift ? <DailyGift state={state} onClose={() => setGiftClosed(true)} /> : null}
       {paused ? (
         <PauseMenu
+          state={state}
           controls={controls}
           onControls={chooseControls}
           onResume={() => setPaused(false)}
@@ -733,12 +814,14 @@ function MapButton({ label, active, onClick, children }: { label: string; active
 }
 
 function PauseMenu({
+  state,
   controls,
   onControls,
   onResume,
   onWardrobe,
   onQuit,
 }: {
+  state: GameState;
   controls: Controls;
   onControls: (controls: Controls) => void;
   onResume: () => void;
@@ -747,7 +830,7 @@ function PauseMenu({
 }) {
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-[2px]" role="dialog" aria-label="Paused">
-      <div className={`${panel} w-full max-w-sm p-5`}>
+      <div className={`${panel} max-h-[92dvh] w-full max-w-sm overflow-y-auto p-5`}>
         <p className="font-display text-2xl">Paused</p>
         <p className="mt-1 text-sm text-slate-400">Your progress is saved automatically.</p>
         <div className="mt-4 grid gap-2">
@@ -761,6 +844,7 @@ function PauseMenu({
             Save and exit to title
           </button>
         </div>
+        <WeeklyCard state={state} />
         <div className="mt-5">
           <p className="text-sm font-semibold">Controls</p>
           <div className="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Controls">
@@ -786,6 +870,7 @@ function PauseMenu({
           <p className="mt-1.5 text-xs text-slate-400">Arrow keys and WASD always work on a keyboard.</p>
         </div>
         <LookSwitch />
+        <SoundSwitch />
         <div className="mt-5 rounded-xl bg-white/5 p-3 text-xs text-slate-300">
           <p className="font-semibold text-slate-200">How to play</p>
           <ul className="mt-1 list-disc space-y-1 pl-4">
@@ -841,6 +926,7 @@ function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => v
   const weather = weatherOf(state.day, state.slot);
   const owed = debt(state);
   const l = lifeOf(state);
+  const events = eventsNow(state);
   return (
     <button
       type="button"
@@ -859,6 +945,11 @@ function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => v
           <span className="text-slate-500">•</span> Age {Math.floor(state.age)}
         </p>
         {owed ? <p className="text-[11px] font-bold text-red-400">Owes {naira(owed)}</p> : null}
+        {events.length ? (
+          <p className="max-w-[10.5rem] truncate text-[11px] font-bold text-amber-300 sm:max-w-[16rem]" title={events.map((e) => `${e.name}: ${e.line}`).join("\n")}>
+            {events.map((e) => `${e.icon} ${e.name}`).join(" · ")}
+          </p>
+        ) : null}
       </div>
       <div className="grid grid-cols-4 gap-x-3 gap-y-1.5 sm:grid-cols-7">
         <Bar label="Energy" Icon={Zap} value={state.stats.energy} color="#34d399" />
@@ -1195,6 +1286,46 @@ function LookSwitch() {
           >
             <span className="block font-semibold">{label}</span>
             <span className="block text-xs text-slate-400">{hint}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Music and sound effects on or off, remembered on this device. */
+function SoundSwitch() {
+  const [music, setMusic] = useState(() => sound.settings.music);
+  const [sfx, setSfx] = useState(() => sound.settings.sfx);
+  const toggle = (which: "music" | "sfx") => {
+    if (which === "music") {
+      sound.setMusic(!music);
+      setMusic(!music);
+    } else {
+      sound.setSfx(!sfx);
+      setSfx(!sfx);
+    }
+  };
+  return (
+    <div className="mt-5">
+      <p className="text-sm font-semibold">Sound</p>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        {(
+          [
+            ["music", "🎵 Music", music],
+            ["sfx", "🔊 Sounds", sfx],
+          ] as const
+        ).map(([id, label, on]) => (
+          <button
+            key={id}
+            type="button"
+            role="switch"
+            aria-checked={on}
+            onClick={() => toggle(id)}
+            className={`rounded-xl border p-3 text-left text-sm transition ${on ? "border-blue-400 bg-blue-400/15" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
+          >
+            <span className="block font-semibold">{label}</span>
+            <span className="block text-xs text-slate-400">{on ? "On" : "Off"}</span>
           </button>
         ))}
       </div>

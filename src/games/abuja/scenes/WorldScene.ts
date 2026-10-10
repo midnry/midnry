@@ -243,6 +243,9 @@ export class WorldScene extends Phaser.Scene {
   /** FRSC road safety checkpoints, and the day they were set up for. */
   private frscPosts: { officer: Figure; barrier: Phaser.GameObjects.Image; x: number; y: number }[] = [];
   private frscDay = -1;
+  /** Where you started on this map, to tell the guide once you've walked a little way. */
+  private walkedFrom = { x: 0, y: 0 };
+  private walked = false;
 
   constructor() {
     super("world");
@@ -311,6 +314,8 @@ export class WorldScene extends Phaser.Scene {
 
     const start = this.startPoint();
     this.player = this.makePlayer(start.x, start.y);
+    this.walkedFrom = { x: start.x, y: start.y };
+    this.walked = false;
     this.beatMarker = this.makeMarker(0x70d3ad, "!");
     this.taskMarker = this.makeMarker(0x38bdf8, "★");
     this.arrow = this.add.triangle(0, 0, 0, -12, 9, 8, -9, 8, 0x70d3ad).setDepth(20).setVisible(false);
@@ -1339,6 +1344,10 @@ export class WorldScene extends Phaser.Scene {
     if (this.riding) {
       this.driveRide(dt);
       return;
+    }
+    if (!this.walked && Math.hypot(this.player.x - this.walkedFrom.x, this.player.y - this.walkedFrom.y) > 90) {
+      this.walked = true;
+      bus.emit("walked", null);
     }
     const paused = state.event || state.ending || state.task?.haggle || (state.chapter && (state.result || !currentBeat(state)));
     if (paused) {

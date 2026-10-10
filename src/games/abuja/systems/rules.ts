@@ -9,6 +9,7 @@ import { forget, remember, sinceWhen } from "./memory";
 import { report } from "./news";
 import { partnerName, pregnancyText, romanceEffect } from "./romance";
 import type { Cond, Effect, GameState, SkillKey, StatKey } from "./types";
+import { hasCityEvent } from "./cityEvents";
 
 export const SLOTS = ["Morning", "Afternoon", "Evening", "Night"] as const;
 export const DAYS_PER_YEAR = 28;
@@ -78,6 +79,7 @@ export function check(state: GameState, cond: Cond | undefined): boolean {
   if (cond.noAsset && state.assets.includes(cond.noAsset)) return false;
   if (cond.powered && state.life?.power.cut) return false;
   if (cond.license != null && Boolean(state.life?.license) !== cond.license) return false;
+  if (cond.cityEvent && (state.chapter || !hasCityEvent(state, cond.cityEvent))) return false;
   return true;
 }
 

@@ -2,7 +2,9 @@ import { CHAPTERS, EVENTS, FIXERS, HOMES, JOBS, LOANS, MAPS, PEOPLE, PLACES, POS
 import { arrivalOf, citySolids, freePoint } from "./citymap";
 import type { Look } from "./character";
 import { RIDE_INFO, fare, fuelCost, rideBan, type RideMode } from "./rides";
-import { rainSurge, weatherOf } from "./weather";
+import { weatherOf } from "./weather";
+import * as CE from "./cityEvents";
+import * as DA from "./daily";
 import {
   DAYS_PER_YEAR,
   END_AGE,
@@ -139,7 +141,11 @@ function go(s: GameState, next: string | undefined) {
 }
 
 export function startGame() {
-  update((s) => enterChapter(s, CHAPTERS[0]!.id));
+  update((s) => {
+    // A brand-new life: show the guide for the first few minutes.
+    s.flags.guide = 0;
+    enterChapter(s, CHAPTERS[0]!.id);
+  });
 }
 
 export function choose(choice: Choice) {
@@ -338,7 +344,7 @@ export function orderMeal(id: string) {
   update((s) => {
     const meal = MENU.find((m) => m.id === id);
     if (!meal || s.chapter || s.ending) return;
-    const total = meal.price + DELIVERY_FEE;
+    const total = Math.round(meal.price * CE.foodSurge(s)) + DELIVERY_FEE;
     if (s.stats.money < total) return toast(s, `You need ${naira(total)} for that, delivery included.`);
     addStat(s, "money", -total);
     apply(s, [{ food: meal.food }, { water: meal.water }]);
@@ -350,8 +356,22 @@ export function savePosition(x: number, y: number, districtId: string) {
   update((s) => {
     s.pos = { x: Math.round(x), y: Math.round(y) };
     s.district = districtId;
+    if (!s.chapter) DA.visited(s, districtId);
   });
 }
+
+// ── Coming back: daily gifts, the weekly challenge and the guide for new players ──
+
+/** Opening the game: make sure this week's challenge exists. */
+export const openDay = () => update((s) => void DA.weekly(s));
+export const claimDailyGift = () => update((s) => toast(s, DA.claimDaily(s)));
+export const claimWeeklyChallenge = () => update((s) => toast(s, DA.claimWeekly(s)));
+/** Move the new-player guide on (see ui/Guide.tsx), remembering your money when the earning step starts. */
+export const setGuide = (step: number) =>
+  update((s) => {
+    s.flags.guide = step;
+    s.flags.guide_money = s.stats.money;
+  });
 
 export function doAction(placeId: string, actionId: string): "loans" | "business" | void {
   let open: "loans" | "business" | undefined;
@@ -581,8 +601,10 @@ export function travel(placeId: string, mode: RideMode) {
     if (shutOut(s, p.district)) return toast(s, d!.gate!.message);
     const banned = rideBan(mode, s.district, p.district);
     if (banned) return toast(s, banned);
+    const stop = CE.rideStop(s);
+    if (stop) return toast(s, stop);
     const to = arrivalOf(p);
-    const cost = fare(mode, s.pos, to, rainSurge(weatherOf(s.day, s.slot)));
+    const cost = fare(mode, s.pos, to, CE.fareSurge(s, mode, p.district));
     const name = RIDE_INFO[mode].label.toLowerCase();
     if (s.stats.money < cost) return toast(s, `You need ${naira(cost)} for the ${name}.`);
     if (mode === "bus" && s.slot + 1 > SLOTS.length - 1) return toast(s, "No more buses tonight. Take a taxi, a keke or an okada.");
@@ -593,6 +615,7 @@ export function travel(placeId: string, mode: RideMode) {
     const from = { ...s.pos };
     s.pos = to;
     s.district = p.district;
+    DA.visited(s, p.district);
     const lines: Record<RideMode, string> = {
       okada: `Your okada man weaves through traffic like a man with no fear and drops you at ${p.name}. ${naira(cost)}.`,
       keke: `The keke rattles you to ${p.name}. The man beside you ate onions for breakfast. ${naira(cost)}.`,
@@ -715,13 +738,16 @@ export function driveTo(placeId: string) {
     if (injured(s) === "fracture") return toast(s, "You can't drive with your leg in a cast.");
     const d = district(p.district);
     if (shutOut(s, p.district)) return toast(s, d!.gate!.message);
+    const stop = CE.rideStop(s);
+    if (stop) return toast(s, stop);
     const to = arrivalOf(p);
-    const cost = fuelCost(s.pos, to);
-    if (s.stats.money < cost) return toast(s, `You need ${naira(cost)} for fuel.`);
+    const cost = Math.round(fuelCost(s.pos, to) * CE.fuelSurge(s));
+    if (s.stats.money < cost) return toast(s, `You need ${naira(cost)} for fuel${CE.fuelSurge(s) > 1 ? " (fuel scarcity prices)" : ""}.`);
     addStat(s, "money", -cost);
     const from = { ...s.pos };
     s.pos = to;
     s.district = p.district;
+    DA.visited(s, p.district);
     toast(s, `You drive yourself to ${p.name}. Fuel: ${naira(cost)}.`);
     // Behind the wheel the whole way (FRSC may be on the route).
     bus.emit("chaseDrive", { from, to, name: p.name });
@@ -766,6 +792,10 @@ function sleep(s: GameState) {
     s.age += 1;
     s.toast = `${s.toast ? `${s.toast} ` : ""}Happy birthday. You are ${s.age}.`;
   }
+  // What Abuja is going through today, and the markets' reaction to today's story.
+  const before = new Set(CE.cityEvents(s.day - 1, 3).map((e) => e.id));
+  for (const e of CE.cityEvents(s.day, 0)) if (!before.has(e.id) && e.id !== "flood") note(s, `${e.icon} ${e.headline}.`);
+  CE.applyViral(s);
   const crashes = closeDay(s);
   if (crashes.length) s.toast = `${s.toast ? `${s.toast} ` : ""}${crashes.join(" ")}`;
   if (adultDays > 0 && adultDays % 7 === 0) {
@@ -912,10 +942,12 @@ function pickEvent(s: GameState) {
   const pool = EVENTS.filter(
     (item) => item.weight > 0 && check(s, item.if) && !(item.once && s.usedEvents.includes(item.id)) && !(quiet && item.id.startsWith("fraud_")),
   );
-  const total = pool.reduce((sum, item) => sum + item.weight, 0);
+  // While something is happening across the city, its own events come up far more often.
+  const weight = (item: (typeof pool)[number]) => item.weight * (item.if?.cityEvent ? 5 : 1);
+  const total = pool.reduce((sum, item) => sum + weight(item), 0);
   let roll = Math.random() * total;
   for (const item of pool) {
-    roll -= item.weight;
+    roll -= weight(item);
     if (roll <= 0) {
       s.event = item.id;
       return;

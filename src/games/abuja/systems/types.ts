@@ -14,6 +14,7 @@ import type { Emeka } from "./emeka";
 import type { Phones } from "./phones";
 import type { Banking } from "./banking";
 import type { NewsTag, Story } from "./news";
+import type { Daily, Weekly } from "./daily";
 
 export type Background = "lapo" | "average";
 export type Gender = "male" | "female";
@@ -102,6 +103,8 @@ export type Cond = {
   loveGender?: Gender;
   /** Has (true) or lacks (false) a driver's licence. */
   license?: boolean;
+  /** Something happening across Abuja right now (cityEvents.ts): fuel, detty, christmas, ramadan, flood, election, viral. */
+  cityEvent?: string;
   any?: Cond[];
 };
 
@@ -411,6 +414,9 @@ export type GameState = {
   phones?: Phones;
   /** Emeka D: how things stand with him. */
   emeka?: Emeka;
+  /** The daily gift streak, and this week's challenge (systems/daily.ts). */
+  daily?: Daily;
+  weekly?: Weekly;
   /** Emeka D has just walked in, waiting for how you react. */
   emekaMeet?: boolean;
   /** Your Instaflex page, once you make one (secondary school onwards). */

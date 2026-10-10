@@ -14,6 +14,7 @@ import { EndScreen } from "./EndScreen";
 import { AgeGate, Creator, Title } from "./Menus";
 import { useGame } from "./useGame";
 import { LoadingScreen } from "./LoadingScreen";
+import { sound } from "../systems/sound";
 
 const World = lazy(() => import("./World").then((module) => ({ default: module.World })));
 
@@ -33,6 +34,12 @@ export function AbujaHustle() {
   const [creating, setCreating] = useState<Slot | null>(null);
   /** What's in each of the three save slots. */
   const [saved, setSaved] = useState<(GameState | null)[]>([null, null, null]);
+  // Music on the title and creator screens; the game picks its own mood once it starts.
+  const onTitle = !state;
+  useEffect(() => {
+    sound.init();
+    if (onTitle) sound.setMood("title");
+  }, [onTitle]);
 
   // Find the latest save: this device, or the account when signed in.
   useEffect(() => {

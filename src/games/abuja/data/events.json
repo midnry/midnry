@@ -2346,5 +2346,676 @@
         "result": "\"Old boy has changed,\" Tobi laughs. You have."
       }
     ]
+  },
+  {
+    "id": "ce_fuel_queue",
+    "weight": 6,
+    "if": {
+      "cityEvent": "fuel"
+    },
+    "title": "The fuel queue",
+    "text": "The queue at the filling station on Airport Road is two kilometres long. A boy with jerrycans whispers: \"Black market. ₦2,000 a litre. No wahala.\"",
+    "choices": [
+      {
+        "text": "Buy from the jerrycan boy (₦12,000)",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -12000
+          },
+          {
+            "chance": 0.25,
+            "then": [
+              {
+                "stat": "health",
+                "add": -6
+              },
+              {
+                "toast": "The fuel was mixed with water. Your engine coughs all the way home."
+              }
+            ],
+            "else": [
+              {
+                "stat": "stress",
+                "add": -4
+              }
+            ]
+          }
+        ],
+        "result": "You pour it in with a funnel made from a sachet water bag."
+      },
+      {
+        "text": "Join the queue and wait it out",
+        "effects": [
+          {
+            "stat": "energy",
+            "add": -20
+          },
+          {
+            "stat": "stress",
+            "add": 8
+          },
+          {
+            "stat": "network",
+            "add": 2
+          }
+        ],
+        "result": "Six hours later you reach the pump. You now know the life stories of everyone around you."
+      },
+      {
+        "text": "Forget it, trek today",
+        "effects": [
+          {
+            "stat": "energy",
+            "add": -10
+          },
+          {
+            "stat": "health",
+            "add": 2
+          }
+        ],
+        "result": "Your legs complain. Your wallet doesn't."
+      }
+    ]
+  },
+  {
+    "id": "ce_fuel_resell",
+    "weight": 4,
+    "if": {
+      "cityEvent": "fuel",
+      "stat": "money",
+      "gte": 30000
+    },
+    "title": "A scarcity hustle",
+    "text": "Your cousin knows a depot manager. \"Buy 100 litres at pump price, sell to the queue at double. Everybody is doing it.\"",
+    "choices": [
+      {
+        "text": "Do it (₦30,000)",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -30000
+          },
+          {
+            "chance": 0.7,
+            "then": [
+              {
+                "stat": "money",
+                "add": 62000
+              },
+              {
+                "toast": "Sold out in an hour. ₦62,000 back."
+              }
+            ],
+            "else": [
+              {
+                "stat": "heat",
+                "add": 8
+              },
+              {
+                "toast": "Task force raids the roadside sellers. Your jerrycans are 'confiscated'."
+              }
+            ]
+          }
+        ],
+        "result": "You stand by the road with your jerrycans like a real businessperson."
+      },
+      {
+        "text": "No, it's people's suffering",
+        "effects": [
+          {
+            "stat": "reputation",
+            "add": 2
+          }
+        ],
+        "result": "Your cousin calls you a saint. It isn't a compliment."
+      }
+    ]
+  },
+  {
+    "id": "ce_detty_concert",
+    "weight": 6,
+    "if": {
+      "cityEvent": "detty"
+    },
+    "title": "Detty December concert",
+    "text": "A big Afrobeats concert at Eagle Square tonight. Regular ticket ₦20,000. VIP with table: ₦150,000.",
+    "choices": [
+      {
+        "text": "Regular ticket (₦20,000)",
+        "if": {
+          "stat": "money",
+          "gte": 20000
+        },
+        "lockedText": "You don't have ₦20,000",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -20000
+          },
+          {
+            "stat": "stress",
+            "add": -15
+          },
+          {
+            "stat": "network",
+            "add": 3
+          },
+          {
+            "stat": "energy",
+            "add": -15
+          }
+        ],
+        "result": "You scream every lyric. Your voice is gone but your soul is full."
+      },
+      {
+        "text": "VIP table (₦150,000)",
+        "if": {
+          "stat": "money",
+          "gte": 150000
+        },
+        "lockedText": "You don't have ₦150,000",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -150000
+          },
+          {
+            "stat": "stress",
+            "add": -20
+          },
+          {
+            "stat": "network",
+            "add": 8
+          },
+          {
+            "stat": "reputation",
+            "add": 4
+          }
+        ],
+        "result": "Bottles with sparklers, people taking photos of you. Someone from a bank gives you their card."
+      },
+      {
+        "text": "Watch the clips on Instaflex at home",
+        "effects": [
+          {
+            "stat": "stress",
+            "add": 3
+          }
+        ],
+        "result": "FOMO is a real illness."
+      }
+    ]
+  },
+  {
+    "id": "ce_detty_owambe",
+    "weight": 5,
+    "if": {
+      "cityEvent": "detty"
+    },
+    "title": "Three weddings, one Saturday",
+    "text": "December is wedding season. You have three invitations for the same Saturday and three aso-ebi requests at ₦15,000 each.",
+    "choices": [
+      {
+        "text": "Go to all three (₦45,000)",
+        "if": {
+          "stat": "money",
+          "gte": 45000
+        },
+        "lockedText": "You don't have ₦45,000",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -45000
+          },
+          {
+            "stat": "network",
+            "add": 9
+          },
+          {
+            "stat": "energy",
+            "add": -30
+          },
+          {
+            "food": 40
+          }
+        ],
+        "result": "Three party jollofs, three dance floors, nine new contacts and one sore back."
+      },
+      {
+        "text": "Pick the richest family's wedding (₦15,000)",
+        "if": {
+          "stat": "money",
+          "gte": 15000
+        },
+        "lockedText": "You don't have ₦15,000",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -15000
+          },
+          {
+            "stat": "network",
+            "add": 5
+          },
+          {
+            "food": 30
+          }
+        ],
+        "result": "Strategic. The small chops were worth it alone."
+      },
+      {
+        "text": "\"Sorry, I travelled\"",
+        "effects": [
+          {
+            "stat": "reputation",
+            "add": -2
+          }
+        ],
+        "result": "Your status shows you at home. Everyone saw it."
+      }
+    ]
+  },
+  {
+    "id": "ce_christmas_bonus",
+    "weight": 8,
+    "if": {
+      "cityEvent": "christmas",
+      "hasJob": true
+    },
+    "title": "Christmas at the office",
+    "text": "HR sends an email: 'Season's greetings'. Then a second one: a Christmas bonus, and a hamper with a bottle of wine and a tin of cabin biscuits.",
+    "choices": [
+      {
+        "text": "Take it home and share with family",
+        "effects": [
+          {
+            "stat": "money",
+            "add": 40000
+          },
+          {
+            "stat": "reputation",
+            "add": 3
+          },
+          {
+            "stat": "stress",
+            "add": -8
+          }
+        ],
+        "result": "₦40,000 and a hamper. Your mum keeps the biscuit tin for sewing things."
+      },
+      {
+        "text": "Keep everything for yourself",
+        "effects": [
+          {
+            "stat": "money",
+            "add": 40000
+          },
+          {
+            "stat": "stress",
+            "add": -4
+          }
+        ],
+        "result": "₦40,000 richer. The cabin biscuits are gone by evening."
+      }
+    ]
+  },
+  {
+    "id": "ce_christmas_village",
+    "weight": 8,
+    "if": {
+      "cityEvent": "christmas"
+    },
+    "title": "\"Are you coming home for Christmas?\"",
+    "text": "Your aunty calls. The whole family is gathering in the village. Everyone expects you to come, and to come with something.",
+    "choices": [
+      {
+        "text": "Travel and spray money (₦60,000)",
+        "if": {
+          "stat": "money",
+          "gte": 60000
+        },
+        "lockedText": "You don't have ₦60,000",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -60000
+          },
+          {
+            "stat": "reputation",
+            "add": 6
+          },
+          {
+            "stat": "stress",
+            "add": -12
+          },
+          {
+            "stat": "network",
+            "add": 3
+          }
+        ],
+        "result": "Grandma prays for you for twenty minutes. You are the family's 'Abuja big man' now."
+      },
+      {
+        "text": "Send ₦15,000 and stay in Abuja",
+        "if": {
+          "stat": "money",
+          "gte": 15000
+        },
+        "lockedText": "You don't have ₦15,000",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -15000
+          },
+          {
+            "stat": "reputation",
+            "add": 1
+          }
+        ],
+        "result": "\"God bless you, but we wanted to see your face.\""
+      },
+      {
+        "text": "Pretend your network is bad",
+        "effects": [
+          {
+            "stat": "stress",
+            "add": 6
+          },
+          {
+            "stat": "reputation",
+            "add": -3
+          }
+        ],
+        "result": "Your aunty calls back on WhatsApp. The network was fine."
+      }
+    ]
+  },
+  {
+    "id": "ce_ramadan_iftar",
+    "weight": 7,
+    "if": {
+      "cityEvent": "ramadan"
+    },
+    "title": "Iftar on the street",
+    "text": "At sunset, the mallam who sells suya near the mosque spreads a mat and waves you over to break the fast with his family.",
+    "choices": [
+      {
+        "text": "Sit and eat with them",
+        "effects": [
+          {
+            "food": 45
+          },
+          {
+            "water": 30
+          },
+          {
+            "stat": "network",
+            "add": 3
+          },
+          {
+            "stat": "stress",
+            "add": -6
+          }
+        ],
+        "result": "Dates, kunu, rice and suya. You leave with a full stomach and an open invitation."
+      },
+      {
+        "text": "Bring something to share (₦5,000)",
+        "if": {
+          "stat": "money",
+          "gte": 5000
+        },
+        "lockedText": "You don't have ₦5,000",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -5000
+          },
+          {
+            "food": 45
+          },
+          {
+            "stat": "reputation",
+            "add": 4
+          },
+          {
+            "stat": "network",
+            "add": 4
+          }
+        ],
+        "result": "Your crate of soft drinks is the star of the mat. People remember."
+      }
+    ]
+  },
+  {
+    "id": "ce_flood_road",
+    "weight": 7,
+    "if": {
+      "cityEvent": "flood"
+    },
+    "title": "The road is a river",
+    "text": "The storm has turned the road home into brown water up to your knees. A man with a wheelbarrow offers to carry you across for ₦1,500.",
+    "choices": [
+      {
+        "text": "Pay the wheelbarrow man (₦1,500)",
+        "if": {
+          "stat": "money",
+          "gte": 1500
+        },
+        "lockedText": "You don't have ₦1,500",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -1500
+          },
+          {
+            "stat": "stress",
+            "add": -2
+          }
+        ],
+        "result": "You cross like royalty. He's made ₦40,000 today. Floods are his Detty December."
+      },
+      {
+        "text": "Wade through",
+        "effects": [
+          {
+            "stat": "health",
+            "add": -6
+          },
+          {
+            "stat": "stress",
+            "add": 5
+          }
+        ],
+        "result": "Something brushes your leg. You decide not to think about it."
+      },
+      {
+        "text": "Wait it out at a shop",
+        "effects": [
+          {
+            "stat": "energy",
+            "add": -8
+          },
+          {
+            "stat": "network",
+            "add": 1
+          }
+        ],
+        "result": "Two hours with strangers, a generator and a Nollywood film. The water goes down."
+      }
+    ]
+  },
+  {
+    "id": "ce_election_money",
+    "weight": 8,
+    "if": {
+      "cityEvent": "election"
+    },
+    "title": "\"Stomach infrastructure\"",
+    "text": "A party agent at the polling unit slides an envelope toward you. \"₦10,000. Just vote correctly. We will be watching.\"",
+    "choices": [
+      {
+        "text": "Take it and vote for them",
+        "effects": [
+          {
+            "stat": "money",
+            "add": 10000,
+            "cash": true
+          },
+          {
+            "stat": "reputation",
+            "add": -3
+          },
+          {
+            "stat": "heat",
+            "add": 3
+          }
+        ],
+        "result": "You fold your conscience into your pocket with the money."
+      },
+      {
+        "text": "Take it, then vote your conscience",
+        "effects": [
+          {
+            "stat": "money",
+            "add": 10000,
+            "cash": true
+          },
+          {
+            "chance": 0.3,
+            "then": [
+              {
+                "stat": "stress",
+                "add": 10
+              },
+              {
+                "toast": "An agent saw how you folded your ballot. He's asking around for you."
+              }
+            ],
+            "else": [
+              {
+                "stat": "stress",
+                "add": -2
+              }
+            ]
+          }
+        ],
+        "result": "Shine your eye, they said. You did."
+      },
+      {
+        "text": "Refuse and report it",
+        "effects": [
+          {
+            "stat": "reputation",
+            "add": 5
+          },
+          {
+            "chance": 0.3,
+            "then": [
+              {
+                "stat": "health",
+                "add": -5
+              },
+              {
+                "toast": "The agent's boys aren't happy. You leave quickly."
+              }
+            ]
+          }
+        ],
+        "result": "The INEC official writes it down. You don't expect anything to happen."
+      }
+    ]
+  },
+  {
+    "id": "ce_election_walk",
+    "weight": 5,
+    "if": {
+      "cityEvent": "election"
+    },
+    "title": "Empty roads",
+    "text": "No cars, no okadas. Kids are playing football in the middle of the expressway. The city feels like a holiday.",
+    "choices": [
+      {
+        "text": "Join the street football",
+        "effects": [
+          {
+            "stat": "stress",
+            "add": -10
+          },
+          {
+            "stat": "energy",
+            "add": -10
+          },
+          {
+            "stat": "network",
+            "add": 2
+          }
+        ],
+        "result": "You score once and argue about offside for twenty minutes."
+      },
+      {
+        "text": "Rest at home",
+        "effects": [
+          {
+            "stat": "energy",
+            "add": 15
+          }
+        ],
+        "result": "The quietest Abuja day of the year. You sleep like a baby."
+      }
+    ]
+  },
+  {
+    "id": "ce_viral_trend",
+    "weight": 4,
+    "if": {
+      "cityEvent": "viral"
+    },
+    "title": "Everyone's talking about it",
+    "text": "Today's trending story is all over every WhatsApp group. A friend says there's money in moving fast while it trends.",
+    "choices": [
+      {
+        "text": "Post a hot take on Instaflex",
+        "effects": [
+          {
+            "skill": "content",
+            "add": 2
+          },
+          {
+            "chance": 0.4,
+            "then": [
+              {
+                "stat": "reputation",
+                "add": 3
+              },
+              {
+                "toast": "Your take goes semi-viral. 30,000 views."
+              }
+            ],
+            "else": [
+              {
+                "stat": "stress",
+                "add": 3
+              },
+              {
+                "toast": "Twelve likes. One of them is your mum."
+              }
+            ]
+          }
+        ],
+        "result": "You post it and refresh every two minutes."
+      },
+      {
+        "text": "Check the Trade app",
+        "effects": [
+          {
+            "skill": "trading",
+            "add": 1
+          }
+        ],
+        "result": "Prices are moving. The question is which way, and for how long."
+      }
+    ]
   }
 ]

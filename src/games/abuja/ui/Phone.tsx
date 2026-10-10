@@ -15,6 +15,7 @@ import { MONTHS, SEASON_NAMES, seasonOf, monthOf } from "../systems/weather";
 import { ASSET_NAMES, END_AGE, FREEDOM_TARGET, USD_RATE, check, debt, naira, netWorth, npcName } from "../systems/rules";
 import { RIDE_INFO, RIDE_MODES, fare, fuelCost, rideBan, rideKm } from "../systems/rides";
 import { rainSurge, weatherOf } from "../systems/weather";
+import { eventsNow, fareSurge, fuelSurge, rideStop } from "../systems/cityEvents";
 import { hasCar } from "../systems/drive";
 import { BUSINESSES, bizDef, canStart, growWhy, upgradeCost } from "../systems/business";
 import { DEALS, QUALITY_LABEL, blocked, repLabel } from "../systems/negotiate/core";
@@ -782,11 +783,15 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
         onChange={(event) => setQuery(event.target.value)}
       />
       <p className="mt-2 text-xs text-slate-400">Pick where to go, then how: okada, keke or taxi get you there now. The bus is cheapest but takes a time slot. Okadas and kekes are banned in the city centre.{rainSurge(weatherOf(state.day, state.slot)) > 1 ? " It's raining: fares are up." : ""}</p>
+      {eventsNow(state).filter((e) => e.fare || e.fuel || e.noRides || e.wetDistricts).map((e) => (
+        <p key={e.id} className="mt-2 rounded-lg bg-amber-400/10 px-2.5 py-1.5 text-xs font-semibold text-amber-200">
+          {e.icon} {e.name}: {e.line}
+        </p>
+      ))}
       <div className="mt-3 grid gap-2">
         {shown.map((p) => {
           const d = district(p.district);
           const unwelcome = d?.gate && !check(state, d.gate.if);
-          const surge = rainSurge(weatherOf(state.day, state.slot));
           const locked = unwelcome && d?.gate?.hard;
           const to = arrivalOf(p);
           return (
@@ -800,20 +805,20 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
               {canDrive ? (
                 <button
                   type="button"
-                  disabled={state.stats.money < fuelCost(state.pos, to)}
+                  disabled={state.stats.money < Math.round(fuelCost(state.pos, to) * fuelSurge(state)) || Boolean(rideStop(state))}
                   className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-40"
                   onClick={() => {
                     driveTo(p.id);
                     onDone();
                   }}
                 >
-                  🚗 Drive yourself · fuel {naira(fuelCost(state.pos, to))}
+                  🚗 Drive yourself · fuel {naira(Math.round(fuelCost(state.pos, to) * fuelSurge(state)))}
                 </button>
               ) : null}
               <div className="mt-2 grid grid-cols-4 gap-1.5">
                 {RIDE_MODES.map((mode) => {
-                  const cost = fare(mode, state.pos, to, surge);
-                  const banned = rideBan(mode, state.district, p.district);
+                  const cost = fare(mode, state.pos, to, fareSurge(state, mode, p.district));
+                  const banned = rideStop(state) ?? rideBan(mode, state.district, p.district);
                   return (
                     <button
                       key={mode}
@@ -831,7 +836,7 @@ function MapApp({ state, onDone }: { state: GameState; onDone: () => void }) {
                         {RIDE_INFO[mode].icon}
                       </span>
                       {RIDE_INFO[mode].label}
-                      <span className="font-normal text-slate-300">{banned ? "Banned here" : naira(cost)}</span>
+                      <span className="font-normal text-slate-300">{banned ? (rideStop(state) ? "No rides today" : "Banned here") : naira(cost)}</span>
                     </button>
                   );
                 })}

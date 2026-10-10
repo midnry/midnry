@@ -2,6 +2,7 @@ import { ASSETS } from "./market";
 import { BUSINESSES } from "./business";
 import { life as lifeOf } from "./life";
 import { MONTHS, SEASON_NAMES, weatherOf } from "./weather";
+import { eventsNow } from "./cityEvents";
 import type { GameState } from "./types";
 
 // Abuja Daily: the city's news, written from what is actually happening in
@@ -54,7 +55,6 @@ function weatherStories(s: GameState): Story[] {
     body = `${month} heat. Sachet water sellers report brisk business at every junction.`;
   }
   out.push({ id: "wx", tag: "Weather", icon: wetTomorrow?.icon ?? now.icon, headline, body, day: s.day });
-  if (now.sky === "storm") out.push({ id: "wx-flood", tag: "City", icon: "🌊", day: s.day, headline: "Flood warning for low-lying roads", body: "FEMA (FCT Emergency Management) warns motorists to avoid flooded underpasses during today's storm. Do not drive through moving water." });
   return out;
 }
 
@@ -162,9 +162,21 @@ function cityStories(s: GameState): Story[] {
 }
 
 /** Today's paper: things that are about you first, then the rest. */
+/** What the whole city is going through: fuel queues, elections, festivals, today's viral story. */
+function cityEventStories(s: GameState): Story[] {
+  return eventsNow(s).map((e) => ({
+    id: `ce-${e.id}`,
+    tag: (e.id === "election" ? "Politics" : e.id === "viral" ? "Markets" : "City") as NewsTag,
+    icon: e.icon,
+    day: s.day,
+    headline: e.headline,
+    body: e.body,
+  }));
+}
+
 export function todaysNews(s: GameState): Story[] {
   const filed: Story[] = (s.news ?? []).filter((n) => s.day - n.day <= 3);
-  const live = [...peopleStories(s), ...crimeStories(s), ...weatherStories(s), ...marketStories(s), ...cityStories(s)];
+  const live = [...cityEventStories(s), ...peopleStories(s), ...crimeStories(s), ...weatherStories(s), ...marketStories(s), ...cityStories(s)];
   const all = [...filed, ...live];
   return [...all.filter((n) => n.you), ...all.filter((n) => !n.you)];
 }

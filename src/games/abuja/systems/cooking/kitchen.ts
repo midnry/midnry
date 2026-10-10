@@ -3,6 +3,7 @@ import { equipment, stats } from "./equipment";
 import { ingredient, INGREDIENTS, TIERS } from "./ingredients";
 import { RECIPES } from "./recipes";
 import type { Dish, EquipTier, IngredientDef, Kitchen, Lot, MarketEvent, Owned, SkillId, Storage, Tier } from "./types";
+import { foodSurge } from "../cityEvents";
 
 // Your kitchen: what you own, what's in the cupboards, how clean it is and
 // what you know. Saves from before cooking existed get a kitchen that fits
@@ -232,6 +233,8 @@ export function price(s: GameState, id: string, tier: Tier, source: Source): num
   const seasonal = season === null ? 1 : season ? 0.8 : 1.25;
   let event = 1;
   for (const e of s.kitchen?.market ?? []) if (e.until >= s.day) event *= e.mult[id] ?? e.mult[`cat:${def.cat}`] ?? e.mult.all ?? 1;
+  // Detty December, Ramadan or today's tomato scarcity across the city.
+  event *= foodSurge(s);
   const supplier = source.id === "sani" && s.life?.neg?.supplier && s.life.neg.supplier.until >= s.day ? 1 - s.life.neg.supplier.discount : 1;
   return Math.max(10, Math.round(def.price * TIERS[tier].price * source.mult * inflation * econ * seasonal * event * supplier / 10) * 10);
 }

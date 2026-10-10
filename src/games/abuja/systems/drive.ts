@@ -2,6 +2,7 @@ import { ROADS, road } from "./city/layout";
 import { injured } from "./health";
 import { life, lifeOf } from "./life";
 import type { GameState } from "./types";
+import { fuelSurge } from "./cityEvents";
 
 // Driving: a licence from the driving school, a car to drive (rented or
 // bought), fuel, and FRSC road safety checkpoints.
@@ -69,7 +70,7 @@ export function toggleDriving(s: GameState): string {
 
 /** Fuel for the distance just driven. Stops the car when the money runs out. */
 export function useFuel(s: GameState, px: number): string | null {
-  const cost = Math.round(px * FUEL_PER_PX);
+  const cost = Math.round(px * FUEL_PER_PX * fuelSurge(s));
   if (cost <= 0) return null;
   if (s.stats.money < cost) {
     life(s).driving = false;
