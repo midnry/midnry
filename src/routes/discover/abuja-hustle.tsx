@@ -194,9 +194,9 @@ function GamePage() {
             <div>
               <p className="flex items-center gap-2 text-sm font-extrabold tracking-widest text-[#a45a12] uppercase" style={GAME_FONT}>
                 <span className="inline-flex h-7 min-w-9 items-center justify-center rounded-lg bg-[#1a1745] px-2 text-[#edc584] shadow-sm">{String(i + 1).padStart(2, "0")}</span>
-                {f.isNew ? <span className="rounded-full bg-[#70d3ad]/25 px-2.5 py-0.5 text-[11px] tracking-normal text-[#0f5c44] normal-case">New</span> : null}
+                {f.isNew ? <span className="rounded-full bg-[#70d3ad]/25 px-2.5 py-0.5 text-[11px] tracking-normal text-[#0f5c44] normal-case dark:text-[#8be0bf]">New</span> : null}
               </p>
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-balance text-[#1a1745] sm:text-4xl" style={GAME_FONT}>{f.title}</h2>
+              <h2 className="mt-3 text-3xl font-black tracking-tight text-balance text-[#1a1745] sm:text-4xl dark:text-[#f7edda]" style={GAME_FONT}>{f.title}</h2>
               <p className="mt-3 max-w-lg text-lg text-pretty text-muted">{f.text}</p>
             </div>
             {f.phone ? <PhoneFrame src={shot(f.image)} alt={f.alt} dark /> : <BrowserFrame src={shot(f.image)} alt={f.alt} />}

@@ -148,7 +148,7 @@ function FeaturedSix() {
           <p className="mt-3 flex-1 text-sm text-pretty text-[#f7edda]/90">
             A life sim. Grow up in a hand-painted Abuja, build a banking career, make friends in high places, and chase financial freedom.
           </p>
-          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#8be0bf]">
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#a7f0d2]">
             See the game <span aria-hidden className="transition group-hover:translate-x-0.5">→</span>
           </span>
         </Link>

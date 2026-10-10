@@ -43,13 +43,13 @@ export function PricingPanel() {
       </article>
 
       <article className="rounded-3xl bg-pine p-6 text-paper sm:p-8">
-        <p className="text-sm text-paper/70">Midnry Pass</p>
+        <p className="text-sm text-paper/85">Midnry Pass</p>
         <h2 className="mt-3 font-display text-4xl tracking-tight text-balance">The rest of the desk</h2>
         <p className="mt-4 font-display text-5xl tabular-nums">
           {PASS_PRICE_LABEL}
-          <span className="ml-2 font-sans text-base text-paper/70">/ month</span>
+          <span className="ml-2 font-sans text-base text-paper/85">/ month</span>
         </p>
-        <p className="mt-1 text-sm text-paper/70">The whole desk. Cancel anytime.</p>
+        <p className="mt-1 text-sm text-paper/85">The whole desk. Cancel anytime.</p>
         <ul className="mt-6 space-y-2 text-sm">
           <li>{includedNames()}</li>
           {paid.map((app) => (
