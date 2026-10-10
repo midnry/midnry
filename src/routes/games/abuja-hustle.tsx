@@ -16,7 +16,10 @@ export const Route = createFileRoute("/games/abuja-hustle")({
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Abuja Hustle" },
     ],
-    links: [{ rel: "apple-touch-icon", href: "/abuja-hustle-180.png" }],
+    links: [
+      { rel: "apple-touch-icon", href: "/abuja-hustle-v2-180.png" },
+      { rel: "icon", type: "image/png", href: "/abuja-hustle-v2-192.png" },
+    ],
   }),
   pendingComponent: () => <LoadingScreen title="Opening Abuja Hustle" />,
   pendingMs: 0,

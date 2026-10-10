@@ -160,7 +160,7 @@ function GamePage() {
         <div className="relative grid items-center gap-10 lg:grid-cols-[1fr_1.1fr]">
           <div>
             <div className="flex items-center gap-3">
-              <img src="/abuja-hustle-192.png" alt="" className="size-14 rounded-2xl" />
+              <img src="/abuja-hustle-v2-192.png" alt="" className="size-14 rounded-2xl" />
               <span className="rounded-full bg-black/25 px-3 py-1 text-xs font-extrabold tracking-widest text-[#edc584] uppercase ring-1 ring-[#edc584]/30" style={GAME_FONT}>Free game · 18+</span>
             </div>
             <h1 className="mt-5 text-5xl font-black tracking-tight text-balance drop-shadow-[0_2px_12px_rgba(10,13,36,0.6)] sm:text-6xl" style={GAME_FONT}>Abuja Hustle</h1>

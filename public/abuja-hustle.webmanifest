@@ -10,7 +10,7 @@
   "background_color": "#05070c",
   "theme_color": "#05070c",
   "icons": [
-    { "src": "/abuja-hustle-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/abuja-hustle-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "/abuja-hustle-v2-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/abuja-hustle-v2-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }
