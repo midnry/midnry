@@ -9,6 +9,8 @@ import { APP_NAME, SITE_DESCRIPTION } from "@/lib/catalog";
 import { ToasterMount } from "@/components/toaster";
 import { Link } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
+import { DayModeSync } from "@/components/day-mode";
+import { MODE_SCRIPT } from "@/lib/day-mode";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -50,6 +52,7 @@ function RootComponent() {
   return (
     <html lang="en" className="antialiased" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: MODE_SCRIPT }} />
         <HeadContent />
         <script
           type="application/ld+json"
@@ -75,6 +78,7 @@ function RootComponent() {
       </head>
       <body>
         <PreviewHostBridge />
+        <DayModeSync />
         <AuthProvider>
           <AccountProvider>
             <FavoritesProvider>

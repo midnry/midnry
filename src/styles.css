@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* `dark:` follows the site's mode (see src/lib/day-mode.ts), not only the device setting. */
+@custom-variant dark (&:where([data-mode="dark"], [data-mode="dark"] *));
+
 @theme {
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Newsreader", Georgia, "Times New Roman", serif;
@@ -12,6 +15,62 @@
   --color-line: #d5e2f0;
   --color-pine: #1d4ed8;
   --color-fail: #b42318;
+}
+
+/* Day modes: light (7am–4pm), evening (4pm–7pm) and dark (7pm–7am, or when the
+   device is set to dark). The colours are registered so a change of mode fades
+   smoothly instead of snapping. */
+@property --color-paper { syntax: "<color>"; inherits: true; initial-value: #f4f7fb; }
+@property --color-paper-2 { syntax: "<color>"; inherits: true; initial-value: #e6eef8; }
+@property --color-card { syntax: "<color>"; inherits: true; initial-value: #ffffff; }
+@property --color-ink { syntax: "<color>"; inherits: true; initial-value: #102033; }
+@property --color-ink-soft { syntax: "<color>"; inherits: true; initial-value: #1e3a5f; }
+@property --color-muted { syntax: "<color>"; inherits: true; initial-value: #5c6e84; }
+@property --color-line { syntax: "<color>"; inherits: true; initial-value: #d5e2f0; }
+@property --color-pine { syntax: "<color>"; inherits: true; initial-value: #1d4ed8; }
+@property --color-fail { syntax: "<color>"; inherits: true; initial-value: #b42318; }
+@property --shadow-tint { syntax: "<color>"; inherits: true; initial-value: rgba(16, 32, 51, 0.06); }
+
+html[data-mode="evening"] {
+  --color-paper: #f7ede2;
+  --color-paper-2: #efdcc8;
+  --color-card: #fffaf3;
+  --color-ink: #2a1a12;
+  --color-ink-soft: #5b3420;
+  --color-muted: #7a6152;
+  --color-line: #ead5c0;
+  --color-pine: #b5410f;
+  --color-fail: #b91c1c;
+  --shadow-tint: rgba(60, 30, 10, 0.08);
+}
+
+html[data-mode="dark"] {
+  color-scheme: dark;
+  --color-paper: #0b1220;
+  --color-paper-2: #121c2f;
+  --color-card: #162238;
+  --color-ink: #e7eef8;
+  --color-ink-soft: #c4d3e8;
+  --color-muted: #93a4bb;
+  --color-line: #26354f;
+  --color-pine: #7aa2ff;
+  --color-fail: #e5484d;
+  --shadow-tint: rgba(255, 255, 255, 0.07);
+}
+
+/* Added after the first paint, so a page never fades in from the wrong mode. */
+html.mode-ease {
+  transition:
+    --color-paper 2s ease,
+    --color-paper-2 2s ease,
+    --color-card 2s ease,
+    --color-ink 2s ease,
+    --color-ink-soft 2s ease,
+    --color-muted 2s ease,
+    --color-line 2s ease,
+    --color-pine 2s ease,
+    --color-fail 2s ease,
+    --shadow-tint 2s ease;
 }
 
 @layer base {
@@ -50,7 +109,7 @@
 @layer components {
   .shadow-line {
     box-shadow:
-      0 0 0 1px rgba(16, 32, 51, 0.06),
+      0 0 0 1px var(--shadow-tint),
       0 1px 2px -1px rgba(16, 32, 51, 0.06),
       0 2px 4px 0 rgba(16, 32, 51, 0.04);
   }
@@ -94,6 +153,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .timer-bar {
+    transition: none;
+  }
+
+  html.mode-ease {
     transition: none;
   }
 
