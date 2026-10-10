@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { addComic, moodFor } from "./comicLook";
 import { startSceneLoading, finishSceneLoading } from "./loading";
 import { districtAt } from "../systems/data";
 import { ROADS, roadRoute } from "../systems/citymap";
@@ -275,6 +276,7 @@ export class DriveScene extends Phaser.Scene {
     if (w.wet || w.sky === "haze") this.add.rectangle(0, 0, width, height, 0x1e293b, w.sky === "storm" ? 0.22 : w.sky === "haze" ? 0 : 0.12).setOrigin(0).setScrollFactor(0).setDepth(997);
     // Evening and night on the road: a darker world, stars, and your headlights on the tarmac ahead.
     const slot = Math.min(3, st?.slot ?? 0);
+    addComic(this, moodFor(slot));
     if (slot >= 2) {
       const night = slot === 3;
       this.sky.setTint(night ? 0x1b2550 : 0xb07a8e);

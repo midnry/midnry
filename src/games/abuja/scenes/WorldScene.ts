@@ -27,6 +27,7 @@ import { playerPainted } from "../systems/painted";
 import { building as buildingInfo } from "../systems/city/catalog";
 import { fullLook, lookKey, randomLook, stageOf, type Look } from "../systems/character";
 import { ChunkedGraphics, type CullBounds } from "./chunkedGraphics";
+import { addComic, moodFor, type ComicFX } from "./comicLook";
 import { NightLight, generator, outage, type Light } from "./nightLight";
 import { INK, animateWalk, pose, building, lotKey, placeBuilding, queueBuildings, faceVehicle, figure, labelScale, loadDeferredWalks, makeArt, queueCharacters, setPeopleScale, queueVehicles, rand, signpost, tileKey, vehicle, type Figure, type Person, type Vehicle } from "./art";
 
@@ -201,6 +202,8 @@ export class WorldScene extends Phaser.Scene {
   private litInfo = new Map<Phaser.GameObjects.Image, { district: string; id: string }>();
   /** Real darkness with light cut out of it. */
   private nightFx: NightLight | null = null;
+  /** The comic look over the whole map, graded by time of day. */
+  private comic: ComicFX | null = null;
   /** Street lamps, and kiosks and stalls with a bulb or lantern, for the night. */
   private lampSpots: { x: number; y: number; district: string }[] = [];
   private warmSpots: { x: number; y: number }[] = [];
@@ -326,6 +329,7 @@ export class WorldScene extends Phaser.Scene {
     this.scale.on("resize", this.sizeVignette, this);
 
     this.cameras.main.setBounds(0, 0, width, height);
+    this.comic = addComic(this, moodFor(getState()?.slot ?? 1));
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     this.fitZoom();
     this.scale.on("resize", this.fitZoom, this);
@@ -1301,6 +1305,7 @@ export class WorldScene extends Phaser.Scene {
     // The flat shade only adds the day's gloom and a touch of sunset colour.
     const city = this.mapId === "city";
     const dusk = Math.min(state.slot, 3);
+    this.comic?.mood(moodFor(dusk));
     const darkness = !city ? 0 : dusk === 3 ? 0.84 + gloom * 0.3 : dusk === 2 ? 0.36 + gloom * 0.4 : 0;
     this.nightFx?.set(Math.min(0.93, darkness), dusk === 2 ? 0x2a1640 : 0x040920, this.lastDusk === null);
     this.lastDusk = dusk;

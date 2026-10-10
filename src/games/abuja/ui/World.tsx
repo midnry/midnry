@@ -66,6 +66,7 @@ import { DriveHudView } from "./DriveHud";
 import { MONTHS, SEASON_NAMES, weatherOf } from "../systems/weather";
 import { isMyRoom } from "../systems/decor";
 import { GAME_FONT, actionBtn, btnGhost, btnPrimary, glass, iconBtn, panel } from "./theme";
+import { lookIsComic, setComicLook } from "../systems/look";
 
 /** The walkable game: story chapters and adult Abuja share this view. */
 export function World({ state, onQuit }: { state: GameState; onQuit: () => void }) {
@@ -784,6 +785,7 @@ function PauseMenu({
           </div>
           <p className="mt-1.5 text-xs text-slate-400">Arrow keys and WASD always work on a keyboard.</p>
         </div>
+        <LookSwitch />
         <div className="mt-5 rounded-xl bg-white/5 p-3 text-xs text-slate-300">
           <p className="font-semibold text-slate-200">How to play</p>
           <ul className="mt-1 list-disc space-y-1 pl-4">
@@ -1161,6 +1163,40 @@ function HaggleModal({ state }: { state: GameState }) {
             Counter
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** Comic look (bold outlines, rich colour) or the classic painted look. */
+function LookSwitch() {
+  const [comic, setComic] = useState(lookIsComic);
+  const pick = (next: boolean) => {
+    setComic(next);
+    setComicLook(next);
+  };
+  return (
+    <div className="mt-5">
+      <p className="text-sm font-semibold">Look</p>
+      <div className="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Look">
+        {(
+          [
+            [true, "🖍️ Comic", "Bold outlines, rich colour"],
+            [false, "🎨 Classic", "Soft painted look"],
+          ] as const
+        ).map(([id, label, hint]) => (
+          <button
+            key={label}
+            type="button"
+            role="radio"
+            aria-checked={comic === id}
+            onClick={() => pick(id)}
+            className={`rounded-xl border p-3 text-left text-sm transition ${comic === id ? "border-blue-400 bg-blue-400/15" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
+          >
+            <span className="block font-semibold">{label}</span>
+            <span className="block text-xs text-slate-400">{hint}</span>
+          </button>
+        ))}
       </div>
     </div>
   );

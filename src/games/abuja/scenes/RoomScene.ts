@@ -1,3 +1,4 @@
+import { addComic } from "./comicLook";
 import { startSceneLoading, finishSceneLoading } from "./loading";
 import { playerPainted } from "../systems/painted";
 import { GAME_FONT } from "../ui/theme";
@@ -82,6 +83,7 @@ export class RoomScene extends Phaser.Scene {
     const layout = this.layout;
     const { w: W, h: H, wall: WALL, door } = ROOM;
     this.cameras.main.setBackgroundColor("#0b1726");
+    addComic(this, "inside");
     this.drawDecor();
     // The room's frame: walls around it, with a doorway at the bottom.
     const g = this.add.graphics().setDepth(0.5);
