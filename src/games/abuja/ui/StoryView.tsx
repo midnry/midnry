@@ -1,4 +1,5 @@
 import { myLooks } from "../systems/painted";
+import { OddsTag } from "./OddsTag";
 import { chapter } from "../systems/data";
 import { choose, continueStory, payFixer, pickSport } from "../systems/engine";
 import { fill, lockReason, naira } from "../systems/rules";
@@ -81,6 +82,7 @@ export function StoryPanel({ state }: { state: GameState }) {
                     >
                       <span className="font-medium">{fill(state, item.text)}</span>
                       {!ok ? <span className="mt-0.5 block text-xs text-slate-400">🔒 {reason}</span> : null}
+                      {ok ? <OddsTag effects={item.effects} /> : null}
                     </button>
                   );
                 })}

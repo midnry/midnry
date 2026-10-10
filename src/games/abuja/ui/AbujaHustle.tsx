@@ -15,6 +15,7 @@ import { AgeGate, Creator, Title } from "./Menus";
 import { useGame } from "./useGame";
 import { LoadingScreen } from "./LoadingScreen";
 import { warmUp } from "./warmup";
+import { markLoadStart, track } from "./telemetry";
 import { sound } from "../systems/sound";
 
 const World = lazy(() => import("./World").then((module) => ({ default: module.World })));
@@ -131,6 +132,8 @@ export function AbujaHustle() {
             setSlot(creating);
             deleteSave(creating);
             replace(newGame(input));
+            markLoadStart();
+            track("start");
             startGame();
             setCreating(null);
           }}
@@ -146,6 +149,8 @@ export function AbujaHustle() {
         onNew={(slot) => setCreating(slot)}
         onContinue={(slot) => {
           setSlot(slot);
+          markLoadStart();
+          track("continue");
           replace(saved[slot - 1] ?? null);
         }}
         onDelete={(slot) => {

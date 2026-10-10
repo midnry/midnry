@@ -1,4 +1,5 @@
 import { LoadingScreen } from "./LoadingScreen";
+import { OddsTag } from "./OddsTag";
 import { GameLoadingContext } from "./loading-context";
 import { myLooks } from "../systems/painted";
 import { useContext, useEffect, useRef, useState } from "react";
@@ -30,6 +31,7 @@ import {
   memoryKey,
   finishGame,
   steal,
+  stealOdds,
   sellStash,
   stashOffer,
   openDay,
@@ -62,6 +64,8 @@ import { PathChooser } from "./Missions";
 import { EmekaMeet, EmekaSheet } from "./Emeka";
 import { MorningCard } from "./Morning";
 import { CelebrationCard } from "./Celebrate";
+import { markPlayable, trackOnce } from "./telemetry";
+import { FeedbackBox } from "./Feedback";
 import { rankOf } from "../systems/milestones";
 import { nextStep, PATHS } from "../systems/missions";
 import { StoryPanel } from "./StoryView";
@@ -121,6 +125,19 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
   const [loading, setLoading] = useState<{ title: string; icon: string; progress?: number; error?: string } | null>({ title: "Loading your next chapter", icon: "✦" });
   const presentedLoading = useContext(GameLoadingContext)?.visible ?? false;
   const isLoading = Boolean(loading) || presentedLoading;
+
+  // Anonymous play counts (ui/telemetry.ts): loading time, chapters reached, adult days, endings.
+  useEffect(() => {
+    if (!isLoading) markPlayable();
+  }, [isLoading]);
+  useEffect(() => {
+    if (state.chapter) trackOnce(state, `ch:${state.chapter}`, "chapter", state.chapter);
+    else if (state.stage === "adult") trackOnce(state, "ch:adult", "chapter", "adult");
+  }, [state.chapter, state.stage]);
+  const adultDays = state.flags.adult_day0 == null ? -1 : state.day - Number(state.flags.adult_day0);
+  useEffect(() => {
+    for (const n of [1, 7, 28, 56, 112]) if (adultDays >= n) trackOnce(state, `ad:${n}`, "adult_day", String(n));
+  }, [adultDays]);
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scheduleTransition = (action: () => void) => {
     if (transitionTimer.current) clearTimeout(transitionTimer.current);
@@ -889,6 +906,7 @@ function PauseMenu({
         </div>
         <LookSwitch />
         <MessageSwitch />
+        <FeedbackBox />
         <SoundSwitch />
         <div className="mt-5 rounded-xl bg-white/5 p-3 text-xs text-slate-300">
           <p className="font-semibold text-slate-200">How to play</p>
@@ -944,6 +962,13 @@ function Bar({ label, Icon, value, color, warn, gain }: { label: string; Icon: S
       </div>
     </div>
   );
+}
+
+/** The odds of stealing unseen, and how much your hustle skill adds. */
+function stealNote(state: GameState): string {
+  const pct = Math.round(stealOdds(state) * 100);
+  const fromSkill = pct - 40;
+  return `🎲 ${pct}% chance nobody sees${fromSkill > 0 ? ` (your hustle skill adds ${fromSkill}%)` : ""}.`;
 }
 
 /** How much water the dispenser at home has left. */
@@ -1132,6 +1157,7 @@ function EventModal({ state }: { state: GameState }) {
               >
                 <span className="font-medium">{item.text}</span>
                 {!ok ? <span className="mt-0.5 block text-xs text-slate-400">🔒 {reason}</span> : null}
+                {ok ? <OddsTag effects={item.effects} /> : null}
               </button>
             );
           })}
@@ -1272,7 +1298,7 @@ function TalkModal({ state, personKey, onClose }: { state: GameState; personKey:
             <ReplyButton
               looks={myLooks(state)}
               adult={adult}
-              note={state.chapter ? "If you're caught, you pay for it, and the school punishes you" : "If you're caught, you pay for it, and the police may come"}
+              note={`${stealNote(state)} ${state.chapter ? "If you're caught, you pay for it and you're punished." : "If you're caught, you pay for it, and the police may come."}`}
               onClick={() => {
                 steal(personKey);
                 onClose();

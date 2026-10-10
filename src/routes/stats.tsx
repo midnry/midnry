@@ -6,6 +6,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useRole } from "@/components/role";
 import { adminStats, type AdminApp, type AdminStats } from "@/lib/admin.functions";
 import { Button, Skeleton, TextInput, cn } from "@/components/ui";
+import { gameStats, type GameStats } from "@/games/abuja/play.functions";
 
 export const Route = createFileRoute("/stats")({
   head: () => ({ meta: [{ title: "Stats — Midnry" }, { name: "robots", content: "noindex" }] }),
@@ -65,6 +66,7 @@ function StatsPage() {
           <Signups data={stats.signups} />
           <TopApps last30={stats.apps30} all={stats.appsAll} />
           <Users stats={stats} />
+          <GameSection />
         </>
       ) : null}
     </Shell>
@@ -240,4 +242,114 @@ function Users({ stats }: { stats: AdminStats }) {
 function prettyDay(day: string): string {
   const date = new Date(`${day}T12:00:00Z`);
   return Number.isNaN(date.getTime()) ? day : date.toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric" });
+}
+
+const CHAPTER_NAMES: Record<string, string> = { primary: "Primary school", secondary: "Secondary school", university: "University", nysc: "NYSC", adult: "Adult life" };
+const ENDING_NAMES: Record<string, string> = { freedom: "Financial Freedom", grass: "Grass to Grace", jail: "Jailed", ninefive: "Stuck in a 9-5", broke: "Broke", japa: "Japa", cut: "Life Cut Short" };
+
+/** Abuja Hustle: how far lives get, endings, loading time, and what players tell us. */
+function GameSection() {
+  const [data, setData] = useState<GameStats | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let cancel = false;
+    gameStats()
+      .then((next) => !cancel && setData(next))
+      .catch((caught: unknown) => !cancel && setError(caught instanceof Error ? caught.message : "Could not load game stats."));
+    return () => {
+      cancel = true;
+    };
+  }, []);
+  if (error) return <p className="mt-10 text-fail">{error}</p>;
+  if (!data) return <Skeleton className="mt-10 h-64 w-full" />;
+  const funnel = [...data.chapters.map((c) => ({ label: CHAPTER_NAMES[c.label] ?? c.label, players: c.players })), ...data.adultDays.map((d) => ({ label: `Adult day ${d.label}`, players: d.players }))];
+  const top = Math.max(1, ...funnel.map((f) => f.players));
+  const sec = (ms: number | null) => (ms == null ? "–" : `${(ms / 1000).toFixed(1)} s`);
+  return (
+    <section className="mt-10" aria-labelledby="game-stats">
+      <h2 id="game-stats" className="font-display text-3xl tracking-tight">
+        Abuja Hustle
+      </h2>
+      <p className="mt-1 text-sm text-muted">Last 30 days. Anonymous: one random id per device, nothing personal.</p>
+      <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Tile label="Players (devices)" value={data.players30} />
+        <Tile label="New lives started" value={data.starts30} />
+        <div className="rounded-2xl bg-card p-4 shadow-line">
+          <dt className="text-sm text-muted">Continue, typical load</dt>
+          <dd className="mt-1 font-display text-3xl tabular-nums">{sec(data.load.median)}</dd>
+        </div>
+        <div className="rounded-2xl bg-card p-4 shadow-line">
+          <dt className="text-sm text-muted">Slowest 10% load</dt>
+          <dd className="mt-1 font-display text-3xl tabular-nums">{sec(data.load.p90)}</dd>
+        </div>
+      </dl>
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl bg-card p-5 shadow-line">
+          <h3 className="font-display text-2xl">How far players get</h3>
+          <ol className="mt-3 grid gap-2">
+            {funnel.map((f) => (
+              <li key={f.label} className="grid grid-cols-[8.5rem_1fr_3rem] items-center gap-3 text-sm">
+                <span className="truncate text-muted">{f.label}</span>
+                <span className="h-3 overflow-hidden rounded-full bg-paper-2">
+                  <span className="block h-full rounded-full bg-pine" style={{ width: `${(f.players / top) * 100}%` }} />
+                </span>
+                <span className="text-right tabular-nums">{f.players}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="rounded-2xl bg-card p-5 shadow-line">
+          <h3 className="font-display text-2xl">Endings</h3>
+          {data.endings.length ? (
+            <ul className="mt-3 divide-y divide-line">
+              {data.endings.map((e) => (
+                <li key={e.label} className="flex justify-between py-2 text-sm">
+                  <span>{ENDING_NAMES[e.label] ?? e.label}</span>
+                  <span className="tabular-nums">{e.count}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-muted">No finished lives yet.</p>
+          )}
+        </div>
+      </div>
+      <div className="mt-6 rounded-2xl bg-card p-5 shadow-line">
+        <h3 className="font-display text-2xl">Player feedback</h3>
+        {data.feedback.length ? (
+          <ul className="mt-3 divide-y divide-line">
+            {data.feedback.map((f) => (
+              <FeedbackRow key={f.id} item={f} />
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 text-sm text-muted">No feedback yet. It arrives from the game's pause menu.</p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function FeedbackRow({ item }: { item: GameStats["feedback"][number] }) {
+  const [open, setOpen] = useState(false);
+  let ctx: Record<string, unknown> = {};
+  try {
+    ctx = JSON.parse(item.context) as Record<string, unknown>;
+  } catch {
+    ctx = {};
+  }
+  const where = [ctx.chapter === "adult" || !ctx.chapter ? null : CHAPTER_NAMES[String(ctx.chapter)], ctx.day != null ? `day ${ctx.day}` : null, ctx.goal ? `goal: ${ctx.goal}` : null, ctx.screen ? String(ctx.screen) : null].filter(Boolean).join(" · ");
+  return (
+    <li className="py-3 text-sm">
+      <p className="text-pretty">{item.message}</p>
+      <p className="mt-1 text-xs text-muted">
+        {new Date(item.created).toLocaleString()} · {item.user ?? "not signed in"}
+        {where ? ` · ${where}` : ""}
+      </p>
+      <button type="button" className="mt-1 min-h-9 text-xs underline underline-offset-4" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+        {open ? "Hide game details" : "Game details"}
+      </button>
+      {open ? <pre className="mt-1 overflow-x-auto rounded-lg bg-paper-2 p-2 text-xs">{JSON.stringify(ctx, null, 2)}</pre> : null}
+    </li>
+  );
 }

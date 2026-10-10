@@ -1378,6 +1378,9 @@ const CAUGHT_PUNISHMENT: Record<string, string> = {
   nysc: "The soldiers make you frog-jump round the parade ground in front of your whole platoon, and you're on sanitation duty for a week.",
 };
 
+/** Your chance of stealing unseen: 40% to start, more with hustle skill, at most 75%. */
+export const stealOdds = (s: GameState) => Math.min(0.75, 0.4 + s.skills.hustle / 250);
+
 /**
  * Steal from someone. Get away with it and you keep it (things you sell for
  * half). Get caught and the punishment fits the theft: buy food for everyone
@@ -1393,7 +1396,7 @@ export function steal(key: string) {
     const table = LOOT[p.map] ?? LOOT.city!;
     const loot = table[Math.floor(Math.random() * table.length)]!;
     const who = memoryKey(p);
-    const odds = Math.min(0.75, 0.4 + s.skills.hustle / 250);
+    const odds = stealOdds(s);
     if (Math.random() < odds) {
       if (loot.kind === "money") withoutBankCheck(() => addStat(s, "money", loot.value));
       else if (loot.kind === "item") (s.stash ??= []).push({ what: loot.what.replace(/^their /, ""), value: loot.value, from: key, day: s.day });

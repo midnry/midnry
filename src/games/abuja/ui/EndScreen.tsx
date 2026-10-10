@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { myLooks } from "../systems/painted";
 import { ENDINGS, job } from "../systems/data";
 import { naira, netWorth } from "../systems/rules";
@@ -11,8 +12,12 @@ import { childGender, inheritance } from "../systems/family";
 import { startHeir } from "../systems/engine";
 import { bizDef, bizWorth } from "../systems/business";
 import { ShareLife } from "./Fame";
+import { trackOnce } from "./telemetry";
 
 export function EndScreen({ state, signedIn = false }: { state: GameState; signedIn?: boolean }) {
+  useEffect(() => {
+    trackOnce(state, "ending", "ending", state.ending ?? "broke", Math.round(netWorth(state)));
+  }, []);
   const ending = ENDINGS[state.ending ?? "broke"];
   const familyBiz = (state.life?.businesses ?? []).map((b) => `the ${bizDef(b.id)?.name ?? "business"} (level ${b.level})`);
   const ownsProperty = Object.values(state.city?.lots ?? {}).some((l) => l.owned);
