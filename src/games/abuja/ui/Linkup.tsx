@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { romance, syncRomance } from "../systems/engine";
-import { ROMANCE, cost, partnerName, person, revealed } from "../systems/romance";
+import { ROMANCE, cost, partnerName, person, revealed, introduced } from "../systems/romance";
 import { naira } from "../systems/rules";
 import type { GameState, Partner } from "../systems/types";
 import { btnGhost, btnPrimary } from "./theme";
@@ -126,13 +126,35 @@ function PartnerCard({ state, p, open, onToggle }: { state: GameState; p: Partne
                   💍 Propose
                 </button>
               ) : null}
+              {p.status === "engaged" && !introduced(state, p.id) ? (
+                <button type="button" className={`${btnPrimary} min-h-10`} onClick={() => romance({ kind: "intro", id: p.id })}>
+                  🎁 Introduction ceremony with {name}'s family · {naira(cost(state, p.id, ROMANCE.introduction.cost))}
+                </button>
+              ) : null}
+              {p.status === "engaged" ? (
+                <p className="text-xs text-slate-400">
+                  {introduced(state, p.id) ? "Introduction done ✓. Pick your wedding. At a big wedding, guests spray money: the bigger your network, the more you get back." : "Church, mosque and traditional weddings need the introduction first. The registry doesn't."}
+                </p>
+              ) : null}
               {p.status === "engaged"
-                ? ROMANCE.weddings.map((w) => (
-                    <button key={w.id} type="button" className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-4 text-left text-sm font-semibold bg-blue-600 text-white hover:bg-blue-500" onClick={() => romance({ kind: "wed", id: p.id, wedding: w.id })}>
-                      <span>{w.name}</span>
-                      <span className="shrink-0 tabular-nums">{naira(cost(state, p.id, w.cost))}</span>
-                    </button>
-                  ))
+                ? ROMANCE.weddings.map((w) => {
+                    const locked = w.intro && !introduced(state, p.id);
+                    return (
+                      <button
+                        key={w.id}
+                        type="button"
+                        disabled={locked}
+                        className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl bg-blue-600 px-4 text-left text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-40"
+                        onClick={() => romance({ kind: "wed", id: p.id, wedding: w.id })}
+                      >
+                        <span>
+                          {locked ? "🔒 " : ""}
+                          {w.name}
+                        </span>
+                        <span className="shrink-0 tabular-nums">{naira(cost(state, p.id, w.cost))}</span>
+                      </button>
+                    );
+                  })
                 : null}
               <details className="rounded-xl bg-black/20 p-2">
                 <summary className="cursor-pointer text-xs text-slate-300">Spend the night</summary>

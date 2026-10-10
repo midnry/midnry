@@ -1,4 +1,6 @@
-import { clamp, naira } from "./rules";
+import { addLog, addStat, clamp, naira } from "./rules";
+import { babyName } from "./family";
+import { withoutBankCheck } from "./bank";
 import type { GameState } from "./types";
 
 // Emeka D: a nepo-baby classmate from secondary school. Anyone can be his
@@ -34,8 +36,29 @@ export function isHisOne(s: GameState): boolean {
   return s.name.trim().toLowerCase() === NAME && viewerHash === HEART;
 }
 
-export type EmekaStage = "none" | "friends" | "crush" | "dating";
-export type Emeka = { stage: EmekaStage; rel: number; met: number; since?: number; beats: number; lastAllowance: number; turnedDown?: boolean; asks?: number; ignored?: boolean };
+export type EmekaStage = "none" | "friends" | "crush" | "dating" | "engaged" | "married";
+export type Emeka = {
+  stage: EmekaStage;
+  rel: number;
+  met: number;
+  since?: number;
+  beats: number;
+  lastAllowance: number;
+  turnedDown?: boolean;
+  asks?: number;
+  ignored?: boolean;
+  /** The grown-up story: his parents, his mum's test, the introduction, the ring, the wedding. */
+  parentsMet?: boolean;
+  mumApproved?: boolean;
+  /** Day of the last try at his mum's test (one try a week). */
+  mumTried?: number;
+  introduced?: boolean;
+  /** Day the wedding happened. */
+  wedDay?: number;
+};
+
+/** Together in any form: dating, engaged or married. */
+export const together = (e: Emeka | undefined) => !!e && (e.stage === "dating" || e.stage === "engaged" || e.stage === "married");
 
 export function emeka(s: GameState): Emeka {
   s.emeka ??= { stage: "none", rel: 0, met: -1, beats: 0, lastAllowance: -1 };
@@ -83,6 +106,7 @@ export const ACTS: Record<"school" | "campus" | "adult", { id: EmekaAct; label: 
 /** The weekly allowance he gives his girlfriend, by stage of life. */
 export function allowance(s: GameState): number {
   const b = band(s);
+  if (s.emeka?.stage === "married") return 400_000;
   return b === "school" ? 3_000 : b === "campus" ? 25_000 : 150_000;
 }
 
@@ -127,7 +151,7 @@ export function meet(s: GameState, how: "friend" | "interest" | "ignore"): strin
 /** Initiate romance: only his one says yes. */
 export function askOut(s: GameState): string {
   const e = emeka(s);
-  if (e.stage === "dating") return "You're already together.";
+  if (together(e)) return "You're already together.";
   if (e.ignored) return IGNORED[Math.floor(Math.random() * IGNORED.length)]!;
   if (impostor(s)) {
     e.ignored = true;
@@ -165,7 +189,7 @@ export function act(s: GameState, a: EmekaAct): string {
 
 function actLine(s: GameState, a: EmekaAct): string {
   const e = emeka(s);
-  const dating = e.stage === "dating";
+  const dating = together(e);
   const b = band(s);
   if (a === "hang") {
     e.rel = clamp(e.rel + 5);
@@ -197,7 +221,7 @@ function actLine(s: GameState, a: EmekaAct): string {
 /** Allowance from Emeka: weekly as an adult, every few story beats before then. */
 export function payAllowance(s: GameState, beat = false): string | null {
   const e = s.emeka;
-  if (!e || e.stage !== "dating" || !isHisOne(s)) return null;
+  if (!e || !together(e) || !isHisOne(s)) return null;
   if (beat) {
     e.beats += 1;
     if (e.beats % 4) return null;
@@ -209,4 +233,125 @@ export function payAllowance(s: GameState, beat = false): string | null {
   const amount = allowance(s);
   s.stats.money += amount;
   return `💸 Emeka sends your allowance: ${naira(amount)}. "For you. Don't argue."`;
+}
+
+// ── The grown-up story (only for her) ───────────────────────────────────────
+// Dinner with his parents in Asokoro, his mother's quiet test, the families'
+// introduction, a proposal, and the wedding of the year, which Emeka pays for.
+
+export type StoryStep = "parents" | "mum" | "intro" | "proposal" | "wedding" | null;
+
+/** The next step of the story, if one is open right now. */
+export function nextStep(s: GameState): StoryStep {
+  const e = s.emeka;
+  if (!e || !isHisOne(s) || band(s) !== "adult" || !together(e)) return null;
+  if (e.stage === "married") return null;
+  if (!e.parentsMet) return e.rel >= 60 ? "parents" : null;
+  if (!e.mumApproved) return "mum";
+  if (!e.introduced) return "intro";
+  if (e.stage === "dating") return e.rel >= 80 ? "proposal" : null;
+  return "wedding";
+}
+
+/** What the next step needs, for the panel. */
+export function stepHint(s: GameState): string {
+  const e = s.emeka;
+  if (!e || !isHisOne(s) || !together(e) || e.stage === "married") return "";
+  if (band(s) !== "adult") return "The rest of your story together starts when you're both grown up.";
+  if (!e.parentsMet && e.rel < 60) return "Spend more time together. He wants you to meet his parents when you're closer.";
+  if (e.stage === "dating" && e.introduced && e.rel < 80) return "Keep going on dates. He's saving up the courage (and the ring).";
+  return "";
+}
+
+export const STEP_LABEL: Record<Exclude<StoryStep, null>, string> = {
+  parents: "🏛️ Dinner with his parents in Asokoro",
+  mum: "⚖️ Tea with his mother, the retired judge",
+  intro: "🤝 The introduction: his family visits yours",
+  proposal: "💍 Emeka has something to ask you",
+  wedding: "👑 The wedding of the year",
+};
+
+/** Dinner with Chief and Justice (Mrs) D. */
+export function meetParents(s: GameState): string {
+  const e = emeka(s);
+  if (nextStep(s) !== "parents") return "";
+  e.parentsMet = true;
+  e.rel = clamp(e.rel + 8);
+  addStat(s, "network", 4);
+  addLog(s, "Met Emeka's parents in Asokoro.");
+  return "A gate the size of a house, a dining table for twenty, and a fish so big it has its own plate. His father, Chief D, talks about ships and laughs at his own jokes. His mother, the retired judge, says very little and watches everything. As you leave she says, \"Come for tea next week. Just the two of us.\"";
+}
+
+/** His mother's questions: answer two of three well to win her over. */
+export const MUM_TEST: { q: string; options: string[]; answer: number }[] = [
+  { q: "An elderly aunt walks into the parlour while you're on your phone. You…", options: ["Keep scrolling, she didn't see you", "Stand up, greet her properly and offer your seat", "Wave and say 'Hi aunty'"], answer: 1 },
+  { q: "\"Emeka says he'll cook tonight. What do you think of that?\"", options: ["\"A man should never be in the kitchen.\"", "\"Then I'll sit and watch.\"", "\"We'll cook together. He makes the stew, I make sure it's edible.\""], answer: 2 },
+  { q: "\"And what do you want for your own life?\"", options: ["\"Whatever Emeka wants.\"", "\"To build something of my own, and to build a home with him.\"", "\"To travel the world on his card.\""], answer: 1 },
+];
+
+export function mumTest(s: GameState, correct: number): string {
+  const e = emeka(s);
+  if (nextStep(s) !== "mum") return "";
+  if (e.mumTried !== undefined && s.day - e.mumTried < 7) return "She said next week. Judges don't like being rushed.";
+  e.mumTried = s.day;
+  if (correct >= 2) {
+    e.mumApproved = true;
+    e.rel = clamp(e.rel + 6);
+    addLog(s, "Won over Emeka's mother.");
+    return "Justice (Mrs) D sets down her cup. \"You'll do. More than do.\" That evening Emeka calls, almost shouting: \"What did you SAY to her? She's never said that about anybody.\"";
+  }
+  addStat(s, "stress", 6);
+  return "She smiles politely and asks the driver to take you home. \"Come back next week,\" she says. You're not sure if that's a good sign.";
+}
+
+/** The families meet. Emeka's side arrives in a convoy. */
+export function introduction(s: GameState): string {
+  const e = emeka(s);
+  if (nextStep(s) !== "intro") return "";
+  e.introduced = true;
+  e.rel = clamp(e.rel + 6);
+  addStat(s, "reputation", 4);
+  if (s.parents) s.parents.bond = clamp(s.parents.bond + 10);
+  addLog(s, "The introduction: Emeka's family visited yours.");
+  return "Four black jeeps on your parents' street. Chief D brings kola nuts, wine and a speech nobody asked for. Your dad pretends to be hard to impress for exactly six minutes. Your mum has already chosen the aso-ebi colours. Emeka paid for everything, including the canopy.";
+}
+
+/** He proposes. */
+export function propose(s: GameState): string {
+  const e = emeka(s);
+  if (nextStep(s) !== "proposal") return "";
+  e.stage = "engaged";
+  e.rel = clamp(e.rel + 10);
+  addStat(s, "stress", -15);
+  addLog(s, "Engaged to Emeka D.");
+  return "💍 A rooftop in Maitama, the whole city lit up below. Emeka is shaking. \"Eunice, I've known since the meat pies. Will you marry me?\" You say yes before he finishes the question.";
+}
+
+/** The wedding of the year. Emeka pays; the guests spray. */
+export function wedding(s: GameState): string {
+  const e = emeka(s);
+  if (nextStep(s) !== "wedding") return "";
+  e.stage = "married";
+  e.wedDay = s.day;
+  e.rel = 100;
+  const sprayed = 2_000_000 + Math.round(s.stats.network * 40_000);
+  withoutBankCheck(() => addStat(s, "money", sprayed));
+  addStat(s, "reputation", 15);
+  addStat(s, "network", 10);
+  addStat(s, "stress", -20);
+  addLog(s, "Married Emeka D at the wedding of the year.");
+  return `👑 Two thousand guests at Eagle Square, a live band, drones overhead and aso-ebi as far as the eye can see. Emeka paid for all of it. The guests sprayed ${naira(sprayed)} and it's all yours. Instaflex can talk about nothing else.`;
+}
+
+/** Married life, weekly: maybe a baby. */
+export function weeklyEmeka(s: GameState): string | null {
+  const e = s.emeka;
+  if (!e || e.stage !== "married" || !isHisOne(s)) return null;
+  const kids = s.children.filter((c) => c.with === "emeka");
+  if (kids.length >= 3 || Math.random() > 0.08) return null;
+  const gender = Math.random() < 0.5 ? "female" : "male";
+  const name = babyName(gender, s.children.map((c) => c.name));
+  s.children.push({ name, born: s.day, with: "emeka", gender, grades: 50 });
+  addLog(s, `${name} was born to you and Emeka.`);
+  return `👶 ${name} is born! Emeka cries more than the baby. Chief D announces it on the radio.`;
 }

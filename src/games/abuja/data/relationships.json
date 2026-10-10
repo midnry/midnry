@@ -38,9 +38,11 @@
   "nepoMultiplier": 2.5,
   "pregnancyChance": { "protected": 0.02, "unprotected": 0.14 },
   "weddings": [
-    { "id": "court", "name": "Court registry wedding", "cost": 150000, "reputation": -4, "text": "A quick signature at the registry. Your aunties will talk about this for years." },
-    { "id": "full", "name": "Traditional + white wedding", "cost": 3500000, "reputation": 15, "text": "Two days, three outfits, a thousand guests, and an MC who forgot your name twice." }
+    { "id": "court", "name": "Court registry wedding", "cost": 150000, "reputation": -4, "spray": 0, "intro": false, "text": "A quick signature at the registry. Your aunties will talk about this for years." },
+    { "id": "church", "name": "Church or mosque wedding + reception", "cost": 1200000, "reputation": 8, "spray": 4000, "intro": true, "text": "Vows in front of everyone you love, rice and stew for three hundred, and a cake that leans slightly to the left." },
+    { "id": "full", "name": "Traditional + white wedding (owambe)", "cost": 3500000, "reputation": 15, "spray": 9000, "intro": true, "text": "Two days, three outfits, a thousand guests, and an MC who forgot your name twice." }
   ],
+  "introduction": { "cost": 350000, "list": ["two cartons of malt", "a bag of rice", "tubers of yam", "a goat", "wrappers for the mothers", "kola nuts", "an envelope for the elders"] },
   "childNames": ["Chidera", "Tobi", "Amina", "Kelechi", "Zara", "David", "Fatima", "Ebuka", "Ruth", "Ibrahim"],
   "childWeeklyCost": 12000
 }

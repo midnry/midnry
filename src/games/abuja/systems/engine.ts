@@ -5,6 +5,8 @@ import { RIDE_INFO, fare, fuelCost, rideBan, type RideMode } from "./rides";
 import { weatherOf } from "./weather";
 import * as CE from "./cityEvents";
 import * as DA from "./daily";
+import * as FA from "./family";
+import * as JP from "./japa";
 import {
   DAYS_PER_YEAR,
   END_AGE,
@@ -27,7 +29,7 @@ import {
   rel,
   rollStars,
 } from "./rules";
-import { bus, update } from "./store";
+import { bus, newGame, replace, update } from "./store";
 import { MENU, DELIVERY_FEE, burn, daysUnwashed, isDirty, life, offense, overnight } from "./life";
 import { caseStatus, nightlyCase, reportScam, resolveFreeze, surrender, withoutBankCheck } from "./bank";
 import { acceptCounter, argue, bluff, closeNegotiation, propose as proposeOffer, setTerms, startNegotiation, walkAway, weeklyNegotiation } from "./negotiate/core";
@@ -59,6 +61,7 @@ import {
   textPartner,
   wed,
   weeklyRomance,
+  introduce,
 } from "./romance";
 import type { Choice, EndingId, GameState, PersonDef, Scene, TaskStep } from "./types";
 import { report } from "./news";
@@ -75,6 +78,11 @@ import * as PH from "./phones";
 import { storyEvent } from "./story";
 import { fadeMemories, forget, memoriesOf, recalled, remember, sinceWhen } from "./memory";
 import { SPORTS, sportOf, sportOptions, type SportId } from "./tournament";
+import { PRESETS } from "./character";
+import { autoOutfit } from "./painted";
+import endingsJson from "../data/endings.json";
+
+const ENDING_TITLES: Record<string, string> = Object.fromEntries(Object.entries(endingsJson as Record<string, { title: string }>).map(([k, v]) => [k, v.title]));
 
 // ── Story ────────────────────────────────────────────────────────────────────
 
@@ -139,6 +147,26 @@ function go(s: GameState, next: string | undefined) {
   }
   if (next === "posting" && !s.postingState && !s.flags.stay_abuja) assignPosting(s);
   goScene(s, next);
+}
+
+/** Carry on as one of your children: born into the family, inheritance held in trust until 18. */
+export function startHeir(parent: GameState, childName: string) {
+  const child = parent.children.find((c) => c.name === childName);
+  if (!child) return;
+  const gender = FA.childGender(child);
+  const preset = PRESETS[gender];
+  const looks = { ...preset, skin: parent.looks.skin, outfit: preset.topColor } as GameState["looks"];
+  const painted = autoOutfit(looks);
+  if (painted) looks.painted = painted;
+  const worth = netWorth(parent);
+  const next = newGame({ name: child.name, gender, background: parent.background === "lapo" && worth < 5_000_000 ? "lapo" : "average", looks, interest: gender === "female" ? "men" : "women" });
+  next.flags.generation = Number(parent.flags.generation ?? 1) + 1;
+  next.flags.inheritance = FA.inheritance(worth);
+  next.flags.parent_name = parent.name;
+  next.flags.guide = 7;
+  next.log.push({ age: 0, text: `Born to ${parent.name}, whose story ended: ${ENDING_TITLES[parent.ending ?? "broke"] ?? "a life lived"}.` });
+  replace(next);
+  update((s) => enterChapter(s, CHAPTERS[0]!.id));
 }
 
 export function startGame() {
@@ -268,6 +296,14 @@ function startAdulthood(s: GameState) {
   s.district = home.district;
   s.pos = { ...arrivalOf(home) };
   s.flags.adult_day0 = s.day;
+  // Born into a family that left something: the trust is released at 18.
+  const trust = Number(s.flags.inheritance ?? 0);
+  if (trust > 0) {
+    s.flags.inheritance = 0;
+    withoutBankCheck(() => addStat(s, "money", trust));
+    addLog(s, `Received an inheritance of ${naira(trust)} from ${String(s.flags.parent_name ?? "your parent")}.`);
+    note(s, `💼 The lawyer reads the will: ${naira(trust)} from ${String(s.flags.parent_name ?? "your parent")} is yours now.`);
+  }
   ensureMarket(s);
   syncPeople(s);
 }
@@ -371,6 +407,47 @@ export function savePosition(x: number, y: number, districtId: string) {
   });
 }
 
+// ── Japa: leaving the country, step by step ─────────────────────────────────────
+
+const japaDo = (fn: (s: GameState) => string) =>
+  update((s) => {
+    if (s.chapter || s.ending) return;
+    const line = fn(s);
+    if (line) toast(s, line);
+  });
+export const japaApply = (route: JP.RouteId) => japaDo((s) => JP.apply(s, route));
+export const japaReset = () => japaDo((s) => (JP.reset(s), ""));
+/** Sit the IELTS (a time slot) after answering the paper. */
+export const japaIelts = (correct: number) =>
+  update((s) => {
+    if (s.slot + 1 > SLOTS.length) return toast(s, "The test centre is closed for today. Come back in the morning.");
+    toast(s, JP.sitIelts(s, correct));
+    spend(s, 1, -10);
+  });
+/** Board the plane: the end of this life in Abuja. */
+export const japaLeave = () =>
+  update((s) => {
+    const line = JP.leave(s);
+    if (!line) return;
+    if (line.startsWith("✈️")) return end(s, "japa");
+    toast(s, line);
+  });
+
+// ── Family: your children and your parents ─────────────────────────────────────
+
+const familyDo = (fn: (s: GameState) => string, slots = 0) =>
+  update((s) => {
+    if (s.chapter || s.ending) return;
+    if (slots && s.slot + slots > SLOTS.length) return toast(s, "It's too late for that today. Tomorrow.");
+    const line = fn(s);
+    if (!line) return;
+    toast(s, line);
+    if (slots) spend(s, slots, -5);
+  });
+export const visitParents = () => familyDo((s) => FA.visitParents(s), 1);
+export const helpHomework = (name: string) => familyDo((s) => FA.homework(s, name), 1);
+export const changeSchool = (name: string, tier: FA.SchoolTier) => familyDo((s) => FA.chooseSchool(s, name, tier));
+
 // ── Coming back: daily gifts, the weekly challenge and the guide for new players ──
 
 /** Opening the game: make sure this week's challenge exists. */
@@ -384,8 +461,8 @@ export const setGuide = (step: number) =>
     s.flags.guide_money = s.stats.money;
   });
 
-export function doAction(placeId: string, actionId: string): "loans" | "business" | void {
-  let open: "loans" | "business" | undefined;
+export function doAction(placeId: string, actionId: string): "loans" | "business" | "japa" | void {
+  let open: "loans" | "business" | "japa" | undefined;
   update((s) => {
     const p = place(placeId);
     const a = p?.actions.find((item) => item.id === actionId);
@@ -447,9 +524,9 @@ export function doAction(placeId: string, actionId: string): "loans" | "business
       return;
     }
     if (a.kind === "japa") {
-      if (!s.certs.degree) return toast(s, "The visa officer flips through your file: no degree. \"Come back when you have one.\"");
-      addLog(s, "Japa'd: left Nigeria for a new life abroad.");
-      return end(s, "japa");
+      // The consultant hands you a checklist; the planning happens in the Japa app.
+      open = "japa";
+      return;
     }
     if (a.slots > 0 && s.slot + a.slots > SLOTS.length) {
       return toast(s, "It's too late for that. Go home and sleep.");
@@ -812,6 +889,7 @@ function sleep(s: GameState) {
   if (adultDays > 0 && adultDays % 7 === 0) {
     weeklyBills(s);
     if (!s.event) s.event = weeklyRomance(s);
+    if (!s.event) s.event = FA.weeklyFamily(s);
     if (!s.event && s.flags.bolaji_connect && Math.random() < 0.3) {
       insiderTip(s);
       s.event = "insider";
@@ -829,6 +907,8 @@ function sleep(s: GameState) {
   note(s, JU.fugitiveNight(s) ?? "");
   note(s, BT.settleBets(s) ?? "");
   note(s, EK.payAllowance(s) ?? "");
+  if (s.day % 7 === 0) note(s, EK.weeklyEmeka(s) ?? "");
+  note(s, JP.nightlyJapa(s) ?? "");
   note(s, ...MI.checkMissions(s));
   pickEvent(s);
   checkEndings(s);
@@ -1056,11 +1136,12 @@ type RomanceAction =
   | { kind: "gift"; id: string }
   | { kind: "ask"; id: string }
   | { kind: "propose"; id: string }
+  | { kind: "intro"; id: string }
   | { kind: "wed"; id: string; wedding: string }
   | { kind: "breakup"; id: string }
   | { kind: "night"; id: string; safe: boolean };
 
-const ROMANCE_SLOTS: Record<RomanceAction["kind"], number> = { text: 0, date: 1, gift: 0, ask: 0, propose: 1, wed: 2, breakup: 0, night: 1 };
+const ROMANCE_SLOTS: Record<RomanceAction["kind"], number> = { text: 0, date: 1, gift: 0, ask: 0, propose: 1, intro: 2, wed: 2, breakup: 0, night: 1 };
 
 export function romance(action: RomanceAction) {
   update((s) => {
@@ -1073,6 +1154,7 @@ export function romance(action: RomanceAction) {
     if (action.kind === "gift") text = giveGift(s, action.id);
     if (action.kind === "ask") text = askOut(s, action.id);
     if (action.kind === "propose") text = propose(s, action.id);
+    if (action.kind === "intro") text = introduce(s, action.id);
     if (action.kind === "wed") text = wed(s, action.id, action.wedding);
     if (action.kind === "breakup") text = breakUp(s, action.id);
     if (action.kind === "night") text = intimacy(s, action.id, action.safe);
@@ -2168,6 +2250,18 @@ export function emekaAct(a: EK.EmekaAct) {
     toast(s, line);
     // Grown-up dates take an evening.
     if (!s.chapter && (a === "date" || a === "hang") && s.slot < SLOTS.length) spend(s, 1, -5);
+  });
+}
+
+/** The next step of the Emeka story (dinner, tea, introduction, proposal, wedding). */
+export function emekaStep(correct = 0) {
+  update((s) => {
+    const step = EK.nextStep(s);
+    const line =
+      step === "parents" ? EK.meetParents(s) : step === "mum" ? EK.mumTest(s, correct) : step === "intro" ? EK.introduction(s) : step === "proposal" ? EK.propose(s) : step === "wedding" ? EK.wedding(s) : "";
+    if (!line) return;
+    toast(s, line);
+    if (!s.chapter && s.slot < SLOTS.length) spend(s, 1, -5);
   });
 }
 

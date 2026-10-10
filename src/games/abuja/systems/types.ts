@@ -15,6 +15,8 @@ import type { Phones } from "./phones";
 import type { Banking } from "./banking";
 import type { NewsTag, Story } from "./news";
 import type { Daily, Weekly } from "./daily";
+import type { Child, Parents } from "./family";
+import type { Japa } from "./japa";
 
 export type Background = "lapo" | "average";
 export type Gender = "male" | "female";
@@ -136,6 +138,8 @@ export type Effect = {
   ending?: EndingId;
   /** Relationship and pregnancy outcomes, handled in systems/romance.ts. */
   romance?: string;
+  /** Children's schools, parents' requests and funerals, handled in systems/family.ts. */
+  family?: string;
   /** Instant price moves in the trading app, in percent. */
   market?: { asset: string; pct: number }[];
   /** Time slots this takes, for offers made in conversation. */
@@ -470,9 +474,13 @@ export type GameState = {
   partners: Record<string, Partner>;
   affairs: { with: string; partner: string; day: number }[];
   pregnancy: { partner: string; day: number; due: number | null; mc: boolean } | null;
-  children: { name: string; born: number; with: string }[];
+  children: Child[];
+  /** Your parents, once you are an adult (systems/family.ts). */
+  parents?: Parents;
+  /** Plans to leave the country (systems/japa.ts). */
+  japa?: Japa;
   /** Who or how much a forced event is about, for {partner} and {amount} in its text. */
-  eventCtx: { partner?: string; amount?: number; asset?: string };
+  eventCtx: { partner?: string; amount?: number; asset?: string; child?: string; reason?: string; parent?: "mum" | "dad" };
   market: MarketState | null;
   task: Task | null;
   /** Hunger, laundry, bills, driving and more. Missing in saves from before these existed. */

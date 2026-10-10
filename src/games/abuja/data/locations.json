@@ -1608,15 +1608,10 @@
       "actions": [
         {
           "id": "japa",
-          "label": "Japa: leave the country (needs ₦6,000,000 and a degree)",
+          "label": "Japa: plan your move abroad",
           "slots": 0,
           "energy": 0,
           "kind": "japa",
-          "if": {
-            "stat": "money",
-            "gte": 6000000
-          },
-          "lockedText": "Needs ₦6,000,000 proof of funds",
           "effects": [],
           "text": ""
         }

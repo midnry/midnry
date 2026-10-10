@@ -29,8 +29,10 @@ import { Linkup } from "./Linkup";
 import { btnGhost, btnPrimary } from "./theme";
 import { Trade } from "./Trade";
 import { WardrobePanel } from "./Wardrobe";
+import { FamilyApp } from "./Family";
+import { JapaApp } from "./Japa";
 
-export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen" | "city" | "news" | "social" | "careers" | "legal" | "connects" | "missions" | "odds" | "emeka" | "gadgets";
+export type PhoneApp = "home" | "food" | "bills" | "business" | "deals" | "wallet" | "loans" | "jobs" | "contacts" | "map" | "stats" | "settings" | "linkup" | "trade" | "wardrobe" | "kitchen" | "city" | "news" | "social" | "careers" | "legal" | "connects" | "missions" | "odds" | "emeka" | "gadgets" | "family" | "japa";
 
 const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "missions", label: "Missions", icon: "🎯", tint: "bg-amber-600" },
@@ -44,6 +46,8 @@ const APPS: { id: PhoneApp; label: string; icon: string; tint: string }[] = [
   { id: "deals", label: "Deals", icon: "🤝", tint: "bg-emerald-700" },
   { id: "trade", label: "Trade", icon: "📈", tint: "bg-indigo-600" },
   { id: "linkup", label: "Linkup", icon: "💗", tint: "bg-pink-600" },
+  { id: "family", label: "Family", icon: "👨‍👩‍👧", tint: "bg-rose-700" },
+  { id: "japa", label: "Japa", icon: "✈️", tint: "bg-sky-600" },
   { id: "loans", label: "QuickKash", icon: "💸", tint: "bg-red-600" },
   { id: "jobs", label: "Jobs", icon: "💼", tint: "bg-sky-600" },
   { id: "careers", label: "Bank Careers", icon: "🏦", tint: "bg-blue-800" },
@@ -106,6 +110,8 @@ export function Phone({ state, app, onApp, onClose }: { state: GameState; app: P
           {app === "missions" ? <MissionsApp state={state} /> : null}
           {app === "odds" ? <OddsApp state={state} /> : null}
           {app === "emeka" ? <EmekaPanel state={state} /> : null}
+          {app === "family" ? <FamilyApp state={state} /> : null}
+          {app === "japa" ? <JapaApp state={state} /> : null}
           {app === "contacts" ? <Contacts state={state} /> : null}
           {app === "map" ? <MapApp state={state} onDone={onClose} /> : null}
           {app === "stats" ? <Life state={state} /> : null}

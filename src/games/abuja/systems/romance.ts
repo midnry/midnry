@@ -1,4 +1,6 @@
 import romanceJson from "../data/relationships.json";
+import { babyName } from "./family";
+import { withoutBankCheck } from "./bank";
 import { addLog, addStat, clamp, naira } from "./rules";
 import type { Gender, GameState, Partner, Personality } from "./types";
 
@@ -14,7 +16,8 @@ export const ROMANCE = romanceJson as unknown as {
   gift: { cost: number; affection: number };
   nepoMultiplier: number;
   pregnancyChance: { protected: number; unprotected: number };
-  weddings: { id: string; name: string; cost: number; reputation: number; text: string }[];
+  weddings: { id: string; name: string; cost: number; reputation: number; text: string; /** Money guests spray per point of your network. */ spray: number; /** Needs the introduction ceremony first. */ intro: boolean }[];
+  introduction: { cost: number; list: string[] };
   childNames: string[];
   childWeeklyCost: number;
 };
@@ -22,6 +25,7 @@ export const ROMANCE = romanceJson as unknown as {
 export const person = (id: string) => ROMANCE.people.find((item) => item.id === id);
 
 export function partnerName(s: GameState, id: string): string {
+  if (id === "emeka") return "Emeka D";
   const p = person(id);
   const gender = s.partners[id]?.gender ?? s.loveGender;
   return p?.names[gender] ?? id;
@@ -166,10 +170,28 @@ export function propose(s: GameState, id: string): string {
   return `On one knee at Jabi Lake. ${partnerName(s, id)} says YES. Someone films it. It gets 40k views.`;
 }
 
+/** The introduction: you and your family visit theirs with the list. Needed before a church or traditional wedding. */
+export const introduced = (s: GameState, id: string) => Boolean(s.flags[`intro_${id}`]);
+
+export function introduce(s: GameState, id: string): string {
+  const p = s.partners[id];
+  if (!p || p.status !== "engaged" || introduced(s, id)) return "";
+  const price = cost(s, id, ROMANCE.introduction.cost);
+  if (s.stats.money < price) return `The list comes to ${naira(price)}. You don't have it yet.`;
+  addStat(s, "money", -price);
+  addStat(s, "reputation", 3);
+  s.flags[`intro_${id}`] = true;
+  touch(s, p, 6);
+  addLog(s, `Introduction ceremony with ${partnerName(s, id)}'s family.`);
+  const list = ROMANCE.introduction.list;
+  return `Your family arrives at theirs with ${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}. The elders pray, argue about the goat, and finally say yes. (${naira(price)})`;
+}
+
 export function wed(s: GameState, id: string, weddingId: string): string {
   const p = s.partners[id];
   const w = ROMANCE.weddings.find((item) => item.id === weddingId);
   if (!p || !w || p.status !== "engaged") return "";
+  if (w.intro && !introduced(s, id)) return "Both families expect the introduction first. Do that, then the wedding.";
   const price = cost(s, id, w.cost);
   if (s.stats.money < price) return `You need ${naira(price)} for that wedding.`;
   addStat(s, "money", -price);
@@ -178,6 +200,12 @@ export function wed(s: GameState, id: string, weddingId: string): string {
   p.status = "married";
   touch(s, p, 10);
   addLog(s, `Married ${partnerName(s, id)} (${w.name.toLowerCase()}).`);
+  // On the dance floor, guests spray money: more friends, more naira.
+  const sprayed = Math.min(Math.round(price * 0.7), Math.round((s.stats.network * w.spray + s.stats.reputation * w.spray * 0.3) / 1000) * 1000);
+  if (sprayed > 0) {
+    withoutBankCheck(() => addStat(s, "money", sprayed));
+    return `${w.text} On the dance floor, guests spray ${naira(sprayed)} in crisp notes. The children collecting them are suspiciously well organised.`;
+  }
   return w.text;
 }
 
@@ -427,8 +455,9 @@ export function romanceEffect(s: GameState, name: string): string[] {
       const preg = s.pregnancy;
       s.pregnancy = null;
       if (!preg) break;
-      const name = ROMANCE.childNames[(s.children.length + s.day) % ROMANCE.childNames.length]!;
-      s.children.push({ name, born: s.day, with: preg.partner });
+      const gender = Math.random() < 0.5 ? "female" : "male";
+      const name = babyName(gender, s.children.map((c) => c.name));
+      s.children.push({ name, born: s.day, with: preg.partner, gender, grades: 50 });
       addStat(s, "reputation", 5);
       addStat(s, "stress", 10);
       addLog(s, `Became a parent: ${name} was born.`);

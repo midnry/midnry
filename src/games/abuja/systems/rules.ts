@@ -11,6 +11,7 @@ import { partnerName, pregnancyText, romanceEffect } from "./romance";
 import type { Cond, Effect, GameState, SkillKey, StatKey } from "./types";
 import { hasCityEvent } from "./cityEvents";
 import { SPORTS, bracket, houseName, rivalFor, sportOf } from "./tournament";
+import { familyEffect } from "./family";
 
 export const SLOTS = ["Morning", "Afternoon", "Evening", "Night"] as const;
 export const DAYS_PER_YEAR = 28;
@@ -206,6 +207,7 @@ export function apply(state: GameState, effects: Effect[] | undefined, toasts: s
     if (effect.ending) state.ending = effect.ending;
     if (effect.market) shock(state, effect.market);
     if (effect.romance) toasts.push(...romanceEffect(state, effect.romance));
+    if (effect.family) toasts.push(...familyEffect(state, effect.family));
     if (effect.food) feed(state, effect.food);
     if (effect.water) drink(state, effect.water);
     if (effect.wash) wash(state);
@@ -246,6 +248,9 @@ export function fill(state: GameState, text: string): string {
     .replace(/\{state_event\}/g, posted?.events[eventIndex]?.text ?? "")
     .replace(/\{partner\}/g, state.eventCtx?.partner ? partnerName(state, state.eventCtx.partner) : "your partner")
     .replace(/\{amount\}/g, (state.eventCtx?.amount ?? 0).toLocaleString("en"))
+    .replace(/\{child\}/g, state.eventCtx?.child ?? "your child")
+    .replace(/\{reason\}/g, state.eventCtx?.reason ?? "Things are hard at home")
+    .replace(/\{parent\}/g, state.eventCtx?.parent === "dad" ? "father" : "mother")
     .replace(/\{asset\}/g, state.eventCtx?.asset ?? "a stock")
     .replace(/\{pregnancy_text\}/g, pregnancyText(state));
 }

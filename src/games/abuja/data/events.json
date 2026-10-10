@@ -3017,5 +3017,105 @@
         "result": "Prices are moving. The question is which way, and for how long."
       }
     ]
+  },
+  {
+    "id": "child_school",
+    "weight": 0,
+    "title": "Time for school",
+    "text": "{child} is three, has opinions about everything, and is ready for school. Where will they go? The choice follows them for years.",
+    "choices": [
+      {
+        "text": "Government school (₦8,000 a term)",
+        "effects": [
+          {
+            "family": "school_public"
+          }
+        ],
+        "result": "New uniform, big school bag, bigger dreams."
+      },
+      {
+        "text": "Private school (₦180,000 a term)",
+        "effects": [
+          {
+            "family": "school_private"
+          }
+        ],
+        "result": "Small classes, a school bus and a crest on the uniform."
+      },
+      {
+        "text": "International school (₦1,500,000 a term)",
+        "if": {
+          "stat": "money",
+          "gte": 1500000
+        },
+        "lockedText": "You'd need ₦1.5m in the bank to even apply",
+        "effects": [
+          {
+            "family": "school_international"
+          },
+          {
+            "stat": "reputation",
+            "add": 3
+          }
+        ],
+        "result": "British curriculum and a swimming pool. The other parents arrive in convoys."
+      }
+    ]
+  },
+  {
+    "id": "parents_ask",
+    "weight": 0,
+    "title": "Mum is calling",
+    "text": "\"How is work? How is Abuja? Have you eaten?\" Then the real reason: {reason}. They need ₦{amount}.",
+    "choices": [
+      {
+        "text": "Send all of it",
+        "effects": [
+          {
+            "family": "parents_all"
+          }
+        ]
+      },
+      {
+        "text": "Send half",
+        "effects": [
+          {
+            "family": "parents_half"
+          }
+        ]
+      },
+      {
+        "text": "\"Things are tight this month\"",
+        "effects": [
+          {
+            "family": "parents_no"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "parent_passing",
+    "weight": 0,
+    "title": "The call you never want",
+    "text": "Your phone rings at 5am. It's your uncle. Your {parent} has passed away. The whole family is looking to you for the burial.",
+    "choices": [
+      {
+        "text": "A burial befitting (₦1,200,000)",
+        "effects": [
+          {
+            "family": "funeral_big"
+          }
+        ]
+      },
+      {
+        "text": "A small, quiet burial (₦250,000)",
+        "effects": [
+          {
+            "family": "funeral_small"
+          }
+        ]
+      }
+    ]
   }
 ]

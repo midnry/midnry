@@ -132,7 +132,7 @@ export function AbujaHustle() {
       />
     );
   }
-  if (state.ending) return <EndScreen state={state} />;
+  if (state.ending) return <EndScreen state={state} signedIn={Boolean(userId)} />;
   return (
     <Suspense fallback={<LoadingScreen title="Loading your next chapter" />}><World
       state={state}

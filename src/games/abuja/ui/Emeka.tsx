@@ -1,7 +1,8 @@
-import { ACTS, PROFILE, allowance, band } from "../systems/emeka";
+import { useState } from "react";
+import { ACTS, MUM_TEST, PROFILE, STEP_LABEL, allowance, band, nextStep, stepHint, together } from "../systems/emeka";
 import { naira } from "../systems/rules";
 import type { GameState } from "../systems/types";
-import { emekaAct, emekaMeet } from "../systems/engine";
+import { emekaAct, emekaMeet, emekaStep } from "../systems/engine";
 import { GAME_FONT, btnGhost, btnPrimary, panel } from "./theme";
 
 /** Emeka D walks into your secondary school. */
@@ -34,7 +35,10 @@ export function EmekaPanel({ state }: { state: GameState }) {
   const e = state.emeka;
   if (!e || e.met < 0) return <p className="text-sm text-slate-300">You haven't met Emeka D.</p>;
   const b = band(state);
-  const dating = e.stage === "dating";
+  const dating = together(e);
+  const step = nextStep(state);
+  const hint = stepHint(state);
+  const title = e.stage === "married" ? "· your husband 💍" : e.stage === "engaged" ? "· your fiancé 💍" : "· your boyfriend 💕";
   if (e.ignored)
     return (
       <div className="grid gap-3 text-sm">
@@ -49,14 +53,20 @@ export function EmekaPanel({ state }: { state: GameState }) {
       {state.toast ? <p className="rounded-xl bg-white/10 p-3 font-semibold">{state.toast}</p> : null}
       <div className="rounded-2xl bg-white/5 p-3">
         <p className="font-bold">
-          {PROFILE.name} {dating ? <span className="text-pink-300">· your boyfriend 💕</span> : <span className="text-slate-400">· {e.stage === "friends" ? "friend" : "classmate"}</span>}
+          {PROFILE.name} {dating ? <span className="text-pink-300">{title}</span> : <span className="text-slate-400">· {e.stage === "friends" ? "friend" : "classmate"}</span>}
         </p>
         <p className="text-xs text-slate-400">{PROFILE.family}</p>
         <div className="mt-2 h-1.5 overflow-hidden rounded bg-white/10">
           <div className="h-full bg-pink-400" style={{ width: `${e.rel}%` }} />
         </div>
-        {dating ? <p className="mt-2 text-xs text-emerald-300">Allowance: {naira(allowance(state))} {b === "adult" ? "every week" : "every few days"}. Nepo boyfriend perks.</p> : null}
+        {dating ? <p className="mt-2 text-xs text-emerald-300">Allowance: {naira(allowance(state))} {b === "adult" ? "every week" : "every few days"}. {e.stage === "married" ? "Married life." : "Nepo boyfriend perks."}</p> : null}
       </div>
+      {step === "mum" ? <MumTest /> : step ? (
+        <button type="button" className={`${btnPrimary} min-h-12`} onClick={() => emekaStep()}>
+          {STEP_LABEL[step]}
+        </button>
+      ) : null}
+      {hint ? <p className="rounded-xl bg-pink-400/10 p-3 text-xs text-pink-100">{hint}</p> : null}
       <div className="grid gap-2">
         {ACTS[b].map((a) => (
           <button key={a.id} type="button" className={`${btnGhost} min-h-11`} onClick={() => emekaAct(a.id)}>
@@ -87,6 +97,47 @@ export function EmekaSheet({ state, onClose }: { state: GameState; onClose: () =
         </div>
         <EmekaPanel state={state} />
       </div>
+    </div>
+  );
+}
+
+/** Tea with his mother: three quiet questions. */
+function MumTest() {
+  const [answers, setAnswers] = useState<(number | null)[]>(() => MUM_TEST.map(() => null));
+  const done = answers.every((a) => a !== null);
+  return (
+    <div className="rounded-2xl border border-amber-400/30 bg-amber-400/5 p-3">
+      <p className="font-bold">{STEP_LABEL.mum}</p>
+      <p className="mt-1 text-xs text-slate-300">Justice (Mrs) D pours the tea herself. Then the questions start.</p>
+      <ol className="mt-2 grid gap-3">
+        {MUM_TEST.map((q, n) => (
+          <li key={q.q}>
+            <p className="text-sm font-semibold">{q.q}</p>
+            <div className="mt-1.5 grid gap-1.5" role="radiogroup" aria-label={`Question ${n + 1}`}>
+              {q.options.map((o, oi) => (
+                <button
+                  key={o}
+                  type="button"
+                  role="radio"
+                  aria-checked={answers[n] === oi}
+                  onClick={() => setAnswers((a) => a.map((x, i) => (i === n ? oi : x)))}
+                  className={`min-h-10 rounded-lg border px-3 py-1 text-left text-sm ${answers[n] === oi ? "border-amber-400 bg-amber-400/15" : "border-white/10 bg-black/20 hover:bg-white/10"}`}
+                >
+                  {o}
+                </button>
+              ))}
+            </div>
+          </li>
+        ))}
+      </ol>
+      <button
+        type="button"
+        className={`${btnPrimary} mt-3 min-h-11 w-full`}
+        disabled={!done}
+        onClick={() => emekaStep(MUM_TEST.filter((q, n) => q.answer === answers[n]).length)}
+      >
+        Finish your tea
+      </button>
     </div>
   );
 }

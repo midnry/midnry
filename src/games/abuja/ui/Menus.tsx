@@ -8,6 +8,7 @@ import { Avatar } from "./Avatar";
 import { PaintedGallery } from "./Wardrobe";
 import { autoOutfit, myLooks, youngPainted } from "../systems/painted";
 import { btnGhost, btnPrimary, panel } from "./theme";
+import { HallOfFame } from "./Fame";
 
 export function AgeGate({ onPass }: { onPass: () => void }) {
   const [refused, setRefused] = useState(false);
@@ -67,8 +68,10 @@ export function Title({
   onDelete: (slot: Slot) => void;
 }) {
   const [confirm, setConfirm] = useState<Slot | null>(null);
+  const [fame, setFame] = useState(false);
   return (
     <Screen>
+      {fame ? <HallOfFame onClose={() => setFame(false)} /> : null}
       <div className="mx-auto max-w-lg text-center">
         <p className="text-sm font-semibold tracking-[0.3em] text-sky-400 uppercase">A life sim · Abuja, Nigeria</p>
         <h1 className="abuja-game__title mt-3 font-display text-6xl text-balance sm:text-7xl">Abuja<span>Hustle<i aria-hidden> ✦</i></span></h1>
@@ -127,6 +130,9 @@ export function Title({
           })}
         </ul>
         {confirm ? <p className="mt-2 text-xs text-red-300">Deleting a life can't be undone.</p> : null}
+        <button type="button" className={`${btnGhost} mt-4 min-h-11 px-5`} onClick={() => setFame(true)}>
+          🏆 Hall of Fame
+        </button>
         <div className="mx-auto mt-6 max-w-xs rounded-2xl border border-white/10 bg-white/5 p-4 text-sm">
           {signedInAs ? (
             <p className="text-slate-300">
