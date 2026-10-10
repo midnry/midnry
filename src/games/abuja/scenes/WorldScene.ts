@@ -149,6 +149,31 @@ const rect = (r: { x: number; y: number; w: number; h: number }) => [r.x, r.y, r
 
 /** How far around you (each way) buildings must be drawn before the city opens. */
 const NEAR_LOTS = 800;
+
+/**
+ * The image files the city loads before you can play, for this save. The
+ * title screen fetches them early (see ui/warmup.ts) so Continue is quick.
+ * Runs the scene's own loading code against a stand-in that only notes URLs.
+ */
+export function startupUrls(state: GameState | null): string[] {
+  const urls = new Set<string>();
+  const noop = () => fake.load;
+  const fake = {
+    load: { image: (_k: string, u: string) => (urls.add(u), fake.load), svg: noop, once: noop, on: noop, off: noop, start: noop },
+    textures: { exists: () => false, get: () => null },
+  };
+  const scene = fake as unknown as Phaser.Scene;
+  const mapId = state ? mapIdFor(state) : "city";
+  const people: Person[] = [playerOf(state)];
+  if (state) people.push(...peopleOn(state, mapId).map(personOf));
+  if (mapId === "city") people.push(...crowdStarters(state?.day ?? 0), POLICE, FRSC);
+  queueCharacters(scene, people, 1);
+  if (mapId === "city") {
+    const at = state?.pos.x ? state.pos : { x: PLACES[0]!.x, y: PLACES[0]!.y };
+    queueBuildings(scene, lotsFor(state).filter((l) => Math.abs(l.x + l.w / 2 - at.x) < NEAR_LOTS && Math.abs(l.y + l.h / 2 - at.y) < NEAR_LOTS));
+  }
+  return [...urls].filter((u) => u.startsWith("/abuja/"));
+}
 /** The city is woken and put to sleep in blocks this size (see wakeBlocks). */
 const BLOCK = 800;
 const blockOf = (x: number, y: number) => `${Math.floor(x / BLOCK)}_${Math.floor(y / BLOCK)}`;

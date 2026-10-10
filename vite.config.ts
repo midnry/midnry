@@ -177,6 +177,11 @@ export default defineConfig(({ command, isPreview }) => ({
             // manifest + head-tag middleware). Nitro v3 defaults serverDir to
             // false, so removing this silently unwires /?install=1 on deploys.
             serverDir: "./server",
+            // Game art keeps its file names when it changes, so: a day fresh,
+            // then served from cache while the browser checks for a new copy.
+            routeRules: {
+              "/abuja/**": { headers: { "cache-control": "public, max-age=86400, stale-while-revalidate=2592000" } },
+            },
           }),
         ]
       : []),

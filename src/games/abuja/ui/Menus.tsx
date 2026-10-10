@@ -55,6 +55,7 @@ function ago(t?: number): string {
 export function Title({
   saves,
   last,
+  checking = false,
   signedInAs,
   onNew,
   onContinue,
@@ -62,6 +63,8 @@ export function Title({
 }: {
   saves: (GameState | null)[];
   last: Slot;
+  /** Still fetching the account's saves: hold Continue so an older copy can't overwrite a newer one. */
+  checking?: boolean;
   signedInAs: string | null;
   onNew: (slot: Slot) => void;
   onContinue: (slot: Slot) => void;
@@ -108,8 +111,8 @@ export function Title({
                       </div>
                     ) : (
                       <div className="flex shrink-0 items-center gap-1">
-                        <button type="button" className={`${btnPrimary} min-h-10 px-3`} onClick={() => onContinue(slot)}>
-                          Continue
+                        <button type="button" className={`${btnPrimary} min-h-10 px-3`} onClick={() => onContinue(slot)} disabled={checking} aria-busy={checking}>
+                          {checking ? "Checking…" : "Continue"}
                         </button>
                         <button type="button" className="min-h-10 rounded-xl px-2.5 text-slate-400 hover:bg-white/10 hover:text-red-300" onClick={() => setConfirm(slot)} aria-label={`Delete ${s.name}'s life`} title="Delete">
                           🗑️
@@ -120,8 +123,8 @@ export function Title({
                 ) : (
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm text-slate-400">Slot {slot} · empty</p>
-                    <button type="button" className={`${saves.some(Boolean) ? btnGhost : btnPrimary} min-h-10 px-3`} onClick={() => onNew(slot)}>
-                      Start a new life
+                    <button type="button" className={`${saves.some(Boolean) ? btnGhost : btnPrimary} min-h-10 px-3`} onClick={() => onNew(slot)} disabled={checking} aria-busy={checking}>
+                      {checking ? "Checking…" : "Start a new life"}
                     </button>
                   </div>
                 )}
@@ -130,6 +133,7 @@ export function Title({
           })}
         </ul>
         {confirm ? <p className="mt-2 text-xs text-red-300">Deleting a life can't be undone.</p> : null}
+        {checking ? <p className="mt-2 text-xs text-slate-400" role="status">Checking your account for a newer save…</p> : null}
         <button type="button" className={`${btnGhost} mt-4 min-h-11 px-5`} onClick={() => setFame(true)}>
           🏆 Hall of Fame
         </button>

@@ -14,6 +14,7 @@ import { EndScreen } from "./EndScreen";
 import { AgeGate, Creator, Title } from "./Menus";
 import { useGame } from "./useGame";
 import { LoadingScreen } from "./LoadingScreen";
+import { warmUp } from "./warmup";
 import { sound } from "../systems/sound";
 
 const World = lazy(() => import("./World").then((module) => ({ default: module.World })));
@@ -34,6 +35,8 @@ export function AbujaHustle() {
   const [creating, setCreating] = useState<Slot | null>(null);
   /** What's in each of the three save slots. */
   const [saved, setSaved] = useState<(GameState | null)[]>([null, null, null]);
+  /** Waiting for the account's saves (Continue holds until they arrive, or a few seconds pass). */
+  const [checking, setChecking] = useState(false);
   // Music on the title and creator screens; the game picks its own mood once it starts.
   const onTitle = !state;
   useEffect(() => {
@@ -61,16 +64,26 @@ export function AbujaHustle() {
     setCloudSaver((payload, slot) => {
       void saveGame({ data: { slot, payload } }).catch(() => {});
     });
+    // Show the title straight away with this device's saves; Continue waits
+    // (at most a few seconds) for the account's copy, which may be newer.
+    setSaved(local);
+    setReady(true);
+    setChecking(true);
+    const giveUp = window.setTimeout(() => !cancel && setChecking(false), 6000);
     loadGame()
       .then((result) => {
         if (cancel) return;
         const cloud = result.slots ?? [result.payload, null, null];
         setSaved(SLOT_IDS.map((n, i) => newestSave(local[i] ?? null, parseSave(cloud[i] ?? null))));
       })
-      .catch(() => !cancel && setSaved(local))
-      .finally(() => !cancel && setReady(true));
+      .catch(() => {})
+      .finally(() => {
+        window.clearTimeout(giveUp);
+        if (!cancel) setChecking(false);
+      });
     return () => {
       cancel = true;
+      window.clearTimeout(giveUp);
     };
   }, [userId, isPending]);
 
@@ -84,6 +97,15 @@ export function AbujaHustle() {
     const local = loadSaves();
     setSaved((prev) => SLOT_IDS.map((n, i) => (n === getSlot() ? (local[i] ?? null) : newestSave(local[i] ?? null, prev[i] ?? null))));
   }, [playing]);
+
+  // On the title screen with a saved life: start fetching what it opens on, so Continue is quick.
+  const onTitleScreen = ready && ageOk && !state;
+  const lastSaved = saved[lastSlot() - 1] ?? saved.find(Boolean) ?? null;
+  useEffect(() => {
+    if (!onTitleScreen || !lastSaved) return;
+    const t = window.setTimeout(() => void warmUp(lastSaved), 400);
+    return () => window.clearTimeout(t);
+  }, [onTitleScreen, lastSaved]);
 
   if (!ready) return <LoadingScreen title={isPending ? "Getting your game ready" : "Finding your saved lives"} icon="◈" />;
   if (!ageOk) {
@@ -119,6 +141,7 @@ export function AbujaHustle() {
       <Title
         saves={saved}
         last={lastSlot()}
+        checking={checking}
         signedInAs={user ? user.displayName || "you" : null}
         onNew={(slot) => setCreating(slot)}
         onContinue={(slot) => {
