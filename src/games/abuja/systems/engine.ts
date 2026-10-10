@@ -32,7 +32,7 @@ import {
   tell,
 } from "./rules";
 import { bus, getState, newGame, replace, setAfterUpdate, update } from "./store";
-import { MENU, DELIVERY_FEE, burn, daysUnwashed, isDirty, life, offense, overnight } from "./life";
+import { BOTTLE_PRICE, MENU, DELIVERY_FEE, burn, buyBottle, daysUnwashed, drinkDispenser, isDirty, life, offense, overnight } from "./life";
 import { caseStatus, nightlyCase, reportScam, resolveFreeze, surrender, withoutBankCheck } from "./bank";
 import { acceptCounter, argue, bluff, closeNegotiation, propose as proposeOffer, setTerms, startNegotiation, walkAway, weeklyNegotiation } from "./negotiate/core";
 import type { Approach, Bluff } from "./negotiate/types";
@@ -420,6 +420,8 @@ export function orderMeal(id: string) {
     const total = Math.round(meal.price * CE.foodSurge(s)) + DELIVERY_FEE;
     if (s.stats.money < total) return toast(s, `You need ${naira(total)} for that, delivery included.`);
     addStat(s, "money", -total);
+    // A bottle for the dispenser at home, not something to eat now.
+    if (meal.id === "bottle19") return toast(s, `${buyBottle(s, true)} ${naira(total)} with delivery.`);
     apply(s, [{ food: meal.food }, { water: meal.water }]);
     toast(s, `${meal.icon} Your ${meal.name} from ${meal.from} arrives. The rider says "Enjoy!" ${naira(total)} with delivery.`);
   });
@@ -495,6 +497,12 @@ export function doAction(placeId: string, actionId: string): "loans" | "business
     if (!p || !a || s.ending || s.event) return;
     if (!check(s, a.if)) return toast(s, a.lockedText ?? "You can't do that yet.");
     if (a.kind === "sleep") return sleep(s);
+    if (a.kind === "dispenser") return toast(s, drinkDispenser(s));
+    if (a.kind === "buybottle") {
+      if (s.stats.money < BOTTLE_PRICE) return toast(s, `A 19-litre bottle costs ${naira(BOTTLE_PRICE)}.`);
+      addStat(s, "money", -BOTTLE_PRICE);
+      return toast(s, buyBottle(s));
+    }
     if (a.kind === "paybill") return toast(s, payHospital(s));
     if (a.kind === "kitchen" || a.kind === "foodshop" || a.kind === "cookclass") {
       kitchen(s);

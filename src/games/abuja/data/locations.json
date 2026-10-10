@@ -281,6 +281,10 @@
             },
             {
               "flag": "guzape_pass"
+            },
+            {
+              "flag": "cap_briefed",
+              "notFlag": "cap_site"
             }
           ]
         },
@@ -367,6 +371,14 @@
           "kind": "kitchen",
           "effects": [],
           "text": "Cook from recipes, experiment, manage your pantry and garden."
+        },
+        {
+          "id": "dispenser",
+          "kind": "dispenser",
+          "label": "🚰 Drink from the water dispenser",
+          "slots": 0,
+          "energy": 0,
+          "text": "Cold water from the dispenser."
         },
         {
           "id": "sachet_water",
@@ -499,15 +511,11 @@
         },
         {
           "id": "dispenser",
-          "label": "Drink water from the dispenser",
+          "kind": "dispenser",
+          "label": "🚰 Drink from the water dispenser",
           "slots": 0,
           "energy": 0,
-          "effects": [
-            {
-              "water": 45
-            }
-          ],
-          "text": "Cold water from the dispenser. Refreshing."
+          "text": "Cold water from the dispenser."
         },
         {
           "id": "machine_wash",
@@ -840,6 +848,14 @@
             }
           ],
           "text": "A cold sachet of pure water. Life."
+        },
+        {
+          "id": "buy_bottle",
+          "kind": "buybottle",
+          "label": "🫙 Buy a 19-litre bottle for your dispenser (₦1,500)",
+          "slots": 0,
+          "energy": 0,
+          "text": "A full 19-litre bottle, ready for the dispenser at home."
         },
         {
           "id": "steal_stall",
@@ -1857,6 +1873,14 @@
             }
           ],
           "text": "The perfume section has no attendant…"
+        },
+        {
+          "id": "buy_bottle",
+          "kind": "buybottle",
+          "label": "🫙 Buy a 19-litre bottle for your dispenser (₦1,500)",
+          "slots": 0,
+          "energy": 0,
+          "text": "A full 19-litre bottle, ready for the dispenser at home."
         }
       ]
     },
@@ -2134,6 +2158,14 @@
             }
           ],
           "text": "A cold sachet of pure water."
+        },
+        {
+          "id": "buy_bottle",
+          "kind": "buybottle",
+          "label": "🫙 Buy a 19-litre bottle for your dispenser (₦1,500)",
+          "slots": 0,
+          "energy": 0,
+          "text": "A full 19-litre bottle, ready for the dispenser at home."
         },
         {
           "id": "nego_supplier",

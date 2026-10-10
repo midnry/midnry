@@ -219,3 +219,28 @@
     rotate: 540deg;
   }
 }
+
+/* A bar that just went up (eating, drinking): it glows and a "+N" floats up. */
+.hud-gain {
+  box-shadow: 0 0 0 2px var(--gain), 0 0 14px var(--gain);
+  transition: box-shadow 300ms ease-out;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hud-gain-chip {
+    animation: hud-gain-float 1400ms ease-out both;
+  }
+}
+@keyframes hud-gain-float {
+  0% {
+    transform: translateY(8px) scale(0.8);
+    opacity: 0;
+  }
+  20% {
+    transform: translateY(0) scale(1.1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-10px) scale(1);
+    opacity: 1;
+  }
+}

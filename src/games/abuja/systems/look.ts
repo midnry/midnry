@@ -27,3 +27,31 @@ export function setComicLook(next: boolean) {
     // Private mode: the switch still works for this visit.
   }
 }
+
+// How on-screen messages leave: they stay until tapped (the default, so
+// nobody misses a line), or hide on their own after enough time to read them.
+const MSG_KEY = "abuja-hustle.messages";
+let autoHide: boolean | null = null;
+
+export function messagesAutoHide(): boolean {
+  if (autoHide != null) return autoHide;
+  try {
+    autoHide = localStorage.getItem(MSG_KEY) === "auto";
+  } catch {
+    autoHide = false;
+  }
+  return autoHide;
+}
+
+export function setMessagesAutoHide(next: boolean) {
+  autoHide = next;
+  try {
+    if (next) localStorage.setItem(MSG_KEY, "auto");
+    else localStorage.removeItem(MSG_KEY);
+  } catch {
+    // Private mode: the choice still works for this visit.
+  }
+}
+
+/** Reading time for a message when it hides itself: about 4 words a second, at least 6 seconds. */
+export const readingMs = (text: string) => Math.max(6000, Math.min(20000, text.split(/\s+/).length * 260 + 2500));

@@ -16,7 +16,7 @@ import { CAR_COLOR, frscSpots, isDriving } from "../systems/drive";
 import { storyGoal } from "../systems/story";
 import { bump, caughtInRain, checkpoint, frsc, leftRichArea, shutOut, trespass, welcome, fuel, currentBeat, mapIdFor, peopleOn, personAt, personKey, savePosition, taskReach } from "../systems/engine";
 import { check } from "../systems/rules";
-import { bus, getState, input, subscribe } from "../systems/store";
+import { bus, getState, input, subscribe, update } from "../systems/store";
 import { findPath, type Point } from "../systems/path";
 import type { GameState, MapRect } from "../systems/types";
 import { ALL_ROADS, LANE, SIDEWALK, halfWidth, laneOffsets, lotDoor, reach, road, type Lot, type Road } from "../systems/city/layout";
@@ -455,7 +455,7 @@ export class WorldScene extends Phaser.Scene {
     bus.emit("near", null);
     finishSceneLoading(this);
     // Development only: lets automated browser tests move the player.
-    if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y), at: () => [this.player.x, this.player.y], blocks: () => [this.placed.size, [...this.blocks.values()].filter((b) => b.awake).length, this.textures.getTextureKeys().filter((k) => k.startsWith("bld_")).length], fps: () => [Math.round(this.game.loop.actualFps), this.children.length, this.life?.count ?? 0], hit: (by: HitBy) => bump(by), crowd: () => this.life?.count ?? 0, crowdAt: () => this.life?.positions ?? [], me: () => { const c = this.cameras.main; return [(this.player.x - c.worldView.x) * c.zoom, (this.player.y - c.worldView.y) * c.zoom, c.zoom]; } };
+    if (import.meta.env.DEV) (window as unknown as { __abuja?: unknown }).__abuja = { place: (x: number, y: number) => this.player.setPosition(x, y), at: () => [this.player.x, this.player.y], blocks: () => [this.placed.size, [...this.blocks.values()].filter((b) => b.awake).length, this.textures.getTextureKeys().filter((k) => k.startsWith("bld_")).length], fps: () => [Math.round(this.game.loop.actualFps), this.children.length, this.life?.count ?? 0], hit: (by: HitBy) => bump(by), crowd: () => this.life?.count ?? 0, crowdAt: () => this.life?.positions ?? [], me: () => { const c = this.cameras.main; return [(this.player.x - c.worldView.x) * c.zoom, (this.player.y - c.worldView.y) * c.zoom, c.zoom]; }, free: (x: number, y: number) => this.standable(x, y, 3), setFlag: (k: string, v: boolean) => update((s) => void (s.flags[k] = v)), people: () => this.people.map((p) => p.label), route: (x: number, y: number) => { const { width, height } = sizeOf(this.mapId); return findPath({ x: this.player.x, y: this.player.y }, { x, y }, width, height, (px, py) => this.standable(px, py, 3)); } };
   }
 
   private cityIdOf(state: GameState | null) {
@@ -1096,10 +1096,15 @@ export class WorldScene extends Phaser.Scene {
     }
   }
 
+  /** Who should be on this map now, as one string: when it changes, people are redrawn. */
+  private peopleSig = "";
+
   private drawPeople() {
     const state = getState();
     if (!state) return;
-    for (const p of peopleOn(state, this.mapId)) {
+    const here = peopleOn(state, this.mapId);
+    this.peopleSig = here.map(personKey).join("|");
+    for (const p of here) {
       const at = personAt(p);
       const body = figure(this, at.x, at.y, personOf(p), { name: p.name });
       body.setDepth(5 + at.y / 10000);
@@ -1252,6 +1257,14 @@ export class WorldScene extends Phaser.Scene {
     for (const { id, marker } of this.placeMarkers) {
       const def = PLACES.find((p) => p.id === id);
       marker.setVisible(check(state, (def as { if?: never })?.if));
+    }
+    // The story can bring someone onto the map (or take them off) while you're here:
+    // Baba Yakubu appears at Guzape once Halima has briefed you, without a reload.
+    if (this.peopleSig !== peopleOn(state, this.mapId).map(personKey).join("|")) {
+      for (const p of this.people) p.body.destroy();
+      this.people = [];
+      this.near = null;
+      this.drawPeople();
     }
     this.grime?.setVisible(isDirty(state));
     const beat = currentBeat(state);

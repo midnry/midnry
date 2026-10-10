@@ -53,6 +53,49 @@ export function drink(s: GameState, amount: number) {
   l.water = clamp(l.water + amount);
 }
 
+// ── The water dispenser at home ──────────────────────────────────────────────
+// It holds one 19-litre bottle (about ten cups). When it runs dry, swap in a
+// full bottle you've bought at a market or the mall, or had delivered.
+
+export const BOTTLE_PRICE = 1500;
+export const CUPS_PER_BOTTLE = 10;
+const CUP = 35;
+
+export function dispenserOf(s: GameState): { cups: number; spare: number } {
+  return s.life?.dispenser ?? { cups: CUPS_PER_BOTTLE, spare: 0 };
+}
+
+function dispenser(s: GameState) {
+  const l = life(s);
+  l.dispenser ??= { cups: CUPS_PER_BOTTLE, spare: 0 };
+  return l.dispenser;
+}
+
+/** A cup from the dispenser, swapping in a full bottle when it runs dry. */
+export function drinkDispenser(s: GameState): string {
+  const d = dispenser(s);
+  let swapped = false;
+  if (d.cups <= 0) {
+    if (d.spare <= 0) return "🚰 The dispenser bottle is empty. Buy a 19-litre bottle at a market or Jabi Lake Mall, or order one on ChopNow.";
+    d.spare -= 1;
+    d.cups = CUPS_PER_BOTTLE;
+    swapped = true;
+  }
+  d.cups -= 1;
+  drink(s, CUP);
+  const left = d.cups === 0 ? (d.spare ? "That was the last cup in this bottle. You have a spare ready." : "That was the last cup. Buy another 19-litre bottle soon.") : `${d.cups} cup${d.cups === 1 ? "" : "s"} left in the bottle.`;
+  return `${swapped ? "You heave a fresh 19-litre bottle onto the dispenser. Glug glug. " : ""}🚰 A cold cup from the dispenser. ${left}`;
+}
+
+/** Buy a 19-litre bottle; it goes home with you, ready for the dispenser. */
+export function buyBottle(s: GameState, delivered = false): string {
+  const d = dispenser(s);
+  d.spare += 1;
+  return delivered
+    ? `🛵 A rider drops a 19-litre bottle at your door. Spare bottles: ${d.spare}.`
+    : `🫙 You buy a 19-litre bottle of water and carry it home on your shoulder. Spare bottles: ${d.spare}.`;
+}
+
 export function wash(s: GameState) {
   life(s).washed = s.day;
 }
@@ -151,6 +194,7 @@ export const MENU: Meal[] = [
   { id: "suya", name: "Suya with onions", icon: "🍢", price: 3000, food: 35, water: 0, from: "Mallam Sani Suya" },
   { id: "shawarma", name: "Chicken shawarma", icon: "🌯", price: 4000, food: 45, water: 0, from: "Shawarma Spot, Wuse 2" },
   { id: "pounded", name: "Pounded yam & egusi", icon: "🥣", price: 5000, food: 70, water: 0, from: "Calabar Kitchen" },
+  { id: "bottle19", name: "19-litre bottle for your dispenser", icon: "🫙", price: BOTTLE_PRICE, food: 0, water: 0, from: "Kogo Spring water depot" },
   { id: "water", name: "Bottled water (pack of 6)", icon: "💧", price: 1500, food: 0, water: 70, from: "Shoprite" },
   { id: "chapman", name: "Chapman", icon: "🍹", price: 2500, food: 5, water: 40, from: "Jabi Lake Mall" },
   { id: "zobo", name: "Zobo (two bottles)", icon: "🧃", price: 1200, food: 0, water: 45, from: "Mama Zobo" },

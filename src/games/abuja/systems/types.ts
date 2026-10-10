@@ -308,7 +308,7 @@ export type ActionDef = {
   /** For "negotiate" actions: which deal; for "foodshop", which market. */
   deal?: string;
   /** Special handlers in the UI: sleep, work, apply, loans, hospital, japa. */
-  kind?: "sleep" | "work" | "apply" | "loans" | "japa" | "meet" | "drive" | "doctor" | "paybill" | "unfreeze" | "efcc" | "drivetest" | "rentcar" | "buycar" | "bizapp" | "negotiate" | "kitchen" | "foodshop" | "cookclass";
+  kind?: "sleep" | "work" | "apply" | "loans" | "japa" | "meet" | "drive" | "doctor" | "paybill" | "unfreeze" | "efcc" | "drivetest" | "rentcar" | "buycar" | "bizapp" | "negotiate" | "kitchen" | "foodshop" | "cookclass" | "dispenser" | "buybottle";
   job?: string;
 };
 
@@ -370,6 +370,8 @@ export type Business = { id: string; level: number; since: number; cash: number;
 
 /** Everyday life added after launch. Older saves have none; see systems/life.ts. */
 export type Life = {
+  /** The water dispenser at home: cups left in the bottle on it, and full 19-litre bottles waiting. */
+  dispenser?: { cups: number; spare: number };
   /** 100 = full, 0 = starving. */
   food: number;
   /** 100 = well watered, 0 = dehydrated. */

@@ -279,6 +279,20 @@ export const FURNITURE: Record<string, Item> = {
       );
     },
   },
+  dispenser: {
+    w: 48,
+    h: 132,
+    foot: 0.22,
+    // A white stand with hot and cold taps, and a blue 19-litre bottle upside down on top.
+    draw: () =>
+      `<path d="M10 52 Q10 8 24 6 Q38 8 38 52 Z" fill="#7dd3fc" fill-opacity="0.85" ${LINE}/>` +
+      `<path d="M16 22 Q24 18 32 22" ${thin("#e0f2fe", 3)}/><path d="M15 36 Q24 32 33 36" ${thin("#e0f2fe", 2.5)}/>` +
+      rect(18, 50, 12, 6, "#38bdf8", 2) +
+      box(6, 56, 36, 72, 8, "#f1f5f9", "#e2e8f0") +
+      rect(13, 76, 7, 9, "#ef4444", 2) +
+      rect(28, 76, 7, 9, "#3b82f6", 2) +
+      rect(10, 96, 28, 4, METAL, 2),
+  },
   fridge: {
     w: 60,
     h: 124,

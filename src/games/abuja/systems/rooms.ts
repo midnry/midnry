@@ -34,7 +34,7 @@ export const ROOM = { w: 640, h: 440, wall: 112, door: { x: 320, y: 418 } };
 
 export type RoomItem = { id: string; x: number; y: number; accent?: string };
 
-export type RoomAction = "phone" | "laptop" | "freshen" | "kitchen" | "vacancies" | "hr" | "training" | "workstation" | "manager" | `p_${string}`;
+export type RoomAction = "phone" | "laptop" | "freshen" | "kitchen" | "dispenser" | "vacancies" | "hr" | "training" | "workstation" | "manager" | `p_${string}`;
 
 export type RoomLayout = {
   wall: string;
@@ -61,6 +61,7 @@ export const LAYOUTS: Record<RoomType, RoomLayout> = {
       { id: "picture", x: 236, y: 30, accent: "#f97316" },
       { id: "window", x: 300, y: 18, accent: "#2e7d32" },
       { id: "tvstand_flat", x: 214, y: 92 },
+      { id: "dispenser", x: 340, y: 70 },
       { id: "sink", x: 400, y: 104 },
       { id: "stove", x: 488, y: 112 },
       { id: "fridge", x: 562, y: 76 },
@@ -75,7 +76,10 @@ export const LAYOUTS: Record<RoomType, RoomLayout> = {
       { x: 73, label: "Bedroom", to: "bedroom_middle" },
       { x: 163, label: "Bathroom", to: "bathroom_middle" },
     ],
-    spots: [{ x: 488, y: 196, label: "🍳 Use the kitchen", action: "kitchen" }],
+    spots: [
+      { x: 488, y: 196, label: "🍳 Use the kitchen", action: "kitchen" },
+      { x: 364, y: 200, label: "🚰 Water dispenser", action: "dispenser" },
+    ],
     staff: [{ x: 360, y: 350 }],
   },
   home_poor: {
@@ -86,6 +90,7 @@ export const LAYOUTS: Record<RoomType, RoomLayout> = {
       { id: "walldoor", x: 130, y: 6, accent: "#7a6249" },
       { id: "window", x: 300, y: 18, accent: "#8a5a33" },
       { id: "crt_bench", x: 220, y: 96 },
+      { id: "dispenser", x: 340, y: 70 },
       { id: "stove", x: 420, y: 112 },
       { id: "bucket", x: 492, y: 150 },
       { id: "broom", x: 540, y: 74 },
@@ -99,7 +104,10 @@ export const LAYOUTS: Record<RoomType, RoomLayout> = {
       { x: 73, label: "Bedroom", to: "bedroom_poor" },
       { x: 163, label: "Bathroom", to: "bathroom_poor" },
     ],
-    spots: [{ x: 420, y: 196, label: "🍳 Use the kitchen", action: "kitchen" }],
+    spots: [
+      { x: 420, y: 196, label: "🍳 Use the kitchen", action: "kitchen" },
+      { x: 364, y: 200, label: "🚰 Water dispenser", action: "dispenser" },
+    ],
     staff: [{ x: 360, y: 350 }],
   },
   bedroom_middle: {

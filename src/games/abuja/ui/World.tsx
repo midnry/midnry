@@ -43,7 +43,7 @@ import { ACT_ONE, storyGoal } from "../systems/story";
 import { hasCar, isDriving } from "../systems/drive";
 import { blocked } from "../systems/negotiate/core";
 import { deal as dealDef } from "../systems/negotiate/deals";
-import { isDirty, lifeOf } from "../systems/life";
+import { CUPS_PER_BOTTLE, dispenserOf, isDirty, lifeOf } from "../systems/life";
 import { personLook } from "../systems/peoplelook";
 import { SLOTS, beatKey, check, debt, fill, lockReason, naira } from "../systems/rules";
 import { bus, getState, input, loadControls, saveControls, type Controls, type NearThing } from "../systems/store";
@@ -71,7 +71,7 @@ import { DriveHudView } from "./DriveHud";
 import { MONTHS, SEASON_NAMES, weatherOf } from "../systems/weather";
 import { isMyRoom } from "../systems/decor";
 import { GAME_FONT, actionBtn, btnGhost, btnPrimary, glass, iconBtn, panel } from "./theme";
-import { lookIsComic, setComicLook } from "../systems/look";
+import { lookIsComic, messagesAutoHide, readingMs, setComicLook, setMessagesAutoHide } from "../systems/look";
 import { eventsNow } from "../systems/cityEvents";
 import { sound, type Mood } from "../systems/sound";
 import { DailyGift, WeeklyCard } from "./Daily";
@@ -256,6 +256,11 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           return;
         }
         if (thing.id === "freshen") freshenUp(poor);
+        else if (thing.id === "dispenser") {
+          const home = insideRef.current?.placeId ?? insideRef.current?.parent?.placeId;
+          if (getState()?.chapter) bus.emit("blocked", "🚰 A cold cup from the family dispenser. Mama keeps it full.");
+          else if (home?.startsWith("home_")) doAction(home, "dispenser");
+        }
         else if (thing.id === "kitchen") {
           if (getState()?.chapter) bus.emit("blocked", "Mama's kitchen, Mama's rules. You'll cook for yourself when you're grown.");
           else if (!insideRef.current?.placeId?.startsWith("home_") && !insideRef.current?.parent?.placeId?.startsWith("home_")) bus.emit("blocked", "This isn't your kitchen. Cook at home.");
@@ -344,9 +349,10 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
     };
   }, [isLoading]);
 
+  // Messages stay until tapped, unless the player chose to have them hide on their own (pause menu).
   useEffect(() => {
-    if (!state.toast) return;
-    const timer = window.setTimeout(clearToast, 6000);
+    if (!state.toast || !messagesAutoHide()) return;
+    const timer = window.setTimeout(clearToast, readingMs(state.toast));
     return () => window.clearTimeout(timer);
   }, [state.toast]);
 
@@ -517,7 +523,12 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
           className={`${glass} absolute ${state.task ? "top-48 sm:top-44" : "top-36 sm:top-32"} left-1/2 z-20 w-[min(92vw,30rem)] -translate-x-1/2 rounded-2xl p-3 text-left text-sm font-semibold text-pretty`}
           style={{ fontFamily: GAME_FONT }}
         >
-          {blocked ?? state.toast}
+          <span className="flex items-start gap-3">
+            <span className="flex-1">{blocked ?? state.toast}</span>
+            <span className="shrink-0 rounded-full bg-white/10 px-2.5 py-1 text-xs font-bold text-slate-200" aria-hidden>
+              OK
+            </span>
+          </span>
         </button>
       ) : null}
 
@@ -877,6 +888,7 @@ function PauseMenu({
           <p className="mt-1.5 text-xs text-slate-400">Arrow keys and WASD always work on a keyboard.</p>
         </div>
         <LookSwitch />
+        <MessageSwitch />
         <SoundSwitch />
         <div className="mt-5 rounded-xl bg-white/5 p-3 text-xs text-slate-300">
           <p className="font-semibold text-slate-200">How to play</p>
@@ -913,10 +925,15 @@ function ChapterHud({ state }: { state: GameState }) {
 type StatIcon = typeof Zap;
 
 /** One stat: a coloured icon, the name, the number and a bar. */
-function Bar({ label, Icon, value, color, warn }: { label: string; Icon: StatIcon; value: number; color: string; warn?: boolean }) {
+function Bar({ label, Icon, value, color, warn, gain }: { label: string; Icon: StatIcon; value: number; color: string; warn?: boolean; gain?: number }) {
   const fill = warn ? "#ef4444" : color;
   return (
-    <div className="min-w-0" title={`${label}: ${Math.round(value)}`}>
+    <div className={`relative min-w-0 rounded-md ${gain ? "hud-gain" : ""}`} title={`${label}: ${Math.round(value)}`} style={gain ? ({ "--gain": color } as React.CSSProperties) : undefined}>
+      {gain ? (
+        <span key={gain} className="hud-gain-chip pointer-events-none absolute -top-4 right-0 z-10 rounded-full px-1.5 text-[11px] font-black text-white shadow" style={{ background: color }} aria-hidden>
+          +{gain}
+        </span>
+      ) : null}
       <div className="flex items-center gap-1 text-[10px] font-extrabold tracking-wide text-slate-200 uppercase">
         <Icon className="size-3.5 shrink-0" style={{ color: fill }} strokeWidth={2.6} fill={Icon === Heart || Icon === Droplet || Icon === Zap || Icon === Star ? fill : "none"} aria-hidden />
         <span className="hidden truncate sm:inline">{label}</span>
@@ -929,16 +946,41 @@ function Bar({ label, Icon, value, color, warn }: { label: string; Icon: StatIco
   );
 }
 
+/** How much water the dispenser at home has left. */
+function dispenserNote(state: GameState): string {
+  const d = dispenserOf(state);
+  const inBottle = d.cups > 0 ? `${d.cups} of ${CUPS_PER_BOTTLE} cups left in the bottle` : "The bottle is empty";
+  return `${inBottle} · ${d.spare} spare bottle${d.spare === 1 ? "" : "s"} at home`;
+}
+
+/** After eating or drinking: how much the bar went up, shown for a few seconds. */
+function useGain(value: number): number {
+  const last = useRef(value);
+  const [gain, setGain] = useState(0);
+  useEffect(() => {
+    const up = Math.round(value - last.current);
+    last.current = value;
+    if (up < 3) return;
+    setGain(up);
+    sound.play("chime");
+    const t = window.setTimeout(() => setGain(0), 3500);
+    return () => window.clearTimeout(t);
+  }, [value]);
+  return gain;
+}
+
 function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => void }) {
   const weather = weatherOf(state.day, state.slot);
   const owed = debt(state);
   const l = lifeOf(state);
   const events = eventsNow(state);
+  const foodGain = useGain(l.food);
+  const waterGain = useGain(l.water);
   const bars = [
     <Bar key="energy" label="Energy" Icon={Zap} value={state.stats.energy} color="#34d399" />,
     <Bar key="health" label="Health" Icon={Heart} value={state.stats.health} color="#f2547d" />,
-    l.food < 60 ? <Bar key="food" label="Food" Icon={Utensils} value={l.food} color="#f59e0b" warn={l.food < 25} /> : null,
-    l.water < 60 ? <Bar key="water" label="Water" Icon={Droplet} value={l.water} color="#38bdf8" warn={l.water < 25} /> : null,
+    l.food < 60 || foodGain ? <Bar key="food" label="Food" Icon={Utensils} value={l.food} color="#f59e0b" warn={l.food < 25} gain={foodGain} /> : null,
+    l.water < 60 || waterGain ? <Bar key="water" label="Water" Icon={Droplet} value={l.water} color="#38bdf8" warn={l.water < 25} gain={waterGain} /> : null,
     state.stats.stress >= 40 ? <Bar key="stress" label="Stress" Icon={Brain} value={state.stats.stress} color="#c084fc" /> : null,
     <Bar key="rep" label="Rep" Icon={Star} value={state.stats.reputation} color="#facc15" />,
     state.stats.heat > 0 ? <Bar key="heat" label="Heat" Icon={Siren} value={state.stats.heat} color="#8b5cf6" /> : null,
@@ -1054,7 +1096,9 @@ function PlacePanel({
               className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left transition hover:border-blue-400/60 hover:bg-white/10 disabled:opacity-45"
             >
               <span className="block text-sm font-semibold">{fill(state, a.label)}</span>
-              <span className="block text-xs text-slate-400">{ok ? (a.kind === "negotiate" ? `${dealDef(a.deal!)?.blurb ?? ""}` : meta) : `🔒 ${dealWhy ?? a.lockedText ?? "Not available yet"}`}</span>
+              <span className="block text-xs text-slate-400">
+                {ok ? (a.kind === "negotiate" ? `${dealDef(a.deal!)?.blurb ?? ""}` : a.kind === "dispenser" || a.kind === "buybottle" ? dispenserNote(state) : meta) : `🔒 ${dealWhy ?? a.lockedText ?? "Not available yet"}`}
+              </span>
             </button>
           );
         })}
@@ -1324,6 +1368,40 @@ function LookSwitch() {
             aria-checked={comic === id}
             onClick={() => pick(id)}
             className={`rounded-xl border p-3 text-left text-sm transition ${comic === id ? "border-blue-400 bg-blue-400/15" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
+          >
+            <span className="block font-semibold">{label}</span>
+            <span className="block text-xs text-slate-400">{hint}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Messages: stay until tapped (default), or hide on their own after time to read them. */
+function MessageSwitch() {
+  const [auto, setAuto] = useState(messagesAutoHide);
+  const pick = (next: boolean) => {
+    setAuto(next);
+    setMessagesAutoHide(next);
+  };
+  return (
+    <div className="mt-5">
+      <p className="text-sm font-semibold">Messages</p>
+      <div className="mt-2 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Messages">
+        {(
+          [
+            [false, "👆 Tap to close", "Stay until you tap OK"],
+            [true, "⏱️ Hide on their own", "Long ones stay longer"],
+          ] as const
+        ).map(([id, label, hint]) => (
+          <button
+            key={label}
+            type="button"
+            role="radio"
+            aria-checked={auto === id}
+            onClick={() => pick(id)}
+            className={`rounded-xl border p-3 text-left text-sm transition ${auto === id ? "border-blue-400 bg-blue-400/15" : "border-white/10 bg-white/5 hover:bg-white/10"}`}
           >
             <span className="block font-semibold">{label}</span>
             <span className="block text-xs text-slate-400">{hint}</span>
