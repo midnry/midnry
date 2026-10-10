@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { RANKS, rankOf } from "../systems/milestones";
+import { FREEDOM_TARGET } from "../systems/rules";
 import { PATHS, PATH_IDS, nextStep, progress, type PathId } from "../systems/missions";
 import { MIN_STAKE, fixtures, type Pick } from "../systems/betting";
 import { naira } from "../systems/rules";
@@ -61,6 +63,7 @@ export function MissionsApp({ state }: { state: GameState }) {
   return (
     <div className="grid gap-4 text-sm">
       {state.toast ? <p className="rounded-xl bg-white/10 p-3 font-semibold">{state.toast}</p> : null}
+      <RankLadder state={state} />
       {path && !changing ? (
         <>
           <div className="rounded-2xl bg-white/5 p-4">
@@ -189,6 +192,42 @@ export function OddsApp({ state }: { state: GameState }) {
           </ul>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** The ranks on the way to financial freedom, with where you are now. */
+function RankLadder({ state }: { state: GameState }) {
+  const r = rankOf(state);
+  const pct = Math.round(r.progress * 100);
+  return (
+    <div className="rounded-2xl bg-white/5 p-4">
+      <div className="flex items-baseline justify-between gap-2">
+        <p className="font-bold">
+          {r.icon} {r.title}
+        </p>
+        <p className="text-xs text-slate-400">{naira(r.worth)} of {naira(FREEDOM_TARGET)}</p>
+      </div>
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+        <div className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400" style={{ width: `${Math.max(2, pct)}%` }} />
+      </div>
+      <ol className="mt-3 grid grid-cols-6 gap-1 text-center text-[10px] leading-tight">
+        {RANKS.map((k) => (
+          <li key={k.id} className={r.worth >= k.at ? "text-amber-200" : "text-slate-500"}>
+            <span className={`mx-auto mb-0.5 flex size-7 items-center justify-center rounded-full text-sm ${r.worth >= k.at ? "bg-amber-400/20" : "bg-white/5 grayscale"}`} aria-hidden>
+              {k.icon}
+            </span>
+            {k.title}
+          </li>
+        ))}
+        <li className={r.worth >= FREEDOM_TARGET ? "text-emerald-300" : "text-slate-500"}>
+          <span className="mx-auto mb-0.5 flex size-7 items-center justify-center rounded-full bg-white/5 text-sm" aria-hidden>
+            🕊️
+          </span>
+          Free
+        </li>
+      </ol>
+      {r.next ? <p className="mt-2 text-xs text-slate-400">Next: {r.next.title} at {naira(r.next.at)}.</p> : null}
     </div>
   );
 }

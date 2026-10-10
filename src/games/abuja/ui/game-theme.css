@@ -178,3 +178,44 @@
     }
   }
 }
+
+/* Celebrations (ui/Celebrate.tsx): the card pops in and confetti falls, unless motion is reduced. */
+.celebrate-confetti span {
+  position: absolute;
+  top: -12px;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .celebrate-pop {
+    animation: celebrate-pop 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  }
+  .celebrate-confetti span {
+    animation-name: celebrate-fall;
+    animation-timing-function: linear;
+    animation-iteration-count: 2;
+  }
+}
+@keyframes celebrate-pop {
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes celebrate-fall {
+  0% {
+    opacity: 1;
+    translate: 0 0;
+  }
+  100% {
+    opacity: 0.9;
+    translate: 30px 105dvh;
+    rotate: 540deg;
+  }
+}

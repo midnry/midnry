@@ -65,10 +65,17 @@ function emit() {
 }
 
 /** Change the game. The mutator edits a fresh copy, so React sees a new object. */
+let afterUpdate: ((draft: GameState) => void) | null = null;
+/** One check to run after every change (the engine uses it for milestones). */
+export function setAfterUpdate(fn: (draft: GameState) => void) {
+  afterUpdate = fn;
+}
+
 export function update(mutator: (draft: GameState) => void): void {
   if (!state) return;
   const draft = structuredClone(state);
   mutator(draft);
+  afterUpdate?.(draft);
   state = draft;
   emit();
   scheduleSave();

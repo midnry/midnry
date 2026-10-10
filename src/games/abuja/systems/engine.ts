@@ -31,7 +31,7 @@ import {
   gather,
   tell,
 } from "./rules";
-import { bus, getState, newGame, replace, update } from "./store";
+import { bus, getState, newGame, replace, setAfterUpdate, update } from "./store";
 import { MENU, DELIVERY_FEE, burn, daysUnwashed, isDirty, life, offense, overnight } from "./life";
 import { caseStatus, nightlyCase, reportScam, resolveFreeze, surrender, withoutBankCheck } from "./bank";
 import { acceptCounter, argue, bluff, closeNegotiation, propose as proposeOffer, setTerms, startNegotiation, walkAway, weeklyNegotiation } from "./negotiate/core";
@@ -77,6 +77,7 @@ import * as BT from "./betting";
 import * as MI from "./missions";
 import * as EK from "./emeka";
 import * as AP from "./apps";
+import * as MS from "./milestones";
 import * as PH from "./phones";
 import { storyEvent } from "./story";
 import { fadeMemories, forget, memoriesOf, recalled, remember, sinceWhen } from "./memory";
@@ -2306,6 +2307,12 @@ export function emekaStep(correct = 0) {
     if (!s.chapter && s.slot < SLOTS.length) spend(s, 1, -5);
   });
 }
+
+// ── Milestones and celebrations (systems/milestones.ts) ──
+
+// Checked after every change, so any route to a milestone counts.
+setAfterUpdate(MS.checkMilestones);
+export const closeCelebration = () => update((s) => MS.nextCelebration(s));
 
 // ── Which apps the phone shows (systems/apps.ts) ──
 

@@ -61,6 +61,8 @@ import { NepoMeet } from "./Nepo";
 import { PathChooser } from "./Missions";
 import { EmekaMeet, EmekaSheet } from "./Emeka";
 import { MorningCard } from "./Morning";
+import { CelebrationCard } from "./Celebrate";
+import { rankOf } from "../systems/milestones";
 import { nextStep, PATHS } from "../systems/missions";
 import { StoryPanel } from "./StoryView";
 import { WardrobePanel } from "./Wardrobe";
@@ -391,7 +393,7 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
       setBlocked("You're all set. Follow the gold mission banner, and check the pause menu for your weekly challenge. Welcome to Abuja!");
     }
   }, [guideStep, story, talking, inStory, isLoading, phone, trip, state.stats.money]);
-  const showGuide = guideStep !== null && !showGift && !story && !isLoading && !paused && !phone && !talking && !state.event && !state.toast && !state.morning && !blocked && !wardrobe;
+  const showGuide = guideStep !== null && !showGift && !story && !isLoading && !paused && !phone && !talking && !state.event && !state.toast && !state.morning && !state.celebrations?.length && !blocked && !wardrobe;
 
   // Sound: the music and street noise follow where you are and the time of day.
   const chapterId = state.chapter;
@@ -502,7 +504,8 @@ export function World({ state, onQuit }: { state: GameState; onQuit: () => void 
         </button>
       ) : null}
 
-      {state.morning && !state.event && !story && !state.minigame ? <MorningCard state={state} /> : null}
+      {state.celebrations?.length && !state.event && !story && !state.minigame ? <CelebrationCard state={state} /> : null}
+      {state.morning && !state.celebrations?.length && !state.event && !story && !state.minigame ? <MorningCard state={state} /> : null}
 
       {(state.toast || blocked) && !story ? (
         <button
@@ -949,7 +952,10 @@ function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => v
       aria-label="Your stats"
     >
       <div>
-        <p className="text-xl leading-tight font-black tabular-nums text-[#4ade80] drop-shadow-[0_1px_0_rgba(0,0,0,0.4)]">{naira(state.stats.money)}</p>
+        <p className="flex items-center gap-2 text-xl leading-tight font-black tabular-nums text-[#4ade80] drop-shadow-[0_1px_0_rgba(0,0,0,0.4)]">
+          {naira(state.stats.money)}
+          {state.stage === "adult" && !state.chapter ? <RankBar state={state} /> : null}
+        </p>
         <p className="text-[11px] font-bold whitespace-nowrap text-slate-300">
           Day {state.day} <span className="text-slate-500">•</span> {SLOTS[Math.min(state.slot, 3)]}{" "}
           <span title={`${weather.label} · ${MONTHS[weather.month]} · ${SEASON_NAMES[weather.season]}`} aria-label={`Weather: ${weather.label}, ${MONTHS[weather.month]}`}>
@@ -969,6 +975,24 @@ function Hud({ state, onOpen }: { state: GameState; onOpen: (app: PhoneApp) => v
         {bars}
       </div>
     </button>
+  );
+}
+
+/** Your rank and how far you are toward financial freedom (₦25m): a small chip beside your money. */
+function RankBar({ state }: { state: GameState }) {
+  const r = rankOf(state);
+  const pct = Math.round(r.progress * 100);
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-amber-200 drop-shadow-none"
+      title={`${r.title}: ${pct}% of the way to financial freedom (₦25m).${r.next ? ` Next rank: ${r.next.title} at ${naira(r.next.at)}.` : ""}`}
+    >
+      <span aria-hidden>{r.icon}</span>
+      <span className="h-1 w-8 overflow-hidden rounded-full bg-white/15" role="progressbar" aria-label={`${r.title}, progress to financial freedom`} aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+        <span className="block h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400" style={{ width: `${Math.max(4, pct)}%` }} />
+      </span>
+      {pct}%
+    </span>
   );
 }
 

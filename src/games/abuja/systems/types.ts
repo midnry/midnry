@@ -479,6 +479,8 @@ export type GameState = {
   parents?: Parents;
   /** Plans to leave the country (systems/japa.ts). */
   japa?: Japa;
+  /** Big moments waiting to be shown full screen (systems/milestones.ts). */
+  celebrations?: import("./milestones").Celebration[];
   /** What happened overnight, shown as a list when you wake (most important first). */
   morning?: { day: number; lead?: string; items: string[] } | null;
   /** Born into a family that left a business or property: held for you until 18. */
