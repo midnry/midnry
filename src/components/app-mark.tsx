@@ -43,8 +43,8 @@ export function AppMark({
     <svg viewBox="0 0 64 64" aria-hidden className={cn("size-10 shrink-0", className)}>
       <defs>
         <linearGradient id={raw} x1="12" y1="8" x2="54" y2="58" gradientUnits="userSpaceOnUse">
-          <stop offset="0" stopColor="#3D9BFF" />
-          <stop offset="1" stopColor="#1A46E0" />
+          <stop offset="0" style={{ stopColor: "var(--mark-a)" }} />
+          <stop offset="1" style={{ stopColor: "var(--mark-b)" }} />
         </linearGradient>
       </defs>
       <path

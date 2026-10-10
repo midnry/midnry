@@ -88,11 +88,11 @@ function Home() {
 
 /** The five most useful everyday apps, in the words people would use for them. */
 const PICKS: { slug: string; tint: string }[] = [
-  { slug: "tasks", tint: "from-sky-500/15" },
-  { slug: "apply", tint: "from-indigo-500/15" },
-  { slug: "cycle", tint: "from-pink-500/15" },
-  { slug: "ledger", tint: "from-emerald-500/15" },
-  { slug: "invoice", tint: "from-amber-500/15" },
+  { slug: "tasks", tint: "from-sky-500/15 evening:from-amber-400/20" },
+  { slug: "apply", tint: "from-indigo-500/15 evening:from-rose-400/15" },
+  { slug: "cycle", tint: "from-pink-500/15 evening:from-pink-400/20" },
+  { slug: "ledger", tint: "from-emerald-500/15 evening:from-lime-500/15" },
+  { slug: "invoice", tint: "from-amber-500/15 evening:from-orange-400/20" },
 ];
 
 function FeaturedSix() {

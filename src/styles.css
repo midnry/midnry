@@ -2,6 +2,7 @@
 
 /* `dark:` follows the site's mode (see src/lib/day-mode.ts), not only the device setting. */
 @custom-variant dark (&:where([data-mode="dark"], [data-mode="dark"] *));
+@custom-variant evening (&:where([data-mode="evening"], [data-mode="evening"] *));
 
 @theme {
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
@@ -29,6 +30,8 @@
 @property --color-line { syntax: "<color>"; inherits: true; initial-value: #d5e2f0; }
 @property --color-pine { syntax: "<color>"; inherits: true; initial-value: #1d4ed8; }
 @property --color-fail { syntax: "<color>"; inherits: true; initial-value: #b42318; }
+@property --mark-a { syntax: "<color>"; inherits: true; initial-value: #3d9bff; }
+@property --mark-b { syntax: "<color>"; inherits: true; initial-value: #1a46e0; }
 @property --shadow-tint { syntax: "<color>"; inherits: true; initial-value: rgba(16, 32, 51, 0.06); }
 
 html[data-mode="evening"] {
@@ -39,7 +42,7 @@ html[data-mode="evening"] {
   --color-ink-soft: #5b3420;
   --color-muted: #7a6152;
   --color-line: #ead5c0;
-  --color-pine: #b5410f;
+  --color-pine: #1d4ed8;
   --color-fail: #b91c1c;
   --shadow-tint: rgba(60, 30, 10, 0.08);
 }
@@ -53,7 +56,9 @@ html[data-mode="dark"] {
   --color-ink-soft: #c4d3e8;
   --color-muted: #93a4bb;
   --color-line: #26354f;
-  --color-pine: #7aa2ff;
+  --color-pine: #5a8dee;
+  --mark-a: #8cc8ff;
+  --mark-b: #5b8cff;
   --color-fail: #e5484d;
   --shadow-tint: rgba(255, 255, 255, 0.07);
 }
@@ -70,7 +75,17 @@ html.mode-ease {
     --color-line 2s ease,
     --color-pine 2s ease,
     --color-fail 2s ease,
+    --mark-a 2s ease,
+    --mark-b 2s ease,
     --shadow-tint 2s ease;
+}
+
+/* The header logo is a picture: lift it a little on the dark background. */
+.site-logo {
+  transition: filter 2s ease;
+}
+html[data-mode="dark"] .site-logo {
+  filter: brightness(1.5) saturate(1.15);
 }
 
 @layer base {
