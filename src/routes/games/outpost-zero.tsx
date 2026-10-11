@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/games/outpost-zero")({
@@ -20,6 +21,19 @@ export const Route = createFileRoute("/games/outpost-zero")({
 
 function OutpostZeroPage() {
   const { room } = Route.useSearch();
+  const frame = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    const onExit = (event: MessageEvent) => {
+      if (
+        event.origin === window.location.origin &&
+        event.source === frame.current?.contentWindow &&
+        event.data?.type === "midnry-outpost-exit"
+      )
+        window.location.assign("/");
+    };
+    window.addEventListener("message", onExit);
+    return () => window.removeEventListener("message", onExit);
+  }, []);
   return (
     <main className="flex h-dvh min-h-[464px] flex-col bg-[#101419] text-[#fff4dc]">
       <nav
@@ -39,7 +53,8 @@ function OutpostZeroPage() {
       {/* The static document owns its Canvas, styles and inputs. Unmounting the
           iframe tears down the game, and its scripts never run during SSR. */}
       <iframe
-        src={`/games/outpost-zero.html?v=menu-20261011${room ? `&room=${encodeURIComponent(room)}` : ""}`}
+        ref={frame}
+        src={`/games/outpost-zero.html?v=qol-20261011${room ? `&room=${encodeURIComponent(room)}` : ""}`}
         title="Outpost Zero first-person shooter"
         className="block min-h-[420px] w-full flex-1 border-0"
         allow="fullscreen"

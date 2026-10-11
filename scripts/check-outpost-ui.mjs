@@ -59,6 +59,10 @@ try {
     assert.ok(await settings.getByLabel("Sound volume").isVisible());
     assert.ok(await settings.getByLabel("Graphics preset").isVisible());
     await settings.getByLabel("Graphics preset").selectOption("performance");
+    await page.locator(".mf-confirmapply").click();
+    await page.waitForFunction(
+      () => document.querySelector("midnry-fps").engine.ui.pendingConfirmation === null,
+    );
     await settings.getByLabel("Bot difficulty").selectOption("easy");
     assert.ok(await settings.evaluate((e) => e.scrollWidth <= e.clientWidth + 1));
     await page.screenshot({
