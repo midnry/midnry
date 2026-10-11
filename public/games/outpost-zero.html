@@ -33,6 +33,20 @@
         height: 100%;
         touch-action: none;
       }
+      .mf-loading {
+        position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
+        padding: 28px; background: radial-gradient(ellipse at top, #283c34, #101715 70%);
+        color: #e4e8e3; font: 16px system-ui, sans-serif; text-align: center;
+      }
+      .mf-loading[hidden] { display: none; }
+      .mf-loading > div { width: min(360px, 100%); }
+      .mf-loading small { letter-spacing: .24em; color: #b3c3ae; }
+      .mf-loading h1 { font-size: clamp(38px, 9vw, 58px); line-height: 1; margin: 24px 0; }
+      .mf-loading progress { width: 100%; height: 6px; accent-color: #b3c3ae; }
+      .mf-loading p { line-height: 1.6; color: #bbc8bf; }
+      .mf-loading a { color: #e4e8e3; }
+      midnry-fps .mf-rendernotice { padding: 12px; border: 1px solid #b3c3ae; }
+      midnry-fps .mf-shell > :not(canvas) { z-index: 2; }
       /* Preview palette stays scoped; existing accessible hit areas and dialogs persist. */
       midnry-fps .mf-military {
         color: #e4e8e3;
@@ -1506,6 +1520,22 @@
   </head>
   <!-- For inline integration copy the style, element and script. Set a height on the host. -->
   <body style="margin: 0; background: #101419">
+    <div class="mf-loading" role="status" aria-live="polite">
+      <div><small>MIDNRY / FIELD OPERATIONS</small><h1>OUTPOST<br>ZERO.</h1>
+        <progress aria-label="Game loading progress" max="100" value="0"></progress>
+        <p class="mf-loadstatus">Preparing field operations…</p>
+        <a href="" class="mf-loadretry" hidden>Retry loading</a>
+      </div>
+    </div>
+    <script>
+      // Visible before module downloads, including when a core module fails.
+      window.addEventListener("error", () => {
+        const screen = document.querySelector(".mf-loading");
+        if (!screen || screen.hidden) return;
+        screen.querySelector(".mf-loadstatus").textContent = "Loading failed. Please retry.";
+        screen.querySelector(".mf-loadretry").hidden = false;
+      }, true);
+    </script>
     <midnry-fps style="height: 100dvh" aria-label="Outpost Zero first-person shooter"></midnry-fps>
     <script type="module">
       import { Arena, MAPS, WEAPONS, mapOf, weaponOf, clamp } from "./outpost-sim.js";
@@ -1548,10 +1578,12 @@
           constructor(root) {
             this.root = root;
             this.shell = root.querySelector(".mf-shell");
+            this.shell.inert = true;
             this.canvas = root.querySelector("canvas");
-            this.ctx = this.canvas.getContext("2d", {
-              alpha: new URLSearchParams(location.search).get("renderer") === "military",
-            });
+            this.useMilitary = new URLSearchParams(location.search).get("renderer") !== "classic";
+            this.ctx = this.canvas.getContext("2d", { alpha: this.useMilitary });
+            this.loadingScreen = document.querySelector(".mf-loading");
+            this.loading = true;
             this.$ = (s) => root.querySelector(s);
             this.abort = new AbortController();
             this.keys = new Set();
@@ -1604,38 +1636,84 @@
             this.weapons = new WeaponArt(this);
             this.retention = new Retention(this);
             this.ui = new MenuUI(this);
-            if (new URLSearchParams(location.search).get("renderer") === "military") {
+            if (this.useMilitary) {
               this.shell.classList.add("mf-military");
               this.$(".mf-tag").textContent = "TACTICAL 3D / LOADING";
-              import("./outpost-military.js")
+              this.loadingTimer = setTimeout(() => {
+                this.fallbackMilitary(new Error("Graphics loading timed out. Please retry on a stable connection."));
+              }, 45000);
+              import("./outpost-military.js?v=startup-20261011")
                 .then(async ({ MilitaryRenderer }) => {
-                  if (this.abort.signal.aborted) return;
-                  const renderer = new MilitaryRenderer(this);
+                  if (this.abort.signal.aborted || !this.loading) return;
+                  const renderer = new MilitaryRenderer(this, (done, total) => {
+                    if (!this.loading || this.abort.signal.aborted) return;
+                    this.loadingScreen.querySelector("progress").value = Math.round(done / total * 90);
+                    this.loadingScreen.querySelector(".mf-loadstatus").textContent =
+                      `Preparing textures, lighting and characters… ${done} / ${total}`;
+                  });
                   this.military = renderer;
                   await renderer.ready;
-                  if (this.abort.signal.aborted) {
+                  if (this.abort.signal.aborted || renderer.disposed || renderer.contextFailed || !this.loading) {
                     renderer.dispose();
                     return;
                   }
+                  if (renderer.assetErrors.length) {
+                    throw new Error("Some 3D assets could not be downloaded. Please retry.");
+                  }
                   this.militaryLoaded = true;
-                  this.$(".mf-tag").textContent = "TACTICAL 3D / PREVIEW";
-                  this.$(".mf-copy").textContent =
-                    "Field operations in a weathered desert compound. Choose a loadout and deploy.";
                   this.resize();
                   this.ui.previewKey = null;
                   this.ui.refresh();
+                  // Compile and draw the scene before dismissing the loading screen.
+                  this.render();
+                  this.finishLoading();
+                  this.$(".mf-tag").textContent = "TACTICAL 3D";
                 })
-                .catch(() => {
-                  this.$(".mf-tag").textContent = "3D UNAVAILABLE / CLASSIC VIEW";
-                  this.$(".mf-kitnote").textContent =
-                    "The 3D preview could not load on this device. The original game remains playable.";
-                });
+                .catch((error) => this.fallbackMilitary(error));
+            } else {
+              requestAnimationFrame(() => this.finishLoading());
             }
             this.resizeObserver = new ResizeObserver(() => this.resize());
             this.resizeObserver.observe(this.shell);
             this.resize();
             this.loop = this.loop.bind(this);
             this.frame = requestAnimationFrame(this.loop);
+          }
+          finishLoading() {
+            clearTimeout(this.loadingTimer);
+            if (this.abort.signal.aborted) return;
+            this.loading = false;
+            this.shell.inert = false;
+            this.loadingScreen.querySelector("progress").value = 100;
+            this.loadingScreen.hidden = true;
+          }
+          fallbackMilitary(error) {
+            if (this.abort.signal.aborted) return;
+            if (this.running) this.pause();
+            this.militaryLoaded = false;
+            this.military?.dispose();
+            this.military = null;
+            this.shell.classList.remove("mf-military");
+            this.$(".mf-tag").textContent = "3D UNAVAILABLE / CLASSIC VIEW";
+            this.rendererError = error?.message || "3D graphics could not start.";
+            let notice = this.$(".mf-rendernotice");
+            if (!notice) {
+              notice = document.createElement("p");
+              notice.className = "mf-rendernotice";
+              notice.setAttribute("role", "status");
+              this.$(".mf-copy").after(notice);
+            }
+            notice.replaceChildren(document.createTextNode(
+              `${this.rendererError} Classic graphics are active. `,
+            ));
+            const retry = document.createElement("a");
+            retry.href = location.href;
+            retry.textContent = "Retry 3D";
+            notice.append(retry);
+            this.ui.previewKey = null;
+            this.ui.refresh();
+            this.render();
+            this.finishLoading();
           }
           // Last Signal uses the same arena, with a clear center for the final zone.
           reset() {
@@ -2339,6 +2417,7 @@
             }
           }
           start() {
+            if (this.loading) return;
             this.retention?.audio.unlock();
             if (this.online) {
               if (this.online.phase === "lobby") {
@@ -3520,6 +3599,7 @@
             this.frame = requestAnimationFrame(this.loop);
           }
           destroy() {
+            clearTimeout(this.loadingTimer);
             this.military?.dispose();
             this.retention?.destroy();
             this.leaveOnline();

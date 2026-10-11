@@ -14453,13 +14453,25 @@ var $ = 3, Cu = "/games/military/", wu = {
 		metal: "#81867b"
 	}
 }, Tu = class {
-	constructor(e) {
-		this.g = e, this.disposed = !1, this.actors = /* @__PURE__ */ new Map(), this.crates = /* @__PURE__ */ new Map(), this.cores = /* @__PURE__ */ new Map(), this.projectiles = /* @__PURE__ */ new Map(), this.fields = /* @__PURE__ */ new Map(), this.materials = /* @__PURE__ */ new Set(), this.geometries = /* @__PURE__ */ new Map(), this.textures = /* @__PURE__ */ new Set(), this.worldTextures = /* @__PURE__ */ new Set(), this.lastTime = 0, this.lastPose = -1, this.mapKey = "", this.wallKeys = "", this.seenShots = /* @__PURE__ */ new Map(), this.tracers = [], this.lastPreset = "", this.assetErrors = [], this.motion = matchMedia("(prefers-reduced-motion: reduce)"), this.renderer = new Qc({
+	constructor(e, t = () => {}) {
+		this.g = e, this.onProgress = t, this.disposed = !1, this.actors = /* @__PURE__ */ new Map(), this.crates = /* @__PURE__ */ new Map(), this.cores = /* @__PURE__ */ new Map(), this.projectiles = /* @__PURE__ */ new Map(), this.fields = /* @__PURE__ */ new Map(), this.materials = /* @__PURE__ */ new Set(), this.geometries = /* @__PURE__ */ new Map(), this.textures = /* @__PURE__ */ new Set(), this.worldTextures = /* @__PURE__ */ new Set(), this.lastTime = 0, this.lastPose = -1, this.mapKey = "", this.wallKeys = "", this.seenShots = /* @__PURE__ */ new Map(), this.tracers = [], this.lastPreset = "", this.assetErrors = [], this.motion = matchMedia("(prefers-reduced-motion: reduce)");
+		let n, r;
+		for (let e of [{
 			antialias: !0,
-			alpha: !1,
-			powerPreference: "high-performance"
+			powerPreference: "default"
+		}, {
+			antialias: !1,
+			powerPreference: "low-power"
+		}]) if (n = document.createElement("canvas"), r = n.getContext("webgl2", {
+			...e,
+			alpha: !1
+		}), r) break;
+		if (!r) throw Error("This browser could not start WebGL 2 graphics.");
+		this.renderer = new Qc({
+			canvas: n,
+			context: r
 		}), this.renderer.setPixelRatio(1), this.renderer.outputColorSpace = T, this.renderer.toneMapping = 4, this.renderer.toneMappingExposure = .95, this.renderer.info.autoReset = !1, this.renderer.shadowMap.enabled = !0, this.renderer.shadowMap.type = 2, this.contextLost = (t) => {
-			t.preventDefault(), !this.disposed && (e.militaryLoaded = !1, e.$(".mf-tag").textContent = "3D UNAVAILABLE / CLASSIC VIEW");
+			t.preventDefault(), !this.disposed && (this.contextFailed = !0, e.fallbackMilitary(/* @__PURE__ */ Error("The graphics context was lost.")));
 		}, this.renderer.domElement.addEventListener("webglcontextlost", this.contextLost), this.renderer.domElement.className = "mf-webgl", this.renderer.domElement.setAttribute("aria-hidden", "true"), this.renderer.domElement.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:0;width:100%;height:100%;", e.shell.insertBefore(this.renderer.domElement, e.canvas), e.canvas.style.cssText = "position:relative;z-index:1;background:transparent", this.scene = new gr(), this.scene.background = new Y("#b8c6d0"), this.scene.fog = new hr("#b8c6d0", .018), this.world = new fr(), this.scene.add(this.world), this.dynamic = new fr(), this.scene.add(this.dynamic), this.camera = new or(60, 1, .06, 260), this.camera.rotation.order = "YXZ", this.hemisphere = new fa("#adbcd0", "#372b20", .55), this.scene.add(this.hemisphere), this.sun = new Ea("#ffddb0", 4.2), this.sun.position.set(-25, 38, -22), this.sun.castShadow = !0, this.sun.shadow.mapSize.set(1024, 1024), Object.assign(this.sun.shadow.camera, {
 			left: -35,
 			right: 35,
@@ -14468,10 +14480,10 @@ var $ = 3, Cu = "/games/military/", wu = {
 			near: 1,
 			far: 140
 		}), this.sun.shadow.bias = -3e-4, this.sun.shadow.normalBias = .03, this.scene.add(this.sun, this.sun.target), this.rim = new Ea("#94b9e7", 1.15), this.rim.position.set(25, 15, 35), this.scene.add(this.rim), this.weaponScene = new gr(), this.weaponCamera = new or(52, 1, .01, 10), this.weaponScene.add(new fa("#e5ecf1", "#786852", 2));
-		let t = new Ea("#fff0d7", 4);
-		t.position.set(-2, 3, -4), this.weaponScene.add(t), this.rig = new fr(), this.weaponScene.add(this.rig), this.flash = new Ca("#ffdcb0", 0, 4), this.flash.position.set(.22, -.08, -.95), this.weaponScene.add(this.flash), this.boxGeometry = this.geo("rounded", () => new iu(1, 1, 1, 3, .025)), this.wallGeometry = this.geo("wall", () => new iu(1, 1, 1, 2, .008)), this.composer = new pu(this.renderer), this.composer.addPass(new mu(this.scene, this.camera)), this.ao = new yu(this.scene, this.camera, 512, 512, 12), this.ao.kernelRadius = .7, this.ao.minDistance = .001, this.ao.maxDistance = .07, this.composer.addPass(this.ao);
-		let n = new mu(this.weaponScene, this.weaponCamera);
-		n.clear = !1, n.clearDepth = !0, this.composer.addPass(n), this.grade = new uu({
+		let i = new Ea("#fff0d7", 4);
+		i.position.set(-2, 3, -4), this.weaponScene.add(i), this.rig = new fr(), this.weaponScene.add(this.rig), this.flash = new Ca("#ffdcb0", 0, 4), this.flash.position.set(.22, -.08, -.95), this.weaponScene.add(this.flash), this.boxGeometry = this.geo("rounded", () => new iu(1, 1, 1, 3, .025)), this.wallGeometry = this.geo("wall", () => new iu(1, 1, 1, 2, .008)), this.composer = new pu(this.renderer), this.composer.addPass(new mu(this.scene, this.camera)), this.ao = new yu(this.scene, this.camera, 512, 512, 12), this.ao.kernelRadius = .7, this.ao.minDistance = .001, this.ao.maxDistance = .07, this.composer.addPass(this.ao);
+		let a = new mu(this.weaponScene, this.weaponCamera);
+		a.clear = !1, a.clearDepth = !0, this.composer.addPass(a), this.grade = new uu({
 			uniforms: { tDiffuse: { value: null } },
 			vertexShader: "varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }",
 			fragmentShader: "uniform sampler2D tDiffuse; varying vec2 vUv;\n        void main(){ vec4 c=texture2D(tDiffuse,vUv);\n          // Subtle warm highlights, cool shadows, and lens falloff; no animated grain.\n          float l=dot(c.rgb,vec3(.2126,.7152,.0722));\n          c.rgb=mix(vec3(l),c.rgb,1.04);\n          c.rgb*=mix(vec3(.90,.97,1.06),vec3(1.045,1.015,.97),smoothstep(.15,1.1,l));\n          vec2 d=(vUv-.5)*vec2(1.,.75);\n          c.rgb*=1.-.32*dot(d,d); gl_FragColor=c; }"
@@ -14510,14 +14522,16 @@ var $ = 3, Cu = "/games/military/", wu = {
 		return a === "z" && (c.rotation.x = Math.PI / 2), a === "x" && (c.rotation.z = Math.PI / 2), c;
 	}
 	async loadAssets() {
-		let t = new ua(), n = async (n) => {
+		let t = 0, n = () => this.onProgress(++t, 14), r = new ua(), i = async (t) => {
 			try {
-				let r = await t.loadAsync(Cu + n);
-				return this.disposed ? (r.dispose(), null) : (r.wrapS = r.wrapT = e, r.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy()), this.textures.add(r), r);
+				let n = await r.loadAsync(Cu + t);
+				return this.disposed ? (n.dispose(), null) : (n.wrapS = n.wrapT = e, n.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy()), this.textures.add(n), n);
 			} catch {
-				return this.assetErrors.push(n), null;
+				return this.assetErrors.push(t), null;
+			} finally {
+				n();
 			}
-		}, r = await Promise.all([
+		}, a = await Promise.all([
 			"asphalt-color.jpg",
 			"asphalt-normal.jpg",
 			"asphalt-roughness.jpg",
@@ -14530,8 +14544,8 @@ var $ = 3, Cu = "/games/military/", wu = {
 			"glove-color.jpg",
 			"glove-normal.jpg",
 			"glove-roughness.jpg"
-		].map((e) => n("textures/" + e)));
-		[this.groundColor, this.groundNormal, this.groundRough, this.metalColor, this.metalNormal, this.metalRough, this.gunColor, this.gunNormal, this.gunRough, this.gloveColor, this.gloveNormal, this.gloveRough] = r, this.gunColor && (this.gunColor.colorSpace = T), this.gloveColor && (this.gloveColor.colorSpace = T), this.groundColor && (this.groundColor.colorSpace = T), this.metalColor && (this.metalColor.colorSpace = T), await Promise.all([(async () => {
+		].map((e) => i("textures/" + e)));
+		[this.groundColor, this.groundNormal, this.groundRough, this.metalColor, this.metalNormal, this.metalRough, this.gunColor, this.gunNormal, this.gunRough, this.gloveColor, this.gloveNormal, this.gloveRough] = a, this.gunColor && (this.gunColor.colorSpace = T), this.gloveColor && (this.gloveColor.colorSpace = T), this.groundColor && (this.groundColor.colorSpace = T), this.metalColor && (this.metalColor.colorSpace = T), await Promise.all([(async () => {
 			try {
 				let e = await new el().loadAsync(Cu + "models/soldier.glb");
 				if (this.disposed) {
@@ -14543,6 +14557,8 @@ var $ = 3, Cu = "/games/military/", wu = {
 				});
 			} catch {
 				this.assetErrors.push("soldier");
+			} finally {
+				n();
 			}
 		})(), (async () => {
 			try {
@@ -14554,6 +14570,8 @@ var $ = 3, Cu = "/games/military/", wu = {
 				e.mapping = 303, this.textures.add(e), this.scene.background = e, this.scene.environment = e, this.weaponScene.environment = e, this.scene.backgroundBlurriness = .015, this.scene.backgroundIntensity = .48, this.scene.environmentIntensity = .45;
 			} catch {
 				this.assetErrors.push("sky");
+			} finally {
+				n();
 			}
 		})()]);
 	}
