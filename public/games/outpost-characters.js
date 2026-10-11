@@ -1,6 +1,7 @@
 /** Original illustrated anime atlases with a procedural loading fallback.
  * Presentation only: never mutates Arena entities or authoritative match rules. */
 import { weaponOf } from "./outpost-content.js";
+export const ANIMATION_FPS = 24;
 const TAU = Math.PI * 2;
 // Tight source bounds measured from alpha; source artwork stays untouched.
 const ATLASES = [
@@ -153,11 +154,20 @@ export class Characters {
     this.lastTime = -1;
     this.round = null;
   }
+  get cacheLimit() {
+    return this.g.academy.preset === "performance" ? 64 : 96;
+  }
   clearCache() {
     this.cache.clear();
   }
-  observe() {
+  clock() {
+    // Online simulation stays authoritative at 10 Hz; presentation advances locally.
     const g = this.g;
+    return g.online ? Math.max(g.time, Math.min(g.time + 0.15, g.visualTime ?? g.time)) : g.time;
+  }
+  observe() {
+    const g = this.g,
+      time = this.clock();
     if (g.time < this.lastTime || this.round !== g.arena.roundId) this.reset();
     this.lastTime = g.time;
     this.round = g.arena.roundId;
@@ -168,41 +178,42 @@ export class Characters {
         y: e.y,
         hp: e.hp,
         movingUntil:
-          old && Math.hypot(e.x - old.x, e.y - old.y) > 0.002
-            ? g.time + 0.18
-            : old?.movingUntil || 0,
-        deathAt: e.hp <= 0 ? (old?.hp > 0 ? g.time : (old?.deathAt ?? -100)) : null,
+          old && Math.hypot(e.x - old.x, e.y - old.y) > 0.002 ? time + 0.18 : old?.movingUntil || 0,
+        deathAt: e.hp <= 0 ? (old?.hp > 0 ? time : (old?.deathAt ?? -100)) : null,
       });
     }
   }
   defeatedVisible(e) {
     const at = this.observed.get(e.id)?.deathAt;
-    return e.hp <= 0 && at != null && this.g.time - at < 0.9;
+    return e.hp <= 0 && at != null && this.clock() - at < 0.9;
   }
   pose(e) {
     const g = this.g,
+      time = this.clock(),
       old = this.observed.get(e.id),
-      moving = old?.movingUntil > g.time;
+      moving = old?.movingUntil > time;
     let state = "idle",
       frame = 0;
     if (e.hp <= 0) {
       state = "down";
       frame = this.motion.matches
-        ? 4
-        : Math.min(4, Math.floor((g.time - (old?.deathAt ?? g.time)) * 6));
-    } else if (g.time - e.hit >= 0 && g.time - e.hit < 0.22) {
+        ? 21
+        : Math.min(21, Math.floor((time - (old?.deathAt ?? time)) * ANIMATION_FPS));
+    } else if (time - e.hit >= 0 && time - e.hit < 0.22) {
       state = "hit";
-      frame = Math.min(1, Math.floor((g.time - e.hit) * 10));
-    } else if (e.reloadUntil > g.time) {
+      frame = Math.min(5, Math.floor((time - e.hit) * ANIMATION_FPS));
+    } else if (e.reloadUntil > time) {
       state = "reload";
-      frame = Math.min(5, Math.floor((1 - (e.reloadUntil - g.time) / 1.4) * 6));
-    } else if (g.time - e.shotAt >= 0 && g.time - e.shotAt < 0.22) {
+      frame = Math.max(0, Math.min(33, Math.floor((1.4 - (e.reloadUntil - time)) * ANIMATION_FPS)));
+    } else if (time - e.shotAt >= 0 && time - e.shotAt < 0.22) {
       state = "fire";
-      frame = Math.min(2, Math.floor((g.time - e.shotAt) * 14));
+      frame = Math.min(5, Math.floor((time - e.shotAt) * ANIMATION_FPS));
     } else if (moving) {
       state = "walk";
-      frame = Math.floor(g.time * (e.speedUntil > g.time ? 14 : 9) + (e.phase || 0)) % 8;
-    } else frame = Math.floor(g.time * 2 + (e.phase || 0)) % 4;
+      frame =
+        Math.floor(time * ANIMATION_FPS * (e.speedUntil > time ? 1.5 : 1) + (e.phase || 0) + 1e-6) %
+        12;
+    } else frame = Math.floor(time * ANIMATION_FPS + (e.phase || 0) + 1e-6) % 72;
     if (this.motion.matches && state !== "down") frame = 0;
     const camera = g.camera(),
       angle = Math.atan2(camera.y - e.y, camera.x - e.x) - e.a;
@@ -234,9 +245,15 @@ export class Characters {
     const c = image.getContext("2d");
     c.scale(density, density);
     if (this.atlases[role].loaded) this.paintAtlas(c, role, ally, w, p);
-    else this.paint(c, RIGS[role], role, variant, ally, w, p);
+    else {
+      const divisors = { idle: 18, walk: 1.5, reload: 5.67, fire: 2, hit: 3, down: 4.4 };
+      this.paint(c, RIGS[role], role, variant, ally, w, {
+        ...p,
+        frame: Math.floor(p.frame / divisors[p.state]),
+      });
+    }
     // LRU bounds memory even with eight angles, loadouts and animation states.
-    if (this.cache.size >= 64) this.cache.delete(this.cache.keys().next().value);
+    while (this.cache.size >= this.cacheLimit) this.cache.delete(this.cache.keys().next().value);
     this.cache.set(key, image);
     return image;
   }
@@ -303,45 +320,79 @@ export class Characters {
     const neutral = back ? 3 : side ? 2 : p.direction === 0 ? 0 : 1;
     let atlas = this.atlases[role],
       index = neutral;
+
     const moving = p.state === "walk" && !this.motion.matches;
     if (moving) {
+      const phase = Math.floor(p.frame / 3) % 4;
+      let start = p.direction === 0 ? 4 : 8;
       if (back && this.atlases[3].loaded) {
         atlas = this.atlases[3];
-        index = role * 4 + (p.frame % 4);
-      } else if (!back) index = (p.direction === 0 ? 4 : 8) + (p.frame % 4);
+        start = role * 4;
+      }
+      if (!back || atlas.name === "backs") {
+        index = start + phase;
+      }
     } else if (!back) {
-      if (p.state === "fire") index = ["melee", "dash"].includes(weapon.kind) ? 13 : 12;
-      if (p.state === "reload") index = p.frame === 0 || p.frame === 5 ? neutral : 13;
+      if (p.state === "fire")
+        index = p.frame < 3 ? (["melee", "dash"].includes(weapon.kind) ? 13 : 12) : neutral;
+      if (p.state === "reload") {
+        index = p.frame < 4 || p.frame > 28 ? neutral : 13;
+      }
       if (p.state === "hit") index = 14;
     }
     if (p.state === "down") {
       atlas = this.atlases[role];
-      index = p.frame === 0 ? 14 : 15;
+      index = p.frame < 2 ? 14 : 15;
     }
-    const source = this.atlasCell(atlas, index),
-      rect = atlas.frames[index];
     const base = atlas.frames[atlas.name === "backs" ? role * 4 : 0];
     // One fixed scale per rig: crouching/run frames retain their natural height.
     const scale = 236 / base[3];
     const mirror = p.direction >= 5;
     const breathe =
-      !this.motion.matches && p.state === "idle" ? Math.sin((p.frame * Math.PI) / 2) * 0.003 : 0;
+      !this.motion.matches && p.state === "idle" ? Math.sin((p.frame / 72) * TAU) * 0.004 : 0;
     const kick =
-      p.state === "fire" ? (2 - p.frame) * 1.2 : p.state === "hit" ? (p.frame ? 1 : -2) : 0;
+      p.state === "fire"
+        ? Math.max(0, 5 - p.frame) * 0.5
+        : p.state === "hit"
+          ? -Math.sin(((p.frame + 1) / 7) * Math.PI) * 3
+          : 0;
     c.save();
     c.imageSmoothingEnabled = true;
     c.imageSmoothingQuality = "high";
     c.translate(96 + kick, 271);
     if (mirror) c.scale(-1, 1);
     c.scale(1, 1 + breathe);
-    // Center the pelvis at the cell center, rather than centering trailing scarves.
-    const cellWidth = atlas.width / 4,
-      column = index % 4;
-    const dx = (rect[0] - (column + 0.5) * cellWidth) * scale;
-    c.drawImage(source, dx, -source.height * scale, source.width * scale, source.height * scale);
+    if (!this.motion.matches && p.state === "reload")
+      c.scale(1, 1 + Math.sin((p.frame / 33) * Math.PI) * 0.006);
+    const source = this.atlasCell(atlas, index),
+      rect = atlas.frames[index];
+    const dx = (rect[0] - ((index % 4) + 0.5) * (atlas.width / 4)) * scale;
+    if (moving) {
+      // Interpolate cloth/limb follow-through in a small deformation mesh at
+      // 24 Hz. One sharp illustration per sample avoids doubled faces/limbs.
+      const wave = Math.sin((p.frame / 12) * TAU);
+      const bands = 12,
+        bandHeight = source.height / bands;
+      for (let band = 0; band < bands; band++) {
+        const t = band / bands,
+          offset = wave * Math.max(0, t - 0.35) * 3;
+        c.drawImage(
+          source,
+          0,
+          band * bandHeight,
+          source.width,
+          bandHeight,
+          dx + offset,
+          (-source.height + band * bandHeight) * scale,
+          source.width * scale,
+          bandHeight * scale + 0.25,
+        );
+      }
+    } else
+      c.drawImage(source, dx, -source.height * scale, source.width * scale, source.height * scale);
     if (p.state === "hit") {
       c.globalCompositeOperation = "source-atop";
-      c.fillStyle = p.frame ? "#fff3ce20" : "#fff3ce55";
+      c.fillStyle = `rgba(255,243,206,${0.34 * (1 - p.frame / 6)})`;
       c.fillRect(-96, -288, 192, 288);
       c.globalCompositeOperation = "source-over";
     }

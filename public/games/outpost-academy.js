@@ -2,6 +2,7 @@
 import { MAPS, WEAPONS } from "./outpost-content.js";
 export const PRESETS = {
   performance: {
+    adaptive: true,
     width: 720,
     texture: 128,
     floor: 6,
@@ -9,8 +10,24 @@ export const PRESETS = {
     shadows: false,
     lighting: false,
   },
-  balanced: { width: 960, texture: 256, floor: 3, distance: 18, shadows: true, lighting: true },
-  high: { width: 1440, texture: 512, floor: 2, distance: 28, shadows: true, lighting: true },
+  balanced: {
+    adaptive: true,
+    width: 960,
+    texture: 256,
+    floor: 3,
+    distance: 18,
+    shadows: true,
+    lighting: true,
+  },
+  high: {
+    adaptive: true,
+    width: 1440,
+    texture: 512,
+    floor: 2,
+    distance: 28,
+    shadows: true,
+    lighting: true,
+  },
 };
 const STEPS = [
   ["Move through the range", "WASD / left joystick: walk two tiles. Shift sprints."],
@@ -47,7 +64,7 @@ export class Academy {
     this.preset = PRESETS[saved?.preset] ? saved.preset : "balanced";
     this.options = { ...PRESETS[this.preset] };
     if (saved?.options)
-      for (const key of ["shadows", "lighting"])
+      for (const key of ["shadows", "lighting", "adaptive"])
         if (typeof saved.options[key] === "boolean") this.options[key] = saved.options[key];
     const menu = game.$(".mf-panel");
     menu.insertAdjacentHTML(
@@ -87,7 +104,7 @@ export class Academy {
     if (e.target.matches("[data-preset]")) {
       candidate.preset = e.target.value;
       candidate.options = { ...PRESETS[candidate.preset] };
-    } else if (["shadows", "lighting"].includes(e.target.dataset.option)) {
+    } else if (["shadows", "lighting", "adaptive"].includes(e.target.dataset.option)) {
       candidate.options[e.target.dataset.option] = e.target.checked;
     } else return;
     if (this.g.ui)
@@ -106,6 +123,8 @@ export class Academy {
     this.options = { ...candidate.options };
     this.settings(target);
     this.materials.clear();
+    this.floorKey = null;
+    if (game.budget) game.budget.scale = 1;
     game.boxSprite = game.coreSprite = null;
     game.propSprites?.clear();
     game.art?.clearCache();
@@ -180,7 +199,7 @@ export class Academy {
       )
       .join(
         "",
-      )}</select></label><p>${this.options.texture} texel materials · up to ${this.options.width}px render width · floor sampling every ${this.options.floor}px · scenery range ${this.options.distance} tiles</p><label class="mf-setting"><span>Defined contact shadows</span><input type="checkbox" data-option="shadows" ${this.options.shadows ? "checked" : ""}></label><label class="mf-setting"><span>Cel material lighting</span><input type="checkbox" data-option="lighting" ${this.options.lighting ? "checked" : ""}></label><p>Texture resolution sharpens mortar, scuffs and metal seams. Distance-filtered texture levels reduce shimmer on angled walls and floors. Detail distance keeps scenery visible farther away. Contact shadows ground characters and crates; material lighting adds stepped highlights and dark recesses. These are Canvas effects, rather than GPU anisotropic filtering, screen-space shadows or shader settings. Preferences are saved on this device.</p>`;
+      )}</select></label><p>${this.options.texture} texel materials · up to ${this.options.width}px render width · floor sampling every ${this.options.floor}px · scenery range ${this.options.distance} tiles</p><p class="mf-perfstatus">120 FPS target · 24 FPS animation</p><label class="mf-setting"><span>Automatic resolution for 120 FPS</span><input type="checkbox" data-option="adaptive" ${this.options.adaptive ? "checked" : ""}></label><p>Resolution adapts to rendering cost. Actual FPS depends on your device and display refresh rate. Turn this off to keep the selected render resolution.</p><label class="mf-setting"><span>Defined contact shadows</span><input type="checkbox" data-option="shadows" ${this.options.shadows ? "checked" : ""}></label><label class="mf-setting"><span>Cel material lighting</span><input type="checkbox" data-option="lighting" ${this.options.lighting ? "checked" : ""}></label><p>Texture resolution sharpens mortar, scuffs and metal seams. Distance-filtered texture levels reduce shimmer on angled walls and floors. Detail distance keeps scenery visible farther away. Contact shadows ground characters and crates; material lighting adds stepped highlights and dark recesses. These are Canvas effects, rather than GPU anisotropic filtering, screen-space shadows or shader settings. Preferences are saved on this device.</p>`;
   }
   begin() {
     const g = this.g;
@@ -353,7 +372,7 @@ export class Academy {
   floor(map, p, horizon) {
     const g = this.g,
       c = g.ctx,
-      step = this.options.floor;
+      step = Math.ceil(this.options.floor / (g.budget?.scale || 1));
     const width = Math.ceil(g.w / step),
       height = Math.ceil(g.h / step);
     if (
@@ -367,11 +386,22 @@ export class Academy {
       this.floorContext = this.floorCanvas.getContext("2d");
       this.floorPixels = this.floorContext.createImageData(width, height);
     }
+    const key = `${map.id}:${g.w}:${g.h}:${p.x}:${p.y}:${p.a}:${horizon}:${step}:${this.options.lighting}:${g.mode}:${g.time > g.zone.delay ? g.zone.half : 0}`;
+    if (this.floorKey === key) {
+      c.drawImage(this.floorCanvas, 0, 0, g.w, g.h);
+      return;
+    }
+    this.floorKey = key;
     const data = this.floorPixels.data;
     data.fill(0);
     const rgb = (color) => [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16));
     const base = rgb(map.theme.floor),
       zones = map.zones.map((z) => ({ ...z, rgb: rgb(z.color) }));
+    const hazeActive = g.mode !== "training" && g.time > g.zone.delay,
+      zoneMinX = g.zone.cx - g.zone.half,
+      zoneMaxX = g.zone.cx + g.zone.half,
+      zoneMinY = g.zone.cy - g.zone.half,
+      zoneMaxY = g.zone.cy + g.zone.half;
     const ca = Math.cos(p.a),
       sa = Math.sin(p.a),
       plane = Math.tan(Math.PI / 6);
@@ -393,14 +423,64 @@ export class Academy {
           shade += (Math.floor(fx * 48) * 17 + Math.floor(fy * 48) * 31) % 13 < 3 ? 0.12 : -0.025;
         if (this.options.lighting && seam < 0.065 && seam >= 0.025 && d < 12) shade += 0.15;
         const haze =
-            g.mode !== "training" && g.time > g.zone.delay && g.outsideSafe({ x: fx, y: fy }),
+            hazeActive && (fx < zoneMinX || fx > zoneMaxX || fy < zoneMinY || fy > zoneMaxY),
           i = (row * width + col) * 4;
-        for (let k = 0; k < 3; k++)
-          data[i + k] = haze ? color[k] * shade * 0.64 + [181, 34, 80][k] * 0.36 : color[k] * shade;
+        const factor = haze ? shade * 0.64 : shade;
+        data[i] = color[0] * factor + (haze ? 65.16 : 0);
+        data[i + 1] = color[1] * factor + (haze ? 12.24 : 0);
+        data[i + 2] = color[2] * factor + (haze ? 28.8 : 0);
         data[i + 3] = 255;
       }
     }
     this.floorContext.putImageData(this.floorPixels, 0, 0);
     c.drawImage(this.floorCanvas, 0, 0, g.w, g.h);
+  }
+}
+
+/** Display cadence stays on requestAnimationFrame. Work adapts toward an 8.3ms budget. */
+export class FrameBudget {
+  constructor() {
+    this.target = 120;
+    this.scale = 1;
+    this.work = 0;
+    this.fps = 0;
+    this.samples = 0;
+    this.windowStart = null;
+    this.windowFrames = 0;
+    this.cooldown = 0;
+    this.slowFrames = 0;
+  }
+  sample(cost, now, active, adaptive = true) {
+    if (!Number.isFinite(cost) || cost < 0 || !Number.isFinite(now)) return false;
+    if (this.windowStart === null || now - this.windowStart > 2000) {
+      this.windowStart = now;
+      this.windowFrames = 0;
+    } else this.windowFrames++;
+    if (now - this.windowStart >= 500) {
+      this.fps = Math.round((this.windowFrames * 1000) / (now - this.windowStart));
+      this.windowFrames = 0;
+      this.windowStart = now;
+    }
+    this.work = this.samples ? this.work * 0.9 + cost * 0.1 : cost;
+    this.samples++;
+    this.cooldown++;
+    if (active && cost > 7.5) this.slowFrames++;
+    if (!adaptive) {
+      const changed = this.scale !== 1;
+      this.scale = 1;
+      return changed;
+    }
+    if (!active || this.samples < 60) return false;
+    const previous = this.scale;
+    if ((this.work > 6.8 || this.slowFrames >= 3) && this.cooldown >= 60) {
+      this.scale = Math.max(0.5, Math.round(this.scale * 0.9 * 100) / 100);
+      this.cooldown = 0;
+      this.slowFrames = 0;
+    } else if (this.work < 3.2 && this.cooldown >= 480) {
+      this.scale = Math.min(1, this.scale + 0.04);
+      this.cooldown = 0;
+    }
+    if (this.cooldown % 60 === 0) this.slowFrames = 0;
+    return Math.abs(this.scale - previous) > 0.001;
   }
 }
