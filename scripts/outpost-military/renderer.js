@@ -12,6 +12,7 @@ import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { Reflector } from "three/addons/objects/Reflector.js";
 import { outfitOf, weaponOf } from "../../public/games/outpost-content.js";
+import { skinPattern } from "../../public/games/outpost-skins.js";
 const SCALE = 3,
   ASSET = "/games/military/",
   TAU = Math.PI * 2;
@@ -709,18 +710,50 @@ export class MilitaryRenderer {
       model.traverse((o) => {
         if (o.isMesh) {
           o.material = o.material.clone();
-          o.material.color.set(outfitOf(e.outfit).primary);
-          // Preserve authored fabric detail while applying the uniform's colour.
+          const uniform = outfitOf(e.outfit),
+            texture = this.skinTexture(uniform);
+          o.material.color.set("#ffffff");
+          o.material.map ||= texture;
+          o.material.roughness = 0.88;
+          o.geometry.computeBoundingBox();
+          const bounds = o.geometry.boundingBox;
           o.material.onBeforeCompile = (shader) => {
-            shader.uniforms.uniformTint = { value: new THREE.Color(outfitOf(e.outfit).primary) };
-            shader.fragmentShader = "uniform vec3 uniformTint;\n" + shader.fragmentShader;
+            shader.uniforms.fabricPattern = { value: texture };
+            shader.uniforms.lowerPattern = {
+              value:
+                uniform.id === "urban"
+                  ? this.skinTexture({
+                      ...uniform,
+                      id: "urban-pants",
+                      pattern: "woodland",
+                      palette: ["#536548", "#7f8b61", "#354333", "#aba77d"],
+                    })
+                  : texture,
+            };
+            shader.uniforms.splitLegs = { value: uniform.id === "urban" };
+            shader.uniforms.fabricHeight = {
+              value: new THREE.Vector2(bounds.min.y, Math.max(0.001, bounds.max.y - bounds.min.y)),
+            };
+            shader.vertexShader =
+              "varying float vFabricHeight; uniform vec2 fabricHeight;\n" + shader.vertexShader;
+            shader.vertexShader = shader.vertexShader.replace(
+              "#include <begin_vertex>",
+              "#include <begin_vertex>\nvFabricHeight=(position.y-fabricHeight.x)/fabricHeight.y;",
+            );
+            shader.fragmentShader =
+              "uniform sampler2D fabricPattern; uniform sampler2D lowerPattern; uniform bool splitLegs; varying float vFabricHeight;\n" +
+              shader.fragmentShader;
             shader.fragmentShader = shader.fragmentShader.replace(
               "#include <map_fragment>",
               `#include <map_fragment>
-               float fabricLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
-               diffuseColor.rgb=mix(diffuseColor.rgb,vec3(fabricLuma)*uniformTint*1.8,.85);`,
+              float fabricLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
+              vec3 pattern=texture2D(fabricPattern,vMapUv*2.0).rgb;
+              if(splitLegs && vFabricHeight<.46) pattern=texture2D(lowerPattern,vMapUv*2.0).rgb;
+              if(vFabricHeight<.105) pattern=vec3(.095,.115,.105);
+              diffuseColor.rgb=pattern*(.72+fabricLuma*.28);`,
             );
           };
+          o.material.customProgramCacheKey = () => "outpost-reference-fabric-v1";
           o.castShadow = true;
           o.receiveShadow = true;
           this.materials.add(o.material);
@@ -834,90 +867,294 @@ export class MilitaryRenderer {
       if (o.name.endsWith("RightHand")) a.weaponAnchor = o;
     });
   }
+  skinTexture(outfit) {
+    this.skinTextures ??= new Map();
+    if (this.skinTextures.has(outfit.id)) return this.skinTextures.get(outfit.id);
+    const texture = new THREE.CanvasTexture(skinPattern(outfit));
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+    this.textures.add(texture);
+    this.skinTextures.set(outfit.id, texture);
+    return texture;
+  }
   dressActor(a, e) {
     const outfit = outfitOf(e.outfit),
-      body = this.material({ color: outfit.primary, roughness: 0.9 }),
-      trim = this.material({ color: outfit.accent, roughness: 0.8 }),
-      dark = this.material({ color: "#222b29", roughness: 0.85 });
+      texture = this.skinTexture(outfit),
+      fabric = this.material({ color: "#ffffff", map: texture, roughness: 0.93 }),
+      plate = this.material({
+        color: "#ffffff",
+        map: this.skinTexture({
+          ...outfit,
+          id: outfit.id + "-armor",
+          pattern: "solid",
+          palette: [outfit.armor],
+        }),
+        roughness: 0.8,
+        metalness: 0.08,
+      }),
+      edge = this.material({ color: outfit.accent, roughness: 0.6, metalness: 0.15 }),
+      dark = this.material({ color: "#283030", roughness: 0.83 }),
+      stitch = this.material({
+        color: new THREE.Color(outfit.armor).lerp(new THREE.Color("#d5d4c2"), 0.24),
+        roughness: 0.95,
+      }),
+      glass = this.material({ color: "#263842", roughness: 0.16, metalness: 0.4 }),
+      glow = this.material({
+        color: outfit.accent,
+        emissive: outfit.accent,
+        emissiveIntensity:
+          outfit.pattern === "circuit" || outfit.pattern === "fracture" ? 0.65 : 0.08,
+        roughness: 0.45,
+      });
     const gear = new THREE.Group();
     gear.name = "outfit-" + outfit.id;
     a.root.add(gear);
-    const box = (mat, p, s) => this.box(gear, mat, p, s);
-    const sphere = (mat, p, s) =>
+    a.skinParts = [];
+    const part = (boneName) => {
+      const group = new THREE.Group();
+      gear.add(group);
+      a.model.traverse((o) => {
+        if (o.isBone && o.name.endsWith(boneName)) group.userData.anchor = o;
+      });
+      a.skinParts.push(group);
+      return group;
+    };
+    const chest = part("Spine2"),
+      head = part("Head"),
+      leftArm = part("LeftArm"),
+      rightArm = part("RightArm"),
+      leftLeg = part("LeftLeg"),
+      rightLeg = part("RightLeg");
+    const box = (group, mat, p, s) => this.box(group, mat, p, s);
+    const sphere = (group, mat, p, s) =>
       this.mesh(
-        gear,
-        this.geo("wardrobeSphere", () => new THREE.SphereGeometry(1, 16, 12)),
+        group,
+        this.geo("skinSphere", () => new THREE.SphereGeometry(1, 24, 16)),
         mat,
         p,
         s,
       );
-    const pack = () => {
-      box(body, [0, 1.4, 0.3], [0.48, 0.55, 0.25]);
-      box(trim, [0, 1.4, 0.44], [0.34, 0.3, 0.04]);
-    };
-    const hood = () => {
-      sphere(body, [0, 2.04, 0.03], [0.29, 0.32, 0.29]);
-      box(dark, [0, 2.08, -0.24], [0.28, 0.17, 0.06]);
-    };
-    for (const x of [-0.18, 0.18]) box(trim, [x, 1.13, -0.23], [0.14, 0.18, 0.1]);
-    if (outfit.gear === "cap") {
-      box(body, [0, 2.25, 0.01], [0.46, 0.12, 0.4]);
-      box(trim, [0, 2.2, -0.28], [0.44, 0.045, 0.26]);
+    const rounded = (group, mat, p, s) =>
+      this.mesh(
+        group,
+        this.geo("skinRounded", () => new RoundedBoxGeometry(1, 1, 1, 2, 0.08)),
+        mat,
+        p,
+        s,
+      );
+    // Modular carrier: plates, side straps, MOLLE rows and separate magazine pouches.
+    rounded(chest, plate, [0, 1.48, -0.245], [0.51, 0.44, 0.1]);
+    rounded(chest, dark, [0, 1.48, 0.24], [0.5, 0.44, 0.09]);
+    for (const x of [-0.245, 0.245]) {
+      box(chest, plate, [x, 1.62, 0.005], [0.095, 0.36, 0.44]);
+      box(chest, dark, [x, 1.61, -0.24], [0.075, 0.09, 0.03]);
     }
-    if (outfit.gear === "scarf") {
-      box(trim, [0, 1.8, 0], [0.56, 0.18, 0.42]);
-      box(trim, [0.17, 1.49, -0.25], [0.18, 0.5, 0.045]);
-      pack();
+    for (let j = 0; j < 4; j++)
+      box(chest, stitch, [0, 1.57 - j * 0.065, -0.321], [0.43, 0.012, 0.012]);
+    for (const x of [-0.175, 0, 0.175]) {
+      rounded(chest, plate, [x, 1.23, -0.31], [0.13, 0.21, 0.075]);
+      box(chest, dark, [x, 1.26, -0.372], [0.11, 0.025, 0.012]);
+      box(chest, stitch, [x, 1.31, -0.37], [0.012, 0.035, 0.012]);
     }
-    if (outfit.gear === "goggles") {
-      for (const x of [-0.1, 0.1]) box(trim, [x, 2.13, -0.245], [0.15, 0.1, 0.1]);
-      box(dark, [0, 0.98, 0], [0.66, 0.08, 0.42]);
-    }
-    if (outfit.gear === "medic") {
-      pack();
-      box(trim, [0, 1.55, -0.245], [0.1, 0.29, 0.045]);
-      box(trim, [0, 1.55, -0.27], [0.29, 0.1, 0.045]);
-    }
-    if (outfit.gear === "hood") {
-      hood();
-      box(trim, [0, 2.07, -0.29], [0.27, 0.055, 0.025]);
-    }
-    if (outfit.gear === "tools") {
-      for (const x of [-0.2, 0.2]) box(trim, [x, 1.5, -0.22], [0.06, 0.58, 0.05]);
-      box(dark, [0, 1.05, 0], [0.68, 0.13, 0.44]);
-      for (let i = 0; i < 3; i++) box(trim, [0.33, 0.98, 0.09 + i * 0.07], [0.06, 0.26, 0.035]);
-    }
-    if (outfit.gear === "fur") {
-      for (let i = 0; i < 8; i++) {
-        const angle = (i / 8) * Math.PI * 2;
-        sphere(trim, [Math.cos(angle) * 0.29, 1.83, Math.sin(angle) * 0.22], [0.13, 0.14, 0.13]);
+    box(chest, dark, [0, 1.01, 0], [0.65, 0.08, 0.45]);
+    for (const x of [-0.31, 0.31]) rounded(chest, plate, [x, 1.04, 0.05], [0.12, 0.16, 0.2]);
+    rounded(chest, plate, [0, 1.46, 0.37], [0.4, 0.5, 0.22]);
+    for (const x of [-0.11, 0.11]) box(chest, dark, [x, 1.46, 0.49], [0.035, 0.43, 0.015]);
+    // Enclosed head silhouettes and dark protective goggles.
+    if (outfit.head === "hood") {
+      const shell = this.mesh(
+        head,
+        this.geo("angularHood", () => new THREE.SphereGeometry(1, 6, 6)),
+        fabric,
+        [0, 2.065, 0.035],
+        [0.295, 0.335, 0.28],
+      );
+      shell.rotation.y = Math.PI / 6;
+      rounded(head, dark, [0, 2.06, -0.252], [0.34, 0.29, 0.07]);
+      rounded(head, plate, [0, 1.985, -0.303], [0.25, 0.15, 0.055]);
+      box(head, edge, [0, 2.2, -0.235], [0.32, 0.028, 0.04]);
+    } else {
+      this.mesh(
+        head,
+        this.geo(
+          "combatHelmet",
+          () => new THREE.SphereGeometry(1, 24, 16, 0, TAU, 0, Math.PI * 0.6),
+        ),
+        fabric,
+        [0, 2.09, 0.025],
+        [0.275, 0.27, 0.275],
+      );
+      box(head, dark, [0, 2.16, -0.23], [0.36, 0.06, 0.08]);
+      for (const x of [-0.255, 0.255]) {
+        this.cylinder(head, plate, [x, 2.09, 0.02], 0.105, 0.065, "x", 16);
+        this.cylinder(head, dark, [x * 1.07, 2.09, 0.02], 0.065, 0.07, "x", 16);
       }
-      pack();
-    }
-    if (outfit.gear === "armor") {
-      for (const x of [-0.42, 0.42]) box(trim, [x, 1.69, 0], [0.3, 0.2, 0.46]);
-      box(body, [0, 1.48, -0.28], [0.5, 0.4, 0.1]);
-      box(trim, [0, 1.51, -0.34], [0.25, 0.24, 0.04]);
-    }
-    if (outfit.gear === "cape") {
-      hood();
-      for (const x of [-0.2, 0.2]) {
-        const panel = box(body, [x, 1.33, 0.32], [0.36, 0.85, 0.06]);
-        panel.rotation.x = -0.16;
-        panel.rotation.z = x * 0.25;
+      rounded(head, dark, [0, 2.095, -0.245], [0.35, 0.135, 0.065]);
+      rounded(head, glass, [0, 2.1, -0.283], [0.29, 0.09, 0.018]);
+      sphere(head, dark, [0, 1.975, -0.25], [0.145, 0.09, 0.085]);
+      if (outfit.head === "respirator") {
+        rounded(head, plate, [0, 1.99, -0.285], [0.22, 0.14, 0.07]);
+        for (const x of [-0.165, 0.165])
+          this.cylinder(head, dark, [x, 1.98, -0.285], 0.057, 0.055, "z", 16);
       }
-      box(trim, [0, 1.84, -0.19], [0.12, 0.07, 0.08]);
-    }
-    if (outfit.gear === "respirator") {
-      sphere(dark, [0, 1.98, -0.26], [0.19, 0.14, 0.12]);
-      for (const x of [-0.18, 0.18]) {
-        sphere(trim, [x, 1.97, -0.28], [0.08, 0.08, 0.08]);
-        this.cylinder(gear, dark, [x, 1.43, 0.36], 0.12, 0.65, "y", 16);
+      if (outfit.head === "visor") {
+        rounded(head, glass, [0, 2.08, -0.31], [0.33, 0.18, 0.05]);
+        box(head, glow, [0, 1.99, -0.34], [0.24, 0.015, 0.015]);
       }
-      box(trim, [0, 2.15, -0.245], [0.34, 0.12, 0.05]);
     }
-    this.mergeStatic(gear);
+    for (const x of [-0.09, 0.09]) {
+      const shine = box(head, stitch, [x, 2.125, -0.297], [0.09, 0.006, 0.006]);
+      shine.rotation.z = -0.2;
+    }
+    for (const [x, arm, leg] of [
+      [-0.38, leftArm, leftLeg],
+      [0.38, rightArm, rightLeg],
+    ]) {
+      const shoulder = rounded(arm, plate, [x, 1.68, 0], [0.21, 0.17, 0.3]);
+      shoulder.rotation.z = x < 0 ? -0.16 : 0.16;
+      box(arm, edge, [x, 1.7, -0.166], [0.18, 0.025, 0.02]);
+      rounded(leg, dark, [x * 0.47, 0.55, -0.075], [0.24, 0.25, 0.13]);
+      rounded(leg, plate, [x * 0.47, 0.56, -0.153], [0.18, 0.18, 0.06]);
+      box(leg, dark, [x * 0.47, 0.77, 0.01], [0.25, 0.045, 0.29]);
+      rounded(leg, plate, [x * 0.69, 0.87, -0.015], [0.14, 0.25, 0.19]);
+    }
+    if (outfit.id === "urban") {
+      sphere(chest, edge, [0, 1.57, -0.34], [0.07, 0.075, 0.013]);
+      box(chest, edge, [0, 1.51, -0.35], [0.09, 0.045, 0.02]);
+      for (const x of [-0.027, 0.027])
+        sphere(chest, dark, [x, 1.585, -0.358], [0.02, 0.023, 0.012]);
+      for (const x of [-0.025, 0, 0.025])
+        box(chest, dark, [x, 1.505, -0.365], [0.008, 0.025, 0.008]);
+    }
+    if (outfit.id === "medic") {
+      box(chest, edge, [0, 1.56, -0.348], [0.035, 0.14, 0.022]);
+      box(chest, edge, [0, 1.56, -0.36], [0.14, 0.035, 0.022]);
+      box(leftArm, edge, [-0.505, 1.65, 0], [0.02, 0.1, 0.12]);
+    }
+    if (outfit.id === "recon") {
+      for (let i = 0; i < 5; i++) {
+        const cone = this.mesh(
+          rightArm,
+          this.geo("skinSpike", () => new THREE.ConeGeometry(1, 1, 6)),
+          dark,
+          [0.4, 1.84, -0.12 + i * 0.06],
+          [0.024, 0.16, 0.024],
+        );
+        cone.rotation.z = -0.25;
+      }
+      for (const x of [-0.17, 0.17]) box(chest, glow, [x, 1.53, -0.324], [0.018, 0.22, 0.014]);
+      box(head, glow, [0, 2.09, -0.3], [0.24, 0.025, 0.022]);
+    }
+    if (outfit.id === "shadow") {
+      for (const x of [-0.4, 0.4])
+        box(x < 0 ? leftArm : rightArm, edge, [x, 1.68, -0.173], [0.21, 0.09, 0.025]);
+      box(head, edge, [0, 2.12, -0.296], [0.29, 0.022, 0.018]);
+    }
+    if (outfit.pattern === "fracture") {
+      for (const x of [-0.18, 0.18])
+        box(x < 0 ? leftLeg : rightLeg, glow, [x, 0.55, -0.19], [0.013, 0.13, 0.015]);
+      box(chest, glow, [0, 1.02, -0.24], [0.085, 0.04, 0.015]);
+    }
+    if (outfit.id === "engineer") {
+      for (const x of [-0.12, 0.12]) {
+        const brace = box(chest, edge, [x, 1.53, -0.334], [0.02, 0.22, 0.02]);
+        brace.rotation.z = x < 0 ? -0.8 : 0.8;
+      }
+      box(chest, edge, [0.12, 1.75, 0.38], [0.025, 0.35, 0.025]);
+    }
+    if (outfit.id === "hazard")
+      for (const x of [-0.13, 0.13])
+        this.cylinder(chest, dark, [x, 1.47, 0.48], 0.085, 0.5, "y", 16);
+    // Keep each rigid item with its animated body part, using its idle transform as the bind pose.
+    a.root.updateMatrixWorld(true);
+    const inverseRoot = a.root.matrixWorld.clone().invert();
+    for (const group of a.skinParts) {
+      this.mergeStatic(group);
+      if (group.userData.anchor) {
+        group.userData.inverseBind = new THREE.Matrix4()
+          .multiplyMatrices(inverseRoot, group.userData.anchor.matrixWorld)
+          .invert();
+        group.matrixAutoUpdate = false;
+      }
+    }
     a.wardrobe = gear;
+  }
+  skinPortrait(id, width = 600, height = 800) {
+    const ids = Array.isArray(id) ? id : [id];
+    const actors = ids.map((outfit, i) => {
+      const actor = this.makeActor({
+        ...this.g.enemies[0],
+        id: "portrait-" + outfit,
+        outfit,
+        weapon: "carbine",
+      });
+      actor.equipment.visible = false;
+      actor.root.position.x = (i - (ids.length - 1) / 2) * 1.06;
+      return actor;
+    });
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color("#e1e4dc");
+    scene.environment = this.scene.environment;
+    scene.add(new THREE.HemisphereLight("#ffffff", "#8c9585", 3));
+    const key = new THREE.DirectionalLight("#fff5e1", 4.5);
+    key.position.set(-3, 5, -4);
+    scene.add(key);
+    const fill = new THREE.DirectionalLight("#c5def3", 2);
+    fill.position.set(4, 3, 2);
+    scene.add(fill);
+    actors.forEach((actor) => scene.add(actor.root));
+    const camera = new THREE.OrthographicCamera(
+      (-1.36 * width) / height,
+      (1.36 * width) / height,
+      1.36,
+      -1.36,
+      0.01,
+      20,
+    );
+    camera.position.set(3.2, 2.15, -6.5);
+    camera.lookAt(0, 1.16, 0);
+    camera.updateMatrixWorld(true);
+    const target = new THREE.WebGLRenderTarget(width, height);
+    target.texture.colorSpace = THREE.SRGBColorSpace;
+    const oldTarget = this.renderer.getRenderTarget(),
+      oldAuto = this.renderer.autoClear;
+    this.renderer.autoClear = true;
+    this.renderer.setRenderTarget(target);
+    this.renderer.render(scene, camera);
+    const pixels = new Uint8Array(width * height * 4);
+    this.renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d"),
+      image = ctx.createImageData(width, height);
+    for (let y = 0; y < height; y++)
+      image.data.set(
+        pixels.subarray((height - y - 1) * width * 4, (height - y) * width * 4),
+        y * width * 4,
+      );
+    ctx.putImageData(image, 0, 0);
+    this.renderer.setRenderTarget(oldTarget);
+    this.renderer.autoClear = oldAuto;
+    target.dispose();
+    for (const actor of actors) {
+      this.disposeActor(actor);
+      this.actors.delete("portrait-" + actor.outfit);
+    }
+    return canvas.toDataURL("image/webp", 0.9);
+  }
+  updateSkinParts(a) {
+    if (!a.skinParts) return;
+    a.root.updateMatrixWorld(true);
+    const inverseRoot = a.root.matrixWorld.clone().invert();
+    for (const group of a.skinParts)
+      if (group.userData.inverseBind) {
+        group.matrix
+          .multiplyMatrices(inverseRoot, group.userData.anchor.matrixWorld)
+          .multiply(group.userData.inverseBind);
+        group.matrixWorldNeedsUpdate = true;
+      }
   }
   updateActors(t) {
     const current = new Set();
@@ -978,6 +1215,7 @@ export class MilitaryRenderer {
       const hit = Math.max(0, 1 - (this.g.time - e.hit) / 0.18);
       a.model.rotation.z = 0;
       a.root.rotation.z = alive ? hit * 0.05 : this.motion.matches ? Math.PI / 2 : fall * 1.5;
+      this.updateSkinParts(a);
       if (a.equipment) {
         if (a.weaponAnchor) {
           a.root.updateMatrixWorld(true);
@@ -1025,8 +1263,9 @@ export class MilitaryRenderer {
       skin: this.material({ color: "#b48a6d", roughness: 0.76 }),
     };
     const uniform = outfitOf(this.g.player.outfit);
-    materials.cloth.color.set(uniform.primary);
-    materials.rubber.color.set(uniform.accent);
+    materials.cloth.color.set("#ffffff");
+    materials.cloth.map = this.skinTexture(uniform);
+    materials.rubber.color.set("#303638");
     Object.values(materials).forEach((m) => (m.userData.weapon = firstPerson));
     return materials;
   }
