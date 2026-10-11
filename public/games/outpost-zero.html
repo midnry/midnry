@@ -808,6 +808,268 @@
         font-weight: 900;
         text-align: center;
       }
+
+      /* Menu hierarchy: play first, compact previews, secondary tools, modal settings. */
+      midnry-fps .mf-panel {
+        width: min(680px, 100%);
+        padding: 24px;
+        scrollbar-gutter: stable;
+      }
+      midnry-fps .mf-panel h1 {
+        font-size: 42px;
+        letter-spacing: -2px;
+        margin: 12px 0;
+      }
+      midnry-fps .mf-copy {
+        max-width: none;
+        font-size: 14px;
+        line-height: 1.45;
+        margin: 10px 0 16px;
+      }
+      midnry-fps .mf-modes {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin: 12px 0;
+      }
+      midnry-fps .mf-modes button {
+        min-height: 78px;
+        border: 2px solid #070b0e;
+        background: #263b44;
+        padding: 10px 8px;
+        color: #fff4dc;
+        font: 800 16px system-ui;
+        cursor: pointer;
+      }
+      midnry-fps .mf-modes button small {
+        display: block;
+        font-size: 11px;
+        font-weight: 500;
+        margin-top: 6px;
+        line-height: 1.35;
+      }
+      midnry-fps .mf-modes button[aria-pressed="true"],
+      midnry-fps .mf-onlinechoice[aria-expanded="true"] {
+        background: #ffc455;
+        color: #141a20;
+      }
+      midnry-fps .mf-network:not([open]) {
+        display: none;
+      }
+      midnry-fps .mf-network {
+        margin: 12px 0;
+        padding: 12px;
+        border: 2px solid #71ebd5;
+        background: #18232e;
+      }
+      midnry-fps .mf-roomformat {
+        font-weight: 800;
+        color: #ffd16b;
+      }
+      midnry-fps .mf-kit {
+        margin-top: 16px;
+        gap: 12px;
+      }
+      midnry-fps .mf-kit label {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      midnry-fps .mf-kit select {
+        width: 100%;
+        min-width: 0;
+        min-height: 44px;
+        font-size: 13px;
+      }
+      midnry-fps .mf-preview {
+        display: block;
+        width: 100%;
+        height: 80px;
+        background: #253543;
+        border: 2px solid #0c131b;
+        object-fit: contain;
+      }
+      midnry-fps .mf-kit label small {
+        font-size: 10px;
+        line-height: 1.4;
+        color: #c6c8c6;
+        letter-spacing: 0;
+        text-transform: none;
+      }
+      midnry-fps .mf-kitnotes,
+      midnry-fps .mf-controlshelp {
+        margin-top: 12px;
+        font-size: 12px;
+      }
+      midnry-fps .mf-kitnotes summary,
+      midnry-fps .mf-controlshelp summary {
+        cursor: pointer;
+        min-height: 32px;
+        display: list-item;
+        align-content: center;
+        color: #c6c8c6;
+      }
+      midnry-fps .mf-start {
+        width: 100%;
+        min-height: 50px;
+        margin-top: 8px;
+      }
+      midnry-fps .mf-learn {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 6px;
+        margin-top: 16px;
+      }
+      midnry-fps .mf-learn button {
+        min-height: 44px;
+        padding: 8px 4px;
+        background: #263b44;
+        color: #fff4dc;
+        font-size: 12px;
+        margin: 0;
+        border: 2px solid #070b0e;
+      }
+      midnry-fps .mf-learn .mf-boot {
+        color: #ffd16b;
+      }
+      midnry-fps .mf-progresslabel {
+        display: block;
+        color: #71ebd5;
+        font-size: 11px;
+        margin-top: 12px;
+      }
+      midnry-fps button:focus-visible,
+      midnry-fps summary:focus-visible,
+      midnry-fps select:focus-visible,
+      midnry-fps input:focus-visible {
+        outline: 3px solid #71ebd5;
+        outline-offset: 3px;
+      }
+      midnry-fps .mf-settings {
+        width: min(620px, 94vw);
+        max-height: 90dvh;
+        overflow: auto;
+        padding: 0;
+        border: 3px solid #101720;
+        background: #18232e;
+        color: #fff4dc;
+      }
+      midnry-fps .mf-settings::backdrop {
+        background: #080e16d9;
+      }
+      midnry-fps .mf-settingshead {
+        position: sticky;
+        top: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 20px;
+        background: #263543;
+        z-index: 1;
+      }
+      midnry-fps .mf-settingshead h2 {
+        margin: 0;
+        font-size: 22px;
+      }
+      midnry-fps .mf-settingsclose {
+        min-height: 44px;
+        padding: 10px 18px;
+        background: #ffd16b;
+        color: #101720;
+        border: 2px solid #101720;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      midnry-fps .mf-settingsbody {
+        padding: 4px 20px 20px;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+      midnry-fps .mf-settingsbody h3 {
+        color: #ffd16b;
+        border-bottom: 1px solid #ffffff30;
+        padding-bottom: 10px;
+      }
+      midnry-fps .mf-settings .mf-retention {
+        padding: 0;
+        border: 0;
+        margin: 0;
+        background: none;
+      }
+      midnry-fps .mf-settings select {
+        min-height: 44px;
+        max-width: 100%;
+        background: #263543;
+        color: #fff4dc;
+        border: 2px solid #71ebd5;
+        padding: 8px;
+        font: inherit;
+      }
+      midnry-fps .mf-settings label {
+        min-height: 44px;
+      }
+      midnry-fps .mf-help {
+        font-size: 12px;
+        line-height: 1.65;
+      }
+      midnry-fps .mf-settings input[type="range"] {
+        min-height: 44px;
+      }
+      midnry-fps .mf-settings input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: #71ebd5;
+      }
+      midnry-fps .mf-settingsnotice {
+        color: #ffd16b;
+      }
+      midnry-fps .mf-panel:has(.mf-results:not([hidden])) .mf-copy {
+        display: none;
+      }
+      midnry-fps .mf-reload {
+        width: 56px;
+        height: 56px;
+      }
+      @media (max-width: 600px) {
+        midnry-fps .mf-modal {
+          padding: 12px;
+        }
+        midnry-fps .mf-panel {
+          padding: 18px;
+        }
+        midnry-fps .mf-panel h1 {
+          font-size: 36px;
+        }
+        midnry-fps .mf-eyebrow {
+          font-size: 9px;
+          letter-spacing: 2px;
+        }
+        midnry-fps .mf-modes button {
+          font-size: 13px;
+          min-height: 72px;
+        }
+        midnry-fps .mf-modes button small {
+          font-size: 10px;
+        }
+        midnry-fps .mf-kit {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        midnry-fps .mf-preview {
+          height: 64px;
+        }
+        midnry-fps .mf-learn {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        midnry-fps .mf-learn .mf-mode {
+          grid-column: 1/-1;
+          min-height: 36px;
+        }
+        midnry-fps .mf-fire {
+          width: 84px;
+          height: 84px;
+        }
+      }
     </style>
   </head>
   <!-- For inline integration copy the style, element and script. Set a height on the host. -->
@@ -818,6 +1080,7 @@
       import { Academy } from "./outpost-academy.js";
       import { ComicArt } from "./outpost-art.js";
       import { Retention } from "./outpost-retention.js";
+      import { MenuUI } from "./outpost-ui.js";
       (() => {
         "use strict";
         // A custom element keeps state private and supports multiple independent instances.
@@ -862,7 +1125,7 @@
             this.last = performance.now();
             this.frame = 0;
             this.viewPitch = 0;
-            this.mode = "training";
+            this.mode = "signal";
             this.mapId = "outpost";
             this.weapon = "carbine";
             this.difficulty = "normal";
@@ -899,6 +1162,7 @@
             this.academy = new Academy(this);
             this.art = new ComicArt(this);
             this.retention = new Retention(this);
+            this.ui = new MenuUI(this);
             this.resizeObserver = new ResizeObserver(() => this.resize());
             this.resizeObserver.observe(this.shell);
             this.resize();
@@ -952,6 +1216,7 @@
                   : "Six rogue sentries. Take cover, reload and secure the outpost.";
             this.updateHUD();
             this.retention?.menu();
+            this.ui?.refresh();
           }
           get player() {
             return (
@@ -1040,6 +1305,7 @@
             this.$(".mf-weaponselect").value = w.id;
             this.$(".mf-mapinfo").textContent = map.tag + " / " + map.description;
             this.$(".mf-weaponinfo").textContent = w.description;
+            this.ui?.refresh();
           }
           useSuper() {
             if (!this.running || this.player.hp <= 0) return;
@@ -1340,6 +1606,7 @@
             }
             this.updateMenu();
             this.retention?.menu();
+            this.ui?.refresh();
           }
           onlineAction(op, extra = {}) {
             const net = this.online;
@@ -1648,6 +1915,7 @@
                 : this.state === "fresh"
                   ? "DEPLOY →"
                   : "RESUME →";
+            this.ui?.refresh();
           }
           resize() {
             // A bounded rendering resolution keeps raycasting inexpensive on phones.

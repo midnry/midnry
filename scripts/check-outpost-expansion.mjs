@@ -128,7 +128,7 @@ try {
       await page.screenshot({ path: "/workspace/screenshots/outpost-landscape.png" });
     }
     await page.evaluate(() => document.querySelector("midnry-fps").engine.pause());
-    assert.ok(await page.locator(".mf-panel").evaluate((e) => e.scrollHeight > e.clientHeight));
+    assert.ok(await page.locator(".mf-panel").evaluate((e) => e.scrollWidth <= e.clientWidth + 1));
     assert.equal(
       await page.evaluate(() => document.documentElement.scrollWidth > innerWidth),
       false,

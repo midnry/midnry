@@ -71,7 +71,7 @@ try {
   await desktop.locator('[data-mode="duo"]').click();
   await desktop.locator(".mf-mapselect").selectOption("skyport");
   await desktop.locator(".mf-weaponselect").selectOption("rocket");
-  await desktop.locator(".mf-network summary").click();
+  await desktop.locator(".mf-onlinechoice").click();
   await desktop.locator(".mf-create").click();
   await desktop.waitForFunction(() => document.querySelector("midnry-fps").engine.online?.code);
   console.log("Desktop room created");
