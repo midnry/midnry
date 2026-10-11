@@ -1813,7 +1813,7 @@
               this.loadingTimer = setTimeout(() => {
                 this.fallbackMilitary(new Error("Graphics loading timed out. Please retry on a stable connection."));
               }, 45000);
-              import("./outpost-military.js?v=skins-20261011")
+              import("./outpost-military.js?v=tablet-refresh-20261011")
                 .then(async ({ MilitaryRenderer }) => {
                   if (this.abort.signal.aborted || !this.loading) return;
                   const renderer = new MilitaryRenderer(this, (done, total) => {
@@ -2111,7 +2111,7 @@
             this.$(".mf-weaponselect").value = w.id;
             const uniform=outfitOf(this.outfit);
             this.$(".mf-outfitselect").value=uniform.id;
-            this.$(".mf-outfitpreview").src=`/games/outfits/${uniform.id}.webp`;
+            this.$(".mf-outfitpreview").src=`/games/outfits/${uniform.id}.webp?v=skins-20261011`;
             this.$(".mf-outfitpreview").alt=uniform.name;
             const lockerKey = `${uniform.id}:${this.online?.phase || "offline"}`;
             if(this.$(".mf-locker")?.open && this.lockerKey !== lockerKey) {

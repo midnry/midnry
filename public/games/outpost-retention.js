@@ -265,7 +265,7 @@ export class Retention {
       )
         .map(
           (o) =>
-            `<button class="mf-outfitcard" data-outfit="${o.id}" aria-label="Wear ${o.name}" aria-pressed="${this.g.outfit === o.id}" ${this.g.online && this.g.online.phase !== "lobby" ? "disabled" : ""}><img src="/games/outfits/${o.id}.webp" alt="${o.name} outfit" loading="lazy" width="240" height="320"><strong>${o.name}</strong><small>${o.description}</small></button>`,
+            `<button class="mf-outfitcard" data-outfit="${o.id}" aria-label="Wear ${o.name}" aria-pressed="${this.g.outfit === o.id}" ${this.g.online && this.g.online.phase !== "lobby" ? "disabled" : ""}><img src="/games/outfits/${o.id}.webp?v=skins-20261011" alt="${o.name} outfit" loading="lazy" width="240" height="320"><strong>${o.name}</strong><small>${o.description}</small></button>`,
         )
         .join(
           "",
