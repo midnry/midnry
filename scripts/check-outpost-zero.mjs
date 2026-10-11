@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 const html = readFileSync(new URL("../public/games/outpost-zero.html", import.meta.url), "utf8");
+const sim = readFileSync(new URL("../public/games/outpost-sim.js", import.meta.url), "utf8");
 const screenshotDir = fileURLToPath(new URL("../screenshots/", import.meta.url));
 mkdirSync(screenshotDir, { recursive: true });
 (async () => {
@@ -22,7 +23,12 @@ mkdirSync(screenshotDir, { recursive: true });
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("http://outpost.test/**", (route) =>
-        route.fulfill({ contentType: "text/html", body: html }),
+        route.fulfill({
+          contentType: route.request().url().endsWith("outpost-sim.js")
+            ? "text/javascript"
+            : "text/html",
+          body: route.request().url().endsWith("outpost-sim.js") ? sim : html,
+        }),
       );
       await page.goto("http://outpost.test/");
       await page.getByRole("button", { name: "LAST SIGNAL · SOLO", exact: true }).click();
