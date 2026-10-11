@@ -180,7 +180,21 @@ export default defineConfig(({ command, isPreview }) => ({
             // Game art keeps its file names when it changes, so: a day fresh,
             // then served from cache while the browser checks for a new copy.
             routeRules: {
-              "/abuja/**": { headers: { "cache-control": "public, max-age=86400, stale-while-revalidate=2592000" } },
+              // Revalidate stable game filenames so releases refresh for returning players.
+              ...Object.fromEntries(
+                [
+                  "outpost-zero.html",
+                  "outpost-sim.js",
+                  "outpost-content.js",
+                  "outpost-academy.js",
+                  "outpost-art.js",
+                ].map((file) => [`/games/${file}`, { headers: { "cache-control": "no-cache" } }]),
+              ),
+              "/abuja/**": {
+                headers: {
+                  "cache-control": "public, max-age=86400, stale-while-revalidate=2592000",
+                },
+              },
             },
           }),
         ]
