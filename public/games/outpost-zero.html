@@ -34,17 +34,61 @@
         touch-action: none;
       }
       .mf-loading {
-        position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
-        padding: 28px; background: radial-gradient(ellipse at top, #283c34, #101715 70%);
-        color: #e4e8e3; font: 16px system-ui, sans-serif; text-align: center;
+        position: fixed; inset: 0; z-index: 100; overflow: hidden;
+        display: flex; flex-direction: column; justify-content: space-between;
+        background: #17201e; color: #eef1e9; font: 16px system-ui, sans-serif;
+        padding: max(30px, env(safe-area-inset-top)) max(36px, env(safe-area-inset-right)) max(26px, env(safe-area-inset-bottom)) max(36px, env(safe-area-inset-left));
+        box-sizing: border-box;
       }
       .mf-loading[hidden] { display: none; }
-      .mf-loading > div { width: min(360px, 100%); }
-      .mf-loading small { letter-spacing: .24em; color: #b3c3ae; }
-      .mf-loading h1 { font-size: clamp(38px, 9vw, 58px); line-height: 1; margin: 24px 0; }
-      .mf-loading progress { width: 100%; height: 6px; accent-color: #b3c3ae; }
-      .mf-loading p { line-height: 1.6; color: #bbc8bf; }
-      .mf-loading a { color: #e4e8e3; }
+      .mf-loadimage { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .7s ease; }
+      .mf-loadimage.is-active { opacity: 1; }
+      .mf-loading::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, #0a100dcc, #0a100d08 30%, #0a100d66 52%, #0a100df5 82%); }
+      .mf-loadheader, .mf-loadbody, .mf-loadfooter { position: relative; z-index: 1; }
+      .mf-loadheader { display: flex; justify-content: space-between; align-items: start; gap: 20px; }
+      .mf-loadbrand { font-weight: 900; font-size: 24px; letter-spacing: .18em; }
+      .mf-loadheader small { display: block; margin-top: 6px; font-size: 10px; color: #d0dbd0; letter-spacing: .22em; }
+      .mf-loadtitle { text-align: right; font-size: 12px; font-weight: 750; letter-spacing: .15em; line-height: 1.7; }
+      .mf-loadbody { margin-top: auto; padding-top: 32px; max-width: 900px; }
+      .mf-loadcategory { color: #c2d9bb; font-size: 11px; font-weight: 700; letter-spacing: .22em; }
+      .mf-loadbody h1 { font-size: clamp(36px, 6vw, 72px); letter-spacing: -.05em; line-height: 1; margin: 12px 0; }
+      .mf-loaddescription { margin: 0; color: #d4ddd3; font-size: 14px; line-height: 1.6; max-width: 480px; }
+      .mf-loadcontrols { display: flex; align-items: center; gap: 12px; margin-top: 22px; }
+      .mf-loadcontrols button { min-width: 44px; height: 44px; border: 1px solid #c7d8c54d; background: #101a15a8; color: #eef1e9; font: inherit; cursor: pointer; border-radius: 50%; }
+      .mf-loadcontrols button:hover { background: #3c5146; }
+      .mf-loadcontrols button:focus-visible { outline: 2px solid #dcf4ce; outline-offset: 4px; }
+      .mf-loadcount { font-size: 11px; color: #c8d7c7; letter-spacing: .15em; font-variant-numeric: tabular-nums; }
+      .mf-loadpause { margin-left: auto; }
+      .mf-loadfooter { margin-top: 24px; border-top: 1px solid #d3e4d02e; padding-top: 18px; }
+      .mf-loadtip { display: flex; align-items: baseline; gap: 18px; max-width: 780px; min-height: 48px; }
+      .mf-loadtip b { flex-shrink: 0; font-size: 10px; letter-spacing: .18em; color: #c2d9bb; }
+      .mf-loadtip p { margin: 0; font-size: 14px; line-height: 1.6; color: #e2e9df; }
+      .mf-loadprogress { display: flex; align-items: center; gap: 16px; }
+      .mf-loading progress { appearance: none; display: block; width: 100%; height: 4px; border: 0; background: #4c5b4c; accent-color: #c2d9bb; }
+      .mf-loading progress::-webkit-progress-bar { background: #4c5b4c; }
+      .mf-loading progress::-webkit-progress-value { background: #c2d9bb; transition: width .2s; }
+      .mf-loading progress::-moz-progress-bar { background: #c2d9bb; }
+      .mf-loadpercent { min-width: 3ch; font-size: 11px; font-variant-numeric: tabular-nums; }
+      .mf-loadstatus { font-size: 11px; color: #b6c3b7; margin: 12px 0 0; }
+      .mf-loading a { color: #eef1e9; display: inline-block; margin-top: 14px; }
+      .mf-loading a[hidden] { display: none; }
+      @media (max-width: 600px) {
+        .mf-loading { padding: max(22px, env(safe-area-inset-top)) 22px max(22px, env(safe-area-inset-bottom)); }
+        .mf-loadbrand { font-size: 20px; }
+        .mf-loadtitle { font-size: 10px; }
+        .mf-loadimage { object-position: 52% center; }
+        .mf-loadtip { gap: 10px; min-height: 76px; }
+        .mf-loadtip p { font-size: 13px; }
+        .mf-loadbody h1 { font-size: 44px; }
+      }
+      @media (max-height: 540px) and (min-width: 601px) {
+        .mf-loading { padding: 18px 30px; }
+        .mf-loadbody h1 { font-size: 36px; margin: 8px 0; }
+        .mf-loadcontrols { margin-top: 12px; }
+        .mf-loadfooter { margin-top: 12px; padding-top: 12px; }
+        .mf-loadtip { min-height: 36px; }
+      }
+      @media (prefers-reduced-motion: reduce) { .mf-loadimage, .mf-loading progress::-webkit-progress-value { transition: none; } }
       midnry-fps .mf-rendernotice { padding: 12px; border: 1px solid #b3c3ae; }
       midnry-fps .mf-shell > :not(canvas) { z-index: 2; }
       /* Preview palette stays scoped; existing accessible hit areas and dialogs persist. */
@@ -1545,21 +1589,88 @@
   </head>
   <!-- For inline integration copy the style, element and script. Set a height on the host. -->
   <body style="margin: 0; background: #101419">
-    <div class="mf-loading" role="status" aria-live="polite">
-      <div><small>MIDNRY / FIELD OPERATIONS</small><h1>OUTPOST<br>ZERO.</h1>
-        <progress aria-label="Game loading progress" max="100" value="0"></progress>
-        <p class="mf-loadstatus">Preparing field operations…</p>
-        <a href="" class="mf-loadretry" hidden>Retry loading</a>
+    <div class="mf-loading" role="region" aria-label="Loading Outpost Zero">
+      <img class="mf-loadimage is-active" src="./loading/outpost.webp" alt="Dust Outpost arena" fetchpriority="high" decoding="async">
+      <img class="mf-loadimage" alt="" decoding="async">
+      <header class="mf-loadheader"><div class="mf-loadbrand">MIDNRY<small>FIELD OPERATIONS</small></div><div class="mf-loadtitle">OUTPOST ZERO<br>PREPARE TO DEPLOY</div></header>
+      <div class="mf-loadbody">
+        <div class="mf-loadcategory">ARENA / 01</div><h1 class="mf-slidetitle">Dust Outpost</h1>
+        <p class="mf-loaddescription">Sandstone cover. Open sightlines. Make every move count.</p>
+        <div class="mf-loadcontrols" role="group" aria-label="Loading slideshow controls">
+          <button class="mf-loadprev" aria-label="Previous loading slide">←</button><span class="mf-loadcount">01 / 06</span><button class="mf-loadnext" aria-label="Next loading slide">→</button><button class="mf-loadpause" aria-label="Pause loading slideshow" aria-pressed="false">Ⅱ</button>
+        </div>
       </div>
+      <footer class="mf-loadfooter">
+        <div class="mf-loadtip"><b>FIELD TIP</b><p>Hold Shift to sprint. Press C or Ctrl while sprinting forward to slide into cover.</p></div>
+        <div class="mf-loadprogress"><progress aria-label="Game loading progress" max="100" value="0"></progress><span class="mf-loadpercent" aria-hidden="true">0%</span></div>
+        <p class="mf-loadstatus" role="status" aria-live="polite">Preparing field operations…</p>
+        <a href="" class="mf-loadretry" hidden>Retry loading</a>
+      </footer>
     </div>
     <script>
-      // Visible before module downloads, including when a core module fails.
-      window.addEventListener("error", () => {
+      // Starts before any game modules; these small stills never delay deployment.
+      (() => {
         const screen = document.querySelector(".mf-loading");
-        if (!screen || screen.hidden) return;
-        screen.querySelector(".mf-loadstatus").textContent = "Loading failed. Please retry.";
-        screen.querySelector(".mf-loadretry").hidden = false;
-      }, true);
+        const slides = [
+          ["outpost", "ARENA / 01", "Dust Outpost", "Sandstone cover. Open sightlines. Make every move count.", "Hold Shift to sprint. Press C or Ctrl while sprinting forward to slide into cover."],
+          ["carbine", "LOADOUT / 01", "VX–7 Carbine", "Your automatic all-rounder. Built for the middle distance.", "Reload with R before pushing a new lane. On mobile, tap the reload button."],
+          ["operator", "CHARACTER / FIELD OPS", "Field Operators", "Boots on the ground. Keep your squad in the fight.", "In Duo, you can spectate your surviving teammate after you go down."],
+          ["skyport", "ARENA / 02", "Skyport", "Aircraft shells, hangars and room to flank.", "Keep moving in Last Signal: the safe zone shrinks as the match goes on."],
+          ["rocket", "LOADOUT / 02", "Flare Launcher", "Heavy firepower. Choose your moment.", "Dealing damage charges your ability. When it is ready, press Q or tap SUPER."],
+          ["freight", "ARENA / 03", "Freight Rush", "Container lanes. Tight angles. Watch the next corner.", "On mobile, move with the left stick and drag the right side of the screen to aim."],
+        ];
+        const images = [...screen.querySelectorAll(".mf-loadimage")];
+        const motion = matchMedia("(prefers-reduced-motion: reduce)");
+        let index = 0, active = 0, stopped = false, paused = motion.matches, timer, request = 0;
+        const pauseButton = screen.querySelector(".mf-loadpause");
+        const schedule = () => {
+          clearInterval(timer);
+          if (!paused && !stopped) timer = setInterval(() => { if (!document.hidden) show(index + 1); }, 4500);
+        };
+        const show = (next) => {
+          if (stopped) return;
+          index = (next + slides.length) % slides.length;
+          const [asset, category, title, description, tip] = slides[index];
+          const updateCaption = () => {
+          screen.querySelector(".mf-loadcategory").textContent = category;
+          screen.querySelector(".mf-slidetitle").textContent = title;
+          screen.querySelector(".mf-loaddescription").textContent = description;
+          screen.querySelector(".mf-loadtip p").textContent = tip;
+          screen.querySelector(".mf-loadcount").textContent = `${String(index + 1).padStart(2, "0")} / 06`;
+          };
+          const image = images[1 - active], token = ++request;
+          image.onload = () => {
+            if (stopped || token !== request) return;
+            updateCaption();
+            images[active].classList.remove("is-active");
+            images[active].alt = "";
+            image.alt = title;
+            image.classList.add("is-active");
+            active = 1 - active;
+          };
+          image.onerror = () => { /* Keep the last successful still if a showcase image fails. */ };
+          image.src = `./loading/${asset}.webp`;
+        };
+        const syncPause = () => {
+          pauseButton.setAttribute("aria-pressed", String(paused));
+          pauseButton.setAttribute("aria-label", paused ? "Resume loading slideshow" : "Pause loading slideshow");
+          pauseButton.textContent = paused ? "▷" : "Ⅱ";
+          schedule();
+        };
+        screen.querySelector(".mf-loadprev").onclick = () => { show(index - 1); schedule(); };
+        screen.querySelector(".mf-loadnext").onclick = () => { show(index + 1); schedule(); };
+        pauseButton.onclick = () => { paused = !paused; syncPause(); };
+        const motionChanged = () => { paused = motion.matches; syncPause(); };
+        motion.addEventListener("change", motionChanged);
+        syncPause();
+        window.outpostLoading = { stop() { stopped = true; ++request; clearInterval(timer); images.forEach(i => { i.onload = null; i.onerror = null; }); motion.removeEventListener("change", motionChanged); } };
+        // Optional showcase images must never turn a successful game load into an error.
+        window.addEventListener("error", (event) => {
+          if (screen.hidden || (!(event instanceof ErrorEvent) && event.target?.tagName !== "SCRIPT")) return;
+          screen.querySelector(".mf-loadstatus").textContent = "Loading failed. Please retry.";
+          screen.querySelector(".mf-loadretry").hidden = false;
+        }, true);
+      })();
     </script>
     <midnry-fps style="height: 100dvh" aria-label="Outpost Zero first-person shooter"></midnry-fps>
     <script type="module">
@@ -1673,8 +1784,9 @@
                   const renderer = new MilitaryRenderer(this, (done, total) => {
                     if (!this.loading || this.abort.signal.aborted) return;
                     this.loadingScreen.querySelector("progress").value = Math.round(done / total * 90);
+                    this.loadingScreen.querySelector(".mf-loadpercent").textContent = `${Math.round(done / total * 90)}%`;
                     this.loadingScreen.querySelector(".mf-loadstatus").textContent =
-                      `Preparing textures, lighting and characters… ${done} / ${total}`;
+                      `Preparing your deployment… ${done} / ${total}`;
                   });
                   this.military = renderer;
                   await renderer.ready;
@@ -1711,6 +1823,7 @@
             this.shell.inert = false;
             this.loadingScreen.querySelector("progress").value = 100;
             this.loadingScreen.hidden = true;
+            window.outpostLoading?.stop();
           }
           fallbackMilitary(error) {
             if (this.abort.signal.aborted) return;
@@ -3714,6 +3827,11 @@
             }
           }
           loop(now) {
+            if (this.loading) {
+              this.last = now;
+              this.frame = requestAnimationFrame(this.loop);
+              return;
+            }
             const start = performance.now(),
               dt = Math.min(0.04, (now - this.last) / 1000);
             this.last = now;
@@ -3743,6 +3861,7 @@
           }
           destroy() {
             clearTimeout(this.loadingTimer);
+            window.outpostLoading?.stop();
             this.military?.dispose();
             this.retention?.destroy();
             this.leaveOnline();
