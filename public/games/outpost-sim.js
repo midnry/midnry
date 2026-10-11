@@ -1107,7 +1107,7 @@ export class Arena {
       if (e.hp <= 0 || e.bot || e.departed) continue;
       const input = inputs[e.id] || {};
       if (Number.isFinite(input.aim)) e.a = Math.atan2(Math.sin(input.aim), Math.cos(input.aim));
-      if (Number.isFinite(input.pitch)) e.pitch = clamp(input.pitch, -1, 1);
+      if (Number.isFinite(input.pitch)) e.pitch = clamp(input.pitch, -Math.tan(75 * Math.PI / 180), Math.tan(75 * Math.PI / 180));
       let f = clamp(Number(input.forward) || 0, -1, 1),
         s = clamp(Number(input.strafe) || 0, -1, 1);
       const len = Math.max(1, Math.hypot(f, s));

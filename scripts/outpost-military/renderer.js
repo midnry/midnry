@@ -320,8 +320,8 @@ export class MilitaryRenderer {
     this.renderer.setSize(w, h, false);
     this.composer?.setSize(w, h);
     this.camera.aspect = w / h;
-    // Match the simulation's fixed horizontal 60-degree field of view.
-    this.camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(Math.PI / 6) / (w / h)));
+    // Match the shared projection used by classic rendering and aim.
+    this.camera.fov = THREE.MathUtils.radToDeg(this.g.verticalFov);
     this.camera.updateProjectionMatrix();
     this.weaponCamera.aspect = w / h;
     this.weaponCamera.fov = THREE.MathUtils.radToDeg(

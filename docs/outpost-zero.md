@@ -273,3 +273,9 @@ Bots draw unique weapons and uniforms from shuffled full pools in every mode. Pr
 Online create/join/loadout requests validate outfit IDs. Public lobby members and authoritative entity snapshots carry the outfit; lobby selection and rematches preserve it. Outfit changes during an online match are rejected. Older room snapshots default safely to Field Ranger.
 
 Validation: `node --test scripts/outpost-equipment.test.mjs scripts/outpost-room-equipment.test.mjs` covers full bot pools, neutral outfit stats, snapshots/respawns, practice weapon use and the actual room handler with a substituted SQL transport. `node scripts/check-outpost-equipment.mjs [base-url]` checks all 11 inspections, all 10 selections, saved preferences, visible AI equipment, resource ownership and classic fallback on mobile and desktop.
+
+### Camera and aiming
+
+Settings → Camera & aim exposes a 75–120° FOV slider (100° default, horizontal at 16:9), mouse sensitivity from 0.1–10 (2 default), a vertical multiplier, independent touch sensitivity, invert look, raw mouse input, and reset. Preferences apply immediately and persist on the device. Wider displays retain vertical FOV; portrait adapts with a vertical cap. The weapon camera has its own fixed projection to avoid stretching the hands or gun.
+
+Mouse input uses 0.022° per count multiplied by sensitivity, equally on both axes at 1× vertical. Angular look is independent of render resolution, adaptive quality, FOV, and frame rate. No game smoothing or acceleration is added. Raw pointer lock is requested when enabled and falls back to regular pointer lock only if the browser reports it unsupported. Pitch is limited to ±75° and its tangent is shared with offline and online hit testing.

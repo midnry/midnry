@@ -16081,7 +16081,7 @@ var Ud = {
 	resize() {
 		if (this.disposed) return;
 		let { w: e, h: t } = this.g;
-		this.renderer.setSize(e, t, !1), this.composer?.setSize(e, t), this.camera.aspect = e / t, this.camera.fov = ge.radToDeg(2 * Math.atan(Math.tan(Math.PI / 6) / (e / t))), this.camera.updateProjectionMatrix(), this.weaponCamera.aspect = e / t, this.weaponCamera.fov = ge.radToDeg(2 * Math.atan(Math.tan(ge.degToRad(26)) / (e / t))), this.weaponCamera.updateProjectionMatrix();
+		this.renderer.setSize(e, t, !1), this.composer?.setSize(e, t), this.camera.aspect = e / t, this.camera.fov = ge.radToDeg(this.g.verticalFov), this.camera.updateProjectionMatrix(), this.weaponCamera.aspect = e / t, this.weaponCamera.fov = ge.radToDeg(2 * Math.atan(Math.tan(ge.degToRad(26)) / (e / t))), this.weaponCamera.updateProjectionMatrix();
 	}
 	tileTexture(e, t) {
 		if (!e) return null;
