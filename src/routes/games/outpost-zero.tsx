@@ -4,7 +4,7 @@ export const Route = createFileRoute("/games/outpost-zero")({
   head: () => ({
     meta: [
       { title: "Outpost Zero — Midnry" },
-      { name: "description", content: "A free comic-styled raycasting shooter. Take down six rogue sentry drones on desktop or mobile." },
+      { name: "description", content: "A free comic-styled raycasting shooter. Play Field Ops or Last Signal, a solo survival mode with Charge Cores and shrinking Red Haze." },
     ],
   }),
   component: OutpostZeroPage,
