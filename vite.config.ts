@@ -190,6 +190,7 @@ export default defineConfig(({ command, isPreview }) => ({
                   "outpost-art.js",
                   "outpost-characters.js",
                   "outpost-weapons.js",
+                  "outpost-environment.js",
                   "outpost-retention.js",
                   "outpost-ui.js",
                   "outpost-progression.js",
@@ -197,6 +198,7 @@ export default defineConfig(({ command, isPreview }) => ({
               ),
               "/games/characters/**": { headers: { "cache-control": "no-cache" } },
               "/games/weapons/**": { headers: { "cache-control": "no-cache" } },
+              "/games/environment/**": { headers: { "cache-control": "no-cache" } },
               "/abuja/**": {
                 headers: {
                   "cache-control": "public, max-age=86400, stale-while-revalidate=2592000",
