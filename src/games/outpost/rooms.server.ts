@@ -1,6 +1,12 @@
 import { randomBytes, createHash, timingSafeEqual } from "node:crypto";
 import { getSql } from "@/lib/db";
-import { Arena, type ArenaState, type Input } from "../../../public/games/outpost-sim.js";
+import {
+  Arena,
+  MAPS,
+  WEAPONS,
+  type ArenaState,
+  type Input,
+} from "../../../public/games/outpost-sim.js";
 
 // HTTPS polling deliberately works on both Render and serverless deployments.
 // Rooms live in the existing database, not a process-local host tab or socket.
@@ -9,6 +15,7 @@ type Member = {
   hash: string;
   name: string;
   team: number;
+  weapon: string;
   lastSeen: number;
   inputAt: number;
   seq: number;
@@ -16,6 +23,7 @@ type Member = {
 };
 type Room = {
   mode: "signal" | "duo";
+  mapId: string;
   phase: "lobby" | "playing" | "ended";
   host: string;
   members: Member[];
@@ -52,12 +60,14 @@ function publicRoom(code: string, room: Room) {
   return {
     code,
     mode: room.mode,
+    mapId: room.mapId || "outpost",
     phase: room.phase,
     host: room.host,
-    members: room.members.map(({ id, name, team, lastSeen }) => ({
+    members: room.members.map(({ id, name, team, weapon, lastSeen }) => ({
       id,
       name,
       team,
+      weapon: weapon || "carbine",
       connected: Date.now() - lastSeen < 20000,
     })),
     arena: room.arena
@@ -80,6 +90,7 @@ function inputOf(value: unknown): Input {
     sprint: v.sprint === true,
     fire: v.fire === true,
     reload: v.reload === true,
+    super: v.super === true,
   };
 }
 function advance(room: Room, now: number) {
@@ -120,12 +131,22 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
     for (const [k, v] of rates) if (v.until < now) rates.delete(k);
     if (body.mode !== "signal" && body.mode !== "duo")
       throw new OutpostError("Choose Last Signal or Pair Ops.");
+    const mapId = body.mapId === undefined ? "outpost" : body.mapId;
+    const weapon = body.weapon === undefined ? "carbine" : body.weapon;
+    if (
+      typeof mapId !== "string" ||
+      !Object.hasOwn(MAPS, mapId) ||
+      typeof weapon !== "string" ||
+      !Object.hasOwn(WEAPONS, weapon)
+    )
+      throw new OutpostError("Choose a valid map and loadout.");
     const id = randomBytes(8).toString("hex"),
       token = randomBytes(24).toString("hex");
     const member: Member = {
       id,
       hash: sha(token),
       name: "Ranger 1",
+      weapon,
       team: 0,
       lastSeen: now,
       inputAt: now,
@@ -134,6 +155,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
     };
     const room: Room = {
       mode: body.mode,
+      mapId,
       phase: "lobby",
       host: id,
       members: [member],
@@ -154,7 +176,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
   }
   const code = typeof body.code === "string" ? body.code.trim().toUpperCase() : "";
   if (!CODE.test(code)) throw new OutpostError("Enter a six-character room code.");
-  const ops = ["join", "poll", "team", "start", "restart", "leave"];
+  const ops = ["join", "poll", "team", "start", "restart", "leave", "settings", "loadout"];
   if (typeof body.op !== "string" || !ops.includes(body.op))
     throw new OutpostError("Unknown room action.");
   // Capability IDs are minted once per join, outside the compare-and-swap retry.
@@ -181,7 +203,11 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
         room.mode === "duo"
           ? ([0, 1, 2, 3].find((t) => room.members.filter((m) => m.team === t).length < 2) ?? 0)
           : room.members.length;
+      const weapon = body.weapon === undefined ? "carbine" : body.weapon;
+      if (typeof weapon !== "string" || !Object.hasOwn(WEAPONS, weapon))
+        throw new OutpostError("Choose a valid loadout.");
       member = {
+        weapon,
         id: joinedId,
         hash: sha(joinedToken),
         name: "Ranger " + room.nextName++,
@@ -208,15 +234,31 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
           const arena = Arena.restore(room.arena),
             self = arena.entities.find((e) => e.id === member.id);
           // The packet can request a shot, never supply a target, damage or position.
-          if (self && member.input.fire) {
+          if (self && (member.input.fire || member.input.super)) {
             self.a = member.input.aim ?? self.a;
             self.pitch = member.input.pitch ?? 0;
-            arena.shoot(self);
+            if (member.input.super) arena.super(self);
+            member.input.super = false;
+            if (member.input.fire) arena.shoot(self);
           }
           room.arena = arena.snapshot();
           if (arena.state === "ended") room.phase = "ended";
         }
       }
+    }
+    if (body.op === "settings") {
+      if (room.host !== member.id) throw new OutpostError("Only the host can choose the map.", 403);
+      if (room.phase !== "lobby") throw new OutpostError("Choose the map before starting.", 409);
+      if (typeof body.mapId !== "string" || !Object.hasOwn(MAPS, body.mapId))
+        throw new OutpostError("Invalid map.");
+      room.mapId = body.mapId;
+    }
+    if (body.op === "loadout") {
+      if (room.phase !== "lobby")
+        throw new OutpostError("Choose your loadout before starting.", 409);
+      if (typeof body.weapon !== "string" || !Object.hasOwn(WEAPONS, body.weapon))
+        throw new OutpostError("Invalid loadout.");
+      member.weapon = body.weapon;
     }
     if (body.op === "team") {
       if (room.phase !== "lobby" || room.mode !== "duo")
@@ -246,7 +288,13 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
         room.members = room.members.filter((m) => now - m.lastSeen < 20000);
         room.arena = new Arena({
           mode: room.mode,
-          humans: room.members.map(({ id, team, name }) => ({ id, team, name })),
+          mapId: room.mapId || "outpost",
+          humans: room.members.map(({ id, team, name, weapon }) => ({
+            id,
+            team,
+            name,
+            weapon: weapon || "carbine",
+          })),
         }).snapshot();
         room.phase = "playing";
       }

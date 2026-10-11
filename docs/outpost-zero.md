@@ -1,6 +1,6 @@
 # Midnry — Outpost Zero
 
-The game uses two small static files: `public/games/outpost-zero.html` (Canvas rendering, procedural art, scoped CSS, controls and lobby) and `public/games/outpost-sim.js` (shared match rules). Serve both from the same directory over HTTP. Offline play needs no backend or external assets; online rooms use the Midnry API and database. No game framework is required. ES modules require a web server rather than opening a local file directly.
+The game uses three small static files: `public/games/outpost-zero.html` (Canvas rendering, procedural art, scoped CSS, controls and lobby) and `public/games/outpost-sim.js` (shared match rules), and `public/games/outpost-content.js` (maps, palettes, scenery and weapon definitions). Serve all three from the same directory over HTTP. Offline play needs no backend or external assets; online rooms use the Midnry API and database. No game framework is required. ES modules require a web server rather than opening a local file directly.
 
 ## Midnry integration
 
@@ -8,7 +8,7 @@ The homepage links to `/discover/outpost-zero`, which launches `/games/outpost-z
 
 ## Embed elsewhere
 
-For the strongest isolation from your site's existing CSS and scripts, serve both files in `/games/`, then embed:
+For the strongest isolation from your site's existing CSS and scripts, serve all three files in `/games/`, then embed:
 
 ```html
 <iframe
@@ -31,8 +31,8 @@ Do not copy the standalone file's `<body>` style to your host page. Every styles
 
 ## Controls and rules
 
-- Desktop: WASD to move; mouse to aim; hold left click or Space to fire; R to reload; Shift to sprint; Escape, P or the pause button to pause. Arrow keys move forward/backward and turn.
-- Mobile: left joystick to move; drag the canvas on the right to aim; hold FIRE to shoot; R to reload. Landscape gives a wider view of the arena.
+- Desktop: WASD to move; mouse to aim; hold left click or Space to fire; R to reload; Shift to sprint; Escape, P or the pause button to pause; Q to activate a charged ability. Arrow keys move forward/backward and turn.
+- Mobile: left joystick to move; drag the canvas on the right to aim; hold FIRE to shoot; R to reload; tap the charged ability button to use a super. Landscape gives a wider view of the arena.
 - Defeat six drones, each requiring three hits from the base weapon. Drones slowly approach when they see you and deal periodic damage within range. Wall cover blocks visibility and shots.
 - The carbine has a 24-round magazine, unlimited reserves and a 1.4-second reload. Reloading is manual unless you try firing an empty magazine.
 - Redeploy after winning or losing. Offline pausing freezes combat and reload timers. Online menus neutralize your input while the match continues.
@@ -54,7 +54,7 @@ The prototype already implements the requested first steps for shooting, enemies
 | Touch / keyboard    | `bindInputs()`                                     | Scoped keyboard input, pointer capture for touch and pointer lock for desktop. Tune mouse and drag sensitivity here.                                                                                                                                                                                                               |
 | Audio               | `shoot()`, `reload()`, enemy damage in `update()`  | Add Web Audio or embedded audio assets, initializing audio only after Deploy is clicked.                                                                                                                                                                                                                                           |
 
-This is an original comic-styled training prototype: flat cel colors, dark outlines, warm sandstone, teal metal, hazard bands and drawn weapons. It uses no Call of Duty or Borderlands assets. It includes AI pathfinding and server-authoritative online rooms. It does not include audio, jumping, saved progression or a full weapon inventory. Vertical aiming is a shifted raycast horizon, not true 3D geometry.
+This is an original comic-styled training prototype: flat cel colors, dark outlines, warm sandstone, teal metal, hazard bands and drawn weapons. It uses no Call of Duty or Borderlands assets. It includes AI pathfinding and server-authoritative online rooms. It does not include audio, jumping, saved progression or weapons picked up/swapped mid-round. Vertical aiming is a shifted raycast horizon, not true 3D geometry.
 
 ## Validation
 
@@ -93,3 +93,38 @@ This is casual multiplayer using roughly 10 HTTPS polls per second per active cl
 Validation: `node --test scripts/outpost-sim.test.mjs` checks team damage, redeployment limits, upgrades, forfeits and victory. `node scripts/check-outpost-online.mjs [baseURL]` tests concurrent eight-player joins, permission failures, untrusted state rejection, separate desktop/mobile clients, firing replication, online menus and host transfer.
 
 The focused browser rule checks are in `scripts/check-outpost-zero.mjs`. Run with `node scripts/check-outpost-zero.mjs` after installing Playwright's Chromium, or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an existing Chromium binary. It verifies both desktop and mobile emulation, including power stacking, crate occlusion, bot competition, increasing gas damage, win/loss, replay and the original Field Ops contract.
+
+## Arena and loadout expansion
+
+The original Dust Outpost is joined by four original arenas. These use layout ideas from the requested references without reusing their geometry or artwork. All have sealed boundaries, connected walkable lanes, legal spawn points and an unobstructed final safe square.
+
+| Arena        | Size    | Layout                                                                                                     |
+| ------------ | ------- | ---------------------------------------------------------------------------------------------------------- |
+| Test Block   | 16 × 16 | Facing teal/coral test houses with window trim, a central street, back-garden lanes and mannequin props    |
+| Skyport      | 24 × 24 | Boarding terminal, aircraft cabin, baggage cover and an outdoor apron; blue glass and white fuselage walls |
+| Freight Rush | 12 × 12 | Four container blocks, a cross-shaped center and short rotations                                           |
+| Wreck Estate | 20 × 20 | Three lanes around a downed rotorcraft, villa rooms and a turquoise pool court                             |
+
+Geometry stays in the flat 2.5D raycaster. There are no playable upper floors. Vaults cross interior cover and choose a walkable landing spot; they are abilities in the flat simulation, not free jumping. Scenery billboards and painted pool/street zones are decorative. Interior cover can be broken by specified supers; perimeter walls always remain sealed. Offline loadout/map changes begin a fresh round. Online maps are host-selected and loadouts are individual lobby choices, locked when a match starts.
+
+| Loadout        | Main attack                                                                   | Charged ability                                                          |
+| -------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| VX–7 Carbine   | Accurate automatic hitscan                                                    | Overdrive: five stronger burst shots                                     |
+| Sunburst       | Five spread pellets with distance falloff                                     | Shockwave: wide heavy blast, knockback and nearby cover break            |
+| Twinwire       | Three accurate pistol shots per trigger                                       | Crossfire: nine sweeping shots                                           |
+| Gatebreaker    | Seven heavy close-range pellets                                               | Breach Run: forward rush that breaks cover and shoves rivals             |
+| Shardpod       | Thrown pod bursts into eight radial shards                                    | Bramble Field: five-second damaging and slowing zone                     |
+| Mirage         | Four spinning blades with distance falloff                                    | Ghost Step: five-second cloak; attack, damage or nearby rivals break it  |
+| Viperfan       | Three poison darts; poison ticks for three seconds and reduces healing to 35% | Venom Vault: cover-crossing leap with poison fans at takeoff and landing |
+| Pulse Knuckles | Close punches heal 30% of damage dealt to rivals                              | Impact Leap: landing splash and three-second speed boost                 |
+| Rift Scythe    | Short dash with a melee swing                                                 | Echo Rush: longer dash and healing spectral shots                        |
+| Flare Launcher | Impact rocket with wall-occluded splash                                       | Skyfall: five marked timed blasts around the aimed position              |
+| Fusecaster     | Two arcing fuses can cross walls before exploding                             | Big Bang: heavy arcing barrel breaks nearby cover and knocks rivals back |
+
+All magazines reload in 1.4 seconds with unlimited reserves. A player’s power rating begins at 40; each core adds 8, scaling the selected weapon and super. Bots start at 16 and use the same weapon rules in survival. Supers charge from actual damage (60% against combatants, 20% against crates) up to 100; activation spends charge, though damage during the ability can start charging the next one. Death clears abilities/statuses and charge. Friendly fire never charges or heals you. Poison suppresses both lifesteal and pickup healing. Invisible foes are hidden from the viewport and minimap outside the proximity reveal range; partners remain visible.
+
+Damage snapshots carry a monotonic sequence, cumulative HP loss and source angle. The renderer uses these for a red edge vignette, floating HP loss, directional threat arrow, short screen shake, critical-health color and hit confirmations. Reduced-motion users keep the visual warnings without the shake. Effects use match time, so offline pausing freezes projectiles, poison, bursts, fields and ability timers.
+
+Extension points: `outpost-content.js` defines `MAPS`, `WEAPONS`, shells, floor paint and scenery; `outpost-sim.js` implements `shoot`, `super`, `updateEffects`, `blast`, `dash`, `leap`, `damage` and serialization. `outpost-zero.html` implements `updateKit`, `observeCombat`, `drawAlternateWeapon`, `propSprite` and `drawCombatEffects`. Room operations `settings` and `loadout` validate choices; the server ignores client-supplied charge, damage and weapons during play. Existing rooms default to the carbine/Outpost during a rolling deployment.
+
+Additional validation: `node scripts/outpost-expansion.test.mjs` checks map connectivity, all loadouts, magazine sizes, falloff, bursts, poison, lifesteal, projectile occlusion, arcing attacks, cover destruction, cloaking, slows and charge. `node scripts/check-outpost-expansion.mjs [baseURL]` renders every new map on desktop/mobile, exercises all eleven keyboard/touch ability controls and checks visible damage warnings. The online check also verifies host-only maps, individual loadouts, map replication and lobby locking.

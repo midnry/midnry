@@ -25,8 +25,9 @@ function OutpostZeroDiscovery() {
           </p>
           <h1 className="mt-5 text-5xl font-black tracking-tight sm:text-6xl">Outpost Zero.</h1>
           <p className="mt-5 max-w-lg text-lg leading-relaxed text-[#c6c8c6]">
-            A sun-scorched outpost. Fight solo in Last Signal or team up in Pair Ops. Create an
-            online room, invite friends, and battle rivals as Red Haze closes in.
+            A sun-scorched outpost. Fight solo in Last Signal or team up in Pair Ops. Choose from
+            five arenas and eleven loadouts, invite friends online, and battle rivals as Red Haze
+            closes in.
           </p>
           <Link
             to="/games/outpost-zero"
@@ -54,7 +55,7 @@ function OutpostZeroDiscovery() {
           <h2 className="font-display text-xl">On your computer</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted">
             WASD to move. Mouse to aim. Click or Space to fire. R to reload, Shift to sprint, and
-            Escape or P to pause. Arrow keys also move and turn.
+            Escape or P to pause. Q activates your charged ability. Arrow keys also move and turn.
           </p>
         </article>
         <article className="rounded-2xl bg-card p-6 shadow-line">
@@ -71,6 +72,24 @@ function OutpostZeroDiscovery() {
             damage boosts. Follow the safe zone before Red Haze closes in. Be the last player or
             pair alive. In Pair Ops, a living partner can bring you back twice. Play with AI or
             share an online room code.
+          </p>
+        </article>
+      </section>
+      <section className="mt-5 grid gap-5 sm:grid-cols-2" aria-label="Maps and loadouts">
+        <article className="rounded-2xl bg-card p-6 shadow-line">
+          <h2 className="font-display text-xl">Five arenas</h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted">
+            Dust Outpost, Test Block’s facing houses, Skyport’s halls and aircraft, Freight Rush’s
+            tight container lanes, and Wreck Estate’s crash site and pool courtyard. Choose your
+            arena before deploying; the host chooses online.
+          </p>
+        </article>
+        <article className="rounded-2xl bg-card p-6 shadow-line">
+          <h2 className="font-display text-xl">Eleven loadouts</h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted">
+            Carbine, scatterguns, dual-pistol bursts, shard pods, spinning blades, poison darts,
+            lifesteal punches, a dash scythe, rockets, and arcing fuses. Deal damage to charge a
+            special ability. Stronger hit feedback makes every exchange easier to read.
           </p>
         </article>
       </section>
