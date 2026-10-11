@@ -1,6 +1,98 @@
-/** Original painted character rigs. Presentation only: never mutates Arena entities. */
+/** Original illustrated anime atlases with a procedural loading fallback.
+ * Presentation only: never mutates Arena entities or authoritative match rules. */
 import { weaponOf } from "./outpost-content.js";
 const TAU = Math.PI * 2;
+// Tight source bounds measured from alpha; source artwork stays untouched.
+const ATLASES = [
+  {
+    name: "ember",
+    width: 1224,
+    height: 1285,
+    frames: [
+      [75, 5, 177, 342],
+      [364, 5, 201, 344],
+      [690, 4, 162, 347],
+      [986, 5, 165, 344],
+      [80, 351, 189, 304],
+      [364, 352, 176, 302],
+      [691, 354, 195, 301],
+      [968, 354, 185, 300],
+      [75, 661, 198, 289],
+      [364, 660, 182, 288],
+      [656, 663, 199, 285],
+      [988, 661, 197, 291],
+      [53, 951, 223, 323],
+      [380, 952, 183, 321],
+      [616, 956, 271, 317],
+      [935, 1063, 266, 210],
+    ],
+  },
+  {
+    name: "nomad",
+    width: 1224,
+    height: 1285,
+    frames: [
+      [67, 5, 197, 347],
+      [369, 5, 201, 347],
+      [671, 5, 178, 347],
+      [969, 6, 203, 345],
+      [69, 358, 194, 310],
+      [370, 361, 188, 299],
+      [670, 361, 226, 306],
+      [970, 359, 213, 306],
+      [56, 672, 219, 286],
+      [370, 662, 209, 296],
+      [671, 676, 226, 285],
+      [991, 677, 218, 286],
+      [35, 955, 271, 321],
+      [361, 959, 221, 318],
+      [615, 970, 282, 305],
+      [936, 1056, 279, 221],
+    ],
+  },
+  {
+    name: "thorn",
+    width: 1224,
+    height: 1285,
+    frames: [
+      [65, 4, 225, 347],
+      [371, 5, 205, 346],
+      [671, 6, 159, 348],
+      [961, 4, 240, 349],
+      [49, 354, 238, 304],
+      [350, 354, 242, 304],
+      [655, 354, 242, 304],
+      [954, 359, 239, 298],
+      [34, 661, 270, 295],
+      [351, 658, 250, 298],
+      [665, 659, 234, 297],
+      [964, 658, 236, 300],
+      [12, 951, 358, 321],
+      [372, 956, 216, 316],
+      [627, 962, 286, 315],
+      [930, 1036, 286, 235],
+    ],
+  },
+  {
+    name: "backs",
+    width: 1448,
+    height: 1086,
+    frames: [
+      [43, 3, 253, 356],
+      [423, 4, 246, 354],
+      [804, 3, 238, 356],
+      [1206, 4, 207, 353],
+      [38, 362, 298, 361],
+      [413, 362, 289, 352],
+      [780, 363, 288, 359],
+      [1143, 363, 296, 353],
+      [12, 728, 324, 350],
+      [396, 726, 314, 350],
+      [764, 726, 328, 353],
+      [1121, 723, 320, 351],
+    ],
+  },
+];
 const RIGS = [
   {
     name: "Ember Scout",
@@ -40,6 +132,21 @@ export class Characters {
     this.cache = new Map();
     this.motion = matchMedia("(prefers-reduced-motion: reduce)");
     this.reset();
+    this.atlases = ATLASES.map((spec) => ({
+      ...spec,
+      image: new Image(),
+      loaded: false,
+      cells: new Map(),
+    }));
+    // Decode once per instance. A procedural fallback keeps play usable on load failure.
+    this.ready = Promise.allSettled(
+      this.atlases.map(async (atlas) => {
+        atlas.image.src = new URL(`./characters/${atlas.name}-atlas.webp`, import.meta.url).href;
+        await atlas.image.decode();
+        atlas.loaded = true;
+        this.clearCache();
+      }),
+    );
   }
   reset() {
     this.observed = new Map();
@@ -106,12 +213,12 @@ export class Characters {
     const g = this.g,
       w = weaponOf(e.weapon),
       p = override || this.pose(e);
-    const role = ["poison", "shard", "lob"].includes(w.kind)
+    const role = ["poison", "shard", "lob", "blades", "dash"].includes(w.kind)
       ? 2
       : ["rocket", "melee", "shotgun"].includes(w.kind)
         ? 1
         : 0;
-    const variant = hash(e.id) % 3,
+    const variant = this.atlases[role].loaded ? 0 : hash(e.id) % 3,
       ally = g.mode === "duo" && e.team === g.player.team;
     const density = g.academy.preset === "high" ? 2 : g.academy.preset === "performance" ? 1 : 1.5;
     const key = `${this.motion.matches}:${density}:${role}:${variant}:${ally}:${w.id}:${p.state}:${p.frame}:${p.direction}`;
@@ -126,11 +233,133 @@ export class Characters {
     image.height = 288 * density;
     const c = image.getContext("2d");
     c.scale(density, density);
-    this.paint(c, RIGS[role], role, variant, ally, w, p);
+    if (this.atlases[role].loaded) this.paintAtlas(c, role, ally, w, p);
+    else this.paint(c, RIGS[role], role, variant, ally, w, p);
     // LRU bounds memory even with eight angles, loadouts and animation states.
     if (this.cache.size >= 64) this.cache.delete(this.cache.keys().next().value);
     this.cache.set(key, image);
     return image;
+  }
+  // Extract a sprite lazily. Keep only its connected silhouette, removing tiny
+  // neighboring-frame fragments where the illustrated atlas has uneven gutters.
+  atlasCell(atlas, index) {
+    if (atlas.cells.has(index)) return atlas.cells.get(index);
+    const [x, y, width, height] = atlas.frames[index];
+    const image = document.createElement("canvas");
+    image.width = width;
+    image.height = height;
+    const ctx = image.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(atlas.image, x, y, width, height, 0, 0, width, height);
+    const pixels = ctx.getImageData(0, 0, width, height),
+      data = pixels.data;
+    const marks = new Uint16Array(width * height),
+      queue = new Int32Array(width * height);
+    let label = 0,
+      largest = 0,
+      count = 0;
+    for (let i = 0; i < marks.length; i++) {
+      if (marks[i] || data[i * 4 + 3] < 16) continue;
+      label++;
+      let start = 0,
+        end = 1;
+      queue[0] = i;
+      marks[i] = label;
+      while (start < end) {
+        const at = queue[start++],
+          px = at % width;
+        for (let direction = 0; direction < 4; direction++) {
+          const next =
+            direction === 0
+              ? px > 0
+                ? at - 1
+                : -1
+              : direction === 1
+                ? px < width - 1
+                  ? at + 1
+                  : -1
+                : direction === 2
+                  ? at - width
+                  : at + width;
+          if (next < 0 || next >= marks.length || marks[next] || data[next * 4 + 3] < 16) continue;
+          marks[next] = label;
+          queue[end++] = next;
+        }
+      }
+      if (end > count) {
+        count = end;
+        largest = label;
+      }
+    }
+    for (let i = 0; i < marks.length; i++) {
+      if (marks[i] !== largest) data[i * 4 + 3] = 0;
+    }
+    ctx.putImageData(pixels, 0, 0);
+    atlas.cells.set(index, image);
+    return image;
+  }
+  paintAtlas(c, role, ally, weapon, p) {
+    const back = [3, 4, 5].includes(p.direction),
+      side = [2, 6].includes(p.direction);
+    const neutral = back ? 3 : side ? 2 : p.direction === 0 ? 0 : 1;
+    let atlas = this.atlases[role],
+      index = neutral;
+    const moving = p.state === "walk" && !this.motion.matches;
+    if (moving) {
+      if (back && this.atlases[3].loaded) {
+        atlas = this.atlases[3];
+        index = role * 4 + (p.frame % 4);
+      } else if (!back) index = (p.direction === 0 ? 4 : 8) + (p.frame % 4);
+    } else if (!back) {
+      if (p.state === "fire") index = ["melee", "dash"].includes(weapon.kind) ? 13 : 12;
+      if (p.state === "reload") index = p.frame === 0 || p.frame === 5 ? neutral : 13;
+      if (p.state === "hit") index = 14;
+    }
+    if (p.state === "down") {
+      atlas = this.atlases[role];
+      index = p.frame === 0 ? 14 : 15;
+    }
+    const source = this.atlasCell(atlas, index),
+      rect = atlas.frames[index];
+    const base = atlas.frames[atlas.name === "backs" ? role * 4 : 0];
+    // One fixed scale per rig: crouching/run frames retain their natural height.
+    const scale = 236 / base[3];
+    const mirror = p.direction >= 5;
+    const breathe =
+      !this.motion.matches && p.state === "idle" ? Math.sin((p.frame * Math.PI) / 2) * 0.003 : 0;
+    const kick =
+      p.state === "fire" ? (2 - p.frame) * 1.2 : p.state === "hit" ? (p.frame ? 1 : -2) : 0;
+    c.save();
+    c.imageSmoothingEnabled = true;
+    c.imageSmoothingQuality = "high";
+    c.translate(96 + kick, 271);
+    if (mirror) c.scale(-1, 1);
+    c.scale(1, 1 + breathe);
+    // Center the pelvis at the cell center, rather than centering trailing scarves.
+    const cellWidth = atlas.width / 4,
+      column = index % 4;
+    const dx = (rect[0] - (column + 0.5) * cellWidth) * scale;
+    c.drawImage(source, dx, -source.height * scale, source.width * scale, source.height * scale);
+    if (p.state === "hit") {
+      c.globalCompositeOperation = "source-atop";
+      c.fillStyle = p.frame ? "#fff3ce20" : "#fff3ce55";
+      c.fillRect(-96, -288, 192, 288);
+      c.globalCompositeOperation = "source-over";
+    }
+    // A compact loadout badge and teammate stripe preserve combat readability.
+    if (p.state !== "down") {
+      c.fillStyle = ally ? "#71ebd5" : weapon.color;
+      c.strokeStyle = "#18222b";
+      c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(-30, -145);
+      c.lineTo(-24, -150);
+      c.lineTo(-18, -145);
+      c.lineTo(-24, -140);
+      c.closePath();
+      c.fill();
+      c.stroke();
+    }
+    c.restore();
   }
   paint(c, r, role, variant, ally, w, p) {
     const phase = (p.frame / 8) * TAU,

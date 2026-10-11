@@ -194,6 +194,7 @@ export default defineConfig(({ command, isPreview }) => ({
                   "outpost-progression.js",
                 ].map((file) => [`/games/${file}`, { headers: { "cache-control": "no-cache" } }]),
               ),
+              "/games/characters/**": { headers: { "cache-control": "no-cache" } },
               "/abuja/**": {
                 headers: {
                   "cache-control": "public, max-age=86400, stale-while-revalidate=2592000",

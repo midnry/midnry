@@ -2704,11 +2704,13 @@
                   c.fillRect(x, ground - sh, 1, sh * 2);
                 }
               }
+              c.imageSmoothingEnabled = !!character;
               for (let x = left; x < right; x++) {
                 if (z >= this.depth[x]) continue;
                 const u = clamp(((x - sx) / width) * frame.width, 0, frame.width - 1);
                 c.drawImage(frame, u, 0, 1, frame.height, x, sy, 1, height);
               }
+              c.imageSmoothingEnabled = false;
               const center = Math.round(sx + width / 2),
                 indicatorY = sy + (character ? height * (30 / 288) : 0);
               if (

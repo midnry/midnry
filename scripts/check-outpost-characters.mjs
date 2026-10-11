@@ -16,10 +16,14 @@ try {
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(base + "/games/outpost-zero.html");
     await page.waitForFunction(() => document.querySelector("midnry-fps")?.engine?.characters);
+    await page.evaluate(() => document.querySelector("midnry-fps").engine.characters.ready);
     const result = await page.evaluate(async () => {
       const g = document.querySelector("midnry-fps").engine,
         chars = g.characters;
       g.$(".mf-modal").hidden = true;
+      for (const atlas of chars.atlases) {
+        if (atlas.loaded) for (let i = 0; i < atlas.frames.length; i++) chars.atlasCell(atlas, i);
+      }
       const enemy = g.enemies[0];
       const before = JSON.stringify(g.arena.snapshot());
       const signatures = new Set(),
@@ -80,17 +84,27 @@ try {
       gallery.id = "character-gallery";
       gallery.style = "position:fixed;inset:0;z-index:999999;width:100vw;height:auto";
       document.body.append(gallery);
-      return { unchanged, bound, unique: signatures.size, sizes, weapons: weapons.length };
+      return {
+        unchanged,
+        bound,
+        unique: signatures.size,
+        sizes,
+        weapons: weapons.length,
+        loaded: chars.atlases.filter((a) => a.loaded).length,
+        extracted: chars.atlases.reduce((n, a) => n + a.cells.size, 0),
+      };
     });
     assert.equal(result.unchanged, true);
     assert.ok(result.bound <= 64);
-    assert.ok(result.unique > 140);
+    assert.ok(result.unique > 60);
+    assert.equal(result.loaded, 4);
+    assert.equal(result.extracted, 60);
     assert.deepEqual(result.sizes, [192, 288, 384]);
     assert.equal(result.weapons, 11);
     if (!mobile)
       await page
         .locator("#character-gallery")
-        .screenshot({ path: "/tmp/outpost-character-gallery.png" });
+        .screenshot({ path: "/workspace/screenshots/outpost-anime-gallery.png" });
     await page.evaluate(() => document.querySelector("#character-gallery").remove());
     const behavior = await page.evaluate(() => {
       const g = document.querySelector("midnry-fps").engine,
@@ -181,7 +195,9 @@ try {
     });
     assert.equal(rendering.occluded, true);
     assert.equal(rendering.visible, true);
-    await page.screenshot({ path: `/tmp/outpost-character-${mobile ? "mobile" : "desktop"}.png` });
+    await page.screenshot({
+      path: `/workspace/screenshots/outpost-anime-${mobile ? "mobile" : "desktop"}.png`,
+    });
     await page.emulateMedia({ reducedMotion: "reduce" });
     const reduced = await page.evaluate(() => {
       const g = document.querySelector("midnry-fps").engine,
@@ -195,6 +211,28 @@ try {
     console.log(JSON.stringify({ mobile, ...result, behavior, rendering, reduced }));
     await page.close();
   }
+  const fallbackPage = await browser.newPage();
+  const fallbackErrors = [];
+  fallbackPage.on("pageerror", (e) => fallbackErrors.push(e.message));
+  await fallbackPage.route("**/characters/*.webp", (route) => route.abort());
+  await fallbackPage.goto(base + "/games/outpost-zero.html");
+  await fallbackPage.waitForFunction(
+    () => document.querySelector("midnry-fps")?.engine?.characters,
+  );
+  await fallbackPage.evaluate(() => document.querySelector("midnry-fps").engine.characters.ready);
+  const fallback = await fallbackPage.evaluate(() => {
+    const g = document.querySelector("midnry-fps").engine;
+    g.render();
+    return {
+      loaded: g.characters.atlases.filter((a) => a.loaded).length,
+      width: g.characters.sprite(g.enemies[0]).width,
+    };
+  });
+  assert.equal(fallback.loaded, 0);
+  assert.ok(fallback.width > 0);
+  assert.deepEqual(fallbackErrors, []);
+  console.log("Artwork load failure retains a playable procedural fallback.");
+  await fallbackPage.close();
 } finally {
   await browser.close();
 }
