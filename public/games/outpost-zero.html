@@ -185,6 +185,8 @@
         padding: 24px;
       }
       midnry-fps .mf-panel {
+        max-height: calc(100% - 16px);
+        overflow: auto;
         width: min(540px, 100%);
         padding: 34px;
         border: 2px solid #070b0e;
@@ -341,6 +343,8 @@
           left: 16px;
         }
         midnry-fps .mf-panel {
+          max-height: calc(100% - 16px);
+          overflow: auto;
           padding: 24px;
         }
         midnry-fps .mf-match {
@@ -353,18 +357,77 @@
           display: none;
         }
       }
+      midnry-fps .mf-network {
+        margin-top: 14px;
+        border-top: 1px solid #fff3;
+        padding-top: 12px;
+        font-size: 12px;
+      }
+      midnry-fps .mf-network summary {
+        cursor: pointer;
+        min-height: 36px;
+        font-weight: 800;
+        color: #71ebd5;
+      }
+      midnry-fps .mf-netrow {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 8px 0;
+      }
+      midnry-fps .mf-netrow button,
+      midnry-fps .mf-teamselect {
+        min-height: 40px;
+        border: 2px solid #070b0e;
+        background: #263b44;
+        color: #fff4dc;
+        padding: 8px;
+        font: inherit;
+      }
+      midnry-fps .mf-codeinput {
+        width: 100px;
+        min-height: 40px;
+        border: 2px solid #070b0e;
+        background: #fff4dc;
+        color: #141a20;
+        padding: 8px;
+        text-transform: uppercase;
+        font: inherit;
+      }
+      midnry-fps .mf-roomcode {
+        font-size: 23px;
+        color: #ffc455;
+        letter-spacing: 4px;
+      }
+      midnry-fps .mf-roster {
+        list-style: none;
+        padding: 0;
+        max-height: 130px;
+        overflow: auto;
+        line-height: 1.8;
+      }
+      midnry-fps .mf-netstatus {
+        color: #ffc455;
+        font-size: 11px;
+        line-height: 1.5;
+        min-height: 18px;
+      }
+      midnry-fps .mf-panel button:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
     </style>
   </head>
   <!-- For inline integration copy the style, element and script. Set a height on the host. -->
   <body style="margin: 0; background: #101419">
     <midnry-fps style="height: 100dvh" aria-label="Outpost Zero first-person shooter"></midnry-fps>
-    <script>
+    <script type="module">
+      import { Arena, LEVEL, clamp } from "./outpost-sim.js";
       (() => {
         "use strict";
         // A custom element keeps state private and supports multiple independent instances.
         if (customElements.get("midnry-fps")) return;
         const TAU = Math.PI * 2;
-        const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
         const angleDiff = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
         class MidnryFPS extends HTMLElement {
@@ -374,10 +437,10 @@
         <canvas aria-label="Game viewport"></canvas>
         <div class="mf-top"><div class="mf-brand">MIDNRY<small>OUTPOST ZERO / FIELD OPS</small></div><div class="mf-topright"><span class="mf-tag">RAYCAST / COMIC EDITION</span><button class="mf-pause" aria-label="Pause game">II</button></div></div>
         <div class="mf-objective">TRAINING CONTRACT<b class="mf-mission">Eliminate the sentry drones</b></div>
-        <div class="mf-match" hidden><b class="mf-cores">CHARGE CORES 0</b><div class="mf-zone"></div></div><div class="mf-cross"></div><div class="mf-toast" role="status" aria-live="polite"></div>
+        <div class="mf-match" hidden><b class="mf-cores">CHARGE CORES 0</b><div class="mf-teamstat"></div><div class="mf-zone"></div></div><div class="mf-cross"></div><div class="mf-toast" role="status" aria-live="polite"></div>
         <div class="mf-bottom"><div class="mf-stat">VITALS<strong class="mf-hp">100</strong><div class="mf-health"><i></i></div></div><div class="mf-stat mf-ammo">VX–7 / AUTO CARBINE<strong class="mf-rounds">24 <span>/ ∞</span></strong></div></div>
         <div class="mf-touch"><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
-        <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">A sun-scorched outpost. Six rogue sentries. One very loud solution. Drop into a comic-book combat sandbox.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="training" aria-pressed="true">FIELD OPS</button><button class="mf-mode" data-mode="signal" aria-pressed="false">LAST SIGNAL · SOLO</button></div><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Click or Space · fire<br>R · reload &nbsp; / &nbsp; Shift · sprint &nbsp; / &nbsp; Esc or P · pause<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
+        <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">A sun-scorched outpost. Six rogue sentries. One very loud solution. Drop into a comic-book combat sandbox.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="training" aria-pressed="true">FIELD OPS</button><button class="mf-mode" data-mode="signal" aria-pressed="false">LAST SIGNAL · SOLO</button><button class="mf-mode" data-mode="duo" aria-pressed="false">PAIR OPS · DUO</button></div><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Click or Space · fire<br>R · reload &nbsp; / &nbsp; Shift · sprint &nbsp; / &nbsp; Esc or P · pause<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
       </div>`;
             this.engine = new Game(this);
           }
@@ -386,26 +449,6 @@
             this.engine = null;
           }
         }
-
-        // Editable arena: 0 = floor, 1 = sandstone, 2 = teal steel, 3 = hazard wall.
-        const LEVEL = [
-          "1111111111111111",
-          "1000000000000001",
-          "1000000000000001",
-          "1000220000110001",
-          "1000220000110001",
-          "1000000000000001",
-          "1000000000000001",
-          "1000000330000001",
-          "1000000330000001",
-          "1000000000000001",
-          "1001100000220001",
-          "1001100000220001",
-          "1000000000000001",
-          "1000000000000001",
-          "1000000000000001",
-          "1111111111111111",
-        ].map((row) => [...row].map(Number));
 
         class Game {
           constructor(root) {
@@ -426,6 +469,7 @@
             this.mode = "training";
             this.reset();
             this.bindInputs();
+            this.bindOnline();
             this.resizeObserver = new ResizeObserver(() => this.resize());
             this.resizeObserver.observe(this.shell);
             this.resize();
@@ -434,191 +478,421 @@
           }
           // Last Signal uses the same arena, with a clear center for the final zone.
           reset() {
-            this.time = 0;
+            this.pendingShot = 0;
+            this.pendingReload = false;
+            this.lastNotice = 0;
+            this.arena = new Arena({ mode: this.mode });
+            this.selfId = "player";
             this.state = "fresh";
             this.running = false;
             this.viewPitch = 0;
-            this.level = LEVEL.map((row) => [...row]);
-            if (this.mode === "signal")
-              for (let y = 7; y <= 8; y++) for (let x = 7; x <= 8; x++) this.level[y][x] = 0;
-            this.player = {
-              id: "player",
-              x: 3.5,
-              y: 13.5,
-              a: -0.18,
-              hp: 100,
-              maxHp: 100,
-              damage: 40,
-              cores: 0,
-              exposure: 0,
-            };
-            this.ammo = 24;
-            this.kills = 0;
-            this.shotAt = -10;
-            this.reloadUntil = 0;
-            this.hurtAt = -10;
             this.step = 0;
             this.keys.clear();
             this.firing = false;
             this.touch = { x: 0, y: 0 };
             this.look = null;
-            this.zone = { half: 7, delay: 12, duration: 150, minHalf: 0.6 };
-            this.crates = [];
-            this.cores = [];
-            const spawnPoints = [
-              [2.5, 2.5],
-              [8.5, 2.5],
-              [13.5, 2.5],
-              [13.5, 8.5],
-              [13.5, 13.5],
-              [8.5, 13.5],
-              [2.5, 13.5],
-              [2.5, 8.5],
-            ];
-            // Shuffle spawn slots rather than allowing overlapping random spawns.
-            for (let i = spawnPoints.length - 1; i > 0; i--) {
-              const j = Math.floor(Math.random() * (i + 1));
-              [spawnPoints[i], spawnPoints[j]] = [spawnPoints[j], spawnPoints[i]];
-            }
-            const spots =
-              this.mode === "signal"
-                ? spawnPoints.slice(1)
-                : [
-                    [11.5, 12.5],
-                    [7.5, 11.5],
-                    [12.5, 7.5],
-                    [5.5, 5.5],
-                    [9.5, 2.5],
-                    [2.5, 2.5],
-                  ];
-            this.enemies = spots.map(([x, y], i) => ({
-              id: "bot" + i,
-              x,
-              y,
-              hp: this.mode === "signal" ? 100 : 120,
-              maxHp: this.mode === "signal" ? 100 : 120,
-              damage: 16,
-              cores: 0,
-              hit: -10,
-              attack: 1 + i * 0.2,
-              phase: i * 1.3,
-              exposure: 0,
-              nextPath: 0,
-              path: [],
-            }));
-            if (this.mode === "signal") {
-              [this.player.x, this.player.y] = spawnPoints[0];
-              this.player.a = Math.atan2(8 - this.player.y, 8 - this.player.x);
-              this.crates = [
-                [4.5, 2.5],
-                [11.5, 2.5],
-                [5.5, 5.5],
-                [10.5, 5.5],
-                [2.5, 6.5],
-                [13.5, 6.5],
-                [4.5, 9.5],
-                [11.5, 9.5],
-                [5.5, 12.5],
-                [10.5, 12.5],
-                [7.5, 6.5],
-                [8.5, 9.5],
-              ].map(([x, y], i) => ({ id: "crate" + i, x, y, hp: 80, maxHp: 80, hit: -10 }));
-            }
             this.toastUntil = 0;
             this.$(".mf-toast").textContent = "";
+            this.$(".mf-start").disabled = false;
             this.$(".mf-start").textContent = "DEPLOY →";
             this.$(".mf-copy").textContent =
-              this.mode === "signal"
-                ? "Eight combatants. One survivor. Break Supply Crates for Charge Cores: +25 max health and +8 weapon damage per core. Red Haze closes in after 12 seconds. Stay inside the safe zone."
-                : "A sun-scorched outpost. Six rogue sentries. One very loud solution. Drop into a comic-book combat sandbox.";
+              this.mode === "duo"
+                ? "Pair Ops: four teams of two. Your partner is marked in mint. No friendly fire. You each have two 8-second redeployments while your partner survives. Collect Charge Cores and escape Red Haze."
+                : this.mode === "signal"
+                  ? "Eight combatants. One survivor. Break Supply Crates for Charge Cores: +25 max health and +8 weapon damage. Red Haze closes after 12 seconds."
+                  : "Six rogue sentries. Take cover, reload and secure the outpost.";
             this.updateHUD();
           }
-          combatants() {
-            return [this.player, ...this.enemies];
+          get player() {
+            return (
+              this.arena?.entities.find((e) => e.id === this.selfId) || this.arena?.entities[0]
+            );
           }
-          outsideSafe(e) {
-            return Math.abs(e.x - 8) > this.zone.half || Math.abs(e.y - 8) > this.zone.half;
+          set player(value) {
+            const i = this.arena.entities.findIndex((e) => e.id === this.selfId);
+            this.arena.entities[i] = value;
           }
-          updateZone() {
-            this.zone.half =
-              7 -
-              (7 - this.zone.minHalf) *
-                clamp((this.time - this.zone.delay) / this.zone.duration, 0, 1);
+          get enemies() {
+            return this.arena.entities.filter((e) => e.id !== this.selfId);
           }
-          // All damage goes through one path: crates, bots, player and Red Haze.
-          damage(target, amount, source = null) {
-            if (target.hp <= 0) return;
-            target.hp = Math.max(0, target.hp - amount);
-            target.hit = this.time;
-            if (target === this.player) this.hurtAt = this.time;
-            if (target.hp > 0) return;
-            if (target.id.startsWith("crate")) {
-              this.cores.push({ x: target.x, y: target.y });
-              if (source === this.player) this.message("SUPPLY CRATE OPEN / COLLECT THE CORE");
-            } else if (target !== this.player) {
-              if (source === this.player) {
-                this.kills++;
-                this.message(this.mode === "signal" ? "RIVAL ELIMINATED" : "SENTRY DOWN");
-              }
-              if (this.mode === "signal")
-                for (let i = 0; i < target.cores; i++)
-                  this.cores.push({
-                    x: target.x + ((i % 3) - 1) * 0.12,
-                    y: target.y + Math.floor(i / 3) * 0.08,
-                  });
-            }
+          set enemies(value) {
+            this.arena.entities = [this.player, ...value];
           }
-          collectCores(entity) {
-            if (entity.hp <= 0) return;
-            for (let i = this.cores.length - 1; i >= 0; i--) {
-              const core = this.cores[i];
-              if (
-                Math.hypot(core.x - entity.x, core.y - entity.y) < 0.65 &&
-                this.visible(entity, core)
-              ) {
-                this.cores.splice(i, 1);
-                entity.cores++;
-                entity.maxHp += 25;
-                entity.hp = Math.min(entity.maxHp, entity.hp + 25);
-                entity.damage += 8;
-                if (entity === this.player) this.message("+1 CHARGE CORE / HEALTH +25 · DAMAGE +8");
-              }
-            }
+          get level() {
+            return this.arena.level;
           }
-          applyHaze(entity, dt) {
-            if (entity.hp <= 0) return;
-            if (this.time > this.zone.delay && this.outsideSafe(entity)) {
-              entity.exposure += dt;
-              const rate = 5 + (this.time - this.zone.delay) * 0.08 + entity.exposure * 0.6;
-              this.damage(entity, rate * dt);
-            } else entity.exposure = 0;
+          get zone() {
+            return this.arena.zone;
+          }
+          get crates() {
+            return this.arena.crates;
+          }
+          set crates(value) {
+            this.arena.crates = value;
+          }
+          get cores() {
+            return this.arena.cores;
+          }
+          set cores(value) {
+            this.arena.cores = value;
+          }
+          get time() {
+            return this.arena?.time || 0;
+          }
+          set time(value) {
+            if (this.arena) this.arena.time = value;
+          }
+          get ammo() {
+            return this.player?.ammo || 0;
+          }
+          set ammo(value) {
+            this.player.ammo = value;
+          }
+          get kills() {
+            return this.player?.kills || 0;
+          }
+          get shotAt() {
+            return this.player?.shotAt ?? -10;
+          }
+          get reloadUntil() {
+            return this.player?.reloadUntil || 0;
+          }
+          get hurtAt() {
+            return this.player?.hit ?? -10;
+          }
+          camera() {
+            if (this.player.hp > 0) return this.player;
+            return (
+              this.enemies.find((e) => e.team === this.player.team && e.hp > 0) ||
+              this.enemies.find((e) => e.hp > 0) ||
+              this.player
+            );
+          }
+          controls() {
+            return {
+              forward:
+                Number(this.keys.has("w") || this.keys.has("arrowup")) -
+                Number(this.keys.has("s") || this.keys.has("arrowdown")) -
+                this.touch.y,
+              strafe: Number(this.keys.has("d")) - Number(this.keys.has("a")) + this.touch.x,
+              aim: this.player.a,
+              pitch: this.viewPitch / this.projection,
+              sprint: this.keys.has("shift"),
+              fire: this.firing || this.keys.has(" ") || this.pendingShot > 0,
+              reload: this.pendingReload,
+            };
+          }
+          flushEvents() {
+            for (const e of this.arena.events) if (e.id === this.selfId) this.message(e.text);
+            this.arena.events = [];
+          }
+          combatants(...args) {
+            const result = this.arena.combatants(...args);
+            this.flushEvents();
+            return result;
+          }
+          outsideSafe(...args) {
+            const result = this.arena.outsideSafe(...args);
+            this.flushEvents();
+            return result;
+          }
+          updateZone(...args) {
+            const result = this.arena.updateZone(...args);
+            this.flushEvents();
+            return result;
+          }
+          damage(...args) {
+            const result = this.arena.damage(...args);
+            this.flushEvents();
+            return result;
+          }
+          collectCores(...args) {
+            const result = this.arena.collectCores(...args);
+            this.flushEvents();
+            return result;
+          }
+          applyHaze(...args) {
+            const result = this.arena.applyHaze(...args);
+            this.flushEvents();
+            return result;
           }
           checkResult() {
             if (this.state === "ended") return;
-            if (this.player.hp <= 0) this.endMatch(false);
-            else if (this.enemies.every((e) => e.hp <= 0)) this.endMatch(true);
+            if (this.online) {
+              if (this.arena.state === "ended")
+                this.endMatch(this.arena.winner === this.player.team);
+              return;
+            }
+            this.arena.checkResult();
+            if (this.arena.state === "ended") this.endMatch(this.arena.winner === this.player.team);
+            else if (this.player.hp <= 0 && !this.arena.teamAlive(this.player.team))
+              this.endMatch(false);
           }
           endMatch(won) {
             this.state = "ended";
             this.pause();
-            const title =
-              this.mode === "signal"
-                ? won
-                  ? "LAST SIGNAL: YOURS"
-                  : "SIGNAL LOST"
-                : won
+            this.message(
+              won
+                ? this.mode === "training"
                   ? "CONTRACT COMPLETE"
-                  : "SIGNAL LOST";
-            this.message(title, 999);
-            const alive = this.combatants().filter((e) => e.hp > 0).length;
-            this.$(".mf-copy").textContent =
-              this.mode === "signal"
-                ? won
-                  ? `You are the last survivor. ${this.player.cores} Charge Cores collected, ${this.kills} rivals eliminated. Deploy again for a fresh match.`
-                  : `Eliminated with ${alive} survivor${alive === 1 ? "" : "s"} remaining. Break crates early and follow the safe zone on your map. Deploy to try again.`
-                : won
-                  ? "All six sentries neutralized. Outpost secured. Deploy again to replay."
-                  : "The sentries got the upper hand. Keep moving, use cover, and reload before your next push.";
+                  : this.mode === "duo"
+                    ? "PAIR OPS: TEAM SECURED"
+                    : "LAST SIGNAL: YOURS"
+                : "SIGNAL LOST",
+              999,
+            );
+            this.$(".mf-copy").textContent = won
+              ? `Victory. ${this.kills} eliminations. ${this.online ? "The host can return the room to the lobby for another round." : "Deploy again for a fresh match."}`
+              : `Your ${this.mode === "duo" ? "team was" : "signal was"} eliminated. ${this.online ? "Watch the remaining players or wait for the next round." : "Deploy to try again."}`;
+          }
+          bindOnline() {
+            this.on(this.$(".mf-create"), "click", () => this.connectOnline("create"));
+            this.on(this.$(".mf-join"), "click", () => this.connectOnline("join"));
+            this.on(this.$(".mf-codeinput"), "keydown", (e) => {
+              if (e.key === "Enter") this.connectOnline("join");
+            });
+            this.on(this.$(".mf-leave"), "click", () => this.leaveOnline());
+            this.on(this.$(".mf-copyinvite"), "click", async () => {
+              if (!this.online) return;
+              const url = new URL("/games/outpost-zero", location.origin);
+              url.searchParams.set("room", this.online.code);
+              try {
+                await navigator.clipboard.writeText(url.href);
+                this.$(".mf-netstatus").textContent = "Invite copied.";
+              } catch {
+                this.$(".mf-netstatus").textContent = "Share this room code: " + this.online.code;
+              }
+            });
+            this.on(this.$(".mf-teamselect"), "change", (e) =>
+              this.onlineAction("team", { team: Number(e.target.value) }),
+            );
+            const code = new URLSearchParams(location.search).get("room");
+            if (code && /^[A-Z2-9]{6}$/i.test(code)) {
+              this.$(".mf-codeinput").value = code.toUpperCase();
+              this.$(".mf-network").open = true;
+            }
+          }
+          async postRoom(body, signal) {
+            const response = await fetch("/api/games/outpost", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify(body),
+              signal,
+              cache: "no-store",
+            });
+            let data;
+            try {
+              data = await response.json();
+            } catch {
+              throw Error("Room service unavailable. Try again shortly.");
+            }
+            if (!response.ok) throw Error(data.error || "Could not reach the room.");
+            return data;
+          }
+          async connectOnline(op) {
+            if (this.connecting || this.online) return;
+            this.connecting = true;
+            this.$(".mf-netstatus").textContent = "Connecting…";
+            for (const button of this.root.querySelectorAll(".mf-connectrow button"))
+              button.disabled = true;
+            try {
+              const mode = this.mode === "training" ? "signal" : this.mode;
+              const controller = new AbortController();
+              this.connectionAbort = controller;
+              const timer = setTimeout(() => controller.abort(), 10000);
+              let data;
+              try {
+                data = await this.postRoom(
+                  { op, mode, code: this.$(".mf-codeinput").value },
+                  controller.signal,
+                );
+              } finally {
+                clearTimeout(timer);
+              }
+              if (this.abort.signal.aborted) return;
+              this.online = { ...data, seq: 0, errors: 0 };
+              this.selfId = data.id;
+              this.pendingShot = 0;
+              this.pendingReload = false;
+              this.netQueue = Promise.resolve();
+              this.applyRoom(data);
+              this.scheduleRoomPoll(100);
+            } catch (error) {
+              if (!this.abort.signal.aborted)
+                this.$(".mf-netstatus").textContent =
+                  error.name === "AbortError" ? "Connection timed out. Try again." : error.message;
+            } finally {
+              this.connecting = false;
+              for (const button of this.root.querySelectorAll(".mf-connectrow button"))
+                button.disabled = false;
+            }
+          }
+          applyRoom(data) {
+            const net = this.online;
+            if (!net) return;
+            const starting = net.phase !== "playing" && data.phase === "playing";
+            const previous = this.arena;
+            Object.assign(net, data);
+            this.mode = data.mode;
+            for (const button of this.root.querySelectorAll(".mf-mode")) {
+              button.disabled = true;
+              button.setAttribute("aria-pressed", String(button.dataset.mode === this.mode));
+            }
+            this.$(".mf-connectrow").hidden = true;
+            this.$(".mf-roompanel").hidden = false;
+            this.$(".mf-network").open = true;
+            this.$(".mf-roomcode").textContent = data.code;
+            this.$(".mf-teamlabel").hidden = this.mode !== "duo" || data.phase !== "lobby";
+            const self = data.members.find((m) => m.id === this.selfId);
+            if (self) this.$(".mf-teamselect").value = String(self.team);
+            const roster = this.$(".mf-roster");
+            roster.replaceChildren();
+            for (const m of data.members) {
+              const li = document.createElement("li");
+              li.textContent = `${m.name}${m.id === this.selfId ? " (you)" : ""}${m.id === data.host ? " · host" : ""}${this.mode === "duo" ? " · Pair " + (m.team + 1) : ""}${m.connected ? "" : " · reconnecting"}`;
+              roster.append(li);
+            }
+            this.$(".mf-netstatus").textContent =
+              data.phase === "lobby"
+                ? `${data.members.length}/8 friends connected. ${data.host === this.selfId ? "Start when ready; bots fill empty seats." : "Waiting for the host to start."}`
+                : "Room " +
+                  data.code +
+                  " / " +
+                  (data.phase === "ended"
+                    ? "Match finished."
+                    : "Online — menus do not pause play.");
+            this.$(".mf-tag").textContent = "ONLINE / " + data.code;
+            if (data.phase === "playing")
+              this.$(".mf-copy").textContent =
+                this.mode === "duo"
+                  ? "Stay with your partner. Two redeployments each, only while a teammate survives. Online play continues with this menu open."
+                  : "Keep the last signal. Collect Charge Cores and stay inside the safe zone. Online play continues with this menu open.";
+            if (data.arena) {
+              const next = Arena.restore(data.arena);
+              if (!starting)
+                for (const e of next.entities) {
+                  const old = previous.entities.find((v) => v.id === e.id);
+                  if (old && old.hp > 0 && e.hp > 0 && Math.hypot(e.x - old.x, e.y - old.y) < 3) {
+                    e.nx = e.x;
+                    e.ny = e.y;
+                    e.x = old.x;
+                    e.y = old.y;
+                    if (e.id === this.selfId) e.a = old.a;
+                  }
+                }
+              this.arena = next;
+              if (starting) {
+                this.state = "playing";
+                this.running = true;
+                this.viewPitch = 0;
+                this.$(".mf-modal").hidden = true;
+                this.shell.focus({ preventScroll: true });
+              }
+              if (this.player.noticeId && this.player.noticeId !== this.lastNotice) {
+                this.lastNotice = this.player.noticeId;
+                this.message(this.player.notice);
+              }
+              this.checkResult();
+              this.updateHUD();
+            } else {
+              this.state = "fresh";
+              this.running = false;
+              this.$(".mf-modal").hidden = false;
+              this.$(".mf-copy").textContent =
+                this.mode === "duo"
+                  ? "Pair Ops online: choose your pair below. Each team has two seats; bots fill empty seats. Two 8-second redeployments per player, only while their partner is alive."
+                  : "Last Signal online: everyone competes to be the last survivor. Bots fill the room to eight combatants when the host starts.";
+            }
+            this.updateMenu();
+          }
+          onlineAction(op, extra = {}) {
+            const net = this.online;
+            if (!net) return Promise.resolve();
+            this.netQueue = this.netQueue
+              .catch(() => {})
+              .then(async () => {
+                if (this.online !== net) return;
+                const controller = new AbortController();
+                this.roomRequestAbort = controller;
+                const timeout = setTimeout(() => controller.abort(), 8000);
+                try {
+                  const data = await this.postRoom(
+                    { op, code: net.code, id: net.id, token: net.token, ...extra },
+                    controller.signal,
+                  );
+                  if (this.online === net) {
+                    net.errors = 0;
+                    this.applyRoom(data);
+                  }
+                  return data;
+                } catch (error) {
+                  if (this.online === net) {
+                    net.errors++;
+                    this.$(".mf-netstatus").textContent =
+                      error.name === "AbortError" ? "Connection slow — retrying…" : error.message;
+                  }
+                } finally {
+                  clearTimeout(timeout);
+                }
+              });
+            return this.netQueue;
+          }
+          scheduleRoomPoll(delay) {
+            clearTimeout(this.roomTimer);
+            this.roomTimer = setTimeout(async () => {
+              const net = this.online;
+              if (!net) return;
+              const began = performance.now(),
+                shot = this.pendingShot || 0,
+                reload = this.pendingReload;
+              const input =
+                this.running && this.player.hp > 0
+                  ? this.controls()
+                  : {
+                      forward: 0,
+                      strafe: 0,
+                      aim: this.player.a,
+                      pitch: 0,
+                      fire: false,
+                      reload: false,
+                    };
+              await this.onlineAction("poll", { seq: ++net.seq, input });
+              if (this.online === net) {
+                if (!net.errors) {
+                  this.pendingShot = Math.max(0, (this.pendingShot || 0) - shot);
+                  if (reload) this.pendingReload = false;
+                }
+                this.scheduleRoomPoll(
+                  net.errors
+                    ? Math.min(2000, 300 * net.errors)
+                    : Math.max(35, 100 - (performance.now() - began)),
+                );
+              }
+            }, delay);
+          }
+          leaveOnline() {
+            clearTimeout(this.roomTimer);
+            this.connectionAbort?.abort();
+            this.roomRequestAbort?.abort();
+            const net = this.online;
+            this.online = null;
+            if (net)
+              void fetch("/api/games/outpost", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ op: "leave", code: net.code, id: net.id, token: net.token }),
+                keepalive: true,
+              }).catch(() => {});
+            if (!this.abort.signal.aborted) {
+              for (const button of this.root.querySelectorAll(".mf-mode")) button.disabled = false;
+              this.$(".mf-connectrow").hidden = false;
+              this.$(".mf-roompanel").hidden = true;
+              this.$(".mf-netstatus").textContent = "";
+              this.$(".mf-tag").textContent = "RAYCAST / COMIC EDITION";
+              this.reset();
+              this.pause();
+              this.$(".mf-start").textContent = "DEPLOY →";
+            }
           }
           on(target, event, handler, options = {}) {
             target.addEventListener(event, handler, { ...options, signal: this.abort.signal });
@@ -627,6 +901,10 @@
             this.on(this.$(".mf-start"), "click", () => this.start());
             for (const button of this.root.querySelectorAll(".mf-mode"))
               this.on(button, "click", () => {
+                if (this.online) {
+                  this.message("LEAVE THE ROOM TO CHANGE MODE");
+                  return;
+                }
                 this.mode = button.dataset.mode;
                 this.reset();
                 for (const other of this.root.querySelectorAll(".mf-mode"))
@@ -774,7 +1052,16 @@
             }
           }
           start() {
-            if (this.state === "ended") this.reset();
+            if (this.online) {
+              if (this.online.phase === "lobby") {
+                if (this.online.host === this.selfId) this.onlineAction("start");
+                return;
+              }
+              if (this.online.phase === "ended") {
+                if (this.online.host === this.selfId) this.onlineAction("restart");
+                return;
+              }
+            } else if (this.state === "ended") this.reset();
             this.state = "playing";
             this.running = true;
             this.$(".mf-modal").hidden = true;
@@ -785,14 +1072,37 @@
             this.running = false;
             this.keys.clear();
             this.firing = false;
+            this.pendingShot = 0;
+            this.pendingReload = false;
             this.touch = { x: 0, y: 0 };
             this.look = null;
             this.stickId = null;
             this.$(".mf-stick i").style.transform = "";
             this.$(".mf-modal").hidden = false;
+            this.updateMenu();
             this.$(".mf-start").focus({ preventScroll: true });
-            this.$(".mf-start").textContent = this.state === "ended" ? "REDEPLOY →" : "RESUME →";
             if (document.pointerLockElement === this.canvas) document.exitPointerLock();
+          }
+          updateMenu() {
+            const button = this.$(".mf-start"),
+              net = this.online;
+            button.disabled =
+              !!net && (net.phase === "lobby" || net.phase === "ended") && net.host !== this.selfId;
+            button.textContent = net
+              ? net.phase === "lobby"
+                ? net.host === this.selfId
+                  ? "START MATCH →"
+                  : "WAITING FOR HOST"
+                : net.phase === "ended"
+                  ? net.host === this.selfId
+                    ? "NEW ROUND →"
+                    : "WAITING FOR HOST"
+                  : "RETURN TO MATCH →"
+              : this.state === "ended"
+                ? "REDEPLOY →"
+                : this.state === "fresh"
+                  ? "DEPLOY →"
+                  : "RESUME →";
           }
           resize() {
             // A bounded rendering resolution keeps raycasting inexpensive on phones.
@@ -806,307 +1116,140 @@
             this.ctx.imageSmoothingEnabled = false;
             this.viewPitch = clamp(this.viewPitch, -this.h * 0.18, this.h * 0.18);
           }
-          wall(x, y) {
-            return this.level[Math.floor(y)]?.[Math.floor(x)] ?? 1;
+          wall(...args) {
+            const result = this.arena.wall(...args);
+            this.flushEvents();
+            return result;
           }
-          // DDA visits grid crossings, so distant walls cannot be skipped by a coarse step.
-          cast(x, y, dx, dy, max = 32) {
-            let mx = Math.floor(x),
-              my = Math.floor(y),
-              side = 0;
-            const ddx = Math.abs(1 / (dx || 1e-12)),
-              ddy = Math.abs(1 / (dy || 1e-12));
-            const sx = dx < 0 ? -1 : 1,
-              sy = dy < 0 ? -1 : 1;
-            let tx = (dx < 0 ? x - mx : mx + 1 - x) * ddx,
-              ty = (dy < 0 ? y - my : my + 1 - y) * ddy,
-              distance = 0;
-            for (let i = 0; i < 128; i++) {
-              if (tx < ty) {
-                mx += sx;
-                distance = tx;
-                tx += ddx;
-                side = 0;
-              } else {
-                my += sy;
-                distance = ty;
-                ty += ddy;
-                side = 1;
-              }
-              const type = this.level[my]?.[mx] ?? 1;
-              if (type || distance > max) {
-                const u = side ? x + dx * distance : y + dy * distance;
-                return { distance, type, side, u: u - Math.floor(u), mx, my };
-              }
-            }
-            return { distance: max, type: 1, side: 0, u: 0, mx, my };
+          cast(...args) {
+            const result = this.arena.cast(...args);
+            this.flushEvents();
+            return result;
           }
-          canMove(x, y, r = 0.2) {
-            return (
-              !this.wall(x - r, y - r) &&
-              !this.wall(x + r, y - r) &&
-              !this.wall(x - r, y + r) &&
-              !this.wall(x + r, y + r) &&
-              !this.crates.some(
-                (box) =>
-                  box.hp > 0 && Math.abs(x - box.x) < r + 0.32 && Math.abs(y - box.y) < r + 0.32,
-              )
-            );
+          canMove(...args) {
+            const result = this.arena.canMove(...args);
+            this.flushEvents();
+            return result;
           }
-          // Circle intersections let crates block shots, including shots aimed at bots behind them.
-          rayTarget(origin, dx, dy, targets) {
-            let nearest = this.cast(origin.x, origin.y, dx, dy).distance,
-              target = null;
-            for (const entity of targets) {
-              if (entity.hp <= 0 || entity === origin) continue;
-              const ex = entity.x - origin.x,
-                ey = entity.y - origin.y,
-                along = ex * dx + ey * dy,
-                across = Math.abs(ex * dy - ey * dx),
-                radius = entity.id.startsWith("crate") ? 0.38 : 0.3;
-              if (along <= 0 || across >= radius) continue;
-              const entry = along - Math.sqrt(radius * radius - across * across);
-              if (entry < nearest) {
-                target = entity;
-                nearest = entry;
-              }
-            }
-            return target;
+          rayTarget(...args) {
+            const result = this.arena.rayTarget(...args);
+            this.flushEvents();
+            return result;
           }
-          visible(a, b) {
-            const dx = b.x - a.x,
-              dy = b.y - a.y,
-              d = Math.hypot(dx, dy);
-            if (d < 0.01) return true;
-            if (this.cast(a.x, a.y, dx / d, dy / d).distance < d - 0.2) return false;
-            const hit = this.rayTarget(
-              a,
-              dx / d,
-              dy / d,
-              this.crates.filter((c) => c !== b),
-            );
-            return !hit || Math.hypot(hit.x - a.x, hit.y - a.y) > d - 0.4;
+          visible(...args) {
+            const result = this.arena.visible(...args);
+            this.flushEvents();
+            return result;
           }
-          move(entity, dx, dy) {
-            if (this.canMove(entity.x + dx, entity.y)) entity.x += dx;
-            if (this.canMove(entity.x, entity.y + dy)) entity.y += dy;
+          move(...args) {
+            const result = this.arena.move(...args);
+            this.flushEvents();
+            return result;
           }
           message(text, duration = 1.5) {
             this.$(".mf-toast").textContent = text;
             this.toastUntil = this.time + duration;
           }
           reload() {
-            if (!this.running || this.reloadUntil || this.ammo === 24) return;
-            this.reloadUntil = this.time + 1.4;
-            this.message("RELOADING", 1.4);
+            if (!this.running) return;
+            if (this.online) {
+              this.pendingReload = true;
+              return;
+            }
+            this.arena.reload(this.player);
+            this.flushEvents();
           }
           shoot() {
-            if (
-              !this.running ||
-              this.player.hp <= 0 ||
-              this.reloadUntil ||
-              this.time - this.shotAt < 0.14
-            )
-              return;
-            if (this.ammo <= 0) {
-              this.reload();
+            if (!this.running || this.player.hp <= 0) return;
+            if (this.online) {
+              this.pendingShot = (this.pendingShot || 0) + 1;
               return;
             }
-            this.ammo--;
-            this.shotAt = this.time;
-            const p = this.player,
-              target = this.rayTarget(p, Math.cos(p.a), Math.sin(p.a), [
-                ...this.enemies,
-                ...this.crates,
-              ]);
-            if (target) {
-              const d = Math.hypot(target.x - p.x, target.y - p.y),
-                aimHeight = Math.abs((this.viewPitch * d) / this.projection);
-              if (aimHeight < (target.id.startsWith("crate") ? 0.32 : 0.48))
-                this.damage(target, p.damage, p);
-            }
+            this.player.pitch = this.viewPitch / this.projection;
+            this.arena.shoot(this.player);
+            this.flushEvents();
             this.checkResult();
             this.updateHUD();
           }
           updateHUD() {
+            if (!this.player) return;
             const p = this.player,
-              signal = this.mode === "signal";
+              survival = this.mode !== "training",
+              duo = this.mode === "duo";
+            this.$(".mf-brand small").textContent =
+              "OUTPOST ZERO / " + (duo ? "PAIR OPS" : survival ? "LAST SIGNAL" : "FIELD OPS");
             this.$(".mf-hp").textContent = Math.ceil(p.hp);
             this.$(".mf-health i").style.width = (p.hp / p.maxHp) * 100 + "%";
             this.$(".mf-rounds").innerHTML = `${this.ammo} <span>/ ∞</span>`;
-            this.$(".mf-objective").firstChild.textContent = signal
-              ? "LAST SIGNAL / SOLO"
-              : "TRAINING CONTRACT";
-            this.$(".mf-mission").textContent = signal
-              ? `Survivors: ${this.combatants().filter((e) => e.hp > 0).length} / 8`
-              : `Sentries neutralized: ${this.enemies.filter((e) => e.hp <= 0).length} / ${this.enemies.length}`;
-            this.$(".mf-match").hidden = !signal;
+            this.$(".mf-objective").firstChild.textContent = duo
+              ? "PAIR OPS / TEAM " + (p.team + 1)
+              : survival
+                ? "LAST SIGNAL / SOLO"
+                : "TRAINING CONTRACT";
+            this.$(".mf-mission").textContent = duo
+              ? `Teams standing: ${
+                  new Set(
+                    this.combatants()
+                      .filter((e) => e.hp > 0)
+                      .map((e) => e.team),
+                  ).size
+                } / 4`
+              : survival
+                ? `Survivors: ${this.combatants().filter((e) => e.hp > 0).length} / 8`
+                : `Sentries neutralized: ${this.enemies.filter((e) => e.hp <= 0).length} / ${this.enemies.length}`;
+            this.$(".mf-match").hidden = !survival;
             this.$(".mf-cores").textContent =
-              `CHARGE CORES ${p.cores} / DMG ${p.damage} / MAX HP ${p.maxHp}`;
+              `CORES ${p.cores} / DMG ${p.damage} / MAX HP ${p.maxHp}`;
+            this.$(".mf-teamstat").textContent = duo
+              ? `REDEPLOYS LEFT ${p.respawns}${p.hp <= 0 ? (p.respawnAt ? " / IN " + Math.ceil(Math.max(0, p.respawnAt - this.time)) + "s" : " / SPECTATING") : ""}`
+              : p.hp <= 0
+                ? "SPECTATING / NO REDEPLOYS"
+                : "";
             this.$(".mf-zone").textContent =
               this.time < this.zone.delay
                 ? `RED HAZE IN ${Math.ceil(this.zone.delay - this.time)}s`
-                : this.outsideSafe(p)
-                  ? "RED HAZE / MOVE INTO THE SAFE ZONE"
+                : this.outsideSafe(p) && p.hp > 0
+                  ? "RED HAZE / GET TO SAFETY"
                   : `SAFE ZONE CLOSING / ${Math.ceil(Math.max(0, this.zone.delay + this.zone.duration - this.time))}s`;
+            this.$(".mf-cross").hidden = p.hp <= 0;
           }
-          // Grid BFS lets rivals route around cover. Paths are refreshed, not recalculated every frame.
-          pathTo(entity, target) {
-            const sx = Math.floor(entity.x),
-              sy = Math.floor(entity.y),
-              tx = Math.floor(target.x),
-              ty = Math.floor(target.y);
-            const key = (x, y) => y * 16 + x,
-              queue = [[sx, sy]],
-              parents = new Map([[key(sx, sy), null]]);
-            let end = null;
-            for (let i = 0; i < queue.length; i++) {
-              const [x, y] = queue[i];
-              if (x === tx && y === ty) {
-                end = [x, y];
-                break;
-              }
-              for (const [dx, dy] of [
-                [1, 0],
-                [-1, 0],
-                [0, 1],
-                [0, -1],
-              ]) {
-                const nx = x + dx,
-                  ny = y + dy,
-                  k = key(nx, ny);
-                if (
-                  nx < 1 ||
-                  ny < 1 ||
-                  nx > 14 ||
-                  ny > 14 ||
-                  parents.has(k) ||
-                  this.wall(nx + 0.5, ny + 0.5)
-                )
-                  continue;
-                if (
-                  this.crates.some(
-                    (c) => c.hp > 0 && Math.floor(c.x) === nx && Math.floor(c.y) === ny,
-                  ) &&
-                  !(nx === tx && ny === ty)
-                )
-                  continue;
-                parents.set(k, [x, y]);
-                queue.push([nx, ny]);
-              }
-            }
-            const path = [];
-            while (end && !(end[0] === sx && end[1] === sy)) {
-              path.unshift({ x: end[0] + 0.5, y: end[1] + 0.5 });
-              end = parents.get(key(...end));
-            }
-            return path;
+          pathTo(...args) {
+            const result = this.arena.pathTo(...args);
+            this.flushEvents();
+            return result;
           }
-          updateRival(bot, dt) {
-            if (bot.hp <= 0) return;
-            const rivals = this.combatants().filter((e) => e !== bot && e.hp > 0);
-            const dist = (e) => Math.hypot(e.x - bot.x, e.y - bot.y);
-            const nearest = (list) => [...list].sort((a, b) => dist(a) - dist(b))[0];
-            const foe = nearest(rivals.filter((e) => dist(e) < 7 && this.visible(bot, e)));
-            const box = nearest(this.crates.filter((c) => c.hp > 0 && !this.outsideSafe(c)));
-            const core = nearest(this.cores.filter((c) => !this.outsideSafe(c)));
-            let goal;
-            if (this.outsideSafe(bot)) goal = { x: 8, y: 8 };
-            else if (core && dist(core) < 4) goal = core;
-            else if (foe) goal = foe;
-            else if (box) goal = box;
-            else goal = nearest(rivals) || { x: 8, y: 8 };
-            if (this.time >= bot.nextPath) {
-              bot.path = this.pathTo(bot, goal);
-              bot.nextPath = this.time + 0.65;
-            }
-            const stop = goal === foe ? 2.1 : goal === box ? 1.2 : 0.25;
-            if (dist(goal) > stop) {
-              let point = bot.path[0];
-              if (point && dist(point) < 0.18) {
-                bot.path.shift();
-                point = bot.path[0];
-              }
-              if (!point && this.visible(bot, goal)) point = goal;
-              if (point) {
-                const dx = point.x - bot.x,
-                  dy = point.y - bot.y,
-                  d = Math.hypot(dx, dy);
-                if (d > 0.01) this.move(bot, (dx / d) * dt * 1.25, (dy / d) * dt * 1.25);
-              }
-            }
-            const target = foe || (box && dist(box) < 3 && this.visible(bot, box) ? box : null);
-            if (target && dist(target) < 6 && this.time >= bot.attack) {
-              bot.attack = this.time + 1.05;
-              // All bots compete with one another; they do not coordinate against the player.
-              const dx = target.x - bot.x,
-                dy = target.y - bot.y,
-                d = Math.hypot(dx, dy);
-              if (d > 0.01) {
-                const hit = this.rayTarget(bot, dx / d, dy / d, [...rivals, ...this.crates]);
-                if (hit) this.damage(hit, bot.damage, bot);
-              }
-            }
-            this.collectCores(bot);
+          updateRival(...args) {
+            const result = this.arena.updateRival(...args);
+            this.flushEvents();
+            return result;
           }
           update(dt) {
-            this.time += dt;
-            if (this.time > this.toastUntil) this.$(".mf-toast").textContent = "";
-            if (this.reloadUntil && this.time >= this.reloadUntil) {
-              this.ammo = 24;
-              this.reloadUntil = 0;
-            }
-            const p = this.player,
-              k = this.keys;
-            p.a += (Number(k.has("arrowright")) - Number(k.has("arrowleft"))) * dt * 2;
-            let forward =
-              Number(k.has("w") || k.has("arrowup")) -
-              Number(k.has("s") || k.has("arrowdown")) -
-              this.touch.y;
-            let strafe = Number(k.has("d")) - Number(k.has("a")) + this.touch.x;
-            const len = Math.max(1, Math.hypot(forward, strafe));
-            forward /= len;
-            strafe /= len;
-            const speed = k.has("shift") ? 4 : 2.6,
-              ca = Math.cos(p.a),
-              sa = Math.sin(p.a);
-            this.move(
-              p,
-              (ca * forward - sa * strafe) * speed * dt,
-              (sa * forward + ca * strafe) * speed * dt,
-            );
-            this.step += Math.hypot(forward, strafe) * dt * 9;
-            if (this.firing || k.has(" ")) this.shoot();
-            if (!this.running) return;
-            if (this.mode === "signal") {
-              this.updateZone();
-              this.collectCores(p);
-              for (const bot of this.enemies) this.updateRival(bot, dt);
-              for (const entity of this.combatants()) this.applyHaze(entity, dt);
-            } else {
-              for (const e of this.enemies) {
-                if (e.hp <= 0) continue;
-                const dx = p.x - e.x,
-                  dy = p.y - e.y,
-                  d = Math.hypot(dx, dy);
-                if (d > 0 && d < 10 && this.visible(e, p)) {
-                  if (d > 1.25) this.move(e, (dx / d) * dt * 0.55, (dy / d) * dt * 0.55);
-                  if (d < 6 && this.time > e.attack) {
-                    e.attack = this.time + 1.6;
-                    this.damage(p, d < 2 ? 9 : 4, e);
-                  }
+            const turn =
+              (Number(this.keys.has("arrowright")) - Number(this.keys.has("arrowleft"))) * dt * 2;
+            if (this.running && this.player.hp > 0) this.player.a += turn;
+            if (this.online) {
+              for (const e of this.combatants())
+                if (Number.isFinite(e.nx)) {
+                  const t = 1 - Math.exp(-dt * 18);
+                  e.x += (e.nx - e.x) * t;
+                  e.y += (e.ny - e.y) * t;
                 }
-              }
+              // Match time follows server snapshots. Menus never pause the room.
+              this.updateHUD();
+              return;
             }
+            this.arena.advance(dt, { [this.selfId]: this.controls() });
+            this.pendingReload = false;
+            this.step += Math.hypot(this.controls().forward, this.controls().strafe) * dt * 9;
+            this.flushEvents();
             this.checkResult();
             this.updateHUD();
           }
-          // Procedural comic textures: flat color blocks, ink edges, cracks and hatch marks.
           drawWorld() {
             const c = this.ctx,
               w = this.w,
               h = this.h,
-              p = this.player,
+              p = this.camera(),
               horizon = h * 0.5 + this.viewPitch;
             c.fillStyle = "#e8aa62";
             c.fillRect(0, 0, w, horizon);
@@ -1139,7 +1282,7 @@
                   fx = p.x + (ca - sa * q) * d,
                   fy = p.y + (sa + ca * q) * d;
                 if (
-                  this.mode === "signal" &&
+                  this.mode !== "training" &&
                   this.time > this.zone.delay &&
                   this.outsideSafe({ x: fx, y: fy })
                 ) {
@@ -1207,7 +1350,7 @@
             }
           }
           // Render a billboard once, then copy visible strips against the wall depth buffer.
-          droneSprite() {
+          droneSprite(ally = false) {
             const sprite = document.createElement("canvas");
             sprite.width = 128;
             sprite.height = 160;
@@ -1271,7 +1414,7 @@
                 [44, 115],
                 [29, 94],
               ],
-              "#ef8b50",
+              ally ? "#50bdad" : "#ef8b50",
             );
             poly(
               [
@@ -1281,7 +1424,7 @@
                 [82, 119],
                 [64, 115],
               ],
-              "#b7503c",
+              ally ? "#28776f" : "#b7503c",
             );
             poly(
               [
@@ -1306,7 +1449,7 @@
             );
             c.fillStyle = "#192832";
             c.fillRect(34, 33, 56, 16);
-            c.fillStyle = "#ff4e42";
+            c.fillStyle = ally ? "#71ebd5" : "#ff4e42";
             c.fillRect(42, 36, 38, 7);
             c.fillStyle = "#ffe09a";
             c.fillRect(41, 69, 18, 7);
@@ -1372,9 +1515,10 @@
           }
           drawEnemies() {
             if (!this.sprite) this.sprite = this.droneSprite();
+            if (!this.allySprite) this.allySprite = this.droneSprite(true);
             if (!this.boxSprite) this.boxSprite = this.lootSprite(false);
             if (!this.coreSprite) this.coreSprite = this.lootSprite(true);
-            const p = this.player,
+            const p = this.camera(),
               c = this.ctx,
               ca = Math.cos(p.a),
               sa = Math.sin(p.a),
@@ -1382,7 +1526,14 @@
             const objects = [
               ...this.enemies
                 .filter((e) => e.hp > 0)
-                .map((e) => ({ e, sprite: this.sprite, size: 0.88 })),
+                .map((e) => ({
+                  e,
+                  sprite:
+                    this.mode === "duo" && e.team === this.player.team
+                      ? this.allySprite
+                      : this.sprite,
+                  size: 0.88,
+                })),
               ...this.crates
                 .filter((e) => e.hp > 0)
                 .map((e) => ({ e, sprite: this.boxSprite, size: 0.72 })),
@@ -1415,7 +1566,7 @@
               }
               const center = Math.round(sx + width / 2);
               if (
-                this.mode === "signal" &&
+                this.mode !== "training" &&
                 e.hp &&
                 center >= 0 &&
                 center < this.w &&
@@ -1423,8 +1574,26 @@
               ) {
                 c.fillStyle = "#101720";
                 c.fillRect(sx, sy - 7, width, 4);
-                c.fillStyle = e.id.startsWith("crate") ? "#ffc455" : "#ef795b";
+                c.fillStyle = e.id.startsWith("crate")
+                  ? "#ffc455"
+                  : this.mode === "duo" && e.team === this.player.team
+                    ? "#71ebd5"
+                    : "#ef795b";
                 c.fillRect(sx + 1, sy - 6, ((width - 2) * e.hp) / e.maxHp, 2);
+                if (
+                  !e.id.startsWith("crate") &&
+                  (!e.bot || (this.mode === "duo" && e.team === this.player.team))
+                ) {
+                  c.fillStyle =
+                    this.mode === "duo" && e.team === this.player.team ? "#71ebd5" : "#fff4dc";
+                  c.font = "bold 11px system-ui";
+                  c.fillText(
+                    (e.team === this.player.team && this.mode === "duo" ? "PARTNER / " : "") +
+                      e.name,
+                    sx,
+                    sy - 14,
+                  );
+                }
                 if (e.cores) {
                   c.fillStyle = "#71ebd5";
                   c.font = "bold 11px system-ui";
@@ -1434,9 +1603,9 @@
             }
           }
           drawHaze() {
-            if (this.mode !== "signal" || this.time <= this.zone.delay) return;
+            if (this.mode === "training" || this.time <= this.zone.delay) return;
             const c = this.ctx,
-              p = this.player,
+              p = this.camera(),
               h = this.zone.half,
               min = 8 - h,
               max = 8 + h;
@@ -1607,7 +1776,7 @@
                 c.fillRect(ox + x * s, oy + y * s, s - 1, s - 1);
               }),
             );
-            if (this.mode === "signal") {
+            if (this.mode !== "training") {
               if (this.time > this.zone.delay) {
                 const low = 8 - this.zone.half,
                   high = 8 + this.zone.half;
@@ -1637,7 +1806,8 @@
             }
             for (const e of this.enemies)
               if (e.hp > 0) {
-                c.fillStyle = "#fa6751";
+                c.fillStyle =
+                  this.mode === "duo" && e.team === this.player.team ? "#71ebd5" : "#fa6751";
                 c.fillRect(ox + e.x * s - 1.5, oy + e.y * s - 1.5, 3, 3);
               }
             const p = this.player;
@@ -1656,7 +1826,7 @@
             this.drawWorld();
             this.drawEnemies();
             this.drawHaze();
-            this.drawWeapon();
+            if (this.player.hp > 0) this.drawWeapon();
             this.drawMap();
             if (this.time - this.hurtAt < 0.35) {
               this.ctx.fillStyle = `rgba(220,45,35,${(0.35 - (this.time - this.hurtAt)) * 0.65})`;
@@ -1666,11 +1836,13 @@
           loop(now) {
             const dt = Math.min(0.04, (now - this.last) / 1000);
             this.last = now;
-            if (this.running) this.update(dt);
+            if (this.running || this.online) this.update(dt);
+            if (this.time > this.toastUntil) this.$(".mf-toast").textContent = "";
             this.render();
             this.frame = requestAnimationFrame(this.loop);
           }
           destroy() {
+            this.leaveOnline();
             cancelAnimationFrame(this.frame);
             this.abort.abort();
             this.resizeObserver.disconnect();

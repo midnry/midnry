@@ -25,14 +25,25 @@ function Home() {
             Simple tools for everyday life.
           </h1>
           <p className="mt-4 max-w-lg text-pretty text-lg text-muted">
-            Free apps for school, work, business and home. Start with our favourites below, or explore them all.
+            Free apps for school, work, business and home. Start with our favourites below, or
+            explore them all.
           </p>
           <HeroActions />
         </div>
         {/* Lead with the product: two of the apps, as they look on a phone (large screens only). */}
         <div className="relative hidden h-[30rem] lg:block" aria-hidden>
-          <PhoneFrame src="/shots/tasks/phone.jpg" alt="" eager className="!absolute top-0 left-4 !w-[14.5rem] -rotate-3" />
-          <PhoneFrame src="/shots/ledger/phone.jpg" alt="" eager className="!absolute top-10 right-2 !w-[14.5rem] rotate-3" />
+          <PhoneFrame
+            src="/shots/tasks/phone.jpg"
+            alt=""
+            eager
+            className="!absolute top-0 left-4 !w-[14.5rem] -rotate-3"
+          />
+          <PhoneFrame
+            src="/shots/ledger/phone.jpg"
+            alt=""
+            eager
+            className="!absolute top-10 right-2 !w-[14.5rem] rotate-3"
+          />
         </div>
       </section>
 
@@ -43,7 +54,8 @@ function Home() {
           <div>
             <h2 className="font-display text-2xl tracking-tight">Looking for something else?</h2>
             <p className="mt-1 text-sm text-pretty text-muted">
-              There are {APPS.length} apps on the desk for school, work, business and home. Search them, or browse by where you fit.
+              There are {APPS.length} apps on the desk for school, work, business and home. Search
+              them, or browse by where you fit.
             </p>
           </div>
           <Link to="/apps" className={buttonClass({ tone: "primary" })}>
@@ -71,7 +83,10 @@ function Home() {
             <p className="font-medium">{PASS_PRICE_LABEL} a month for more</p>
             <p className="mt-1 text-muted">
               Midnry Pass unlocks everything.{" "}
-              <Link to="/pricing" className="inline-flex min-h-11 items-center text-ink underline underline-offset-4">
+              <Link
+                to="/pricing"
+                className="inline-flex min-h-11 items-center text-ink underline underline-offset-4"
+              >
                 See pricing
               </Link>
             </p>
@@ -113,7 +128,10 @@ function FeaturedApps() {
           </h2>
           <p className="mt-1 text-sm text-muted">Our five most useful apps, and two games.</p>
         </div>
-        <Link to="/apps" className="hidden min-h-11 shrink-0 items-center text-sm font-medium text-ink underline underline-offset-4 sm:inline-flex">
+        <Link
+          to="/apps"
+          className="hidden min-h-11 shrink-0 items-center text-sm font-medium text-ink underline underline-offset-4 sm:inline-flex"
+        >
           See all apps
         </Link>
       </div>
@@ -132,12 +150,17 @@ function FeaturedApps() {
                 <AppMark slug={app.slug} name={app.name} className="size-12 shrink-0" />
                 <div className="min-w-0">
                   <p className="font-display text-xl tracking-tight">{app.name}</p>
-                  <p className="text-xs text-muted">{app.tier === "free" ? "Free with an account" : "Midnry Pass"}</p>
+                  <p className="text-xs text-muted">
+                    {app.tier === "free" ? "Free with an account" : "Midnry Pass"}
+                  </p>
                 </div>
               </div>
               <p className="mt-3 flex-1 text-sm text-pretty text-muted">{pitchFor(app)}</p>
               <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-ink">
-                Learn more <span aria-hidden className="transition group-hover:translate-x-0.5">→</span>
+                Learn more{" "}
+                <span aria-hidden className="transition group-hover:translate-x-0.5">
+                  →
+                </span>
               </span>
             </Link>
           );
@@ -149,15 +172,26 @@ function FeaturedApps() {
           <div className="flex items-center gap-3">
             <img src="/abuja-hustle-v2-192.png" alt="" className="size-12 shrink-0 rounded-2xl" />
             <div className="min-w-0">
-              <p className="text-xl font-black tracking-tight" style={{ fontFamily: '"Nunito", "Outfit", system-ui, sans-serif' }}>Abuja Hustle</p>
-              <p className="text-xs font-semibold tracking-widest text-[#edc584] uppercase">Free game · 18+ · Updated</p>
+              <p
+                className="text-xl font-black tracking-tight"
+                style={{ fontFamily: '"Nunito", "Outfit", system-ui, sans-serif' }}
+              >
+                Abuja Hustle
+              </p>
+              <p className="text-xs font-semibold tracking-widest text-[#edc584] uppercase">
+                Free game · 18+ · Updated
+              </p>
             </div>
           </div>
           <p className="mt-3 flex-1 text-sm text-pretty text-[#f7edda]/90">
-            A life sim. Grow up in a hand-painted Abuja, build a banking career, make friends in high places, and chase financial freedom.
+            A life sim. Grow up in a hand-painted Abuja, build a banking career, make friends in
+            high places, and chase financial freedom.
           </p>
           <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#a7f0d2]">
-            See the game <span aria-hidden className="transition group-hover:translate-x-0.5">→</span>
+            See the game{" "}
+            <span aria-hidden className="transition group-hover:translate-x-0.5">
+              →
+            </span>
           </span>
         </Link>
         <Link
@@ -168,11 +202,21 @@ function FeaturedApps() {
             <img src="/outpost-zero.svg" alt="" className="size-12 shrink-0 rounded-xl" />
             <div className="min-w-0">
               <p className="text-xl font-black tracking-tight">Outpost Zero</p>
-              <p className="text-xs font-semibold tracking-widest text-[#ffc455] uppercase">Free game · Arena shooter</p>
+              <p className="text-xs font-semibold tracking-widest text-[#ffc455] uppercase">
+                Free game · Arena shooter
+              </p>
             </div>
           </div>
-          <p className="mt-3 flex-1 text-sm text-pretty text-[#c6c8c6]">A comic-styled shooter. Play Field Ops or outlast seven bots in Last Signal: collect Charge Cores and escape the shrinking Red Haze.</p>
-          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#ffc455]">See the game <span aria-hidden className="transition group-hover:translate-x-0.5">→</span></span>
+          <p className="mt-3 flex-1 text-sm text-pretty text-[#c6c8c6]">
+            A comic-styled shooter. Play Solo or Duo with bots or friends online. Collect Charge
+            Cores, escape Red Haze, and be the last player or pair alive.
+          </p>
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#ffc455]">
+            See the game{" "}
+            <span aria-hidden className="transition group-hover:translate-x-0.5">
+              →
+            </span>
+          </span>
         </Link>
       </div>
     </section>
