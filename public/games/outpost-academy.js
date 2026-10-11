@@ -106,9 +106,10 @@ export class Academy {
     this.options = { ...candidate.options };
     this.settings(target);
     this.materials.clear();
-    game.sprite = game.allySprite = game.boxSprite = game.coreSprite = null;
+    game.boxSprite = game.coreSprite = null;
     game.propSprites?.clear();
     game.art?.clearCache();
+    game.characters?.clearCache();
     game.resize();
     try {
       localStorage.setItem(
