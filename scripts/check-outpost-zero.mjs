@@ -12,6 +12,7 @@ const academy = readFileSync(
   new URL("../public/games/outpost-academy.js", import.meta.url),
   "utf8",
 );
+const art = readFileSync(new URL("../public/games/outpost-art.js", import.meta.url), "utf8");
 const screenshotDir = fileURLToPath(new URL("../screenshots/", import.meta.url));
 mkdirSync(screenshotDir, { recursive: true });
 (async () => {
@@ -39,7 +40,9 @@ mkdirSync(screenshotDir, { recursive: true });
               ? content
               : route.request().url().endsWith("outpost-academy.js")
                 ? academy
-                : html,
+                : route.request().url().endsWith("outpost-art.js")
+                  ? art
+                  : html,
         }),
       );
       await page.goto("http://outpost.test/");

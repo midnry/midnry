@@ -1,6 +1,6 @@
 # Midnry — Outpost Zero
 
-The game uses four small static files: `public/games/outpost-zero.html` (Canvas rendering, procedural art, scoped CSS, controls and lobby) and `public/games/outpost-sim.js` (shared match rules), and `public/games/outpost-content.js` (maps, palettes, scenery and weapon definitions), plus `public/games/outpost-academy.js` (tutorial, field guide and graphics materials). Serve all four from the same directory over HTTP. Offline play needs no backend or external assets; online rooms use the Midnry API and database. No game framework is required. ES modules require a web server rather than opening a local file directly.
+The game uses five small static files: `public/games/outpost-zero.html` (Canvas rendering, procedural art, scoped CSS, controls and lobby) and `public/games/outpost-sim.js` (shared match rules), and `public/games/outpost-content.js` (maps, palettes, scenery and weapon definitions), plus `public/games/outpost-academy.js` (tutorial, field guide and graphics materials), and `public/games/outpost-art.js` (scenery, animations, lighting and cosmetic effects). Serve all five from the same directory over HTTP. Offline play needs no backend or external assets; online rooms use the Midnry API and database. No game framework is required. ES modules require a web server rather than opening a local file directly.
 
 ## Midnry integration
 
@@ -8,7 +8,7 @@ The homepage links to `/discover/outpost-zero`, which launches `/games/outpost-z
 
 ## Embed elsewhere
 
-For the strongest isolation from your site's existing CSS and scripts, serve all four files in `/games/`, then embed:
+For the strongest isolation from your site's existing CSS and scripts, serve all five files in `/games/`, then embed:
 
 ```html
 <iframe
@@ -138,3 +138,11 @@ The field manual generates overhead layouts for all five maps and base stats/abi
 Graphics presets: Performance (720px / 128-texel materials), Balanced (960px / 256 texels), High (1440px / 512 texels), capped by viewport width. Higher presets use denser floor sampling and higher-resolution character/loot art. Cached procedural wall textures include mortar, bolts, hatching and scratches; mip levels reduce distant aliasing. A reusable projected floor pixel buffer avoids per-pixel Canvas drawing calls. Scenery distance, depth-tested contact shadows and stepped material highlights preserve the ink outlines. Shadows and lighting can be toggled independently; preferences persist in device-local storage when available. These are Canvas equivalents, not GPU anisotropic filtering, polygon LOD, screen-space shadow maps or shader programs. Choose Performance on slower devices; no fixed frame rate is guaranteed.
 
 Validation: `node scripts/check-outpost-academy.mjs [baseURL]` exercises the complete tutorial on desktop and touch, checks all guide entries, persists presets, verifies practice cleanup and captures screenshots.
+
+## Comic scenery and animation
+
+`ComicArt` adds visual details without changing server rules or collision geometry. Arena decoration includes desert cacti/antennae, test-site gardens/mailboxes, terminal baggage carts/beacons, freight pallets/drums, and estate palms/rubble/deck chairs. These props are decorative and give no additional bullet cover. Painted walls include cables, window reflections, safety labels and container corrugation; directional texture orientation keeps lettering readable. Indoor regions have dark panel ceilings and cool light, while exterior surfaces retain warm sunlight. Backgrounds include clouds, airport towers/aircraft, port cranes and test-site silhouettes.
+
+Character billboards have cached walking poses, loadout-colored equipment, pouches, helmet accents and brief hit flashes. Weapon presentation adds reload hand/magazine motion, melee swings, gunfire casings and muzzle smoke. Hit debris, cover fragments, explosion rings and temporary wall impact marks are driven by observed match state. Particle counts, decals, caches and effect histories are bounded, reset between matches, and freeze with offline simulation time. Online visual effects follow server snapshots; cosmetics never send authoritative damage. Reduced-motion preferences disable added limb, weapon and atmospheric motion and keep impact particles static as they fade.
+
+Run `node scripts/check-outpost-art.mjs [baseURL]` for desktop/mobile scene captures, impact/cover/casing/smoke checks, effect limits, pause/reset behavior, reduced motion and a check that rendering does not change match snapshots.
