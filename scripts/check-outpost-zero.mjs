@@ -4,6 +4,10 @@ import { readFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 const html = readFileSync(new URL("../public/games/outpost-zero.html", import.meta.url), "utf8");
 const sim = readFileSync(new URL("../public/games/outpost-sim.js", import.meta.url), "utf8");
+const content = readFileSync(
+  new URL("../public/games/outpost-content.js", import.meta.url),
+  "utf8",
+);
 const screenshotDir = fileURLToPath(new URL("../screenshots/", import.meta.url));
 mkdirSync(screenshotDir, { recursive: true });
 (async () => {
@@ -24,10 +28,12 @@ mkdirSync(screenshotDir, { recursive: true });
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("http://outpost.test/**", (route) =>
         route.fulfill({
-          contentType: route.request().url().endsWith("outpost-sim.js")
-            ? "text/javascript"
-            : "text/html",
-          body: route.request().url().endsWith("outpost-sim.js") ? sim : html,
+          contentType: route.request().url().endsWith(".js") ? "text/javascript" : "text/html",
+          body: route.request().url().endsWith("outpost-sim.js")
+            ? sim
+            : route.request().url().endsWith("outpost-content.js")
+              ? content
+              : html,
         }),
       );
       await page.goto("http://outpost.test/");

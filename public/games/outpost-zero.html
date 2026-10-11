@@ -416,13 +416,121 @@
         opacity: 0.5;
         cursor: default;
       }
+
+      midnry-fps .mf-kit {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 18px;
+      }
+      midnry-fps .mf-kit label {
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #71ebd5;
+      }
+      midnry-fps .mf-kit select {
+        display: block;
+        width: 100%;
+        min-height: 44px;
+        margin-top: 6px;
+        background: #263b44;
+        color: #fff4dc;
+        border: 2px solid #0c151c;
+        padding: 8px;
+        font: 700 13px system-ui;
+      }
+      midnry-fps .mf-mapinfo,
+      midnry-fps .mf-weaponinfo,
+      midnry-fps .mf-kitnote {
+        font: 12px/1.6 system-ui;
+        color: #c6c8c6;
+        margin: 10px 0;
+      }
+      midnry-fps .mf-mapinfo {
+        color: #ffc455;
+      }
+      midnry-fps .mf-kitnote {
+        font-size: 11px;
+        color: #8ea0a4;
+      }
+      midnry-fps .mf-damage {
+        position: absolute;
+        top: 58%;
+        left: 50%;
+        transform: translateX(-50%);
+        font: 900 27px system-ui;
+        color: #ff675c;
+        text-shadow: 2px 2px #101720;
+        pointer-events: none;
+      }
+      midnry-fps .mf-hitmark {
+        position: absolute;
+        top: 46%;
+        left: 50%;
+        transform: translateX(-50%);
+        font: 900 20px system-ui;
+        color: #ffe0a0;
+        text-shadow: 2px 2px #101720;
+        pointer-events: none;
+      }
+      midnry-fps .mf-super {
+        position: absolute;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: 38%;
+        min-height: 44px;
+        padding: 9px 14px;
+        background: #24333c;
+        color: #b9c3c5;
+        border: 3px solid #111922;
+        font: 800 11px system-ui;
+        cursor: pointer;
+      }
+      midnry-fps .mf-super b {
+        display: block;
+        color: #ffc455;
+        margin-top: 3px;
+      }
+      midnry-fps .mf-super-ready {
+        background: #ffc455;
+        color: #131d25;
+        box-shadow: 4px 4px #111922;
+      }
+      midnry-fps .mf-super-ready b {
+        color: #131d25;
+      }
+      midnry-fps .mf-hp-hit {
+        color: #ff675c;
+      }
+      midnry-fps .mf-critical {
+        color: #ff675c;
+      }
+      @media (max-width: 700px) {
+        midnry-fps .mf-super {
+          bottom: 180px;
+          font-size: 10px;
+          padding: 7px;
+          max-width: 42%;
+        }
+        midnry-fps .mf-kit {
+          gap: 8px;
+        }
+      }
+      @media (max-width: 700px) and (max-height: 500px) {
+        midnry-fps .mf-super {
+          bottom: 18px;
+          max-width: 32%;
+        }
+      }
     </style>
   </head>
   <!-- For inline integration copy the style, element and script. Set a height on the host. -->
   <body style="margin: 0; background: #101419">
     <midnry-fps style="height: 100dvh" aria-label="Outpost Zero first-person shooter"></midnry-fps>
     <script type="module">
-      import { Arena, LEVEL, clamp } from "./outpost-sim.js";
+      import { Arena, MAPS, WEAPONS, mapOf, weaponOf, clamp } from "./outpost-sim.js";
       (() => {
         "use strict";
         // A custom element keeps state private and supports multiple independent instances.
@@ -438,9 +546,10 @@
         <div class="mf-top"><div class="mf-brand">MIDNRY<small>OUTPOST ZERO / FIELD OPS</small></div><div class="mf-topright"><span class="mf-tag">RAYCAST / COMIC EDITION</span><button class="mf-pause" aria-label="Pause game">II</button></div></div>
         <div class="mf-objective">TRAINING CONTRACT<b class="mf-mission">Eliminate the sentry drones</b></div>
         <div class="mf-match" hidden><b class="mf-cores">CHARGE CORES 0</b><div class="mf-teamstat"></div><div class="mf-zone"></div></div><div class="mf-cross"></div><div class="mf-toast" role="status" aria-live="polite"></div>
+        <div class="mf-damage" role="status" aria-live="polite"></div><div class="mf-hitmark" aria-hidden="true"></div><button class="mf-super" aria-label="Use charged ability">Q · SUPER <b>0%</b></button>
         <div class="mf-bottom"><div class="mf-stat">VITALS<strong class="mf-hp">100</strong><div class="mf-health"><i></i></div></div><div class="mf-stat mf-ammo">VX–7 / AUTO CARBINE<strong class="mf-rounds">24 <span>/ ∞</span></strong></div></div>
         <div class="mf-touch"><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
-        <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">A sun-scorched outpost. Six rogue sentries. One very loud solution. Drop into a comic-book combat sandbox.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="training" aria-pressed="true">FIELD OPS</button><button class="mf-mode" data-mode="signal" aria-pressed="false">LAST SIGNAL · SOLO</button><button class="mf-mode" data-mode="duo" aria-pressed="false">PAIR OPS · DUO</button></div><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Click or Space · fire<br>R · reload &nbsp; / &nbsp; Shift · sprint &nbsp; / &nbsp; Esc or P · pause<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
+        <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">A sun-scorched outpost. Six rogue sentries. One very loud solution. Drop into a comic-book combat sandbox.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="training" aria-pressed="true">FIELD OPS</button><button class="mf-mode" data-mode="signal" aria-pressed="false">LAST SIGNAL · SOLO</button><button class="mf-mode" data-mode="duo" aria-pressed="false">PAIR OPS · DUO</button></div><div class="mf-kit"><label>Arena<select class="mf-mapselect" aria-label="Choose arena"></select></label><label>Loadout<select class="mf-weaponselect" aria-label="Choose loadout"></select></label></div><p class="mf-mapinfo"></p><p class="mf-weaponinfo"></p><p class="mf-kitnote">Choose before deploying. Offline changes start a fresh round; online, the host chooses the arena.</p><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Click or Space · fire<br>R · reload &nbsp; / &nbsp; Shift · sprint &nbsp; / &nbsp; Esc or P · pause &nbsp; / &nbsp; Q · super<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
       </div>`;
             this.engine = new Game(this);
           }
@@ -467,6 +576,35 @@
             this.frame = 0;
             this.viewPitch = 0;
             this.mode = "training";
+            this.mapId = "outpost";
+            this.weapon = "carbine";
+            for (const map of Object.values(MAPS)) {
+              const option = document.createElement("option");
+              option.value = map.id;
+              option.textContent = map.name;
+              this.$(".mf-mapselect").append(option);
+            }
+            for (const w of Object.values(WEAPONS)) {
+              const option = document.createElement("option");
+              option.value = w.id;
+              option.textContent = w.name;
+              this.$(".mf-weaponselect").append(option);
+            }
+            this.on(this.$(".mf-mapselect"), "change", (e) => {
+              if (this.online) this.onlineAction("settings", { mapId: e.target.value });
+              else {
+                this.mapId = e.target.value;
+                this.reset();
+              }
+            });
+            this.on(this.$(".mf-weaponselect"), "change", (e) => {
+              if (this.online) this.onlineAction("loadout", { weapon: e.target.value });
+              else {
+                this.weapon = e.target.value;
+                this.reset();
+              }
+            });
+            this.on(this.$(".mf-super"), "click", () => this.useSuper());
             this.reset();
             this.bindInputs();
             this.bindOnline();
@@ -481,7 +619,15 @@
             this.pendingShot = 0;
             this.pendingReload = false;
             this.lastNotice = 0;
-            this.arena = new Arena({ mode: this.mode });
+            this.arena = new Arena({ mode: this.mode, mapId: this.mapId, weapon: this.weapon });
+            this.damageSeen = 0;
+            this.damageTotalSeen = 0;
+            this.hitSeen = 0;
+            this.hitTotalSeen = 0;
+            this.damageUntil = 0;
+            this.hitUntil = 0;
+            this.pendingSuper = false;
+            this.updateKit();
             this.selfId = "player";
             this.state = "fresh";
             this.running = false;
@@ -580,7 +726,54 @@
               sprint: this.keys.has("shift"),
               fire: this.firing || this.keys.has(" ") || this.pendingShot > 0,
               reload: this.pendingReload,
+              super: this.pendingSuper,
             };
+          }
+          updateKit() {
+            const map = mapOf(this.mapId),
+              w = weaponOf(this.weapon);
+            this.$(".mf-mapselect").value = map.id;
+            this.$(".mf-weaponselect").value = w.id;
+            this.$(".mf-mapinfo").textContent = map.tag + " / " + map.description;
+            this.$(".mf-weaponinfo").textContent = w.description;
+          }
+          useSuper() {
+            if (!this.running || this.player.hp <= 0) return;
+            if (this.player.charge < 100) {
+              this.message("CHARGE YOUR SUPER BY DEALING DAMAGE");
+              return;
+            }
+            if (this.online) this.pendingSuper = true;
+            else {
+              this.player.pitch = this.viewPitch / this.projection;
+              this.arena.super(this.player);
+              this.flushEvents();
+            }
+          }
+          observeCombat() {
+            const p = this.player,
+              now = performance.now();
+            if (p.damageSeq !== this.damageSeen) {
+              const amount = Math.max(0, (p.damageTotal || 0) - (this.damageTotalSeen || 0));
+              this.damageSeen = p.damageSeq;
+              this.damageTotalSeen = p.damageTotal;
+              if (amount > 0.1) {
+                this.damageUntil = now + 520;
+                this.damageKick = Math.min(8, 2 + amount * 0.08);
+                this.$(".mf-damage").textContent = "−" + Math.ceil(amount) + " HP";
+              }
+            }
+            if (p.hitSeq !== this.hitSeen) {
+              const total = Math.max(0, (p.hitTotal || 0) - (this.hitTotalSeen || 0));
+              this.hitTotalSeen = p.hitTotal;
+              this.hitSeen = p.hitSeq;
+              this.hitUntil = now + 240;
+              this.$(".mf-hitmark").textContent = "✕ " + Math.ceil(total || p.hitDamage || 0);
+            }
+            const hurt = now < this.damageUntil;
+            this.$(".mf-damage").hidden = !hurt;
+            this.$(".mf-hitmark").hidden = now > this.hitUntil;
+            this.$(".mf-hp").classList.toggle("mf-hp-hit", hurt);
           }
           flushEvents() {
             for (const e of this.arena.events) if (e.id === this.selfId) this.message(e.text);
@@ -703,7 +896,13 @@
               let data;
               try {
                 data = await this.postRoom(
-                  { op, mode, code: this.$(".mf-codeinput").value },
+                  {
+                    op,
+                    mode,
+                    code: this.$(".mf-codeinput").value,
+                    mapId: this.mapId,
+                    weapon: this.weapon,
+                  },
                   controller.signal,
                 );
               } finally {
@@ -734,6 +933,7 @@
             const previous = this.arena;
             Object.assign(net, data);
             this.mode = data.mode;
+            this.mapId = data.mapId || "outpost";
             for (const button of this.root.querySelectorAll(".mf-mode")) {
               button.disabled = true;
               button.setAttribute("aria-pressed", String(button.dataset.mode === this.mode));
@@ -744,7 +944,13 @@
             this.$(".mf-roomcode").textContent = data.code;
             this.$(".mf-teamlabel").hidden = this.mode !== "duo" || data.phase !== "lobby";
             const self = data.members.find((m) => m.id === this.selfId);
-            if (self) this.$(".mf-teamselect").value = String(self.team);
+            if (self) {
+              this.$(".mf-teamselect").value = String(self.team);
+              this.weapon = self.weapon || "carbine";
+            }
+            this.updateKit();
+            this.$(".mf-mapselect").disabled = data.phase !== "lobby" || data.host !== this.selfId;
+            this.$(".mf-weaponselect").disabled = data.phase !== "lobby";
             const roster = this.$(".mf-roster");
             roster.replaceChildren();
             for (const m of data.members) {
@@ -795,6 +1001,18 @@
               this.checkResult();
               this.updateHUD();
             } else {
+              if (
+                this.arena.mapId !== this.mapId ||
+                this.arena.mode !== this.mode ||
+                this.player.id !== this.selfId ||
+                this.player.weapon !== this.weapon ||
+                this.player.team !== (self?.team ?? 0)
+              )
+                this.arena = new Arena({
+                  mode: this.mode,
+                  mapId: this.mapId,
+                  humans: [{ id: this.selfId, team: self?.team ?? 0, weapon: this.weapon }],
+                });
               this.state = "fresh";
               this.running = false;
               this.$(".mf-modal").hidden = false;
@@ -844,7 +1062,8 @@
               if (!net) return;
               const began = performance.now(),
                 shot = this.pendingShot || 0,
-                reload = this.pendingReload;
+                reload = this.pendingReload,
+                superPending = this.pendingSuper;
               const input =
                 this.running && this.player.hp > 0
                   ? this.controls()
@@ -861,6 +1080,7 @@
                 if (!net.errors) {
                   this.pendingShot = Math.max(0, (this.pendingShot || 0) - shot);
                   if (reload) this.pendingReload = false;
+                  if (superPending) this.pendingSuper = false;
                 }
                 this.scheduleRoomPoll(
                   net.errors
@@ -889,6 +1109,8 @@
               this.$(".mf-roompanel").hidden = true;
               this.$(".mf-netstatus").textContent = "";
               this.$(".mf-tag").textContent = "RAYCAST / COMIC EDITION";
+              this.$(".mf-mapselect").disabled = false;
+              this.$(".mf-weaponselect").disabled = false;
               this.reset();
               this.pause();
               this.$(".mf-start").textContent = "DEPLOY →";
@@ -912,6 +1134,7 @@
               });
             this.on(this.$(".mf-pause"), "click", () => this.pause());
             this.on(this.shell, "keydown", (e) => {
+              if (e.target.closest?.("input,select,textarea")) return;
               const k = e.key.toLowerCase();
               if (
                 [
@@ -925,6 +1148,7 @@
                   "s",
                   "d",
                   "r",
+                  "q",
                   "p",
                   "shift",
                 ].includes(k)
@@ -937,6 +1161,7 @@
               if (!this.running) return;
               this.keys.add(k);
               if (k === "r") this.reload();
+              if (k === "q" && !e.repeat) this.useSuper();
               if (k === " " && !e.repeat) this.shoot();
             });
             this.on(this.shell, "keyup", (e) => this.keys.delete(e.key.toLowerCase()));
@@ -1177,7 +1402,14 @@
               survival = this.mode !== "training",
               duo = this.mode === "duo";
             this.$(".mf-brand small").textContent =
-              "OUTPOST ZERO / " + (duo ? "PAIR OPS" : survival ? "LAST SIGNAL" : "FIELD OPS");
+              "OUTPOST ZERO / " + mapOf(this.arena.mapId).name.toUpperCase();
+            const weapon = weaponOf(p.weapon);
+            this.$(".mf-ammo").firstChild.textContent = weapon.name.toUpperCase() + " ";
+            this.$(".mf-super").disabled = p.hp <= 0 || p.charge < 100;
+            this.$(".mf-super").firstChild.textContent = "Q · " + weapon.super.toUpperCase() + " ";
+            this.$(".mf-super b").textContent = Math.floor(p.charge || 0) + "%";
+            this.$(".mf-super").classList.toggle("mf-super-ready", p.charge >= 100);
+            this.$(".mf-hp").classList.toggle("mf-critical", p.hp > 0 && p.hp / p.maxHp < 0.3);
             this.$(".mf-hp").textContent = Math.ceil(p.hp);
             this.$(".mf-health i").style.width = (p.hp / p.maxHp) * 100 + "%";
             this.$(".mf-rounds").innerHTML = `${this.ammo} <span>/ ∞</span>`;
@@ -1240,6 +1472,7 @@
             }
             this.arena.advance(dt, { [this.selfId]: this.controls() });
             this.pendingReload = false;
+            this.pendingSuper = false;
             this.step += Math.hypot(this.controls().forward, this.controls().strafe) * dt * 9;
             this.flushEvents();
             this.checkResult();
@@ -1251,11 +1484,13 @@
               h = this.h,
               p = this.camera(),
               horizon = h * 0.5 + this.viewPitch;
+            const map = mapOf(this.arena.mapId),
+              theme = map.theme;
             c.fillStyle = "#e8aa62";
             c.fillRect(0, 0, w, horizon);
-            c.fillStyle = "#f4cd87";
+            c.fillStyle = theme.sky;
             c.fillRect(0, 0, w, horizon * 0.62);
-            c.fillStyle = "#ffe7a1";
+            c.fillStyle = theme.sun;
             c.beginPath();
             c.arc(w * 0.76, horizon * 0.38, Math.min(w, h) * 0.08, 0, TAU);
             c.fill();
@@ -1266,7 +1501,7 @@
               c.lineTo((w * i) / 12, horizon - 18 - (Math.sin(i * 2.8) + 1) * 30);
             c.lineTo(w, horizon);
             c.fill();
-            c.fillStyle = "#73564a";
+            c.fillStyle = theme.floor;
             c.fillRect(0, horizon, w, h - horizon);
             c.fillStyle = "#89684f";
             c.fillRect(0, horizon + (h - horizon) * 0.45, w, (h - horizon) * 0.55);
@@ -1281,6 +1516,13 @@
                 const q = ((2 * x) / w - 1) * plane,
                   fx = p.x + (ca - sa * q) * d,
                   fy = p.y + (sa + ca * q) * d;
+                const zone = map.zones.find(
+                  (z) => fx >= z.x && fy >= z.y && fx < z.x + z.w && fy < z.y + z.h,
+                );
+                if (zone) {
+                  c.fillStyle = zone.color;
+                  c.fillRect(x, y, 5, 3);
+                }
                 if (
                   this.mode !== "training" &&
                   this.time > this.zone.delay &&
@@ -1295,11 +1537,7 @@
                 }
               }
             }
-            const palettes = {
-              1: ["#d89045", "#ad6936", "#f7bf69"],
-              2: ["#318e91", "#246269", "#65b7ae"],
-              3: ["#d3a43d", "#9f7231", "#f4d46b"],
-            };
+            const palettes = theme.walls;
             let prevKey = "";
             for (let x = 0; x < w; x += 2) {
               const q = ((2 * (x + 0.5)) / w - 1) * plane,
@@ -1326,6 +1564,31 @@
                 c.fillRect(x, top, 2, size);
               }
               prevKey = key;
+              if (
+                map.id === "testblock" &&
+                [2, 4].includes(hit.type) &&
+                hit.u > 0.18 &&
+                hit.u < 0.82
+              ) {
+                c.fillStyle = "#e8efd8";
+                c.fillRect(x, top + size * 0.22, 2, size * 0.34);
+                if (hit.u > 0.24 && hit.u < 0.76) {
+                  c.fillStyle = hit.u > 0.48 && hit.u < 0.52 ? "#e8efd8" : "#284d62";
+                  c.fillRect(x, top + size * 0.25, 2, size * 0.26);
+                }
+                c.fillStyle = "#f5e4c5";
+                c.fillRect(x, top + size * 0.6, 2, size * 0.035);
+              }
+              if (map.id === "skyport" && [5, 6].includes(hit.type) && hit.u > 0.2 && hit.u < 0.8) {
+                c.fillStyle = "#193b51";
+                c.fillRect(x, top + size * 0.29, 2, size * (hit.type === 6 ? 0.19 : 0.36));
+                c.fillStyle = "#89d3e4";
+                c.fillRect(x, top + size * 0.3, 2, size * 0.035);
+              }
+              if (map.id === "freight" && Math.floor(hit.u * 24) % 3 === 0) {
+                c.fillStyle = "#15263055";
+                c.fillRect(x, top + size * 0.08, 2, size * 0.85);
+              }
               // Horizontal mortar / steel panel seams.
               c.fillStyle = "#272c2a";
               for (let j = 1; j < 4; j++)
@@ -1513,6 +1776,322 @@
             }
             return sprite;
           }
+          propSprite(prop) {
+            this.propSprites ??= new Map();
+            const key = prop.kind + prop.label;
+            if (this.propSprites.has(key)) return this.propSprites.get(key);
+            const s = document.createElement("canvas");
+            s.width = 128;
+            s.height = 160;
+            const c = s.getContext("2d");
+            c.lineWidth = 6;
+            c.strokeStyle = "#101720";
+            c.lineJoin = "round";
+            const box = (x, y, w, h, fill) => {
+              c.fillStyle = fill;
+              c.fillRect(x, y, w, h);
+              c.strokeRect(x, y, w, h);
+            };
+            if (prop.kind === "dummy") {
+              box(46, 46, 36, 36, "#f3d7a8");
+              box(34, 83, 58, 48, "#8bbaa9");
+              box(35, 132, 18, 22, "#394f56");
+              box(75, 132, 18, 22, "#394f56");
+              box(13, 85, 19, 35, "#efd2a5");
+              box(95, 85, 19, 35, "#efd2a5");
+            } else if (prop.kind === "wreck") {
+              box(5, 96, 118, 45, "#53636a");
+              box(42, 76, 40, 39, "#92b4be");
+              box(5, 111, 34, 15, "#e1b452");
+              c.beginPath();
+              c.moveTo(12, 79);
+              c.lineTo(117, 65);
+              c.moveTo(64, 67);
+              c.lineTo(85, 44);
+              c.stroke();
+            } else if (prop.kind === "luggage") {
+              box(16, 80, 42, 69, "#ec965e");
+              box(63, 100, 49, 49, "#64939d");
+              box(27, 69, 20, 12, "#151f27");
+            } else {
+              box(57, 90, 13, 64, "#536971");
+              box(4, 43, 120, 52, "#2b5461");
+              c.fillStyle = "#ffc455";
+              c.font = "bold 12px monospace";
+              c.textAlign = "center";
+              c.fillText(prop.label, 64, 74);
+            }
+            this.propSprites.set(key, s);
+            return s;
+          }
+          drawCombatEffects() {
+            const c = this.ctx,
+              p = this.camera(),
+              ca = Math.cos(p.a),
+              sa = Math.sin(p.a),
+              horizon = this.h * 0.5 + this.viewPitch;
+            const point = (x, y, height = 0) => {
+              const dx = x - p.x,
+                dy = y - p.y,
+                z = dx * ca + dy * sa;
+              if (z <= 0.12) return null;
+              const sx = this.w * 0.5 + ((-dx * sa + dy * ca) * this.projection) / z;
+              if (sx < 0 || sx >= this.w || z > this.depth[Math.floor(sx)] + 0.1) return null;
+              return { x: sx, y: horizon + (this.projection * (0.5 - height)) / z, z };
+            };
+            for (const f of this.arena.fields) {
+              const v = point(f.x, f.y);
+              if (!v) continue;
+              const r = Math.min(this.w, (this.projection * f.radius) / v.z);
+              c.fillStyle = "#6ee58c55";
+              c.strokeStyle = "#14262c";
+              c.lineWidth = 3;
+              c.beginPath();
+              c.ellipse(v.x, v.y, r, r * 0.25, 0, 0, TAU);
+              c.fill();
+              c.stroke();
+              for (let i = -3; i <= 3; i++) {
+                c.strokeStyle = "#9de374";
+                c.beginPath();
+                c.moveTo(v.x + (i * r) / 4, v.y);
+                c.lineTo(v.x + (i * r) / 4 - 6, v.y - r * 0.18);
+                c.stroke();
+              }
+            }
+            for (const e of [...this.arena.projectiles, ...this.arena.fx]) {
+              const v = point(e.x, e.y, (e.height || 0) + (e.kind === "barrage" ? 0.01 : 0.4));
+              if (!v) continue;
+              const radius = Math.max(
+                2,
+                Math.min(120, (this.projection * (e.radius || 0.07)) / v.z),
+              );
+              c.fillStyle = ["poison", "toxic", "spike"].includes(e.kind)
+                ? "#a7e76c"
+                : e.kind === "echo"
+                  ? "#c7a6f3"
+                  : "#ffbf5c";
+              c.strokeStyle = "#15202a";
+              c.lineWidth = 3;
+              if (e.until && e.kind === "blast") {
+                c.globalAlpha = clamp((e.until - this.time) / 0.45, 0, 1);
+              }
+              c.beginPath();
+              if (e.kind === "barrage") c.ellipse(v.x, v.y, radius, radius * 0.2, 0, 0, TAU);
+              else c.arc(v.x, v.y, radius, 0, TAU);
+              c.fill();
+              c.stroke();
+              c.globalAlpha = 1;
+              if (e.kind === "rocket" || e.kind === "barrel") {
+                c.fillStyle = "#e96742";
+                c.fillRect(v.x - radius * 0.6, v.y - radius, Math.max(3, radius), radius * 2);
+              }
+            }
+          }
+          drawAlternateWeapon() {
+            const c = this.ctx,
+              w = weaponOf(this.player.weapon),
+              recoil = Math.max(0, 1 - (this.time - this.shotAt) * 9),
+              scale = Math.min(this.w / 850, this.h / 620) * 1.3;
+            const reload = this.reloadUntil
+              ? Math.sin(clamp((this.reloadUntil - this.time) / 1.4, 0, 1) * Math.PI) * 70
+              : 0;
+            c.save();
+            c.translate(
+              this.w * 0.58 + Math.sin(this.step) * 3,
+              this.h + 18 + reload + recoil * 14,
+            );
+            c.scale(scale, scale);
+            c.lineWidth = 6;
+            c.strokeStyle = "#101720";
+            c.lineJoin = "round";
+            const poly = (pts, fill) => {
+              c.fillStyle = fill;
+              c.beginPath();
+              pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
+              c.closePath();
+              c.fill();
+              c.stroke();
+            };
+            const gun = (x, width = 44) => {
+              poly(
+                [
+                  [x - 30, 0],
+                  [x - 50, -90],
+                  [x - 12, -126],
+                  [x + 55, -105],
+                  [x + 72, 0],
+                ],
+                "#8e634d",
+              );
+              poly(
+                [
+                  [x - width, -85],
+                  [x - width, -190],
+                  [x + width * 0.6, -228],
+                  [x + width, -180],
+                  [x + width, -80],
+                ],
+                w.color,
+              );
+              poly(
+                [
+                  [x - 13, -180],
+                  [x - 11, -250],
+                  [x + 13, -250],
+                  [x + 16, -180],
+                ],
+                "#273d49",
+              );
+              c.fillStyle = "#f4e4c1";
+              c.fillRect(x - 8, -246, 17, 8);
+            };
+            if (w.kind === "burst") {
+              gun(-70, 27);
+              gun(65, 27);
+            } else if (w.kind === "melee") {
+              for (const x of [-105, 75]) {
+                poly(
+                  [
+                    [x - 35, 0],
+                    [x - 50, -135],
+                    [x + 35, -151],
+                    [x + 60, 0],
+                  ],
+                  "#77584e",
+                );
+                poly(
+                  [
+                    [x - 51, -128],
+                    [x - 51, -193],
+                    [x + 35, -211],
+                    [x + 50, -152],
+                  ],
+                  w.color,
+                );
+                for (let i = 0; i < 3; i++) {
+                  c.fillStyle = "#b3cbd0";
+                  c.fillRect(x - 36 + i * 24, -190, 15, 25);
+                }
+              }
+            } else if (w.kind === "dash") {
+              poly(
+                [
+                  [-20, 0],
+                  [3, -258],
+                  [27, -258],
+                  [22, 0],
+                ],
+                "#574753",
+              );
+              poly(
+                [
+                  [10, -251],
+                  [66, -294],
+                  [156, -273],
+                  [182, -239],
+                  [107, -254],
+                  [35, -230],
+                ],
+                w.color,
+              );
+            } else if (["blades", "poison"].includes(w.kind)) {
+              poly(
+                [
+                  [-72, 0],
+                  [-98, -116],
+                  [-33, -150],
+                  [27, -88],
+                  [49, 0],
+                ],
+                "#a27c61",
+              );
+              for (let i = -1; i <= 1; i++)
+                poly(
+                  [
+                    [-37 + i * 28, -111],
+                    [-69 + i * 43, -218],
+                    [-44 + i * 40, -229],
+                    [-8 + i * 28, -122],
+                  ],
+                  w.color,
+                );
+            } else if (w.kind === "shard") {
+              poly(
+                [
+                  [-70, 0],
+                  [-81, -101],
+                  [-21, -143],
+                  [35, -71],
+                  [46, 0],
+                ],
+                "#a27c61",
+              );
+              c.fillStyle = w.color;
+              c.beginPath();
+              c.arc(-30, -183, 47, 0, TAU);
+              c.fill();
+              c.stroke();
+              for (let i = 0; i < 8; i++) {
+                const a = (i * TAU) / 8;
+                poly(
+                  [
+                    [-30 + Math.cos(a) * 37, -183 + Math.sin(a) * 37],
+                    [-30 + Math.cos(a) * 64, -183 + Math.sin(a) * 64],
+                    [-30 + Math.cos(a + 0.2) * 40, -183 + Math.sin(a + 0.2) * 40],
+                  ],
+                  "#e7f3bd",
+                );
+              }
+            } else if (w.kind === "lob") {
+              gun(0, 40);
+              for (const x of [-29, 18]) {
+                poly(
+                  [
+                    [x, -110],
+                    [x - 5, -224],
+                    [x + 22, -234],
+                    [x + 28, -110],
+                  ],
+                  w.color,
+                );
+                c.fillStyle = "#ed6445";
+                c.fillRect(x, -212, 18, 70);
+              }
+            } else {
+              gun(0, w.kind === "rocket" ? 65 : w.id === "breach" ? 57 : 47);
+              if (w.kind === "rocket") {
+                c.fillStyle = "#111d25";
+                c.beginPath();
+                c.ellipse(0, -242, 44, 19, 0, 0, TAU);
+                c.fill();
+                c.stroke();
+                c.fillStyle = "#ffac62";
+                c.beginPath();
+                c.ellipse(0, -242, 21, 10, 0, 0, TAU);
+                c.fill();
+              }
+            }
+            c.fillStyle = "#fff0cc";
+            c.font = "bold 13px monospace";
+            c.fillText(w.name.toUpperCase(), -70, -70);
+            if (
+              recoil > 0.5 &&
+              !["melee", "dash", "shard", "lob", "blades", "poison"].includes(w.kind)
+            )
+              poly(
+                [
+                  [-30, -254],
+                  [-50, -298],
+                  [-10, -287],
+                  [9, -330],
+                  [24, -284],
+                  [57, -301],
+                  [41, -257],
+                ],
+                "#ffcf61",
+              );
+            c.restore();
+          }
           drawEnemies() {
             if (!this.sprite) this.sprite = this.droneSprite();
             if (!this.allySprite) this.allySprite = this.droneSprite(true);
@@ -1525,7 +2104,13 @@
               horizon = this.h * 0.5 + this.viewPitch;
             const objects = [
               ...this.enemies
-                .filter((e) => e.hp > 0)
+                .filter(
+                  (e) =>
+                    e.hp > 0 &&
+                    (!(e.cloakedUntil > this.time) ||
+                      (this.mode === "duo" && e.team === this.player.team) ||
+                      Math.hypot(e.x - p.x, e.y - p.y) < 1.3),
+                )
                 .map((e) => ({
                   e,
                   sprite:
@@ -1538,6 +2123,12 @@
                 .filter((e) => e.hp > 0)
                 .map((e) => ({ e, sprite: this.boxSprite, size: 0.72 })),
               ...this.cores.map((e) => ({ e, sprite: this.coreSprite, size: 0.55 })),
+              ...mapOf(this.arena.mapId).props.map((e) => ({
+                e,
+                sprite: this.propSprite(e),
+                size: e.kind === "wreck" ? 0.65 : e.kind === "dummy" ? 0.8 : 0.9,
+                aspect: e.kind === "wreck" ? 2.2 : 0.8,
+              })),
             ];
             const visible = objects
               .map((o) => {
@@ -1547,9 +2138,9 @@
               })
               .filter((v) => v.z > 0.15)
               .sort((a, b) => b.z - a.z);
-            for (const { e, sprite, size, z, lateral } of visible) {
+            for (const { e, sprite, size, aspect, z, lateral } of visible) {
               const height = (this.projection * size) / z,
-                width = height * 0.8,
+                width = height * (aspect || 0.8),
                 sx = this.w * 0.5 + (lateral * this.projection) / z - width / 2;
               // All billboards share the same world floor, regardless of their height.
               const sy =
@@ -1607,8 +2198,8 @@
             const c = this.ctx,
               p = this.camera(),
               h = this.zone.half,
-              min = 8 - h,
-              max = 8 + h;
+              min = this.zone.cx - h,
+              max = this.zone.cx + h;
             // The ray's exit from the safe rectangle forms a vertical fog curtain.
             if (!this.outsideSafe(p))
               for (let x = 0; x < this.w; x += 8) {
@@ -1631,6 +2222,10 @@
             }
           }
           drawWeapon() {
+            if (this.player.weapon !== "carbine") {
+              this.drawAlternateWeapon();
+              return;
+            }
             const c = this.ctx,
               scale = Math.min(this.w / 900, this.h / 550) * 1.2;
             const recoil = Math.max(0, 1 - (this.time - this.shotAt) / 0.12),
@@ -1765,11 +2360,12 @@
           }
           drawMap() {
             const c = this.ctx,
-              s = Math.max(3, Math.min(7, this.w / 140)),
-              ox = this.w - 16 * s - 24,
+              n = this.level.length,
+              s = Math.max(2, Math.min(7, this.w / (n * 9))),
+              ox = this.w - n * s - 24,
               oy = 76;
             c.fillStyle = "#101923dd";
-            c.fillRect(ox - 5, oy - 5, 16 * s + 10, 16 * s + 10);
+            c.fillRect(ox - 5, oy - 5, n * s + 10, n * s + 10);
             this.level.forEach((row, y) =>
               row.forEach((v, x) => {
                 c.fillStyle = v ? "#e2b768" : "#25323a";
@@ -1778,13 +2374,13 @@
             );
             if (this.mode !== "training") {
               if (this.time > this.zone.delay) {
-                const low = 8 - this.zone.half,
-                  high = 8 + this.zone.half;
+                const low = this.zone.cx - this.zone.half,
+                  high = this.zone.cx + this.zone.half;
                 c.fillStyle = "#b32c5999";
-                c.fillRect(ox, oy, 16 * s, low * s);
-                c.fillRect(ox, oy + high * s, 16 * s, (16 - high) * s);
+                c.fillRect(ox, oy, n * s, low * s);
+                c.fillRect(ox, oy + high * s, n * s, (n - high) * s);
                 c.fillRect(ox, oy + low * s, low * s, (high - low) * s);
-                c.fillRect(ox + high * s, oy + low * s, (16 - high) * s, (high - low) * s);
+                c.fillRect(ox + high * s, oy + low * s, (n - high) * s, (high - low) * s);
                 c.strokeStyle = "#71ebd5";
                 c.lineWidth = 1;
                 c.strokeRect(
@@ -1805,7 +2401,12 @@
               }
             }
             for (const e of this.enemies)
-              if (e.hp > 0) {
+              if (
+                e.hp > 0 &&
+                (!(e.cloakedUntil > this.time) ||
+                  (e.team === this.player.team && this.mode === "duo") ||
+                  Math.hypot(e.x - this.player.x, e.y - this.player.y) < 1.3)
+              ) {
                 c.fillStyle =
                   this.mode === "duo" && e.team === this.player.team ? "#71ebd5" : "#fa6751";
                 c.fillRect(ox + e.x * s - 1.5, oy + e.y * s - 1.5, 3, 3);
@@ -1823,14 +2424,63 @@
             c.stroke();
           }
           render() {
+            this.observeCombat();
+            const c = this.ctx,
+              now = performance.now(),
+              hurt = Math.max(0, (this.damageUntil - now) / 520);
+            c.save();
+            if (hurt > 0)
+              c.translate(
+                Math.sin(now * 0.07) *
+                  this.damageKick *
+                  hurt *
+                  (matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1),
+                Math.cos(now * 0.09) *
+                  this.damageKick *
+                  hurt *
+                  (matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1),
+              );
             this.drawWorld();
             this.drawEnemies();
             this.drawHaze();
+            this.drawCombatEffects();
             if (this.player.hp > 0) this.drawWeapon();
+            c.restore();
             this.drawMap();
-            if (this.time - this.hurtAt < 0.35) {
-              this.ctx.fillStyle = `rgba(220,45,35,${(0.35 - (this.time - this.hurtAt)) * 0.65})`;
-              this.ctx.fillRect(0, 0, this.w, this.h);
+            const critical = this.player.hp > 0 && this.player.hp / this.player.maxHp < 0.3;
+            if (hurt > 0 || critical) {
+              const g = c.createRadialGradient(
+                this.w / 2,
+                this.h / 2,
+                this.h * 0.15,
+                this.w / 2,
+                this.h / 2,
+                Math.max(this.w, this.h) * 0.65,
+              );
+              g.addColorStop(0, "#cc203000");
+              g.addColorStop(
+                1,
+                `rgba(220,30,44,${Math.min(0.8, hurt * 0.7 + (critical ? 0.22 : 0))})`,
+              );
+              c.fillStyle = g;
+              c.fillRect(0, 0, this.w, this.h);
+            }
+            if (hurt > 0 && this.player.damageAngle !== null) {
+              const a = this.player.damageAngle - this.player.a - Math.PI / 2;
+              c.save();
+              c.translate(this.w / 2, this.h / 2);
+              c.rotate(a);
+              c.fillStyle = "#ff5b48";
+              c.strokeStyle = "#171d24";
+              c.lineWidth = 3;
+              c.beginPath();
+              c.moveTo(70, -12);
+              c.lineTo(88, 0);
+              c.lineTo(70, 12);
+              c.closePath();
+              c.fill();
+              c.stroke();
+              c.restore();
             }
           }
           loop(now) {

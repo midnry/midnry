@@ -6,6 +6,7 @@ export type Input = {
   sprint?: boolean;
   fire?: boolean;
   reload?: boolean;
+  super?: boolean;
 };
 export type Entity = {
   id: string;
@@ -33,14 +34,39 @@ export type Entity = {
   nextPath: number;
   path: { x: number; y: number }[];
   departed: boolean;
+  weapon: string;
+  charge: number;
+  cloakedUntil: number;
+  speedUntil: number;
+  poisonUntil: number;
+  slowUntil: number;
+  damageSeq: number;
+  damageTotal: number;
+  damageAngle: number | null;
+  hitSeq: number;
+  hitDamage: number;
+  hitAt: number;
 };
 export type Crate = { id: string; x: number; y: number; hp: number; maxHp: number; hit: number };
 export type ArenaState = {
   mode: string;
+  mapId: string;
+  projectiles: unknown[];
+  fields: unknown[];
+  fx: unknown[];
+  nextEffect: number;
   time: number;
   state: string;
   winner: number | null;
-  zone: { half: number; delay: number; duration: number; minHalf: number };
+  zone: {
+    half: number;
+    initialHalf: number;
+    cx: number;
+    cy: number;
+    delay: number;
+    duration: number;
+    minHalf: number;
+  };
   level: number[][];
   entities: Entity[];
   crates: Crate[];
@@ -51,7 +77,9 @@ export function clamp(n: number, a: number, b: number): number;
 export class Arena {
   constructor(options?: {
     mode?: string;
-    humans?: { id: string; team: number; name?: string }[];
+    mapId?: string;
+    weapon?: string;
+    humans?: { id: string; team: number; name?: string; weapon?: string }[];
     random?: () => number;
   });
   static restore(data: ArenaState): Arena;
@@ -64,5 +92,33 @@ export class Arena {
   snapshot(): ArenaState;
   advance(dt: number, inputs?: Record<string, Input>): void;
   shoot(e: Entity): void;
+  super(e: Entity): boolean;
   detach(id: string): void;
 }
+
+export type MapSpec = {
+  id: string;
+  name: string;
+  tag: string;
+  description: string;
+  level: number[][];
+  theme: Record<string, unknown>;
+  props: unknown[];
+  zones: unknown[];
+};
+export type WeaponSpec = {
+  id: string;
+  name: string;
+  kind: string;
+  damage: number;
+  mag: number;
+  cooldown: number;
+  range: number;
+  color: string;
+  super: string;
+  description: string;
+};
+export const MAPS: Record<string, MapSpec>;
+export const WEAPONS: Record<string, WeaponSpec>;
+export function mapOf(id: string): MapSpec;
+export function weaponOf(id: string): WeaponSpec;

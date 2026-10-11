@@ -26,12 +26,21 @@ try {
   assert.equal(guest.members.length >= 2, true);
   await call({ op: "join", code: host.code }, 409);
   await call(auth(guest, "start"), 403);
+  await call(auth(guest, "settings", { mapId: "estate" }), 403);
+  await call(auth(host, "settings", { mapId: "__proto__" }), 400);
+  await call(auth(guest, "loadout", { weapon: "toString" }), 400);
+  await call(auth(host, "settings", { mapId: "testblock" }));
+  await call(auth(guest, "loadout", { weapon: "scatter" }));
   await call({ ...auth(host, "poll"), token: "0".repeat(48) }, 401);
   await call(auth(joins[1], "team", { team: 0 }), 409);
   const started = await call(auth(host, "start"));
   assert.equal(started.arena.entities.length, 8);
   assert.equal(started.arena.entities.filter((e) => e.bot).length, 0);
   await call({ op: "join", code: host.code }, 409);
+  assert.equal(started.arena.mapId, "testblock");
+  assert.equal(started.arena.entities.find((e) => e.id === guest.id).weapon, "scatter");
+  await call(auth(host, "settings", { mapId: "outpost" }), 409);
+  await call(auth(guest, "loadout", { weapon: "carbine" }), 409);
   const self = started.arena.entities.find((e) => e.id === host.id);
   const checked = await call(
     auth(host, "poll", {
@@ -60,6 +69,8 @@ try {
   console.log("Opening desktop room");
   await desktop.goto(base + "/games/outpost-zero.html");
   await desktop.locator('[data-mode="duo"]').click();
+  await desktop.locator(".mf-mapselect").selectOption("skyport");
+  await desktop.locator(".mf-weaponselect").selectOption("rocket");
   await desktop.locator("summary").click();
   await desktop.locator(".mf-create").click();
   await desktop.waitForFunction(() => document.querySelector("midnry-fps").engine.online?.code);
@@ -68,6 +79,7 @@ try {
   await mobile.goto(base + "/games/outpost-zero.html?room=" + code);
   assert.ok(await mobile.locator("details").evaluate((e) => e.open));
   assert.equal(await mobile.locator(".mf-codeinput").inputValue(), code);
+  await mobile.locator(".mf-weaponselect").selectOption("venom");
   await mobile.locator(".mf-join").click();
   await mobile.waitForFunction(
     () => document.querySelector("midnry-fps").engine.online?.members.length === 2,
@@ -76,6 +88,12 @@ try {
     () => document.querySelector("midnry-fps").engine.online?.members.length === 2,
   );
   assert.equal(await mobile.locator(".mf-start").isDisabled(), true);
+  assert.equal(await mobile.locator(".mf-mapselect").inputValue(), "skyport");
+  assert.equal(await mobile.locator(".mf-mapselect").isDisabled(), true);
+  await desktop.locator(".mf-mapselect").selectOption("freight");
+  await mobile.waitForFunction(
+    () => document.querySelector("midnry-fps").engine.mapId === "freight",
+  );
   console.log("Both players joined");
   await desktop.locator(".mf-start").click();
   for (const p of [desktop, mobile])
@@ -85,20 +103,38 @@ try {
   console.log("Both clients started");
   const one = await desktop.evaluate(() => {
     const g = document.querySelector("midnry-fps").engine;
-    return { id: g.selfId, team: g.player.team, ids: g.arena.entities.map((e) => e.id) };
+    return {
+      id: g.selfId,
+      team: g.player.team,
+      weapon: g.player.weapon,
+      mag: g.player.ammo,
+      mapId: g.arena.mapId,
+      ids: g.arena.entities.map((e) => e.id),
+    };
   });
   const two = await mobile.evaluate(() => {
     const g = document.querySelector("midnry-fps").engine;
-    return { id: g.selfId, team: g.player.team, ids: g.arena.entities.map((e) => e.id) };
+    return {
+      id: g.selfId,
+      team: g.player.team,
+      weapon: g.player.weapon,
+      mag: g.player.ammo,
+      mapId: g.arena.mapId,
+      ids: g.arena.entities.map((e) => e.id),
+    };
   });
+  assert.equal(one.weapon, "rocket");
+  assert.equal(two.weapon, "venom");
+  assert.equal(one.mapId, "freight");
+  assert.equal(two.mapId, "freight");
   assert.notEqual(one.id, two.id);
   assert.equal(one.team, two.team);
   assert.deepEqual(one.ids, two.ids);
   await mobile.locator(".mf-fire").tap();
-  await mobile.waitForFunction(() => document.querySelector("midnry-fps").engine.player.ammo < 24);
+  await mobile.waitForFunction(() => document.querySelector("midnry-fps").engine.player.ammo < 9);
   await desktop.waitForFunction(
     (id) =>
-      document.querySelector("midnry-fps").engine.arena.entities.find((e) => e.id === id).ammo < 24,
+      document.querySelector("midnry-fps").engine.arena.entities.find((e) => e.id === id).ammo < 9,
     two.id,
   );
   await desktop.evaluate(() => document.querySelector("midnry-fps").engine.pause());
