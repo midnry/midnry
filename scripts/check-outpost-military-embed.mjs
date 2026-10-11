@@ -27,7 +27,7 @@ try {
     g.destroy();
   });
   assert.deepEqual(errors, []);
-  await page.goto(base + "/games/outpost-zero.html");
+  await page.goto(base + "/games/outpost-zero.html?renderer=classic");
   await page.waitForFunction(() => document.querySelector("midnry-fps")?.engine?.characters);
   assert.equal(
     await page.evaluate(() => !!document.querySelector("midnry-fps").engine.military),

@@ -7,7 +7,7 @@ export class MenuUI {
       modes = g.$(".mf-modes"),
       learn = g.$(".mf-learn");
     g.$("h1").innerHTML = "Outpost <em>Zero.</em>";
-    g.$(".mf-eyebrow").textContent = "MIDNRY / COMIC SURVIVAL";
+    g.$(".mf-eyebrow").textContent = "MIDNRY / FIELD OPERATIONS";
     const practice = g.$('[data-mode="training"]');
     practice.textContent = "Practice";
     for (const [id, title, detail] of [

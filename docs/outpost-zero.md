@@ -232,7 +232,7 @@ Materials are decoded asynchronously and cached per graphics preset. Loading a m
 
 ## Tactical 3D graphics
 
-The Midnry game page selects the locally bundled WebGL renderer with `renderer=military`. The simulation, multiplayer API, map collision, mobile controls, graphics confirmation, and exit flow remain shared with the original game. Opening the static page without that query selects the original illustrated renderer. Devices that cannot initialize WebGL or lose their graphics context return to that original renderer.
+The Midnry game page selects the locally bundled WebGL renderer with `renderer=military`. The simulation, multiplayer API, map collision, mobile controls, graphics confirmation, and exit flow remain shared with the original game. The static page also selects tactical 3D by default; `renderer=classic` explicitly selects the original illustrated renderer. Startup retries WebGL 2 with a low-power, non-multisampled context if the default context fails. Devices that cannot initialize WebGL, lose their graphics context, or fail to download the assets return to the original renderer with a visible explanation and Retry 3D link. Failed renderers are disposed.
 
 The tactical presentation uses PBR asphalt, corrugated panels, worn metal and leather photographs, image-based HDR lighting, directional shadows, irregular wet-ground planar reflections, and cinematic color grading. High quality adds screen-space contact shadows, 4096-pixel sun shadows, and a 1024-pixel reflection target. Balanced uses a 512-pixel reflection target and 2048-pixel sun shadows. Performance omits planar reflections and cinematic processing; the shadow toggle remains respected. Rendering follows the existing adaptive internal resolution.
 
@@ -241,3 +241,8 @@ Skeletal character poses update at 30 FPS independently of the display render lo
 Edit `scripts/outpost-military/renderer.js` and run `npm run build:outpost-military` to regenerate the self-contained public module. Production build scripts also regenerate it automatically. Static files have no runtime CDN dependency.
 
 Validation: `node scripts/check-outpost-military.mjs [base-url]` checks desktop/mobile rendering, all five maps and eleven loadouts, material cache bounds, camera alignment, cover destruction, weapon-specific projectile meshes, damaging fields, 30 FPS pose sampling, and quality settings. `node scripts/check-outpost-military-embed.mjs [base-url]` checks the integrated iframe, context-loss fallback, teardown, and original-renderer selection.
+
+
+## Loading and startup
+
+A loading screen appears before module downloads, reports completion of the fourteen tactical assets, and keeps controls inert until the first 3D frame has rendered. Loading has a 45-second timeout; failed core module downloads show a retry link. Explicit classic launches dismiss loading after the engine initializes. `node scripts/check-outpost-loading.mjs [base-url]` checks desktop/mobile loading, default tactical graphics, low-power context retry, first deployment, context-loss cleanup, asset failure and the classic opt-out. Set `CHROMIUM_PATH` to use a local Chromium installation.

@@ -21,8 +21,9 @@ const PROFILES = {
   estate: { floor: "#c6bca5", fog: "#c4c1ba", metal: "#81867b" },
 };
 export class MilitaryRenderer {
-  constructor(g) {
+  constructor(g, onProgress = () => {}) {
     this.g = g;
+    this.onProgress = onProgress;
     this.disposed = false;
     this.actors = new Map();
     this.crates = new Map();
@@ -42,11 +43,19 @@ export class MilitaryRenderer {
     this.lastPreset = "";
     this.assetErrors = [];
     this.motion = matchMedia("(prefers-reduced-motion: reduce)");
-    this.renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: false,
-      powerPreference: "high-performance",
-    });
+    // A high-performance, multisampled context is not available on every phone.
+    // Retry on a fresh canvas so rejected attributes don't lock the next attempt.
+    let canvas, context;
+    for (const attributes of [
+      { antialias: true, powerPreference: "default" },
+      { antialias: false, powerPreference: "low-power" },
+    ]) {
+      canvas = document.createElement("canvas");
+      context = canvas.getContext("webgl2", { ...attributes, alpha: false });
+      if (context) break;
+    }
+    if (!context) throw new Error("This browser could not start WebGL 2 graphics.");
+    this.renderer = new THREE.WebGLRenderer({ canvas, context });
     this.renderer.setPixelRatio(1);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -57,8 +66,8 @@ export class MilitaryRenderer {
     this.contextLost = (event) => {
       event.preventDefault();
       if (this.disposed) return;
-      g.militaryLoaded = false;
-      g.$(".mf-tag").textContent = "3D UNAVAILABLE / CLASSIC VIEW";
+      this.contextFailed = true;
+      g.fallbackMilitary(new Error("The graphics context was lost."));
     };
     this.renderer.domElement.addEventListener("webglcontextlost", this.contextLost);
     this.renderer.domElement.className = "mf-webgl";
@@ -176,6 +185,8 @@ export class MilitaryRenderer {
     return m;
   }
   async loadAssets() {
+    let completed = 0;
+    const complete = () => this.onProgress(++completed, 14);
     const loader = new THREE.TextureLoader();
     const load = async (path) => {
       try {
@@ -191,6 +202,8 @@ export class MilitaryRenderer {
       } catch {
         this.assetErrors.push(path);
         return null;
+      } finally {
+        complete();
       }
     };
     const maps = await Promise.all(
@@ -249,6 +262,8 @@ export class MilitaryRenderer {
           });
         } catch {
           this.assetErrors.push("soldier");
+        } finally {
+          complete();
         }
       })(),
       (async () => {
@@ -268,6 +283,8 @@ export class MilitaryRenderer {
           this.scene.environmentIntensity = 0.45;
         } catch {
           this.assetErrors.push("sky");
+        } finally {
+          complete();
         }
       })(),
     ]);
