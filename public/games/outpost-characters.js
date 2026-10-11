@@ -1,7 +1,7 @@
 /** Original illustrated anime atlases with a procedural loading fallback.
  * Presentation only: never mutates Arena entities or authoritative match rules. */
 import { weaponOf } from "./outpost-content.js";
-export const ANIMATION_FPS = 24;
+export const ANIMATION_FPS = 30;
 const TAU = Math.PI * 2;
 // Tight source bounds measured from alpha; source artwork stays untouched.
 const ATLASES = [
@@ -155,7 +155,7 @@ export class Characters {
     this.round = null;
   }
   get cacheLimit() {
-    return this.g.academy.preset === "performance" ? 64 : 96;
+    return 128;
   }
   clearCache() {
     this.cache.clear();
@@ -197,23 +197,23 @@ export class Characters {
     if (e.hp <= 0) {
       state = "down";
       frame = this.motion.matches
-        ? 21
-        : Math.min(21, Math.floor((time - (old?.deathAt ?? time)) * ANIMATION_FPS));
+        ? 26
+        : Math.min(26, Math.floor((time - (old?.deathAt ?? time)) * ANIMATION_FPS));
     } else if (time - e.hit >= 0 && time - e.hit < 0.22) {
       state = "hit";
-      frame = Math.min(5, Math.floor((time - e.hit) * ANIMATION_FPS));
+      frame = Math.min(6, Math.floor((time - e.hit) * ANIMATION_FPS));
     } else if (e.reloadUntil > time) {
       state = "reload";
-      frame = Math.max(0, Math.min(33, Math.floor((1.4 - (e.reloadUntil - time)) * ANIMATION_FPS)));
+      frame = Math.max(0, Math.min(41, Math.floor((1.4 - (e.reloadUntil - time)) * ANIMATION_FPS)));
     } else if (time - e.shotAt >= 0 && time - e.shotAt < 0.22) {
       state = "fire";
-      frame = Math.min(5, Math.floor((time - e.shotAt) * ANIMATION_FPS));
+      frame = Math.min(6, Math.floor((time - e.shotAt) * ANIMATION_FPS));
     } else if (moving) {
       state = "walk";
       frame =
         Math.floor(time * ANIMATION_FPS * (e.speedUntil > time ? 1.5 : 1) + (e.phase || 0) + 1e-6) %
-        12;
-    } else frame = Math.floor(time * ANIMATION_FPS + (e.phase || 0) + 1e-6) % 72;
+        15;
+    } else frame = Math.floor(time * ANIMATION_FPS + (e.phase || 0) + 1e-6) % 90;
     if (this.motion.matches && state !== "down") frame = 0;
     const camera = g.camera(),
       angle = Math.atan2(camera.y - e.y, camera.x - e.x) - e.a;
@@ -249,7 +249,7 @@ export class Characters {
       const divisors = { idle: 18, walk: 1.5, reload: 5.67, fire: 2, hit: 3, down: 4.4 };
       this.paint(c, RIGS[role], role, variant, ally, w, {
         ...p,
-        frame: Math.floor(p.frame / divisors[p.state]),
+        frame: Math.floor((p.frame * 24) / ANIMATION_FPS / divisors[p.state]),
       });
     }
     // LRU bounds memory even with eight angles, loadouts and animation states.
@@ -314,7 +314,9 @@ export class Characters {
     atlas.cells.set(index, image);
     return image;
   }
-  paintAtlas(c, role, ally, weapon, p) {
+  paintAtlas(c, role, ally, weapon, pose) {
+    // Preserve the original gait/breath/reaction durations while sampling at 30Hz.
+    const p = { ...pose, frame: (pose.frame * 24) / ANIMATION_FPS };
     const back = [3, 4, 5].includes(p.direction),
       side = [2, 6].includes(p.direction);
     const neutral = back ? 3 : side ? 2 : p.direction === 0 ? 0 : 1;
@@ -369,7 +371,7 @@ export class Characters {
     const dx = (rect[0] - ((index % 4) + 0.5) * (atlas.width / 4)) * scale;
     if (moving) {
       // Interpolate cloth/limb follow-through in a small deformation mesh at
-      // 24 Hz. One sharp illustration per sample avoids doubled faces/limbs.
+      // 30 Hz. One sharp illustration per sample avoids doubled faces/limbs.
       const wave = Math.sin((p.frame / 12) * TAU);
       const bands = 12,
         bandHeight = source.height / bands;

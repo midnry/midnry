@@ -10,7 +10,7 @@ test("120Hz and 60Hz cadence report measured FPS without inventing display frame
     assert.equal(b.target, 120);
     assert.equal(b.scale, 1);
   }
-  assert.equal(ANIMATION_FPS, 24);
+  assert.equal(ANIMATION_FPS, 30);
 });
 test("sustained overload lowers resolution gradually and clamps its floor", () => {
   const b = new FrameBudget();

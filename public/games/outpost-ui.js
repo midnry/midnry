@@ -328,6 +328,7 @@ export class MenuUI {
     canvas.setAttribute("aria-label", `${w.name} ${w.kind} weapon illustration`);
     c.fillStyle = "#253543";
     c.fillRect(0, 0, 240, 112);
+    if (this.g.weapons?.preview(c, w.id, 240, 112)) return;
     const shape = (points) => {
       c.beginPath();
       points.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
