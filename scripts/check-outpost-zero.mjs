@@ -246,7 +246,7 @@ mkdirSync(screenshotDir, { recursive: true });
       await page.screenshot({
         path: `${screenshotDir}last-signal-${mobile ? "mobile" : "desktop"}.png`,
       });
-      if (mobile) await page.getByRole("button", { name: "Pause game" }).click();
+      if (mobile) await page.getByRole("button", { name: "Open game menu" }).click();
       else await page.keyboard.press("p");
       const pausedTime = await page.evaluate(
         () => document.querySelector("midnry-fps").engine.time,
