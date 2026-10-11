@@ -33,7 +33,7 @@ Do not copy the standalone file's `<body>` style to your host page. Every styles
 
 - Desktop: WASD to move; mouse to aim; hold left click or Space to fire; R to reload; Shift to sprint; Escape, P or the pause button to pause. Arrow keys move forward/backward and turn.
 - Mobile: left joystick to move; drag the canvas on the right to aim; hold FIRE to shoot; R to reload. Landscape gives a wider view of the arena.
-- Defeat six drones, each with three health points. Drones slowly approach when they see you and deal periodic damage within range. Wall cover blocks visibility and shots.
+- Defeat six drones, each requiring three hits from the base weapon. Drones slowly approach when they see you and deal periodic damage within range. Wall cover blocks visibility and shots.
 - The carbine has a 24-round magazine, unlimited reserves and a 1.4-second reload. Reloading is manual unless you try firing an empty magazine.
 - Redeploy after winning or losing. Pausing freezes combat and reload timers.
 
@@ -58,5 +58,25 @@ This is an original comic-styled training prototype: flat cel colors, dark outli
 
 ## Validation
 
-The prototype was checked with Chromium through Playwright. It checks movement, wall collision, DDA distances, hitscan damage and kills, wall-blocked shots, reloads, pause state, multiple instances, teardown and mobile joystick cancellation. Desktop and mobile screenshots are included. Touch was checked in browser emulation, not on physical devices.
+The prototype was checked with Chromium through Playwright. It checks movement, wall collision, DDA distances, hitscan damage and kills, wall-blocked shots, reloads, pause state, multiple instances, teardown and mobile joystick cancellation. Desktop and mobile renders were visually inspected. Touch was checked in browser emulation, not on physical devices.
 
+
+## Last Signal · Solo
+
+Select **LAST SIGNAL · SOLO** in the Deploy menu. This is an offline, single-player survival match: you and seven AI rivals spawn in shuffled, separate positions. Rivals fight one another, break crates, collect cores and navigate around cover. Eliminate or outlast every rival to win. Death ends your match; Deploy resets the arena and every power-up. Selecting a mode starts a new match.
+
+| Original concept | Outpost Zero name | Rules |
+| --- | --- | --- |
+| Last-player-standing mode | Last Signal | Eight combatants, one survivor |
+| Breakable loot boxes | Supply Crates | 80 health, block movement and shots, drop one Charge Core |
+| Permanent match boosts | Charge Cores | Each adds 25 maximum/current health and 8 weapon damage until the match ends |
+| Closing hazard | Red Haze | Starts after 12 seconds, closes over 150 seconds, final safe square stays centered on clear floor |
+| Safe zone | Safe zone | Mint outline on the map; red shading marks the hazardous region |
+
+The VX–7 starts at 40 damage; rival bots start at 16. Core boosts apply to both player and bots. Gas damage applies to everyone outside the safe rectangle and increases with elapsed match time and uninterrupted exposure. Returning inside clears the exposure bonus. Pausing freezes all match timers.
+
+Key extension points: `reset()` (spawn and loot layout), `damage()` (crate drops and eliminations), `collectCores()` (permanent upgrades), `updateZone()` / `applyHaze()` (hazard timing), `updateRival()` / `pathTo()` (AI competition and navigation), `checkResult()` (last-survivor condition), and `drawHaze()` / `drawMap()` (hazard visualization).
+
+This iteration supports Solo with AI. Online multiplayer and the optional two-person **Pair Ops** variant with limited teammate-dependent redeployments are not implemented.
+
+The focused browser rule checks are in `scripts/check-outpost-zero.mjs`. Run with `node scripts/check-outpost-zero.mjs` after installing Playwright's Chromium, or set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an existing Chromium binary. It verifies both desktop and mobile emulation, including power stacking, crate occlusion, bot competition, increasing gas damage, win/loss, replay and the original Field Ops contract.

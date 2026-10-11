@@ -171,7 +171,7 @@ function FeaturedApps() {
               <p className="text-xs font-semibold tracking-widest text-[#ffc455] uppercase">Free game · Arena shooter</p>
             </div>
           </div>
-          <p className="mt-3 flex-1 text-sm text-pretty text-[#c6c8c6]">A comic-styled first-person shooter. Take cover, reload, and take down six rogue sentries. Desktop and touch controls.</p>
+          <p className="mt-3 flex-1 text-sm text-pretty text-[#c6c8c6]">A comic-styled shooter. Play Field Ops or outlast seven bots in Last Signal: collect Charge Cores and escape the shrinking Red Haze.</p>
           <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#ffc455]">See the game <span aria-hidden className="transition group-hover:translate-x-0.5">→</span></span>
         </Link>
       </div>
