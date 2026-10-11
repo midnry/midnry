@@ -93,6 +93,7 @@ function inputOf(value: unknown): Input {
     aim: number("aim", 100000),
     pitch: number("pitch", 1),
     sprint: v.sprint === true,
+    slide: v.slide === true,
     fire: v.fire === true,
     reload: v.reload === true,
     super: v.super === true,

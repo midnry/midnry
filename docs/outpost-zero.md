@@ -246,3 +246,12 @@ Validation: `node scripts/check-outpost-military.mjs [base-url]` checks desktop/
 ## Loading and startup
 
 A loading screen appears before module downloads, reports completion of the fourteen tactical assets, and keeps controls inert until the first 3D frame has rendered. Loading has a 45-second timeout; failed core module downloads show a retry link. Explicit classic launches dismiss loading after the engine initializes. `node scripts/check-outpost-loading.mjs [base-url]` checks desktop/mobile loading, default tactical graphics, low-power context retry, first deployment, context-loss cleanup, asset failure and the classic opt-out. Set `CHROMIUM_PATH` to use a local Chromium installation.
+
+
+## Sprint, slide and death presentation
+
+Hold Shift to sprint on a keyboard. On touchscreens, toggle SPRINT and push the joystick forward. Press C or Ctrl (or touch SLIDE) while sprinting forward for a 0.65-second momentum slide; slides have a 1.6-second cooldown. The shared simulation and server input validation own movement, wall collision and snapshots. Sliding lowers the tactical camera and the visible character posture; sprinting uses the run animation. Existing weapon damage and collision rules apply throughout.
+
+On death, the player camera drops and rolls with a fade to SIGNAL LOST for 1.2 seconds before the round debrief. Reduced-motion users get a 0.35-second fade without camera movement. A living Duo partner is spectated after the death sequence; an ended team gets its debrief. Surviving victories show the debrief immediately. Visible tactical rivals collapse briefly instead of disappearing immediately. Replay and online round starts clear death and sprint state.
+
+Validation: `node --test scripts/outpost-movement.test.mjs` verifies movement, cooldown, momentum, collisions and snapshot restoration. `node scripts/check-outpost-movement.mjs [base-url]` verifies keyboard/touch controls, death-before-results, camera collapse, replay reset, reduced-motion classic death and Duo spectating.

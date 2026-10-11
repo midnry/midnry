@@ -127,6 +127,12 @@ export class Arena {
         poisonSource: null,
         poisonDamage: 0,
         slowUntil: 0,
+        sprinting: false,
+        slideUntil: 0,
+        slideCooldown: 0,
+        slideHeld: false,
+        slideDx: 0,
+        slideDy: 0,
         damageSeq: 0,
         damageTotal: 0,
         damageAngle: null,
@@ -467,6 +473,10 @@ export class Arena {
     e.ammo = weaponOf(e.weapon).mag;
     e.respawnAt = 0;
     e.reloadUntil = 0;
+    e.sprinting = false;
+    e.slideUntil = 0;
+    e.slideCooldown = 0;
+    e.slideHeld = false;
     e.path = [];
     e.nextPath = 0;
     e.hit = -10;
@@ -1089,13 +1099,24 @@ export class Arena {
       const len = Math.max(1, Math.hypot(f, s));
       f /= len;
       s /= len;
+      const ca = Math.cos(e.a), sa = Math.sin(e.a);
+      if (input.slide && !e.slideHeld && input.sprint && f > 0.2 &&
+          this.time >= (e.slideCooldown || 0)) {
+        e.slideUntil = this.time + 0.65;
+        e.slideCooldown = this.time + 1.6;
+        const direction = Math.hypot(f, s);
+        e.slideDx = (ca * f - sa * s) / direction;
+        e.slideDy = (sa * f + ca * s) / direction;
+      }
+      e.slideHeld = !!input.slide;
+      const sliding = e.slideUntil > this.time;
+      e.sprinting = !sliding && !!input.sprint && Math.hypot(f, s) > 0.1;
       const speed =
-          (input.sprint ? 4 : 2.6) *
+          (sliding ? 3 + 3 * ((e.slideUntil - this.time) / 0.65) : input.sprint ? 4 : 2.6) *
           (e.speedUntil > this.time ? 1.4 : 1) *
-          (e.slowUntil > this.time ? 0.45 : 1),
-        ca = Math.cos(e.a),
-        sa = Math.sin(e.a);
-      this.move(e, (ca * f - sa * s) * speed * dt, (sa * f + ca * s) * speed * dt);
+          (e.slowUntil > this.time ? 0.45 : 1);
+      this.move(e, (sliding ? e.slideDx : ca * f - sa * s) * speed * dt,
+        (sliding ? e.slideDy : sa * f + ca * s) * speed * dt);
       if (input.reload) this.reload(e);
       if (input.super) this.super(e);
       if (input.fire) this.shoot(e);

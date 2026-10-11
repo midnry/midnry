@@ -357,6 +357,31 @@
         height: 48px;
         background: #e8e0ccab;
       }
+      midnry-fps .mf-sprint, midnry-fps .mf-slide {
+        position: absolute; bottom: calc(225px + var(--mf-safe-bottom)); width: 82px; min-height: 48px;
+        border: 2px solid #b3c3ae; background: #17201edb; color: #fff4dc;
+        pointer-events: auto; touch-action: none; font-weight: 800;
+      }
+      midnry-fps .mf-sprint { left: calc(24px + var(--mf-safe-left)); }
+      midnry-fps .mf-sprint[aria-pressed="true"] { background: #b3c3ae; color: #101419; }
+      midnry-fps .mf-slide { right: calc(25px + var(--mf-safe-right)); }
+      midnry-fps .mf-movement {
+        position: absolute; bottom: calc(108px + var(--mf-safe-bottom)); left: 50%; transform: translateX(-50%);
+        padding: 8px 12px; color: #b3c3ae; background: #101419b0;
+        pointer-events: none; font-weight: 800; letter-spacing: .1em;
+      }
+      @media (max-width: 700px) {
+        midnry-fps .mf-movement { bottom: calc(286px + var(--mf-safe-bottom)); }
+      }
+      @media (max-height: 500px) and (min-width: 600px) {
+        midnry-fps .mf-slide { right: calc(185px + var(--mf-safe-right)); bottom: calc(118px + var(--mf-safe-bottom)); }
+      }
+      midnry-fps .mf-dying :is(.mf-touch, .mf-super, .mf-cross, .mf-movement) { visibility: hidden; }
+      midnry-fps .mf-death {
+        position: absolute; inset: 0; display: grid; place-items: center;
+        pointer-events: none; color: #e4e8e3; background: transparent;
+        font-weight: 900; font-size: clamp(24px, 5vw, 52px); letter-spacing: .16em;
+      }
       midnry-fps [hidden] {
         display: none !important;
       }
@@ -1563,7 +1588,7 @@
         <div class="mf-match" hidden><b class="mf-cores">CHARGE CORES 0</b><div class="mf-teamstat"></div><div class="mf-zone"></div></div><div class="mf-cross"></div><div class="mf-toast" role="status" aria-live="polite"></div>
         <div class="mf-damage" role="status" aria-live="polite"></div><div class="mf-hitmark" aria-hidden="true"></div><button class="mf-super" aria-label="Use charged ability">Q · SUPER <b>0%</b></button>
         <div class="mf-bottom"><div class="mf-stat">VITALS<strong class="mf-hp">100</strong><div class="mf-health"><i></i></div></div><div class="mf-stat mf-ammo">VX–7 / AUTO CARBINE<strong class="mf-rounds">24 <span>/ ∞</span></strong></div></div>
-        <div class="mf-touch"><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
+        <div class="mf-movement" hidden role="status" aria-live="polite"></div><div class="mf-death" hidden role="status" aria-live="polite">SIGNAL LOST</div><div class="mf-touch"><button class="mf-sprint" aria-label="Toggle sprint" aria-pressed="false">SPRINT</button><button class="mf-slide" aria-label="Slide while sprinting">SLIDE</button><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
         <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">A sun-scorched outpost. Six rogue sentries. One very loud solution. Drop into a comic-book combat sandbox.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="training" aria-pressed="true">FIELD OPS</button><button class="mf-mode" data-mode="signal" aria-pressed="false">LAST SIGNAL · SOLO</button><button class="mf-mode" data-mode="duo" aria-pressed="false">PAIR OPS · DUO</button></div><div class="mf-kit"><label>Arena<select class="mf-mapselect" aria-label="Choose arena"></select></label><label>Loadout<select class="mf-weaponselect" aria-label="Choose loadout"></select></label></div><p class="mf-mapinfo"></p><p class="mf-weaponinfo"></p><p class="mf-kitnote">Choose before deploying. Offline changes start a fresh round; online, the host chooses the arena.</p><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Click or Space · fire<br>R · reload &nbsp; / &nbsp; Shift · sprint &nbsp; / &nbsp; Esc or P · pause &nbsp; / &nbsp; Q · super<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
       </div>`;
             this.engine = new Game(this);
@@ -1717,6 +1742,15 @@
           }
           // Last Signal uses the same arena, with a clear center for the final zone.
           reset() {
+            this.shell.classList.remove("mf-dying");
+            this.deathSequence = null;
+            this.deathProgress = 0;
+            this.deathSeen = false;
+            this.pendingResult = null;
+            this.touchSprint = false;
+            this.pendingSlide = false;
+            this.$(".mf-death").hidden = true;
+            this.$(".mf-sprint").setAttribute("aria-pressed", "false");
             this.art?.reset();
             this.characters?.reset();
             this.weapons?.reset();
@@ -1829,6 +1863,7 @@
             return this.player?.hit ?? -10;
           }
           camera() {
+            if (this.deathSequence) return this.deathSequence.origin;
             if (this.player.hp > 0) return this.player;
             return (
               this.enemies.find((e) => e.team === this.player.team && e.hp > 0) ||
@@ -1845,11 +1880,68 @@
               strafe: Number(this.keys.has("d")) - Number(this.keys.has("a")) + this.touch.x,
               aim: this.player.a,
               pitch: this.viewPitch / this.projection,
-              sprint: this.keys.has("shift"),
+              sprint: this.keys.has("shift") || this.touchSprint,
+              slide: this.pendingSlide,
               fire: this.firing || this.keys.has(" ") || this.pendingShot > 0,
               reload: this.pendingReload,
               super: this.pendingSuper,
             };
+          }
+          requestSlide() {
+            if (!this.running || this.player.hp <= 0 || this.deathSequence) return;
+            const input = this.controls();
+            if (!input.sprint || input.forward <= 0.2) {
+              this.message("SPRINT FORWARD TO SLIDE", 2);
+              return;
+            }
+            if ((this.player.slideCooldown || 0) > this.time) return;
+            this.pendingSlide = true;
+          }
+          beginDeath(now = performance.now()) {
+            if (this.deathSeen || this.state === "fresh") return;
+            this.deathSeen = true;
+            this.shell.classList.add("mf-dying");
+            this.deathProgress = 0;
+            this.deathSequence = {
+              at: now,
+              duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 350 : 1200,
+              origin: { ...this.player },
+              resume: this.running,
+            };
+            this.running = false;
+            this.keys.clear();
+            this.firing = false;
+            this.pendingSlide = false;
+            this.touchSprint = false;
+            this.touch = { x: 0, y: 0 };
+            this.look = null;
+            this.stickId = null;
+            this.$(".mf-stick i").style.transform = "";
+            this.$(".mf-sprint").setAttribute("aria-pressed", "false");
+            this.$(".mf-modal").hidden = true;
+            this.$(".mf-death").hidden = false;
+            this.$(".mf-cross").hidden = true;
+            this.updateHUD();
+            this.ui?.syncAccessibility();
+          }
+          updateDeath(now) {
+            if (this.player.hp > 0 && !this.deathSequence) this.deathSeen = false;
+            if (this.player.hp <= 0 && !this.deathSeen && this.state !== "fresh" &&
+                this.state !== "ended") this.beginDeath(now);
+            if (!this.deathSequence) return;
+            this.deathProgress = clamp((now - this.deathSequence.at) / this.deathSequence.duration, 0, 1);
+            if (this.deathProgress < 1) return;
+            const resume = this.deathSequence.resume, result = this.pendingResult;
+            this.shell.classList.remove("mf-dying");
+            this.deathSequence = null;
+            this.deathProgress = 0;
+            this.pendingResult = null;
+            this.$(".mf-death").hidden = true;
+            if (result !== null) this.endMatch(result);
+            else if (resume) {
+              this.running = true;
+              this.shell.focus({ preventScroll: true });
+            } else this.pause();
           }
           updateKit() {
             const map = mapOf(this.mapId),
@@ -1948,6 +2040,11 @@
           }
           endMatch(won) {
             if (this.state === "ended") return;
+            if (this.player.hp <= 0 && !this.deathSeen) this.beginDeath();
+            if (this.deathSequence) {
+              this.pendingResult = won;
+              return;
+            }
             this.state = "ended";
             this.pause();
             this.message(
@@ -2124,6 +2221,15 @@
               this.arena = next;
               if (starting) {
                 this.retention?.reset();
+                this.shell.classList.remove("mf-dying");
+                this.deathSequence = null;
+                this.deathProgress = 0;
+                this.deathSeen = false;
+                this.pendingResult = null;
+                this.touchSprint = false;
+                this.pendingSlide = false;
+                this.$(".mf-sprint").setAttribute("aria-pressed", "false");
+                this.$(".mf-death").hidden = true;
                 this.state = "playing";
                 this.running = true;
                 this.viewPitch = 0;
@@ -2202,7 +2308,8 @@
               const began = performance.now(),
                 shot = this.pendingShot || 0,
                 reload = this.pendingReload,
-                superPending = this.pendingSuper;
+                superPending = this.pendingSuper,
+                slidePending = this.pendingSlide;
               const input =
                 this.running && this.player.hp > 0
                   ? this.controls()
@@ -2220,6 +2327,7 @@
                   this.pendingShot = Math.max(0, (this.pendingShot || 0) - shot);
                   if (reload) this.pendingReload = false;
                   if (superPending) this.pendingSuper = false;
+                  if (slidePending) this.pendingSlide = false;
                 }
                 this.scheduleRoomPoll(
                   net.errors
@@ -2272,6 +2380,15 @@
                   other.setAttribute("aria-pressed", String(other === button));
               });
             this.on(this.$(".mf-pause"), "click", () => this.pause());
+            this.on(this.$(".mf-sprint"), "click", () => {
+              if (!this.running || this.player.hp <= 0) return;
+              this.touchSprint = !this.touchSprint;
+              this.$(".mf-sprint").setAttribute("aria-pressed", String(this.touchSprint));
+            });
+            this.on(this.$(".mf-slide"), "pointerdown", (e) => {
+              e.preventDefault();
+              this.requestSlide();
+            });
             this.on(this.shell, "keydown", (e) => {
               if (e.target.closest?.("input,select,textarea,dialog")) return;
               if (!this.running && e.target.closest?.("button,summary")) return;
@@ -2291,6 +2408,8 @@
                   "q",
                   "p",
                   "shift",
+                  "c",
+                  "control",
                 ].includes(k)
               )
                 e.preventDefault();
@@ -2302,6 +2421,7 @@
               this.keys.add(k);
               if (k === "r") this.reload();
               if (k === "q" && !e.repeat) this.useSuper();
+              if ((k === "c" || k === "control") && !e.repeat) this.requestSlide();
               if (k === " " && !e.repeat) this.shoot();
             });
             this.on(this.shell, "keyup", (e) => this.keys.delete(e.key.toLowerCase()));
@@ -2417,7 +2537,7 @@
             }
           }
           start() {
-            if (this.loading) return;
+            if (this.loading || this.deathSequence) return;
             this.retention?.audio.unlock();
             if (this.online) {
               if (this.online.phase === "lobby") {
@@ -2437,6 +2557,10 @@
             this.lockMouse();
           }
           pause() {
+            if (this.deathSequence) return;
+            this.pendingSlide = false;
+            this.touchSprint = false;
+            this.$(".mf-sprint").setAttribute("aria-pressed", "false");
             this.running = false;
             this.keys.clear();
             this.firing = false;
@@ -2636,7 +2760,8 @@
             this.arena.advance(dt, { [this.selfId]: this.controls() });
             this.pendingReload = false;
             this.pendingSuper = false;
-            this.step += Math.hypot(this.controls().forward, this.controls().strafe) * dt * 9;
+            this.pendingSlide = false;
+            this.step += Math.hypot(this.controls().forward, this.controls().strafe) * dt * (this.player.sprinting ? 14 : 9);
             this.flushEvents();
             this.academy?.update();
             this.checkResult();
@@ -3507,6 +3632,14 @@
               hurt = Math.max(0, (this.damageUntil - now) / 520);
             if (this.militaryLoaded) c.clearRect(0, 0, this.w, this.h);
             c.save();
+            const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+            if (!this.militaryLoaded && this.deathSequence && !reducedMotion) {
+              const fall = this.deathProgress * this.deathProgress;
+              c.translate(this.w / 2, this.h / 2);
+              c.rotate(fall * 0.4);
+              c.scale(1 + fall * 0.15, 1 + fall * 0.15);
+              c.translate(-this.w / 2, -this.h / 2 - fall * this.h * 0.12);
+            }
             if (hurt > 0)
               c.translate(
                 Math.sin(now * 0.07) *
@@ -3535,6 +3668,15 @@
             }
             c.restore();
             this.drawMap();
+            if (this.deathSequence) {
+              c.fillStyle = `rgba(12,15,16,${this.deathProgress * 0.88})`;
+              c.fillRect(0, 0, this.w, this.h);
+              this.$(".mf-death").style.opacity = String(Math.min(1, this.deathProgress * 3));
+            }
+            const movement = this.$(".mf-movement");
+            const sliding = this.player.hp > 0 && this.player.slideUntil > this.time;
+            movement.hidden = !this.running || this.player.hp <= 0 || (!sliding && !this.player.sprinting);
+            movement.textContent = sliding ? "SLIDING" : "SPRINTING";
             const critical = this.player.hp > 0 && this.player.hp / this.player.maxHp < 0.3;
             if (hurt > 0 || critical) {
               const g = c.createRadialGradient(
@@ -3576,6 +3718,7 @@
               dt = Math.min(0.04, (now - this.last) / 1000);
             this.last = now;
             if (this.running || this.online) this.update(dt);
+            this.updateDeath(now);
             if (this.time > this.toastUntil) this.$(".mf-toast").textContent = "";
             this.visualTime = this.online
               ? Math.min(this.time + 0.15, Math.max(this.time, (this.visualTime ?? this.time) + dt))

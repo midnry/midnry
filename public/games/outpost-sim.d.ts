@@ -4,6 +4,7 @@ export type Input = {
   aim?: number;
   pitch?: number;
   sprint?: boolean;
+  slide?: boolean;
   fire?: boolean;
   reload?: boolean;
   super?: boolean;
@@ -18,6 +19,12 @@ export type Entity = {
   a: number;
   pitch: number;
   hp: number;
+  sprinting?: boolean;
+  slideUntil?: number;
+  slideCooldown?: number;
+  slideHeld?: boolean;
+  slideDx?: number;
+  slideDy?: number;
   maxHp: number;
   damage: number;
   cores: number;
