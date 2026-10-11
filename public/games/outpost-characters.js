@@ -1,6 +1,6 @@
 /** Original illustrated anime atlases with a procedural loading fallback.
  * Presentation only: never mutates Arena entities or authoritative match rules. */
-import { weaponOf } from "./outpost-content.js";
+import { weaponOf, outfitOf } from "./outpost-content.js";
 export const ANIMATION_FPS = 30;
 const TAU = Math.PI * 2;
 // Tight source bounds measured from alpha; source artwork stays untouched.
@@ -223,6 +223,7 @@ export class Characters {
   sprite(e, override) {
     const g = this.g,
       w = weaponOf(e.weapon),
+      outfit = outfitOf(e.outfit),
       p = override || this.pose(e);
     const role = ["poison", "shard", "lob", "blades", "dash"].includes(w.kind)
       ? 2
@@ -232,7 +233,7 @@ export class Characters {
     const variant = this.atlases[role].loaded ? 0 : hash(e.id) % 3,
       ally = g.mode === "duo" && e.team === g.player.team;
     const density = g.academy.preset === "high" ? 2 : g.academy.preset === "performance" ? 1 : 1.5;
-    const key = `${this.motion.matches}:${density}:${role}:${variant}:${ally}:${w.id}:${p.state}:${p.frame}:${p.direction}`;
+    const key = `${outfit.id}:${this.motion.matches}:${density}:${role}:${variant}:${ally}:${w.id}:${p.state}:${p.frame}:${p.direction}`;
     if (this.cache.has(key)) {
       const image = this.cache.get(key);
       this.cache.delete(key);
@@ -251,6 +252,37 @@ export class Characters {
         ...p,
         frame: Math.floor((p.frame * 24) / ANIMATION_FPS / divisors[p.state]),
       });
+    }
+    // Preserve authored animation frames, with a consistent uniform tint in classic view.
+    c.save();
+    c.globalCompositeOperation = "source-atop";
+    c.globalAlpha = 0.38;
+    c.fillStyle = outfit.primary;
+    c.fillRect(0, 0, 192, 288);
+    c.restore();
+    // Distinct gear marks stay on the torso, matching the 3D outfit identity.
+    if (p.state !== "down") {
+      c.save();
+      c.fillStyle = outfit.accent;
+      c.strokeStyle = "#17221d";
+      c.lineWidth = 2;
+      const x = p.direction >= 4 ? 83 : 103,
+        y = 126 + (p.state === "walk" ? Math.sin(p.frame) * 2 : 0);
+      if (outfit.gear === "medic") {
+        c.fillRect(x - 3, y - 10, 6, 20);
+        c.fillRect(x - 10, y - 3, 20, 6);
+      } else if (outfit.gear === "armor") {
+        c.fillRect(x - 13, y - 12, 26, 24);
+        c.strokeRect(x - 13, y - 12, 26, 24);
+      } else if (outfit.gear === "tools") {
+        for (let i = 0; i < 3; i++) c.fillRect(x - 12 + i * 9, y + 12, 5, 16);
+      } else {
+        c.beginPath();
+        c.arc(x, y, 7 + Object.keys({ cap: 1, scarf: 1 }).includes(outfit.gear) * 3, 0, TAU);
+        c.fill();
+        c.stroke();
+      }
+      c.restore();
     }
     // LRU bounds memory even with eight angles, loadouts and animation states.
     while (this.cache.size >= this.cacheLimit) this.cache.delete(this.cache.keys().next().value);

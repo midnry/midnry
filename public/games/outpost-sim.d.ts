@@ -46,6 +46,7 @@ export type Entity = {
   path: { x: number; y: number }[];
   departed: boolean;
   weapon: string;
+  outfit?: string;
   charge: number;
   cloakedUntil: number;
   speedUntil: number;
@@ -101,7 +102,8 @@ export class Arena {
     countdown?: number;
     mapId?: string;
     weapon?: string;
-    humans?: { id: string; team: number; name?: string; weapon?: string }[];
+    outfit?: string;
+    humans?: { id: string; team: number; name?: string; weapon?: string; outfit?: string }[];
     random?: () => number;
   });
   static restore(data: ArenaState): Arena;
@@ -147,3 +149,14 @@ export const MAPS: Record<string, MapSpec>;
 export const WEAPONS: Record<string, WeaponSpec>;
 export function mapOf(id: string): MapSpec;
 export function weaponOf(id: string): WeaponSpec;
+
+export type Outfit = {
+  id: string;
+  name: string;
+  primary: string;
+  accent: string;
+  gear: string;
+  description: string;
+};
+export const OUTFITS: Record<string, Outfit>;
+export function outfitOf(id?: string): Outfit;

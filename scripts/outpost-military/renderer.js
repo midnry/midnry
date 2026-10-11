@@ -2,6 +2,7 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { clone as cloneSkeleton } from "three/addons/utils/SkeletonUtils.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
@@ -10,6 +11,7 @@ import { SSAOPass } from "three/addons/postprocessing/SSAOPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { Reflector } from "three/addons/objects/Reflector.js";
+import { outfitOf, weaponOf } from "../../public/games/outpost-content.js";
 const SCALE = 3,
   ASSET = "/games/military/",
   TAU = Math.PI * 2;
@@ -679,6 +681,7 @@ export class MilitaryRenderer {
     };
   }
   makeActor(e) {
+    const before = new Set(this.materials);
     const root = new THREE.Group();
     this.dynamic.add(root);
     let model,
@@ -706,14 +709,16 @@ export class MilitaryRenderer {
       model.traverse((o) => {
         if (o.isMesh) {
           o.material = o.material.clone();
-          o.material.color.set("#71776b");
-          // Preserve the model's authored detail while suppressing its yellow armor tint.
+          o.material.color.set(outfitOf(e.outfit).primary);
+          // Preserve authored fabric detail while applying the uniform's colour.
           o.material.onBeforeCompile = (shader) => {
+            shader.uniforms.uniformTint = { value: new THREE.Color(outfitOf(e.outfit).primary) };
+            shader.fragmentShader = "uniform vec3 uniformTint;\n" + shader.fragmentShader;
             shader.fragmentShader = shader.fragmentShader.replace(
               "#include <map_fragment>",
               `#include <map_fragment>
                float fabricLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
-               diffuseColor.rgb=mix(diffuseColor.rgb,vec3(fabricLuma),.85);`,
+               diffuseColor.rgb=mix(diffuseColor.rgb,vec3(fabricLuma)*uniformTint*1.8,.85);`,
             );
           };
           o.castShadow = true;
@@ -754,6 +759,8 @@ export class MilitaryRenderer {
     const actor = {
       root,
       model,
+      outfit: outfitOf(e.outfit).id,
+      weapon: e.weapon,
       mixer,
       actions,
       action: "Idle",
@@ -763,8 +770,154 @@ export class MilitaryRenderer {
       lastSample: null,
       deadAt: null,
     };
+    this.dressActor(actor, e);
+    this.equipActor(actor, e);
+    actor.ownedMaterials = [...this.materials].filter((m) => !before.has(m));
     this.actors.set(e.id, actor);
     return actor;
+  }
+  mergeStatic(group) {
+    group.updateMatrixWorld(true);
+    const inverse = group.matrixWorld.clone().invert(),
+      batches = new Map();
+    group.traverse((o) => {
+      if (!o.isMesh) return;
+      const geometry = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+      geometry.applyMatrix4(o.matrixWorld).applyMatrix4(inverse);
+      if (!geometry.attributes.uv)
+        geometry.setAttribute(
+          "uv",
+          new THREE.Float32BufferAttribute(
+            new Float32Array(geometry.attributes.position.count * 2),
+            2,
+          ),
+        );
+      const list = batches.get(o.material) || [];
+      list.push(geometry);
+      batches.set(o.material, list);
+      if (o.userData.ownedGeometry) o.geometry.dispose();
+    });
+    group.clear();
+    for (const [material, geometries] of batches) {
+      const geometry = mergeGeometries(geometries);
+      geometries.forEach((g) => g.dispose());
+      if (!geometry) continue;
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.userData.ownedGeometry = true;
+      group.add(mesh);
+    }
+  }
+  disposeActor(a) {
+    this.dynamic.remove(a.root);
+    a.mixer?.stopAllAction();
+    a.root.traverse((o) => {
+      if (o.userData.ownedGeometry) o.geometry.dispose();
+    });
+    for (const material of a.ownedMaterials || []) {
+      material.dispose();
+      this.materials.delete(material);
+    }
+  }
+  equipActor(a, e) {
+    const m = this.weaponMaterials(false);
+    a.equipmentMaterials = Object.values(m);
+    const equipment = new THREE.Group();
+    a.root.add(equipment);
+    this.buildWeapon(equipment, e.weapon, m, false);
+    this.mergeStatic(equipment);
+    equipment.position.set(0.15, 1.25, -0.14);
+    equipment.scale.setScalar(1.1);
+    a.equipment = equipment;
+    a.model.traverse((o) => {
+      if (o.name.endsWith("RightHand")) a.weaponAnchor = o;
+    });
+  }
+  dressActor(a, e) {
+    const outfit = outfitOf(e.outfit),
+      body = this.material({ color: outfit.primary, roughness: 0.9 }),
+      trim = this.material({ color: outfit.accent, roughness: 0.8 }),
+      dark = this.material({ color: "#222b29", roughness: 0.85 });
+    const gear = new THREE.Group();
+    gear.name = "outfit-" + outfit.id;
+    a.root.add(gear);
+    const box = (mat, p, s) => this.box(gear, mat, p, s);
+    const sphere = (mat, p, s) =>
+      this.mesh(
+        gear,
+        this.geo("wardrobeSphere", () => new THREE.SphereGeometry(1, 16, 12)),
+        mat,
+        p,
+        s,
+      );
+    const pack = () => {
+      box(body, [0, 1.4, 0.3], [0.48, 0.55, 0.25]);
+      box(trim, [0, 1.4, 0.44], [0.34, 0.3, 0.04]);
+    };
+    const hood = () => {
+      sphere(body, [0, 2.04, 0.03], [0.29, 0.32, 0.29]);
+      box(dark, [0, 2.08, -0.24], [0.28, 0.17, 0.06]);
+    };
+    for (const x of [-0.18, 0.18]) box(trim, [x, 1.13, -0.23], [0.14, 0.18, 0.1]);
+    if (outfit.gear === "cap") {
+      box(body, [0, 2.25, 0.01], [0.46, 0.12, 0.4]);
+      box(trim, [0, 2.2, -0.28], [0.44, 0.045, 0.26]);
+    }
+    if (outfit.gear === "scarf") {
+      box(trim, [0, 1.8, 0], [0.56, 0.18, 0.42]);
+      box(trim, [0.17, 1.49, -0.25], [0.18, 0.5, 0.045]);
+      pack();
+    }
+    if (outfit.gear === "goggles") {
+      for (const x of [-0.1, 0.1]) box(trim, [x, 2.13, -0.245], [0.15, 0.1, 0.1]);
+      box(dark, [0, 0.98, 0], [0.66, 0.08, 0.42]);
+    }
+    if (outfit.gear === "medic") {
+      pack();
+      box(trim, [0, 1.55, -0.245], [0.1, 0.29, 0.045]);
+      box(trim, [0, 1.55, -0.27], [0.29, 0.1, 0.045]);
+    }
+    if (outfit.gear === "hood") {
+      hood();
+      box(trim, [0, 2.07, -0.29], [0.27, 0.055, 0.025]);
+    }
+    if (outfit.gear === "tools") {
+      for (const x of [-0.2, 0.2]) box(trim, [x, 1.5, -0.22], [0.06, 0.58, 0.05]);
+      box(dark, [0, 1.05, 0], [0.68, 0.13, 0.44]);
+      for (let i = 0; i < 3; i++) box(trim, [0.33, 0.98, 0.09 + i * 0.07], [0.06, 0.26, 0.035]);
+    }
+    if (outfit.gear === "fur") {
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        sphere(trim, [Math.cos(angle) * 0.29, 1.83, Math.sin(angle) * 0.22], [0.13, 0.14, 0.13]);
+      }
+      pack();
+    }
+    if (outfit.gear === "armor") {
+      for (const x of [-0.42, 0.42]) box(trim, [x, 1.69, 0], [0.3, 0.2, 0.46]);
+      box(body, [0, 1.48, -0.28], [0.5, 0.4, 0.1]);
+      box(trim, [0, 1.51, -0.34], [0.25, 0.24, 0.04]);
+    }
+    if (outfit.gear === "cape") {
+      hood();
+      for (const x of [-0.2, 0.2]) {
+        const panel = box(body, [x, 1.33, 0.32], [0.36, 0.85, 0.06]);
+        panel.rotation.x = -0.16;
+        panel.rotation.z = x * 0.25;
+      }
+      box(trim, [0, 1.84, -0.19], [0.12, 0.07, 0.08]);
+    }
+    if (outfit.gear === "respirator") {
+      sphere(dark, [0, 1.98, -0.26], [0.19, 0.14, 0.12]);
+      for (const x of [-0.18, 0.18]) {
+        sphere(trim, [x, 1.97, -0.28], [0.08, 0.08, 0.08]);
+        this.cylinder(gear, dark, [x, 1.43, 0.36], 0.12, 0.65, "y", 16);
+      }
+      box(trim, [0, 2.15, -0.245], [0.34, 0.12, 0.05]);
+    }
+    this.mergeStatic(gear);
+    a.wardrobe = gear;
   }
   updateActors(t) {
     const current = new Set();
@@ -774,6 +927,11 @@ export class MilitaryRenderer {
       if (e.id === camera.id) continue;
       current.add(e.id);
       let a = this.actors.get(e.id);
+      if (a && (a.outfit !== outfitOf(e.outfit).id || a.weapon !== e.weapon)) {
+        this.disposeActor(a);
+        this.actors.delete(e.id);
+        a = null;
+      }
       if (!a) a = this.makeActor(e);
       const moving = Math.hypot(e.x - a.x, e.y - a.y) > 0.001;
       a.patch.color.set(
@@ -785,7 +943,8 @@ export class MilitaryRenderer {
       if (alive) a.deadAt = null;
       else if (a.deadAt === null) a.deadAt = now;
       const fall = alive ? 0 : Math.min(1, (now - a.deadAt) / 0.85);
-      a.root.visible = (alive || now - a.deadAt < 2.5) &&
+      a.root.visible =
+        (alive || now - a.deadAt < 2.5) &&
         (!cloaked || Math.hypot(e.x - camera.x, e.y - camera.y) < 1.3);
       const sliding = alive && e.slideUntil > this.g.time;
       a.root.scale.y = sliding ? 0.55 : 1;
@@ -798,7 +957,10 @@ export class MilitaryRenderer {
       a.root.rotation.y = -Math.PI / 2 - e.a;
       const next =
         alive && moving && !this.motion.matches && !sliding
-          ? (e.sprinting || e.speedUntil > this.g.time ? "Run" : "Walk") : "Idle";
+          ? e.sprinting || e.speedUntil > this.g.time
+            ? "Run"
+            : "Walk"
+          : "Idle";
       if (next !== a.action) {
         a.actions[a.action]?.fadeOut(0.12);
         a.actions[next]?.reset().fadeIn(0.12).play();
@@ -814,22 +976,25 @@ export class MilitaryRenderer {
       a.y = e.y;
       // Short physical recoil and hit flinch layered on skeletal locomotion.
       const hit = Math.max(0, 1 - (this.g.time - e.hit) / 0.18);
-      a.model.rotation.z = alive ? hit * 0.05 : this.motion.matches ? Math.PI / 2 : fall * 1.5;
+      a.model.rotation.z = 0;
+      a.root.rotation.z = alive ? hit * 0.05 : this.motion.matches ? Math.PI / 2 : fall * 1.5;
+      if (a.equipment) {
+        if (a.weaponAnchor) {
+          a.root.updateMatrixWorld(true);
+          a.weaponAnchor.getWorldPosition(a.equipment.position);
+          a.root.worldToLocal(a.equipment.position);
+          a.equipment.position.z -= 0.05;
+        } else a.equipment.position.y = 1.25 + (moving ? Math.sin(t * 7 + e.phase) * 0.025 : 0);
+        a.equipment.rotation.x = t - e.shotAt < 0.15 ? -0.12 : 0;
+      }
     }
     for (const [id, a] of this.actors)
       if (!current.has(id)) {
-        this.dynamic.remove(a.root);
-        a.mixer?.stopAllAction();
-        a.root.traverse((o) => {
-          if (o.isMesh) {
-            o.material.dispose();
-            this.materials.delete(o.material);
-          }
-        });
+        this.disposeActor(a);
         this.actors.delete(id);
       }
   }
-  weaponMaterials() {
+  weaponMaterials(firstPerson = true) {
     const materials = {
       metal: this.material({
         color: "#555c59",
@@ -859,7 +1024,10 @@ export class MilitaryRenderer {
       }),
       skin: this.material({ color: "#b48a6d", roughness: 0.76 }),
     };
-    Object.values(materials).forEach((m) => (m.userData.weapon = true));
+    const uniform = outfitOf(this.g.player.outfit);
+    materials.cloth.color.set(uniform.primary);
+    materials.rubber.color.set(uniform.accent);
+    Object.values(materials).forEach((m) => (m.userData.weapon = firstPerson));
     return materials;
   }
   hand(parent, x, y, z, m) {
@@ -889,7 +1057,7 @@ export class MilitaryRenderer {
       finger.rotation.x = Math.PI / 2;
     }
   }
-  firearm(parent, m, kind = "rifle", offset = 0) {
+  firearm(parent, m, kind = "rifle", offset = 0, hands = true) {
     const gun = new THREE.Group();
     parent.add(gun);
     gun.position.x = offset;
@@ -943,12 +1111,12 @@ export class MilitaryRenderer {
       this.cylinder(gun, m.metal, [0, -0.025, -0.82], 0.019, 0.36);
       this.box(gun, m.polymer, [0, -0.012, -0.81], [0.075, 0.08, 0.15]);
     }
-    this.hand(gun, 0.032, -0.105, -0.445, m);
-    this.hand(gun, -0.045, -0.058, -0.75, m);
+    if (hands) this.hand(gun, 0.032, -0.105, -0.445, m);
+    if (hands) this.hand(gun, -0.045, -0.058, -0.75, m);
     return gun;
   }
   updateWeapon(id = this.g.player.weapon) {
-    if (id === this.weaponId) return;
+    if (id === this.weaponId && this.weaponOutfit === this.g.player.outfit) return;
     this.rig.traverse((o) => {
       if (o.isMesh) {
         if (o.userData.ownedGeometry) o.geometry.dispose();
@@ -966,44 +1134,102 @@ export class MilitaryRenderer {
       }
     this.rig.clear();
     this.weaponId = id;
+    this.weaponOutfit = this.g.player.outfit;
     const m = this.weaponMaterials();
+    this.buildWeapon(this.rig, id, m);
+    this.mergeStatic(this.rig);
+    this.rig.position.set(id === "twin" || id === "brawler" ? 0.05 : 0.23, -0.2, 0);
+    this.rig.rotation.set(0.02, -0.07, -0.025);
+  }
+  buildWeapon(parent, id, m, hands = true) {
+    const hand = (...args) => {
+      if (hands) this.hand(...args);
+    };
+    m.polymer.color.set(weaponOf(id).color).multiplyScalar(0.55);
+    if (id === "venom") m.steel.color.set("#6eb75a");
+    if (id === "veil") m.steel.color.set("#c6b6e0");
     const firearms = ["carbine", "scatter", "twin", "breach"];
     if (firearms.includes(id)) {
       if (id === "twin") {
         for (const x of [-0.16, 0.16]) {
-          const pistol = this.firearm(this.rig, m, "burst", x);
-          pistol.scale.set(0.8, 0.8, 0.55);
+          const pistol = new THREE.Group();
+          parent.add(pistol);
+          pistol.position.x = x;
+          this.box(pistol, m.metal, [0, 0.015, -0.52], [0.055, 0.065, 0.26]);
+          this.cylinder(pistol, m.steel, [0, 0.02, -0.66], 0.014, 0.03);
+          const grip = this.box(pistol, m.polymer, [0, -0.1, -0.44], [0.048, 0.15, 0.07]);
+          grip.rotation.x = -0.18;
+          this.box(pistol, m.steel, [0, 0.057, -0.59], [0.012, 0.014, 0.025]);
+          hand(pistol, 0.025, -0.1, -0.45, m);
         }
-      } else this.firearm(this.rig, m, ["scatter", "breach"].includes(id) ? "shotgun" : "rifle");
+      } else {
+        const gun = this.firearm(
+          parent,
+          m,
+          ["scatter", "breach"].includes(id) ? "shotgun" : "rifle",
+          0,
+          hands,
+        );
+        if (id === "scatter") {
+          gun.scale.z = 0.8;
+          this.box(gun, m.polymer, [0, -0.015, -0.77], [0.12, 0.1, 0.2]);
+        }
+        if (id === "breach") {
+          this.cylinder(gun, m.steel, [0.037, 0.018, -0.97], 0.025, 0.36);
+          this.box(gun, m.metal, [0, -0.07, -0.58], [0.12, 0.15, 0.12]);
+        }
+      }
     } else if (id === "rocket") {
-      this.cylinder(this.rig, m.polymer, [0.02, 0, -0.62], 0.095, 0.66);
-      this.cylinder(this.rig, m.metal, [0.02, 0, -0.96], 0.1, 0.03);
-      this.cylinder(this.rig, m.rubber, [0.02, 0, -0.982], 0.078, 0.004);
-      this.box(this.rig, m.metal, [0.02, 0.12, -0.65], [0.05, 0.12, 0.06]);
-      this.box(this.rig, m.polymer, [0.02, -0.13, -0.45], [0.04, 0.17, 0.06]);
-      this.hand(this.rig, 0.06, -0.13, -0.47, m);
-      this.hand(this.rig, -0.045, -0.09, -0.77, m);
+      this.cylinder(parent, m.polymer, [0.02, 0, -0.62], 0.095, 0.66);
+      this.cylinder(parent, m.metal, [0.02, 0, -0.96], 0.1, 0.03);
+      this.cylinder(parent, m.rubber, [0.02, 0, -0.982], 0.078, 0.004);
+      this.box(parent, m.metal, [0.02, 0.12, -0.65], [0.05, 0.12, 0.06]);
+      this.box(parent, m.polymer, [0.02, -0.13, -0.45], [0.04, 0.17, 0.06]);
+      hand(parent, 0.06, -0.13, -0.47, m);
+      hand(parent, -0.045, -0.09, -0.77, m);
     } else if (id === "demo" || id === "shard") {
       for (const x of id === "demo" ? [-0.055, 0.055] : [0]) {
-        this.cylinder(this.rig, m.polymer, [x, -0.07, -0.52], 0.055, 0.21, "y");
-        this.box(this.rig, m.metal, [x, 0.045, -0.52], [0.06, 0.02, 0.045]);
+        this.cylinder(parent, m.polymer, [x, -0.07, -0.52], 0.055, 0.21, "y");
+        this.box(parent, m.metal, [x, 0.045, -0.52], [0.06, 0.02, 0.045]);
         const ring = this.mesh(
-          this.rig,
+          parent,
           this.geo("pin", () => new THREE.TorusGeometry(0.02, 0.003, 8, 24)),
           m.steel,
           [x, 0.065, -0.52],
         );
         ring.rotation.y = 0.3;
       }
-      this.hand(this.rig, 0.02, -0.2, -0.5, m);
+      hand(parent, 0.02, -0.2, -0.5, m);
     } else if (id === "brawler") {
-      this.hand(this.rig, -0.22, -0.03, -0.45, m);
-      this.hand(this.rig, 0.12, -0.03, -0.45, m);
+      hand(parent, -0.22, -0.03, -0.45, m);
+      hand(parent, 0.12, -0.03, -0.45, m);
+      for (const x of [-0.22, 0.12]) {
+        this.box(parent, m.metal, [x, 0, -0.49], [0.16, 0.12, 0.19]);
+        this.box(parent, m.polymer, [x, 0.07, -0.49], [0.17, 0.045, 0.16]);
+      }
     } else {
       const count = id === "reaper" ? 1 : id === "veil" ? 4 : 3;
+      if (id === "reaper") {
+        this.cylinder(parent, m.polymer, [0, -0.12, -0.52], 0.018, 0.65, "y");
+        const shape = new THREE.Shape();
+        shape.moveTo(-0.03, 0.26);
+        shape.bezierCurveTo(0.12, 0.48, 0.38, 0.42, 0.47, 0.06);
+        shape.bezierCurveTo(0.34, 0.26, 0.18, 0.29, -0.03, 0.26);
+        const blade = this.mesh(
+          parent,
+          new THREE.ExtrudeGeometry(shape, {
+            depth: 0.015,
+            bevelEnabled: false,
+            curveSegments: 12,
+          }),
+          m.steel,
+          [0, 0, -0.52],
+        );
+        blade.userData.ownedGeometry = true;
+      }
       for (let i = 0; i < count; i++) {
         const blade = new THREE.Group();
-        this.rig.add(blade);
+        parent.add(blade);
         blade.position.set((i - (count - 1) / 2) * 0.04, 0, -0.52);
         blade.rotation.z = (i - (count - 1) / 2) * 0.2;
         this.box(blade, m.rubber, [0, -0.13, 0], [0.023, 0.12, 0.022]);
@@ -1022,10 +1248,8 @@ export class MilitaryRenderer {
         const mesh = this.mesh(blade, geometry, m.steel);
         mesh.userData.ownedGeometry = true;
       }
-      this.hand(this.rig, 0.005, -0.22, -0.48, m);
+      hand(parent, 0.005, -0.22, -0.48, m);
     }
-    this.rig.position.set(id === "twin" || id === "brawler" ? 0.05 : 0.23, -0.2, 0);
-    this.rig.rotation.set(0.02, -0.07, -0.025);
   }
   preview(c, id, width, height) {
     if (this.disposed || !this.soldier) return false;
@@ -1035,42 +1259,73 @@ export class MilitaryRenderer {
       c.drawImage(this.previews.get(key), 0, 0, width, height);
       return true;
     }
-    this.previewTarget ||= new THREE.WebGLRenderTarget(256, 160);
-    const target = this.previewTarget,
+    const w = Math.min(1200, Math.max(480, width * 2)),
+      h = Math.round((w * height) / width);
+    const target = new THREE.WebGLRenderTarget(w, h),
       oldTarget = this.renderer.getRenderTarget(),
-      oldId = this.weaponId;
-    const oldPosition = this.rig.position.clone(),
-      oldRotation = this.rig.quaternion.clone();
-    const oldAuto = this.renderer.autoClear,
-      oldColor = this.renderer.getClearColor(new THREE.Color()),
-      oldAlpha = this.renderer.getClearAlpha();
-    this.updateWeapon(id);
-    this.rig.position.set(0, 0, 0);
-    this.rig.rotation.set(0, 0, 0);
-    const camera = new THREE.PerspectiveCamera(35, 256 / 160, 0.01, 10);
-    camera.position.set(0.9, 0.3, 0.4);
-    camera.lookAt(0, -0.04, -0.6);
+      oldAuto = this.renderer.autoClear;
+    target.texture.colorSpace = THREE.SRGBColorSpace;
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color("#334039");
+    scene.environment = this.scene.environment;
+    scene.add(new THREE.HemisphereLight("#ffffff", "#8b9c91", 3));
+    const light = new THREE.DirectionalLight("#fff5df", 5);
+    light.position.set(2, 3, 3);
+    scene.add(light);
+    const display = new THREE.Group();
+    scene.add(display);
+    const before = new Set(this.materials),
+      m = this.weaponMaterials(false);
+    this.buildWeapon(display, id, m, false);
+    const box = new THREE.Box3().setFromObject(display),
+      center = box.getCenter(new THREE.Vector3());
+    const aspect = w / h;
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 10);
+    camera.position.copy(center).add(new THREE.Vector3(2, 0.65, 1.1));
+    camera.lookAt(center);
+    camera.updateMatrixWorld(true);
+    const projected = new THREE.Box3();
+    for (const x of [box.min.x, box.max.x])
+      for (const y of [box.min.y, box.max.y])
+        for (const z of [box.min.z, box.max.z])
+          projected.expandByPoint(
+            new THREE.Vector3(x, y, z).applyMatrix4(camera.matrixWorldInverse),
+          );
+    const span =
+      Math.max(
+        (projected.max.y - projected.min.y) / 2,
+        (projected.max.x - projected.min.x) / (2 * aspect),
+      ) * 1.18;
+    camera.left = -span * aspect;
+    camera.right = span * aspect;
+    camera.top = span;
+    camera.bottom = -span;
+    camera.updateProjectionMatrix();
     this.renderer.setRenderTarget(target);
-    this.renderer.setClearColor("#26312c", 1);
     this.renderer.autoClear = true;
-    this.renderer.render(this.weaponScene, camera);
-    const pixels = new Uint8Array(256 * 160 * 4);
-    this.renderer.readRenderTargetPixels(target, 0, 0, 256, 160, pixels);
+    this.renderer.render(scene, camera);
+    const pixels = new Uint8Array(w * h * 4);
+    this.renderer.readRenderTargetPixels(target, 0, 0, w, h, pixels);
     const canvas = document.createElement("canvas");
-    canvas.width = 256;
-    canvas.height = 160;
+    canvas.width = w;
+    canvas.height = h;
     const ctx = canvas.getContext("2d"),
-      image = ctx.createImageData(256, 160);
-    for (let row = 0; row < 160; row++)
-      image.data.set(pixels.subarray((159 - row) * 256 * 4, (160 - row) * 256 * 4), row * 256 * 4);
+      image = ctx.createImageData(w, h);
+    for (let row = 0; row < h; row++)
+      image.data.set(pixels.subarray((h - 1 - row) * w * 4, (h - row) * w * 4), row * w * 4);
     ctx.putImageData(image, 0, 0);
-    this.previews.set(key, canvas);
     this.renderer.setRenderTarget(oldTarget);
-    this.renderer.setClearColor(oldColor, oldAlpha);
     this.renderer.autoClear = oldAuto;
-    this.updateWeapon(oldId);
-    this.rig.position.copy(oldPosition);
-    this.rig.quaternion.copy(oldRotation);
+    target.dispose();
+    display.traverse((o) => {
+      if (o.userData.ownedGeometry) o.geometry.dispose();
+    });
+    for (const material of this.materials)
+      if (!before.has(material)) {
+        material.dispose();
+        this.materials.delete(material);
+      }
+    this.previews.set(key, canvas);
     c.drawImage(canvas, 0, 0, width, height);
     return true;
   }
@@ -1289,17 +1544,7 @@ export class MilitaryRenderer {
       t = g.animationTime;
     if (this.mapKey !== g.arena.mapId || this.loadedMap !== !!this.soldier) {
       this.loadedMap = !!this.soldier;
-      for (const a of this.actors.values()) {
-        this.dynamic.remove(a.root);
-        a.mixer?.stopAllAction();
-      }
-      for (const a of this.actors.values())
-        a.root.traverse((o) => {
-          if (o.isMesh) {
-            o.material.dispose();
-            this.materials.delete(o.material);
-          }
-        });
+      for (const a of this.actors.values()) this.disposeActor(a);
       this.actors.clear();
       this.buildWorld();
     }
@@ -1313,7 +1558,11 @@ export class MilitaryRenderer {
     this.eyeHeight ??= 1.5;
     this.eyeHeight += (targetHeight - this.eyeHeight) * (1 - Math.exp(-dt * 18));
     const fall = this.motion.matches ? 0 : (g.deathProgress || 0) ** 2;
-    this.camera.position.set(p.x * SCALE, g.deathSequence ? 1.5 - fall * 1.25 : this.eyeHeight, p.y * SCALE);
+    this.camera.position.set(
+      p.x * SCALE,
+      g.deathSequence ? 1.5 - fall * 1.25 : this.eyeHeight,
+      p.y * SCALE,
+    );
     this.camera.rotation.set(pitch - fall * 0.25, -p.a - Math.PI / 2, fall * 0.5, "YXZ");
     this.updateActors(t);
     this.updatePickups(t);

@@ -1,5 +1,5 @@
 import { FINISHES, profileOf, awardMatch, levelOf } from "./outpost-progression.js";
-import { weaponOf } from "./outpost-sim.js";
+import { weaponOf, OUTFITS } from "./outpost-sim.js";
 const read = (key) => {
   try {
     return JSON.parse(localStorage.getItem(key));
@@ -151,6 +151,13 @@ export class Retention {
         this.lockerContents();
       }
     });
+    g.on(g.$(".mf-lockerbody"), "click", (e) => {
+      const card = e.target.closest("[data-outfit]");
+      if (card && !card.disabled) {
+        g.chooseOutfit(card.dataset.outfit);
+        g.$(`[data-outfit="${card.dataset.outfit}"]`)?.focus({ preventScroll: true });
+      }
+    });
     this.menu();
   }
   reset() {
@@ -249,10 +256,21 @@ export class Retention {
     g.start();
   }
   lockerContents() {
+    const focused = document.activeElement?.dataset?.outfit;
     const p = this.profile,
       next = FINISHES.find((f) => f.xp > p.xp);
     this.g.$(".mf-lockerbody").innerHTML =
-      `<h2>Level ${levelOf(p)} / ${p.xp} XP</h2><p>${p.matches} completed rounds · ${p.wins} victories</p><progress max="150" value="${p.xp % 150}" aria-label="Progress to next level"></progress><p>${150 - (p.xp % 150)} XP to the next level. ${next ? `${Math.max(0, next.xp - p.xp)} XP to ${next.name}.` : "All weapon finishes unlocked."}</p><label>Weapon finish<select class="mf-finish" aria-label="Weapon finish">${FINISHES.map((f) => `<option value="${f.id}" ${f.id === p.skin ? "selected" : ""} ${f.xp > p.xp ? "disabled" : ""}>${f.name}${f.xp > p.xp ? ` · ${f.xp} XP` : ""}</option>`).join("")}</select></label><div class="mf-finishpreview" style="--finish:${this.finishColor() || "#4a6873"}">${FINISHES.find((f) => f.id === p.skin).name}</div><h3>Optional challenges</h3><p>Complete three rounds: ${Math.min(3, p.matches)}/3 · ${p.milestones.includes("first-three") ? "Reward earned" : "50 bonus XP"}</p><p>Finish rounds with three loadouts: ${Math.min(3, p.weapons.length)}/3 · ${p.milestones.includes("explorer") ? "Reward earned" : "50 bonus XP"}</p><p>XP rewards completed matches and victories. Boot Camp and losses under 15 seconds do not earn XP. All rewards change appearance only. There are no streak penalties or purchases.</p><p>Progress is saved on this browser and device. Clearing browser data removes it; it does not sync between devices.</p>`;
+      `<h2>Level ${levelOf(p)} / ${p.xp} XP</h2><p>${p.matches} completed rounds · ${p.wins} victories</p><progress max="150" value="${p.xp % 150}" aria-label="Progress to next level"></progress><p>${150 - (p.xp % 150)} XP to the next level. ${next ? `${Math.max(0, next.xp - p.xp)} XP to ${next.name}.` : "All weapon finishes unlocked."}</p><label>Weapon finish<select class="mf-finish" aria-label="Weapon finish">${FINISHES.map((f) => `<option value="${f.id}" ${f.id === p.skin ? "selected" : ""} ${f.xp > p.xp ? "disabled" : ""}>${f.name}${f.xp > p.xp ? ` · ${f.xp} XP` : ""}</option>`).join("")}</select></label><div class="mf-finishpreview" style="--finish:${this.finishColor() || "#4a6873"}">${FINISHES.find((f) => f.id === p.skin).name}</div><h3>Uniforms / ${Object.keys(OUTFITS).length}</h3><p>All outfits are available now. AI combatants wear the same uniforms. Outfits change appearance only.${this.g.online && this.g.online.phase !== "lobby" ? " Choose your outfit in the next lobby." : " Choose yours here or in the deployment menu."}</p><div class="mf-outfitgrid">${Object.values(
+        OUTFITS,
+      )
+        .map(
+          (o) =>
+            `<button class="mf-outfitcard" data-outfit="${o.id}" aria-label="Wear ${o.name}" aria-pressed="${this.g.outfit === o.id}" ${this.g.online && this.g.online.phase !== "lobby" ? "disabled" : ""}><img src="/games/outfits/${o.id}.webp" alt="${o.name} outfit" loading="lazy" width="240" height="320"><strong>${o.name}</strong><small>${o.description}</small></button>`,
+        )
+        .join(
+          "",
+        )}</div><h3>Optional challenges</h3><p>Complete three rounds: ${Math.min(3, p.matches)}/3 · ${p.milestones.includes("first-three") ? "Reward earned" : "50 bonus XP"}</p><p>Finish rounds with three loadouts: ${Math.min(3, p.weapons.length)}/3 · ${p.milestones.includes("explorer") ? "Reward earned" : "50 bonus XP"}</p><p>XP rewards completed matches and victories. Boot Camp and losses under 15 seconds do not earn XP. All rewards change appearance only. There are no streak penalties or purchases.</p><p>Progress is saved on this browser and device. Clearing browser data removes it; it does not sync between devices.</p>`;
+    if (focused) this.g.$(`[data-outfit="${focused}"]`)?.focus({ preventScroll: true });
   }
   locker() {
     if (this.g.running) this.g.pause();

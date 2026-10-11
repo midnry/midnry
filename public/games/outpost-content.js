@@ -329,3 +329,88 @@ export const WEAPONS = {
 };
 export const mapOf = (id) => (Object.hasOwn(MAPS, id) ? MAPS[id] : MAPS.outpost);
 export const weaponOf = (id) => (Object.hasOwn(WEAPONS, id) ? WEAPONS[id] : WEAPONS.carbine);
+
+/** Cosmetic uniforms shared by the client, bots and authoritative rooms. */
+export const OUTFITS = {
+  ranger: {
+    id: "ranger",
+    name: "Field Ranger",
+    primary: "#65774a",
+    accent: "#c7bd8a",
+    gear: "cap",
+    description: "Olive fatigues, field cap and ammunition pouches.",
+  },
+  desert: {
+    id: "desert",
+    name: "Desert Nomad",
+    primary: "#b59b70",
+    accent: "#725844",
+    gear: "scarf",
+    description: "Sand uniform, wrapped scarf and expedition pack.",
+  },
+  urban: {
+    id: "urban",
+    name: "Urban Patrol",
+    primary: "#576577",
+    accent: "#a6c1d1",
+    gear: "goggles",
+    description: "Slate armour, raised goggles and utility belt.",
+  },
+  medic: {
+    id: "medic",
+    name: "Rescue Medic",
+    primary: "#e0ddd2",
+    accent: "#c64d4d",
+    gear: "medic",
+    description: "Ivory rescue suit, red medical markings and trauma pack.",
+  },
+  recon: {
+    id: "recon",
+    name: "Night Recon",
+    primary: "#264658",
+    accent: "#65c8c6",
+    gear: "hood",
+    description: "Navy scout suit, close-fitting hood and sensor visor.",
+  },
+  engineer: {
+    id: "engineer",
+    name: "Field Engineer",
+    primary: "#b56830",
+    accent: "#e8c775",
+    gear: "tools",
+    description: "Orange work suit, safety harness and loaded tool belt.",
+  },
+  alpine: {
+    id: "alpine",
+    name: "Alpine Scout",
+    primary: "#d7e5e8",
+    accent: "#607d91",
+    gear: "fur",
+    description: "Snow suit, broad insulated collar and climbing pack.",
+  },
+  sentinel: {
+    id: "sentinel",
+    name: "Blue Sentinel",
+    primary: "#345ab0",
+    accent: "#d9ddea",
+    gear: "armor",
+    description: "Cobalt armour, reinforced shoulder plates and chest shield.",
+  },
+  shadow: {
+    id: "shadow",
+    name: "Shadow Runner",
+    primary: "#292b36",
+    accent: "#ad8cc9",
+    gear: "cape",
+    description: "Dark scout suit, hood and split shoulder cape.",
+  },
+  hazard: {
+    id: "hazard",
+    name: "Hazard Response",
+    primary: "#bdad30",
+    accent: "#252c28",
+    gear: "respirator",
+    description: "Yellow protective suit, respirator and twin air tanks.",
+  },
+};
+export const outfitOf = (id) => (Object.hasOwn(OUTFITS, id) ? OUTFITS[id] : OUTFITS.ranger);

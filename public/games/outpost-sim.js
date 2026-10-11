@@ -1,7 +1,7 @@
 /** Shared, DOM-free simulation for offline games and authoritative online rooms. */
 export const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
-import { LEVEL, MAPS, WEAPONS, mapOf, weaponOf } from "./outpost-content.js";
-export { LEVEL, MAPS, WEAPONS, mapOf, weaponOf };
+import { LEVEL, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf } from "./outpost-content.js";
+export { LEVEL, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf };
 const SPAWNS = [
   [2.5, 2.5],
   [8.5, 2.5],
@@ -29,6 +29,7 @@ export class Arena {
     mode = "training",
     mapId = "outpost",
     weapon = "carbine",
+    outfit = "ranger",
     humans = [{ id: "player", team: 0 }],
     random = Math.random,
     difficulty = "normal",
@@ -85,6 +86,17 @@ export class Arena {
     this.entities = [];
     this.crates = [];
     this.cores = [];
+    const shuffled = (items) => {
+      const pool = [...items];
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      return pool;
+    };
+    const botWeapons = shuffled(Object.keys(WEAPONS)),
+      botOutfits = shuffled(Object.keys(OUTFITS));
+    let botIndex = 0;
     const seats = mode === "training" ? 7 : 8;
     const teamCounts = [0, 0, 0, 0];
     for (let i = 0; i < seats; i++) {
@@ -106,6 +118,9 @@ export class Arena {
         ];
         [x, y] = training[i];
       }
+      const loadout = weaponOf(human?.weapon ?? (human ? weapon : botWeapons[botIndex])).id;
+      const uniform = outfitOf(human?.outfit ?? (human ? outfit : botOutfits[botIndex])).id;
+      if (!human) botIndex++;
       this.entities.push({
         id: human?.id ?? "bot" + i,
         name: human?.name ?? "Sentry " + i,
@@ -115,10 +130,8 @@ export class Arena {
         y,
         a: mode === "training" ? -0.18 : Math.atan2(center - y, center - x),
         pitch: 0,
-        weapon: weaponOf(
-          human?.weapon ??
-            (human ? weapon : mode === "training" ? "carbine" : Object.keys(WEAPONS)[i % 11]),
-        ).id,
+        weapon: loadout,
+        outfit: uniform,
         charge: 0,
         cloakedUntil: 0,
         speedUntil: 0,
@@ -148,10 +161,7 @@ export class Arena {
         exposure: 0,
         hit: -10,
         shotAt: -10,
-        ammo: weaponOf(
-          human?.weapon ??
-            (human ? weapon : mode === "training" ? "carbine" : Object.keys(WEAPONS)[i % 11]),
-        ).mag,
+        ammo: weaponOf(loadout).mag,
         reloadUntil: 0,
         notice: "",
         noticeId: 0,
@@ -227,6 +237,7 @@ export class Arena {
       e.placement ??= 0;
       e.eliminatedAt ??= null;
       e.charge ??= 0;
+      e.outfit = outfitOf(e.outfit).id;
       e.damageSeq ??= 0;
       e.damageTotal ??= 0;
       e.hitSeq ??= 0;
@@ -1016,12 +1027,15 @@ export class Arena {
       const dx = p.x - bot.x,
         dy = p.y - bot.y,
         d = Math.hypot(dx, dy);
+      const w = weaponOf(bot.weapon);
       if (d > 0 && d < 10 && this.visible(bot, p)) {
-        if (d > 1.25)
+        if (d > Math.min(2.1, w.range * 0.65))
           this.move(bot, (dx / d) * dt * 0.55 * skill.speed, (dy / d) * dt * 0.55 * skill.speed);
-        if (d < 6 && this.time > bot.attack) {
-          bot.attack = this.time + 1.6 * skill.reaction;
-          this.damage(p, d < 2 ? 9 : 4, bot);
+        bot.a = Math.atan2(dy, dx) + Math.sin(this.time * 3 + bot.phase) * skill.aim;
+        bot.pitch = 0;
+        if (d < w.range && this.time > bot.attack) {
+          bot.attack = this.time + Math.max(1.6, w.cooldown) * skill.reaction;
+          this.shoot(bot);
         }
       }
       return;
@@ -1099,9 +1113,15 @@ export class Arena {
       const len = Math.max(1, Math.hypot(f, s));
       f /= len;
       s /= len;
-      const ca = Math.cos(e.a), sa = Math.sin(e.a);
-      if (input.slide && !e.slideHeld && input.sprint && f > 0.2 &&
-          this.time >= (e.slideCooldown || 0)) {
+      const ca = Math.cos(e.a),
+        sa = Math.sin(e.a);
+      if (
+        input.slide &&
+        !e.slideHeld &&
+        input.sprint &&
+        f > 0.2 &&
+        this.time >= (e.slideCooldown || 0)
+      ) {
         e.slideUntil = this.time + 0.65;
         e.slideCooldown = this.time + 1.6;
         const direction = Math.hypot(f, s);
@@ -1112,11 +1132,14 @@ export class Arena {
       const sliding = e.slideUntil > this.time;
       e.sprinting = !sliding && !!input.sprint && Math.hypot(f, s) > 0.1;
       const speed =
-          (sliding ? 3 + 3 * ((e.slideUntil - this.time) / 0.65) : input.sprint ? 4 : 2.6) *
-          (e.speedUntil > this.time ? 1.4 : 1) *
-          (e.slowUntil > this.time ? 0.45 : 1);
-      this.move(e, (sliding ? e.slideDx : ca * f - sa * s) * speed * dt,
-        (sliding ? e.slideDy : sa * f + ca * s) * speed * dt);
+        (sliding ? 3 + 3 * ((e.slideUntil - this.time) / 0.65) : input.sprint ? 4 : 2.6) *
+        (e.speedUntil > this.time ? 1.4 : 1) *
+        (e.slowUntil > this.time ? 0.45 : 1);
+      this.move(
+        e,
+        (sliding ? e.slideDx : ca * f - sa * s) * speed * dt,
+        (sliding ? e.slideDy : sa * f + ca * s) * speed * dt,
+      );
       if (input.reload) this.reload(e);
       if (input.super) this.super(e);
       if (input.fire) this.shoot(e);

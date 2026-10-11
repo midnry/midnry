@@ -89,6 +89,25 @@
         .mf-loadtip { min-height: 36px; }
       }
       @media (prefers-reduced-motion: reduce) { .mf-loadimage, .mf-loading progress::-webkit-progress-value { transition: none; } }
+      midnry-fps .mf-kit .mf-outfitlabel { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 96px; gap: 14px; align-items: center; }
+      midnry-fps .mf-outfitlabel span { min-width: 0; }
+      midnry-fps .mf-outfitlabel select { display: block; width: 100%; margin-top: 8px; }
+      midnry-fps .mf-outfitpreview { display: block; width: 96px; height: 112px; object-fit: cover; border-radius: 8px; background: #25312d; }
+      midnry-fps .mf-outfitgrid { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: 14px; }
+      midnry-fps .mf-locker .mf-outfitcard { padding: 0 0 12px; border: 2px solid #58685d; border-radius: 10px; overflow: hidden; background: #1e2924; text-align: left; color: #edf2e9; font: 14px/1.4 system-ui; margin: 0; min-width: 0; }
+      midnry-fps .mf-locker .mf-outfitcard[aria-pressed="true"] { border-color: #c4e8b5; box-shadow: 0 0 0 2px #c4e8b533; }
+      midnry-fps .mf-locker .mf-outfitcard:disabled { opacity: .7; }
+      midnry-fps .mf-locker .mf-outfitcard img { width: 100%; height: 200px; object-fit: contain; display: block; background: #334039; }
+      midnry-fps .mf-locker .mf-outfitcard strong, midnry-fps .mf-locker .mf-outfitcard small { display: block; margin: 8px 12px 0; }
+      midnry-fps .mf-locker .mf-outfitcard small { font-size: 11px; font-weight: 400; line-height: 1.5; color: #c8d4c8; overflow-wrap: normal; }
+      midnry-fps .mf-arsenalgrid { grid-template-columns: repeat(auto-fit,minmax(min(320px,100%),1fr)); }
+      midnry-fps .mf-inspectweapon { display: block; width: 100%; border: 0; padding: 0; background: #334039; color: #e4eddf; text-align: left; border-radius: 8px; overflow: hidden; }
+      midnry-fps .mf-inspectweapon img { display: block; width: 100%; height: auto; aspect-ratio: 8/5; object-fit: contain; }
+      midnry-fps .mf-inspectweapon span { display: block; padding: 8px 12px; font-size: 12px; }
+      midnry-fps .mf-weaponinspect { width: min(1000px,94vw); max-height: 92dvh; overflow: auto; border: 1px solid #71856e; border-radius: 14px; padding: 20px; background: #17221c; color: #edf2e9; }
+      midnry-fps .mf-weaponinspect img { width: 100%; height: auto; display: block; }
+      midnry-fps .mf-weaponinspect button { min-height: 44px; float: right; padding: 8px 18px; color: #17221c; background: #c6d9ba; border: 1px solid #819579; border-radius: 8px; }
+      midnry-fps .mf-weaponinspect::backdrop { background: #08110de8; }
       midnry-fps .mf-rendernotice { padding: 12px; border: 1px solid #b3c3ae; }
       midnry-fps .mf-shell > :not(canvas) { z-index: 2; }
       /* Preview palette stays scoped; existing accessible hit areas and dialogs persist. */
@@ -1674,7 +1693,7 @@
     </script>
     <midnry-fps style="height: 100dvh" aria-label="Outpost Zero first-person shooter"></midnry-fps>
     <script type="module">
-      import { Arena, MAPS, WEAPONS, mapOf, weaponOf, clamp } from "./outpost-sim.js";
+      import { Arena, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf, clamp } from "./outpost-sim.js";
       import { Academy, FrameBudget } from "./outpost-academy.js";
       import { ComicArt } from "./outpost-art.js";
       import { Characters } from "./outpost-characters.js";
@@ -1700,7 +1719,7 @@
         <div class="mf-damage" role="status" aria-live="polite"></div><div class="mf-hitmark" aria-hidden="true"></div><button class="mf-super" aria-label="Use charged ability">Q · SUPER <b>0%</b></button>
         <div class="mf-bottom"><div class="mf-stat">VITALS<strong class="mf-hp">100</strong><div class="mf-health"><i></i></div></div><div class="mf-stat mf-ammo">VX–7 / AUTO CARBINE<strong class="mf-rounds">24 <span>/ ∞</span></strong></div></div>
         <div class="mf-movement" hidden role="status" aria-live="polite"></div><div class="mf-death" hidden role="status" aria-live="polite">SIGNAL LOST</div><div class="mf-touch"><button class="mf-sprint" aria-label="Toggle sprint" aria-pressed="false">SPRINT</button><button class="mf-slide" aria-label="Slide while sprinting">SLIDE</button><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
-        <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">A sun-scorched outpost. Six rogue sentries. One very loud solution. Drop into a comic-book combat sandbox.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="training" aria-pressed="true">FIELD OPS</button><button class="mf-mode" data-mode="signal" aria-pressed="false">LAST SIGNAL · SOLO</button><button class="mf-mode" data-mode="duo" aria-pressed="false">PAIR OPS · DUO</button></div><div class="mf-kit"><label>Arena<select class="mf-mapselect" aria-label="Choose arena"></select></label><label>Loadout<select class="mf-weaponselect" aria-label="Choose loadout"></select></label></div><p class="mf-mapinfo"></p><p class="mf-weaponinfo"></p><p class="mf-kitnote">Choose before deploying. Offline changes start a fresh round; online, the host chooses the arena.</p><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Click or Space · fire<br>R · reload &nbsp; / &nbsp; Shift · sprint &nbsp; / &nbsp; Esc or P · pause &nbsp; / &nbsp; Q · super<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
+        <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">A sun-scorched outpost. Six rogue sentries. One very loud solution. Drop into a comic-book combat sandbox.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="training" aria-pressed="true">FIELD OPS</button><button class="mf-mode" data-mode="signal" aria-pressed="false">LAST SIGNAL · SOLO</button><button class="mf-mode" data-mode="duo" aria-pressed="false">PAIR OPS · DUO</button></div><div class="mf-kit"><label>Arena<select class="mf-mapselect" aria-label="Choose arena"></select></label><label>Loadout<select class="mf-weaponselect" aria-label="Choose loadout"></select></label><label class="mf-outfitlabel"><span>Outfit<select class="mf-outfitselect" aria-label="Choose outfit"></select></span><img class="mf-outfitpreview" alt="Selected outfit" width="120" height="150"></label></div><p class="mf-mapinfo"></p><p class="mf-weaponinfo"></p><p class="mf-kitnote">Choose before deploying. Offline changes start a fresh round; online, the host chooses the arena.</p><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Click or Space · fire<br>R · reload &nbsp; / &nbsp; Shift · sprint &nbsp; / &nbsp; Esc or P · pause &nbsp; / &nbsp; Q · super<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
       </div>`;
             this.engine = new Game(this);
           }
@@ -1733,6 +1752,13 @@
             this.mode = "signal";
             this.mapId = "outpost";
             this.weapon = "carbine";
+            try { this.outfit = outfitOf(localStorage.getItem("midnry-outpost-outfit")).id; }
+            catch { this.outfit = "ranger"; }
+            for(const outfit of Object.values(OUTFITS)) {
+              const option=document.createElement("option");option.value=outfit.id;option.textContent=outfit.name;
+              this.$(".mf-outfitselect").append(option);
+            }
+            this.on(this.$(".mf-outfitselect"), "change", e => this.chooseOutfit(e.target.value));
             this.difficulty = "normal";
             for (const map of Object.values(MAPS)) {
               const option = document.createElement("option");
@@ -1754,7 +1780,7 @@
               }
             });
             this.on(this.$(".mf-weaponselect"), "change", (e) => {
-              if (this.online) this.onlineAction("loadout", { weapon: e.target.value });
+              if (this.online) this.onlineAction("loadout", { weapon: e.target.value, outfit: this.outfit });
               else {
                 this.weapon = e.target.value;
                 this.reset();
@@ -1778,7 +1804,7 @@
               this.loadingTimer = setTimeout(() => {
                 this.fallbackMilitary(new Error("Graphics loading timed out. Please retry on a stable connection."));
               }, 45000);
-              import("./outpost-military.js?v=startup-20261011")
+              import("./outpost-military.js?v=equipment-20261011")
                 .then(async ({ MilitaryRenderer }) => {
                   if (this.abort.signal.aborted || !this.loading) return;
                   const renderer = new MilitaryRenderer(this, (done, total) => {
@@ -1880,6 +1906,7 @@
               mode: this.mode,
               mapId: this.mapId,
               weapon: this.weapon,
+              outfit: this.outfit,
               difficulty: this.difficulty,
             });
             this.damageSeen = 0;
@@ -2056,11 +2083,32 @@
               this.shell.focus({ preventScroll: true });
             } else this.pause();
           }
+          chooseOutfit(id) {
+            if (!Object.hasOwn(OUTFITS,id)) return;
+            if(this.online) {
+              if(this.online.phase !== "lobby") return;
+              this.onlineAction("loadout", {weapon:this.weapon,outfit:id});
+            } else {
+              this.outfit=id;this.player.outfit=id;
+              try {localStorage.setItem("midnry-outpost-outfit",id);}catch{}
+              this.characters?.clearCache();this.updateKit();
+
+            }
+          }
           updateKit() {
             const map = mapOf(this.mapId),
               w = weaponOf(this.weapon);
             this.$(".mf-mapselect").value = map.id;
             this.$(".mf-weaponselect").value = w.id;
+            const uniform=outfitOf(this.outfit);
+            this.$(".mf-outfitselect").value=uniform.id;
+            this.$(".mf-outfitpreview").src=`/games/outfits/${uniform.id}.webp`;
+            this.$(".mf-outfitpreview").alt=uniform.name;
+            const lockerKey = `${uniform.id}:${this.online?.phase || "offline"}`;
+            if(this.$(".mf-locker")?.open && this.lockerKey !== lockerKey) {
+              this.lockerKey = lockerKey;
+              this.retention?.lockerContents();
+            }
             this.$(".mf-mapinfo").textContent = map.tag + " / " + map.description;
             this.$(".mf-weaponinfo").textContent = w.description;
             this.ui?.refresh();
@@ -2242,6 +2290,7 @@
                     code: this.$(".mf-codeinput").value,
                     mapId: this.mapId,
                     weapon: this.weapon,
+                    outfit: this.outfit,
                   },
                   controller.signal,
                 );
@@ -2292,10 +2341,13 @@
             if (self) {
               this.$(".mf-teamselect").value = String(self.team);
               this.weapon = self.weapon || "carbine";
+              this.outfit = outfitOf(self.outfit).id;
+              try {localStorage.setItem("midnry-outpost-outfit",this.outfit);}catch{}
             }
             this.updateKit();
             this.$(".mf-mapselect").disabled = data.phase !== "lobby" || data.host !== this.selfId;
             this.$(".mf-weaponselect").disabled = data.phase !== "lobby";
+            this.$(".mf-outfitselect").disabled = data.phase !== "lobby";
             const roster = this.$(".mf-roster");
             roster.replaceChildren();
             for (const m of data.members) {
@@ -2361,13 +2413,14 @@
                 this.arena.mode !== this.mode ||
                 this.player.id !== this.selfId ||
                 this.player.weapon !== this.weapon ||
+                this.player.outfit !== this.outfit ||
                 this.player.team !== (self?.team ?? 0)
               )
                 this.arena = new Arena({
                   mode: this.mode,
                   difficulty: this.difficulty,
                   mapId: this.mapId,
-                  humans: [{ id: this.selfId, team: self?.team ?? 0, weapon: this.weapon }],
+                  humans: [{ id: this.selfId, team: self?.team ?? 0, weapon: this.weapon, outfit: this.outfit }],
                 });
               this.state = "fresh";
               this.running = false;
@@ -2471,6 +2524,7 @@
               this.$(".mf-tag").textContent = "RAYCAST / COMIC EDITION";
               this.$(".mf-mapselect").disabled = false;
               this.$(".mf-weaponselect").disabled = false;
+              this.$(".mf-outfitselect").disabled = false;
               this.reset();
               this.pause();
               this.$(".mf-start").textContent = "DEPLOY →";

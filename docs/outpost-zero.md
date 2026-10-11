@@ -261,3 +261,15 @@ Validation: `node --test scripts/outpost-movement.test.mjs` verifies movement, c
 The startup screen cycles through stills captured from the tactical renderer: Dust Outpost, Skyport, Freight Rush, VX–7 Carbine, Flare Launcher and the operator. Matching field tips sit above real asset progress. Slides advance every 4.5 seconds; arrows and a pause button work before game modules finish downloading. Reduced motion starts paused. Optional image failures retain the previous still and never fail game loading; the carousel stops as soon as the playable menu is ready. The six compressed WebP assets total under 250 KB and are loaded on demand.
 
 Validate with `node scripts/check-outpost-loading.mjs [base-url]`.
+
+### Arsenal inspection and uniforms
+
+The Field Guide displays 960 × 600 stills of all 11 tactical weapon models. Select an image for an enlarged inspection view; the same geometry builds first-person rigs and AI equipment. Preview framing fits the whole weapon, uses the environment lighting and writes sRGB pixels so metal detail stays readable.
+
+Ten free uniforms are available in the deployment menu and Ranger Locker: Field Ranger, Desert Nomad, Urban Patrol, Rescue Medic, Night Recon, Field Engineer, Alpine Scout, Blue Sentinel, Shadow Runner and Hazard Response. Each has its own palette and gear silhouette (cap, scarf, goggles, medical pack, hood/visor, harness/tools, insulated collar, heavy plates, cape, or respirator/tanks). The selected uniform is saved on this device; the classic renderer retains its authored frames with matching colour and insignia. Uniforms have no effect on health, hitboxes or damage.
+
+Bots draw unique weapons and uniforms from shuffled full pools in every mode. Practice sentries use actual weapon firing/reload rules with relaxed movement and attack intervals. Tactical AI visibly carry their assigned weapons, attached to their animated hands. Equipment and uniform meshes are batched by material and cleaned up on actor changes, map changes and shutdown.
+
+Online create/join/loadout requests validate outfit IDs. Public lobby members and authoritative entity snapshots carry the outfit; lobby selection and rematches preserve it. Outfit changes during an online match are rejected. Older room snapshots default safely to Field Ranger.
+
+Validation: `node --test scripts/outpost-equipment.test.mjs scripts/outpost-room-equipment.test.mjs` covers full bot pools, neutral outfit stats, snapshots/respawns, practice weapon use and the actual room handler with a substituted SQL transport. `node scripts/check-outpost-equipment.mjs [base-url]` checks all 11 inspections, all 10 selections, saved preferences, visible AI equipment, resource ownership and classic fallback on mobile and desktop.
