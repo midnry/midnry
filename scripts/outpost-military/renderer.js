@@ -781,7 +781,14 @@ export class MilitaryRenderer {
       );
       const alive = e.hp > 0,
         cloaked = e.cloakedUntil > this.g.time && e.team !== this.g.player.team;
-      a.root.visible = alive && (!cloaked || Math.hypot(e.x - camera.x, e.y - camera.y) < 1.3);
+      const now = performance.now() / 1000;
+      if (alive) a.deadAt = null;
+      else if (a.deadAt === null) a.deadAt = now;
+      const fall = alive ? 0 : Math.min(1, (now - a.deadAt) / 0.85);
+      a.root.visible = (alive || now - a.deadAt < 2.5) &&
+        (!cloaked || Math.hypot(e.x - camera.x, e.y - camera.y) < 1.3);
+      const sliding = alive && e.slideUntil > this.g.time;
+      a.root.scale.y = sliding ? 0.55 : 1;
       a.root.position.set(
         e.x * SCALE,
         Math.sin(Math.min(1, Math.max(0, ((e.jumpUntil || 0) - this.g.time) / 0.5)) * Math.PI) *
@@ -790,7 +797,8 @@ export class MilitaryRenderer {
       );
       a.root.rotation.y = -Math.PI / 2 - e.a;
       const next =
-        moving && !this.motion.matches ? (e.speedUntil > this.g.time ? "Run" : "Walk") : "Idle";
+        alive && moving && !this.motion.matches && !sliding
+          ? (e.sprinting || e.speedUntil > this.g.time ? "Run" : "Walk") : "Idle";
       if (next !== a.action) {
         a.actions[a.action]?.fadeOut(0.12);
         a.actions[next]?.reset().fadeIn(0.12).play();
@@ -806,7 +814,7 @@ export class MilitaryRenderer {
       a.y = e.y;
       // Short physical recoil and hit flinch layered on skeletal locomotion.
       const hit = Math.max(0, 1 - (this.g.time - e.hit) / 0.18);
-      a.model.rotation.z = hit * 0.05;
+      a.model.rotation.z = alive ? hit * 0.05 : this.motion.matches ? Math.PI / 2 : fall * 1.5;
     }
     for (const [id, a] of this.actors)
       if (!current.has(id)) {
@@ -1298,8 +1306,15 @@ export class MilitaryRenderer {
     this.rebuildWalls();
     const p = g.camera(),
       pitch = Math.atan(g.viewPitch / g.projection);
-    this.camera.position.set(p.x * SCALE, 1.5, p.y * SCALE);
-    this.camera.rotation.set(pitch, -p.a - Math.PI / 2, 0, "YXZ");
+    const now = performance.now(),
+      dt = Math.min(0.1, (now - (this.lastRenderAt || now)) / 1000),
+      targetHeight = p.slideUntil > g.time ? 0.7 : 1.5;
+    this.lastRenderAt = now;
+    this.eyeHeight ??= 1.5;
+    this.eyeHeight += (targetHeight - this.eyeHeight) * (1 - Math.exp(-dt * 18));
+    const fall = this.motion.matches ? 0 : (g.deathProgress || 0) ** 2;
+    this.camera.position.set(p.x * SCALE, g.deathSequence ? 1.5 - fall * 1.25 : this.eyeHeight, p.y * SCALE);
+    this.camera.rotation.set(pitch - fall * 0.25, -p.a - Math.PI / 2, fall * 0.5, "YXZ");
     this.updateActors(t);
     this.updatePickups(t);
     this.updateFields();
@@ -1318,11 +1333,12 @@ export class MilitaryRenderer {
       -0.2 * Math.max(1, this.g.h / this.g.w) -
       (reload > 0 ? Math.sin(reload * Math.PI) * 0.25 : 0) +
       (this.motion.matches ? 0 : Math.sin(g.step) * 0.005);
+    this.rig.position.y -= fall * 0.65;
     this.rig.position.z = recoil * 0.04;
     this.rig.rotation.x = 0.02 - recoil * 0.075;
     this.rig.rotation.z = -0.025 + Math.sin(reload * Math.PI) * 0.3;
     this.flash.intensity = recoil > 0.65 ? 3 : 0;
-    this.rig.visible = g.player.hp > 0;
+    this.rig.visible = g.player.hp > 0 || (!!g.deathSequence && g.deathProgress < 0.65);
     const outside =
       g.mode !== "training" &&
       g.time > g.zone.delay &&

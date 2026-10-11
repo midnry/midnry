@@ -30,7 +30,7 @@ export const PRESETS = {
   },
 };
 const STEPS = [
-  ["Move through the range", "WASD / left joystick: walk two tiles. Shift sprints."],
+  ["Move through the range", "WASD / left joystick: walk two tiles. Hold Shift or toggle SPRINT to run. C / Ctrl / SLIDE triggers a forward sprint slide."],
   [
     "Aim and fire",
     "Mouse / drag the right side to aim. Click, Space or FIRE: destroy the stationary sentry ahead.",
@@ -146,7 +146,7 @@ export class Academy {
     if (kind === "graphics") this.settings();
     else {
       g.$(".mf-bookbody").innerHTML =
-        `<p class="mf-bookintro">KNOW YOUR GROUND. KNOW YOUR GEAR.</p><p>WASD / left stick moves. Mouse / right-side drag aims. Click, Space or FIRE shoots. R reloads; Q uses a fully charged ability. Escape or P opens the menu. Damage flashes red; below 30% health, vitals pulse. Hit markers confirm damage.</p><h2>Match rules</h2><p>Field Ops: eliminate six sentries. Last Signal: eight combatants, one survivor. Supply Crates drop Charge Cores (+25 max health, +8 power rating; scales weapon damage). Red Haze closes after 12 seconds and hurts more the longer you stay outside. Pair Ops: four pairs, no friendly fire, two returns each after 8 seconds while your partner lives. Losing both partners ends your team.</p><p>Online: create or join a room, share its invite, pick a loadout and team, then the host deploys. Bots fill empty seats. The host selects the map before starting. <b>Online matches keep running while reading this guide.</b></p><h2>Arenas / ${Object.keys(MAPS).length}</h2><div class="mf-guidegrid">${Object.values(
+        `<p class="mf-bookintro">KNOW YOUR GROUND. KNOW YOUR GEAR.</p><p>WASD / left stick moves. Mouse / right-side drag aims. Click, Space or FIRE shoots. Shift / SPRINT runs; C, Ctrl or SLIDE slides while sprinting forward. R reloads; Q uses a fully charged ability. Escape or P opens the menu. Damage flashes red; below 30% health, vitals pulse. Hit markers confirm damage.</p><h2>Match rules</h2><p>Field Ops: eliminate six sentries. Last Signal: eight combatants, one survivor. Supply Crates drop Charge Cores (+25 max health, +8 power rating; scales weapon damage). Red Haze closes after 12 seconds and hurts more the longer you stay outside. Pair Ops: four pairs, no friendly fire, two returns each after 8 seconds while your partner lives. Losing both partners ends your team.</p><p>Online: create or join a room, share its invite, pick a loadout and team, then the host deploys. Bots fill empty seats. The host selects the map before starting. <b>Online matches keep running while reading this guide.</b></p><h2>Arenas / ${Object.keys(MAPS).length}</h2><div class="mf-guidegrid">${Object.values(
           MAPS,
         )
           .map(

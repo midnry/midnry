@@ -14957,12 +14957,16 @@ var $ = 3, Cu = "/games/military/", wu = {
 			i ||= this.makeActor(e);
 			let a = Math.hypot(e.x - i.x, e.y - i.y) > .001;
 			i.patch.color.set(e.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465");
-			let o = e.hp > 0, s = e.cloakedUntil > this.g.time && e.team !== this.g.player.team;
-			i.root.visible = o && (!s || Math.hypot(e.x - n.x, e.y - n.y) < 1.3), i.root.position.set(e.x * $, Math.sin(Math.min(1, Math.max(0, ((e.jumpUntil || 0) - this.g.time) / .5)) * Math.PI) * $, e.y * $), i.root.rotation.y = -Math.PI / 2 - e.a;
-			let c = a && !this.motion.matches ? e.speedUntil > this.g.time ? "Run" : "Walk" : "Idle";
-			c !== i.action && (i.actions[i.action]?.fadeOut(.12), i.actions[c]?.reset().fadeIn(.12).play(), i.action = c), i.mixer && i.lastSample !== r && (i.mixer.update(i.lastSample === null ? 0 : Math.max(0, Math.min(.1, r - i.lastSample))), i.lastSample = r), i.x = e.x, i.y = e.y;
-			let l = Math.max(0, 1 - (this.g.time - e.hit) / .18);
-			i.model.rotation.z = l * .05;
+			let o = e.hp > 0, s = e.cloakedUntil > this.g.time && e.team !== this.g.player.team, c = performance.now() / 1e3;
+			o ? i.deadAt = null : i.deadAt === null && (i.deadAt = c);
+			let l = o ? 0 : Math.min(1, (c - i.deadAt) / .85);
+			i.root.visible = (o || c - i.deadAt < 2.5) && (!s || Math.hypot(e.x - n.x, e.y - n.y) < 1.3);
+			let u = o && e.slideUntil > this.g.time;
+			i.root.scale.y = u ? .55 : 1, i.root.position.set(e.x * $, Math.sin(Math.min(1, Math.max(0, ((e.jumpUntil || 0) - this.g.time) / .5)) * Math.PI) * $, e.y * $), i.root.rotation.y = -Math.PI / 2 - e.a;
+			let d = o && a && !this.motion.matches && !u ? e.sprinting || e.speedUntil > this.g.time ? "Run" : "Walk" : "Idle";
+			d !== i.action && (i.actions[i.action]?.fadeOut(.12), i.actions[d]?.reset().fadeIn(.12).play(), i.action = d), i.mixer && i.lastSample !== r && (i.mixer.update(i.lastSample === null ? 0 : Math.max(0, Math.min(.1, r - i.lastSample))), i.lastSample = r), i.x = e.x, i.y = e.y;
+			let f = Math.max(0, 1 - (this.g.time - e.hit) / .18);
+			i.model.rotation.z = o ? f * .05 : this.motion.matches ? Math.PI / 2 : l * 1.5;
 		}
 		for (let [e, n] of this.actors) t.has(e) || (this.dynamic.remove(n.root), n.mixer?.stopAllAction(), n.root.traverse((e) => {
 			e.isMesh && (e.material.dispose(), this.materials.delete(e.material));
@@ -15583,17 +15587,19 @@ var $ = 3, Cu = "/games/military/", wu = {
 			this.actors.clear(), this.buildWorld();
 		}
 		this.rebuildWalls();
-		let n = e.camera(), r = Math.atan(e.viewPitch / e.projection);
-		if (this.camera.position.set(n.x * $, 1.5, n.y * $), this.camera.rotation.set(r, -n.a - Math.PI / 2, 0, "YXZ"), this.updateActors(t), this.updatePickups(t), this.updateFields(), t < this.lastTime) {
+		let n = e.camera(), r = Math.atan(e.viewPitch / e.projection), i = performance.now(), a = Math.min(.1, (i - (this.lastRenderAt || i)) / 1e3), o = n.slideUntil > e.time ? .7 : 1.5;
+		this.lastRenderAt = i, this.eyeHeight ??= 1.5, this.eyeHeight += (o - this.eyeHeight) * (1 - Math.exp(-a * 18));
+		let s = this.motion.matches ? 0 : (e.deathProgress || 0) ** 2;
+		if (this.camera.position.set(n.x * $, e.deathSequence ? 1.5 - s * 1.25 : this.eyeHeight, n.y * $), this.camera.rotation.set(r - s * .25, -n.a - Math.PI / 2, s * .5, "YXZ"), this.updateActors(t), this.updatePickups(t), this.updateFields(), t < this.lastTime) {
 			this.seenShots.clear();
 			for (let e of this.tracers) this.dynamic.remove(e.mesh);
 			this.tracers = [];
 		}
 		this.updateProjectiles(t), this.updateWeapon();
-		let i = Math.max(0, 1 - (t - e.shotAt) / .16), a = Math.max(0, Math.min(1, (e.reloadUntil - t) / 1.4));
-		this.rig.position.y = -.2 * Math.max(1, this.g.h / this.g.w) - (a > 0 ? Math.sin(a * Math.PI) * .25 : 0) + (this.motion.matches ? 0 : Math.sin(e.step) * .005), this.rig.position.z = i * .04, this.rig.rotation.x = .02 - i * .075, this.rig.rotation.z = -.025 + Math.sin(a * Math.PI) * .3, this.flash.intensity = i > .65 ? 3 : 0, this.rig.visible = e.player.hp > 0;
-		let o = e.mode !== "training" && e.time > e.zone.delay && (Math.abs(n.x - e.zone.cx) > e.zone.half || Math.abs(n.y - e.zone.cy) > e.zone.half);
-		return this.scene.fog.color.set(o ? "#827276" : wu[e.arena.mapId].fog), this.scene.fog.density = o ? .065 : .009, this.renderer.info.reset(), e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), this.lastTime = t, !0;
+		let c = Math.max(0, 1 - (t - e.shotAt) / .16), l = Math.max(0, Math.min(1, (e.reloadUntil - t) / 1.4));
+		this.rig.position.y = -.2 * Math.max(1, this.g.h / this.g.w) - (l > 0 ? Math.sin(l * Math.PI) * .25 : 0) + (this.motion.matches ? 0 : Math.sin(e.step) * .005), this.rig.position.y -= s * .65, this.rig.position.z = c * .04, this.rig.rotation.x = .02 - c * .075, this.rig.rotation.z = -.025 + Math.sin(l * Math.PI) * .3, this.flash.intensity = c > .65 ? 3 : 0, this.rig.visible = e.player.hp > 0 || !!e.deathSequence && e.deathProgress < .65;
+		let u = e.mode !== "training" && e.time > e.zone.delay && (Math.abs(n.x - e.zone.cx) > e.zone.half || Math.abs(n.y - e.zone.cy) > e.zone.half);
+		return this.scene.fog.color.set(u ? "#827276" : wu[e.arena.mapId].fog), this.scene.fog.density = u ? .065 : .009, this.renderer.info.reset(), e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), this.lastTime = t, !0;
 	}
 	disposeObject(e) {
 		e.traverse((e) => {
