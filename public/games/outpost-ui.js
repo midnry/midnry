@@ -129,7 +129,7 @@ export class MenuUI {
     const a = this.g.academy;
     this.confirm(
       "Apply graphics changes?",
-      `${a.preset} → ${candidate.preset}. Contact shadows: ${candidate.options.shadows ? "on" : "off"}. Material lighting: ${candidate.options.lighting ? "on" : "off"}. Higher quality can reduce performance.`,
+      `${a.preset} → ${candidate.preset}. Contact shadows: ${candidate.options.shadows ? "on" : "off"}. Material lighting: ${candidate.options.lighting ? "on" : "off"}. Automatic resolution: ${candidate.options.adaptive ? "on" : "off"}. Higher quality can reduce performance.`,
       "Apply changes",
       (accepted) => {
         if (accepted) a.commitGraphics(candidate, target);

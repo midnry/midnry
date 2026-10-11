@@ -88,7 +88,7 @@ export class ComicArt {
     const g = this.g,
       c = g.ctx,
       w = g.w,
-      t = this.motion.matches ? 0 : g.time;
+      t = this.motion.matches ? 0 : g.animationTime;
     c.save();
     c.lineWidth = 2;
     c.strokeStyle = "#26323e";
@@ -518,13 +518,13 @@ export class ComicArt {
   effectsWorld() {
     const g = this.g,
       c = g.ctx,
-      t = g.time;
+      t = g.animationTime;
     c.save();
     for (const m of this.marks) {
       const v = this.project(m.x, m.y, m.h);
       if (!v) continue;
       const r = Math.min(12, (g.projection * 0.018) / v.z);
-      c.globalAlpha = Math.min(1, (18 - (t - m.born)) / 3);
+      c.globalAlpha = Math.max(0, Math.min(1, (18 - (t - m.born)) / 3));
       c.fillStyle = "#121c27";
       c.beginPath();
       c.arc(v.x, v.y, r, 0, TAU);
@@ -547,7 +547,7 @@ export class ComicArt {
         v = this.project(q.x + q.vx * travel, q.y + q.vy * travel, Math.max(0.015, h));
       if (!v) continue;
       const r = Math.max(1, Math.min(11, (g.projection * 0.024) / v.z));
-      c.globalAlpha = 1 - age / q.life;
+      c.globalAlpha = Math.max(0, 1 - age / q.life);
       c.fillStyle = q.color;
       c.strokeStyle = "#101720";
       c.lineWidth = 1;
@@ -584,7 +584,7 @@ export class ComicArt {
         if (!v) continue;
         c.globalAlpha = 0.4;
         c.fillStyle =
-          g.mode !== "training" && g.time > g.zone.delay && g.outsideSafe({ x, y })
+          g.mode !== "training" && g.animationTime > g.zone.delay && g.outsideSafe({ x, y })
             ? "#ed799d"
             : "#fff0bd";
         c.fillRect(v.x, v.y, Math.max(1, 3 / v.z), Math.max(1, 3 / v.z));
@@ -624,7 +624,7 @@ export class ComicArt {
     this.weaponSaved = true;
     c.save();
     if (this.motion.matches) return;
-    const r = p.reloadUntil ? Math.max(0, Math.min(1, (p.reloadUntil - g.time) / 1.4)) : 0,
+    const r = p.reloadUntil ? Math.max(0, Math.min(1, (p.reloadUntil - g.animationTime) / 1.4)) : 0,
       progress = 1 - r;
     if (r) {
       const lean = Math.sin(progress * Math.PI);
@@ -632,7 +632,7 @@ export class ComicArt {
       c.rotate(0.055 * lean);
     }
     if (["melee", "dash"].includes(w.kind)) {
-      const recoil = Math.max(0, 1 - (g.time - p.shotAt) * 5);
+      const recoil = Math.max(0, 1 - (g.animationTime - p.shotAt) * 5);
       c.translate(-g.w * 0.08 * recoil, -g.h * 0.045 * recoil);
     }
   }
@@ -647,7 +647,9 @@ export class ComicArt {
     }
     c.save();
     const scale = Math.min(g.w / 900, g.h / 550) * 1.2,
-      remaining = p.reloadUntil ? Math.max(0, Math.min(1, (p.reloadUntil - g.time) / 1.4)) : 0;
+      remaining = p.reloadUntil
+        ? Math.max(0, Math.min(1, (p.reloadUntil - g.animationTime) / 1.4))
+        : 0;
     if (remaining && !this.motion.matches) {
       const phase = 1 - remaining,
         lift = Math.sin(phase * Math.PI),
@@ -722,7 +724,7 @@ export class ComicArt {
     }
     if (!this.motion.matches)
       for (const q of this.weaponParticles) {
-        const age = g.time - q.born;
+        const age = g.animationTime - q.born;
         if (q.kind === "shell") {
           const x = g.w * 0.65 + age * g.w * 0.35,
             y = g.h * 0.69 - age * g.h * 0.32 + age * age * g.h * 0.7;
@@ -736,7 +738,7 @@ export class ComicArt {
           c.strokeRect(-4, -2, 9 * scale, 4 * scale);
           c.restore();
         } else {
-          c.globalAlpha = (1 - age / 0.65) * 0.22;
+          c.globalAlpha = Math.max(0, 1 - age / 0.65) * 0.22;
           c.fillStyle = q.color;
           c.beginPath();
           c.ellipse(
