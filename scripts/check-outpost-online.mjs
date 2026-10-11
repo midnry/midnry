@@ -71,13 +71,13 @@ try {
   await desktop.locator('[data-mode="duo"]').click();
   await desktop.locator(".mf-mapselect").selectOption("skyport");
   await desktop.locator(".mf-weaponselect").selectOption("rocket");
-  await desktop.locator("summary").click();
+  await desktop.locator(".mf-network summary").click();
   await desktop.locator(".mf-create").click();
   await desktop.waitForFunction(() => document.querySelector("midnry-fps").engine.online?.code);
   console.log("Desktop room created");
   const code = await desktop.locator(".mf-roomcode").innerText();
   await mobile.goto(base + "/games/outpost-zero.html?room=" + code);
-  assert.ok(await mobile.locator("details").evaluate((e) => e.open));
+  assert.ok(await mobile.locator(".mf-network").evaluate((e) => e.open));
   assert.equal(await mobile.locator(".mf-codeinput").inputValue(), code);
   await mobile.locator(".mf-weaponselect").selectOption("venom");
   await mobile.locator(".mf-join").click();
@@ -93,6 +93,11 @@ try {
   await desktop.locator(".mf-mapselect").selectOption("freight");
   await mobile.waitForFunction(
     () => document.querySelector("midnry-fps").engine.mapId === "freight",
+  );
+  assert.ok(
+    await mobile.evaluate(
+      () => document.querySelector("midnry-fps").engine.retention.audio.ctx?.state === "running",
+    ),
   );
   console.log("Both players joined");
   await desktop.locator(".mf-start").click();

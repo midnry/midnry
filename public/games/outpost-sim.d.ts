@@ -27,6 +27,10 @@ export type Entity = {
   ammo: number;
   reloadUntil: number;
   kills: number;
+  damageDealt: number;
+  coresCollected: number;
+  placement: number;
+  eliminatedAt: number | null;
   respawns: number;
   respawnAt: number;
   phase: number;
@@ -48,7 +52,16 @@ export type Entity = {
   hitAt: number;
 };
 export type Crate = { id: string; x: number; y: number; hp: number; maxHp: number; hit: number };
+export type Difficulty = "easy" | "normal" | "hard";
+export const DIFFICULTIES: Record<
+  Difficulty,
+  { speed: number; reaction: number; aim: number; awareness: number }
+>;
+export function difficultyOf(id: string): Difficulty;
 export type ArenaState = {
+  difficulty?: Difficulty;
+  countdown?: number;
+  roundId?: string;
   mode: string;
   mapId: string;
   projectiles: unknown[];
@@ -77,6 +90,8 @@ export function clamp(n: number, a: number, b: number): number;
 export class Arena {
   constructor(options?: {
     mode?: string;
+    difficulty?: Difficulty;
+    countdown?: number;
     mapId?: string;
     weapon?: string;
     humans?: { id: string; team: number; name?: string; weapon?: string }[];
@@ -84,6 +99,9 @@ export class Arena {
   });
   static restore(data: ArenaState): Arena;
   mode: string;
+  difficulty: Difficulty;
+  countdown: number;
+  roundId: string;
   time: number;
   state: string;
   winner: number | null;

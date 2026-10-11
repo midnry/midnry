@@ -4,6 +4,9 @@ import {
   Arena,
   MAPS,
   WEAPONS,
+  DIFFICULTIES,
+  difficultyOf,
+  type Difficulty,
   type ArenaState,
   type Input,
 } from "../../../public/games/outpost-sim.js";
@@ -22,6 +25,7 @@ type Member = {
   input: Input;
 };
 type Room = {
+  difficulty?: Difficulty;
   mode: "signal" | "duo";
   mapId: string;
   phase: "lobby" | "playing" | "ended";
@@ -59,6 +63,7 @@ function authorize(room: Room, id: unknown, token: unknown) {
 function publicRoom(code: string, room: Room) {
   return {
     code,
+    difficulty: room.difficulty || "normal",
     mode: room.mode,
     mapId: room.mapId || "outpost",
     phase: room.phase,
@@ -131,6 +136,9 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
     for (const [k, v] of rates) if (v.until < now) rates.delete(k);
     if (body.mode !== "signal" && body.mode !== "duo")
       throw new OutpostError("Choose Last Signal or Pair Ops.");
+    const difficulty = body.difficulty === undefined ? "normal" : body.difficulty;
+    if (typeof difficulty !== "string" || !Object.hasOwn(DIFFICULTIES, difficulty))
+      throw new OutpostError("Invalid bot difficulty.");
     const mapId = body.mapId === undefined ? "outpost" : body.mapId;
     const weapon = body.weapon === undefined ? "carbine" : body.weapon;
     if (
@@ -155,6 +163,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
     };
     const room: Room = {
       mode: body.mode,
+      difficulty: difficultyOf(difficulty),
       mapId,
       phase: "lobby",
       host: id,
@@ -176,7 +185,17 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
   }
   const code = typeof body.code === "string" ? body.code.trim().toUpperCase() : "";
   if (!CODE.test(code)) throw new OutpostError("Enter a six-character room code.");
-  const ops = ["join", "poll", "team", "start", "restart", "leave", "settings", "loadout"];
+  const ops = [
+    "join",
+    "poll",
+    "team",
+    "start",
+    "restart",
+    "leave",
+    "settings",
+    "loadout",
+    "rematch",
+  ];
   if (typeof body.op !== "string" || !ops.includes(body.op))
     throw new OutpostError("Unknown room action.");
   // Capability IDs are minted once per join, outside the compare-and-swap retry.
@@ -247,11 +266,20 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
       }
     }
     if (body.op === "settings") {
-      if (room.host !== member.id) throw new OutpostError("Only the host can choose the map.", 403);
-      if (room.phase !== "lobby") throw new OutpostError("Choose the map before starting.", 409);
-      if (typeof body.mapId !== "string" || !Object.hasOwn(MAPS, body.mapId))
-        throw new OutpostError("Invalid map.");
-      room.mapId = body.mapId;
+      if (room.host !== member.id)
+        throw new OutpostError("Only the host can choose match settings.", 403);
+      if (room.phase !== "lobby")
+        throw new OutpostError("Choose match settings before starting.", 409);
+      if (body.mapId !== undefined) {
+        if (typeof body.mapId !== "string" || !Object.hasOwn(MAPS, body.mapId))
+          throw new OutpostError("Invalid map.");
+        room.mapId = body.mapId;
+      }
+      if (body.difficulty !== undefined) {
+        if (typeof body.difficulty !== "string" || !Object.hasOwn(DIFFICULTIES, body.difficulty))
+          throw new OutpostError("Invalid bot difficulty.");
+        room.difficulty = difficultyOf(body.difficulty);
+      }
     }
     if (body.op === "loadout") {
       if (room.phase !== "lobby")
@@ -274,10 +302,27 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
         throw new OutpostError("That pair is full.", 409);
       member.team = body.team;
     }
-    if (body.op === "start" || body.op === "restart") {
+    if (body.op === "start" || body.op === "restart" || body.op === "rematch") {
       if (room.host !== member.id)
         throw new OutpostError("Only the room host can start a match.", 403);
-      if (body.op === "restart") {
+      if (body.op === "rematch") {
+        if (room.phase !== "ended")
+          throw new OutpostError("Finish this match before starting another.", 409);
+        room.members = room.members.filter((m) => now - m.lastSeen < 20000);
+        room.arena = new Arena({
+          mode: room.mode,
+          mapId: room.mapId || "outpost",
+          difficulty: room.difficulty || "normal",
+          countdown: 2,
+          humans: room.members.map(({ id, team, name, weapon }) => ({
+            id,
+            team,
+            name,
+            weapon: weapon || "carbine",
+          })),
+        }).snapshot();
+        room.phase = "playing";
+      } else if (body.op === "restart") {
         if (room.phase !== "ended")
           throw new OutpostError("Finish this match before starting another.", 409);
         room.members = room.members.filter((m) => now - m.lastSeen < 20000);
@@ -289,6 +334,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
         room.arena = new Arena({
           mode: room.mode,
           mapId: room.mapId || "outpost",
+          difficulty: room.difficulty || "normal",
           humans: room.members.map(({ id, team, name, weapon }) => ({
             id,
             team,

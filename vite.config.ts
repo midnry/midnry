@@ -188,6 +188,8 @@ export default defineConfig(({ command, isPreview }) => ({
                   "outpost-content.js",
                   "outpost-academy.js",
                   "outpost-art.js",
+                  "outpost-retention.js",
+                  "outpost-progression.js",
                 ].map((file) => [`/games/${file}`, { headers: { "cache-control": "no-cache" } }]),
               ),
               "/abuja/**": {
