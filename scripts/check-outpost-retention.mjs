@@ -17,8 +17,9 @@ try {
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(base + "/games/outpost-zero.html");
-    await page.locator(".mf-retention summary").click();
+    await page.locator(".mf-graphics").click();
     await page.locator(".mf-difficulty").selectOption("easy");
+    await page.locator(".mf-settingsclose").click();
     await page.locator(".mf-mapselect").selectOption("freight");
     await page.locator(".mf-weaponselect").selectOption("rocket");
     await page.locator(".mf-mode[data-mode=duo]").click();
@@ -29,6 +30,7 @@ try {
       null,
     );
     await page.locator(".mf-lockerclose").click();
+    await page.locator(".mf-graphics").click();
     await page.locator(".mf-volume").fill("25");
     await page.locator(".mf-mute").check();
     assert.ok(
@@ -37,6 +39,7 @@ try {
         return a.ctx.state === "running" && a.volume === 0.25 && a.muted;
       }),
     );
+    await page.locator(".mf-settingsclose").click();
     await page.locator(".mf-start").click();
     // Controlled combat fixture uses real rules to finish a round and exercise the debrief.
     await page.evaluate(() => {

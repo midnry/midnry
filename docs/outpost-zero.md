@@ -1,6 +1,6 @@
 # Midnry — Outpost Zero
 
-The game uses seven small static files: `public/games/outpost-zero.html` (Canvas rendering, procedural art, scoped CSS, controls and lobby) and `public/games/outpost-sim.js` (shared match rules), and `public/games/outpost-content.js` (maps, palettes, scenery and weapon definitions), plus `public/games/outpost-academy.js` (tutorial, field guide and graphics materials), and `public/games/outpost-art.js` (scenery, animations, lighting and cosmetic effects), `public/games/outpost-retention.js` (sound, results and locker UI) and `public/games/outpost-progression.js` (device-local cosmetic rewards). Serve all seven from the same directory over HTTP. Offline play needs no backend or external assets; online rooms use the Midnry API and database. No game framework is required. ES modules require a web server rather than opening a local file directly.
+The game uses eight small static files: `public/games/outpost-zero.html` (Canvas rendering, procedural art, scoped CSS, controls and lobby) and `public/games/outpost-sim.js` (shared match rules), and `public/games/outpost-content.js` (maps, palettes, scenery and weapon definitions), plus `public/games/outpost-academy.js` (tutorial, field guide and graphics materials), and `public/games/outpost-art.js` (scenery, animations, lighting and cosmetic effects), `public/games/outpost-retention.js` (sound, results and locker UI) and `public/games/outpost-progression.js` (device-local cosmetic rewards), plus `public/games/outpost-ui.js` (menu hierarchy, shared settings panel and map/weapon previews). Serve all eight from the same directory over HTTP. Offline play needs no backend or external assets; online rooms use the Midnry API and database. No game framework is required. ES modules require a web server rather than opening a local file directly.
 
 ## Midnry integration
 
@@ -8,7 +8,7 @@ The homepage links to `/discover/outpost-zero`, which launches `/games/outpost-z
 
 ## Embed elsewhere
 
-For the strongest isolation from your site's existing CSS and scripts, serve all seven files in `/games/`, then embed:
+For the strongest isolation from your site's existing CSS and scripts, serve all eight files in `/games/`, then embed:
 
 ```html
 <iframe
@@ -62,7 +62,7 @@ The prototype was checked with Chromium through Playwright. It checks movement, 
 
 ## Last Signal · Solo
 
-Select **LAST SIGNAL · SOLO** in the Deploy menu. Offline, this is a single-player survival match: you and seven AI rivals spawn in shuffled, separate positions. Rivals fight one another, break crates, collect cores and navigate around cover. Eliminate or outlast every rival to win. Death ends your match; Deploy resets the arena and every power-up. Selecting a mode starts a new match.
+Select **Play Solo** in the Deploy menu. Offline, this is a single-player survival match: you and seven AI rivals spawn in shuffled, separate positions. Rivals fight one another, break crates, collect cores and navigate around cover. Eliminate or outlast every rival to win. Death ends your match; Deploy resets the arena and every power-up. Selecting a mode starts a new match.
 
 | Original concept          | Outpost Zero name | Rules                                                                                             |
 | ------------------------- | ----------------- | ------------------------------------------------------------------------------------------------- |
@@ -78,7 +78,7 @@ Key extension points: `reset()` (spawn and loot layout), `damage()` (crate drops
 
 ## Pair Ops · Duo
 
-Select **PAIR OPS · DUO**. Eight combatants form four teams of two. Offline, an AI partner covers your team. Friendly fire is blocked. Each player has two redeployments, each after eight seconds, provided a teammate remains alive. A team wipe cancels pending returns. While waiting, the camera follows a living teammate. Death drops collected cores; returning gives base health, base damage and a fresh magazine. The last living pair wins.
+Select **Play Duo**. Eight combatants form four teams of two. Offline, an AI partner covers your team. Friendly fire is blocked. Each player has two redeployments, each after eight seconds, provided a teammate remains alive. A team wipe cancels pending returns. While waiting, the camera follows a living teammate. Death drops collected cores; returning gives base health, base damage and a fresh magazine. The last living pair wins.
 
 ## Online rooms
 
@@ -151,7 +151,7 @@ The Midnry iframe includes a graphics-release query parameter, preserving room i
 
 ## Player experience and cosmetic progression
 
-**PLAYER EXPERIENCE** in the deployment menu contains Easy, Normal and Hard bot difficulty, sound volume, mute and the **RANGER LOCKER**. Difficulty changes bot speed, awareness, reaction time and accuracy; health and weapon damage are unchanged. Online settings are host-only and locked during a round. Normal retains the original bot behavior.
+**Settings** in the main menu contains Easy, Normal and Hard bot difficulty, sound volume, mute and graphics controls. **Locker** opens cosmetic rewards. Difficulty changes bot speed, awareness, reaction time and accuracy; health and weapon damage are unchanged. Online settings are host-only and locked during a round. Normal retains the original bot behavior.
 
 The round debrief shows placement (team placement in Duo), eliminations, actual damage to combatants, survival time, cumulative cores collected and level. Crate damage and friendly fire do not count. **PLAY AGAIN** keeps the same mode, map, loadout and difficulty, then starts a two-second countdown with combat and hazard timers frozen. In online rooms, the host starts the rematch for everyone without returning to the lobby; room code, player IDs, teams and loadouts remain intact. Other players wait for the host. The existing deployment button still returns an ended online match to the lobby for setting changes.
 
@@ -160,3 +160,11 @@ Completed rounds award 40 base XP, up to 60 for eliminations, 40 for damage and 
 Progress and sound preferences save in browser localStorage, with graceful fallback when storage is unavailable. Progress is per browser/device, is not account-synced or competitive proof, and is removed when browser data is cleared. Recent round IDs prevent duplicate rewards. Do not use local XP for trusted leaderboards. Audio initializes only after a user gesture, is voice-limited, and closes with the component.
 
 Checks: `node scripts/outpost-retention.test.mjs` tests reward and shared-simulation rules; `node scripts/check-outpost-retention.mjs [baseURL]` checks desktop/mobile results, rematches, countdown, audio and locker persistence; `node scripts/check-outpost-rematch.mjs [baseURL]` checks server difficulty authority and a same-team online rematch.
+
+## Simplified menu and accessible settings
+
+The menu defaults to Solo and leads with **Play Solo**, **Play Duo**, and **Play Online**. Mode selection happens before **Start Solo / Start Duo**; Online opens room creation and code entry, with the chosen Solo/Duo format explained in the room panel. Connected rooms retain the host and team permissions. Valid invite links open the room panel automatically.
+
+Map and weapon selections each have a compact original Canvas illustration and a short hint. Optional descriptions and keyboard/touch instructions are collapsible. **Practice**, **Tutorial**, **Field Guide**, **Settings**, and **Locker** remain separate secondary actions. The single native Settings dialog groups bot difficulty, sound and graphics; Escape dismisses it and restores focus. Offline gameplay pauses, while online play continues with an explicit notice. The tutorial is disabled while connected to an online room.
+
+Styles remain scoped to `midnry-fps`; room-panel accessibility IDs are unique per instance. Visible focus outlines, native select labels, touch targets of at least 44 pixels, compact portrait layouts and scrollable landscape panels support keyboard and touch use. The new menu changes no server combat rules. Test `node scripts/check-outpost-ui.mjs [baseURL]` for desktop, 390px and 320px mobile widths, landscape, all 16 previews, grouped settings, keyboard activation, pause/resume and invite entry. Browser emulation does not establish physical-device comfort.

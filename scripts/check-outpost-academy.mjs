@@ -17,7 +17,7 @@ try {
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(base + "/games/outpost-zero.html");
-    await page.getByRole("button", { name: "FIELD GUIDE", exact: true }).click();
+    await page.getByRole("button", { name: "Field Guide", exact: true }).click();
     assert.equal(await page.locator(".mf-mapdiagram").count(), 5);
     assert.equal(await page.locator(".mf-guidegrid article").count(), 16);
     assert.equal(
@@ -28,7 +28,7 @@ try {
       path: `/workspace/screenshots/outpost-guide-${mobile ? "mobile" : "desktop"}.png`,
     });
     await page.getByRole("button", { name: "BACK", exact: true }).click();
-    await page.getByRole("button", { name: "GRAPHICS", exact: true }).click();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
     await page.getByLabel("Graphics preset").selectOption("high");
     assert.equal(
       await page.evaluate(
@@ -36,7 +36,7 @@ try {
       ),
       512,
     );
-    await page.getByRole("button", { name: "BACK", exact: true }).click();
+    await page.getByRole("button", { name: "Done", exact: true }).click();
     await page.reload();
     assert.equal(
       await page.evaluate(() => document.querySelector("midnry-fps").engine.academy.preset),
@@ -45,7 +45,7 @@ try {
     await page.evaluate(() => {
       document.querySelector("midnry-fps").engine.lockMouse = () => {};
     });
-    await page.getByRole("button", { name: "BOOT CAMP →", exact: true }).click();
+    await page.getByRole("button", { name: "Tutorial", exact: true }).click();
     await page.evaluate(() => {
       if (document.pointerLockElement) document.exitPointerLock();
     });
@@ -149,15 +149,15 @@ try {
     );
     assert.equal(
       await page.evaluate(() => document.querySelector("midnry-fps").engine.enemies.length),
-      6,
+      7,
     );
     assert.equal(
       await page.evaluate(() => document.querySelector("midnry-fps").engine.player.charge),
       0,
     );
-    await page.getByRole("button", { name: "GRAPHICS", exact: true }).click();
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
     await page.getByLabel("Graphics preset").selectOption("performance");
-    await page.getByRole("button", { name: "BACK", exact: true }).click();
+    await page.getByRole("button", { name: "Done", exact: true }).click();
     await page.screenshot({
       path: `/workspace/screenshots/outpost-performance-${mobile ? "mobile" : "desktop"}.png`,
     });

@@ -67,7 +67,9 @@ export class Academy {
       this.begin();
     });
     game.on(game.$(".mf-guide"), "click", () => this.open("guide"));
-    game.on(game.$(".mf-graphics"), "click", () => this.open("graphics"));
+    game.on(game.$(".mf-graphics"), "click", () =>
+      game.ui ? game.ui.settings() : this.open("graphics"),
+    );
     game.on(game.$(".mf-bookclose"), "click", () => game.$(".mf-book").close());
     game.on(game.$(".mf-endboot"), "click", () => this.finish());
     game.on(game.$(".mf-skipboot"), "click", () => (this.step === 6 ? this.finish() : this.next()));
@@ -77,26 +79,30 @@ export class Academy {
     );
     // Modal dialog supplies native focus containment and Escape dismissal.
     game.on(game.$(".mf-book"), "keydown", (e) => e.stopPropagation());
-    game.on(game.$(".mf-bookbody"), "change", (e) => {
-      if (e.target.matches("[data-preset]")) {
-        this.preset = e.target.value;
-        this.options = { ...PRESETS[this.preset] };
-        this.settings();
-      } else if (e.target.dataset.option) this.options[e.target.dataset.option] = e.target.checked;
-      else return;
-      this.materials.clear();
-      game.sprite = game.allySprite = game.boxSprite = game.coreSprite = null;
-      game.propSprites?.clear();
-      game.art?.clearCache();
-      game.resize();
-      try {
-        localStorage.setItem(
-          "midnry-outpost-graphics",
-          JSON.stringify({ preset: this.preset, options: this.options }),
-        );
-      } catch {}
-    });
+    game.on(game.$(".mf-bookbody"), "change", (e) => this.applySetting(e));
   }
+  // Both the field-guide fallback and unified settings use the same controls.
+  applySetting(e, target = this.g.$(".mf-bookbody")) {
+    const game = this.g;
+    if (e.target.matches("[data-preset]")) {
+      this.preset = e.target.value;
+      this.options = { ...PRESETS[this.preset] };
+      this.settings(target);
+    } else if (e.target.dataset.option) this.options[e.target.dataset.option] = e.target.checked;
+    else return;
+    this.materials.clear();
+    game.sprite = game.allySprite = game.boxSprite = game.coreSprite = null;
+    game.propSprites?.clear();
+    game.art?.clearCache();
+    game.resize();
+    try {
+      localStorage.setItem(
+        "midnry-outpost-graphics",
+        JSON.stringify({ preset: this.preset, options: this.options }),
+      );
+    } catch {}
+  }
+
   open(kind) {
     const g = this.g;
     if (g.running) g.pause();
@@ -148,18 +154,17 @@ export class Academy {
     }
     g.$(".mf-book").showModal();
   }
-  settings() {
-    this.g.$(".mf-bookbody").innerHTML =
-      `<p class="mf-bookintro">INK, STEEL & SUNLIGHT</p><p>Sharpen the comic artwork without changing the bold colors and black outlines. High increases rendering cost; choose Performance if your device gets warm or play feels slow.</p><label class="mf-setting">Graphics preset<select data-preset aria-label="Graphics preset">${Object.keys(
-        PRESETS,
+  settings(target = this.g.$(".mf-bookbody")) {
+    target.innerHTML = `<p class="mf-bookintro">INK, STEEL & SUNLIGHT</p><p>Sharpen the comic artwork without changing the bold colors and black outlines. High increases rendering cost; choose Performance if your device gets warm or play feels slow.</p><label class="mf-setting">Graphics preset<select data-preset aria-label="Graphics preset">${Object.keys(
+      PRESETS,
+    )
+      .map(
+        (k) =>
+          `<option value="${k}" ${k === this.preset ? "selected" : ""}>${k[0].toUpperCase() + k.slice(1)}</option>`,
       )
-        .map(
-          (k) =>
-            `<option value="${k}" ${k === this.preset ? "selected" : ""}>${k[0].toUpperCase() + k.slice(1)}</option>`,
-        )
-        .join(
-          "",
-        )}</select></label><p>${this.options.texture} texel materials · up to ${this.options.width}px render width · floor sampling every ${this.options.floor}px · scenery range ${this.options.distance} tiles</p><label class="mf-setting"><span>Defined contact shadows</span><input type="checkbox" data-option="shadows" ${this.options.shadows ? "checked" : ""}></label><label class="mf-setting"><span>Cel material lighting</span><input type="checkbox" data-option="lighting" ${this.options.lighting ? "checked" : ""}></label><p>Texture resolution sharpens mortar, scuffs and metal seams. Distance-filtered texture levels reduce shimmer on angled walls and floors. Detail distance keeps scenery visible farther away. Contact shadows ground characters and crates; material lighting adds stepped highlights and dark recesses. These are Canvas effects, rather than GPU anisotropic filtering, screen-space shadows or shader settings. Preferences are saved on this device.</p>`;
+      .join(
+        "",
+      )}</select></label><p>${this.options.texture} texel materials · up to ${this.options.width}px render width · floor sampling every ${this.options.floor}px · scenery range ${this.options.distance} tiles</p><label class="mf-setting"><span>Defined contact shadows</span><input type="checkbox" data-option="shadows" ${this.options.shadows ? "checked" : ""}></label><label class="mf-setting"><span>Cel material lighting</span><input type="checkbox" data-option="lighting" ${this.options.lighting ? "checked" : ""}></label><p>Texture resolution sharpens mortar, scuffs and metal seams. Distance-filtered texture levels reduce shimmer on angled walls and floors. Detail distance keeps scenery visible farther away. Contact shadows ground characters and crates; material lighting adds stepped highlights and dark recesses. These are Canvas effects, rather than GPU anisotropic filtering, screen-space shadows or shader settings. Preferences are saved on this device.</p>`;
   }
   begin() {
     const g = this.g;

@@ -21,6 +21,7 @@ const progression = readFileSync(
   new URL("../public/games/outpost-progression.js", import.meta.url),
   "utf8",
 );
+const menuUI = readFileSync(new URL("../public/games/outpost-ui.js", import.meta.url), "utf8");
 const screenshotDir = fileURLToPath(new URL("../screenshots/", import.meta.url));
 mkdirSync(screenshotDir, { recursive: true });
 (async () => {
@@ -54,11 +55,13 @@ mkdirSync(screenshotDir, { recursive: true });
                     ? retention
                     : route.request().url().endsWith("outpost-progression.js")
                       ? progression
-                      : html,
+                      : route.request().url().endsWith("outpost-ui.js")
+                        ? menuUI
+                        : html,
         }),
       );
       await page.goto("http://outpost.test/");
-      await page.getByRole("button", { name: "LAST SIGNAL · SOLO", exact: true }).click();
+      await page.getByRole("button", { name: "Play Solo", exact: true }).click();
       const rules = await page.evaluate(() => {
         const g = document.querySelector("midnry-fps").engine;
         const ok = (x, msg) => {
@@ -210,7 +213,7 @@ mkdirSync(screenshotDir, { recursive: true });
           replay: true,
         };
       });
-      await page.getByRole("button", { name: "DEPLOY" }).click();
+      await page.locator(".mf-start").click();
       if (mobile) await page.getByRole("button", { name: "Fire weapon" }).tap();
       else await page.keyboard.press("Space");
       assert(
@@ -241,12 +244,12 @@ mkdirSync(screenshotDir, { recursive: true });
         pausedTime,
         "pause freezes time",
       );
-      await page.getByRole("button", { name: "FIELD OPS", exact: true }).click();
+      await page.getByRole("button", { name: "Practice", exact: true }).click();
       assert.equal(
         await page.evaluate(() => document.querySelector("midnry-fps").engine.mode),
         "training",
       );
-      await page.getByRole("button", { name: "DEPLOY" }).click();
+      await page.locator(".mf-start").click();
       await page.evaluate(() => {
         const g = document.querySelector("midnry-fps").engine;
         g.player.x = 5.5;
