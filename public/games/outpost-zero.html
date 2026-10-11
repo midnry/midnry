@@ -685,6 +685,7 @@
     <script type="module">
       import { Arena, MAPS, WEAPONS, mapOf, weaponOf, clamp } from "./outpost-sim.js";
       import { Academy } from "./outpost-academy.js";
+      import { ComicArt } from "./outpost-art.js";
       (() => {
         "use strict";
         // A custom element keeps state private and supports multiple independent instances.
@@ -763,6 +764,7 @@
             this.bindInputs();
             this.bindOnline();
             this.academy = new Academy(this);
+            this.art = new ComicArt(this);
             this.resizeObserver = new ResizeObserver(() => this.resize());
             this.resizeObserver.observe(this.shell);
             this.resize();
@@ -771,6 +773,7 @@
           }
           // Last Signal uses the same arena, with a clear center for the final zone.
           reset() {
+            this.art?.reset();
             if (this.academy?.active) {
               this.academy.active = false;
               this.$(".mf-lesson").hidden = true;
@@ -1664,6 +1667,7 @@
               c.lineTo((w * i) / 12, horizon - 18 - (Math.sin(i * 2.8) + 1) * 30);
             c.lineTo(w, horizon);
             c.fill();
+            this.art.background(map, p, horizon);
             c.fillStyle = theme.floor;
             c.fillRect(0, horizon, w, h - horizon);
             c.fillStyle = "#89684f";
@@ -1692,7 +1696,9 @@
               const material = this.academy.wallTexture(map, hit.type, hit.side, size);
               c.drawImage(
                 material,
-                Math.floor(hit.u * (material.width - 1)),
+                Math.floor(
+                  ((hit.side ? dy > 0 : dx < 0) ? 1 - hit.u : hit.u) * (material.width - 1),
+                ),
                 0,
                 1,
                 material.height,
@@ -1931,6 +1937,8 @@
             return sprite;
           }
           propSprite(prop) {
+            if (!this.arena || !["dummy", "wreck", "luggage", "sign"].includes(prop.kind))
+              return this.art.scenery(prop);
             this.propSprites ??= new Map();
             const key = prop.kind + prop.label;
             if (this.propSprites.has(key)) return this.propSprites.get(key);
@@ -2267,21 +2275,23 @@
                 )
                 .map((e) => ({
                   e,
-                  sprite:
+                  sprite: this.art.actorSprite(
                     this.mode === "duo" && e.team === this.player.team
                       ? this.allySprite
                       : this.sprite,
+                    e,
+                  ),
                   size: 0.88,
                 })),
               ...this.crates
                 .filter((e) => e.hp > 0)
                 .map((e) => ({ e, sprite: this.boxSprite, size: 0.72 })),
               ...this.cores.map((e) => ({ e, sprite: this.coreSprite, size: 0.55 })),
-              ...mapOf(this.arena.mapId).props.map((e) => ({
+              ...[...mapOf(this.arena.mapId).props, ...this.art.extras()].map((e) => ({
                 e,
                 sprite: this.propSprite(e),
-                size: e.kind === "wreck" ? 0.65 : e.kind === "dummy" ? 0.8 : 0.9,
-                aspect: e.kind === "wreck" ? 2.2 : 0.8,
+                size: e.size || (e.kind === "wreck" ? 0.65 : e.kind === "dummy" ? 0.8 : 0.9),
+                aspect: e.aspect || (e.kind === "wreck" ? 2.2 : 0.8),
               })),
             ];
             const visible = objects
@@ -2590,6 +2600,7 @@
           }
           render() {
             this.observeCombat();
+            this.art.observe();
             const c = this.ctx,
               now = performance.now(),
               hurt = Math.max(0, (this.damageUntil - now) / 520);
@@ -2606,10 +2617,16 @@
                   (matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1),
               );
             this.drawWorld();
+            this.art.lighting();
             this.drawEnemies();
             this.drawHaze();
             this.drawCombatEffects();
-            if (this.player.hp > 0) this.drawWeapon();
+            this.art.effectsWorld();
+            if (this.player.hp > 0) {
+              this.art.weaponBefore();
+              this.drawWeapon();
+              this.art.weaponAfter();
+            }
             c.restore();
             this.drawMap();
             const critical = this.player.hp > 0 && this.player.hp / this.player.maxHp < 0.3;

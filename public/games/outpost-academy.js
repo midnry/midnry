@@ -87,6 +87,7 @@ export class Academy {
       this.materials.clear();
       game.sprite = game.allySprite = game.boxSprite = game.coreSprite = null;
       game.propSprites?.clear();
+      game.art?.clearCache();
       game.resize();
       try {
         localStorage.setItem(
@@ -307,6 +308,7 @@ export class Academy {
         c.lineTo(x + n * 0.015, y + n * 0.006);
         c.stroke();
       }
+      this.g.art?.decorate(c, map, type, n);
       const levels = [cvs];
       while (levels.at(-1).width > 8) {
         const prev = levels.at(-1),
