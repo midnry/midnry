@@ -27,8 +27,10 @@ import { Route as AppsSlugRouteImport } from './routes/apps/$slug'
 import { Route as AudiencesAudienceRouteImport } from './routes/audiences/$audience'
 import { Route as DiscoverSlugRouteImport } from './routes/discover/$slug'
 import { Route as DiscoverAbujaHustleRouteImport } from './routes/discover/abuja-hustle'
+import { Route as DiscoverOutpostZeroRouteImport } from './routes/discover/outpost-zero'
 import { Route as ForAudienceRouteImport } from './routes/for/$audience'
 import { Route as GamesAbujaHustleRouteImport } from './routes/games/abuja-hustle'
+import { Route as GamesOutpostZeroRouteImport } from './routes/games/outpost-zero'
 import { Route as SectionsGenreRouteImport } from './routes/sections/$genre'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAvatarIdRouteImport } from './routes/api/avatar/$id'
@@ -127,6 +129,11 @@ const DiscoverAbujaHustleRoute = DiscoverAbujaHustleRouteImport.update({
   path: '/discover/abuja-hustle',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DiscoverOutpostZeroRoute = DiscoverOutpostZeroRouteImport.update({
+  id: '/discover/outpost-zero',
+  path: '/discover/outpost-zero',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ForAudienceRoute = ForAudienceRouteImport.update({
   id: '/for/$audience',
   path: '/for/$audience',
@@ -135,6 +142,11 @@ const ForAudienceRoute = ForAudienceRouteImport.update({
 const GamesAbujaHustleRoute = GamesAbujaHustleRouteImport.update({
   id: '/games/abuja-hustle',
   path: '/games/abuja-hustle',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GamesOutpostZeroRoute = GamesOutpostZeroRouteImport.update({
+  id: '/games/outpost-zero',
+  path: '/games/outpost-zero',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SectionsGenreRoute = SectionsGenreRouteImport.update({
@@ -192,8 +204,10 @@ export interface FileRoutesByFullPath {
   '/audiences/$audience': typeof AudiencesAudienceRoute
   '/discover/$slug': typeof DiscoverSlugRoute
   '/discover/abuja-hustle': typeof DiscoverAbujaHustleRoute
+  '/discover/outpost-zero': typeof DiscoverOutpostZeroRoute
   '/for/$audience': typeof ForAudienceRoute
   '/games/abuja-hustle': typeof GamesAbujaHustleRoute
+  '/games/outpost-zero': typeof GamesOutpostZeroRoute
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps/': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -221,8 +235,10 @@ export interface FileRoutesByTo {
   '/audiences/$audience': typeof AudiencesAudienceRoute
   '/discover/$slug': typeof DiscoverSlugRoute
   '/discover/abuja-hustle': typeof DiscoverAbujaHustleRoute
+  '/discover/outpost-zero': typeof DiscoverOutpostZeroRoute
   '/for/$audience': typeof ForAudienceRoute
   '/games/abuja-hustle': typeof GamesAbujaHustleRoute
+  '/games/outpost-zero': typeof GamesOutpostZeroRoute
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -251,8 +267,10 @@ export interface FileRoutesById {
   '/audiences/$audience': typeof AudiencesAudienceRoute
   '/discover/$slug': typeof DiscoverSlugRoute
   '/discover/abuja-hustle': typeof DiscoverAbujaHustleRoute
+  '/discover/outpost-zero': typeof DiscoverOutpostZeroRoute
   '/for/$audience': typeof ForAudienceRoute
   '/games/abuja-hustle': typeof GamesAbujaHustleRoute
+  '/games/outpost-zero': typeof GamesOutpostZeroRoute
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps/': typeof AppsIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -282,8 +300,10 @@ export interface FileRouteTypes {
     | '/audiences/$audience'
     | '/discover/$slug'
     | '/discover/abuja-hustle'
+    | '/discover/outpost-zero'
     | '/for/$audience'
     | '/games/abuja-hustle'
+    | '/games/outpost-zero'
     | '/sections/$genre'
     | '/apps/'
     | '/api/auth/$'
@@ -311,8 +331,10 @@ export interface FileRouteTypes {
     | '/audiences/$audience'
     | '/discover/$slug'
     | '/discover/abuja-hustle'
+    | '/discover/outpost-zero'
     | '/for/$audience'
     | '/games/abuja-hustle'
+    | '/games/outpost-zero'
     | '/sections/$genre'
     | '/apps'
     | '/api/auth/$'
@@ -340,8 +362,10 @@ export interface FileRouteTypes {
     | '/audiences/$audience'
     | '/discover/$slug'
     | '/discover/abuja-hustle'
+    | '/discover/outpost-zero'
     | '/for/$audience'
     | '/games/abuja-hustle'
+    | '/games/outpost-zero'
     | '/sections/$genre'
     | '/apps/'
     | '/api/auth/$'
@@ -370,8 +394,10 @@ export interface RootRouteChildren {
   AudiencesAudienceRoute: typeof AudiencesAudienceRoute
   DiscoverSlugRoute: typeof DiscoverSlugRoute
   DiscoverAbujaHustleRoute: typeof DiscoverAbujaHustleRoute
+  DiscoverOutpostZeroRoute: typeof DiscoverOutpostZeroRoute
   ForAudienceRoute: typeof ForAudienceRoute
   GamesAbujaHustleRoute: typeof GamesAbujaHustleRoute
+  GamesOutpostZeroRoute: typeof GamesOutpostZeroRoute
   SectionsGenreRoute: typeof SectionsGenreRoute
   AppsIndexRoute: typeof AppsIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -510,6 +536,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiscoverAbujaHustleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/discover/outpost-zero': {
+      id: '/discover/outpost-zero'
+      path: '/discover/outpost-zero'
+      fullPath: '/discover/outpost-zero'
+      preLoaderRoute: typeof DiscoverOutpostZeroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/for/$audience': {
       id: '/for/$audience'
       path: '/for/$audience'
@@ -522,6 +555,13 @@ declare module '@tanstack/react-router' {
       path: '/games/abuja-hustle'
       fullPath: '/games/abuja-hustle'
       preLoaderRoute: typeof GamesAbujaHustleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/games/outpost-zero': {
+      id: '/games/outpost-zero'
+      path: '/games/outpost-zero'
+      fullPath: '/games/outpost-zero'
+      preLoaderRoute: typeof GamesOutpostZeroRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sections/$genre': {
@@ -594,8 +634,10 @@ const rootRouteChildren: RootRouteChildren = {
   AudiencesAudienceRoute: AudiencesAudienceRoute,
   DiscoverSlugRoute: DiscoverSlugRoute,
   DiscoverAbujaHustleRoute: DiscoverAbujaHustleRoute,
+  DiscoverOutpostZeroRoute: DiscoverOutpostZeroRoute,
   ForAudienceRoute: ForAudienceRoute,
   GamesAbujaHustleRoute: GamesAbujaHustleRoute,
+  GamesOutpostZeroRoute: GamesOutpostZeroRoute,
   SectionsGenreRoute: SectionsGenreRoute,
   AppsIndexRoute: AppsIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

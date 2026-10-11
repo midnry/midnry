@@ -14,6 +14,8 @@ const PAGES = [
   ...APPS.map((app) => `/discover/${app.slug}`),
   "/discover/abuja-hustle",
   "/games/abuja-hustle",
+  "/discover/outpost-zero",
+  "/games/outpost-zero",
 ];
 
 function originOf(request: Request): string {
