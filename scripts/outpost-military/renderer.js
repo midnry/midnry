@@ -13,6 +13,7 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { Reflector } from "three/addons/objects/Reflector.js";
 import { outfitOf, weaponOf } from "../../public/games/outpost-content.js";
 import { skinPattern } from "../../public/games/outpost-skins.js";
+import { isAppleTouchDevice, graphicsProfile, renderSize } from "./compatibility.js";
 const SCALE = 3,
   ASSET = "/games/military/",
   TAU = Math.PI * 2;
@@ -24,7 +25,7 @@ const PROFILES = {
   estate: { floor: "#c6bca5", fog: "#c4c1ba", metal: "#81867b" },
 };
 export class MilitaryRenderer {
-  constructor(g, onProgress = () => {}) {
+  constructor(g, onProgress = () => {}, { safeMode = false } = {}) {
     this.g = g;
     this.onProgress = onProgress;
     this.disposed = false;
@@ -48,9 +49,10 @@ export class MilitaryRenderer {
     this.motion = matchMedia("(prefers-reduced-motion: reduce)");
     // A high-performance, multisampled context is not available on every phone.
     // Retry on a fresh canvas so rejected attributes don't lock the next attempt.
+    const appleTouch = isAppleTouchDevice(navigator);
     let canvas, context;
     for (const attributes of [
-      { antialias: true, powerPreference: "default" },
+      { antialias: !appleTouch && !safeMode, powerPreference: "default" },
       { antialias: false, powerPreference: "low-power" },
     ]) {
       canvas = document.createElement("canvas");
@@ -59,6 +61,14 @@ export class MilitaryRenderer {
     }
     if (!context) throw new Error("This browser could not start WebGL 2 graphics.");
     this.renderer = new THREE.WebGLRenderer({ canvas, context });
+    this.profile = graphicsProfile({
+      appleTouch,
+      safeMode,
+      halfFloat:
+        this.renderer.extensions.has("EXT_color_buffer_float") ||
+        this.renderer.extensions.has("EXT_color_buffer_half_float"),
+      maxTextureSize: this.renderer.capabilities.maxTextureSize,
+    });
     this.renderer.setPixelRatio(1);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -70,7 +80,7 @@ export class MilitaryRenderer {
       event.preventDefault();
       if (this.disposed) return;
       this.contextFailed = true;
-      g.fallbackMilitary(new Error("The graphics context was lost."));
+      g.recoverMilitary(new Error("The graphics context was lost."));
     };
     this.renderer.domElement.addEventListener("webglcontextlost", this.contextLost);
     this.renderer.domElement.className = "mf-webgl";
@@ -122,21 +132,27 @@ export class MilitaryRenderer {
     this.boxGeometry = this.geo("rounded", () => new RoundedBoxGeometry(1, 1, 1, 3, 0.025));
     this.wallGeometry = this.geo("wall", () => new RoundedBoxGeometry(1, 1, 1, 2, 0.008));
     // Cinematic processing stays separate from simulation and the accessible HUD.
-    this.composer = new EffectComposer(this.renderer);
-    this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.ao = new SSAOPass(this.scene, this.camera, 512, 512, 12);
-    this.ao.kernelRadius = 0.7;
-    this.ao.minDistance = 0.001;
-    this.ao.maxDistance = 0.07;
-    this.composer.addPass(this.ao);
-    const hands = new RenderPass(this.weaponScene, this.weaponCamera);
-    hands.clear = false;
-    hands.clearDepth = true;
-    this.composer.addPass(hands);
-    this.grade = new ShaderPass({
-      uniforms: { tDiffuse: { value: null } },
-      vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
-      fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv;
+    if (!safeMode) {
+      const target = new THREE.WebGLRenderTarget(1, 1, {
+        type: this.profile.halfFloat ? THREE.HalfFloatType : THREE.UnsignedByteType,
+      });
+      this.composer = new EffectComposer(this.renderer, target);
+      this.composer.addPass(new RenderPass(this.scene, this.camera));
+      if (this.profile.ambientOcclusion) {
+        this.ao = new SSAOPass(this.scene, this.camera, 512, 512, 12);
+        this.ao.kernelRadius = 0.7;
+        this.ao.minDistance = 0.001;
+        this.ao.maxDistance = 0.07;
+        this.composer.addPass(this.ao);
+      }
+      const hands = new RenderPass(this.weaponScene, this.weaponCamera);
+      hands.clear = false;
+      hands.clearDepth = true;
+      this.composer.addPass(hands);
+      this.grade = new ShaderPass({
+        uniforms: { tDiffuse: { value: null } },
+        vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+        fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv;
         void main(){ vec4 c=texture2D(tDiffuse,vUv);
           // Subtle warm highlights, cool shadows, and lens falloff; no animated grain.
           float l=dot(c.rgb,vec3(.2126,.7152,.0722));
@@ -144,9 +160,10 @@ export class MilitaryRenderer {
           c.rgb*=mix(vec3(.90,.97,1.06),vec3(1.045,1.015,.97),smoothstep(.15,1.1,l));
           vec2 d=(vUv-.5)*vec2(1.,.75);
           c.rgb*=1.-.32*dot(d,d); gl_FragColor=c; }`,
-    });
-    this.composer.addPass(this.grade);
-    this.composer.addPass(new OutputPass());
+      });
+      this.composer.addPass(this.grade);
+      this.composer.addPass(new OutputPass());
+    }
     this.ready = this.loadAssets().then(() => {
       if (!this.disposed) {
         this.mapKey = "";
@@ -271,6 +288,9 @@ export class MilitaryRenderer {
       })(),
       (async () => {
         try {
+          // PMREM requires floating-point render targets. Keep direct cinematic lights
+          // when the device cannot render those targets, rather than losing all 3D.
+          if (!this.profile.halfFloat) return;
           const hdr = await new RGBELoader().loadAsync(ASSET + "sky.hdr");
           if (this.disposed) {
             hdr.dispose();
@@ -298,7 +318,10 @@ export class MilitaryRenderer {
     if (this.lastPreset === preset + options.shadows + options.lighting) return;
     this.lastPreset = preset + options.shadows + options.lighting;
     this.renderer.shadowMap.enabled = options.shadows;
-    const size = preset === "high" ? 4096 : preset === "performance" ? 1024 : 2048;
+    const size = Math.min(
+      this.profile.maxShadowSize,
+      preset === "high" ? 4096 : preset === "performance" ? 1024 : 2048,
+    );
     if (this.sun.shadow.mapSize.x !== size) {
       this.sun.shadow.mapSize.set(size, size);
       this.sun.shadow.map?.dispose();
@@ -306,10 +329,10 @@ export class MilitaryRenderer {
     }
     this.sun.intensity = options.lighting ? 4.2 : 1.7;
     this.hemisphere.intensity = options.lighting ? 0.55 : 1.3;
-    this.ao.enabled = preset === "high" && options.shadows;
-    this.grade.enabled = options.lighting;
+    if (this.ao) this.ao.enabled = preset === "high" && options.shadows;
+    if (this.grade) this.grade.enabled = options.lighting;
     if (this.reflection) {
-      this.reflection.visible = preset !== "performance";
+      this.reflection.visible = this.profile.reflections && preset !== "performance";
       this.reflection
         .getRenderTarget()
         .setSize(preset === "high" ? 1024 : 512, preset === "high" ? 1024 : 512);
@@ -318,8 +341,9 @@ export class MilitaryRenderer {
   resize() {
     if (this.disposed) return;
     const { w, h } = this.g;
-    this.renderer.setSize(w, h, false);
-    this.composer?.setSize(w, h);
+    const [renderWidth, renderHeight] = renderSize(w, h, this.profile);
+    this.renderer.setSize(renderWidth, renderHeight, false);
+    this.composer?.setSize(renderWidth, renderHeight);
     this.camera.aspect = w / h;
     // Match the shared projection used by classic rendering and aim.
     this.camera.fov = THREE.MathUtils.radToDeg(this.g.verticalFov);
@@ -634,6 +658,7 @@ export class MilitaryRenderer {
     }
   }
   makePuddles(id, n) {
+    if (!this.profile.reflections) return;
     // One reflection camera covers the arena, with an irregular water mask.
     // This reflects moving characters and walls, rather than a painted highlight.
     const shader = {
@@ -667,6 +692,9 @@ export class MilitaryRenderer {
       multisample: 0,
       shader,
     });
+    reflector.getRenderTarget().texture.type = this.profile.halfFloat
+      ? THREE.HalfFloatType
+      : THREE.UnsignedByteType;
     reflector.rotation.x = -Math.PI / 2;
     reflector.position.set((n * SCALE) / 2, 0.014, (n * SCALE) / 2);
     reflector.material.transparent = true;
@@ -1834,7 +1862,7 @@ export class MilitaryRenderer {
     this.scene.fog.color.set(outside ? "#827276" : PROFILES[g.arena.mapId].fog);
     this.scene.fog.density = outside ? 0.065 : 0.009;
     this.renderer.info.reset();
-    if (g.academy.preset === "performance") {
+    if (!this.composer || g.academy.preset === "performance") {
       this.renderer.autoClear = true;
       this.renderer.render(this.scene, this.camera);
       this.renderer.autoClear = false;
@@ -1858,8 +1886,8 @@ export class MilitaryRenderer {
     this.disposed = true;
     for (const a of this.actors.values()) a.mixer?.stopAllAction();
     this.previewTarget?.dispose();
-    this.composer.dispose();
-    for (const pass of this.composer.passes) pass.dispose?.();
+    this.composer?.dispose();
+    for (const pass of this.composer?.passes || []) pass.dispose?.();
     this.clearWorld();
     for (const m of this.materials) m.dispose();
     for (const geo of this.geometries.values()) geo.dispose();
