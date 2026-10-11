@@ -1397,6 +1397,81 @@
           border: 2px solid currentColor;
         }
       }
+      /* Apple HIG: coherent shapes for related controls; inset surfaces use
+         smaller corners than their container. Web values are our design tokens,
+         not universal radii mandated by Apple. */
+      midnry-fps {
+        --mf-corner-surface: 32px;
+        --mf-corner-card: 16px;
+        --mf-corner-control: 12px;
+        --mf-panel-inset: 24px;
+      }
+      midnry-fps :is(.mf-panel, .mf-settings, .mf-book, .mf-locker, .mf-confirm) {
+        border-radius: var(--mf-corner-surface);
+      }
+      midnry-fps .mf-shell :is(button, select, input[type="text"], .mf-codeinput) {
+        border-radius: var(--mf-corner-control);
+      }
+      midnry-fps
+        .mf-shell
+        :is(
+          .mf-modes button,
+          .mf-network,
+          .mf-results,
+          .mf-lesson,
+          .mf-countdown,
+          .mf-guidegrid article,
+          .mf-finishpreview
+        ) {
+        border-radius: var(--mf-corner-card);
+      }
+      midnry-fps :is(.mf-preview, .mf-mapdiagram) {
+        border-radius: var(--mf-corner-control);
+      }
+      midnry-fps :is(.mf-settingshead, .mf-bookhead, .mf-lockerhead) {
+        border-radius: calc(var(--mf-corner-surface) - 3px) calc(var(--mf-corner-surface) - 3px) 0 0;
+      }
+      midnry-fps .mf-shell :is(.mf-start, .mf-exit, .mf-panel > .mf-results) {
+        border-radius: max(8px, calc(var(--mf-corner-surface) - var(--mf-panel-inset)));
+      }
+      midnry-fps .mf-shell button:is(.mf-fire, .mf-reload, .mf-pause) {
+        border-radius: 50%;
+      }
+      midnry-fps :is(.mf-brand, .mf-stat, .mf-objective, .mf-match) {
+        border-radius: 8px;
+      }
+      @media (max-width: 600px) {
+        midnry-fps {
+          --mf-panel-inset: 18px;
+        }
+      }
+      @media (max-width: 360px) {
+        midnry-fps {
+          --mf-panel-inset: 14px;
+        }
+      }
+      /* Progressive enhancement: continuous corners where supported. Ordinary
+         border-radius remains the fallback for Safari and older browsers. */
+      @supports (corner-shape: squircle) {
+        midnry-fps
+          :is(
+            .mf-panel,
+            dialog,
+            .mf-network,
+            .mf-results,
+            .mf-lesson,
+            .mf-preview,
+            .mf-guidegrid article,
+            .mf-settingshead,
+            .mf-bookhead,
+            .mf-lockerhead
+          ),
+        midnry-fps .mf-shell button:not(.mf-fire):not(.mf-reload):not(.mf-pause),
+        midnry-fps .mf-shell select,
+        midnry-fps .mf-codeinput {
+          corner-shape: squircle;
+        }
+      }
     </style>
   </head>
   <!-- For inline integration copy the style, element and script. Set a height on the host. -->
