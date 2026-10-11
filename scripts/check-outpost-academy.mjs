@@ -30,6 +30,10 @@ try {
     await page.getByRole("button", { name: "BACK", exact: true }).click();
     await page.getByRole("button", { name: "Settings", exact: true }).click();
     await page.getByLabel("Graphics preset").selectOption("high");
+    await page.locator(".mf-confirmapply").click();
+    await page.waitForFunction(
+      () => document.querySelector("midnry-fps").engine.ui.pendingConfirmation === null,
+    );
     assert.equal(
       await page.evaluate(
         () => document.querySelector("midnry-fps").engine.academy.options.texture,
@@ -157,6 +161,10 @@ try {
     );
     await page.getByRole("button", { name: "Settings", exact: true }).click();
     await page.getByLabel("Graphics preset").selectOption("performance");
+    await page.locator(".mf-confirmapply").click();
+    await page.waitForFunction(
+      () => document.querySelector("midnry-fps").engine.ui.pendingConfirmation === null,
+    );
     await page.getByRole("button", { name: "Done", exact: true }).click();
     await page.screenshot({
       path: `/workspace/screenshots/outpost-performance-${mobile ? "mobile" : "desktop"}.png`,

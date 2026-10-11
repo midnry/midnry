@@ -99,7 +99,67 @@ export class MenuUI {
     );
     g.$(".mf-fire").setAttribute("aria-label", "Fire weapon");
     g.$(".mf-reload").setAttribute("aria-label", "Reload weapon");
+    learn.insertAdjacentHTML("afterend", '<button class="mf-exit">Exit Game</button>');
+    g.shell.insertAdjacentHTML(
+      "beforeend",
+      '<dialog class="mf-confirm" aria-label="Confirm action"><h2></h2><p></p><form method="dialog"><button value="cancel" autofocus>Cancel</button><button class="mf-confirmapply" value="apply">Apply changes</button></form></dialog>',
+    );
+    g.on(g.$(".mf-exit"), "click", () => this.confirmExit());
+    g.on(g.$(".mf-confirm"), "keydown", (e) => e.stopPropagation());
+    g.on(g.$(".mf-confirm"), "close", () => {
+      const pending = this.pendingConfirmation;
+      this.pendingConfirmation = null;
+      pending?.(g.$(".mf-confirm").returnValue === "apply");
+    });
     this.refresh();
+  }
+  confirm(title, message, action, callback) {
+    const g = this.g,
+      dialog = g.$(".mf-confirm");
+    if (g.running) g.pause();
+    this.pendingConfirmation = callback;
+    dialog.returnValue = "cancel";
+    dialog.setAttribute("aria-label", title);
+    dialog.querySelector("h2").textContent = title;
+    dialog.querySelector("p").textContent = message;
+    g.$(".mf-confirmapply").textContent = action;
+    dialog.showModal();
+  }
+  confirmGraphics(candidate, target, selector) {
+    const a = this.g.academy;
+    this.confirm(
+      "Apply graphics changes?",
+      `${a.preset} → ${candidate.preset}. Contact shadows: ${candidate.options.shadows ? "on" : "off"}. Material lighting: ${candidate.options.lighting ? "on" : "off"}. Higher quality can reduce performance.`,
+      "Apply changes",
+      (accepted) => {
+        if (accepted) a.commitGraphics(candidate, target);
+        else a.settings(target);
+        // Rebuilding the graphics controls must preserve keyboard focus.
+        target.querySelector(selector)?.focus({ preventScroll: true });
+      },
+    );
+  }
+  confirmExit() {
+    const g = this.g;
+    this.confirm(
+      "Exit game?",
+      g.online
+        ? "Leaving forfeits your player and leaves the online room. Hosting transfers to another player. Completed cosmetic rewards stay saved on this browser."
+        : "Return to Midnry? Any unfinished round will end. Completed cosmetic rewards stay saved on this browser.",
+      "Exit to Midnry",
+      (accepted) => {
+        if (accepted) this.exitGame();
+      },
+    );
+  }
+  exitGame() {
+    const g = this.g;
+    g.destroy();
+    g.root.engine = null;
+    g.root.innerHTML =
+      '<div class="mf-exited"><h1>Session ended.</h1><p>Thanks for playing Outpost Zero.</p><a href="/" target="_top">Back to Midnry →</a></div>';
+    if (window.parent === window) window.location.assign("/");
+    else window.parent.postMessage({ type: "midnry-outpost-exit" }, location.origin);
   }
   settings() {
     const g = this.g;

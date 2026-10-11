@@ -83,13 +83,28 @@ export class Academy {
   }
   // Both the field-guide fallback and unified settings use the same controls.
   applySetting(e, target = this.g.$(".mf-bookbody")) {
-    const game = this.g;
+    const candidate = { preset: this.preset, options: { ...this.options } };
     if (e.target.matches("[data-preset]")) {
-      this.preset = e.target.value;
-      this.options = { ...PRESETS[this.preset] };
-      this.settings(target);
-    } else if (e.target.dataset.option) this.options[e.target.dataset.option] = e.target.checked;
-    else return;
+      candidate.preset = e.target.value;
+      candidate.options = { ...PRESETS[candidate.preset] };
+    } else if (["shadows", "lighting"].includes(e.target.dataset.option)) {
+      candidate.options[e.target.dataset.option] = e.target.checked;
+    } else return;
+    if (this.g.ui)
+      this.g.ui.confirmGraphics(
+        candidate,
+        target,
+        e.target.matches("[data-preset]")
+          ? "[data-preset]"
+          : `[data-option="${e.target.dataset.option}"]`,
+      );
+    else this.commitGraphics(candidate, target);
+  }
+  commitGraphics(candidate, target) {
+    const game = this.g;
+    this.preset = candidate.preset;
+    this.options = { ...candidate.options };
+    this.settings(target);
     this.materials.clear();
     game.sprite = game.allySprite = game.boxSprite = game.coreSprite = null;
     game.propSprites?.clear();
