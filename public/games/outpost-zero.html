@@ -677,6 +677,137 @@
           padding: 6px;
         }
       }
+
+      midnry-fps .mf-retention {
+        margin: 16px 0;
+        padding: 12px;
+        border: 2px solid #101720;
+        background: #263543;
+        color: #f9e9c8;
+        font: 13px/1.5 system-ui;
+      }
+      midnry-fps .mf-retention summary {
+        cursor: pointer;
+        font-weight: 800;
+        color: #71ebd5;
+      }
+      midnry-fps .mf-retention label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+      midnry-fps .mf-retention select,
+      midnry-fps .mf-locker select {
+        max-width: 100%;
+        padding: 10px;
+        background: #18232e;
+        color: #fff;
+        border: 2px solid #71ebd5;
+        font: inherit;
+      }
+      midnry-fps .mf-retention input {
+        accent-color: #71ebd5;
+      }
+      midnry-fps .mf-retention button,
+      midnry-fps .mf-results button,
+      midnry-fps .mf-locker button {
+        background: #ffd16b;
+        color: #101720;
+        border: 2px solid #101720;
+        padding: 12px 16px;
+        font: 800 13px system-ui;
+        cursor: pointer;
+        margin-top: 10px;
+      }
+      midnry-fps .mf-results {
+        margin: 16px 0;
+        padding: 14px;
+        background: #263543;
+        border: 2px solid #71ebd5;
+        color: #f9e9c8;
+      }
+      midnry-fps .mf-results h2 {
+        font: 900 20px system-ui;
+        margin: 0 0 12px;
+        color: #ffd16b;
+      }
+      midnry-fps .mf-resultstats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+      midnry-fps .mf-resultstats small {
+        font: 11px system-ui;
+        color: #bed1d4;
+        display: block;
+      }
+      midnry-fps .mf-resultstats strong {
+        font: 800 22px system-ui;
+        display: block;
+      }
+      midnry-fps .mf-earned,
+      midnry-fps .mf-againnote {
+        font: 13px/1.5 system-ui;
+      }
+      midnry-fps .mf-results .mf-again {
+        width: 100%;
+      }
+      midnry-fps .mf-countdown {
+        position: absolute;
+        left: 50%;
+        top: 40%;
+        transform: translate(-50%, -50%);
+        padding: 20px;
+        background: #18232ef0;
+        color: #ffd16b;
+        border: 3px solid #101720;
+        font: 900 24px system-ui;
+        text-align: center;
+        pointer-events: none;
+      }
+      midnry-fps .mf-locker {
+        width: min(600px, 90vw);
+        max-height: 85dvh;
+        padding: 0;
+        border: 3px solid #101720;
+        background: #18232e;
+        color: #f9e9c8;
+      }
+      midnry-fps .mf-locker::backdrop {
+        background: #080e19dc;
+      }
+      midnry-fps .mf-lockerhead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        background: #263543;
+        position: sticky;
+        top: 0;
+      }
+      midnry-fps .mf-lockerhead button {
+        margin: 0;
+      }
+      midnry-fps .mf-lockerbody {
+        padding: 20px;
+        font: 14px/1.6 system-ui;
+      }
+      midnry-fps .mf-locker progress {
+        width: 100%;
+        accent-color: #71ebd5;
+      }
+      midnry-fps .mf-finishpreview {
+        margin-top: 16px;
+        padding: 25px;
+        border: 4px solid #101720;
+        background: var(--finish);
+        color: #101720;
+        font-weight: 900;
+        text-align: center;
+      }
     </style>
   </head>
   <!-- For inline integration copy the style, element and script. Set a height on the host. -->
@@ -686,6 +817,7 @@
       import { Arena, MAPS, WEAPONS, mapOf, weaponOf, clamp } from "./outpost-sim.js";
       import { Academy } from "./outpost-academy.js";
       import { ComicArt } from "./outpost-art.js";
+      import { Retention } from "./outpost-retention.js";
       (() => {
         "use strict";
         // A custom element keeps state private and supports multiple independent instances.
@@ -733,6 +865,7 @@
             this.mode = "training";
             this.mapId = "outpost";
             this.weapon = "carbine";
+            this.difficulty = "normal";
             for (const map of Object.values(MAPS)) {
               const option = document.createElement("option");
               option.value = map.id;
@@ -765,6 +898,7 @@
             this.bindOnline();
             this.academy = new Academy(this);
             this.art = new ComicArt(this);
+            this.retention = new Retention(this);
             this.resizeObserver = new ResizeObserver(() => this.resize());
             this.resizeObserver.observe(this.shell);
             this.resize();
@@ -774,6 +908,7 @@
           // Last Signal uses the same arena, with a clear center for the final zone.
           reset() {
             this.art?.reset();
+            this.retention?.reset();
             if (this.academy?.active) {
               this.academy.active = false;
               this.$(".mf-lesson").hidden = true;
@@ -782,7 +917,12 @@
             this.pendingShot = 0;
             this.pendingReload = false;
             this.lastNotice = 0;
-            this.arena = new Arena({ mode: this.mode, mapId: this.mapId, weapon: this.weapon });
+            this.arena = new Arena({
+              mode: this.mode,
+              mapId: this.mapId,
+              weapon: this.weapon,
+              difficulty: this.difficulty,
+            });
             this.damageSeen = 0;
             this.damageTotalSeen = 0;
             this.hitSeen = 0;
@@ -811,6 +951,7 @@
                   ? "Eight combatants. One survivor. Break Supply Crates for Charge Cores: +25 max health and +8 weapon damage. Red Haze closes after 12 seconds."
                   : "Six rogue sentries. Take cover, reload and secure the outpost.";
             this.updateHUD();
+            this.retention?.menu();
           }
           get player() {
             return (
@@ -986,6 +1127,7 @@
               this.endMatch(false);
           }
           endMatch(won) {
+            if (this.state === "ended") return;
             this.state = "ended";
             this.pause();
             this.message(
@@ -1001,6 +1143,7 @@
             this.$(".mf-copy").textContent = won
               ? `Victory. ${this.kills} eliminations. ${this.online ? "The host can return the room to the lobby for another round." : "Deploy again for a fresh match."}`
               : `Your ${this.mode === "duo" ? "team was" : "signal was"} eliminated. ${this.online ? "Watch the remaining players or wait for the next round." : "Deploy to try again."}`;
+            this.retention?.finish(won);
           }
           bindOnline() {
             this.on(this.$(".mf-create"), "click", () => this.connectOnline("create"));
@@ -1048,6 +1191,7 @@
           }
           async connectOnline(op) {
             if (this.connecting || this.online) return;
+            this.retention?.audio.unlock();
             if (this.academy?.active) this.academy.finish();
             this.connecting = true;
             this.$(".mf-netstatus").textContent = "Connecting…";
@@ -1064,6 +1208,7 @@
                   {
                     op,
                     mode,
+                    difficulty: this.difficulty,
                     code: this.$(".mf-codeinput").value,
                     mapId: this.mapId,
                     weapon: this.weapon,
@@ -1094,10 +1239,15 @@
           applyRoom(data) {
             const net = this.online;
             if (!net) return;
-            const starting = net.phase !== "playing" && data.phase === "playing";
+            // A guest may miss the ended snapshot if the host rematches immediately.
+            const starting =
+              data.phase === "playing" &&
+              (net.phase !== "playing" || data.arena?.roundId !== this.arena.roundId);
+            if (data.phase === "lobby" && net.phase !== "lobby") this.retention?.reset();
             const previous = this.arena;
             Object.assign(net, data);
             this.mode = data.mode;
+            this.difficulty = data.difficulty || "normal";
             this.mapId = data.mapId || "outpost";
             for (const button of this.root.querySelectorAll(".mf-mode")) {
               button.disabled = true;
@@ -1153,6 +1303,7 @@
                 }
               this.arena = next;
               if (starting) {
+                this.retention?.reset();
                 this.state = "playing";
                 this.running = true;
                 this.viewPitch = 0;
@@ -1175,6 +1326,7 @@
               )
                 this.arena = new Arena({
                   mode: this.mode,
+                  difficulty: this.difficulty,
                   mapId: this.mapId,
                   humans: [{ id: this.selfId, team: self?.team ?? 0, weapon: this.weapon }],
                 });
@@ -1187,6 +1339,7 @@
                   : "Last Signal online: everyone competes to be the last survivor. Bots fill the room to eight combatants when the host starts.";
             }
             this.updateMenu();
+            this.retention?.menu();
           }
           onlineAction(op, extra = {}) {
             const net = this.online;
@@ -1300,6 +1453,7 @@
             this.on(this.$(".mf-pause"), "click", () => this.pause());
             this.on(this.shell, "keydown", (e) => {
               if (e.target.closest?.("input,select,textarea,dialog")) return;
+              if (!this.running && e.target.closest?.("button,summary")) return;
               const k = e.key.toLowerCase();
               if (
                 [
@@ -1442,6 +1596,7 @@
             }
           }
           start() {
+            this.retention?.audio.unlock();
             if (this.online) {
               if (this.online.phase === "lobby") {
                 if (this.online.host === this.selfId) this.onlineAction("start");
@@ -2067,7 +2222,7 @@
             c.strokeStyle = "#101720";
             c.lineJoin = "round";
             const poly = (pts, fill) => {
-              c.fillStyle = this.academy.materialFill(c, fill, pts);
+              c.fillStyle = this.academy.materialFill(c, this.retention?.paint(fill) || fill, pts);
               c.beginPath();
               pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
               c.closePath();
@@ -2417,7 +2572,11 @@
             c.strokeStyle = "#0c131b";
             c.lineJoin = "round";
             const poly = (pts, color) => {
-              c.fillStyle = this.academy.materialFill(c, color, pts);
+              c.fillStyle = this.academy.materialFill(
+                c,
+                this.retention?.paint(color) || color,
+                pts,
+              );
               c.beginPath();
               pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
               c.closePath();
@@ -2601,6 +2760,7 @@
           render() {
             this.observeCombat();
             this.art.observe();
+            this.retention.observe();
             const c = this.ctx,
               now = performance.now(),
               hurt = Math.max(0, (this.damageUntil - now) / 520);
@@ -2674,6 +2834,7 @@
             this.frame = requestAnimationFrame(this.loop);
           }
           destroy() {
+            this.retention?.destroy();
             this.leaveOnline();
             cancelAnimationFrame(this.frame);
             this.abort.abort();

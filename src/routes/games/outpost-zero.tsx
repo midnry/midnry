@@ -39,7 +39,7 @@ function OutpostZeroPage() {
       {/* The static document owns its Canvas, styles and inputs. Unmounting the
           iframe tears down the game, and its scripts never run during SSR. */}
       <iframe
-        src={`/games/outpost-zero.html?v=comic-20261011${room ? `&room=${encodeURIComponent(room)}` : ""}`}
+        src={`/games/outpost-zero.html?v=experience-20261011${room ? `&room=${encodeURIComponent(room)}` : ""}`}
         title="Outpost Zero first-person shooter"
         className="block min-h-[420px] w-full flex-1 border-0"
         allow="fullscreen"

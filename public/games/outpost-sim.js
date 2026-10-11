@@ -18,6 +18,12 @@ const TEAM_SPAWNS = [
   [13.5, 13.5],
   [2.5, 13.5],
 ];
+export const DIFFICULTIES = {
+  easy: { speed: 0.7, reaction: 1.5, aim: 0.13, awareness: 5 },
+  normal: { speed: 1, reaction: 1, aim: 0, awareness: 7 },
+  hard: { speed: 1.25, reaction: 0.8, aim: 0, awareness: 9 },
+};
+export const difficultyOf = (id) => (Object.hasOwn(DIFFICULTIES, id) ? id : "normal");
 export class Arena {
   constructor({
     mode = "training",
@@ -25,8 +31,13 @@ export class Arena {
     weapon = "carbine",
     humans = [{ id: "player", team: 0 }],
     random = Math.random,
+    difficulty = "normal",
+    countdown = 0,
   } = {}) {
     this.mode = mode;
+    this.difficulty = difficultyOf(difficulty);
+    this.countdown = clamp(Number(countdown) || 0, 0, 3);
+    this.roundId = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
     this.mapId = mapOf(mapId).id;
     this.projectiles = [];
     this.fields = [];
@@ -139,6 +150,10 @@ export class Arena {
         notice: "",
         noticeId: 0,
         kills: 0,
+        damageDealt: 0,
+        coresCollected: 0,
+        placement: 0,
+        eliminatedAt: null,
         respawns: mode === "duo" ? 2 : 0,
         respawnAt: 0,
         phase: i * 1.3,
@@ -193,11 +208,18 @@ export class Arena {
     arena.fields ??= [];
     arena.fx ??= [];
     arena.nextEffect ??= 0;
+    arena.difficulty = difficultyOf(arena.difficulty);
+    arena.countdown ??= 0;
+    arena.roundId ??= `legacy-${arena.mapId}-${arena.entities.map((e) => e.id).join("-")}-${arena.time}`;
     arena.zone.cx ??= arena.level.length / 2;
     arena.zone.cy ??= arena.level.length / 2;
     arena.zone.initialHalf ??= arena.level.length / 2 - 1;
     for (const e of arena.entities) {
       e.weapon ??= "carbine";
+      e.damageDealt ??= 0;
+      e.coresCollected ??= e.cores || 0;
+      e.placement ??= 0;
+      e.eliminatedAt ??= null;
       e.charge ??= 0;
       e.damageSeq ??= 0;
       e.damageTotal ??= 0;
@@ -210,6 +232,9 @@ export class Arena {
   snapshot() {
     return {
       mode: this.mode,
+      difficulty: this.difficulty,
+      countdown: this.countdown,
+      roundId: this.roundId,
       mapId: this.mapId,
       projectiles: this.projectiles,
       fields: this.fields,
@@ -342,6 +367,7 @@ export class Arena {
       target.cloakedUntil = 0;
     }
     if (source && source !== target) {
+      if (!target.id.startsWith("crate")) source.damageDealt = (source.damageDealt || 0) + actual;
       source.charge = clamp(
         (source.charge || 0) + actual * (target.id.startsWith("crate") ? 0.2 : 0.6),
         0,
@@ -360,7 +386,7 @@ export class Arena {
       if (source) this.emit(source.id, "SUPPLY CRATE OPEN / COLLECT THE CORE");
       return;
     }
-    if (source) {
+    if (source && source !== target) {
       source.kills++;
       this.emit(source.id, "RIVAL ELIMINATED");
     }
@@ -396,6 +422,7 @@ export class Arena {
       if (Math.hypot(core.x - e.x, core.y - e.y) < 0.65 && this.visible(e, core)) {
         this.cores.splice(i, 1);
         e.cores++;
+        e.coresCollected = (e.coresCollected || 0) + 1;
         e.maxHp += 25;
         this.heal(e, 25);
         e.damage += 8;
@@ -468,10 +495,17 @@ export class Arena {
   checkResult() {
     if (this.state === "ended") return;
     const teams = new Set(this.entities.filter((e) => e.hp > 0).map((e) => e.team));
-    for (const e of this.entities) if (e.respawnAt && !teams.has(e.team)) e.respawnAt = 0;
+    for (const e of this.entities) {
+      if (e.respawnAt && !teams.has(e.team)) e.respawnAt = 0;
+      if (!teams.has(e.team) && !e.placement) {
+        e.placement = teams.size + 1;
+        e.eliminatedAt = this.time;
+      }
+    }
     if (teams.size <= 1) {
       this.state = "ended";
       this.winner = teams.size ? [...teams][0] : null;
+      for (const e of this.entities) if (e.team === this.winner) e.placement = 1;
     }
   }
   heal(e, amount) {
@@ -612,6 +646,7 @@ export class Arena {
     }
   }
   reload(e) {
+    if (this.countdown > 0) return false;
     const w = weaponOf(e.weapon);
     if (e.hp > 0 && !e.reloadUntil && e.ammo < w.mag) {
       e.reloadUntil = this.time + 1.4;
@@ -620,6 +655,7 @@ export class Arena {
     }
   }
   shoot(e) {
+    if (this.countdown > 0) return false;
     const w = weaponOf(e.weapon);
     if (
       e.hp <= 0 ||
@@ -710,6 +746,7 @@ export class Arena {
     return p;
   }
   super(e) {
+    if (this.countdown > 0) return false;
     if (e.hp <= 0 || e.charge < 100 || this.state === "ended") return false;
     const w = weaponOf(e.weapon),
       power = e.damage / 40;
@@ -962,6 +999,7 @@ export class Arena {
   }
   updateRival(bot, dt) {
     if (bot.hp <= 0 || bot.departed) return;
+    const skill = DIFFICULTIES[difficultyOf(this.difficulty)];
     if (this.mode === "training") {
       const p = this.entities.find((e) => !e.bot);
       if (!p || p.hp <= 0) return;
@@ -969,9 +1007,10 @@ export class Arena {
         dy = p.y - bot.y,
         d = Math.hypot(dx, dy);
       if (d > 0 && d < 10 && this.visible(bot, p)) {
-        if (d > 1.25) this.move(bot, (dx / d) * dt * 0.55, (dy / d) * dt * 0.55);
+        if (d > 1.25)
+          this.move(bot, (dx / d) * dt * 0.55 * skill.speed, (dy / d) * dt * 0.55 * skill.speed);
         if (d < 6 && this.time > bot.attack) {
-          bot.attack = this.time + 1.6;
+          bot.attack = this.time + 1.6 * skill.reaction;
           this.damage(p, d < 2 ? 9 : 4, bot);
         }
       }
@@ -986,7 +1025,7 @@ export class Arena {
       ),
       dist = (e) => Math.hypot(e.x - bot.x, e.y - bot.y),
       nearest = (list) => [...list].sort((a, b) => dist(a) - dist(b))[0];
-    const foe = nearest(rivals.filter((e) => dist(e) < 7 && this.visible(bot, e))),
+    const foe = nearest(rivals.filter((e) => dist(e) < skill.awareness && this.visible(bot, e))),
       box = nearest(this.crates.filter((c) => c.hp > 0 && !this.outsideSafe(c))),
       core = nearest(this.cores.filter((c) => !this.outsideSafe(c)));
     let goal;
@@ -1012,13 +1051,16 @@ export class Arena {
         const dx = point.x - bot.x,
           dy = point.y - bot.y,
           d = Math.hypot(dx, dy);
-        if (d > 0.01) this.move(bot, (dx / d) * dt * 1.25, (dy / d) * dt * 1.25);
+        if (d > 0.01)
+          this.move(bot, (dx / d) * dt * 1.25 * skill.speed, (dy / d) * dt * 1.25 * skill.speed);
       }
     }
     const target = foe || (box && dist(box) < 3 && this.visible(bot, box) ? box : null);
     if (target && dist(target) < weaponOf(bot.weapon).range && this.time >= bot.attack) {
-      bot.attack = this.time + Math.max(0.5, weaponOf(bot.weapon).cooldown);
-      bot.a = Math.atan2(target.y - bot.y, target.x - bot.x);
+      bot.attack = this.time + Math.max(0.5, weaponOf(bot.weapon).cooldown) * skill.reaction;
+      bot.a =
+        Math.atan2(target.y - bot.y, target.x - bot.x) +
+        Math.sin(this.time * 3 + bot.phase) * skill.aim;
       bot.pitch = 0;
       if (bot.charge >= 100) this.super(bot);
       this.shoot(bot);
@@ -1027,6 +1069,10 @@ export class Arena {
   }
   advance(dt, inputs = {}) {
     if (this.state === "ended") return;
+    if (this.countdown > 0) {
+      this.countdown = Math.max(0, this.countdown - dt);
+      return;
+    }
     this.time += dt;
     for (const e of this.entities) {
       if (e.respawnAt && this.time >= e.respawnAt) this.respawn(e);

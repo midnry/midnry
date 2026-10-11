@@ -1,6 +1,6 @@
 # Midnry — Outpost Zero
 
-The game uses five small static files: `public/games/outpost-zero.html` (Canvas rendering, procedural art, scoped CSS, controls and lobby) and `public/games/outpost-sim.js` (shared match rules), and `public/games/outpost-content.js` (maps, palettes, scenery and weapon definitions), plus `public/games/outpost-academy.js` (tutorial, field guide and graphics materials), and `public/games/outpost-art.js` (scenery, animations, lighting and cosmetic effects). Serve all five from the same directory over HTTP. Offline play needs no backend or external assets; online rooms use the Midnry API and database. No game framework is required. ES modules require a web server rather than opening a local file directly.
+The game uses seven small static files: `public/games/outpost-zero.html` (Canvas rendering, procedural art, scoped CSS, controls and lobby) and `public/games/outpost-sim.js` (shared match rules), and `public/games/outpost-content.js` (maps, palettes, scenery and weapon definitions), plus `public/games/outpost-academy.js` (tutorial, field guide and graphics materials), and `public/games/outpost-art.js` (scenery, animations, lighting and cosmetic effects), `public/games/outpost-retention.js` (sound, results and locker UI) and `public/games/outpost-progression.js` (device-local cosmetic rewards). Serve all seven from the same directory over HTTP. Offline play needs no backend or external assets; online rooms use the Midnry API and database. No game framework is required. ES modules require a web server rather than opening a local file directly.
 
 ## Midnry integration
 
@@ -8,7 +8,7 @@ The homepage links to `/discover/outpost-zero`, which launches `/games/outpost-z
 
 ## Embed elsewhere
 
-For the strongest isolation from your site's existing CSS and scripts, serve all five files in `/games/`, then embed:
+For the strongest isolation from your site's existing CSS and scripts, serve all seven files in `/games/`, then embed:
 
 ```html
 <iframe
@@ -52,9 +52,9 @@ The prototype already implements the requested first steps for shooting, enemies
 | First-person weapon | `drawWeapon()`                                     | Layered outlined polygons with walk bob, recoil, reload dip and muzzle flash. Replace with a sprite animation or add an aim-down-sights interpolation.                                                                                                                                                                             |
 | HUD / menus         | `connectedCallback()`, `updateHUD()`               | Component-scoped markup. Add score, weapon switches, options or mission variants here.                                                                                                                                                                                                                                             |
 | Touch / keyboard    | `bindInputs()`                                     | Scoped keyboard input, pointer capture for touch and pointer lock for desktop. Tune mouse and drag sensitivity here.                                                                                                                                                                                                               |
-| Audio               | `shoot()`, `reload()`, enemy damage in `update()`  | Add Web Audio or embedded audio assets, initializing audio only after Deploy is clicked.                                                                                                                                                                                                                                           |
+| Audio               | `outpost-retention.js: FieldAudio / observe()`     | Procedural Web Audio, gesture-unlocked, with volume/mute and teardown. No audio downloads.                                                                                                                                                                                                                                         |
 
-This is an original comic-styled training prototype: flat cel colors, dark outlines, warm sandstone, teal metal, hazard bands and drawn weapons. It uses no Call of Duty or Borderlands assets. It includes AI pathfinding and server-authoritative online rooms. It does not include audio, jumping, saved progression or weapons picked up/swapped mid-round. Vertical aiming is a shifted raycast horizon, not true 3D geometry.
+This is an original comic-styled training prototype: flat cel colors, dark outlines, warm sandstone, teal metal, hazard bands and drawn weapons. It uses no Call of Duty or Borderlands assets. It includes AI pathfinding and server-authoritative online rooms. It includes procedural sound and device-local cosmetic progression. It does not include jumping or weapons picked up/swapped mid-round. Vertical aiming is a shifted raycast horizon, not true 3D geometry.
 
 ## Validation
 
@@ -148,3 +148,15 @@ Character billboards have cached walking poses, loadout-colored equipment, pouch
 Run `node scripts/check-outpost-art.mjs [baseURL]` for desktop/mobile scene captures, impact/cover/casing/smoke checks, effect limits, pause/reset behavior, reduced motion and a check that rendering does not change match snapshots.
 
 The Midnry iframe includes a graphics-release query parameter, preserving room invite parameters. Static game files send `Cache-Control: no-cache` so returning browsers revalidate stable filenames when a new release arrives.
+
+## Player experience and cosmetic progression
+
+**PLAYER EXPERIENCE** in the deployment menu contains Easy, Normal and Hard bot difficulty, sound volume, mute and the **RANGER LOCKER**. Difficulty changes bot speed, awareness, reaction time and accuracy; health and weapon damage are unchanged. Online settings are host-only and locked during a round. Normal retains the original bot behavior.
+
+The round debrief shows placement (team placement in Duo), eliminations, actual damage to combatants, survival time, cumulative cores collected and level. Crate damage and friendly fire do not count. **PLAY AGAIN** keeps the same mode, map, loadout and difficulty, then starts a two-second countdown with combat and hazard timers frozen. In online rooms, the host starts the rematch for everyone without returning to the lobby; room code, player IDs, teams and loadouts remain intact. Other players wait for the host. The existing deployment button still returns an ended online match to the lobby for setting changes.
+
+Completed rounds award 40 base XP, up to 60 for eliminations, 40 for damage and 40 for cores, plus 40 for a victory. Boot Camp and losses shorter than 15 seconds earn no XP. Completing three rounds and completing rounds with three distinct loadouts each award a one-time 50 XP bonus. Each 150 XP adds a level. Weapon finishes unlock at 200 (Copper Signal), 600 (Glacier Ink) and 1,200 XP (Nightfall); they change only the first-person weapon palette. No combat upgrade, purchase, streak penalty or daily obligation is attached.
+
+Progress and sound preferences save in browser localStorage, with graceful fallback when storage is unavailable. Progress is per browser/device, is not account-synced or competitive proof, and is removed when browser data is cleared. Recent round IDs prevent duplicate rewards. Do not use local XP for trusted leaderboards. Audio initializes only after a user gesture, is voice-limited, and closes with the component.
+
+Checks: `node scripts/outpost-retention.test.mjs` tests reward and shared-simulation rules; `node scripts/check-outpost-retention.mjs [baseURL]` checks desktop/mobile results, rematches, countdown, audio and locker persistence; `node scripts/check-outpost-rematch.mjs [baseURL]` checks server difficulty authority and a same-team online rematch.
