@@ -177,8 +177,7 @@ export default defineConfig(({ command, isPreview }) => ({
             // manifest + head-tag middleware). Nitro v3 defaults serverDir to
             // false, so removing this silently unwires /?install=1 on deploys.
             serverDir: "./server",
-            // Game art keeps its file names when it changes, so: a day fresh,
-            // then served from cache while the browser checks for a new copy.
+            // Returning players must revalidate game code and art after each release.
             routeRules: {
               // Revalidate stable game filenames so releases refresh for returning players.
               ...Object.fromEntries(
@@ -194,9 +193,14 @@ export default defineConfig(({ command, isPreview }) => ({
                   "outpost-military.js",
                   "outpost-retention.js",
                   "outpost-ui.js",
+                  "outpost-look.js",
+                  "outpost-skins.js",
                   "outpost-progression.js",
                 ].map((file) => [`/games/${file}`, { headers: { "cache-control": "no-cache" } }]),
               ),
+              "/games/outfits/**": { headers: { "cache-control": "no-cache" } },
+              "/games/arsenal/**": { headers: { "cache-control": "no-cache" } },
+              "/games/loading/**": { headers: { "cache-control": "no-cache" } },
               "/games/characters/**": { headers: { "cache-control": "no-cache" } },
               "/games/weapons/**": { headers: { "cache-control": "no-cache" } },
               "/games/military/**": { headers: { "cache-control": "no-cache" } },
