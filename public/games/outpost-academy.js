@@ -159,9 +159,22 @@ export class Academy {
         )
           .map(
             (w) =>
-              `<article style="--kit:${w.color}"><h3>${w.name}</h3><small>${w.kind.toUpperCase()} · ${w.mag} ROUNDS</small><p>${w.description}</p><dl><dt>Base hit</dt><dd>${w.damage}${w.pellets ? " × " + w.pellets : ""}</dd><dt>Range</dt><dd>${w.range} tiles</dd><dt>Attack interval</dt><dd>${w.cooldown}s</dd><dt>Charged ability</dt><dd>${w.super}</dd></dl></article>`,
+              `<article style="--kit:${w.color}"><canvas class="mf-weaponportrait" width="240" height="160" data-weapon="${w.id}" role="img" aria-label="${w.name} illustrated weapon"></canvas><h3>${w.name}</h3><small>${w.kind.toUpperCase()} · ${w.mag} ROUNDS</small><p>${w.description}</p><dl><dt>Base hit</dt><dd>${w.damage}${w.pellets ? " × " + w.pellets : ""}</dd><dt>Range</dt><dd>${w.range} tiles</dd><dt>Attack interval</dt><dd>${w.cooldown}s</dd><dt>Charged ability</dt><dd>${w.super}</dd></dl></article>`,
           )
           .join("")}</div>`;
+      const portraits = [...g.root.querySelectorAll("[data-weapon]")];
+      const paintWeapons = () => {
+        if (g.abort.signal.aborted) return;
+        for (const canvas of portraits)
+          if (canvas.isConnected) {
+            const c = canvas.getContext("2d");
+            c.fillStyle = "#253543";
+            c.fillRect(0, 0, canvas.width, canvas.height);
+            g.weapons?.preview(c, canvas.dataset.weapon, canvas.width, canvas.height);
+          }
+      };
+      paintWeapons();
+      g.weapons?.ready.then(paintWeapons);
       for (const canvas of g.root.querySelectorAll("[data-map]")) {
         const map = MAPS[canvas.dataset.map],
           size = map.level.length;
@@ -199,7 +212,7 @@ export class Academy {
       )
       .join(
         "",
-      )}</select></label><p>${this.options.texture} texel materials · up to ${this.options.width}px render width · floor sampling every ${this.options.floor}px · scenery range ${this.options.distance} tiles</p><p class="mf-perfstatus">120 FPS target · 24 FPS animation</p><label class="mf-setting"><span>Automatic resolution for 120 FPS</span><input type="checkbox" data-option="adaptive" ${this.options.adaptive ? "checked" : ""}></label><p>Resolution adapts to rendering cost. Actual FPS depends on your device and display refresh rate. Turn this off to keep the selected render resolution.</p><label class="mf-setting"><span>Defined contact shadows</span><input type="checkbox" data-option="shadows" ${this.options.shadows ? "checked" : ""}></label><label class="mf-setting"><span>Cel material lighting</span><input type="checkbox" data-option="lighting" ${this.options.lighting ? "checked" : ""}></label><p>Texture resolution sharpens mortar, scuffs and metal seams. Distance-filtered texture levels reduce shimmer on angled walls and floors. Detail distance keeps scenery visible farther away. Contact shadows ground characters and crates; material lighting adds stepped highlights and dark recesses. These are Canvas effects, rather than GPU anisotropic filtering, screen-space shadows or shader settings. Preferences are saved on this device.</p>`;
+      )}</select></label><p>${this.options.texture} texel materials · up to ${this.options.width}px render width · floor sampling every ${this.options.floor}px · scenery range ${this.options.distance} tiles</p><p class="mf-perfstatus">120 FPS target · 30 FPS animation</p><label class="mf-setting"><span>Automatic resolution for 120 FPS</span><input type="checkbox" data-option="adaptive" ${this.options.adaptive ? "checked" : ""}></label><p>Resolution adapts to rendering cost. Actual FPS depends on your device and display refresh rate. Turn this off to keep the selected render resolution.</p><label class="mf-setting"><span>Defined contact shadows</span><input type="checkbox" data-option="shadows" ${this.options.shadows ? "checked" : ""}></label><label class="mf-setting"><span>Cel material lighting</span><input type="checkbox" data-option="lighting" ${this.options.lighting ? "checked" : ""}></label><p>Texture resolution sharpens mortar, scuffs and metal seams. Distance-filtered texture levels reduce shimmer on angled walls and floors. Detail distance keeps scenery visible farther away. Contact shadows ground characters and crates; material lighting adds stepped highlights and dark recesses. These are Canvas effects, rather than GPU anisotropic filtering, screen-space shadows or shader settings. Preferences are saved on this device.</p>`;
   }
   begin() {
     const g = this.g;

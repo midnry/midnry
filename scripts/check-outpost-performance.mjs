@@ -128,10 +128,10 @@ try {
       };
     });
     assert.equal(result.target, 120);
-    assert.equal(result.walkChanges, 24);
-    assert.ok(result.uniqueWalk >= 12);
-    assert.equal(result.idleChanges, 24);
-    assert.equal(result.onlineSamples, 24);
+    assert.equal(result.walkChanges, 30);
+    assert.ok(result.uniqueWalk >= 15);
+    assert.equal(result.idleChanges, 30);
+    assert.equal(result.onlineSamples, 30);
     assert.ok(result.imageDraws < 30);
     assert.equal(result.unchanged, true);
     assert.ok(result.scale >= 0.5 && result.scale <= 1);

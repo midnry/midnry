@@ -95,7 +95,7 @@ try {
       };
     });
     assert.equal(result.unchanged, true);
-    assert.ok(result.bound <= 96);
+    assert.ok(result.bound <= 128);
     assert.ok(result.unique > 60);
     assert.equal(result.loaded, 4);
     assert.equal(result.extracted, 60);

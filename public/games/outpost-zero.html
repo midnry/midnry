@@ -591,6 +591,12 @@
       midnry-fps .mf-guidegrid small {
         color: #ffd16b;
       }
+      midnry-fps .mf-weaponportrait {
+        position: static;
+        width: 100%;
+        height: 160px;
+        object-fit: contain;
+      }
       midnry-fps .mf-mapdiagram {
         position: static;
         width: 100%;
@@ -1484,6 +1490,7 @@
       import { Characters } from "./outpost-characters.js";
       import { Retention } from "./outpost-retention.js";
       import { MenuUI } from "./outpost-ui.js";
+      import { WeaponArt } from "./outpost-weapons.js";
       (() => {
         "use strict";
         // A custom element keeps state private and supports multiple independent instances.
@@ -1566,6 +1573,7 @@
             this.academy = new Academy(this);
             this.art = new ComicArt(this);
             this.characters = new Characters(this);
+            this.weapons = new WeaponArt(this);
             this.retention = new Retention(this);
             this.ui = new MenuUI(this);
             this.resizeObserver = new ResizeObserver(() => this.resize());
@@ -1578,6 +1586,7 @@
           reset() {
             this.art?.reset();
             this.characters?.reset();
+            this.weapons?.reset();
             this.retention?.reset();
             if (this.academy?.active) {
               this.academy.active = false;
@@ -2763,35 +2772,9 @@
                 c.stroke();
               }
             }
-            for (const e of [...this.arena.projectiles, ...this.arena.fx]) {
-              const v = point(e.x, e.y, (e.height || 0) + (e.kind === "barrage" ? 0.01 : 0.4));
-              if (!v) continue;
-              const radius = Math.max(
-                2,
-                Math.min(120, (this.projection * (e.radius || 0.07)) / v.z),
-              );
-              c.fillStyle = ["poison", "toxic", "spike"].includes(e.kind)
-                ? "#a7e76c"
-                : e.kind === "echo"
-                  ? "#c7a6f3"
-                  : "#ffbf5c";
-              c.strokeStyle = "#15202a";
-              c.lineWidth = 3;
-              if (e.until && e.kind === "blast") {
-                c.globalAlpha = clamp((e.until - this.animationTime) / 0.45, 0, 1);
-              }
-              c.beginPath();
-              if (e.kind === "barrage") c.ellipse(v.x, v.y, radius, radius * 0.2, 0, 0, TAU);
-              else c.arc(v.x, v.y, radius, 0, TAU);
-              c.fill();
-              c.stroke();
-              c.globalAlpha = 1;
-              if (e.kind === "rocket" || e.kind === "barrel") {
-                c.fillStyle = "#e96742";
-                c.fillRect(v.x - radius * 0.6, v.y - radius, Math.max(3, radius), radius * 2);
-              }
-            }
+            this.weapons.combat(point);
           }
+
           drawAlternateWeapon() {
             const c = this.ctx,
               w = weaponOf(this.player.weapon),
@@ -3164,6 +3147,7 @@
             }
           }
           drawWeapon() {
+            if (this.weapons.draw()) return;
             if (this.player.weapon !== "carbine") {
               this.drawAlternateWeapon();
               return;
@@ -3374,6 +3358,7 @@
             this.observeCombat();
             this.art.observe();
             this.characters.observe();
+            this.weapons.observe();
             this.retention.observe();
             const c = this.ctx,
               now = performance.now(),
@@ -3462,7 +3447,7 @@
               this.lastPerformanceLabel = now;
               const label = this.$(".mf-perfstatus");
               if (label)
-                label.textContent = `120 FPS target · ${this.budget.fps || "—"} FPS measured · ${this.budget.work.toFixed(1)} ms work · 24 FPS animation`;
+                label.textContent = `120 FPS target · ${this.budget.fps || "—"} FPS measured · ${this.budget.work.toFixed(1)} ms work · 30 FPS animation`;
             }
             this.frame = requestAnimationFrame(this.loop);
           }
