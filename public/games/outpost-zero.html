@@ -1153,6 +1153,13 @@
         height: 20px;
         accent-color: #71ebd5;
       }
+      midnry-fps .mf-looklabel { display: grid; gap: 4px; margin: 12px 0; }
+      midnry-fps .mf-lookrow { display: flex; align-items: center; gap: 12px; }
+      midnry-fps .mf-lookrow input[type="range"] { flex: 1; min-width: 0; width: 100%; accent-color: #96b88a; }
+      midnry-fps .mf-lookrow input[type="number"] { width: 84px; min-height: 44px; background: #17221c; color: #edf2e9; border: 1px solid #71856e; border-radius: 5px; padding: 6px; font: inherit; }
+      midnry-fps .mf-lookreset { min-height: 44px; padding: 8px 14px; background: #c6d9ba; color: #17221c; border: 1px solid #819579; border-radius: 5px; }
+      midnry-fps .mf-aimsettings output { color: #c6d9ba; float: right; font-variant-numeric: tabular-nums; }
+      midnry-fps .mf-aimsettings > label:not(.mf-looklabel) { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
       midnry-fps .mf-settingsnotice {
         color: #ffd16b;
       }
@@ -1698,6 +1705,7 @@
       import { ComicArt } from "./outpost-art.js";
       import { Characters } from "./outpost-characters.js";
       import { Retention } from "./outpost-retention.js";
+      import { LookSettings, lookDelta, viewGeometry, PITCH_LIMIT, requestAimLock } from "./outpost-look.js";
       import { MenuUI } from "./outpost-ui.js";
       import { WeaponArt } from "./outpost-weapons.js";
       import { EnvironmentArt } from "./outpost-environment.js";
@@ -1748,7 +1756,8 @@
             this.time = 0;
             this.last = performance.now();
             this.frame = 0;
-            this.viewPitch = 0;
+            this.lookPitch = 0;
+            this.aimSettings = new LookSettings(this);
             this.mode = "signal";
             this.mapId = "outpost";
             this.weapon = "carbine";
@@ -1804,7 +1813,7 @@
               this.loadingTimer = setTimeout(() => {
                 this.fallbackMilitary(new Error("Graphics loading timed out. Please retry on a stable connection."));
               }, 45000);
-              import("./outpost-military.js?v=equipment-20261011")
+              import("./outpost-military.js?v=aim-20261011")
                 .then(async ({ MilitaryRenderer }) => {
                   if (this.abort.signal.aborted || !this.loading) return;
                   const renderer = new MilitaryRenderer(this, (done, total) => {
@@ -2607,12 +2616,7 @@
             });
             this.on(document, "mousemove", (e) => {
               if (this.running && document.pointerLockElement === this.canvas) {
-                this.player.a += e.movementX * 0.0025;
-                this.viewPitch = clamp(
-                  this.viewPitch - e.movementY * 0.35,
-                  -this.h * 0.18,
-                  this.h * 0.18,
-                );
+                this.applyLook(e.movementX, e.movementY);
               }
             });
             this.on(this.canvas, "pointerdown", (e) => {
@@ -2632,12 +2636,7 @@
             });
             this.on(this.canvas, "pointermove", (e) => {
               if (this.running && this.look?.id === e.pointerId) {
-                this.player.a += (e.clientX - this.look.x) * 0.006;
-                this.viewPitch = clamp(
-                  this.viewPitch - (e.clientY - this.look.y) * 0.5,
-                  -this.h * 0.18,
-                  this.h * 0.18,
-                );
+                this.applyLook(e.clientX - this.look.x, e.clientY - this.look.y, true);
                 this.look.x = e.clientX;
                 this.look.y = e.clientY;
               }
@@ -2695,14 +2694,17 @@
               document.pointerLockElement === this.canvas
             )
               return;
-            // Sandboxed embeds may deny pointer lock; arrow-key aiming remains available.
-            try {
-              const result = this.canvas.requestPointerLock?.();
-              result?.catch(() => this.message("ARROW KEYS TO AIM", 3));
-            } catch {
-              this.message("ARROW KEYS TO AIM", 3);
-            }
+            requestAimLock(this.canvas, this.aimSettings.values.raw, () => this.message("ARROW KEYS TO AIM", 3));
           }
+          get viewPitch() { return Math.tan(this.lookPitch || 0) * (this.projection || 1); }
+          set viewPitch(value) { this.lookPitch = clamp(Math.atan(value / (this.projection || 1)), -PITCH_LIMIT, PITCH_LIMIT); }
+          applyLook(dx, dy, touch = false) {
+            if (!Number.isFinite(dx) || !Number.isFinite(dy) || this.player.hp <= 0) return;
+            const delta = lookDelta(dx, dy, this.aimSettings.values, touch);
+            this.player.a += delta.yaw;
+            this.lookPitch = clamp(this.lookPitch + delta.pitch, -PITCH_LIMIT, PITCH_LIMIT);
+          }
+
           start() {
             if (this.loading || this.deathSequence) return;
             this.retention?.audio.unlock();
@@ -2777,7 +2779,10 @@
             this.canvas.width = this.w;
             this.canvas.height = this.h;
             this.depth = new Float32Array(this.w);
-            this.projection = this.w / (2 * Math.tan(Math.PI / 6));
+            const view = viewGeometry(this.w, this.h, this.aimSettings.values.fov);
+            this.projection = view.projection;
+            this.viewPlane = view.plane;
+            this.verticalFov = view.vertical;
             this.ctx.imageSmoothingEnabled = false;
             this.military?.resize();
             // Cache DOM geometry only on resize; keep the minimap clear of the
@@ -2790,7 +2795,7 @@
               top: ((landscape ? pause.top : pause.bottom + 12) - r.top) * ratio,
               size: Math.min(r.width <= 600 || landscape ? 96 : 128, r.width * 0.22) * ratio,
             };
-            this.viewPitch = clamp(this.viewPitch, -this.h * 0.18, this.h * 0.18);
+
           }
           wall(...args) {
             const result = this.arena.wall(...args);
@@ -2965,7 +2970,7 @@
             // Floor grid projected from world coordinates for a strong sense of movement.
             const ca = Math.cos(p.a),
               sa = Math.sin(p.a),
-              plane = Math.tan(Math.PI / 6);
+              plane = this.viewPlane;
             this.academy.floor(map, p, horizon);
             const palettes = theme.walls;
             let prevKey = "";
@@ -3562,7 +3567,7 @@
             // The ray's exit from the safe rectangle forms a vertical fog curtain.
             if (!this.outsideSafe(p))
               for (let x = 0; x < this.w; x += 8) {
-                const q = ((2 * x) / this.w - 1) * Math.tan(Math.PI / 6),
+                const q = ((2 * x) / this.w - 1) * this.viewPlane,
                   dx = Math.cos(p.a) - Math.sin(p.a) * q,
                   dy = Math.sin(p.a) + Math.cos(p.a) * q;
                 const tx = (dx > 0 ? max - p.x : min - p.x) / (dx || 1e-12),

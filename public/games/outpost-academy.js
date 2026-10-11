@@ -434,7 +434,7 @@ export class Academy {
       zoneMaxY = g.zone.cy + g.zone.half;
     const ca = Math.cos(p.a),
       sa = Math.sin(p.a),
-      plane = Math.tan(Math.PI / 6);
+      plane = g.viewPlane;
     for (let row = Math.max(0, Math.ceil((horizon + step) / step)); row < height; row++) {
       const y = row * step,
         d = (g.projection * 0.5) / (y - horizon);

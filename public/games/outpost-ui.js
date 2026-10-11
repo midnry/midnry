@@ -84,8 +84,9 @@ export class MenuUI {
       });
     g.shell.insertAdjacentHTML(
       "beforeend",
-      '<dialog class="mf-settings" aria-label="Settings"><div class="mf-settingshead"><h2>Settings</h2><button class="mf-settingsclose">Done</button></div><div class="mf-settingsbody"><h3>Gameplay & sound</h3><div class="mf-experience"></div><h3>Graphics</h3><div class="mf-graphicsettings"></div><p class="mf-settingsnotice"></p></div></dialog>',
+      '<dialog class="mf-settings" aria-label="Settings"><div class="mf-settingshead"><h2>Settings</h2><button class="mf-settingsclose">Done</button></div><div class="mf-settingsbody"><h3>Camera & aim</h3><div class="mf-aimsettings"></div><h3>Gameplay & sound</h3><div class="mf-experience"></div><h3>Graphics</h3><div class="mf-graphicsettings"></div><p class="mf-settingsnotice"></p></div></dialog>',
     );
+    g.aimSettings.mount(g.$(".mf-aimsettings"));
     const controls = document.createElement("div");
     controls.className = "mf-retention";
     const old = g.$("details.mf-retention");
