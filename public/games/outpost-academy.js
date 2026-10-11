@@ -171,7 +171,11 @@ export class Academy {
             const c = canvas.getContext("2d");
             c.fillStyle = "#253543";
             c.fillRect(0, 0, canvas.width, canvas.height);
-            g.weapons?.preview(c, canvas.dataset.weapon, canvas.width, canvas.height);
+            if (!(
+              g.militaryLoaded &&
+              g.military.preview(c, canvas.dataset.weapon, canvas.width, canvas.height)
+            ))
+              g.weapons?.preview(c, canvas.dataset.weapon, canvas.width, canvas.height);
           }
       };
       paintWeapons();
