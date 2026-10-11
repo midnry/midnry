@@ -156,6 +156,10 @@ export type Outfit = {
   primary: string;
   accent: string;
   gear: string;
+  pattern: "woodland" | "digital" | "solid" | "circuit" | "fracture";
+  palette: string[];
+  armor: string;
+  head: "helmet" | "hood" | "respirator" | "visor";
   description: string;
 };
 export const OUTFITS: Record<string, Outfit>;

@@ -1813,7 +1813,7 @@
               this.loadingTimer = setTimeout(() => {
                 this.fallbackMilitary(new Error("Graphics loading timed out. Please retry on a stable connection."));
               }, 45000);
-              import("./outpost-military.js?v=aim-20261011")
+              import("./outpost-military.js?v=skins-20261011")
                 .then(async ({ MilitaryRenderer }) => {
                   if (this.abort.signal.aborted || !this.loading) return;
                   const renderer = new MilitaryRenderer(this, (done, total) => {

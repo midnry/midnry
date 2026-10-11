@@ -122,6 +122,16 @@ try {
           )
             throw Error("AI equipment not visible");
           if (!a.weaponAnchor) throw Error("Weapon not attached to hand");
+          if (
+            a.skinParts?.length !== 6 ||
+            a.skinParts.some((p) => !p.userData.anchor || !p.children.length)
+          )
+            throw Error("Outfit gear lacks animated anchors");
+          r.skinPortrait(bot.outfit, 120, 160);
+          const textures = r.skinTextures.size;
+          r.skinPortrait(bot.outfit, 120, 160);
+          if (r.skinTextures.size !== textures)
+            throw Error("Portrait recreated cached fabric textures");
           if (pass === 0 && i === 0) baseline = r.materials.size;
           maximum = Math.max(maximum, r.materials.size);
         }

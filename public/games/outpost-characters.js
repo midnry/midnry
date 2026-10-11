@@ -1,5 +1,6 @@
 /** Original illustrated anime atlases with a procedural loading fallback.
  * Presentation only: never mutates Arena entities or authoritative match rules. */
+import { skinPattern } from "./outpost-skins.js";
 import { weaponOf, outfitOf } from "./outpost-content.js";
 export const ANIMATION_FPS = 30;
 const TAU = Math.PI * 2;
@@ -256,8 +257,8 @@ export class Characters {
     // Preserve authored animation frames, with a consistent uniform tint in classic view.
     c.save();
     c.globalCompositeOperation = "source-atop";
-    c.globalAlpha = 0.38;
-    c.fillStyle = outfit.primary;
+    c.globalAlpha = 0.55;
+    c.fillStyle = c.createPattern(skinPattern(outfit, 192), "repeat");
     c.fillRect(0, 0, 192, 288);
     c.restore();
     // Distinct gear marks stay on the torso, matching the 3D outfit identity.
