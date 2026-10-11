@@ -185,7 +185,7 @@ Eight camera-relative directions select front, quarter, profile and mirrored/bac
 
 The atlases load and decode asynchronously; the prior procedural rig provides a fallback if artwork is still loading or unavailable. Explicit alpha bounds and lazy connected-silhouette extraction prevent neighboring frames leaking into a pose. Each original atlas remains untouched; runtime frames are cropped into Canvas buffers. Smooth character sampling preserves thin ink lines, while walls retain their comic rendering.
 
-Performance, Balanced and High generate 192×288, 288×432 and 384×576 composed character frames respectively. Only visible, wall-unoccluded characters request frames; a 64-entry (Performance) or 96-entry (Balanced/High) LRU limits composed canvas memory, and at most 60 source cells are extracted per game instance. Changing graphics clears composed frames. Animation reads shared match timestamps and positions without changing health, collisions, hitboxes or online authority. Defeated characters disappear after 0.9 seconds and respawns reset the defeat pose.
+Performance, Balanced and High generate 192×288, 288×432 and 384×576 composed character frames respectively. Only visible, wall-unoccluded characters request frames; a 128-entry LRU limits composed canvas memory, and at most 60 source cells are extracted per game instance. Changing graphics clears composed frames. Animation reads shared match timestamps and positions without changing health, collisions, hitboxes or online authority. Defeated characters disappear after 0.9 seconds and respawns reset the defeat pose.
 
 Validate with `node scripts/check-outpost-characters.mjs [base-url]`: decoded art, source cells, states and angles, loadouts, resolution tiers, cache bounds, unchanged simulation snapshots, wall occlusion, respawns, reduced motion and desktop/mobile behavior.
 
@@ -222,3 +222,9 @@ Apple's [Buttons HIG](https://developer.apple.com/design/human-interface-guideli
 `outpost-weapons.js` loads a transparent, illustrated eleven-weapon atlas, trims and caches each rig once, and shares it between first-person gameplay, loadout previews and the field guide. Recoil, reload and melee motion use the local presentation clock. If the atlas fails to load, procedural weapons remain usable.
 
 Cosmetic ammunition now distinguishes rifle bullets, pistol rounds, shotgun pellets, rockets, blades, poison daggers, spiked pods and dynamite. Hitscan tracers are short-lived, depth-tested and capped at 64. All effects only read the arena; damage, collisions and multiplayer authority remain in the simulation.
+
+## Painted environments
+
+`outpost-environment.js` loads two locally hosted WebP atlases: sixteen painted material tiles and five map-specific panoramic skies. Floor materials follow world coordinates and existing map zones (street, grass, terminal, apron, cargo yard, villa and pool). Ground sampling uses cached distance mipmaps, the existing adaptive floor buffer, and Red Haze tinting. Painted wall panels keep collision geometry, directional shading, ink outlines and readable signs. Skies wrap with camera rotation; interiors retain their ceiling instead of showing an outdoor panorama.
+
+Materials are decoded asynchronously and cached per graphics preset. Loading a material invalidates the procedural cache, and changing graphics clears the illustrated cache. Failed artwork loads preserve procedural floors, walls and skies. Rendering never changes arena state or multiplayer traffic. `node scripts/check-outpost-environment.mjs [base-url]` checks every map on desktop/mobile, camera movement, panorama wrapping, terrain zones, haze, cache reuse and loading failure. Performance checks remain in `check-outpost-performance.mjs`.

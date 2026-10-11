@@ -16,7 +16,10 @@ try {
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(base + "/games/outpost-zero.html");
     await page.waitForFunction(() => document.querySelector("midnry-fps")?.engine?.characters);
-    await page.evaluate(() => document.querySelector("midnry-fps").engine.characters.ready);
+    await page.evaluate(() => {
+      const g = document.querySelector("midnry-fps").engine;
+      return Promise.all([g.characters.ready, g.weapons.ready, g.environment.ready]);
+    });
     const result = await page.evaluate(async () => {
       const g = document.querySelector("midnry-fps").engine,
         c = g.characters;

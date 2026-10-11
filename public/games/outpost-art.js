@@ -73,7 +73,9 @@ export class ComicArt {
   }
   interior(map, p) {
     return (
-      (map.id === "skyport" && p.x > 3 && p.x < 14 && p.y > 3 && p.y < 11) ||
+      (map.id === "skyport" &&
+        ((p.x > 3 && p.x < 14 && p.y > 3 && p.y < 11) ||
+          (p.x > 18 && p.x < 21 && p.y > 4 && p.y < 17))) ||
       (map.id === "testblock" &&
         p.y > 4 &&
         p.y < 11 &&
@@ -92,52 +94,55 @@ export class ComicArt {
     c.save();
     c.lineWidth = 2;
     c.strokeStyle = "#26323e";
-    // Cel clouds and parallax silhouettes give each setting a recognizable horizon.
-    for (let i = 0; i < 4; i++) {
-      const x = ((((i * 0.29 - p.a * 0.12 + t * 0.0007) % 1) + 1) % 1) * w,
-        y = horizon * (0.18 + (i % 2) * 0.18);
-      c.fillStyle = "#ffe7b466";
-      c.beginPath();
-      c.ellipse(x, y, w * 0.07, Math.max(4, horizon * 0.024), 0, 0, TAU);
-      c.fill();
-    }
-    const offset = ((((p.a / TAU) % 1) + 1) % 1) * w;
-    const skyline = (x, y, width, height, color) => {
-      c.fillStyle = color;
-      c.fillRect((x - offset + w * 2) % (w * 1.2), y, width, height);
-    };
-    if (map.id === "skyport") {
-      skyline(w * 0.15, horizon - 100, w * 0.045, 100, "#526879");
-      skyline(w * 0.13, horizon - 112, w * 0.085, 24, "#243d51");
-      skyline(w * 0.6, horizon - 30, w * 0.3, 30, "#596d78");
-      const x = ((((t * 0.007 - p.a * 0.08) % 1) + 1) % 1) * w;
-      c.fillStyle = "#263d51";
-      c.beginPath();
-      c.moveTo(x, horizon * 0.3);
-      c.lineTo(x + 40, horizon * 0.3 + 3);
-      c.lineTo(x + 20, horizon * 0.3 - 10);
-      c.lineTo(x + 28, horizon * 0.3 + 3);
-      c.lineTo(x + 10, horizon * 0.3 + 12);
-      c.closePath();
-      c.fill();
-    } else if (map.id === "freight") {
-      for (let i = 0; i < 3; i++) {
-        const x = (w * (0.12 + i * 0.35) - offset + w * 2) % w;
-        c.strokeStyle = "#344b55";
-        c.lineWidth = 5;
+    const paintedSky = g.environment?.sky(map, p, horizon);
+    if (!paintedSky) {
+      // Cel clouds and parallax silhouettes give each setting a recognizable horizon.
+      for (let i = 0; i < 4; i++) {
+        const x = ((((i * 0.29 - p.a * 0.12 + t * 0.0007) % 1) + 1) % 1) * w,
+          y = horizon * (0.18 + (i % 2) * 0.18);
+        c.fillStyle = "#ffe7b466";
         c.beginPath();
-        c.moveTo(x, horizon);
-        c.lineTo(x, horizon - 100);
-        c.lineTo(x + 75, horizon - 100);
-        c.lineTo(x + 75, horizon - 35);
-        c.stroke();
+        c.ellipse(x, y, w * 0.07, Math.max(4, horizon * 0.024), 0, 0, TAU);
+        c.fill();
       }
-    } else if (map.id === "testblock") {
-      skyline(w * 0.65, horizon - 90, 16, 90, "#715b63");
-      skyline(w * 0.61, horizon - 110, 70, 28, "#b97967");
-    } else if (map.id === "estate") {
-      for (let i = 0; i < 3; i++)
-        skyline(w * (i * 0.32), horizon - 40 - i * 7, w * 0.14, 60, "#8c6b73");
+      const offset = ((((p.a / TAU) % 1) + 1) % 1) * w;
+      const skyline = (x, y, width, height, color) => {
+        c.fillStyle = color;
+        c.fillRect((x - offset + w * 2) % (w * 1.2), y, width, height);
+      };
+      if (map.id === "skyport") {
+        skyline(w * 0.15, horizon - 100, w * 0.045, 100, "#526879");
+        skyline(w * 0.13, horizon - 112, w * 0.085, 24, "#243d51");
+        skyline(w * 0.6, horizon - 30, w * 0.3, 30, "#596d78");
+        const x = ((((t * 0.007 - p.a * 0.08) % 1) + 1) % 1) * w;
+        c.fillStyle = "#263d51";
+        c.beginPath();
+        c.moveTo(x, horizon * 0.3);
+        c.lineTo(x + 40, horizon * 0.3 + 3);
+        c.lineTo(x + 20, horizon * 0.3 - 10);
+        c.lineTo(x + 28, horizon * 0.3 + 3);
+        c.lineTo(x + 10, horizon * 0.3 + 12);
+        c.closePath();
+        c.fill();
+      } else if (map.id === "freight") {
+        for (let i = 0; i < 3; i++) {
+          const x = (w * (0.12 + i * 0.35) - offset + w * 2) % w;
+          c.strokeStyle = "#344b55";
+          c.lineWidth = 5;
+          c.beginPath();
+          c.moveTo(x, horizon);
+          c.lineTo(x, horizon - 100);
+          c.lineTo(x + 75, horizon - 100);
+          c.lineTo(x + 75, horizon - 35);
+          c.stroke();
+        }
+      } else if (map.id === "testblock") {
+        skyline(w * 0.65, horizon - 90, 16, 90, "#715b63");
+        skyline(w * 0.61, horizon - 110, 70, 28, "#b97967");
+      } else if (map.id === "estate") {
+        for (let i = 0; i < 3; i++)
+          skyline(w * (i * 0.32), horizon - 40 - i * 7, w * 0.14, 60, "#8c6b73");
+      }
     }
     if (this.interior(map, p)) {
       c.fillStyle = "#24303a";

@@ -1491,6 +1491,7 @@
       import { Retention } from "./outpost-retention.js";
       import { MenuUI } from "./outpost-ui.js";
       import { WeaponArt } from "./outpost-weapons.js";
+      import { EnvironmentArt } from "./outpost-environment.js";
       (() => {
         "use strict";
         // A custom element keeps state private and supports multiple independent instances.
@@ -1572,6 +1573,7 @@
             this.budget = new FrameBudget();
             this.academy = new Academy(this);
             this.art = new ComicArt(this);
+            this.environment = new EnvironmentArt(this);
             this.characters = new Characters(this);
             this.weapons = new WeaponArt(this);
             this.retention = new Retention(this);
@@ -2581,47 +2583,54 @@
                 c.fillRect(x, top, 2, size);
               }
               prevKey = key;
-              if (
-                map.id === "testblock" &&
-                [2, 4].includes(hit.type) &&
-                hit.u > 0.18 &&
-                hit.u < 0.82
-              ) {
-                c.fillStyle = "#e8efd8";
-                c.fillRect(x, top + size * 0.22, 2, size * 0.34);
-                if (hit.u > 0.24 && hit.u < 0.76) {
-                  c.fillStyle = hit.u > 0.48 && hit.u < 0.52 ? "#e8efd8" : "#284d62";
-                  c.fillRect(x, top + size * 0.25, 2, size * 0.26);
+              if (!this.environment.loaded) {
+                if (
+                  map.id === "testblock" &&
+                  [2, 4].includes(hit.type) &&
+                  hit.u > 0.18 &&
+                  hit.u < 0.82
+                ) {
+                  c.fillStyle = "#e8efd8";
+                  c.fillRect(x, top + size * 0.22, 2, size * 0.34);
+                  if (hit.u > 0.24 && hit.u < 0.76) {
+                    c.fillStyle = hit.u > 0.48 && hit.u < 0.52 ? "#e8efd8" : "#284d62";
+                    c.fillRect(x, top + size * 0.25, 2, size * 0.26);
+                  }
+                  c.fillStyle = "#f5e4c5";
+                  c.fillRect(x, top + size * 0.6, 2, size * 0.035);
                 }
-                c.fillStyle = "#f5e4c5";
-                c.fillRect(x, top + size * 0.6, 2, size * 0.035);
-              }
-              if (map.id === "skyport" && [5, 6].includes(hit.type) && hit.u > 0.2 && hit.u < 0.8) {
-                c.fillStyle = "#193b51";
-                c.fillRect(x, top + size * 0.29, 2, size * (hit.type === 6 ? 0.19 : 0.36));
-                c.fillStyle = "#89d3e4";
-                c.fillRect(x, top + size * 0.3, 2, size * 0.035);
-              }
-              if (map.id === "freight" && Math.floor(hit.u * 24) % 3 === 0) {
-                c.fillStyle = "#15263055";
-                c.fillRect(x, top + size * 0.08, 2, size * 0.85);
-              }
-              // Horizontal mortar / steel panel seams.
-              c.fillStyle = "#272c2a";
-              for (let j = 1; j < 4; j++)
-                c.fillRect(x, top + (size * j) / 4, 2, Math.max(1, size * 0.008));
-              if (hit.type === 3 && Math.floor(hit.u * 10) % 2 === 0) {
-                c.fillStyle = "#222b30";
-                c.fillRect(x, top + size * 0.64, 2, size * 0.19);
-              }
-              if (hit.type === 2 && hit.u > 0.16 && hit.u < 0.84) {
-                c.fillStyle = "#163c43";
-                c.fillRect(x, top + size * 0.3, 2, size * 0.03);
-                c.fillRect(x, top + size * 0.38, 2, size * 0.03);
-              }
-              if (hit.type === 1 && Math.floor(hit.u * 28) % 7 === 0) {
-                c.fillStyle = "#603f2d";
-                c.fillRect(x, top + size * (0.12 + hit.u * 0.25), 2, size * 0.045);
+                if (
+                  map.id === "skyport" &&
+                  [5, 6].includes(hit.type) &&
+                  hit.u > 0.2 &&
+                  hit.u < 0.8
+                ) {
+                  c.fillStyle = "#193b51";
+                  c.fillRect(x, top + size * 0.29, 2, size * (hit.type === 6 ? 0.19 : 0.36));
+                  c.fillStyle = "#89d3e4";
+                  c.fillRect(x, top + size * 0.3, 2, size * 0.035);
+                }
+                if (map.id === "freight" && Math.floor(hit.u * 24) % 3 === 0) {
+                  c.fillStyle = "#15263055";
+                  c.fillRect(x, top + size * 0.08, 2, size * 0.85);
+                }
+                // Horizontal mortar / steel panel seams.
+                c.fillStyle = "#272c2a";
+                for (let j = 1; j < 4; j++)
+                  c.fillRect(x, top + (size * j) / 4, 2, Math.max(1, size * 0.008));
+                if (hit.type === 3 && Math.floor(hit.u * 10) % 2 === 0) {
+                  c.fillStyle = "#222b30";
+                  c.fillRect(x, top + size * 0.64, 2, size * 0.19);
+                }
+                if (hit.type === 2 && hit.u > 0.16 && hit.u < 0.84) {
+                  c.fillStyle = "#163c43";
+                  c.fillRect(x, top + size * 0.3, 2, size * 0.03);
+                  c.fillRect(x, top + size * 0.38, 2, size * 0.03);
+                }
+                if (hit.type === 1 && Math.floor(hit.u * 28) % 7 === 0) {
+                  c.fillStyle = "#603f2d";
+                  c.fillRect(x, top + size * (0.12 + hit.u * 0.25), 2, size * 0.045);
+                }
               }
               if (d > 5) {
                 c.fillStyle = `rgba(35,28,32,${Math.min(0.55, (d - 5) * 0.035)})`;

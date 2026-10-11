@@ -129,6 +129,7 @@ export class Academy {
     game.propSprites?.clear();
     game.art?.clearCache();
     game.characters?.clearCache();
+    game.environment?.clearCache();
     game.resize();
     try {
       localStorage.setItem(
@@ -327,39 +328,42 @@ export class Academy {
       cvs.width = cvs.height = n;
       const c = cvs.getContext("2d"),
         colors = map.theme.walls[type] || map.theme.walls[1];
-      c.fillStyle = colors[side ? 1 : 0];
-      c.fillRect(0, 0, n, n);
-      if (this.options.lighting) {
-        c.fillStyle = colors[2];
-        c.fillRect(0, 0, n, n * 0.13);
-        c.fillStyle = "#10172025";
-        c.fillRect(0, n * 0.72, n, n * 0.28);
-      }
-      // Reproducible ink hatching, mortar, bolt heads and highlights.
-      for (let row = 0; row < 4; row++) {
-        c.fillStyle = "#101720";
-        c.fillRect(0, (row * n) / 4, n, Math.max(1, n / 128));
-        const offset = row % 2 ? n / 4 : 0;
-        for (let col = 0; col < 3; col++) {
-          const x = ((col * n) / 2 + offset) % n,
-            y = (row * n) / 4;
-          c.fillStyle = "#10172080";
-          c.fillRect(x, y, n / 160, n / 4);
+      const illustrated = this.g.environment?.wall(c, map, type, side, n, this.options.lighting);
+      if (!illustrated) {
+        c.fillStyle = colors[side ? 1 : 0];
+        c.fillRect(0, 0, n, n);
+        if (this.options.lighting) {
           c.fillStyle = colors[2];
-          c.fillRect(x + n * 0.03, y + n * 0.025, n * 0.3, n / 160);
-          c.fillStyle = "#101720";
-          c.fillRect(x + n * 0.03, y + n * 0.06, n / 100, n / 100);
+          c.fillRect(0, 0, n, n * 0.13);
+          c.fillStyle = "#10172025";
+          c.fillRect(0, n * 0.72, n, n * 0.28);
         }
-      }
-      for (let i = 0; i < 130; i++) {
-        const x = (((i * 73 + 19) % 257) / 257) * n,
-          y = (((i * 113 + 41) % 251) / 251) * n;
-        c.strokeStyle = i % 3 ? "#10172030" : colors[2];
-        c.lineWidth = n / 512;
-        c.beginPath();
-        c.moveTo(x, y);
-        c.lineTo(x + n * 0.015, y + n * 0.006);
-        c.stroke();
+        // Reproducible ink hatching, mortar, bolt heads and highlights.
+        for (let row = 0; row < 4; row++) {
+          c.fillStyle = "#101720";
+          c.fillRect(0, (row * n) / 4, n, Math.max(1, n / 128));
+          const offset = row % 2 ? n / 4 : 0;
+          for (let col = 0; col < 3; col++) {
+            const x = ((col * n) / 2 + offset) % n,
+              y = (row * n) / 4;
+            c.fillStyle = "#10172080";
+            c.fillRect(x, y, n / 160, n / 4);
+            c.fillStyle = colors[2];
+            c.fillRect(x + n * 0.03, y + n * 0.025, n * 0.3, n / 160);
+            c.fillStyle = "#101720";
+            c.fillRect(x + n * 0.03, y + n * 0.06, n / 100, n / 100);
+          }
+        }
+        for (let i = 0; i < 130; i++) {
+          const x = (((i * 73 + 19) % 257) / 257) * n,
+            y = (((i * 113 + 41) % 251) / 251) * n;
+          c.strokeStyle = i % 3 ? "#10172030" : colors[2];
+          c.lineWidth = n / 512;
+          c.beginPath();
+          c.moveTo(x, y);
+          c.lineTo(x + n * 0.015, y + n * 0.006);
+          c.stroke();
+        }
       }
       this.g.art?.decorate(c, map, type, n);
       const levels = [cvs];
@@ -399,9 +403,13 @@ export class Academy {
       this.floorContext = this.floorCanvas.getContext("2d");
       this.floorPixels = this.floorContext.createImageData(width, height);
     }
-    const key = `${map.id}:${g.w}:${g.h}:${p.x}:${p.y}:${p.a}:${horizon}:${step}:${this.options.lighting}:${g.mode}:${g.time > g.zone.delay ? g.zone.half : 0}`;
+    const ground = g.environment?.loaded ? g.environment.ground(map) : null;
+    const key = `${map.id}:${g.w}:${g.h}:${p.x}:${p.y}:${p.a}:${horizon}:${step}:${this.options.lighting}:${g.environment?.revision}:${g.mode}:${g.time > g.zone.delay ? g.zone.half : 0}`;
     if (this.floorKey === key) {
+      c.save();
+      c.imageSmoothingEnabled = !!ground;
       c.drawImage(this.floorCanvas, 0, 0, g.w, g.h);
+      c.restore();
       return;
     }
     this.floorKey = key;
@@ -409,7 +417,7 @@ export class Academy {
     data.fill(0);
     const rgb = (color) => [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16));
     const base = rgb(map.theme.floor),
-      zones = map.zones.map((z) => ({ ...z, rgb: rgb(z.color) }));
+      zones = map.zones.map((z, i) => ({ ...z, rgb: rgb(z.color), material: i + 1 }));
     const hazeActive = g.mode !== "training" && g.time > g.zone.delay,
       zoneMinX = g.zone.cx - g.zone.half,
       zoneMaxX = g.zone.cx + g.zone.half,
@@ -422,6 +430,16 @@ export class Academy {
       const y = row * step,
         d = (g.projection * 0.5) / (y - horizon);
       if (d > 32) continue;
+      const lod = ground
+        ? Math.max(
+            0,
+            Math.min(
+              ground[0].length - 1,
+              Math.floor(Math.log2((ground[0][0].size * d * step) / (g.projection * 2))),
+            ),
+          )
+        : 0;
+      const fog = Math.min(0.72, Math.max(0, (d - 4) * 0.025));
       for (let col = 0; col < width; col++) {
         const q = ((2 * col * step) / g.w - 1) * plane,
           fx = p.x + (ca - sa * q) * d,
@@ -438,15 +456,40 @@ export class Academy {
         const haze =
             hazeActive && (fx < zoneMinX || fx > zoneMaxX || fy < zoneMinY || fy > zoneMaxY),
           i = (row * width + col) * 4;
-        const factor = haze ? shade * 0.64 : shade;
-        data[i] = color[0] * factor + (haze ? 65.16 : 0);
-        data[i + 1] = color[1] * factor + (haze ? 12.24 : 0);
-        data[i + 2] = color[2] * factor + (haze ? 28.8 : 0);
+        if (ground) {
+          // Two world tiles per painted repeat. Distance mipmaps suppress shimmer.
+          const material = ground[zone?.material || 0] || ground[0],
+            level = material[lod];
+          const tx = Math.floor(((((fx * 0.5) % 1) + 1) % 1) * level.size),
+            ty = Math.floor(((((fy * 0.5) % 1) + 1) % 1) * level.size),
+            ti = (ty * level.size + tx) * 4;
+          const light = this.options.lighting ? 0.92 : 1;
+          let r = level.pixels[ti] * light * (1 - fog) + base[0] * fog,
+            green = level.pixels[ti + 1] * light * (1 - fog) + base[1] * fog,
+            b = level.pixels[ti + 2] * light * (1 - fog) + base[2] * fog;
+          // Existing cargo-lane markings stay useful against the painted concrete.
+          if (map.id === "freight" && zone && (u < 0.07 || v < 0.07)) {
+            r = r * 0.3 + 161;
+            green = green * 0.3 + 123;
+            b = b * 0.3 + 39;
+          }
+          data[i] = haze ? r * 0.64 + 65.16 : r;
+          data[i + 1] = haze ? green * 0.64 + 12.24 : green;
+          data[i + 2] = haze ? b * 0.64 + 28.8 : b;
+        } else {
+          const factor = haze ? shade * 0.64 : shade;
+          data[i] = color[0] * factor + (haze ? 65.16 : 0);
+          data[i + 1] = color[1] * factor + (haze ? 12.24 : 0);
+          data[i + 2] = color[2] * factor + (haze ? 28.8 : 0);
+        }
         data[i + 3] = 255;
       }
     }
     this.floorContext.putImageData(this.floorPixels, 0, 0);
+    c.save();
+    c.imageSmoothingEnabled = !!ground;
     c.drawImage(this.floorCanvas, 0, 0, g.w, g.h);
+    c.restore();
   }
 }
 
