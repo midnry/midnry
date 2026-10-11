@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Midnry — Outpost Zero</title>
+<style>
+/* All selectors belong to this component; host-page elements are untouched. */
+midnry-fps { display:block; width:100%; height:100%; min-height:420px; }
+midnry-fps .mf-shell { position:relative; height:100%; min-height:420px; overflow:hidden; background:#101419; color:#fff4dc; font:14px system-ui,sans-serif; isolation:isolate; }
+midnry-fps .mf-shell * { box-sizing:border-box; }
+midnry-fps canvas { display:block; width:100%; height:100%; touch-action:none; }
+midnry-fps button { font:inherit; cursor:pointer; color:inherit; }
+midnry-fps .mf-top { position:absolute; top:22px; left:26px; right:26px; display:flex; justify-content:space-between; align-items:center; pointer-events:none; gap:12px; }
+midnry-fps .mf-brand { font-weight:950; letter-spacing:4px; font-size:20px; }
+midnry-fps .mf-brand small { display:block; color:#eeb74d; font-size:10px; letter-spacing:3px; margin-top:4px; }
+midnry-fps .mf-topright { display:flex; align-items:center; gap:12px; }
+midnry-fps .mf-tag { border:1px solid #ffffff55; padding:7px 11px; font-size:10px; letter-spacing:2px; background:#111a; }
+midnry-fps .mf-pause { pointer-events:auto; border:1px solid #ffffff55; background:#111a; width:36px; height:32px; }
+midnry-fps .mf-bottom { position:absolute; left:26px; right:26px; bottom:25px; display:flex; justify-content:space-between; align-items:end; pointer-events:none; }
+midnry-fps .mf-stat { font-size:11px; letter-spacing:2px; color:#eee0c7; }
+midnry-fps .mf-stat strong { display:block; font-size:36px; line-height:1.15; letter-spacing:-1px; color:#fff4dc; }
+midnry-fps .mf-health { width:140px; height:5px; background:#402426; margin-top:8px; }
+midnry-fps .mf-health i { display:block; height:100%; width:100%; background:#ffbd43; }
+midnry-fps .mf-ammo { text-align:right; }
+midnry-fps .mf-ammo strong span { font-size:15px; color:#bcaf99; letter-spacing:0; }
+midnry-fps .mf-objective { position:absolute; left:26px; top:96px; font-size:10px; letter-spacing:2px; text-shadow:0 2px 4px #000; pointer-events:none; }
+midnry-fps .mf-objective b { display:block; font-size:14px; letter-spacing:0; margin-top:6px; color:#ffcc58; }
+midnry-fps .mf-cross { position:absolute; top:50%; left:50%; width:22px; height:22px; transform:translate(-50%,-50%); pointer-events:none; background:linear-gradient(#fff4dc,#fff4dc) center/2px 6px no-repeat; }
+midnry-fps .mf-cross::before,midnry-fps .mf-cross::after { content:''; position:absolute; top:10px; width:6px; height:2px; background:#fff4dc; box-shadow:0 1px 2px #000; }
+midnry-fps .mf-cross::before { left:0; } midnry-fps .mf-cross::after { right:0; }
+midnry-fps .mf-toast { position:absolute; left:50%; top:62%; transform:translateX(-50%); text-align:center; color:#ffca49; font-weight:900; letter-spacing:2px; text-shadow:2px 2px #000; pointer-events:none; }
+midnry-fps .mf-modal { position:absolute; inset:0; display:grid; place-items:center; background:linear-gradient(90deg,#10141bd9,#10141b60); padding:24px; }
+midnry-fps .mf-panel { width:min(540px,100%); padding:34px; border:2px solid #070b0e; background:#18212bed; box-shadow:9px 9px 0 #0007; }
+midnry-fps .mf-eyebrow { color:#ffc455; letter-spacing:4px; font-size:11px; font-weight:800; }
+midnry-fps h1 { font-size:clamp(36px,7vw,66px); line-height:.95; letter-spacing:-3px; text-transform:uppercase; margin:18px 0; font-weight:950; }
+midnry-fps h1 em { color:#ffc455; font-style:normal; }
+midnry-fps .mf-copy { color:#c6c8c6; line-height:1.65; max-width:410px; }
+midnry-fps .mf-start { margin-top:15px; background:#ffc455; color:#141a20; padding:15px 26px; border:3px solid #070b0e; box-shadow:4px 4px 0 #070b0e; font-weight:900; letter-spacing:2px; }
+midnry-fps .mf-help { font-size:11px; line-height:1.8; margin-top:24px; color:#9fa9b1; }
+midnry-fps .mf-touch { position:absolute; inset:0; pointer-events:none; display:none; }
+midnry-fps .mf-stick { position:absolute; left:24px; bottom:102px; width:112px; height:112px; border-radius:50%; border:2px solid #ffffff45; background:#151b2466; pointer-events:auto; touch-action:none; }
+midnry-fps .mf-stick i { position:absolute; left:35px; top:35px; width:38px; height:38px; border:2px solid #fff6; border-radius:50%; background:#ffc45580; }
+midnry-fps .mf-fire,midnry-fps .mf-reload { position:absolute; right:25px; bottom:118px; width:76px; height:76px; border:3px solid #151b24; border-radius:50%; background:#ffc455c9; color:#151b24; font-size:12px; font-weight:900; pointer-events:auto; touch-action:none; }
+midnry-fps .mf-reload { right:112px; bottom:115px; width:48px; height:48px; background:#e8e0ccab; }
+midnry-fps [hidden] { display:none !important; }
+@media (pointer:coarse) { midnry-fps .mf-touch { display:block; } }
+@media (max-width:600px) { midnry-fps .mf-top { top:16px; left:16px; right:16px; } midnry-fps .mf-bottom { left:16px; right:16px; bottom:18px; } midnry-fps .mf-objective { top:82px; left:16px; } midnry-fps .mf-panel { padding:24px; } midnry-fps .mf-tag { display:none; } }
+</style>
+</head>
+<!-- For inline integration copy the style, element and script. Set a height on the host. -->
+<body style="margin:0;background:#101419">
+<midnry-fps style="height:100dvh" aria-label="Outpost Zero first-person shooter"></midnry-fps>
+<script>
+(() => {
+  'use strict';
+  // A custom element keeps state private and supports multiple independent instances.
+  if (customElements.get('midnry-fps')) return;
+  const TAU = Math.PI * 2;
+  const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
+  const angleDiff = a => Math.atan2(Math.sin(a),Math.cos(a));
+
+  class MidnryFPS extends HTMLElement {
+    connectedCallback() {
+      if (this.engine) return;
+      this.innerHTML = `<div class="mf-shell" tabindex="0">
+        <canvas aria-label="Game viewport"></canvas>
+        <div class="mf-top"><div class="mf-brand">MIDNRY<small>OUTPOST ZERO / FIELD OPS</small></div><div class="mf-topright"><span class="mf-tag">RAYCAST / COMIC EDITION</span><button class="mf-pause" aria-label="Pause game">II</button></div></div>
+        <div class="mf-objective">TRAINING CONTRACT<b class="mf-mission">Eliminate the sentry drones</b></div>
+        <div class="mf-cross"></div><div class="mf-toast" role="status" aria-live="polite"></div>
+        <div class="mf-bottom"><div class="mf-stat">VITALS<strong class="mf-hp">100</strong><div class="mf-health"><i></i></div></div><div class="mf-stat mf-ammo">VX–7 / AUTO CARBINE<strong class="mf-rounds">24 <span>/ ∞</span></strong></div></div>
+        <div class="mf-touch"><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
+        <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">A sun-scorched outpost. Six rogue sentries. One very loud solution. Drop into a comic-book combat sandbox.</p><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Click or Space · fire<br>R · reload &nbsp; / &nbsp; Shift · sprint &nbsp; / &nbsp; Esc or P · pause<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
+      </div>`;
+      this.engine = new Game(this);
+    }
+    disconnectedCallback() { this.engine?.destroy(); this.engine = null; }
+  }
+
+  // Editable arena: 0 = floor, 1 = sandstone, 2 = teal steel, 3 = hazard wall.
+  const LEVEL = [
+    '1111111111111111',
+    '1000000000000001',
+    '1000000000000001',
+    '1000220000110001',
+    '1000220000110001',
+    '1000000000000001',
+    '1000000000000001',
+    '1000000330000001',
+    '1000000330000001',
+    '1000000000000001',
+    '1001100000220001',
+    '1001100000220001',
+    '1000000000000001',
+    '1000000000000001',
+    '1000000000000001',
+    '1111111111111111'
+  ].map(row => [...row].map(Number));
+
+  class Game {
+    constructor(root) {
+      this.root=root; this.shell=root.querySelector('.mf-shell');
+      this.canvas=root.querySelector('canvas'); this.ctx=this.canvas.getContext('2d',{alpha:false});
+      this.$=s=>root.querySelector(s); this.abort=new AbortController();
+      this.keys=new Set(); this.touch={x:0,y:0}; this.firing=false; this.running=false;
+      this.time=0; this.last=performance.now(); this.frame=0; this.viewPitch=0;
+      this.reset(); this.bindInputs();
+      this.resizeObserver=new ResizeObserver(()=>this.resize()); this.resizeObserver.observe(this.shell);
+      this.resize(); this.loop=this.loop.bind(this); this.frame=requestAnimationFrame(this.loop);
+    }
+    reset() {
+      this.player={x:3.5,y:13.5,a:-.18,hp:100}; this.ammo=24; this.kills=0;
+      this.shotAt=-10; this.reloadUntil=0; this.hurtAt=-10; this.step=0;
+      this.enemies=[[11.5,12.5],[7.5,11.5],[12.5,7.5],[5.5,5.5],[9.5,2.5],[2.5,2.5]].map(([x,y],i)=>({x,y,hp:3,hit:-10,attack:0,phase:i*1.3}));
+      this.toastUntil=0; this.$('.mf-toast').textContent=''; this.updateHUD();
+    }
+    on(target,event,handler,options={}) { target.addEventListener(event,handler,{...options,signal:this.abort.signal}); }
+    bindInputs() {
+      this.on(this.$('.mf-start'),'click',()=>this.start());
+      this.on(this.$('.mf-pause'),'click',()=>this.pause());
+      this.on(this.shell,'keydown',e=>{
+        const k=e.key.toLowerCase();
+        if ([' ','arrowup','arrowdown','arrowleft','arrowright','w','a','s','d','r','p','shift'].includes(k)) e.preventDefault();
+        if (k==='escape'||k==='p') { if(this.running)this.pause(); return; }
+        if (!this.running) return;
+        this.keys.add(k); if(k==='r')this.reload();if(k===' '&&!e.repeat)this.shoot();
+      });
+      this.on(this.shell,'keyup',e=>this.keys.delete(e.key.toLowerCase()));
+      this.on(window,'blur',()=>{if(this.running)this.pause();});
+      this.on(document,'visibilitychange',()=>{if(document.hidden&&this.running)this.pause();});
+      this.on(document,'pointerlockchange',()=>{
+        if(document.pointerLockElement===this.canvas)this.hadLock=true;
+        else if(this.hadLock&&this.running){this.hadLock=false;this.pause();}
+      });
+      this.on(document,'mousemove',e=>{
+        if(this.running&&document.pointerLockElement===this.canvas){this.player.a+=e.movementX*.0025;this.viewPitch=clamp(this.viewPitch-e.movementY*.35,-this.h*.18,this.h*.18);}
+      });
+      this.on(this.canvas,'pointerdown',e=>{
+        if(!this.running)return; this.shell.focus({preventScroll:true});
+        if(e.pointerType==='mouse'&&e.button===0){this.firing=true;this.shoot();this.lockMouse();}
+        else if(e.clientX>this.canvas.getBoundingClientRect().left+this.canvas.clientWidth*.35){this.look={id:e.pointerId,x:e.clientX,y:e.clientY};this.canvas.setPointerCapture(e.pointerId);}
+      });
+      this.on(this.canvas,'pointermove',e=>{
+        if(this.running&&this.look?.id===e.pointerId){this.player.a+=(e.clientX-this.look.x)*.006;this.viewPitch=clamp(this.viewPitch-(e.clientY-this.look.y)*.5,-this.h*.18,this.h*.18);this.look.x=e.clientX;this.look.y=e.clientY;}
+      });
+      this.on(window,'pointerup',e=>{if(e.pointerType==='mouse')this.firing=false;if(this.look?.id===e.pointerId)this.look=null;});
+      this.on(this.canvas,'pointercancel',()=>{this.look=null;this.firing=false;});
+      this.on(this.canvas,'contextmenu',e=>e.preventDefault());
+      const stick=this.$('.mf-stick');
+      const moveStick=e=>{
+        const r=stick.getBoundingClientRect(), x=e.clientX-r.left-r.width/2,y=e.clientY-r.top-r.height/2;
+        const length=Math.max(38,Math.hypot(x,y));this.touch.x=x/length;this.touch.y=y/length;
+        this.$('.mf-stick i').style.transform=`translate(${this.touch.x*34}px,${this.touch.y*34}px)`;
+      };
+      this.on(stick,'pointerdown',e=>{if(!this.running)return;this.stickId=e.pointerId;stick.setPointerCapture(e.pointerId);moveStick(e);});
+      this.on(stick,'pointermove',e=>{if(this.stickId===e.pointerId)moveStick(e);});
+      const endStick=()=>{this.stickId=null;this.touch={x:0,y:0};this.$('.mf-stick i').style.transform='';};
+      this.on(stick,'pointerup',endStick);this.on(stick,'pointercancel',endStick);
+      this.on(this.$('.mf-fire'),'pointerdown',e=>{if(!this.running)return;e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);this.firing=true;this.shoot();});
+      for(const type of ['pointerup','pointercancel'])this.on(this.$('.mf-fire'),type,()=>this.firing=false);
+      this.on(this.$('.mf-reload'),'click',()=>this.reload());
+    }
+    lockMouse() {
+      if(matchMedia('(pointer:coarse)').matches||document.pointerLockElement===this.canvas)return;
+      // Sandboxed embeds may deny pointer lock; arrow-key aiming remains available.
+      try { const result=this.canvas.requestPointerLock?.();result?.catch(()=>this.message('ARROW KEYS TO AIM',3)); } catch { this.message('ARROW KEYS TO AIM',3); }
+    }
+    start() {
+      if(this.player.hp<=0||this.kills===this.enemies.length)this.reset();
+      this.running=true;this.$('.mf-modal').hidden=true;this.shell.focus({preventScroll:true});this.lockMouse();
+    }
+    pause() {
+      this.running=false;this.keys.clear();this.firing=false;this.touch={x:0,y:0};this.look=null;this.stickId=null;
+      this.$('.mf-stick i').style.transform='';this.$('.mf-modal').hidden=false;this.$('.mf-start').focus({preventScroll:true});
+      this.$('.mf-start').textContent=this.player.hp<=0||this.kills===this.enemies.length?'REDEPLOY →':'RESUME →';
+      if(document.pointerLockElement===this.canvas)document.exitPointerLock();
+    }
+    resize() {
+      // A bounded rendering resolution keeps raycasting inexpensive on phones.
+      const r=this.shell.getBoundingClientRect();this.w=Math.max(1,Math.min(960,Math.round(r.width)));
+      this.h=Math.max(1,Math.round(this.w*r.height/Math.max(1,r.width)));
+      this.canvas.width=this.w;this.canvas.height=this.h;this.depth=new Float32Array(this.w);
+      this.projection=this.w/(2*Math.tan(Math.PI/6));this.ctx.imageSmoothingEnabled=false;
+      this.viewPitch=clamp(this.viewPitch,-this.h*.18,this.h*.18);
+    }
+    wall(x,y) { return LEVEL[Math.floor(y)]?.[Math.floor(x)]??1; }
+    // DDA visits grid crossings, so distant walls cannot be skipped by a coarse step.
+    cast(x,y,dx,dy,max=32) {
+      let mx=Math.floor(x),my=Math.floor(y), side=0;
+      const ddx=Math.abs(1/(dx||1e-12)),ddy=Math.abs(1/(dy||1e-12));
+      const sx=dx<0?-1:1,sy=dy<0?-1:1;
+      let tx=(dx<0?x-mx:mx+1-x)*ddx,ty=(dy<0?y-my:my+1-y)*ddy,distance=0;
+      for(let i=0;i<128;i++){
+        if(tx<ty){mx+=sx;distance=tx;tx+=ddx;side=0;}else{my+=sy;distance=ty;ty+=ddy;side=1;}
+        const type=LEVEL[my]?.[mx]??1;
+        if(type||distance>max){const u=side?x+dx*distance:y+dy*distance;return{distance,type,side,u:u-Math.floor(u),mx,my};}
+      }
+      return{distance:max,type:1,side:0,u:0,mx,my};
+    }
+    canMove(x,y,r=.2) { return !this.wall(x-r,y-r)&&!this.wall(x+r,y-r)&&!this.wall(x-r,y+r)&&!this.wall(x+r,y+r); }
+    move(entity,dx,dy) {if(this.canMove(entity.x+dx,entity.y))entity.x+=dx;if(this.canMove(entity.x,entity.y+dy))entity.y+=dy;}
+    message(text,duration=1.5){this.$('.mf-toast').textContent=text;this.toastUntil=this.time+duration;}
+    reload(){if(!this.running||this.reloadUntil||this.ammo===24)return;this.reloadUntil=this.time+1.4;this.message('RELOADING',1.4);}
+    shoot() {
+      if(this.reloadUntil||this.time-this.shotAt<.14)return;
+      if(this.ammo<=0){this.reload();return;}
+      this.ammo--;this.shotAt=this.time;
+      // Hitscan: compare the shot with enemy radius AND the first wall along the ray.
+      const p=this.player,dx=Math.cos(p.a),dy=Math.sin(p.a),wall=this.cast(p.x,p.y,dx,dy).distance;
+      let target=null,nearest=wall;
+      for(const e of this.enemies){if(e.hp<=0)continue;const ex=e.x-p.x,ey=e.y-p.y,along=ex*dx+ey*dy,across=Math.abs(ex*dy-ey*dx);
+        const verticalAim=Math.abs(this.viewPitch*along/this.projection);
+        if(along>0&&along<nearest&&across<.3&&verticalAim<.48){target=e;nearest=along;}}
+      if(target){target.hp--;target.hit=this.time;if(target.hp===0){this.kills++;this.message('+100 / SENTRY DOWN');}}
+      this.updateHUD();
+      if(this.kills===this.enemies.length){this.message('CONTRACT COMPLETE',99);this.pause();this.$('.mf-copy').textContent='All six sentries neutralized. Outpost secured. Deploy again to replay the training contract.';}
+    }
+    updateHUD(){this.$('.mf-hp').textContent=Math.ceil(this.player.hp);this.$('.mf-health i').style.width=this.player.hp+'%';this.$('.mf-rounds').innerHTML=`${this.ammo} <span>/ ∞</span>`;this.$('.mf-mission').textContent=`Sentries neutralized: ${this.kills} / ${this.enemies.length}`;}
+    update(dt) {
+      this.time+=dt;
+      if(this.time>this.toastUntil)this.$('.mf-toast').textContent='';
+      if(this.reloadUntil&&this.time>=this.reloadUntil){this.ammo=24;this.reloadUntil=0;this.updateHUD();}
+      const p=this.player,k=this.keys;
+      p.a+=(Number(k.has('arrowright'))-Number(k.has('arrowleft')))*dt*2;
+      let forward=Number(k.has('w')||k.has('arrowup'))-Number(k.has('s')||k.has('arrowdown'))-this.touch.y;
+      let strafe=Number(k.has('d'))-Number(k.has('a'))+this.touch.x;
+      const len=Math.max(1,Math.hypot(forward,strafe));forward/=len;strafe/=len;
+      const speed=k.has('shift')?4:2.6,ca=Math.cos(p.a),sa=Math.sin(p.a);
+      this.move(p,(ca*forward-sa*strafe)*speed*dt,(sa*forward+ca*strafe)*speed*dt);
+      this.step+=Math.hypot(forward,strafe)*dt*9;
+      if(this.firing||k.has(' '))this.shoot();
+      if(!this.running)return;
+      for(const e of this.enemies){
+        if(e.hp<=0)continue;const dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy);
+        if(d<10&&this.cast(e.x,e.y,dx/d,dy/d).distance>d-.25){
+          if(d>1.25)this.move(e,dx/d*dt*.55,dy/d*dt*.55);
+          if(d<6&&this.time>e.attack){e.attack=this.time+1.6;p.hp=Math.max(0,p.hp-(d<2?9:4));this.hurtAt=this.time;this.updateHUD();}
+        }
+      }
+      if(p.hp<=0){this.message('SIGNAL LOST',99);this.pause();this.$('.mf-copy').textContent='The sentries got the upper hand. Keep moving, use cover, and reload before your next push.';}
+    }
+    // Procedural comic textures: flat color blocks, ink edges, cracks and hatch marks.
+    drawWorld() {
+      const c=this.ctx,w=this.w,h=this.h,p=this.player,horizon=h*.5+this.viewPitch;
+      c.fillStyle='#e8aa62';c.fillRect(0,0,w,horizon);
+      c.fillStyle='#f4cd87';c.fillRect(0,0,w,horizon*.62);
+      c.fillStyle='#ffe7a1';c.beginPath();c.arc(w*.76,horizon*.38,Math.min(w,h)*.08,0,TAU);c.fill();
+      c.fillStyle='#9e7558';c.beginPath();c.moveTo(0,horizon);for(let i=0;i<=12;i++)c.lineTo(w*i/12,horizon-18-(Math.sin(i*2.8)+1)*30);c.lineTo(w,horizon);c.fill();
+      c.fillStyle='#73564a';c.fillRect(0,horizon,w,h-horizon);
+      c.fillStyle='#89684f';c.fillRect(0,horizon+(h-horizon)*.45,w,(h-horizon)*.55);
+      // Floor grid projected from world coordinates for a strong sense of movement.
+      const ca=Math.cos(p.a),sa=Math.sin(p.a),plane=Math.tan(Math.PI/6);
+      for(let y=Math.max(0,Math.floor(horizon+3));y<h;y+=3){
+        const d=this.projection*.5/(y-horizon);if(d>20)continue;
+        for(let x=0;x<w;x+=5){const q=(2*x/w-1)*plane,fx=p.x+(ca-sa*q)*d,fy=p.y+(sa+ca*q)*d;
+          if(fx-Math.floor(fx)<.025||fy-Math.floor(fy)<.025){c.fillStyle='#372e2b55';c.fillRect(x,y,5,3);}}
+      }
+      const palettes={1:['#d89045','#ad6936','#f7bf69'],2:['#318e91','#246269','#65b7ae'],3:['#d3a43d','#9f7231','#f4d46b']};
+      let prevKey='';
+      for(let x=0;x<w;x+=2){
+        const q=(2*(x+.5)/w-1)*plane,dx=ca-sa*q,dy=sa+ca*q;
+        const hit=this.cast(p.x,p.y,dx,dy),d=Math.max(.05,hit.distance),size=this.projection/d;
+        this.depth[x]=d;if(x+1<w)this.depth[x+1]=d;
+        const top=horizon-size/2,bottom=horizon+size/2,colors=palettes[hit.type]||palettes[1];
+        c.fillStyle=colors[hit.side?1:0];c.fillRect(x,top,2,size);
+        c.fillStyle=colors[2];c.fillRect(x,top+size*.03,2,size*.045);
+        c.fillStyle='#151a21';c.fillRect(x,top,2,Math.max(2,size*.018));c.fillRect(x,bottom-Math.max(2,size*.018),2,Math.max(2,size*.018));
+        const key=hit.mx+','+hit.my+','+hit.side;
+        if(key!==prevKey||hit.u<.018||hit.u>.982){c.fillStyle='#1a2025';c.fillRect(x,top,2,size);}prevKey=key;
+        // Horizontal mortar / steel panel seams.
+        c.fillStyle='#272c2a';for(let j=1;j<4;j++)c.fillRect(x,top+size*j/4,2,Math.max(1,size*.008));
+        if(hit.type===3&&Math.floor(hit.u*10)%2===0){c.fillStyle='#222b30';c.fillRect(x,top+size*.64,2,size*.19);}
+        if(hit.type===2&&hit.u>.16&&hit.u<.84){c.fillStyle='#163c43';c.fillRect(x,top+size*.3,2,size*.03);c.fillRect(x,top+size*.38,2,size*.03);}
+        if(hit.type===1&&Math.floor(hit.u*28)%7===0){c.fillStyle='#603f2d';c.fillRect(x,top+size*(.12+hit.u*.25),2,size*.045);}
+        if(d>5){c.fillStyle=`rgba(35,28,32,${Math.min(.55,(d-5)*.035)})`;c.fillRect(x,top,2,size);}
+      }
+    }
+    // Render a billboard once, then copy visible strips against the wall depth buffer.
+    droneSprite() {
+      const sprite=document.createElement('canvas');sprite.width=128;sprite.height=160;
+      const c=sprite.getContext('2d');c.lineWidth=6;c.strokeStyle='#101720';
+      const poly=(points,fill)=>{c.fillStyle=fill;c.beginPath();points.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fill();c.stroke();};
+      c.fillStyle='#0005';c.beginPath();c.ellipse(64,149,40,8,0,0,TAU);c.fill();
+      poly([[42,108],[58,108],[54,139],[34,139]],'#253b46');poly([[70,108],[86,108],[96,139],[74,139]],'#253b46');
+      poly([[25,61],[40,70],[31,114],[14,103]],'#cf5d42');poly([[88,68],[106,59],[115,103],[98,115]],'#cf5d42');
+      poly([[35,58],[94,58],[99,101],[82,119],[44,115],[29,94]],'#ef8b50');poly([[65,61],[94,58],[99,101],[82,119],[64,115]],'#b7503c');
+      poly([[35,19],[86,15],[99,49],[86,65],[37,62],[27,43]],'#d2d8bf');poly([[78,19],[86,15],[99,49],[86,65],[77,59]],'#879b96');
+      c.fillStyle='#192832';c.fillRect(34,33,56,16);c.fillStyle='#ff4e42';c.fillRect(42,36,38,7);
+      c.fillStyle='#ffe09a';c.fillRect(41,69,18,7);c.fillStyle='#242f37';c.fillRect(53,86,27,18);c.strokeRect(53,86,27,18);
+      return sprite;
+    }
+    drawEnemies() {
+      if(!this.sprite)this.sprite=this.droneSprite();
+      const p=this.player,c=this.ctx,ca=Math.cos(p.a),sa=Math.sin(p.a),horizon=this.h*.5+this.viewPitch;
+      const visible=this.enemies.filter(e=>e.hp>0).map(e=>{const dx=e.x-p.x,dy=e.y-p.y;return{e,z:dx*ca+dy*sa,lateral:-dx*sa+dy*ca};}).filter(v=>v.z>.15).sort((a,b)=>b.z-a.z);
+      for(const {e,z,lateral} of visible){const height=this.projection*.88/z,width=height*.8,sx=this.w*.5+lateral*this.projection/z-width/2,sy=horizon-height*.5+Math.sin(this.time*3+e.phase)*height*.025;
+        const left=Math.max(0,Math.floor(sx)),right=Math.min(this.w,Math.ceil(sx+width));
+        for(let x=left;x<right;x++){if(z>=this.depth[x])continue;const u=clamp((x-sx)/width*128,0,127);c.drawImage(this.sprite,u,0,1,160,x,sy,1,height);
+          if(this.time-e.hit<.12){c.fillStyle='#fff9';c.fillRect(x,sy+height*.2,1,height*.55);}}
+      }
+    }
+    drawWeapon() {
+      const c=this.ctx,scale=Math.min(this.w/900,this.h/550)*1.2;
+      const recoil=Math.max(0,1-(this.time-this.shotAt)/.12),reload=this.reloadUntil?Math.sin(clamp((this.reloadUntil-this.time)/1.4,0,1)*Math.PI):0;
+      c.save();c.translate(this.w*.59+Math.sin(this.step)*4,this.h+Math.abs(Math.cos(this.step))*3+reload*110+recoil*25);c.scale(scale,scale);c.lineWidth=5;c.strokeStyle='#0c131b';c.lineJoin='round';
+      const poly=(pts,color)=>{c.fillStyle=color;c.beginPath();pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fill();c.stroke();};
+      poly([[-90,10],[-95,-80],[-42,-135],[10,-100],[40,10]],'#a1795a');poly([[83,10],[70,-93],[105,-118],[145,-70],[160,10]],'#b78a65');
+      poly([[-55,10],[-55,-107],[-28,-165],[49,-164],[89,-95],[93,10]],'#273b49');
+      poly([[-40,-103],[-27,-186],[-8,-234],[36,-234],[61,-187],[65,-103]],'#4a6873');
+      poly([[13,-105],[13,-213],[36,-234],[61,-187],[65,-103]],'#294450');
+      poly([[-33,-147],[-25,-187],[49,-187],[58,-147]],'#edb14f');
+      poly([[-9,-213],[-7,-252],[29,-252],[36,-213]],'#1b2a34');
+      c.fillStyle='#a4b9b4';c.fillRect(-1,-248,20,8);c.fillStyle='#e55e3c';c.fillRect(-20,-169,64,7);
+      c.fillStyle='#142831';c.fillRect(-25,-126,72,14);c.fillStyle='#d4c9a9';c.font='bold 14px monospace';c.fillText('VX–7',-20,-110);
+      if(recoil>.3){poly([[10,-260],[-27,-287],[-7,-289],[-24,-321],[8,-305],[26,-337],[30,-302],[65,-319],[46,-286],[63,-269],[28,-268]],'#ffbf3b');poly([[6,-265],[0,-291],[20,-311],[31,-279],[39,-268]],'#fff2bc');}
+      c.restore();
+    }
+    drawMap() {
+      const c=this.ctx,s=Math.max(3,Math.min(7,this.w/140)),ox=this.w-16*s-24,oy=76;
+      c.fillStyle='#101923bb';c.fillRect(ox-5,oy-5,16*s+10,16*s+10);
+      LEVEL.forEach((row,y)=>row.forEach((v,x)=>{c.fillStyle=v?'#e2b768':'#25323a';c.fillRect(ox+x*s,oy+y*s,s-1,s-1);}));
+      for(const e of this.enemies)if(e.hp>0){c.fillStyle='#fa6751';c.fillRect(ox+e.x*s-1.5,oy+e.y*s-1.5,3,3);}
+      const p=this.player;c.fillStyle='#faf2d8';c.beginPath();c.arc(ox+p.x*s,oy+p.y*s,2.5,0,TAU);c.fill();c.strokeStyle='#fff';c.lineWidth=1.5;c.beginPath();c.moveTo(ox+p.x*s,oy+p.y*s);c.lineTo(ox+(p.x+Math.cos(p.a)*1.2)*s,oy+(p.y+Math.sin(p.a)*1.2)*s);c.stroke();
+    }
+    render() {
+      this.drawWorld();this.drawEnemies();this.drawWeapon();this.drawMap();
+      if(this.time-this.hurtAt<.35){this.ctx.fillStyle=`rgba(220,45,35,${(.35-(this.time-this.hurtAt))*.65})`;this.ctx.fillRect(0,0,this.w,this.h);}
+    }
+    loop(now) {const dt=Math.min(.04,(now-this.last)/1000);this.last=now;if(this.running)this.update(dt);this.render();this.frame=requestAnimationFrame(this.loop);}
+    destroy(){cancelAnimationFrame(this.frame);this.abort.abort();this.resizeObserver.disconnect();if(document.pointerLockElement===this.canvas)document.exitPointerLock();}
+  }
+  customElements.define('midnry-fps',MidnryFPS);
+})();
+</script>
+</body>
+</html>

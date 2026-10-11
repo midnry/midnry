@@ -36,7 +36,7 @@ function Home() {
         </div>
       </section>
 
-      <FeaturedSix />
+      <FeaturedApps />
 
       <section className="mt-10 rounded-3xl bg-card p-6 shadow-line sm:p-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -103,7 +103,7 @@ const PICKS: { slug: string; tint: string }[] = [
   { slug: "invoice", tint: "from-amber-500/15 evening:from-orange-400/20" },
 ];
 
-function FeaturedSix() {
+function FeaturedApps() {
   return (
     <section className="mt-12" aria-labelledby="featured-heading">
       <div className="mb-5 flex items-end justify-between gap-4">
@@ -111,7 +111,7 @@ function FeaturedSix() {
           <h2 id="featured-heading" className="font-display text-3xl tracking-tight">
             Start with these
           </h2>
-          <p className="mt-1 text-sm text-muted">Our five most useful apps, and a game.</p>
+          <p className="mt-1 text-sm text-muted">Our five most useful apps, and two games.</p>
         </div>
         <Link to="/apps" className="hidden min-h-11 shrink-0 items-center text-sm font-medium text-ink underline underline-offset-4 sm:inline-flex">
           See all apps
@@ -159,6 +159,20 @@ function FeaturedSix() {
           <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#a7f0d2]">
             See the game <span aria-hidden className="transition group-hover:translate-x-0.5">→</span>
           </span>
+        </Link>
+        <Link
+          to="/discover/outpost-zero"
+          className="group flex flex-col rounded-3xl border-2 border-[#080e15] bg-[#18212b] p-5 text-[#fff4dc] shadow-line transition hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          <div className="flex items-center gap-3">
+            <img src="/outpost-zero.svg" alt="" className="size-12 shrink-0 rounded-xl" />
+            <div className="min-w-0">
+              <p className="text-xl font-black tracking-tight">Outpost Zero</p>
+              <p className="text-xs font-semibold tracking-widest text-[#ffc455] uppercase">Free game · Arena shooter</p>
+            </div>
+          </div>
+          <p className="mt-3 flex-1 text-sm text-pretty text-[#c6c8c6]">A comic-styled first-person shooter. Take cover, reload, and take down six rogue sentries. Desktop and touch controls.</p>
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#ffc455]">See the game <span aria-hidden className="transition group-hover:translate-x-0.5">→</span></span>
         </Link>
       </div>
     </section>
