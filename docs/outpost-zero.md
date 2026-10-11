@@ -255,3 +255,9 @@ Hold Shift to sprint on a keyboard. On touchscreens, toggle SPRINT and push the 
 On death, the player camera drops and rolls with a fade to SIGNAL LOST for 1.2 seconds before the round debrief. Reduced-motion users get a 0.35-second fade without camera movement. A living Duo partner is spectated after the death sequence; an ended team gets its debrief. Surviving victories show the debrief immediately. Visible tactical rivals collapse briefly instead of disappearing immediately. Replay and online round starts clear death and sprint state.
 
 Validation: `node --test scripts/outpost-movement.test.mjs` verifies movement, cooldown, momentum, collisions and snapshot restoration. `node scripts/check-outpost-movement.mjs [base-url]` verifies keyboard/touch controls, death-before-results, camera collapse, replay reset, reduced-motion classic death and Duo spectating.
+
+### Loading showcase
+
+The startup screen cycles through stills captured from the tactical renderer: Dust Outpost, Skyport, Freight Rush, VX–7 Carbine, Flare Launcher and the operator. Matching field tips sit above real asset progress. Slides advance every 4.5 seconds; arrows and a pause button work before game modules finish downloading. Reduced motion starts paused. Optional image failures retain the previous still and never fail game loading; the carousel stops as soon as the playable menu is ready. The six compressed WebP assets total under 250 KB and are loaded on demand.
+
+Validate with `node scripts/check-outpost-loading.mjs [base-url]`.
