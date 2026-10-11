@@ -44,8 +44,15 @@ mkdirSync(screenshotDir, { recursive: true });
       });
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
-      await page.route("http://outpost.test/**", (route) =>
-        route.fulfill({
+      await page.route("http://outpost.test/**", (route) => {
+        const pathname = new URL(route.request().url()).pathname;
+        if (/^\/characters\/(ember|nomad|thorn|backs)-atlas\.webp$/.test(pathname)) {
+          return route.fulfill({
+            contentType: "image/webp",
+            body: readFileSync(new URL("../public/games" + pathname, import.meta.url)),
+          });
+        }
+        return route.fulfill({
           contentType: route.request().url().endsWith(".js") ? "text/javascript" : "text/html",
           body: route.request().url().endsWith("outpost-sim.js")
             ? sim
@@ -64,8 +71,8 @@ mkdirSync(screenshotDir, { recursive: true });
                         : route.request().url().endsWith("outpost-ui.js")
                           ? menuUI
                           : html,
-        }),
-      );
+        });
+      });
       await page.goto("http://outpost.test/");
       await page.getByRole("button", { name: "Play Solo", exact: true }).click();
       const rules = await page.evaluate(() => {

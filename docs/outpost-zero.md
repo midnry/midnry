@@ -1,6 +1,6 @@
 # Midnry — Outpost Zero
 
-The game uses nine small static files: `public/games/outpost-zero.html` (Canvas rendering, procedural art, scoped CSS, controls and lobby) and `public/games/outpost-sim.js` (shared match rules), and `public/games/outpost-content.js` (maps, palettes, scenery and weapon definitions), plus `public/games/outpost-academy.js` (tutorial, field guide and graphics materials), and `public/games/outpost-art.js` (scenery, animations, lighting and cosmetic effects), `public/games/outpost-retention.js` (sound, results and locker UI) and `public/games/outpost-progression.js` (device-local cosmetic rewards), `public/games/outpost-characters.js` (painted character rigs and directional animation), plus `public/games/outpost-ui.js` (menu hierarchy, shared settings panel and map/weapon previews). Serve all nine from the same directory over HTTP. Offline play needs no backend or external assets; online rooms use the Midnry API and database. No game framework is required. ES modules require a web server rather than opening a local file directly.
+The game uses nine small static files: `public/games/outpost-zero.html` (Canvas rendering, procedural art, scoped CSS, controls and lobby) and `public/games/outpost-sim.js` (shared match rules), and `public/games/outpost-content.js` (maps, palettes, scenery and weapon definitions), plus `public/games/outpost-academy.js` (tutorial, field guide and graphics materials), and `public/games/outpost-art.js` (scenery, animations, lighting and cosmetic effects), `public/games/outpost-retention.js` (sound, results and locker UI) and `public/games/outpost-progression.js` (device-local cosmetic rewards), `public/games/outpost-characters.js` (painted character rigs and directional animation), plus `public/games/outpost-ui.js` (menu hierarchy, shared settings panel and map/weapon previews). Serve all nine modules plus the four bundled WebP atlases in `public/games/characters/` over HTTP. Offline play needs no backend or externally hosted assets; online rooms use the Midnry API and database. No game framework is required. ES modules require a web server rather than opening a local file directly.
 
 ## Midnry integration
 
@@ -8,7 +8,7 @@ The homepage links to `/discover/outpost-zero`, which launches `/games/outpost-z
 
 ## Embed elsewhere
 
-For the strongest isolation from your site's existing CSS and scripts, serve all nine files in `/games/`, then embed:
+For the strongest isolation from your site's existing CSS and scripts, serve all nine files in `/games/` and copy `public/games/characters/` to `/games/characters/`, then embed:
 
 ```html
 <iframe
@@ -177,12 +177,14 @@ Changing a graphics preset, contact shadows or material lighting opens **Apply g
 
 `node scripts/check-outpost-qol.mjs [baseURL]` covers graphics apply/cancel/Escape and saved preferences, saved cosmetic preservation, standalone and embedded exit, rejected messages from the wrong window, online forfeit and host transfer.
 
-## Painted character rigs
+## Illustrated anime characters
 
-`outpost-characters.js` replaces robot silhouettes with three original human archetypes: Ember Scout, Iron Nomad and Thorn Warden. Loadout families select their clothing and equipment, while stable entity IDs vary hair and facial details. Angular facial planes, eyes, brows, scars, stitched coats, scarves, armor rivets, belt pouches, boots and weapon details use layered color and ink outlines. Duo allies retain a mint identification stripe.
+`outpost-characters.js` uses three original illustrated archetypes: Ember Scout, Iron Nomad and Thorn Warden. Four locally hosted WebP atlases provide 60 drawings in total: 16 poses per character plus four back-running poses each. Detailed eyes, natural adult proportions, hair strands, fabric folds, armor and shaded hands replace geometric cutout art. Rifle, heavy and throwing/blade loadout families select the matching archetype; Duo allies retain a mint identification badge and existing partner labels. Character equipment illustrates its family rather than every individual loadout; gameplay and first-person weapon selection remain governed by `outpost-content.js`.
 
-Eight camera-relative directions select front, quarter, profile and back views. Animation states include idle breathing and blinking, eight-frame articulated walking, firing recoil, six-frame magazine handling, hit flinches and a brief defeat fall. Reduced-motion preferences stop looping movement. These are original procedural 2.5D rigs, not film-quality 3D assets.
+Eight camera-relative directions select front, quarter, profile and mirrored/back views. Four-phase illustrated running cycles cover front, quarter and rear movement. Idle breathing, firing recoil, equipment handling, expressive hit reactions and a kneeling defeat pose use match timestamps. Reload transitions select the illustrated handling pose, and rear attack reactions retain the rear silhouette. Reduced-motion preferences stop looping movement. This is pose-based 2D animation in a raycaster, rather than a full 3D animation system.
 
-Performance, Balanced and High generate 192×288, 288×432 and 384×576 character frames respectively. Only visible, wall-unoccluded characters request frames; a 64-entry LRU limits canvas memory. Changing graphics clears this cache. Animation reads shared match timestamps and positions without changing health, collisions, hitboxes or online authority. Defeated characters disappear after 0.9 seconds and respawns reset the defeat pose.
+The atlases load and decode asynchronously; the prior procedural rig provides a fallback if artwork is still loading or unavailable. Explicit alpha bounds and lazy connected-silhouette extraction prevent neighboring frames leaking into a pose. Each original atlas remains untouched; runtime frames are cropped into Canvas buffers. Smooth character sampling preserves thin ink lines, while walls retain their comic rendering.
 
-Validate with `node scripts/check-outpost-characters.mjs [base-url]`: all states and angles, loadouts, resolution tiers, cache bounds, unchanged simulation snapshots, reduced motion and desktop/mobile behavior.
+Performance, Balanced and High generate 192×288, 288×432 and 384×576 composed character frames respectively. Only visible, wall-unoccluded characters request frames; a 64-entry LRU limits composed canvas memory, and at most 60 source cells are extracted per game instance. Changing graphics clears composed frames. Animation reads shared match timestamps and positions without changing health, collisions, hitboxes or online authority. Defeated characters disappear after 0.9 seconds and respawns reset the defeat pose.
+
+Validate with `node scripts/check-outpost-characters.mjs [base-url]`: decoded art, source cells, states and angles, loadouts, resolution tiers, cache bounds, unchanged simulation snapshots, wall occlusion, respawns, reduced motion and desktop/mobile behavior.
