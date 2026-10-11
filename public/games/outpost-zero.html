@@ -1808,40 +1808,7 @@
             this.retention = new Retention(this);
             this.ui = new MenuUI(this);
             if (this.useMilitary) {
-              this.shell.classList.add("mf-military");
-              this.$(".mf-tag").textContent = "TACTICAL 3D / LOADING";
-              this.loadingTimer = setTimeout(() => {
-                this.fallbackMilitary(new Error("Graphics loading timed out. Please retry on a stable connection."));
-              }, 45000);
-              import("./outpost-military.js?v=tablet-refresh-20261011")
-                .then(async ({ MilitaryRenderer }) => {
-                  if (this.abort.signal.aborted || !this.loading) return;
-                  const renderer = new MilitaryRenderer(this, (done, total) => {
-                    if (!this.loading || this.abort.signal.aborted) return;
-                    this.loadingScreen.querySelector("progress").value = Math.round(done / total * 90);
-                    this.loadingScreen.querySelector(".mf-loadpercent").textContent = `${Math.round(done / total * 90)}%`;
-                    this.loadingScreen.querySelector(".mf-loadstatus").textContent =
-                      `Preparing your deployment… ${done} / ${total}`;
-                  });
-                  this.military = renderer;
-                  await renderer.ready;
-                  if (this.abort.signal.aborted || renderer.disposed || renderer.contextFailed || !this.loading) {
-                    renderer.dispose();
-                    return;
-                  }
-                  if (renderer.assetErrors.length) {
-                    throw new Error("Some 3D assets could not be downloaded. Please retry.");
-                  }
-                  this.militaryLoaded = true;
-                  this.resize();
-                  this.ui.previewKey = null;
-                  this.ui.refresh();
-                  // Compile and draw the scene before dismissing the loading screen.
-                  this.render();
-                  this.finishLoading();
-                  this.$(".mf-tag").textContent = "TACTICAL 3D";
-                })
-                .catch((error) => this.fallbackMilitary(error));
+              this.startMilitary();
             } else {
               requestAnimationFrame(() => this.finishLoading());
             }
@@ -1850,6 +1817,67 @@
             this.resize();
             this.loop = this.loop.bind(this);
             this.frame = requestAnimationFrame(this.loop);
+          }
+          startMilitary(safeMode = false) {
+            const attempt = this.graphicsAttempt = (this.graphicsAttempt || 0) + 1;
+            this.loading = true;
+            this.shell.inert = true;
+            this.loadingScreen.hidden = false;
+            this.shell.classList.add("mf-military");
+            this.$(".mf-tag").textContent = "TACTICAL 3D / LOADING";
+            const current = () => !this.abort.signal.aborted && this.graphicsAttempt === attempt;
+            const watchProgress = () => {
+              clearTimeout(this.loadingTimer);
+              this.loadingTimer = setTimeout(() => {
+                if (current()) this.recoverMilitary(new Error("Graphics loading stalled. Please retry on a stable connection."));
+              }, 45000);
+            };
+            this.loadingScreen.querySelector("progress").value = 0;
+            this.loadingScreen.querySelector(".mf-loadpercent").textContent = "0%";
+            this.loadingScreen.querySelector(".mf-loadstatus").textContent = safeMode
+              ? "Optimizing cinematic 3D for this device…" : "Preparing your deployment…";
+            watchProgress();
+            import("./outpost-military.js?v=ipad-3d-20261011")
+              .then(async ({ MilitaryRenderer }) => {
+                if (!current()) return;
+                const renderer = new MilitaryRenderer(this, (done, total) => {
+                  if (!current() || !this.loading) return;
+                  watchProgress();
+                  this.loadingScreen.querySelector("progress").value = Math.round(done / total * 90);
+                  this.loadingScreen.querySelector(".mf-loadpercent").textContent = `${Math.round(done / total * 90)}%`;
+                  this.loadingScreen.querySelector(".mf-loadstatus").textContent =
+                    `Preparing your deployment… ${done} / ${total}`;
+                }, { safeMode });
+                this.military = renderer;
+                await renderer.ready;
+                if (!current() || renderer.disposed || renderer.contextFailed || !this.loading) {
+                  renderer.dispose();
+                  return;
+                }
+                if (renderer.assetErrors.length) throw new Error("Some 3D assets could not be downloaded. Please retry.");
+                this.militaryLoaded = true;
+                this.resize();
+                this.ui.previewKey = null;
+                this.ui.refresh();
+                this.render();
+                if (!current()) return;
+                this.finishLoading();
+                this.$(".mf-tag").textContent = safeMode ? "TACTICAL 3D / COMPATIBLE" : "TACTICAL 3D";
+              })
+              .catch((error) => { if (current()) this.recoverMilitary(error); });
+          }
+          recoverMilitary(error) {
+            if (this.abort.signal.aborted) return;
+            if (this.safe3DRetry) {
+              this.fallbackMilitary(error);
+              return;
+            }
+            this.safe3DRetry = true;
+            if (this.running) this.pause();
+            this.militaryLoaded = false;
+            this.military?.dispose();
+            this.military = null;
+            this.startMilitary(true);
           }
           finishLoading() {
             clearTimeout(this.loadingTimer);
@@ -1863,6 +1891,7 @@
           fallbackMilitary(error) {
             if (this.abort.signal.aborted) return;
             if (this.running) this.pause();
+            this.graphicsAttempt = (this.graphicsAttempt || 0) + 1;
             this.militaryLoaded = false;
             this.military?.dispose();
             this.military = null;

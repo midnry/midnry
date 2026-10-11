@@ -16043,8 +16043,28 @@ function Jd(e, t = 512) {
 	return i.globalAlpha = 1, qd.set(n, r), r;
 }
 //#endregion
+//#region scripts/outpost-military/compatibility.js
+function Yd(e) {
+	return /iPad|iPhone|iPod/.test(e.userAgent || "") || /Mac/.test(e.platform || "") && e.maxTouchPoints > 1;
+}
+function Xd({ appleTouch: e = !1, safeMode: t = !1, halfFloat: n = !0, maxTextureSize: r = 4096 } = {}) {
+	return {
+		safeMode: t,
+		halfFloat: n,
+		maxTextureSize: r,
+		maxPixels: t ? 6e5 : e ? 1e6 : 24e5,
+		maxShadowSize: Math.min(r, t ? 512 : e ? 1024 : 4096),
+		ambientOcclusion: !t && !e && n,
+		reflections: !t
+	};
+}
+function Zd(e, t, n) {
+	let r = Math.min(1, Math.sqrt(n.maxPixels / (e * t)), n.maxTextureSize / Math.max(e, t));
+	return [Math.max(1, Math.floor(e * r)), Math.max(1, Math.floor(t * r))];
+}
+//#endregion
 //#region scripts/outpost-military/renderer.js
-var $ = 3, Yd = "/games/military/", Xd = Math.PI * 2, Zd = {
+var $ = 3, Qd = "/games/military/", $d = Math.PI * 2, ef = {
 	outpost: {
 		floor: "#a69980",
 		fog: "#bbc2c3",
@@ -16070,26 +16090,31 @@ var $ = 3, Yd = "/games/military/", Xd = Math.PI * 2, Zd = {
 		fog: "#c4c1ba",
 		metal: "#81867b"
 	}
-}, Qd = class {
-	constructor(e, t = () => {}) {
+}, tf = class {
+	constructor(e, t = () => {}, { safeMode: n = !1 } = {}) {
 		this.g = e, this.onProgress = t, this.disposed = !1, this.actors = /* @__PURE__ */ new Map(), this.crates = /* @__PURE__ */ new Map(), this.cores = /* @__PURE__ */ new Map(), this.projectiles = /* @__PURE__ */ new Map(), this.fields = /* @__PURE__ */ new Map(), this.materials = /* @__PURE__ */ new Set(), this.geometries = /* @__PURE__ */ new Map(), this.textures = /* @__PURE__ */ new Set(), this.worldTextures = /* @__PURE__ */ new Set(), this.lastTime = 0, this.lastPose = -1, this.mapKey = "", this.wallKeys = "", this.seenShots = /* @__PURE__ */ new Map(), this.tracers = [], this.lastPreset = "", this.assetErrors = [], this.motion = matchMedia("(prefers-reduced-motion: reduce)");
-		let n, r;
+		let r = Yd(navigator), i, a;
 		for (let e of [{
-			antialias: !0,
+			antialias: !r && !n,
 			powerPreference: "default"
 		}, {
 			antialias: !1,
 			powerPreference: "low-power"
-		}]) if (n = document.createElement("canvas"), r = n.getContext("webgl2", {
+		}]) if (i = document.createElement("canvas"), a = i.getContext("webgl2", {
 			...e,
 			alpha: !1
-		}), r) break;
-		if (!r) throw Error("This browser could not start WebGL 2 graphics.");
+		}), a) break;
+		if (!a) throw Error("This browser could not start WebGL 2 graphics.");
 		this.renderer = new mu({
-			canvas: n,
-			context: r
+			canvas: i,
+			context: a
+		}), this.profile = Xd({
+			appleTouch: r,
+			safeMode: n,
+			halfFloat: this.renderer.extensions.has("EXT_color_buffer_float") || this.renderer.extensions.has("EXT_color_buffer_half_float"),
+			maxTextureSize: this.renderer.capabilities.maxTextureSize
 		}), this.renderer.setPixelRatio(1), this.renderer.outputColorSpace = T, this.renderer.toneMapping = 4, this.renderer.toneMappingExposure = .95, this.renderer.info.autoReset = !1, this.renderer.shadowMap.enabled = !0, this.renderer.shadowMap.type = 2, this.contextLost = (t) => {
-			t.preventDefault(), !this.disposed && (this.contextFailed = !0, e.fallbackMilitary(/* @__PURE__ */ Error("The graphics context was lost.")));
+			t.preventDefault(), !this.disposed && (this.contextFailed = !0, e.recoverMilitary(/* @__PURE__ */ Error("The graphics context was lost.")));
 		}, this.renderer.domElement.addEventListener("webglcontextlost", this.contextLost), this.renderer.domElement.className = "mf-webgl", this.renderer.domElement.setAttribute("aria-hidden", "true"), this.renderer.domElement.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:0;width:100%;height:100%;", e.shell.insertBefore(this.renderer.domElement, e.canvas), e.canvas.style.cssText = "position:relative;z-index:1;background:transparent", this.scene = new gr(), this.scene.background = new Y("#b8c6d0"), this.scene.fog = new hr("#b8c6d0", .018), this.world = new fr(), this.scene.add(this.world), this.dynamic = new fr(), this.scene.add(this.dynamic), this.camera = new or(60, 1, .06, 260), this.camera.rotation.order = "YXZ", this.hemisphere = new ko("#adbcd0", "#372b20", .55), this.scene.add(this.hemisphere), this.sun = new Uo("#ffddb0", 4.2), this.sun.position.set(-25, 38, -22), this.sun.castShadow = !0, this.sun.shadow.mapSize.set(1024, 1024), Object.assign(this.sun.shadow.camera, {
 			left: -35,
 			right: 35,
@@ -16098,14 +16123,18 @@ var $ = 3, Yd = "/games/military/", Xd = Math.PI * 2, Zd = {
 			near: 1,
 			far: 140
 		}), this.sun.shadow.bias = -3e-4, this.sun.shadow.normalBias = .03, this.scene.add(this.sun, this.sun.target), this.rim = new Uo("#94b9e7", 1.15), this.rim.position.set(25, 15, 35), this.scene.add(this.rim), this.weaponScene = new gr(), this.weaponCamera = new or(52, 1, .01, 10), this.weaponScene.add(new ko("#e5ecf1", "#786852", 2));
-		let i = new Uo("#fff0d7", 4);
-		i.position.set(-2, 3, -4), this.weaponScene.add(i), this.rig = new fr(), this.weaponScene.add(this.rig), this.flash = new Bo("#ffdcb0", 0, 4), this.flash.position.set(.22, -.08, -.95), this.weaponScene.add(this.flash), this.boxGeometry = this.geo("rounded", () => new Sd(1, 1, 1, 3, .025)), this.wallGeometry = this.geo("wall", () => new Sd(1, 1, 1, 2, .008)), this.composer = new jd(this.renderer), this.composer.addPass(new Md(this.scene, this.camera)), this.ao = new Ld(this.scene, this.camera, 512, 512, 12), this.ao.kernelRadius = .7, this.ao.minDistance = .001, this.ao.maxDistance = .07, this.composer.addPass(this.ao);
-		let a = new Md(this.weaponScene, this.weaponCamera);
-		a.clear = !1, a.clearDepth = !0, this.composer.addPass(a), this.grade = new Od({
-			uniforms: { tDiffuse: { value: null } },
-			vertexShader: "varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }",
-			fragmentShader: "uniform sampler2D tDiffuse; varying vec2 vUv;\n        void main(){ vec4 c=texture2D(tDiffuse,vUv);\n          // Subtle warm highlights, cool shadows, and lens falloff; no animated grain.\n          float l=dot(c.rgb,vec3(.2126,.7152,.0722));\n          c.rgb=mix(vec3(l),c.rgb,1.04);\n          c.rgb*=mix(vec3(.90,.97,1.06),vec3(1.045,1.015,.97),smoothstep(.15,1.1,l));\n          vec2 d=(vUv-.5)*vec2(1.,.75);\n          c.rgb*=1.-.32*dot(d,d); gl_FragColor=c; }"
-		}), this.composer.addPass(this.grade), this.composer.addPass(new zd()), this.ready = this.loadAssets().then(() => {
+		let o = new Uo("#fff0d7", 4);
+		if (o.position.set(-2, 3, -4), this.weaponScene.add(o), this.rig = new fr(), this.weaponScene.add(this.rig), this.flash = new Bo("#ffdcb0", 0, 4), this.flash.position.set(.22, -.08, -.95), this.weaponScene.add(this.flash), this.boxGeometry = this.geo("rounded", () => new Sd(1, 1, 1, 3, .025)), this.wallGeometry = this.geo("wall", () => new Sd(1, 1, 1, 2, .008)), !n) {
+			let e = new Ve(1, 1, { type: this.profile.halfFloat ? f : l });
+			this.composer = new jd(this.renderer, e), this.composer.addPass(new Md(this.scene, this.camera)), this.profile.ambientOcclusion && (this.ao = new Ld(this.scene, this.camera, 512, 512, 12), this.ao.kernelRadius = .7, this.ao.minDistance = .001, this.ao.maxDistance = .07, this.composer.addPass(this.ao));
+			let t = new Md(this.weaponScene, this.weaponCamera);
+			t.clear = !1, t.clearDepth = !0, this.composer.addPass(t), this.grade = new Od({
+				uniforms: { tDiffuse: { value: null } },
+				vertexShader: "varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }",
+				fragmentShader: "uniform sampler2D tDiffuse; varying vec2 vUv;\n        void main(){ vec4 c=texture2D(tDiffuse,vUv);\n          // Subtle warm highlights, cool shadows, and lens falloff; no animated grain.\n          float l=dot(c.rgb,vec3(.2126,.7152,.0722));\n          c.rgb=mix(vec3(l),c.rgb,1.04);\n          c.rgb*=mix(vec3(.90,.97,1.06),vec3(1.045,1.015,.97),smoothstep(.15,1.1,l));\n          vec2 d=(vUv-.5)*vec2(1.,.75);\n          c.rgb*=1.-.32*dot(d,d); gl_FragColor=c; }"
+			}), this.composer.addPass(this.grade), this.composer.addPass(new zd());
+		}
+		this.ready = this.loadAssets().then(() => {
 			this.disposed || (this.mapKey = "", this.updateWeapon());
 		}), this.configure(), this.resize();
 	}
@@ -16142,7 +16171,7 @@ var $ = 3, Yd = "/games/military/", Xd = Math.PI * 2, Zd = {
 	async loadAssets() {
 		let t = 0, n = () => this.onProgress(++t, 14), r = new Do(), i = async (t) => {
 			try {
-				let n = await r.loadAsync(Yd + t);
+				let n = await r.loadAsync(Qd + t);
 				return this.disposed ? (n.dispose(), null) : (n.wrapS = n.wrapT = e, n.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy()), this.textures.add(n), n);
 			} catch {
 				return this.assetErrors.push(t), null;
@@ -16165,7 +16194,7 @@ var $ = 3, Yd = "/games/military/", Xd = Math.PI * 2, Zd = {
 		].map((e) => i("textures/" + e)));
 		[this.groundColor, this.groundNormal, this.groundRough, this.metalColor, this.metalNormal, this.metalRough, this.gunColor, this.gunNormal, this.gunRough, this.gloveColor, this.gloveNormal, this.gloveRough] = a, this.gunColor && (this.gunColor.colorSpace = T), this.gloveColor && (this.gloveColor.colorSpace = T), this.groundColor && (this.groundColor.colorSpace = T), this.metalColor && (this.metalColor.colorSpace = T), await Promise.all([(async () => {
 			try {
-				let e = await new vu().loadAsync(Yd + "models/soldier.glb");
+				let e = await new vu().loadAsync(Qd + "models/soldier.glb");
 				if (this.disposed) {
 					this.disposeObject(e.scene);
 					return;
@@ -16180,7 +16209,8 @@ var $ = 3, Yd = "/games/military/", Xd = Math.PI * 2, Zd = {
 			}
 		})(), (async () => {
 			try {
-				let e = await new _d().loadAsync(Yd + "sky.hdr");
+				if (!this.profile.halfFloat) return;
+				let e = await new _d().loadAsync(Qd + "sky.hdr");
 				if (this.disposed) {
 					e.dispose();
 					return;
@@ -16197,13 +16227,13 @@ var $ = 3, Yd = "/games/military/", Xd = Math.PI * 2, Zd = {
 		let e = this.g.academy.preset, t = this.g.academy.options;
 		if (this.lastPreset === e + t.shadows + t.lighting) return;
 		this.lastPreset = e + t.shadows + t.lighting, this.renderer.shadowMap.enabled = t.shadows;
-		let n = e === "high" ? 4096 : e === "performance" ? 1024 : 2048;
-		this.sun.shadow.mapSize.x !== n && (this.sun.shadow.mapSize.set(n, n), this.sun.shadow.map?.dispose(), this.sun.shadow.map = null), this.sun.intensity = t.lighting ? 4.2 : 1.7, this.hemisphere.intensity = t.lighting ? .55 : 1.3, this.ao.enabled = e === "high" && t.shadows, this.grade.enabled = t.lighting, this.reflection && (this.reflection.visible = e !== "performance", this.reflection.getRenderTarget().setSize(e === "high" ? 1024 : 512, e === "high" ? 1024 : 512));
+		let n = Math.min(this.profile.maxShadowSize, e === "high" ? 4096 : e === "performance" ? 1024 : 2048);
+		this.sun.shadow.mapSize.x !== n && (this.sun.shadow.mapSize.set(n, n), this.sun.shadow.map?.dispose(), this.sun.shadow.map = null), this.sun.intensity = t.lighting ? 4.2 : 1.7, this.hemisphere.intensity = t.lighting ? .55 : 1.3, this.ao && (this.ao.enabled = e === "high" && t.shadows), this.grade && (this.grade.enabled = t.lighting), this.reflection && (this.reflection.visible = this.profile.reflections && e !== "performance", this.reflection.getRenderTarget().setSize(e === "high" ? 1024 : 512, e === "high" ? 1024 : 512));
 	}
 	resize() {
 		if (this.disposed) return;
-		let { w: e, h: t } = this.g;
-		this.renderer.setSize(e, t, !1), this.composer?.setSize(e, t), this.camera.aspect = e / t, this.camera.fov = _e.radToDeg(this.g.verticalFov), this.camera.updateProjectionMatrix(), this.weaponCamera.aspect = e / t, this.weaponCamera.fov = _e.radToDeg(2 * Math.atan(Math.tan(_e.degToRad(26)) / (e / t))), this.weaponCamera.updateProjectionMatrix();
+		let { w: e, h: t } = this.g, [n, r] = Zd(e, t, this.profile);
+		this.renderer.setSize(n, r, !1), this.composer?.setSize(n, r), this.camera.aspect = e / t, this.camera.fov = _e.radToDeg(this.g.verticalFov), this.camera.updateProjectionMatrix(), this.weaponCamera.aspect = e / t, this.weaponCamera.fov = _e.radToDeg(2 * Math.atan(Math.tan(_e.degToRad(26)) / (e / t))), this.weaponCamera.updateProjectionMatrix();
 	}
 	tileTexture(e, t) {
 		if (!e) return null;
@@ -16219,7 +16249,7 @@ var $ = 3, Yd = "/games/military/", Xd = Math.PI * 2, Zd = {
 		this.worldTextures.clear(), this.world.clear(), this.wallMeshes = null, this.fittings = [], this.fittingMaterial = null, this.reflection = null;
 	}
 	buildWorld() {
-		let e = this.g, t = e.arena.mapId, n = Zd[t] || Zd.outpost, r = e.level.length;
+		let e = this.g, t = e.arena.mapId, n = ef[t] || ef.outpost, r = e.level.length;
 		this.clearWorld(), this.mapKey = t, this.wallKeys = "", this.scene.fog.color.set(n.fog), this.scene.fog.density = t === "freight" ? .021 : .012;
 		let i = this.material({
 			color: n.floor,
@@ -16485,6 +16515,7 @@ var $ = 3, Yd = "/games/military/", Xd = Math.PI * 2, Zd = {
 		}
 	}
 	makePuddles(e, t) {
+		if (!this.profile.reflections) return;
 		let n = {
 			uniforms: Qn.clone(Bd.ReflectorShader.uniforms),
 			vertexShader: Bd.ReflectorShader.vertexShader.replace("varying vec4 vUv;", "varying vec4 vUv; varying vec2 wetUv;").replace("vUv = textureMatrix", "wetUv = position.xy; vUv = textureMatrix"),
@@ -16496,7 +16527,7 @@ var $ = 3, Yd = "/games/military/", Xd = Math.PI * 2, Zd = {
 			multisample: 0,
 			shader: n
 		});
-		i.rotation.x = -Math.PI / 2, i.position.set(t * $ / 2, .014, t * $ / 2), i.material.transparent = !0, i.material.depthWrite = !1, i.userData.ownedGeometry = !0, i.visible = this.g.academy.preset !== "performance", this.world.add(i), this.reflection = i;
+		i.getRenderTarget().texture.type = this.profile.halfFloat ? f : l, i.rotation.x = -Math.PI / 2, i.position.set(t * $ / 2, .014, t * $ / 2), i.material.transparent = !0, i.material.depthWrite = !1, i.userData.ownedGeometry = !0, i.visible = this.g.academy.preset !== "performance", this.world.add(i), this.reflection = i;
 		let a = i.onBeforeRender.bind(i);
 		i.onBeforeRender = (...e) => {
 			this.scene.overrideMaterial || a(...e);
@@ -16806,7 +16837,7 @@ var $ = 3, Yd = "/games/military/", Xd = Math.PI * 2, Zd = {
 				.04
 			]);
 		} else {
-			this.mesh(m, this.geo("combatHelmet", () => new Ua(1, 24, 16, 0, Xd, 0, Math.PI * .6)), i, [
+			this.mesh(m, this.geo("combatHelmet", () => new Ua(1, 24, 16, 0, $d, 0, Math.PI * .6)), i, [
 				0,
 				2.09,
 				.025
@@ -17928,7 +17959,7 @@ var $ = 3, Yd = "/games/military/", Xd = Math.PI * 2, Zd = {
 		let c = Math.max(0, 1 - (t - e.shotAt) / .16), l = Math.max(0, Math.min(1, (e.reloadUntil - t) / 1.4));
 		this.rig.position.y = -.2 * Math.max(1, this.g.h / this.g.w) - (l > 0 ? Math.sin(l * Math.PI) * .25 : 0) + (this.motion.matches ? 0 : Math.sin(e.step) * .005), this.rig.position.y -= s * .65, this.rig.position.z = c * .04, this.rig.rotation.x = .02 - c * .075, this.rig.rotation.z = -.025 + Math.sin(l * Math.PI) * .3, this.flash.intensity = c > .65 ? 3 : 0, this.rig.visible = e.player.hp > 0 || !!e.deathSequence && e.deathProgress < .65;
 		let u = e.mode !== "training" && e.time > e.zone.delay && (Math.abs(n.x - e.zone.cx) > e.zone.half || Math.abs(n.y - e.zone.cy) > e.zone.half);
-		return this.scene.fog.color.set(u ? "#827276" : Zd[e.arena.mapId].fog), this.scene.fog.density = u ? .065 : .009, this.renderer.info.reset(), e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), this.lastTime = t, !0;
+		return this.scene.fog.color.set(u ? "#827276" : ef[e.arena.mapId].fog), this.scene.fog.density = u ? .065 : .009, this.renderer.info.reset(), !this.composer || e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), this.lastTime = t, !0;
 	}
 	disposeObject(e) {
 		e.traverse((e) => {
@@ -17942,8 +17973,8 @@ var $ = 3, Yd = "/games/military/", Xd = Math.PI * 2, Zd = {
 		if (!this.disposed) {
 			this.disposed = !0;
 			for (let e of this.actors.values()) e.mixer?.stopAllAction();
-			this.previewTarget?.dispose(), this.composer.dispose();
-			for (let e of this.composer.passes) e.dispose?.();
+			this.previewTarget?.dispose(), this.composer?.dispose();
+			for (let e of this.composer?.passes || []) e.dispose?.();
 			this.clearWorld();
 			for (let e of this.materials) e.dispose();
 			for (let e of this.geometries.values()) e.dispose();
@@ -17953,4 +17984,4 @@ var $ = 3, Yd = "/games/military/", Xd = Math.PI * 2, Zd = {
 	}
 };
 //#endregion
-export { Qd as MilitaryRenderer };
+export { tf as MilitaryRenderer };
