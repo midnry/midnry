@@ -524,6 +524,159 @@
           max-width: 32%;
         }
       }
+
+      midnry-fps .mf-learn {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 18px;
+      }
+      midnry-fps .mf-learn button,
+      midnry-fps .mf-book button,
+      midnry-fps .mf-lesson button {
+        background: #ffd16b;
+        color: #101720;
+        border: 2px solid #101720;
+        padding: 10px 14px;
+        font: 800 12px system-ui;
+        cursor: pointer;
+      }
+      midnry-fps .mf-book {
+        width: min(850px, 90vw);
+        max-height: 85dvh;
+        padding: 0;
+        border: 3px solid #101720;
+        background: #18232e;
+        color: #f9e9c8;
+        box-shadow: 8px 8px 0 #0006;
+      }
+      midnry-fps .mf-book::backdrop {
+        background: #080e19dc;
+      }
+      midnry-fps .mf-bookhead {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        background: #263543;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+      }
+      midnry-fps .mf-bookbody {
+        padding: 20px;
+        font: 14px/1.65 system-ui;
+      }
+      midnry-fps .mf-bookintro {
+        font-weight: 900;
+        color: #ffd16b;
+        letter-spacing: 1px;
+      }
+      midnry-fps .mf-guidegrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+        gap: 16px;
+      }
+      midnry-fps .mf-guidegrid article {
+        background: #263543;
+        border: 2px solid #101720;
+        border-top: 4px solid var(--kit, #71ebd5);
+        padding: 16px;
+      }
+      midnry-fps .mf-guidegrid h3 {
+        margin: 8px 0;
+        font-size: 20px;
+      }
+      midnry-fps .mf-guidegrid small {
+        color: #ffd16b;
+      }
+      midnry-fps .mf-mapdiagram {
+        position: static;
+        width: 100%;
+        height: 160px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+      midnry-fps .mf-guidegrid dl {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+        margin-bottom: 0;
+      }
+      midnry-fps .mf-guidegrid dd {
+        margin: 0;
+        color: #71ebd5;
+      }
+      midnry-fps .mf-setting {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: center;
+        padding: 16px 0;
+        border-bottom: 1px solid #465561;
+      }
+      midnry-fps .mf-setting select {
+        background: #263543;
+        color: #fff;
+        padding: 12px;
+        border: 2px solid #71ebd5;
+        font: inherit;
+      }
+      midnry-fps .mf-setting input {
+        width: 22px;
+        height: 22px;
+        accent-color: #71ebd5;
+      }
+      midnry-fps .mf-lesson {
+        position: absolute;
+        top: 90px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(440px, calc(100% - 32px));
+        padding: 12px;
+        background: #18232ef2;
+        border: 3px solid #101720;
+        box-shadow: 4px 4px 0 #ffd16b;
+        color: #f9e9c8;
+        z-index: 5;
+        font: 13px/1.4 system-ui;
+      }
+      midnry-fps .mf-lesson[hidden],
+      midnry-fps .mf-shell:has(.mf-modal:not([hidden])) .mf-lesson {
+        display: none;
+      }
+      midnry-fps .mf-lesson small {
+        display: block;
+        color: #71ebd5;
+      }
+      midnry-fps .mf-lesson b {
+        display: block;
+        font-size: 18px;
+        margin-top: 4px;
+      }
+      midnry-fps .mf-lesson p {
+        margin: 6px 0 10px;
+      }
+      midnry-fps .mf-lesson div {
+        display: flex;
+        gap: 8px;
+      }
+      @media (max-height: 500px) {
+        midnry-fps .mf-lesson {
+          top: 12px;
+          left: 12px;
+          transform: none;
+          width: 300px;
+          font-size: 11px;
+        }
+        midnry-fps .mf-lesson b {
+          font-size: 14px;
+        }
+        midnry-fps .mf-lesson button {
+          padding: 6px;
+        }
+      }
     </style>
   </head>
   <!-- For inline integration copy the style, element and script. Set a height on the host. -->
@@ -531,6 +684,7 @@
     <midnry-fps style="height: 100dvh" aria-label="Outpost Zero first-person shooter"></midnry-fps>
     <script type="module">
       import { Arena, MAPS, WEAPONS, mapOf, weaponOf, clamp } from "./outpost-sim.js";
+      import { Academy } from "./outpost-academy.js";
       (() => {
         "use strict";
         // A custom element keeps state private and supports multiple independent instances.
@@ -608,6 +762,7 @@
             this.reset();
             this.bindInputs();
             this.bindOnline();
+            this.academy = new Academy(this);
             this.resizeObserver = new ResizeObserver(() => this.resize());
             this.resizeObserver.observe(this.shell);
             this.resize();
@@ -616,6 +771,11 @@
           }
           // Last Signal uses the same arena, with a clear center for the final zone.
           reset() {
+            if (this.academy?.active) {
+              this.academy.active = false;
+              this.$(".mf-lesson").hidden = true;
+              this.$(".mf-endboot").hidden = this.$(".mf-skipboot").hidden = true;
+            }
             this.pendingShot = 0;
             this.pendingReload = false;
             this.lastNotice = 0;
@@ -810,6 +970,7 @@
             return result;
           }
           checkResult() {
+            if (this.academy?.active) return;
             if (this.state === "ended") return;
             if (this.online) {
               if (this.arena.state === "ended")
@@ -884,6 +1045,7 @@
           }
           async connectOnline(op) {
             if (this.connecting || this.online) return;
+            if (this.academy?.active) this.academy.finish();
             this.connecting = true;
             this.$(".mf-netstatus").textContent = "Connecting…";
             for (const button of this.root.querySelectorAll(".mf-connectrow button"))
@@ -1134,7 +1296,7 @@
               });
             this.on(this.$(".mf-pause"), "click", () => this.pause());
             this.on(this.shell, "keydown", (e) => {
-              if (e.target.closest?.("input,select,textarea")) return;
+              if (e.target.closest?.("input,select,textarea,dialog")) return;
               const k = e.key.toLowerCase();
               if (
                 [
@@ -1332,7 +1494,7 @@
           resize() {
             // A bounded rendering resolution keeps raycasting inexpensive on phones.
             const r = this.shell.getBoundingClientRect();
-            this.w = Math.max(1, Math.min(960, Math.round(r.width)));
+            this.w = Math.max(1, Math.min(this.academy?.options.width || 960, Math.round(r.width)));
             this.h = Math.max(1, Math.round((this.w * r.height) / Math.max(1, r.width)));
             this.canvas.width = this.w;
             this.canvas.height = this.h;
@@ -1475,6 +1637,7 @@
             this.pendingSuper = false;
             this.step += Math.hypot(this.controls().forward, this.controls().strafe) * dt * 9;
             this.flushEvents();
+            this.academy?.update();
             this.checkResult();
             this.updateHUD();
           }
@@ -1509,34 +1672,7 @@
             const ca = Math.cos(p.a),
               sa = Math.sin(p.a),
               plane = Math.tan(Math.PI / 6);
-            for (let y = Math.max(0, Math.floor(horizon + 3)); y < h; y += 3) {
-              const d = (this.projection * 0.5) / (y - horizon);
-              if (d > 20) continue;
-              for (let x = 0; x < w; x += 5) {
-                const q = ((2 * x) / w - 1) * plane,
-                  fx = p.x + (ca - sa * q) * d,
-                  fy = p.y + (sa + ca * q) * d;
-                const zone = map.zones.find(
-                  (z) => fx >= z.x && fy >= z.y && fx < z.x + z.w && fy < z.y + z.h,
-                );
-                if (zone) {
-                  c.fillStyle = zone.color;
-                  c.fillRect(x, y, 5, 3);
-                }
-                if (
-                  this.mode !== "training" &&
-                  this.time > this.zone.delay &&
-                  this.outsideSafe({ x: fx, y: fy })
-                ) {
-                  c.fillStyle = "#b522505c";
-                  c.fillRect(x, y, 5, 3);
-                }
-                if (fx - Math.floor(fx) < 0.025 || fy - Math.floor(fy) < 0.025) {
-                  c.fillStyle = "#372e2b55";
-                  c.fillRect(x, y, 5, 3);
-                }
-              }
-            }
+            this.academy.floor(map, p, horizon);
             const palettes = theme.walls;
             let prevKey = "";
             for (let x = 0; x < w; x += 2) {
@@ -1553,6 +1689,18 @@
                 colors = palettes[hit.type] || palettes[1];
               c.fillStyle = colors[hit.side ? 1 : 0];
               c.fillRect(x, top, 2, size);
+              const material = this.academy.wallTexture(map, hit.type, hit.side, size);
+              c.drawImage(
+                material,
+                Math.floor(hit.u * (material.width - 1)),
+                0,
+                1,
+                material.height,
+                x,
+                top,
+                2,
+                size,
+              );
               c.fillStyle = colors[2];
               c.fillRect(x, top + size * 0.03, 2, size * 0.045);
               c.fillStyle = "#151a21";
@@ -1615,13 +1763,16 @@
           // Render a billboard once, then copy visible strips against the wall depth buffer.
           droneSprite(ally = false) {
             const sprite = document.createElement("canvas");
-            sprite.width = 128;
-            sprite.height = 160;
+            const density =
+              this.academy.preset === "high" ? 3 : this.academy.preset === "balanced" ? 2 : 1;
+            sprite.width = 128 * density;
+            sprite.height = 160 * density;
             const c = sprite.getContext("2d");
+            c.scale(density, density);
             c.lineWidth = 6;
             c.strokeStyle = "#101720";
             const poly = (points, fill) => {
-              c.fillStyle = fill;
+              c.fillStyle = this.academy.materialFill(c, fill, points);
               c.beginPath();
               points.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
               c.closePath();
@@ -1723,9 +1874,12 @@
           }
           lootSprite(isCore) {
             const sprite = document.createElement("canvas");
-            sprite.width = 128;
-            sprite.height = 160;
+            const density =
+              this.academy.preset === "high" ? 3 : this.academy.preset === "balanced" ? 2 : 1;
+            sprite.width = 128 * density;
+            sprite.height = 160 * density;
             const c = sprite.getContext("2d");
+            c.scale(density, density);
             c.strokeStyle = "#101720";
             c.lineWidth = 7;
             c.lineJoin = "round";
@@ -1905,7 +2059,7 @@
             c.strokeStyle = "#101720";
             c.lineJoin = "round";
             const poly = (pts, fill) => {
-              c.fillStyle = fill;
+              c.fillStyle = this.academy.materialFill(c, fill, pts);
               c.beginPath();
               pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
               c.closePath();
@@ -2136,7 +2290,7 @@
                   dy = o.e.y - p.y;
                 return { ...o, z: dx * ca + dy * sa, lateral: -dx * sa + dy * ca };
               })
-              .filter((v) => v.z > 0.15)
+              .filter((v) => v.z > 0.15 && (!v.e.kind || v.z < this.academy.options.distance))
               .sort((a, b) => b.z - a.z);
             for (const { e, sprite, size, aspect, z, lateral } of visible) {
               const height = (this.projection * size) / z,
@@ -2150,10 +2304,21 @@
                 Math.sin(this.time * 3 + (e.phase || 0)) * height * 0.015;
               const left = Math.max(0, Math.floor(sx)),
                 right = Math.min(this.w, Math.ceil(sx + width));
+              if (this.academy.options.shadows) {
+                // Occluded ground contact shadow drawn in depth-tested strips.
+                const ground = horizon + (this.projection * 0.5) / z;
+                for (let x = left; x < right; x++) {
+                  if (z >= this.depth[x]) continue;
+                  const edge = (x - sx - width / 2) / (width / 2);
+                  const sh = Math.sqrt(Math.max(0, 1 - edge * edge)) * height * 0.045;
+                  c.fillStyle = "#10172065";
+                  c.fillRect(x, ground - sh, 1, sh * 2);
+                }
+              }
               for (let x = left; x < right; x++) {
                 if (z >= this.depth[x]) continue;
-                const u = clamp(((x - sx) / width) * 128, 0, 127);
-                c.drawImage(sprite, u, 0, 1, 160, x, sy, 1, height);
+                const u = clamp(((x - sx) / width) * sprite.width, 0, sprite.width - 1);
+                c.drawImage(sprite, u, 0, 1, sprite.height, x, sy, 1, height);
               }
               const center = Math.round(sx + width / 2);
               if (
@@ -2242,7 +2407,7 @@
             c.strokeStyle = "#0c131b";
             c.lineJoin = "round";
             const poly = (pts, color) => {
-              c.fillStyle = color;
+              c.fillStyle = this.academy.materialFill(c, color, pts);
               c.beginPath();
               pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
               c.closePath();

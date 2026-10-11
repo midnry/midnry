@@ -1,6 +1,6 @@
 # Midnry — Outpost Zero
 
-The game uses three small static files: `public/games/outpost-zero.html` (Canvas rendering, procedural art, scoped CSS, controls and lobby) and `public/games/outpost-sim.js` (shared match rules), and `public/games/outpost-content.js` (maps, palettes, scenery and weapon definitions). Serve all three from the same directory over HTTP. Offline play needs no backend or external assets; online rooms use the Midnry API and database. No game framework is required. ES modules require a web server rather than opening a local file directly.
+The game uses four small static files: `public/games/outpost-zero.html` (Canvas rendering, procedural art, scoped CSS, controls and lobby) and `public/games/outpost-sim.js` (shared match rules), and `public/games/outpost-content.js` (maps, palettes, scenery and weapon definitions), plus `public/games/outpost-academy.js` (tutorial, field guide and graphics materials). Serve all four from the same directory over HTTP. Offline play needs no backend or external assets; online rooms use the Midnry API and database. No game framework is required. ES modules require a web server rather than opening a local file directly.
 
 ## Midnry integration
 
@@ -8,7 +8,7 @@ The homepage links to `/discover/outpost-zero`, which launches `/games/outpost-z
 
 ## Embed elsewhere
 
-For the strongest isolation from your site's existing CSS and scripts, serve all three files in `/games/`, then embed:
+For the strongest isolation from your site's existing CSS and scripts, serve all four files in `/games/`, then embed:
 
 ```html
 <iframe
@@ -128,3 +128,13 @@ Damage snapshots carry a monotonic sequence, cumulative HP loss and source angle
 Extension points: `outpost-content.js` defines `MAPS`, `WEAPONS`, shells, floor paint and scenery; `outpost-sim.js` implements `shoot`, `super`, `updateEffects`, `blast`, `dash`, `leap`, `damage` and serialization. `outpost-zero.html` implements `updateKit`, `observeCombat`, `drawAlternateWeapon`, `propSprite` and `drawCombatEffects`. Room operations `settings` and `loadout` validate choices; the server ignores client-supplied charge, damage and weapons during play. Existing rooms default to the carbine/Outpost during a rolling deployment.
 
 Additional validation: `node scripts/outpost-expansion.test.mjs` checks map connectivity, all loadouts, magazine sizes, falloff, bursts, poison, lifesteal, projectile occlusion, arcing attacks, cover destruction, cloaking, slows and charge. `node scripts/check-outpost-expansion.mjs [baseURL]` renders every new map on desktop/mobile, exercises all eleven keyboard/touch ability controls and checks visible damage warnings. The online check also verifies host-only maps, individual loadouts, map replication and lobby locking.
+
+## Boot Camp, field guide and graphics
+
+The deployment menu has **Boot Camp**, **Field Guide** and **Graphics** buttons. Boot Camp is an isolated offline practice arena with seven steps: move, defeat a stationary target, reload, break a crate, collect its core, activate Overdrive, then learn survival/team rules. Steps advance from actual actions, with skip and exit buttons. P releases desktop pointer lock to use those buttons. Returning to normal play creates a fresh arena; practice charge and AI changes never enter multiplayer. Joining a room exits practice.
+
+The field manual generates overhead layouts for all five maps and base stats/ability descriptions for all eleven weapons directly from the shared catalog. The native modal supports keyboard focus containment and Escape. Online matches continue behind menus.
+
+Graphics presets: Performance (720px / 128-texel materials), Balanced (960px / 256 texels), High (1440px / 512 texels), capped by viewport width. Higher presets use denser floor sampling and higher-resolution character/loot art. Cached procedural wall textures include mortar, bolts, hatching and scratches; mip levels reduce distant aliasing. A reusable projected floor pixel buffer avoids per-pixel Canvas drawing calls. Scenery distance, depth-tested contact shadows and stepped material highlights preserve the ink outlines. Shadows and lighting can be toggled independently; preferences persist in device-local storage when available. These are Canvas equivalents, not GPU anisotropic filtering, polygon LOD, screen-space shadow maps or shader programs. Choose Performance on slower devices; no fixed frame rate is guaranteed.
+
+Validation: `node scripts/check-outpost-academy.mjs [baseURL]` exercises the complete tutorial on desktop and touch, checks all guide entries, persists presets, verifies practice cleanup and captures screenshots.
