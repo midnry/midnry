@@ -132,7 +132,7 @@ try {
   await guest.waitForFunction(
     () => document.querySelector("midnry-fps").engine.online?.phase === "playing",
   );
-  await game.getByRole("button", { name: "Pause game" }).click();
+  await game.getByRole("button", { name: "Open game menu" }).click();
   await game.locator(".mf-exit").click();
   assert.match(await game.locator(".mf-confirm p").innerText(), /forfeits/);
   await game.locator('.mf-confirm button[value="cancel"]').click();

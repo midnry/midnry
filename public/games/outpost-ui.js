@@ -111,7 +111,101 @@ export class MenuUI {
       this.pendingConfirmation = null;
       pending?.(g.$(".mf-confirm").returnValue === "apply");
     });
+    this.setupAccessibility();
     this.refresh();
+  }
+  setupAccessibility() {
+    const g = this.g;
+    // These device-local UI preferences never alter match rules or graphics presets.
+    this.accessibility = { textScale: 1, contrast: false };
+    try {
+      const saved = JSON.parse(localStorage.getItem("midnry-outpost-accessibility"));
+      if ([1, 1.5, 2].includes(saved?.textScale)) this.accessibility.textScale = saved.textScale;
+      if (typeof saved?.contrast === "boolean") this.accessibility.contrast = saved.contrast;
+    } catch {
+      /* Storage can be unavailable in an embedded/private browser. */
+    }
+    g.$(".mf-experience").insertAdjacentHTML(
+      "afterend",
+      `<h3>Accessibility</h3><label class="mf-setting">Menu text size<select class="mf-textsize" aria-label="Menu text size"><option value="1">Standard · 100%</option><option value="1.5">Large · 150%</option><option value="2">Extra large · 200%</option></select></label><label class="mf-setting"><span>Higher UI contrast</span><input class="mf-contrast" type="checkbox"></label><p>Text size and contrast are saved on this device. System Reduce Motion reduces decorative animation and camera shake. Combat uses visual aiming; menus and match status provide screen-reader text.</p>`,
+    );
+    g.$(".mf-textsize").value = String(this.accessibility.textScale);
+    g.$(".mf-contrast").checked = this.accessibility.contrast;
+    for (const selector of [".mf-textsize", ".mf-contrast"])
+      g.on(g.$(selector), "change", () => {
+        this.accessibility.textScale = Number(g.$(".mf-textsize").value);
+        this.accessibility.contrast = g.$(".mf-contrast").checked;
+        this.applyAccessibility();
+        try {
+          localStorage.setItem("midnry-outpost-accessibility", JSON.stringify(this.accessibility));
+        } catch {}
+      });
+    this.applyAccessibility();
+    const id = "outpost-access-" + Math.random().toString(36).slice(2);
+    g.shell.insertAdjacentHTML(
+      "beforeend",
+      `<p id="${id}" class="mf-sr-only">Visual first-person shooter. Keyboard: WASD moves, left and right arrows aim, Space fires, R reloads, Q uses your ability, and Escape or P opens the menu. Touch: left joystick moves and dragging the right side aims.</p><div class="mf-sr-only mf-accessannounce" role="status" aria-live="polite" aria-atomic="true"></div>`,
+    );
+    g.shell.setAttribute("aria-label", "Outpost Zero game controls");
+    g.shell.setAttribute("aria-describedby", id);
+    g.canvas.setAttribute("role", "img");
+    g.canvas.setAttribute("aria-describedby", id);
+    g.$(".mf-stick").setAttribute(
+      "aria-label",
+      "Touch movement joystick; keyboard alternative: WASD",
+    );
+    g.$(".mf-pause").setAttribute("aria-label", "Open game menu");
+    g.$(".mf-pause").title = "Open game menu (Esc or P)";
+    g.$(".mf-confirm").querySelector("p").id = id + "-confirm";
+    g.$(".mf-confirm").setAttribute("aria-describedby", id + "-confirm");
+    g.$(".mf-controlshelp").insertAdjacentHTML(
+      "beforebegin",
+      '<p class="mf-accessstatus" hidden></p>',
+    );
+    // In the menu, keep keyboard focus out of the underlying combat controls.
+    // Native nested dialogs handle their own focus containment and Escape key.
+    g.on(g.shell, "keydown", (event) => {
+      if (event.key !== "Tab" || g.$(".mf-modal").hidden || event.target.closest("dialog")) return;
+      const items = [
+        ...g.$(".mf-modal").querySelectorAll("button, select, input, summary, a[href]"),
+      ].filter((e) => !e.disabled && e.getClientRects().length && !e.closest("[hidden]"));
+      if (!items.length) return;
+      const first = items[0],
+        last = items[items.length - 1];
+      if (
+        event.shiftKey &&
+        (document.activeElement === first || !items.includes(document.activeElement))
+      ) {
+        event.preventDefault();
+        last.focus();
+      } else if (
+        !event.shiftKey &&
+        (document.activeElement === last || !items.includes(document.activeElement))
+      ) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+  }
+  applyAccessibility() {
+    this.g.root.style.setProperty("--mf-text-scale", this.accessibility.textScale);
+    this.g.shell.classList.toggle("mf-large-text", this.accessibility.textScale > 1);
+    this.g.shell.classList.toggle("mf-high-contrast", this.accessibility.contrast);
+  }
+  syncAccessibility() {
+    const g = this.g,
+      menu = !g.$(".mf-modal").hidden;
+    for (const selector of [".mf-top", ".mf-touch", ".mf-super"]) g.$(selector).inert = menu;
+    if (this.menuVisible !== menu) {
+      this.menuVisible = menu;
+      g.$(".mf-accessannounce").textContent = menu
+        ? "Game menu open. " + (g.online ? "Online match continues." : "Offline game paused.")
+        : "Match active. Escape or P opens the game menu.";
+    }
+    const status = g.$(".mf-accessstatus"),
+      p = g.player;
+    status.hidden = g.state === "fresh";
+    status.textContent = `Match status: ${Math.ceil(p.hp)} of ${Math.ceil(p.maxHp)} health. ${p.ammo} rounds. ${p.kills || 0} eliminations. ${g.enemies.filter((e) => e.hp > 0).length} other combatants alive.`;
   }
   confirm(title, message, action, callback) {
     const g = this.g,
@@ -172,6 +266,7 @@ export class MenuUI {
     g.$(".mf-settings").showModal();
   }
   refresh() {
+    this.syncAccessibility();
     const g = this.g,
       map = mapOf(g.mapId),
       weapon = weaponOf(g.weapon);

@@ -35,9 +35,17 @@ function OutpostZeroPage() {
     return () => window.removeEventListener("message", onExit);
   }, []);
   return (
-    <main className="flex h-dvh min-h-[464px] flex-col bg-[#101419] text-[#fff4dc]">
+    <main
+      className="flex h-dvh min-h-0 flex-col bg-[#101419] text-[#fff4dc]"
+      style={{
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+      }}
+    >
       <nav
         aria-label="Game navigation"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
         className="flex min-h-11 shrink-0 items-center justify-between gap-3 border-b border-white/15 px-4 text-xs"
       >
         <Link to="/" className="inline-flex min-h-11 items-center font-semibold hover:underline">
@@ -54,9 +62,9 @@ function OutpostZeroPage() {
           iframe tears down the game, and its scripts never run during SSR. */}
       <iframe
         ref={frame}
-        src={`/games/outpost-zero.html?v=fps-120-20261011${room ? `&room=${encodeURIComponent(room)}` : ""}`}
+        src={`/games/outpost-zero.html?v=accessible-ui-20261011${room ? `&room=${encodeURIComponent(room)}` : ""}`}
         title="Outpost Zero first-person shooter"
-        className="block min-h-[420px] w-full flex-1 border-0"
+        className="block min-h-0 w-full flex-1 border-0"
         allow="fullscreen"
       />
     </main>
