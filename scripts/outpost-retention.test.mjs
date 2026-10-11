@@ -104,13 +104,14 @@ test("difficulty changes AI movement and reaction, not health or damage", () => 
   const distances = [],
     delays = [];
   for (const difficulty of Object.keys(DIFFICULTIES)) {
-    const a = new Arena({ difficulty }),
+    const a = new Arena({ difficulty, random: () => 0.5 }),
       p = a.entities[0],
       bot = a.entities[1];
     p.x = 8.5;
     p.y = 8.5;
     bot.x = 8.5;
-    bot.y = 6.5;
+    bot.y = 5.5;
+    bot.weapon = "carbine";
     bot.attack = 0;
     a.time = 1;
     a.visible = () => true;

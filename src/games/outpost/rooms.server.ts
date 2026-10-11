@@ -4,6 +4,7 @@ import {
   Arena,
   MAPS,
   WEAPONS,
+  OUTFITS,
   DIFFICULTIES,
   difficultyOf,
   type Difficulty,
@@ -19,6 +20,7 @@ type Member = {
   name: string;
   team: number;
   weapon: string;
+  outfit?: string;
   lastSeen: number;
   inputAt: number;
   seq: number;
@@ -44,6 +46,12 @@ export class OutpostError extends Error {
     super(message);
   }
 }
+function outfitId(value: unknown): string {
+  if (value === undefined) return "ranger";
+  if (typeof value !== "string" || !Object.hasOwn(OUTFITS, value))
+    throw new OutpostError("Choose a valid outfit.");
+  return value;
+}
 const sha = (value: string) => createHash("sha256").update(value).digest("hex");
 const roomCode = () =>
   Array.from(randomBytes(6), (n) => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[n % 32]).join("");
@@ -68,11 +76,12 @@ function publicRoom(code: string, room: Room) {
     mapId: room.mapId || "outpost",
     phase: room.phase,
     host: room.host,
-    members: room.members.map(({ id, name, team, weapon, lastSeen }) => ({
+    members: room.members.map(({ id, name, team, weapon, outfit, lastSeen }) => ({
       id,
       name,
       team,
       weapon: weapon || "carbine",
+      outfit: outfit || "ranger",
       connected: Date.now() - lastSeen < 20000,
     })),
     arena: room.arena
@@ -156,6 +165,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
       hash: sha(token),
       name: "Ranger 1",
       weapon,
+      outfit: outfitId(body.outfit),
       team: 0,
       lastSeen: now,
       inputAt: now,
@@ -228,6 +238,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
         throw new OutpostError("Choose a valid loadout.");
       member = {
         weapon,
+        outfit: outfitId(body.outfit),
         id: joinedId,
         hash: sha(joinedToken),
         name: "Ranger " + room.nextName++,
@@ -287,7 +298,9 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
         throw new OutpostError("Choose your loadout before starting.", 409);
       if (typeof body.weapon !== "string" || !Object.hasOwn(WEAPONS, body.weapon))
         throw new OutpostError("Invalid loadout.");
+      const outfit = body.outfit === undefined ? member.outfit || "ranger" : outfitId(body.outfit);
       member.weapon = body.weapon;
+      member.outfit = outfit;
     }
     if (body.op === "team") {
       if (room.phase !== "lobby" || room.mode !== "duo")
@@ -315,11 +328,12 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
           mapId: room.mapId || "outpost",
           difficulty: room.difficulty || "normal",
           countdown: 2,
-          humans: room.members.map(({ id, team, name, weapon }) => ({
+          humans: room.members.map(({ id, team, name, weapon, outfit }) => ({
             id,
             team,
             name,
             weapon: weapon || "carbine",
+            outfit: outfit || "ranger",
           })),
         }).snapshot();
         room.phase = "playing";
@@ -336,11 +350,12 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
           mode: room.mode,
           mapId: room.mapId || "outpost",
           difficulty: room.difficulty || "normal",
-          humans: room.members.map(({ id, team, name, weapon }) => ({
+          humans: room.members.map(({ id, team, name, weapon, outfit }) => ({
             id,
             team,
             name,
             weapon: weapon || "carbine",
+            outfit: outfit || "ranger",
           })),
         }).snapshot();
         room.phase = "playing";

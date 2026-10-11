@@ -30,7 +30,10 @@ export const PRESETS = {
   },
 };
 const STEPS = [
-  ["Move through the range", "WASD / left joystick: walk two tiles. Hold Shift or toggle SPRINT to run. C / Ctrl / SLIDE triggers a forward sprint slide."],
+  [
+    "Move through the range",
+    "WASD / left joystick: walk two tiles. Hold Shift or toggle SPRINT to run. C / Ctrl / SLIDE triggers a forward sprint slide.",
+  ],
   [
     "Aim and fire",
     "Mouse / drag the right side to aim. Click, Space or FIRE: destroy the stationary sentry ahead.",
@@ -88,6 +91,25 @@ export class Academy {
       game.ui ? game.ui.settings() : this.open("graphics"),
     );
     game.on(game.$(".mf-bookclose"), "click", () => game.$(".mf-book").close());
+    game.shell.insertAdjacentHTML(
+      "beforeend",
+      `<dialog class="mf-weaponinspect" aria-label="Weapon inspection"><button aria-label="Close weapon inspection">BACK</button><h2></h2><img width="960" height="600"><p></p></dialog>`,
+    );
+    game.on(game.$(".mf-weaponinspect button"), "click", () => game.$(".mf-weaponinspect").close());
+    game.on(game.$(".mf-weaponinspect"), "keydown", (e) => e.stopPropagation());
+    game.on(game.$(".mf-bookbody"), "click", (e) => {
+      const button = e.target.closest("[data-inspect]");
+      if (!button) return;
+      const w = WEAPONS[button.dataset.inspect];
+      if (!w) return;
+      const dialog = game.$(".mf-weaponinspect"),
+        image = dialog.querySelector("img");
+      dialog.querySelector("h2").textContent = w.name;
+      image.src = `/games/arsenal/${w.id}.webp`;
+      image.alt = `${w.name} full-size weapon`;
+      dialog.querySelector("p").textContent = w.description;
+      dialog.showModal();
+    });
     game.on(game.$(".mf-endboot"), "click", () => this.finish());
     game.on(game.$(".mf-skipboot"), "click", () => (this.step === 6 ? this.finish() : this.next()));
     game.on(game.$(".mf-lesson-exit"), "click", () => this.finish());
@@ -155,31 +177,14 @@ export class Academy {
           )
           .join(
             "",
-          )}</div><h2>Arsenal / ${Object.keys(WEAPONS).length}</h2><p>Stats below are base damage per projectile or melee hit, before distance falloff, splash or cores. A pellet/burst attack can land several hits. All loadouts reload in 1.4 seconds; ability charge comes from damage, not time.</p><div class="mf-guidegrid">${Object.values(
+          )}</div><h2>Arsenal / ${Object.keys(WEAPONS).length}</h2><p>Stats below are base damage per projectile or melee hit, before distance falloff, splash or cores. A pellet/burst attack can land several hits. All loadouts reload in 1.4 seconds; ability charge comes from damage, not time.</p><p>Tap any weapon image to inspect the full-size view. AI opponents can carry every loadout, including launchers and melee weapons.</p><div class="mf-guidegrid mf-arsenalgrid">${Object.values(
           WEAPONS,
         )
           .map(
             (w) =>
-              `<article style="--kit:${w.color}"><canvas class="mf-weaponportrait" width="240" height="160" data-weapon="${w.id}" role="img" aria-label="${w.name} illustrated weapon"></canvas><h3>${w.name}</h3><small>${w.kind.toUpperCase()} · ${w.mag} ROUNDS</small><p>${w.description}</p><dl><dt>Base hit</dt><dd>${w.damage}${w.pellets ? " × " + w.pellets : ""}</dd><dt>Range</dt><dd>${w.range} tiles</dd><dt>Attack interval</dt><dd>${w.cooldown}s</dd><dt>Charged ability</dt><dd>${w.super}</dd></dl></article>`,
+              `<article style="--kit:${w.color}"><button class="mf-inspectweapon" data-inspect="${w.id}" aria-label="Inspect ${w.name}"><img class="mf-weaponportrait" src="/games/arsenal/${w.id}.webp" alt="${w.name} weapon" width="960" height="600" loading="lazy"><span>Inspect weapon ↗</span></button><h3>${w.name}</h3><small>${w.kind.toUpperCase()} · ${w.mag} ROUNDS</small><p>${w.description}</p><dl><dt>Base hit</dt><dd>${w.damage}${w.pellets ? " × " + w.pellets : ""}</dd><dt>Range</dt><dd>${w.range} tiles</dd><dt>Attack interval</dt><dd>${w.cooldown}s</dd><dt>Charged ability</dt><dd>${w.super}</dd></dl></article>`,
           )
           .join("")}</div>`;
-      const portraits = [...g.root.querySelectorAll("[data-weapon]")];
-      const paintWeapons = () => {
-        if (g.abort.signal.aborted) return;
-        for (const canvas of portraits)
-          if (canvas.isConnected) {
-            const c = canvas.getContext("2d");
-            c.fillStyle = "#253543";
-            c.fillRect(0, 0, canvas.width, canvas.height);
-            if (!(
-              g.militaryLoaded &&
-              g.military.preview(c, canvas.dataset.weapon, canvas.width, canvas.height)
-            ))
-              g.weapons?.preview(c, canvas.dataset.weapon, canvas.width, canvas.height);
-          }
-      };
-      paintWeapons();
-      g.weapons?.ready.then(paintWeapons);
       for (const canvas of g.root.querySelectorAll("[data-map]")) {
         const map = MAPS[canvas.dataset.map],
           size = map.level.length;
