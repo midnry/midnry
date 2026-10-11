@@ -75,6 +75,17 @@ function OutpostZeroDiscovery() {
           </p>
         </article>
       </section>
+      <section
+        className="mt-5 rounded-2xl bg-card p-6 shadow-line"
+        aria-label="Learn and customize"
+      >
+        <h2 className="font-display text-xl">Learn the ropes. Sharpen the ink.</h2>
+        <p className="mt-3 text-sm leading-relaxed text-muted">
+          Open Boot Camp in the game menu for guided hands-on training. The Field Guide explains
+          every map, loadout and ability. Graphics offers Performance, Balanced and High presets
+          with sharper comic textures, contact shadows and cel material lighting.
+        </p>
+      </section>
       <section className="mt-5 grid gap-5 sm:grid-cols-2" aria-label="Maps and loadouts">
         <article className="rounded-2xl bg-card p-6 shadow-line">
           <h2 className="font-display text-xl">Five arenas</h2>
