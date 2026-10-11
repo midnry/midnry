@@ -228,3 +228,16 @@ Cosmetic ammunition now distinguishes rifle bullets, pistol rounds, shotgun pell
 `outpost-environment.js` loads two locally hosted WebP atlases: sixteen painted material tiles and five map-specific panoramic skies. Floor materials follow world coordinates and existing map zones (street, grass, terminal, apron, cargo yard, villa and pool). Ground sampling uses cached distance mipmaps, the existing adaptive floor buffer, and Red Haze tinting. Painted wall panels keep collision geometry, directional shading, ink outlines and readable signs. Skies wrap with camera rotation; interiors retain their ceiling instead of showing an outdoor panorama.
 
 Materials are decoded asynchronously and cached per graphics preset. Loading a material invalidates the procedural cache, and changing graphics clears the illustrated cache. Failed artwork loads preserve procedural floors, walls and skies. Rendering never changes arena state or multiplayer traffic. `node scripts/check-outpost-environment.mjs [base-url]` checks every map on desktop/mobile, camera movement, panorama wrapping, terrain zones, haze, cache reuse and loading failure. Performance checks remain in `check-outpost-performance.mjs`.
+
+
+## Tactical 3D graphics
+
+The Midnry game page selects the locally bundled WebGL renderer with `renderer=military`. The simulation, multiplayer API, map collision, mobile controls, graphics confirmation, and exit flow remain shared with the original game. Opening the static page without that query selects the original illustrated renderer. Devices that cannot initialize WebGL or lose their graphics context return to that original renderer.
+
+The tactical presentation uses PBR asphalt, corrugated panels, worn metal and leather photographs, image-based HDR lighting, directional shadows, irregular wet-ground planar reflections, and cinematic color grading. High quality adds screen-space contact shadows, 4096-pixel sun shadows, and a 1024-pixel reflection target. Balanced uses a 512-pixel reflection target and 2048-pixel sun shadows. Performance omits planar reflections and cinematic processing; the shadow toggle remains respected. Rendering follows the existing adaptive internal resolution.
+
+Skeletal character poses update at 30 FPS independently of the display render loop. 120 FPS and 8K output are not guaranteed or validated on physical devices. The current infantry asset is an interim armored character; a purpose-built contemporary military character remains a future art upgrade. See `public/games/military/ATTRIBUTION.md` for asset provenance and licenses.
+
+Edit `scripts/outpost-military/renderer.js` and run `npm run build:outpost-military` to regenerate the self-contained public module. Production build scripts also regenerate it automatically. Static files have no runtime CDN dependency.
+
+Validation: `node scripts/check-outpost-military.mjs [base-url]` checks desktop/mobile rendering, all five maps and eleven loadouts, material cache bounds, camera alignment, cover destruction, weapon-specific projectile meshes, damaging fields, 30 FPS pose sampling, and quality settings. `node scripts/check-outpost-military-embed.mjs [base-url]` checks the integrated iframe, context-loss fallback, teardown, and original-renderer selection.

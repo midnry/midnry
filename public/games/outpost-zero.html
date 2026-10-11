@@ -33,6 +33,30 @@
         height: 100%;
         touch-action: none;
       }
+      /* Preview palette stays scoped; existing accessible hit areas and dialogs persist. */
+      midnry-fps .mf-military {
+        color: #e4e8e3;
+        --kit: #9cbaa5;
+      }
+      midnry-fps .mf-military .mf-panel,
+      midnry-fps .mf-military .mf-dialog,
+      midnry-fps .mf-military .mf-book {
+        background: #17201eea;
+        border-color: #65706a;
+      }
+      midnry-fps .mf-military .mf-panel h1 em {
+        color: #b3c3ae;
+      }
+      midnry-fps .mf-military .mf-top .mf-tag {
+        background: #19201cbd;
+      }
+      midnry-fps .mf-military .mf-stat,
+      midnry-fps .mf-military .mf-brand,
+      midnry-fps .mf-military .mf-match,
+      midnry-fps .mf-military .mf-objective {
+        background: #111915c9;
+        border-width: 1px;
+      }
       midnry-fps button {
         font: inherit;
         cursor: pointer;
@@ -1525,7 +1549,9 @@
             this.root = root;
             this.shell = root.querySelector(".mf-shell");
             this.canvas = root.querySelector("canvas");
-            this.ctx = this.canvas.getContext("2d", { alpha: false });
+            this.ctx = this.canvas.getContext("2d", {
+              alpha: new URLSearchParams(location.search).get("renderer") === "military",
+            });
             this.$ = (s) => root.querySelector(s);
             this.abort = new AbortController();
             this.keys = new Set();
@@ -1578,6 +1604,33 @@
             this.weapons = new WeaponArt(this);
             this.retention = new Retention(this);
             this.ui = new MenuUI(this);
+            if (new URLSearchParams(location.search).get("renderer") === "military") {
+              this.shell.classList.add("mf-military");
+              this.$(".mf-tag").textContent = "TACTICAL 3D / LOADING";
+              import("./outpost-military.js")
+                .then(async ({ MilitaryRenderer }) => {
+                  if (this.abort.signal.aborted) return;
+                  const renderer = new MilitaryRenderer(this);
+                  this.military = renderer;
+                  await renderer.ready;
+                  if (this.abort.signal.aborted) {
+                    renderer.dispose();
+                    return;
+                  }
+                  this.militaryLoaded = true;
+                  this.$(".mf-tag").textContent = "TACTICAL 3D / PREVIEW";
+                  this.$(".mf-copy").textContent =
+                    "Field operations in a weathered desert compound. Choose a loadout and deploy.";
+                  this.resize();
+                  this.ui.previewKey = null;
+                  this.ui.refresh();
+                })
+                .catch(() => {
+                  this.$(".mf-tag").textContent = "3D UNAVAILABLE / CLASSIC VIEW";
+                  this.$(".mf-kitnote").textContent =
+                    "The 3D preview could not load on this device. The original game remains playable.";
+                });
+            }
             this.resizeObserver = new ResizeObserver(() => this.resize());
             this.resizeObserver.observe(this.shell);
             this.resize();
@@ -2356,6 +2409,7 @@
             this.depth = new Float32Array(this.w);
             this.projection = this.w / (2 * Math.tan(Math.PI / 6));
             this.ctx.imageSmoothingEnabled = false;
+            this.military?.resize();
             // Cache DOM geometry only on resize; keep the minimap clear of the
             // menu button and touch controls at every internal render scale.
             const pause = this.$(".mf-pause").getBoundingClientRect(),
@@ -3372,6 +3426,7 @@
             const c = this.ctx,
               now = performance.now(),
               hurt = Math.max(0, (this.damageUntil - now) / 520);
+            if (this.militaryLoaded) c.clearRect(0, 0, this.w, this.h);
             c.save();
             if (hurt > 0)
               c.translate(
@@ -3384,16 +3439,20 @@
                   hurt *
                   (matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1),
               );
-            this.drawWorld();
-            this.art.lighting();
-            this.drawEnemies();
-            this.drawHaze();
-            this.drawCombatEffects();
-            this.art.effectsWorld();
-            if (this.player.hp > 0) {
-              this.art.weaponBefore();
-              this.drawWeapon();
-              this.art.weaponAfter();
+            if (this.militaryLoaded) {
+              this.military.render();
+            } else {
+              this.drawWorld();
+              this.art.lighting();
+              this.drawEnemies();
+              this.drawHaze();
+              this.drawCombatEffects();
+              this.art.effectsWorld();
+              if (this.player.hp > 0) {
+                this.art.weaponBefore();
+                this.drawWeapon();
+                this.art.weaponAfter();
+              }
             }
             c.restore();
             this.drawMap();
@@ -3461,6 +3520,7 @@
             this.frame = requestAnimationFrame(this.loop);
           }
           destroy() {
+            this.military?.dispose();
             this.retention?.destroy();
             this.leaveOnline();
             cancelAnimationFrame(this.frame);
