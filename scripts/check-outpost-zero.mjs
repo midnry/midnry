@@ -13,6 +13,10 @@ const academy = readFileSync(
   "utf8",
 );
 const art = readFileSync(new URL("../public/games/outpost-art.js", import.meta.url), "utf8");
+const characters = readFileSync(
+  new URL("../public/games/outpost-characters.js", import.meta.url),
+  "utf8",
+);
 const retention = readFileSync(
   new URL("../public/games/outpost-retention.js", import.meta.url),
   "utf8",
@@ -51,13 +55,15 @@ mkdirSync(screenshotDir, { recursive: true });
                 ? academy
                 : route.request().url().endsWith("outpost-art.js")
                   ? art
-                  : route.request().url().endsWith("outpost-retention.js")
-                    ? retention
-                    : route.request().url().endsWith("outpost-progression.js")
-                      ? progression
-                      : route.request().url().endsWith("outpost-ui.js")
-                        ? menuUI
-                        : html,
+                  : route.request().url().endsWith("outpost-characters.js")
+                    ? characters
+                    : route.request().url().endsWith("outpost-retention.js")
+                      ? retention
+                      : route.request().url().endsWith("outpost-progression.js")
+                        ? progression
+                        : route.request().url().endsWith("outpost-ui.js")
+                          ? menuUI
+                          : html,
         }),
       );
       await page.goto("http://outpost.test/");

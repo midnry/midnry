@@ -188,6 +188,7 @@ export default defineConfig(({ command, isPreview }) => ({
                   "outpost-content.js",
                   "outpost-academy.js",
                   "outpost-art.js",
+                  "outpost-characters.js",
                   "outpost-retention.js",
                   "outpost-ui.js",
                   "outpost-progression.js",
