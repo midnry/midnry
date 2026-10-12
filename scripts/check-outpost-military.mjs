@@ -18,12 +18,19 @@ try {
       if (m.type() === "error") errors.push(m.text());
     });
     await page.goto(base + "/games/outpost-zero.html?renderer=military");
-    await page.waitForFunction(() => document.querySelector("midnry-fps")?.engine?.militaryLoaded, null, {
-      timeout: 60000,
-    });
+    await page.waitForFunction(
+      () => document.querySelector("midnry-fps")?.engine?.militaryLoaded,
+      null,
+      {
+        timeout: 60000,
+      },
+    );
     const stats = await page.evaluate(() => {
       const g = document.querySelector("midnry-fps").engine;
       cancelAnimationFrame(g.frame);
+      g.mode = "signal";
+      g.mapId = "outpost";
+      g.reset();
       g.$(".mf-modal").hidden = true;
       g.player.x = 3.5;
       g.player.y = 2.5;
@@ -67,7 +74,7 @@ try {
         };
         g.academy.preset = "performance";
         g.academy.options.shadows = false;
-        for (const id of Object.keys(MAPS)) {
+        for (const id of Object.keys(MAPS).filter((id) => !MAPS[id].protocolOnly)) {
           g.mapId = id;
           g.reset();
           r.render();
@@ -141,8 +148,17 @@ try {
         g.academy.options.shadows = g.academy.options.lighting = true;
         r.render();
         check(r.ao.enabled, "High contact shadows enabled");
-        check(r.sun.shadow.mapSize.x === 4096, "High shadow resolution");
+        check(r.sun.shadow.mapSize.x === 2048, "High focused shadow resolution");
+        check(r.sun.shadow.camera.right <= 26 && r.sun.shadow.camera.left >= -26, "shadow detail stays focused near the player");
+        check(!r.rim.visible && !r.grade.enabled, "natural materials and motivated sources supply the look");
         check(r.reflection.getRenderTarget().width === 1024, "High reflection resolution");
+        const supportedSamples = r.offscreenSamples;
+        r.offscreenSamples = 0;
+        r.lastPreset = "";
+        r.render();
+        check(r.fxaa.enabled && r.composer.renderTarget1.samples === 0, "antialiasing works without float multisampling");
+        r.offscreenSamples = supportedSamples;
+        r.lastPreset = "";
         g.academy.preset = "balanced";
         r.render();
         g.player.x = 3.5;
@@ -157,7 +173,7 @@ try {
         });
         g.render();
         return {
-          maps: Object.keys(MAPS).length,
+          maps: Object.keys(MAPS).filter((id) => !MAPS[id].protocolOnly).length,
           weapons: Object.keys(WEAPONS).length,
           animationSamples: samples,
           materials: r.materials.size,

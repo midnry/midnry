@@ -1,152 +1,77 @@
-import { chromium } from "playwright";
+/** Real browser checks for unsupported-device handling and recovery. Local servers only. */
 import assert from "node:assert/strict";
+import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
 const base = process.argv[2] || "http://127.0.0.1:8080";
-const browser = await chromium.launch({
-  executablePath: "/usr/bin/chromium",
-  args: [
-    "--no-sandbox",
-    "--use-gl=angle",
-    "--use-angle=swiftshader",
-    "--enable-unsafe-swiftshader",
-  ],
-});
+assert.ok(["127.0.0.1", "localhost", "[::1]"].includes(new URL(base).hostname));
+mkdirSync("/workspace/screenshots", { recursive: true });
+const browser = await chromium.launch({ executablePath: "/usr/bin/chromium", args: ["--no-sandbox", "--enable-unsafe-swiftshader"] });
 try {
-  const cases =
-    process.argv[3] === "--smoke"
-      ? ["tablet-landscape", "startup-recovery"]
-      : [
-          "tablet-landscape",
-          "tablet-portrait",
-          "phone",
-          "desktop",
-          "no-float",
-          "startup-recovery",
-          "no-webgl",
-        ];
-  for (const scenario of cases) {
-    const portrait = scenario === "tablet-portrait";
-    const page = await browser.newPage({
-      viewport:
-        scenario === "phone"
-          ? { width: 390, height: 844 }
-          : portrait
-            ? { width: 768, height: 1024 }
-            : { width: 1024, height: 768 },
-      hasTouch: scenario !== "desktop",
+  const results = [];
+  for (const mobile of [false, true]) {
+    const page = await browser.newPage({ viewport: mobile ? { width: 390, height: 844 } : { width: 1280, height: 800 }, hasTouch: mobile, isMobile: mobile, ignoreHTTPSErrors: true });
+    const errors = [], requests = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+    page.on("request", (request) => requests.push(request.url()));
+    await page.addInitScript(() => {
+      localStorage.setItem("midnry-outpost-graphics", JSON.stringify({ preset: "performance", options: { adaptive: false } }));
+      window.__testEnableGraphics = false;
+      const original = HTMLCanvasElement.prototype.getContext;
+      HTMLCanvasElement.prototype.getContext = function (type, ...args) {
+        if (type === "webgl2" && !window.__testEnableGraphics) return null;
+        return original.call(this, type, ...args);
+      };
     });
-    const errors = [];
-    page.on("pageerror", (e) => errors.push(e.message));
-    page.on("console", (m) => {
-      if (m.type() === "error") errors.push(m.text());
+    await page.goto(base + "/games/outpost-zero.html", { waitUntil: "domcontentloaded" });
+    await page.waitForFunction(() => document.querySelector("midnry-fps")?.engine?.compatibilityReport?.status === "unsupported", null, { polling: 100 });
+    assert.equal(await page.evaluate(() => document.querySelector("midnry-fps").engine.militaryLoaded), false);
+    await page.locator(".mf-render-retry").waitFor({ state: "visible" });
+    assert.equal(await page.locator(".mf-start").isDisabled(), true);
+    assert.match(await page.locator(".mf-render-status").innerText(), /WebGL 2 is unavailable/i);
+    assert.equal(requests.some((url) => /\/outpost-military\.js/.test(url)), false, "unsupported graphics do not download the 3D renderer");
+    await page.screenshot({ path: `/workspace/screenshots/outpost-compatibility-unsupported-${mobile ? "mobile" : "desktop"}.png` });
+    await page.evaluate(() => { window.__testEnableGraphics = true; });
+    await page.locator(".mf-render-retry").click();
+    await page.waitForFunction(() => {
+      const g = document.querySelector("midnry-fps").engine;
+      return g.militaryLoaded && !g.militaryLoading;
+    }, null, { polling: 100, timeout: 60000 });
+    const report = await page.evaluate(() => {
+      const g = document.querySelector("midnry-fps").engine;
+      cancelAnimationFrame(g.frame); g.frame = 0;
+      return { ...g.compatibilityReport, preset: g.academy.preset };
     });
-    await page.addInitScript(
-      ({ scenario }) => {
-        if (scenario !== "desktop") {
-          Object.defineProperty(navigator, "platform", { value: "MacIntel" });
-          Object.defineProperty(navigator, "maxTouchPoints", { value: 5 });
-        }
-        if (scenario === "no-float") {
-          const original = WebGL2RenderingContext.prototype.getExtension;
-          WebGL2RenderingContext.prototype.getExtension = function (name) {
-            return ["EXT_color_buffer_float", "EXT_color_buffer_half_float"].includes(name)
-              ? null
-              : original.call(this, name);
-          };
-        }
-        if (["startup-recovery", "no-webgl"].includes(scenario)) {
-          const original = HTMLCanvasElement.prototype.getContext;
-          let attempts = 0;
-          HTMLCanvasElement.prototype.getContext = function (type, ...args) {
-            if (type === "webgl2" && (scenario === "no-webgl" || ++attempts <= 2)) return null;
-            return original.call(this, type, ...args);
-          };
-        }
-      },
-      { scenario },
-    );
-    await page.goto(base + "/games/outpost-zero.html?renderer=military");
-    await page.waitForFunction(
-      () => document.querySelector("midnry-fps")?.engine?.loading === false,
-      null,
-      { timeout: 90000 },
-    );
-    if (scenario === "no-webgl") {
-      assert.equal(await page.locator(".mf-tag").textContent(), "3D UNAVAILABLE / CLASSIC VIEW");
-      assert((await page.locator(".mf-rendernotice").textContent()).includes("WebGL 2"));
-    } else {
-      const state = await page.evaluate(() => {
-        const g = document.querySelector("midnry-fps").engine,
-          r = g.military;
-        if (!r) throw Error(g.rendererError || "No cinematic renderer");
-        cancelAnimationFrame(g.frame);
-        const before = JSON.stringify(g.arena.snapshot());
-        g.render();
-        return {
-          loaded: g.militaryLoaded,
-          profile: r.profile,
-          ao: !!r.ao,
-          halfFloat: r.profile.halfFloat,
-          composer: !!r.composer,
-          soldier: !!r.soldier,
-          assets: r.assetErrors,
-          pure: before === JSON.stringify(g.arena.snapshot()),
-          canvases: g.shell.querySelectorAll(".mf-webgl").length,
-        };
-      });
-      assert(state.loaded && state.soldier && state.pure);
-      assert.deepEqual(state.assets, []);
-      assert.equal(state.canvases, 1);
-      if (scenario !== "desktop") {
-        assert.equal(state.ao, false);
-        assert(state.profile.maxShadowSize <= 1024);
-      }
-      if (scenario === "no-float") assert.equal(state.halfFloat, false);
-      if (scenario === "startup-recovery") {
-        assert(state.profile.safeMode);
-        assert.equal(state.composer, false);
-      }
-      if (scenario.startsWith("tablet")) {
-        await page.evaluate(() => {
-          const g = document.querySelector("midnry-fps").engine;
-          g.$(".mf-modal").hidden = true;
-          g.player.x = 3.5;
-          g.player.y = 2.5;
-          g.player.a = 0;
-          g.viewPitch = 0;
-          g.enemies.forEach((e, i) => {
-            e.x = 5.5 + i * 0.4;
-            e.y = 2.8 + i * 0.3;
-            e.hp = 100;
-          });
-          g.render();
-        });
-        await page.screenshot({ path: `/workspace/screenshots/outpost-ipad-${scenario}.png` });
-      }
-      if (portrait) {
-        await page.evaluate(() =>
-          document
-            .querySelector("midnry-fps")
-            .engine.military.renderer.getContext()
-            .getExtension("WEBGL_lose_context")
-            .loseContext(),
-        );
-        await page.waitForFunction(
-          () => {
-            const g = document.querySelector("midnry-fps").engine;
-            return g.militaryLoaded && !g.loading && g.military?.profile.safeMode;
-          },
-          null,
-          { timeout: 90000 },
-        );
-        assert.equal(await page.locator(".mf-tag").textContent(), "TACTICAL 3D / COMPATIBLE");
-        assert.equal(await page.locator(".mf-webgl").count(), 1);
-        console.log("Actual GPU context loss recovered into cinematic 3D");
-      }
-    }
+    assert.ok(["ready", "limited"].includes(report.status));
+    assert.equal(report.checks.length, 4);
+    assert.ok(report.checks.every((check) => ["passed", "warning"].includes(check.status)));
+    assert.ok(Number.isFinite(report.frameCostMs));
+    assert.equal(report.preset, "performance", "recommendations preserve saved preferences");
+    await page.locator(".mf-compat-open").click();
+    await page.locator(".mf-compat-report").waitFor({ state: "visible" });
+    assert.match(await page.locator(".mf-compat-body").innerText(), /brief test|short scene sample/i);
+    await page.screenshot({ path: `/workspace/screenshots/outpost-compatibility-report-${mobile ? "mobile" : "desktop"}.png` });
+    await page.locator(".mf-compat-close").click();
+    const roundBeforeHelp = await page.evaluate(() => document.querySelector("midnry-fps").engine.arena.roundId);
+    await page.locator(".mf-boot").click();
+    await page.waitForFunction(() => document.querySelector("midnry-fps").engine.protocolUI.guide.open, null, { polling: 100 });
+    assert.equal(await page.evaluate(() => document.querySelector("midnry-fps").engine.mode), "protocol");
+    assert.equal(await page.evaluate(() => document.querySelector("midnry-fps").engine.arena.roundId), roundBeforeHelp, "mission tutorial preserves rescue progress");
+    await page.keyboard.press("Escape");
     assert.deepEqual(errors, []);
-    console.log("PASS", scenario);
+    results.push({ mobile, blockedGraphics: "passed", rendererNotDownloaded: "passed", retry: "passed", measuredReport: "passed", preferencesPreserved: "passed", errors });
     await page.close();
   }
-} finally {
-  await browser.close();
-}
+  const features = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const errors = [], requests = [];
+  features.on("pageerror", (error) => errors.push(error.message));
+  features.on("request", (request) => requests.push(request.url()));
+  await features.addInitScript(() => { window.ResizeObserver = undefined; });
+  await features.goto(base + "/games/outpost-zero.html", { waitUntil: "domcontentloaded" });
+  await features.waitForFunction(() => document.querySelector("midnry-fps")?.engine?.compatibilityReport?.status === "unsupported", null, { polling: 100 });
+  assert.match(await features.locator(".mf-render-status").innerText(), /ResizeObserver/);
+  assert.equal(requests.some((url) => /\/outpost-military\.js/.test(url)), false);
+  assert.deepEqual(errors, [], "missing browser APIs show a compatibility result instead of crashing setup");
+  await features.close();
+  console.log(JSON.stringify({ compatibility: results, missingBrowserFeature: "passed" }));
+} finally { await browser.close(); }

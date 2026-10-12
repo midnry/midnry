@@ -41,6 +41,10 @@ source = source
   .replace(
     "../../../public/games/outpost-sim.js",
     pathToFileURL(resolve("public/games/outpost-sim.js")).href,
+  )
+  .replace(
+    "../../../public/games/outpost-protocol.js",
+    pathToFileURL(resolve("public/games/outpost-protocol.js")).href,
   );
 const modulePath = join(temporary, "rooms.mjs");
 await writeFile(modulePath, source);

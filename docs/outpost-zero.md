@@ -1,6 +1,6 @@
 # Midnry — Outpost Zero
 
-The game uses nine small static files: `public/games/outpost-zero.html` (Canvas rendering, procedural art, scoped CSS, controls and lobby) and `public/games/outpost-sim.js` (shared match rules), and `public/games/outpost-content.js` (maps, palettes, scenery and weapon definitions), plus `public/games/outpost-academy.js` (tutorial, field guide and graphics materials), and `public/games/outpost-art.js` (scenery, animations, lighting and cosmetic effects), `public/games/outpost-retention.js` (sound, results and locker UI) and `public/games/outpost-progression.js` (device-local cosmetic rewards), `public/games/outpost-characters.js` (painted character rigs and directional animation), plus `public/games/outpost-ui.js` (menu hierarchy, shared settings panel and map/weapon previews). Serve all nine modules plus the four bundled WebP atlases in `public/games/characters/` over HTTP. Offline play needs no backend or externally hosted assets; online rooms use the Midnry API and database. No game framework is required. ES modules require a web server rather than opening a local file directly.
+The game is a scoped HTML/JavaScript component with a locally bundled Three.js WebGL renderer (`outpost-military.js`). Canvas is used only for HUD and tactical diagrams. Serve the `public/games/` modules and `public/games/military/` assets over HTTP. Offline play needs no backend or runtime CDN; online rooms use the Midnry API and database. The retired comic art modules and atlases are no longer imported or rendered by the game.
 
 ## Midnry integration
 
@@ -8,7 +8,7 @@ The homepage links to `/discover/outpost-zero`, which launches `/games/outpost-z
 
 ## Embed elsewhere
 
-For the strongest isolation from your site's existing CSS and scripts, serve all nine files in `/games/` and copy `public/games/characters/` to `/games/characters/`, then embed:
+For the strongest isolation from your site's existing CSS and scripts, serve the game modules in `/games/` and copy `public/games/military/` to `/games/military/`, then embed:
 
 ```html
 <iframe
@@ -39,26 +39,11 @@ Do not copy the standalone file's `<body>` style to your host page. Every styles
 
 ## Engine and extension guide
 
-The prototype already implements the requested first steps for shooting, enemies and a weapon. Extend these named pieces:
-
-| Feature             | Where to edit                                      | How it works / what to add                                                                                                                                                                                                                                                                                                         |
-| ------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Arena               | `outpost-sim.js: LEVEL`                            | Equal-length rows of tile IDs. `0` is walkable, `1` is sandstone, `2` teal steel, `3` hazard walls. Keep the perimeter closed.                                                                                                                                                                                                     |
-| Raycasting          | `cast()` and `drawWorld()`                         | Grid DDA finds each wall. Camera-plane rays produce perpendicular distances, avoiding fisheye. A depth buffer clips enemy sprites against walls.                                                                                                                                                                                   |
-| Movement            | `update()`, `canMove()`, `move()`                  | Delta-time movement, diagonal normalization, player-radius collision and sliding along walls. Edit walking/sprint speeds here.                                                                                                                                                                                                     |
-| Shooting            | `shoot()`                                          | A hitscan ray picks the nearest enemy within its hit radius, before the first wall. A simple vertical tolerance follows the shifted horizon. Edit cooldown, magazine size and damage here. For headshots, add a distinct height range; for projectiles, update projectile positions and test the segment against walls each frame. |
-| Enemies             | `Arena.constructor()`, `updateRival()`, `pathTo()` | Spawn coordinates, health, line of sight, grid pathfinding and attack timing.                                                                                                                                                                                                                                                      |
-| Enemy art           | `Characters`, `drawEnemies()`                      | Original painted human rigs with eight view angles and articulated animation; visible pixel strips are depth-tested. Extend the rigs in `outpost-characters.js` or substitute a sprite sheet.                                                                                                                                      |
-| First-person weapon | `drawWeapon()`                                     | Layered outlined polygons with walk bob, recoil, reload dip and muzzle flash. Replace with a sprite animation or add an aim-down-sights interpolation.                                                                                                                                                                             |
-| HUD / menus         | `connectedCallback()`, `updateHUD()`               | Component-scoped markup. Add score, weapon switches, options or mission variants here.                                                                                                                                                                                                                                             |
-| Touch / keyboard    | `bindInputs()`                                     | Scoped keyboard input, pointer capture for touch and pointer lock for desktop. Tune mouse and drag sensitivity here.                                                                                                                                                                                                               |
-| Audio               | `outpost-retention.js: FieldAudio / observe()`     | Procedural Web Audio, gesture-unlocked, with volume/mute and teardown. No audio downloads.                                                                                                                                                                                                                                         |
-
-This is an original comic-styled training prototype: flat cel colors, dark outlines, warm sandstone, teal metal, hazard bands and drawn weapons. It uses no Call of Duty or Borderlands assets. It includes AI pathfinding and server-authoritative online rooms. It includes procedural sound and device-local cosmetic progression. It does not include jumping or weapons picked up/swapped mid-round. Vertical aiming is a shifted raycast horizon, not true 3D geometry.
+Simulation, collision and online authority remain in `outpost-sim.js` and `outpost-protocol.js`. Edit maps and weapons in `outpost-content.js`, and the default base in `outpost-protocol-map.js`. Edit cinematic world, skeletal characters, first-person weapons and effects in `scripts/outpost-military/renderer.js`, then regenerate `outpost-military.js`. Menus and weapon previews live in `outpost-ui.js`; tutorial and field-guide content live in `outpost-academy.js`. The HTML owns scoped styles, input, renderer initialization and graphics recovery.
 
 ## Validation
 
-The prototype was checked with Chromium through Playwright. It checks movement, wall collision, DDA distances, hitscan damage and kills, wall-blocked shots, reloads, pause state, multiple instances, teardown and mobile joystick cancellation. Desktop and mobile renders were visually inspected. Touch was checked in browser emulation, not on physical devices.
+Desktop and mobile browser checks cover real controls, gameplay, the embedded page, direct/old links, failed 3D initialization, retry, GPU context loss, teardown and retired-artwork request prevention. Screenshots are visually inspected. Touch uses browser emulation; physical devices and sustained 120 Hz output require separate hardware testing.
 
 ## Last Signal · Solo
 
@@ -74,7 +59,7 @@ Select **Play Solo** in the Deploy menu. Offline, this is a single-player surviv
 
 The VX–7 starts at 40 damage; rival bots start at 16. Core boosts apply to both player and bots. Gas damage applies to everyone outside the safe rectangle and increases with elapsed match time and uninterrupted exposure. Returning inside clears the exposure bonus. Pausing freezes all match timers.
 
-Key extension points: `reset()` (spawn and loot layout), `damage()` (crate drops and eliminations), `collectCores()` (permanent upgrades), `updateZone()` / `applyHaze()` (hazard timing), `updateRival()` / `pathTo()` (AI competition and navigation), `checkResult()` (last-survivor condition), and `drawHaze()` / `drawMap()` (hazard visualization).
+Key extension points: `reset()` (spawn and loot layout), `damage()` (crate drops and eliminations), `collectCores()` (permanent upgrades), `updateZone()` / `applyHaze()` (hazard timing), `updateRival()` / `pathTo()` (AI competition and navigation), `checkResult()` (last-survivor condition), and the military renderer / `drawMap()` (hazard visualization).
 
 ## Pair Ops · Duo
 
@@ -105,7 +90,7 @@ The original Dust Outpost is joined by four original arenas. These use layout id
 | Freight Rush | 12 × 12 | Four container blocks, a cross-shaped center and short rotations                                           |
 | Wreck Estate | 20 × 20 | Three lanes around a downed rotorcraft, villa rooms and a turquoise pool court                             |
 
-Geometry stays in the flat 2.5D raycaster. There are no playable upper floors. Vaults cross interior cover and choose a walkable landing spot; they are abilities in the flat simulation, not free jumping. Scenery billboards and painted pool/street zones are decorative. Interior cover can be broken by specified supers; perimeter walls always remain sealed. Offline loadout/map changes begin a fresh round. Online maps are host-selected and loadouts are individual lobby choices, locked when a match starts.
+Simulation remains on a single 2.5D plane, with a separate Three.js 3D presentation. There are no playable upper floors. Vaults cross interior cover and choose a walkable landing spot; they are abilities in the flat simulation, not free jumping. Environment details are decorative and do not add collision or new sightlines. Interior cover can be broken by specified supers; perimeter walls always remain sealed. Offline loadout/map changes begin a fresh round. Online maps are host-selected and loadouts are individual lobby choices, locked when a match starts.
 
 | Loadout        | Main attack                                                                   | Charged ability                                                          |
 | -------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
@@ -135,19 +120,9 @@ The deployment menu has **Boot Camp**, **Field Guide** and **Graphics** buttons.
 
 The field manual generates overhead layouts for all five maps and base stats/ability descriptions for all eleven weapons directly from the shared catalog. The native modal supports keyboard focus containment and Escape. Online matches continue behind menus.
 
-Graphics presets: Performance (720px / 128-texel materials), Balanced (960px / 256 texels), High (1440px / 512 texels), capped by viewport width. Higher presets use denser floor sampling and higher-resolution character/loot art. Cached procedural wall textures include mortar, bolts, hatching and scratches; mip levels reduce distant aliasing. A reusable projected floor pixel buffer avoids per-pixel Canvas drawing calls. Scenery distance, depth-tested contact shadows and stepped material highlights preserve the ink outlines. Shadows and lighting can be toggled independently; preferences persist in device-local storage when available. These are Canvas equivalents, not GPU anisotropic filtering, polygon LOD, screen-space shadow maps or shader programs. Choose Performance on slower devices; no fixed frame rate is guaranteed.
+Graphics presets use the cinematic renderer described below. Performance lowers internal resolution and effects; Balanced and High add reflections and more detailed shadows. All presets retain PBR materials and 3D models. Graphics changes require confirmation and persist on the device.
 
 Validation: `node scripts/check-outpost-academy.mjs [baseURL]` exercises the complete tutorial on desktop and touch, checks all guide entries, persists presets, verifies practice cleanup and captures screenshots.
-
-## Comic scenery and animation
-
-`ComicArt` adds visual details without changing server rules or collision geometry. Arena decoration includes desert cacti/antennae, test-site gardens/mailboxes, terminal baggage carts/beacons, freight pallets/drums, and estate palms/rubble/deck chairs. These props are decorative and give no additional bullet cover. Painted walls include cables, window reflections, safety labels and container corrugation; directional texture orientation keeps lettering readable. Indoor regions have dark panel ceilings and cool light, while exterior surfaces retain warm sunlight. Backgrounds include clouds, airport towers/aircraft, port cranes and test-site silhouettes.
-
-Character billboards use the painted human rigs described below, with layered equipment, directional views and action animations. Weapon presentation adds reload hand/magazine motion, melee swings, gunfire casings and muzzle smoke. Hit debris, cover fragments, explosion rings and temporary wall impact marks are driven by observed match state. Particle counts, decals, caches and effect histories are bounded, reset between matches, and freeze with offline simulation time. Online visual effects follow server snapshots; cosmetics never send authoritative damage. Reduced-motion preferences disable added limb, weapon and atmospheric motion and keep impact particles static as they fade.
-
-Run `node scripts/check-outpost-art.mjs [baseURL]` for desktop/mobile scene captures, impact/cover/casing/smoke checks, effect limits, pause/reset behavior, reduced motion and a check that rendering does not change match snapshots.
-
-The Midnry iframe includes a graphics-release query parameter, preserving room invite parameters. Static game files send `Cache-Control: no-cache` so returning browsers revalidate stable filenames when a new release arrives.
 
 ## Player experience and cosmetic progression
 
@@ -177,29 +152,11 @@ Changing a graphics preset, contact shadows or material lighting opens **Apply g
 
 `node scripts/check-outpost-qol.mjs [baseURL]` covers graphics apply/cancel/Escape and saved preferences, saved cosmetic preservation, standalone and embedded exit, rejected messages from the wrong window, online forfeit and host transfer.
 
-## Illustrated anime characters
-
-`outpost-characters.js` uses three original illustrated archetypes: Ember Scout, Iron Nomad and Thorn Warden. Four locally hosted WebP atlases provide 60 drawings in total: 16 poses per character plus four back-running poses each. Detailed eyes, natural adult proportions, hair strands, fabric folds, armor and shaded hands replace geometric cutout art. Rifle, heavy and throwing/blade loadout families select the matching archetype; Duo allies retain a mint identification badge and existing partner labels. Character equipment illustrates its family rather than every individual loadout; gameplay and first-person weapon selection remain governed by `outpost-content.js`.
-
-Eight camera-relative directions select front, quarter, profile and mirrored/back views. Four-phase illustrated running cycles cover front, quarter and rear movement. Idle breathing, firing recoil, equipment handling, expressive hit reactions and a kneeling defeat pose use match timestamps. Reload transitions select the illustrated handling pose, and rear attack reactions retain the rear silhouette. Reduced-motion preferences stop looping movement. This is pose-based 2D animation in a raycaster, rather than a full 3D animation system.
-
-The atlases load and decode asynchronously; the prior procedural rig provides a fallback if artwork is still loading or unavailable. Explicit alpha bounds and lazy connected-silhouette extraction prevent neighboring frames leaking into a pose. Each original atlas remains untouched; runtime frames are cropped into Canvas buffers. Smooth character sampling preserves thin ink lines, while walls retain their comic rendering.
-
-Performance, Balanced and High generate 192×288, 288×432 and 384×576 composed character frames respectively. Only visible, wall-unoccluded characters request frames; a 128-entry LRU limits composed canvas memory, and at most 60 source cells are extracted per game instance. Changing graphics clears composed frames. Animation reads shared match timestamps and positions without changing health, collisions, hitboxes or online authority. Defeated characters disappear after 0.9 seconds and respawns reset the defeat pose.
-
-Validate with `node scripts/check-outpost-characters.mjs [base-url]`: decoded art, source cells, states and angles, loadouts, resolution tiers, cache bounds, unchanged simulation snapshots, wall occlusion, respawns, reduced motion and desktop/mobile behavior.
-
 ## 120 FPS rendering target and 30 FPS animation
 
-The game follows the display's `requestAnimationFrame` cadence with a 120 FPS work budget (8.33 ms per frame). Automatic resolution is enabled in each graphics preset: sustained work above 6.8 ms gradually lowers render width and floor sampling cost; repeated slow frames also trigger reduction, and sustained spare capacity gradually restores detail. The scale stays between 50% and 100%, with a 240px minimum render width when the viewport permits. Settings shows measured FPS, work time and the target. Turning automatic resolution off uses the normal confirmation menu and saves that choice on this device.
+The renderer follows the display's animation loop with an adaptive 120 FPS work budget. Sustained expensive frames lower internal resolution, and spare capacity restores detail within bounded limits. Settings displays measured FPS and work time. Skeletal character poses sample at 30 FPS independently of the display rendering loop. Offline pause and reduced-motion preferences stop decorative motion; online presentation continues between server snapshots. Menus render their frozen background less often while input and online timers remain responsive.
 
-Sprite rendering batches contiguous wall-visible columns into a few source crops instead of one Canvas draw per pixel. Contact shadows use the same depth-tested ranges. The floor reuses its buffer when camera, safe-zone and graphics state are unchanged, skips per-pixel event dispatch and avoids temporary color allocations. HUD updates during gameplay are limited to 30 Hz; explicit menu/reset refreshes remain immediate. These optimizations preserve simulation rules and wall occlusion.
-
-Character presentation samples a 30 Hz timeline. Four illustrated gait key poses per direction are supplemented with cloth/limb deformation samples, giving a fifteen-sample cycle played at 30 FPS (faster during sprint). This is interpolated sprite motion, not 30 newly drawn anime cells every second. Idle breathing, recoil, reload motion and hit reactions also use the 30 Hz timeline. The 128-frame cache on every graphics preset now holds a full seven-opponent gait cycle to avoid repeated canvas allocation. Reduced-motion settings and offline pause intentionally stop looping animation. First-person weapon and particle motion use a local presentation clock between authoritative online snapshots; online requests and server authority remain at their existing 10 Hz rate.
-
-120 visible FPS requires a display running at 120 Hz or higher and sufficient CPU/GPU capacity. Browser refresh limits, power saving and slow devices can reduce visible FPS; automatic resolution cannot override those limits. There is no timer-generated substitute for display frames.
-
-`node scripts/outpost-performance.test.mjs` checks measured cadence, budget adaptation, hysteresis and the 30 Hz constant. `node scripts/check-outpost-performance.mjs [base-url]` checks actual animation samples, online presentation between snapshots, sprite draw batching, unchanged match snapshots, sustained desktop/mobile render work, and confirmed/persisted automatic resolution. Its headless display cadence is reported honestly and is not a physical 120 Hz device certification.
+120 visible FPS requires a 120 Hz or faster display and sufficient CPU/GPU capacity. Browser refresh limits and power saving can reduce visible FPS. This target is not a physical-device performance certification.
 
 ## Accessible game chrome
 
@@ -213,39 +170,55 @@ Run `node scripts/check-outpost-accessibility.mjs [baseURL]` for desktop, 390px/
 
 ## Rounded interface shapes
 
-The game applies a consistent corner hierarchy: 32px menu/dialog surfaces, 16px cards, 12px ordinary controls, and circular fire/reload/menu controls. Full-width inset actions use the container radius minus the panel padding, with an 8px floor; mobile padding changes retain this relationship. Dialog header backgrounds use the inner surface radius. Browsers supporting CSS `corner-shape: squircle` receive continuous corners, with ordinary rounded rectangles as the fallback. All styles stay component-scoped and retain existing comic outlines, hit areas, focus/pressed feedback and text enlargement.
+The game applies a consistent corner hierarchy: 32px menu/dialog surfaces, 16px cards, 12px ordinary controls, and circular fire/reload/menu controls. Full-width inset actions use the container radius minus the panel padding, with an 8px floor; mobile padding changes retain this relationship. Dialog header backgrounds use the inner surface radius. Browsers supporting CSS `corner-shape: squircle` receive continuous corners, with ordinary rounded rectangles as the fallback. All styles stay component-scoped and retain hit areas, focus/pressed feedback and text enlargement.
 
 Apple's [Buttons HIG](https://developer.apple.com/design/human-interface-guidelines/buttons) calls for consistent corner radii and content padding on related buttons; [Sheets HIG](https://developer.apple.com/design/human-interface-guidelines/sheets) describes rounded cardlike modal surfaces. [Adopting Liquid Glass](https://developer.apple.com/documentation/technologyoverviews/adopting-liquid-glass) explains concentric corner relationships between containers and inset elements. The pixel values above are a web design choice, not a universal Apple specification; this styling does not reproduce native Liquid Glass materials.
 
-## Illustrated arsenal and ammunition
-
-`outpost-weapons.js` loads a transparent, illustrated eleven-weapon atlas, trims and caches each rig once, and shares it between first-person gameplay, loadout previews and the field guide. Recoil, reload and melee motion use the local presentation clock. If the atlas fails to load, procedural weapons remain usable.
-
-Cosmetic ammunition now distinguishes rifle bullets, pistol rounds, shotgun pellets, rockets, blades, poison daggers, spiked pods and dynamite. Hitscan tracers are short-lived, depth-tested and capped at 64. All effects only read the arena; damage, collisions and multiplayer authority remain in the simulation.
-
-## Painted environments
-
-`outpost-environment.js` loads two locally hosted WebP atlases: sixteen painted material tiles and five map-specific panoramic skies. Floor materials follow world coordinates and existing map zones (street, grass, terminal, apron, cargo yard, villa and pool). Ground sampling uses cached distance mipmaps, the existing adaptive floor buffer, and Red Haze tinting. Painted wall panels keep collision geometry, directional shading, ink outlines and readable signs. Skies wrap with camera rotation; interiors retain their ceiling instead of showing an outdoor panorama.
-
-Materials are decoded asynchronously and cached per graphics preset. Loading a material invalidates the procedural cache, and changing graphics clears the illustrated cache. Failed artwork loads preserve procedural floors, walls and skies. Rendering never changes arena state or multiplayer traffic. `node scripts/check-outpost-environment.mjs [base-url]` checks every map on desktop/mobile, camera movement, panorama wrapping, terrain zones, haze, cache reuse and loading failure. Performance checks remain in `check-outpost-performance.mjs`.
-
-
 ## Tactical 3D graphics
 
-The Midnry game page selects the locally bundled WebGL renderer with `renderer=military`. The simulation, multiplayer API, map collision, mobile controls, graphics confirmation, and exit flow remain shared with the original game. The static page also selects tactical 3D by default; `renderer=classic` explicitly selects the original illustrated renderer. Startup retries WebGL 2 with a low-power, non-multisampled context if the default context fails. Devices that cannot initialize WebGL, lose their graphics context, or fail to download the assets return to the original renderer with a visible explanation and Retry 3D link. Failed renderers are disposed.
+Every game entry point uses the cinematic WebGL renderer, including the embedded page, the bare static URL and old bookmarks with `renderer=classic`. No query parameter enables comic rendering. Loading, failed initialization and graphics-context loss show a neutral loading/recovery screen with Retry and Exit actions; they never draw the comic world, characters or weapons. Deployment is disabled until 3D is ready. All graphics presets retain the realistic materials and models; Performance reduces rendering cost without selecting another art style. Weapon thumbnails in menus and the field guide also use this renderer exclusively.
+Startup also retries a low-power WebGL 2 context and uses bounded Apple-touch GPU budgets; recovery retains cinematic graphics.
 
-The tactical presentation uses PBR asphalt, corrugated panels, worn metal and leather photographs, image-based HDR lighting, directional shadows, irregular wet-ground planar reflections, and cinematic color grading. High quality adds screen-space contact shadows, 4096-pixel sun shadows, and a 1024-pixel reflection target. Balanced uses a 512-pixel reflection target and 2048-pixel sun shadows. Performance omits planar reflections and cinematic processing; the shadow toggle remains respected. Rendering follows the existing adaptive internal resolution.
+The tactical presentation uses surface-specific PBR photographs: outdoor asphalt, indoor concrete, plaster, brick, woven cloth, and metal. Coated walls and weapons use dielectric paint rather than uniformly metallic shading; gun receivers no longer use the diamond-tread plate texture. Local mipmapped normal/roughness maps and anisotropic filtering preserve appropriately scaled detail. New asset provenance is in `public/games/military/REALISM-ASSETS.md`.
 
-Skeletal character poses update at 30 FPS independently of the display render loop. 120 FPS and 8K output are not guaranteed or validated on physical devices. The current infantry asset is an interim armored character; a purpose-built contemporary military character remains a future art upgrade. See `public/games/military/ATTRIBUTION.md` for asset provenance and licenses.
+Lighting follows the HDR sky direction with one sun and sky fill, avoiding an unrelated blue rim light. The shadow frustum follows the player and snaps to texels: High uses a 2048-pixel local sun atlas and 1024-pixel reflection target; Balanced/Performance use a 1024-pixel sun atlas, and Balanced uses 512-pixel reflections. Only fixtures within the occupied room illuminate its interior; weapons follow those same sources and power failures. High adds restrained screen-space contact shadows. Ground-water reflections use an angle-dependent Fresnel response and limited wet patches. Performance omits planar reflections and contact-shadow postprocessing; all shadow/lighting preferences remain respected. Exposure and tone mapping supply the look without a saturation, split-tone or vignette filter. Existing adaptive internal resolution remains in effect.
+
+Skeletal character poses update at 30 FPS independently of the display render loop. Soldiers are normalized to a natural 1.82-metre standing height, with a 1.65-metre eye camera. Material response preserves the authored character atlas instead of flattening it with a grey filter, and locomotion follows actual movement. 120 FPS and 8K output are not guaranteed or validated on physical devices. The current infantry sculpt is still an interim armored character; a purpose-built contemporary military character remains a future art upgrade. See `public/games/military/ATTRIBUTION.md` for asset provenance and licenses.
 
 Edit `scripts/outpost-military/renderer.js` and run `npm run build:outpost-military` to regenerate the self-contained public module. Production build scripts also regenerate it automatically. Static files have no runtime CDN dependency.
 
-Validation: `node scripts/check-outpost-military.mjs [base-url]` checks desktop/mobile rendering, all five maps and eleven loadouts, material cache bounds, camera alignment, cover destruction, weapon-specific projectile meshes, damaging fields, 30 FPS pose sampling, and quality settings. `node scripts/check-outpost-military-embed.mjs [base-url]` checks the integrated iframe, context-loss fallback, teardown, and original-renderer selection.
+Validation: `node scripts/check-outpost-military.mjs [base-url]` checks desktop/mobile rendering, all five maps and eleven loadouts, material cache bounds, camera alignment, cover destruction, weapon-specific projectile meshes, damaging fields, 30 FPS pose sampling, and quality settings. `node scripts/check-outpost-military-embed.mjs [base-url]` checks the integrated iframe, direct and legacy links, initialization failure, context-loss recovery, teardown and the absence of comic asset requests.
 
+## Blackout Protocol — Lifeline Run (default)
+
+Eight matching uniforms conceal six operators and two infiltrators. Bots fill unused seats; offline role preference helps learn each role and online roles are server-assigned. The mission has two parts:
+
+1. **Gather and load at Breakwater Base.** Collect four Trauma kits, two Surgical packs, three IV fluids and four Recovery supplements. Carry one item at a time, then load it at the hangar's medevac pad. Lost operators return any carried item to its source, so the mission cannot be blocked by inaccessible cargo. Any living operator can finish the shared manifest. Hold at the pad after all 13 items are loaded to board the aircraft.
+2. **Transport and deliver.** Lifeline Medevac has a connected cockpit, cabin, cargo bay and avionics room. Its normal route takes 120 seconds; operators can use autopilot or pilot manually. On arrival, repair damaged cargo if necessary and hold at the cargo console to hand off aid to the field clinic. Delivering aid while at least one patient remains alive wins the rescue; the result shows how many survived.
+
+Four wounded soldiers deteriorate throughout the mission, including radio assemblies. The crew loses if every operator dies or departs, every wounded soldier dies, or the aircraft crashes. Completing former base assignments, detaining all infiltrators and reaching the former reinforcement deadline do not skip the rescue. Lost operators can watch but cannot gather cargo, pilot, vote, report or speak on the living radio.
+
+Infiltrators can eliminate isolated operators, cut power, jam communications, use maintenance ducts at base and fake supply work. Three difficult-to-arm base charges remain an optional sabotage: a successful detonation destroys the staging operation and its crew. Base charges are cleared when the aircraft departs. In flight, infiltrators can damage medical cargo or disable autopilot through a six-second stationary interaction at avionics. Damaged cargo requires a six-second repair before delivery.
+
+Disabling autopilot gives the crew 18 seconds to recover flight control. A living operator must reach the helm, take the seat, and use W/S to adjust altitude and A/D to correct heading. Stay within the marked safe bands for three seconds to stabilize. Only the seated operator, after stabilization, can restore autopilot. Releasing the helm or losing the pilot while flying manually reopens the recovery emergency. There is no timer-based automatic recovery. Touch controls provide the same four flight inputs. Mouse or right-side dragging still looks around.
+
+Body reports and the emergency console start radio discussion and voting. Meetings block movement and interactions; patients keep deteriorating. An aircraft in manual flight must restore autopilot before a new assembly can start. Ties/Skip detain nobody. Discussion is bounded plain text; voice transport is not included. Online menus never pause the shared mission.
+
+`outpost-protocol.js` owns the DOM-free authoritative mission, victory conditions and legal AI. `outpost-protocol-map.js` defines the base, aircraft and supply catalog. `outpost-protocol-ui.js` owns briefings, medical HUD, contextual holds, flight controls and meetings. The renderer reads public mission state for cargo, instruments, terrain, landing apron and the four-stretcher destination clinic. Snapshot projection whitelists mission fields; only the authenticated recipient receives their own cargo, role and channel. Clients submit bounded intentions, never cargo counts, patient health, route progress or control flags. Existing database room storage needs no migration.
+
+Validation: `outpost-protocol.test.mjs` covers real collection/loading/boarding/flight/delivery, cargo recovery, wounded/crew/crash losses, stabilization and illegal restore, meetings, legal bots, JSON restoration and privacy. Map and server suites validate connected fixtures, mission-map restrictions and sanitized flight inputs. `check-outpost-protocol.mjs` drives real keyboard/touch holds and pilot axes; `--online` adds disposable eight-player local API/privacy checks.
+
+## Loading-screen compatibility check
+
+Every game open and graphics retry performs local checks for required browser APIs, an actual WebGL 2 shader/pixel test, detailed game files and a brief rendered scene sample. Unsupported browsers/devices are blocked before deployment with an explanation and Retry/Exit actions. Missing downloads are distinguished from browser capability failures. The game never falls back to comic graphics or simpler replacement characters.
+
+The scene sample records render cost and observed display cadence, recommends a graphics preset, and clearly explains that a brief test cannot guarantee sustained FPS. Saved graphics preferences are preserved. **Device check** in the menu opens the full report; accepting a recommendation uses the existing graphics confirmation dialog. Hardware data is not sent to a server or stored as a fingerprint. JavaScript/module startup failures also leave an actionable loading screen.
+
+Validation: `outpost-compatibility.test.mjs` checks capability failures and honest recommendations; `check-outpost-compatibility.mjs` checks desktop/mobile GPU rejection, retry, the measured report, preserved preferences and missing browser APIs without startup crashes. Cinematic lifecycle checks cover missing files, GPU context loss, retry and teardown.
 
 ## Loading and startup
 
-A loading screen appears before module downloads, reports completion of the fourteen tactical assets, and keeps controls inert until the first 3D frame has rendered. Loading has a 45-second timeout; failed core module downloads show a retry link. Explicit classic launches dismiss loading after the engine initializes. `node scripts/check-outpost-loading.mjs [base-url]` checks desktop/mobile loading, default tactical graphics, low-power context retry, first deployment, context-loss cleanup, asset failure and the classic opt-out. Set `CHROMIUM_PATH` to use a local Chromium installation.
+A loading screen appears before module downloads, reports completion of the all required tactical assets, and keeps controls inert until the first 3D frame has rendered. Loading has a 45-second timeout; failed core module downloads show a retry link. Legacy classic links select the same cinematic renderer. `node scripts/check-outpost-loading.mjs [base-url]` checks desktop/mobile loading, default tactical graphics, low-power context retry, first deployment, context-loss cleanup, asset failure and the cinematic-only recovery. Set `CHROMIUM_PATH` to use a local Chromium installation.
 
 
 ## Sprint, slide and death presentation
@@ -254,7 +227,7 @@ Hold Shift to sprint on a keyboard. On touchscreens, toggle SPRINT and push the 
 
 On death, the player camera drops and rolls with a fade to SIGNAL LOST for 1.2 seconds before the round debrief. Reduced-motion users get a 0.35-second fade without camera movement. A living Duo partner is spectated after the death sequence; an ended team gets its debrief. Surviving victories show the debrief immediately. Visible tactical rivals collapse briefly instead of disappearing immediately. Replay and online round starts clear death and sprint state.
 
-Validation: `node --test scripts/outpost-movement.test.mjs` verifies movement, cooldown, momentum, collisions and snapshot restoration. `node scripts/check-outpost-movement.mjs [base-url]` verifies keyboard/touch controls, death-before-results, camera collapse, replay reset, reduced-motion classic death and Duo spectating.
+Validation: `node --test scripts/outpost-movement.test.mjs` verifies movement, cooldown, momentum, collisions and snapshot restoration. `node scripts/check-outpost-movement.mjs [base-url]` verifies keyboard/touch controls, death-before-results, camera collapse, replay reset, reduced-motion death and Duo spectating.
 
 ### Loading showcase
 
@@ -266,13 +239,13 @@ Validate with `node scripts/check-outpost-loading.mjs [base-url]`.
 
 The Field Guide displays 960 × 600 stills of all 11 tactical weapon models. Select an image for an enlarged inspection view; the same geometry builds first-person rigs and AI equipment. Preview framing fits the whole weapon, uses the environment lighting and writes sRGB pixels so metal detail stays readable.
 
-Ten free uniforms are available in the deployment menu and Ranger Locker: Field Ranger, Desert Nomad, Urban Patrol, Rescue Medic, Night Recon, Field Engineer, Alpine Scout, Blue Sentinel, Shadow Runner and Hazard Response. Each has its own palette and gear silhouette (cap, scarf, goggles, medical pack, hood/visor, harness/tools, insulated collar, heavy plates, cape, or respirator/tanks). The selected uniform is saved on this device; the classic renderer retains its authored frames with matching colour and insignia. Uniforms have no effect on health, hitboxes or damage.
+Ten free uniforms are available in the deployment menu and Ranger Locker: Field Ranger, Desert Nomad, Urban Patrol, Rescue Medic, Night Recon, Field Engineer, Alpine Scout, Blue Sentinel, Shadow Runner and Hazard Response. Each has its own palette and gear silhouette (cap, scarf, goggles, medical pack, hood/visor, harness/tools, insulated collar, heavy plates, cape, or respirator/tanks). The selected uniform is saved on this device. Uniforms have no effect on health, hitboxes or damage.
 
-Bots draw unique weapons and uniforms from shuffled full pools in every mode. Practice sentries use actual weapon firing/reload rules with relaxed movement and attack intervals. Tactical AI visibly carry their assigned weapons, attached to their animated hands. Equipment and uniform meshes are batched by material and cleaned up on actor changes, map changes and shutdown.
+Bots draw unique weapons and uniforms from shuffled full pools in combat modes; Blackout Protocol uses matching uniforms to conceal roles. Practice sentries use actual weapon firing/reload rules with relaxed movement and attack intervals. Tactical AI visibly carry their assigned weapons, attached to their animated hands. Equipment and uniform meshes are batched by material and cleaned up on actor changes, map changes and shutdown.
 
 Online create/join/loadout requests validate outfit IDs. Public lobby members and authoritative entity snapshots carry the outfit; lobby selection and rematches preserve it. Outfit changes during an online match are rejected. Older room snapshots default safely to Field Ranger.
 
-Validation: `node --test scripts/outpost-equipment.test.mjs scripts/outpost-room-equipment.test.mjs` covers full bot pools, neutral outfit stats, snapshots/respawns, practice weapon use and the actual room handler with a substituted SQL transport. `node scripts/check-outpost-equipment.mjs [base-url]` checks all 11 inspections, all 10 selections, saved preferences, visible AI equipment, resource ownership and classic fallback on mobile and desktop.
+Validation: `node --test scripts/outpost-equipment.test.mjs scripts/outpost-room-equipment.test.mjs` covers full bot pools, neutral outfit stats, snapshots/respawns, practice weapon use and the actual room handler with a substituted SQL transport. `node scripts/check-outpost-equipment.mjs [base-url]` checks all 11 inspections, all 10 selections, saved preferences, visible AI equipment, resource ownership and cinematic recovery on mobile and desktop.
 
 ### Camera and aiming
 
@@ -282,4 +255,4 @@ Mouse input uses 0.022° per count multiplied by sensitivity, equally on both ax
 
 ### Reference-inspired tactical skins
 
-The ten existing outfit IDs remain available to players and AI. Their visuals use woodland and digital camouflage, enclosed helmets or hoods, modular carriers, masks, pads, packs and distinct purple/teal accent patterns. The medic remains a tenth rescue-themed outfit. Six rigid gear groups follow the authored skeleton during idle, walking, running and death; first-person sleeves and classic sprites use the same skin palettes and cloth patterns. Locker portraits are rendered from the actual game models via `scripts/capture-outpost-skins.mjs`. Cosmetic choices do not change combat values.
+The ten existing outfit IDs remain available to players and AI. Their visuals use woodland and digital camouflage, enclosed helmets or hoods, modular carriers, masks, pads, packs and distinct purple/teal accent patterns. The medic remains a tenth rescue-themed outfit. Six rigid gear groups follow the authored skeleton during idle, walking, running and death; first-person sleeves use the same skin palettes and cloth patterns. Locker portraits are rendered from the actual game models via `scripts/capture-outpost-skins.mjs`. Cosmetic choices do not change combat values.

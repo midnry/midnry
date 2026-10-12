@@ -1,0 +1,164 @@
+[
+  {
+    "name": "concrete",
+    "asset": "brushed_concrete_03",
+    "path": "public/games/military/textures/realism-concrete-color.jpg",
+    "resolution": "2k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/brushed_concrete_03/brushed_concrete_03_diff_2k.jpg",
+    "bytes": 3726708,
+    "md5": "47306c2e0ac2b2b15c40b18099533776"
+  },
+  {
+    "name": "concrete",
+    "asset": "brushed_concrete_03",
+    "path": "public/games/military/textures/realism-concrete-normal.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brushed_concrete_03/brushed_concrete_03_nor_gl_1k.jpg",
+    "bytes": 1151266,
+    "md5": "f7ee60d126c1f86540f081fdcb42e2d4"
+  },
+  {
+    "name": "concrete",
+    "asset": "brushed_concrete_03",
+    "path": "public/games/military/textures/realism-concrete-roughness.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brushed_concrete_03/brushed_concrete_03_rough_1k.jpg",
+    "bytes": 530188,
+    "md5": "0515bf50ced5d25985ec5168ea243914"
+  },
+  {
+    "name": "plaster",
+    "asset": "painted_plaster_wall",
+    "path": "public/games/military/textures/realism-plaster-color.jpg",
+    "resolution": "2k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/painted_plaster_wall/painted_plaster_wall_diff_2k.jpg",
+    "bytes": 3132937,
+    "md5": "32f4f4e5ded7d20e55e337004d0d9691"
+  },
+  {
+    "name": "plaster",
+    "asset": "painted_plaster_wall",
+    "path": "public/games/military/textures/realism-plaster-normal.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/painted_plaster_wall/painted_plaster_wall_nor_gl_1k.jpg",
+    "bytes": 900461,
+    "md5": "43fff290583dbdfc9bfa088a2750e840"
+  },
+  {
+    "name": "plaster",
+    "asset": "painted_plaster_wall",
+    "path": "public/games/military/textures/realism-plaster-roughness.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/painted_plaster_wall/painted_plaster_wall_rough_1k.jpg",
+    "bytes": 354762,
+    "md5": "e076a6360329a2bc18c7397dc50c074a"
+  },
+  {
+    "name": "brick",
+    "asset": "brick_wall_001",
+    "path": "public/games/military/textures/realism-brick-color.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brick_wall_001/brick_wall_001_diffuse_1k.jpg",
+    "bytes": 574381,
+    "md5": "955d2d4500eb549be0f2873305782798"
+  },
+  {
+    "name": "brick",
+    "asset": "brick_wall_001",
+    "path": "public/games/military/textures/realism-brick-normal.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brick_wall_001/brick_wall_001_nor_gl_1k.jpg",
+    "bytes": 295279,
+    "md5": "be151875ed0897fc716aeef6daac8bd5"
+  },
+  {
+    "name": "brick",
+    "asset": "brick_wall_001",
+    "path": "public/games/military/textures/realism-brick-roughness.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brick_wall_001/brick_wall_001_rough_1k.jpg",
+    "bytes": 211093,
+    "md5": "618ceca60a4321aecc6d61eebe53d551"
+  },
+  {
+    "name": "fabric",
+    "asset": "denim_fabric",
+    "path": "public/games/military/textures/realism-fabric-color.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/denim_fabric/denim_fabric_diff_1k.jpg",
+    "bytes": 886486,
+    "md5": "3835b5e277dd99784bfe68d985da14ae"
+  },
+  {
+    "name": "fabric",
+    "asset": "denim_fabric",
+    "path": "public/games/military/textures/realism-fabric-normal.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/denim_fabric/denim_fabric_nor_gl_1k.jpg",
+    "bytes": 474669,
+    "md5": "9008fe723671f9cb3e6d0889eab9adb0"
+  },
+  {
+    "name": "fabric",
+    "asset": "denim_fabric",
+    "path": "public/games/military/textures/realism-fabric-roughness.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/denim_fabric/denim_fabric_rough_1k.jpg",
+    "bytes": 467773,
+    "md5": "7eebb4a6185f2e6805976bc356dd1b41"
+  },
+  {
+    "name": "wood",
+    "asset": "fine_grained_wood",
+    "path": "public/games/military/textures/realism-wood-color.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/fine_grained_wood/fine_grained_wood_col_1k.jpg",
+    "bytes": 336305,
+    "md5": "3db9decdde678e087e67ff99d30c0a73"
+  },
+  {
+    "name": "wood",
+    "asset": "fine_grained_wood",
+    "path": "public/games/military/textures/realism-wood-normal.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/fine_grained_wood/fine_grained_wood_nor_gl_1k.jpg",
+    "bytes": 193626,
+    "md5": "a9e33e87ea5c32945fc30553767b7046"
+  },
+  {
+    "name": "wood",
+    "asset": "fine_grained_wood",
+    "path": "public/games/military/textures/realism-wood-roughness.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/fine_grained_wood/fine_grained_wood_rough_1k.jpg",
+    "bytes": 215155,
+    "md5": "5e29204cca6747b5df219e9a7255540f"
+  },
+  {
+    "name": "weaponMetal",
+    "asset": "metal_plate_02",
+    "path": "public/games/military/textures/realism-weaponMetal-color.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metal_plate_02/metal_plate_02_diff_1k.jpg",
+    "bytes": 625917,
+    "md5": "531b7e067dc537e0b3c7962175e04ffd"
+  },
+  {
+    "name": "weaponMetal",
+    "asset": "metal_plate_02",
+    "path": "public/games/military/textures/realism-weaponMetal-normal.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metal_plate_02/metal_plate_02_nor_gl_1k.jpg",
+    "bytes": 183264,
+    "md5": "ce8198004fd9409f592a7f024be0c01e"
+  },
+  {
+    "name": "weaponMetal",
+    "asset": "metal_plate_02",
+    "path": "public/games/military/textures/realism-weaponMetal-roughness.jpg",
+    "resolution": "1k",
+    "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/metal_plate_02/metal_plate_02_rough_1k.jpg",
+    "bytes": 911772,
+    "md5": "1fa97d5031aa575656a316bfd404ca4d"
+  }
+]

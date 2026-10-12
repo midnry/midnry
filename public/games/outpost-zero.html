@@ -115,6 +115,60 @@
         color: #e4e8e3;
         --kit: #9cbaa5;
       }
+      /* The loading/recovery screen never exposes another world renderer. */
+      midnry-fps .mf-render-status {
+        position: absolute;
+        inset: 0;
+        z-index: 100;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: #101815;
+      }
+      midnry-fps .mf-render-status[hidden] { display: none; }
+      midnry-fps .mf-render-status > div {
+        width: min(100%, 440px);
+        padding: 28px;
+        border: 1px solid #65706a;
+        border-radius: 22px;
+        background: #1a2520;
+      }
+      midnry-fps .mf-render-status h2 { margin: 12px 0; font-size: 24px; }
+      midnry-fps .mf-render-status p { color: #bdc9c1; line-height: 1.6; }
+      midnry-fps .mf-render-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+      midnry-fps .mf-render-actions button {
+        min-height: 48px;
+        padding: 12px 18px;
+        border: 1px solid #8fa798;
+        border-radius: 12px;
+        background: #2c4034;
+      }
+      midnry-fps .mf-compat-list { list-style: none; margin: 20px 0; padding: 0; }
+      midnry-fps .mf-compat-list li {
+        padding: 10px 0;
+        border-top: 1px solid #65706a55;
+        display: grid;
+        grid-template-columns: 58px 1fr;
+        column-gap: 10px;
+      }
+      midnry-fps .mf-compat-list small { display: block; color: #becac3; line-height: 1.5; margin-top: 4px; }
+      midnry-fps .mf-compat-state { font-size: 11px; font-weight: 700; color: #bbc7bf; padding-top: 3px; }
+      midnry-fps [data-compat-state="passed"] .mf-compat-state { color: #a8ddbd; }
+      midnry-fps [data-compat-state="warning"] .mf-compat-state { color: #ffcc70; }
+      midnry-fps [data-compat-state="failed"] .mf-compat-state { color: #ffaaa1; }
+      midnry-fps .mf-compat-report {
+        color: #e4e8e3;
+        background: #17201e;
+        border: 1px solid #65706a;
+        border-radius: 26px;
+        width: min(620px, calc(100% - 24px));
+        max-height: calc(100dvh - 24px);
+        overflow-y: auto;
+        padding: 24px;
+      }
+      midnry-fps .mf-compat-report::backdrop { background: #030705b8; }
+      midnry-fps .mf-compat-report button { min-height: 44px; }
+      midnry-fps .mf-render-status > div { max-height: 100%; overflow-y: auto; }
       midnry-fps .mf-military .mf-panel,
       midnry-fps .mf-military .mf-dialog,
       midnry-fps .mf-military .mf-book {
@@ -140,6 +194,7 @@
         color: inherit;
       }
       midnry-fps .mf-top {
+        z-index: 2;
         position: absolute;
         top: 22px;
         left: 26px;
@@ -278,6 +333,7 @@
         pointer-events: none;
       }
       midnry-fps .mf-modal {
+        z-index: 10;
         position: absolute;
         inset: 0;
         display: grid;
@@ -370,6 +426,7 @@
         color: #9fa9b1;
       }
       midnry-fps .mf-touch {
+        z-index: 2;
         position: absolute;
         inset: 0;
         pointer-events: none;
@@ -1698,36 +1755,60 @@
         }, true);
       })();
     </script>
-    <midnry-fps style="height: 100dvh" aria-label="Outpost Zero first-person shooter"></midnry-fps>
+    <midnry-fps style="height: 100dvh" aria-label="Outpost Zero first-person shooter">
+      <div class="mf-shell mf-military"><div class="mf-render-status"><div>
+        <div class="mf-eyebrow">OUTPOST ZERO / DEVICE CHECK</div>
+        <h2 data-initial-title>Checking compatibility</h2>
+        <p data-initial-message>Preparing browser and 3D graphics checks…</p>
+        <noscript><p>JavaScript is disabled. Enable it and reload to run this game.</p></noscript>
+        <div class="mf-render-actions"><button data-initial-retry hidden onclick="location.reload()">Retry loading</button><a href="/" target="_top">Back to Midnry</a></div>
+      </div></div></div>
+    </midnry-fps>
+    <script nomodule>
+      document.querySelector('midnry-fps').setAttribute('data-module-unsupported', 'true');
+      document.querySelector('[data-initial-title]').textContent = 'Browser update needed';
+      document.querySelector('[data-initial-message]').textContent = 'This browser does not support the game’s JavaScript modules. Use an updated browser.';
+    </script>
+    <script>
+      // A failed module download must leave an actionable screen, even before
+      // the custom element or the full compatibility checker can initialize.
+      setTimeout(function () {
+        var root = document.querySelector('midnry-fps');
+        if (root && !root.engine && !root.hasAttribute('data-module-unsupported') && root.querySelector('[data-initial-message]')) {
+          root.querySelector('[data-initial-title]').textContent = 'Game files unavailable';
+          root.querySelector('[data-initial-message]').textContent = 'The game could not start its compatibility check. Check your connection and retry loading.';
+          root.querySelector('[data-initial-retry]').hidden = false;
+        }
+      }, 15000);
+    </script>
     <script type="module">
-      import { Arena, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf, clamp } from "./outpost-sim.js";
-      import { Academy, FrameBudget } from "./outpost-academy.js";
-      import { ComicArt } from "./outpost-art.js";
-      import { Characters } from "./outpost-characters.js";
+      import { MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf, clamp } from "./outpost-sim.js";
+      import { createArena, restoreArena, protocolView } from "./outpost-protocol.js";
+      import { PROTOCOL_MAP, TRANSPORT_MAP } from "./outpost-protocol-map.js";
+      import { ProtocolUI } from "./outpost-protocol-ui.js";
+      import { Academy, FrameBudget, PRESETS } from "./outpost-academy.js";
+      import { newCompatibilityReport, updateCheck, checkBrowser, checkScene } from "./outpost-compatibility.js";
       import { Retention } from "./outpost-retention.js";
       import { LookSettings, lookDelta, viewGeometry, PITCH_LIMIT, requestAimLock } from "./outpost-look.js";
       import { MenuUI } from "./outpost-ui.js";
-      import { WeaponArt } from "./outpost-weapons.js";
-      import { EnvironmentArt } from "./outpost-environment.js";
       (() => {
         "use strict";
         // A custom element keeps state private and supports multiple independent instances.
         if (customElements.get("midnry-fps")) return;
         const TAU = Math.PI * 2;
-        const angleDiff = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 
         class MidnryFPS extends HTMLElement {
           connectedCallback() {
             if (this.engine) return;
-            this.innerHTML = `<div class="mf-shell" tabindex="0">
+            this.innerHTML = `<div class="mf-shell mf-military" tabindex="0">
         <canvas aria-label="Game viewport"></canvas>
-        <div class="mf-top"><div class="mf-brand">MIDNRY<small>OUTPOST ZERO / FIELD OPS</small></div><div class="mf-topright"><span class="mf-tag">RAYCAST / COMIC EDITION</span><button class="mf-pause" aria-label="Open game menu">II</button></div></div>
+        <div class="mf-top"><div class="mf-brand">MIDNRY<small>OUTPOST ZERO / FIELD OPS</small></div><div class="mf-topright"><span class="mf-tag">TACTICAL 3D / LOADING</span><button class="mf-pause" aria-label="Open game menu">II</button></div></div>
         <div class="mf-objective">TRAINING CONTRACT<b class="mf-mission">Eliminate the sentry drones</b></div>
         <div class="mf-match" hidden><b class="mf-cores">CHARGE CORES 0</b><div class="mf-teamstat"></div><div class="mf-zone"></div></div><div class="mf-cross"></div><div class="mf-toast" role="status" aria-live="polite"></div>
         <div class="mf-damage" role="status" aria-live="polite"></div><div class="mf-hitmark" aria-hidden="true"></div><button class="mf-super" aria-label="Use charged ability">Q · SUPER <b>0%</b></button>
         <div class="mf-bottom"><div class="mf-stat">VITALS<strong class="mf-hp">100</strong><div class="mf-health"><i></i></div></div><div class="mf-stat mf-ammo">VX–7 / AUTO CARBINE<strong class="mf-rounds">24 <span>/ ∞</span></strong></div></div>
         <div class="mf-movement" hidden role="status" aria-live="polite"></div><div class="mf-death" hidden role="status" aria-live="polite">SIGNAL LOST</div><div class="mf-touch"><button class="mf-sprint" aria-label="Toggle sprint" aria-pressed="false">SPRINT</button><button class="mf-slide" aria-label="Slide while sprinting">SLIDE</button><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
-        <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">A sun-scorched outpost. Six rogue sentries. One very loud solution. Drop into a comic-book combat sandbox.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="training" aria-pressed="true">FIELD OPS</button><button class="mf-mode" data-mode="signal" aria-pressed="false">LAST SIGNAL · SOLO</button><button class="mf-mode" data-mode="duo" aria-pressed="false">PAIR OPS · DUO</button></div><div class="mf-kit"><label>Arena<select class="mf-mapselect" aria-label="Choose arena"></select></label><label>Loadout<select class="mf-weaponselect" aria-label="Choose loadout"></select></label><label class="mf-outfitlabel"><span>Outfit<select class="mf-outfitselect" aria-label="Choose outfit"></select></span><img class="mf-outfitpreview" alt="Selected outfit" width="120" height="150"></label></div><p class="mf-mapinfo"></p><p class="mf-weaponinfo"></p><p class="mf-kitnote">Choose before deploying. Offline changes start a fresh round; online, the host chooses the arena.</p><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Click or Space · fire<br>R · reload &nbsp; / &nbsp; Shift · sprint &nbsp; / &nbsp; Esc or P · pause &nbsp; / &nbsp; Q · super<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
+        <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">Field operations in a weathered compound. Choose a loadout and deploy.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="protocol" aria-pressed="true">BLACKOUT PROTOCOL</button><button class="mf-mode" data-mode="training" aria-pressed="false">FIELD OPS</button><button class="mf-mode" data-mode="signal" aria-pressed="false">LAST SIGNAL · SOLO</button><button class="mf-mode" data-mode="duo" aria-pressed="false">PAIR OPS · DUO</button></div><div class="mf-kit"><label>Arena<select class="mf-mapselect" aria-label="Choose arena"></select></label><label>Loadout<select class="mf-weaponselect" aria-label="Choose loadout"></select></label><label class="mf-outfitlabel"><span>Outfit<select class="mf-outfitselect" aria-label="Choose outfit"></select></span><img class="mf-outfitpreview" alt="Selected outfit" width="120" height="150"></label></div><p class="mf-mapinfo"></p><p class="mf-weaponinfo"></p><p class="mf-kitnote">Choose before deploying. Offline changes start a fresh round; online, the host chooses the arena.</p><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Click or Space · fire<br>R · reload &nbsp; / &nbsp; Shift · sprint &nbsp; / &nbsp; Esc or P · pause &nbsp; / &nbsp; Q · super<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
       </div>`;
             this.engine = new Game(this);
           }
@@ -1743,8 +1824,10 @@
             this.shell = root.querySelector(".mf-shell");
             this.shell.inert = true;
             this.canvas = root.querySelector("canvas");
-            this.useMilitary = new URLSearchParams(location.search).get("renderer") !== "classic";
-            this.ctx = this.canvas.getContext("2d", { alpha: this.useMilitary });
+            this.useMilitary = true;
+            this.ctx = this.canvas.getContext("2d", {
+              alpha: true,
+            });
             this.loadingScreen = document.querySelector(".mf-loading");
             this.loading = true;
             this.$ = (s) => root.querySelector(s);
@@ -1756,10 +1839,14 @@
             this.time = 0;
             this.last = performance.now();
             this.frame = 0;
+            this.viewPitch = 0;
+            this.mode = "protocol";
+            this.mapId = "breakwater";
+            this.protocolMap = PROTOCOL_MAP;
+            this.transportMap = TRANSPORT_MAP;
+            this.rolePreference = "operator";
             this.lookPitch = 0;
             this.aimSettings = new LookSettings(this);
-            this.mode = "signal";
-            this.mapId = "outpost";
             this.weapon = "carbine";
             try { this.outfit = outfitOf(localStorage.getItem("midnry-outpost-outfit")).id; }
             catch { this.outfit = "ranger"; }
@@ -1801,121 +1888,240 @@
             this.bindOnline();
             this.budget = new FrameBudget();
             this.academy = new Academy(this);
-            this.art = new ComicArt(this);
-            this.environment = new EnvironmentArt(this);
-            this.characters = new Characters(this);
-            this.weapons = new WeaponArt(this);
             this.retention = new Retention(this);
             this.ui = new MenuUI(this);
-            if (this.useMilitary) {
-              this.startMilitary();
-            } else {
-              requestAnimationFrame(() => this.finishLoading());
-            }
-            this.resizeObserver = new ResizeObserver(() => this.resize());
+            this.protocolUI = new ProtocolUI(this);
+            this.protocolUI.refreshMenu();
+            this.initMilitaryStatus();
+            // Every entry point uses the same cinematic renderer. Query strings
+            // from older bookmarks cannot select the retired comic version.
+            this.militaryReady = this.retryMilitary();
+            // Keep the compatibility screen working on browsers missing this
+            // required API; the check will block deployment with an explanation.
+            this.resizeObserver = typeof ResizeObserver === "function"
+              ? new ResizeObserver(() => this.resize())
+              : { observe() {}, disconnect() {} };
             this.resizeObserver.observe(this.shell);
             this.resize();
             this.loop = this.loop.bind(this);
             this.frame = requestAnimationFrame(this.loop);
           }
-          startMilitary(safeMode = false) {
-            const attempt = this.graphicsAttempt = (this.graphicsAttempt || 0) + 1;
-            this.loading = true;
-            this.shell.inert = true;
-            this.loadingScreen.hidden = false;
-            this.shell.classList.add("mf-military");
-            this.$(".mf-tag").textContent = "TACTICAL 3D / LOADING";
-            const current = () => !this.abort.signal.aborted && this.graphicsAttempt === attempt;
-            const watchProgress = () => {
-              clearTimeout(this.loadingTimer);
-              this.loadingTimer = setTimeout(() => {
-                if (current()) this.recoverMilitary(new Error("Graphics loading stalled. Please retry on a stable connection."));
-              }, 45000);
-            };
-            this.loadingScreen.querySelector("progress").value = 0;
-            this.loadingScreen.querySelector(".mf-loadpercent").textContent = "0%";
-            this.loadingScreen.querySelector(".mf-loadstatus").textContent = safeMode
-              ? "Optimizing cinematic 3D for this device…" : "Preparing your deployment…";
-            watchProgress();
-            import("./outpost-military.js?v=ipad-3d-20261011")
-              .then(async ({ MilitaryRenderer }) => {
-                if (!current()) return;
-                const renderer = new MilitaryRenderer(this, (done, total) => {
-                  if (!current() || !this.loading) return;
-                  watchProgress();
-                  this.loadingScreen.querySelector("progress").value = Math.round(done / total * 90);
-                  this.loadingScreen.querySelector(".mf-loadpercent").textContent = `${Math.round(done / total * 90)}%`;
-                  this.loadingScreen.querySelector(".mf-loadstatus").textContent =
-                    `Preparing your deployment… ${done} / ${total}`;
-                }, { safeMode });
-                this.military = renderer;
-                await renderer.ready;
-                if (!current() || renderer.disposed || renderer.contextFailed || !this.loading) {
-                  renderer.dispose();
-                  return;
-                }
-                if (renderer.assetErrors.length) throw new Error("Some 3D assets could not be downloaded. Please retry.");
-                this.militaryLoaded = true;
-                this.resize();
-                this.ui.previewKey = null;
-                this.ui.refresh();
-                this.render();
-                if (!current()) return;
-                this.finishLoading();
-                this.$(".mf-tag").textContent = safeMode ? "TACTICAL 3D / COMPATIBLE" : "TACTICAL 3D";
-              })
-              .catch((error) => { if (current()) this.recoverMilitary(error); });
+          initMilitaryStatus() {
+            this.compatibilityReport = newCompatibilityReport();
+            const status = document.createElement("div");
+            status.className = "mf-render-status";
+            status.setAttribute("role", "dialog");
+            status.setAttribute("aria-modal", "true");
+            status.setAttribute("aria-label", "Cinematic graphics loading and recovery");
+            status.innerHTML = `<div><div class="mf-eyebrow">OUTPOST ZERO / DEVICE CHECK</div><h2 class="mf-render-title">Checking compatibility</h2><p class="mf-render-message" role="status" aria-live="polite">Checking the browser, graphics device and game files.</p><ul class="mf-compat-list"></ul><div class="mf-render-actions"><button class="mf-render-retry" hidden>Retry graphics</button><button class="mf-render-exit">Exit game</button></div></div>`;
+            this.shell.append(status);
+            this.shell.insertAdjacentHTML("beforeend", `<dialog class="mf-compat-report" aria-label="Device compatibility check"><h2>Device compatibility</h2><div class="mf-compat-body"></div><div class="mf-render-actions"><button class="mf-compat-recommend" hidden>Use recommended graphics</button><button class="mf-compat-close">Done</button></div></dialog>`);
+            const details = document.createElement("button");
+            details.className = "mf-compat-open";
+            details.textContent = "Device check";
+            this.$(".mf-learn").append(details);
+            this.on(details, "click", () => {
+              if (this.running) this.pause();
+              this.refreshCompatibility();
+              this.$(".mf-compat-report").showModal();
+            });
+            this.on(this.$(".mf-compat-close"), "click", () => this.$(".mf-compat-report").close());
+            this.on(this.$(".mf-compat-report"), "keydown", (event) => event.stopPropagation());
+            this.on(this.$(".mf-compat-report"), "close", () => details.focus({ preventScroll: true }));
+            this.on(this.$(".mf-compat-recommend"), "click", () => {
+              const preset = this.compatibilityReport.recommendedPreset;
+              if (!PRESETS[preset]) return;
+              this.$(".mf-compat-report").close();
+              this.ui.confirmGraphics({ preset, options: { ...PRESETS[preset] } }, this.$(".mf-graphicsettings"), "[data-preset]");
+            });
+            this.on(this.$(".mf-render-retry"), "click", () => {
+              this.militaryReady = this.retryMilitary();
+            });
+            this.on(this.$(".mf-render-exit"), "click", () => this.ui.exitGame());
+            this.on(status, "keydown", (event) => {
+              if (event.key !== "Tab") return;
+              const buttons = [...status.querySelectorAll("button")].filter((button) => !button.hidden);
+              const index = buttons.indexOf(document.activeElement);
+              event.preventDefault();
+              buttons[(index + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length].focus();
+            });
+            this.refreshCompatibility();
           }
-          recoverMilitary(error) {
-            if (this.abort.signal.aborted) return;
-            if (this.safe3DRetry) {
-              this.fallbackMilitary(error);
-              return;
+          compatibilityList() {
+            const list = document.createElement("ul");
+            list.className = "mf-compat-list";
+            const report = this.compatibilityReport;
+            for (const check of report.checks) {
+              const row = document.createElement("li");
+              row.dataset.compatCheck = check.id;
+              row.dataset.compatState = check.status;
+              const state = document.createElement("span");
+              state.className = "mf-compat-state";
+              state.textContent = ({ passed: "PASS", warning: "NOTE", failed: "FAIL" })[check.status] || (report.status === "checking" ? "WAIT" : "SKIP");
+              const content = document.createElement("div");
+              const title = document.createElement("strong");
+              title.textContent = check.label;
+              const detail = document.createElement("small");
+              detail.textContent = check.status === "checking" && report.status !== "checking" ? "Not tested because an earlier check failed." : check.detail;
+              content.append(title, detail);
+              row.append(state, content);
+              list.append(row);
             }
-            this.safe3DRetry = true;
-            if (this.running) this.pause();
+            return list;
+          }
+          refreshCompatibility() {
+            if (!this.$(".mf-render-status")) return;
+            const report = this.compatibilityReport;
+            this.$(".mf-render-status .mf-compat-list").replaceWith(this.compatibilityList());
+            const body = this.$(".mf-compat-body");
+            const summary = document.createElement("p");
+            summary.textContent = report.summary;
+            const privacy = document.createElement("p");
+            privacy.textContent = "These checks run on this device when the game opens. No hardware report is sent to a server. A short scene sample recommends graphics quality; it does not guarantee a sustained frame rate.";
+            body.replaceChildren(summary, this.compatibilityList(), privacy);
+            this.$(".mf-compat-open").textContent = report.status === "ready"
+              ? "Device check · Ready"
+              : report.status === "limited" ? report.recommendedPreset === this.academy.preset ? "Device check · Limited performance" : "Device check · Lower graphics recommended" : "Device check";
+            this.$(".mf-compat-recommend").hidden = !["ready", "limited"].includes(report.status) || report.recommendedPreset === this.academy.preset;
+            this.$(".mf-compat-report").dataset.status = report.status;
+          }
+          showMilitaryStatus(failed, reason) {
+            this.$(".mf-render-status").hidden = false;
+            for (const child of this.shell.children)
+              if (child !== this.$(".mf-render-status")) child.inert = true;
+            this.$(".mf-render-title").textContent = failed
+              ? "Cinematic graphics unavailable"
+              : "Checking compatibility";
+            this.$(".mf-render-message").textContent = !failed
+              ? "Checking the browser, graphics device and game files."
+              : reason === "context-lost"
+                ? "The graphics connection was interrupted. Retry to restore the 3D scene. Your online match continues while this screen is open."
+                : "The 3D scene could not load. Retry, or check that your browser supports WebGL with hardware acceleration enabled.";
+            if (failed && this.compatibilityReport.status === "unsupported" && reason !== "context-lost")
+              this.$(".mf-render-message").textContent = this.compatibilityReport.summary;
+            this.$(".mf-render-retry").hidden = !failed;
+            this.$(".mf-tag").textContent = failed ? "TACTICAL 3D / UNAVAILABLE" : "TACTICAL 3D / LOADING";
+            this.$(".mf-start").disabled = true;
+            if (!failed) this.$(".mf-render-exit").focus({ preventScroll: true });
+            this.refreshCompatibility();
+          }
+          handleMilitaryFailure(reason) {
+            if (this.abort.signal.aborted) return;
             this.militaryLoaded = false;
+            this.militaryLoadError = reason;
+            this.militaryError = reason;
+            if (reason === "context-lost") {
+              updateCheck(this.compatibilityReport, "graphics", "failed", "The graphics connection was interrupted. Retry runs the device check again.");
+              this.compatibilityReport.status = "load-error";
+              this.compatibilityReport.summary = "The graphics connection needs to be restored.";
+            } else if (this.compatibilityReport.status === "checking") {
+              updateCheck(this.compatibilityReport, "assets", "failed", "Game files could not finish loading. Check your connection and retry.");
+              this.compatibilityReport.status = "load-error";
+              this.compatibilityReport.summary = "The browser passed its checks, but the game files could not load.";
+            }
+            // Native dialogs occupy the top layer; close them so recovery is
+            // visible and keyboard users can reach its actions.
+            for (const dialog of this.root.querySelectorAll("dialog[open]")) dialog.close();
+            this.pause();
+            this.ctx.clearRect(0, 0, this.w, this.h);
+            this.finishLoading();
+            this.showMilitaryStatus(true, reason);
+            this.$(".mf-render-retry").focus({ preventScroll: true });
+            if (reason === "context-lost" && !this.militaryLoading && !this.safe3DRetry) {
+              this.safe3DRetry = true;
+              this.militaryReady = this.retryMilitary(true);
+            }
+          }
+          async retryMilitary(safeMode = false) {
+            if (this.militaryLoading || this.abort.signal.aborted) return;
+            this.militaryLoading = true;
+            this.militaryLoaded = false;
+            this.militaryError = null;
+            this.compatibilityReport = newCompatibilityReport();
+            const attempt = (this.militaryAttempt || 0) + 1;
+            this.militaryAttempt = attempt;
             this.military?.dispose();
             this.military = null;
-            this.startMilitary(true);
+            this.loading = true;
+            this.shell.inert = false;
+            this.loadingScreen.hidden = false;
+            this.showMilitaryStatus(false);
+            this.loadingTimer = setTimeout(() => this.handleMilitaryFailure("loading-timeout"), 90000);
+            try {
+              // Paint the loading screen before probing or compiling shaders.
+              await new Promise((resolve) => requestAnimationFrame(resolve));
+              if (this.abort.signal.aborted) return;
+              if (!checkBrowser(this.compatibilityReport)) {
+                this.handleMilitaryFailure("compatibility");
+                return;
+              }
+              updateCheck(this.compatibilityReport, "assets", "checking", "Loading the detailed environment and character files…");
+              updateCheck(this.compatibilityReport, "performance", "checking", "The loaded scene will be tested at your selected graphics quality.");
+              this.refreshCompatibility();
+              const { MilitaryRenderer } = await import(
+                `./outpost-military.js?v=natural-realism-20261012&retry=${attempt - 1}`
+              );
+              if (this.abort.signal.aborted) return;
+              const renderer = new MilitaryRenderer(this, (done,total) => {
+                if (this.abort.signal.aborted || !this.loading) return;
+                const percent = Math.round(done / total * 90);
+                this.loadingScreen.querySelector("progress").value = percent;
+                this.loadingScreen.querySelector(".mf-loadpercent").textContent = `${percent}%`;
+                this.loadingScreen.querySelector(".mf-loadstatus").textContent = `Loading game files ${done} / ${total}…`;
+              }, { safeMode: safeMode || this.compatibilityReport.lowPowerRequired });
+              this.military = renderer;
+              await renderer.ready;
+              if (this.abort.signal.aborted) {
+                renderer.dispose();
+                return;
+              }
+              if (renderer.contextUnavailable) throw new Error("context-lost");
+              // Missing models or photographic materials must not quietly
+              // substitute simplified geometry or flat-colored surfaces.
+              if (renderer.assetErrors.length) throw new Error("assets-unavailable");
+              updateCheck(this.compatibilityReport, "assets", "passed", "Detailed materials, character models and lighting loaded.");
+              this.refreshCompatibility();
+              if (!await checkScene(this.compatibilityReport, renderer, this.academy.preset, this.abort.signal)) {
+                if (this.abort.signal.aborted) return;
+                throw new Error("scene-check-failed");
+              }
+              this.refreshCompatibility();
+              this.militaryLoaded = true;
+              this.finishLoading();
+              this.militaryLoadError = null;
+              this.militaryError = null;
+              this.$(".mf-render-status").hidden = true;
+              for (const child of this.shell.children) child.inert = false;
+              this.$(".mf-tag").textContent = "TACTICAL 3D / CINEMATIC";
+              this.resize();
+              this.ui.previewKey = null;
+              this.updateMenu();
+            } catch (error) {
+              if (!this.abort.signal.aborted) {
+                this.military?.dispose();
+                this.military = null;
+                const reason = String(error?.message || error);
+                if (!safeMode && /context|scene-check-failed|WebGL/i.test(reason)) {
+                  this.militaryLoading = false;
+                  return await this.retryMilitary(true);
+                }
+                this.handleMilitaryFailure(reason);
+              }
+            } finally {
+              this.militaryLoading = false;
+            }
           }
           finishLoading() {
             clearTimeout(this.loadingTimer);
-            if (this.abort.signal.aborted) return;
             this.loading = false;
             this.shell.inert = false;
-            this.loadingScreen.querySelector("progress").value = 100;
             this.loadingScreen.hidden = true;
+            this.loadingScreen.querySelector("progress").value = 100;
             window.outpostLoading?.stop();
           }
-          fallbackMilitary(error) {
+          recoverMilitary(error) {
             if (this.abort.signal.aborted) return;
-            if (this.running) this.pause();
-            this.graphicsAttempt = (this.graphicsAttempt || 0) + 1;
-            this.militaryLoaded = false;
-            this.military?.dispose();
-            this.military = null;
-            this.shell.classList.remove("mf-military");
-            this.$(".mf-tag").textContent = "3D UNAVAILABLE / CLASSIC VIEW";
-            this.rendererError = error?.message || "3D graphics could not start.";
-            let notice = this.$(".mf-rendernotice");
-            if (!notice) {
-              notice = document.createElement("p");
-              notice.className = "mf-rendernotice";
-              notice.setAttribute("role", "status");
-              this.$(".mf-copy").after(notice);
-            }
-            notice.replaceChildren(document.createTextNode(
-              `${this.rendererError} Classic graphics are active. `,
-            ));
-            const retry = document.createElement("a");
-            retry.href = location.href;
-            retry.textContent = "Retry 3D";
-            notice.append(retry);
-            this.ui.previewKey = null;
-            this.ui.refresh();
-            this.render();
-            this.finishLoading();
+            this.militaryReady = this.retryMilitary(true);
           }
           // Last Signal uses the same arena, with a clear center for the final zone.
           reset() {
@@ -1940,7 +2146,13 @@
             this.pendingShot = 0;
             this.pendingReload = false;
             this.lastNotice = 0;
-            this.arena = new Arena({
+            this.selfId = "player";
+            if (this.mode === "protocol") {
+              this.mapId = "breakwater";
+              this.weapon = "carbine";
+            } else if (MAPS[this.mapId]?.protocolOnly) this.mapId = "outpost";
+            this.arena = createArena({
+              rolePreference: this.rolePreference,
               mode: this.mode,
               mapId: this.mapId,
               weapon: this.weapon,
@@ -1966,7 +2178,7 @@
             this.look = null;
             this.toastUntil = 0;
             this.$(".mf-toast").textContent = "";
-            this.$(".mf-start").disabled = false;
+            this.$(".mf-start").disabled = !this.militaryLoaded;
             this.$(".mf-start").textContent = "DEPLOY →";
             this.$(".mf-copy").textContent =
               this.mode === "duo"
@@ -1976,7 +2188,19 @@
                   : "Six rogue sentries. Take cover, reload and secure the outpost.";
             this.updateHUD();
             this.retention?.menu();
+            this.protocolUI?.reset();
             this.ui?.refresh();
+            this.protocolUI?.refreshMenu();
+          }
+          protocolView() {
+            if (this.mode !== "protocol" || !this.arena?.protocol) return null;
+            const key = this.arena,
+              time = this.arena.time;
+            if (this.protocolCache?.arena === key && this.protocolCache.time === time)
+              return this.protocolCache.view;
+            const view = protocolView(this.arena.snapshot(), this.selfId);
+            this.protocolCache = { arena: key, time, view };
+            return view;
           }
           get player() {
             return (
@@ -2042,7 +2266,7 @@
           }
           camera() {
             if (this.deathSequence) return this.deathSequence.origin;
-            if (this.player.hp > 0) return this.player;
+            if (this.mode === "protocol" || this.player.hp > 0) return this.player;
             return (
               this.enemies.find((e) => e.team === this.player.team && e.hp > 0) ||
               this.enemies.find((e) => e.hp > 0) ||
@@ -2050,7 +2274,9 @@
             );
           }
           controls() {
-            return {
+            const protocol = this.mode === "protocol",
+              frozen = protocol && this.arena.protocol?.phase !== "roam";
+            const controls = {
               forward:
                 Number(this.keys.has("w") || this.keys.has("arrowup")) -
                 Number(this.keys.has("s") || this.keys.has("arrowdown")) -
@@ -2064,6 +2290,18 @@
               reload: this.pendingReload,
               super: this.pendingSuper,
             };
+            if (protocol) {
+              controls.fire = controls.reload = controls.super = false;
+              controls.sprint = false;
+              if (frozen || this.protocolUI?.piloting) controls.forward = controls.strafe = 0;
+              Object.assign(controls, this.protocolUI?.controls() || {});
+              if (controls.protocolAction?.op === "helm") {
+                this.player.a = controls.aim = TRANSPORT_MAP.helm.a;
+                this.viewPitch = controls.pitch = 0;
+              }
+              if (frozen) controls.vehicleInput = { pitch: 0, steer: 0 };
+            }
+            return controls;
           }
           requestSlide() {
             if (!this.running || this.player.hp <= 0 || this.deathSequence) return;
@@ -2122,6 +2360,7 @@
             } else this.pause();
           }
           chooseOutfit(id) {
+            if (this.mode === "protocol") return;
             if (!Object.hasOwn(OUTFITS,id)) return;
             if(this.online) {
               if(this.online.phase !== "lobby") return;
@@ -2136,9 +2375,19 @@
           updateKit() {
             const map = mapOf(this.mapId),
               w = weaponOf(this.weapon);
+            for (const option of this.$(".mf-mapselect").options) {
+              const allowed =
+                this.mode === "protocol"
+                  ? option.value === this.mapId
+                  : !MAPS[option.value]?.protocolOnly;
+              option.hidden = !allowed;
+              option.disabled = !allowed;
+            }
             this.$(".mf-mapselect").value = map.id;
             this.$(".mf-weaponselect").value = w.id;
             const uniform=outfitOf(this.outfit);
+            this.$(".mf-outfitselect").disabled = this.mode === "protocol" || !!this.online && this.online.phase !== "lobby";
+            this.$(".mf-outfitselect").closest("label").hidden = this.mode === "protocol";
             this.$(".mf-outfitselect").value=uniform.id;
             this.$(".mf-outfitpreview").src=`/games/outfits/${uniform.id}.webp?v=skins-20261011`;
             this.$(".mf-outfitpreview").alt=uniform.name;
@@ -2150,8 +2399,10 @@
             this.$(".mf-mapinfo").textContent = map.tag + " / " + map.description;
             this.$(".mf-weaponinfo").textContent = w.description;
             this.ui?.refresh();
+            this.protocolUI?.refreshMenu();
           }
           useSuper() {
+            if (this.mode === "protocol") return;
             if (!this.running || this.player.hp <= 0) return;
             if (this.player.charge < 100) {
               this.message("CHARGE YOUR SUPER BY DEALING DAMAGE");
@@ -2233,6 +2484,11 @@
               return;
             }
             this.arena.checkResult();
+            if (this.mode === "protocol") {
+              if (this.arena.state === "ended")
+                this.endMatch(this.arena.winner === this.player.team);
+              return;
+            }
             if (this.arena.state === "ended") this.endMatch(this.arena.winner === this.player.team);
             else if (this.player.hp <= 0 && !this.arena.teamAlive(this.player.team))
               this.endMatch(false);
@@ -2260,6 +2516,7 @@
               ? `Victory. ${this.kills} eliminations. ${this.online ? "The host can return the room to the lobby for another round." : "Deploy again for a fresh match."}`
               : `Your ${this.mode === "duo" ? "team was" : "signal was"} eliminated. ${this.online ? "Watch the remaining players or wait for the next round." : "Deploy to try again."}`;
             this.retention?.finish(won);
+            if (this.mode === "protocol") this.protocolUI?.result(won);
           }
           bindOnline() {
             this.on(this.$(".mf-create"), "click", () => this.connectOnline("create"));
@@ -2384,8 +2641,10 @@
             }
             this.updateKit();
             this.$(".mf-mapselect").disabled = data.phase !== "lobby" || data.host !== this.selfId;
-            this.$(".mf-weaponselect").disabled = data.phase !== "lobby";
-            this.$(".mf-outfitselect").disabled = data.phase !== "lobby";
+            this.$(".mf-weaponselect").disabled =
+              this.mode === "protocol" || data.phase !== "lobby";
+            if (this.mode === "protocol") this.$(".mf-mapselect").disabled = true;
+            this.$(".mf-outfitselect").disabled = this.mode === "protocol" || data.phase !== "lobby";
             const roster = this.$(".mf-roster");
             roster.replaceChildren();
             for (const m of data.members) {
@@ -2409,7 +2668,7 @@
                   ? "Stay with your partner. Two redeployments each, only while a teammate survives. Online play continues with this menu open."
                   : "Keep the last signal. Collect Charge Cores and stay inside the safe zone. Online play continues with this menu open.";
             if (data.arena) {
-              const next = Arena.restore(data.arena);
+              const next = restoreArena(data.arena);
               if (!starting)
                 for (const e of next.entities) {
                   const old = previous.entities.find((v) => v.id === e.id);
@@ -2422,7 +2681,9 @@
                   }
                 }
               this.arena = next;
+              this.protocolCache = null;
               if (starting) {
+                this.protocolUI?.reset();
                 this.retention?.reset();
                 this.shell.classList.remove("mf-dying");
                 this.deathSequence = null;
@@ -2451,10 +2712,10 @@
                 this.arena.mode !== this.mode ||
                 this.player.id !== this.selfId ||
                 this.player.weapon !== this.weapon ||
-                this.player.outfit !== this.outfit ||
-                this.player.team !== (self?.team ?? 0)
+                (this.mode !== "protocol" && this.player.outfit !== this.outfit) ||
+                (this.mode !== "protocol" && this.player.team !== (self?.team ?? 0))
               )
-                this.arena = new Arena({
+                this.arena = createArena({
                   mode: this.mode,
                   difficulty: this.difficulty,
                   mapId: this.mapId,
@@ -2471,6 +2732,7 @@
             this.updateMenu();
             this.retention?.menu();
             this.ui?.refresh();
+            this.protocolUI?.refreshMenu();
           }
           onlineAction(op, extra = {}) {
             const net = this.online;
@@ -2515,7 +2777,7 @@
                 superPending = this.pendingSuper,
                 slidePending = this.pendingSlide;
               const input =
-                this.running && this.player.hp > 0
+                this.running && (this.player.hp > 0 || this.mode === "protocol")
                   ? this.controls()
                   : {
                       forward: 0,
@@ -2531,6 +2793,7 @@
                   this.pendingShot = Math.max(0, (this.pendingShot || 0) - shot);
                   if (reload) this.pendingReload = false;
                   if (superPending) this.pendingSuper = false;
+                  this.protocolUI?.acknowledge(input.protocolAction?.seq);
                   if (slidePending) this.pendingSlide = false;
                 }
                 this.scheduleRoomPoll(
@@ -2559,7 +2822,7 @@
               this.$(".mf-connectrow").hidden = false;
               this.$(".mf-roompanel").hidden = true;
               this.$(".mf-netstatus").textContent = "";
-              this.$(".mf-tag").textContent = "RAYCAST / COMIC EDITION";
+              this.$(".mf-tag").textContent = "TACTICAL 3D / LOADING";
               this.$(".mf-mapselect").disabled = false;
               this.$(".mf-weaponselect").disabled = false;
               this.$(".mf-outfitselect").disabled = false;
@@ -2638,7 +2901,14 @@
             });
             this.on(document, "pointerlockchange", () => {
               if (document.pointerLockElement === this.canvas) this.hadLock = true;
-              else if (this.hadLock && this.running) {
+              else if (
+                this.hadLock &&
+                this.running &&
+                !(
+                  this.mode === "protocol" &&
+                  (this.arena.protocol?.phase !== "roam" || this.protocolUI?.hasDialogOpen?.())
+                )
+              ) {
                 this.hadLock = false;
                 this.pause();
               }
@@ -2735,7 +3005,7 @@
           }
 
           start() {
-            if (this.loading || this.deathSequence) return;
+            if (!this.militaryLoaded || this.loading || this.deathSequence) return;
             this.retention?.audio.unlock();
             if (this.online) {
               if (this.online.phase === "lobby") {
@@ -2752,7 +3022,8 @@
             this.$(".mf-modal").hidden = true;
             this.ui?.syncAccessibility();
             this.shell.focus({ preventScroll: true });
-            this.lockMouse();
+            if (this.mode === "protocol") this.protocolUI?.update(true);
+            else this.lockMouse();
           }
           pause() {
             if (this.deathSequence) return;
@@ -2777,7 +3048,8 @@
             const button = this.$(".mf-start"),
               net = this.online;
             button.disabled =
-              !!net && (net.phase === "lobby" || net.phase === "ended") && net.host !== this.selfId;
+              !this.militaryLoaded ||
+              (!!net && (net.phase === "lobby" || net.phase === "ended") && net.host !== this.selfId);
             button.textContent = net
               ? net.phase === "lobby"
                 ? net.host === this.selfId
@@ -2796,7 +3068,7 @@
             this.ui?.refresh();
           }
           resize() {
-            // A bounded rendering resolution keeps raycasting inexpensive on phones.
+            // A bounded rendering resolution keeps cinematic rendering affordable on phones.
             const r = this.shell.getBoundingClientRect();
             const baseWidth = Math.max(
                 1,
@@ -2861,6 +3133,7 @@
             this.toastUntil = this.time + duration;
           }
           reload() {
+            if (this.mode === "protocol") return;
             if (!this.running) return;
             if (this.online) {
               this.pendingReload = true;
@@ -2870,6 +3143,7 @@
             this.flushEvents();
           }
           shoot() {
+            if (this.mode === "protocol") return;
             if (!this.running || this.player.hp <= 0) return;
             if (this.online) {
               this.pendingShot = (this.pendingShot || 0) + 1;
@@ -2886,6 +3160,10 @@
             const now = performance.now();
             if (!force && now - (this.lastHUD || 0) < 1000 / 30) return;
             this.lastHUD = now;
+            if (this.mode === "protocol" && this.protocolUI) {
+              this.protocolUI.update();
+              return;
+            }
             const p = this.player,
               survival = this.mode !== "training",
               duo = this.mode === "duo";
@@ -2946,7 +3224,12 @@
           update(dt) {
             const turn =
               (Number(this.keys.has("arrowright")) - Number(this.keys.has("arrowleft"))) * dt * 2;
-            if (this.running && this.player.hp > 0) this.player.a += turn;
+            if (this.running && (this.player.hp > 0 || this.mode === "protocol"))
+              this.player.a += turn;
+            if (this.mode === "protocol" && !this.online && this.protocolUI?.brief.open) {
+              this.updateHUD(false);
+              return;
+            }
             if (this.online) {
               for (const e of this.combatants())
                 if (Number.isFinite(e.nx)) {
@@ -2958,7 +3241,14 @@
               this.updateHUD(false);
               return;
             }
-            this.arena.advance(dt, { [this.selfId]: this.controls() });
+            const input = this.controls();
+            this.arena.advance(dt, { [this.selfId]: input });
+            if (this.mode === "protocol" && this.mapId !== this.arena.mapId) {
+              this.mapId = this.arena.mapId;
+              this.updateKit();
+              this.protocolCache = null;
+            }
+            this.protocolUI?.acknowledge(input.protocolAction?.seq);
             this.pendingReload = false;
             this.pendingSuper = false;
             this.pendingSlide = false;
@@ -2967,794 +3257,6 @@
             this.academy?.update();
             this.checkResult();
             this.updateHUD(false);
-          }
-          drawWorld() {
-            const c = this.ctx,
-              w = this.w,
-              h = this.h,
-              p = this.camera(),
-              horizon = h * 0.5 + this.viewPitch;
-            const map = mapOf(this.arena.mapId),
-              theme = map.theme;
-            c.fillStyle = "#e8aa62";
-            c.fillRect(0, 0, w, horizon);
-            c.fillStyle = theme.sky;
-            c.fillRect(0, 0, w, horizon * 0.62);
-            c.fillStyle = theme.sun;
-            c.beginPath();
-            c.arc(w * 0.76, horizon * 0.38, Math.min(w, h) * 0.08, 0, TAU);
-            c.fill();
-            c.fillStyle = "#9e7558";
-            c.beginPath();
-            c.moveTo(0, horizon);
-            for (let i = 0; i <= 12; i++)
-              c.lineTo((w * i) / 12, horizon - 18 - (Math.sin(i * 2.8) + 1) * 30);
-            c.lineTo(w, horizon);
-            c.fill();
-            this.art.background(map, p, horizon);
-            c.fillStyle = theme.floor;
-            c.fillRect(0, horizon, w, h - horizon);
-            c.fillStyle = "#89684f";
-            c.fillRect(0, horizon + (h - horizon) * 0.45, w, (h - horizon) * 0.55);
-            // Floor grid projected from world coordinates for a strong sense of movement.
-            const ca = Math.cos(p.a),
-              sa = Math.sin(p.a),
-              plane = this.viewPlane;
-            this.academy.floor(map, p, horizon);
-            const palettes = theme.walls;
-            let prevKey = "";
-            for (let x = 0; x < w; x += 2) {
-              const q = ((2 * (x + 0.5)) / w - 1) * plane,
-                dx = ca - sa * q,
-                dy = sa + ca * q;
-              const hit = this.arena.cast(p.x, p.y, dx, dy),
-                d = Math.max(0.05, hit.distance),
-                size = this.projection / d;
-              this.depth[x] = d;
-              if (x + 1 < w) this.depth[x + 1] = d;
-              const top = horizon - size / 2,
-                bottom = horizon + size / 2,
-                colors = palettes[hit.type] || palettes[1];
-              c.fillStyle = colors[hit.side ? 1 : 0];
-              c.fillRect(x, top, 2, size);
-              const material = this.academy.wallTexture(map, hit.type, hit.side, size);
-              c.drawImage(
-                material,
-                Math.floor(
-                  ((hit.side ? dy > 0 : dx < 0) ? 1 - hit.u : hit.u) * (material.width - 1),
-                ),
-                0,
-                1,
-                material.height,
-                x,
-                top,
-                2,
-                size,
-              );
-              c.fillStyle = colors[2];
-              c.fillRect(x, top + size * 0.03, 2, size * 0.045);
-              c.fillStyle = "#151a21";
-              c.fillRect(x, top, 2, Math.max(2, size * 0.018));
-              c.fillRect(x, bottom - Math.max(2, size * 0.018), 2, Math.max(2, size * 0.018));
-              const key = hit.mx + "," + hit.my + "," + hit.side;
-              if (key !== prevKey || hit.u < 0.018 || hit.u > 0.982) {
-                c.fillStyle = "#1a2025";
-                c.fillRect(x, top, 2, size);
-              }
-              prevKey = key;
-              if (!this.environment.loaded) {
-                if (
-                  map.id === "testblock" &&
-                  [2, 4].includes(hit.type) &&
-                  hit.u > 0.18 &&
-                  hit.u < 0.82
-                ) {
-                  c.fillStyle = "#e8efd8";
-                  c.fillRect(x, top + size * 0.22, 2, size * 0.34);
-                  if (hit.u > 0.24 && hit.u < 0.76) {
-                    c.fillStyle = hit.u > 0.48 && hit.u < 0.52 ? "#e8efd8" : "#284d62";
-                    c.fillRect(x, top + size * 0.25, 2, size * 0.26);
-                  }
-                  c.fillStyle = "#f5e4c5";
-                  c.fillRect(x, top + size * 0.6, 2, size * 0.035);
-                }
-                if (
-                  map.id === "skyport" &&
-                  [5, 6].includes(hit.type) &&
-                  hit.u > 0.2 &&
-                  hit.u < 0.8
-                ) {
-                  c.fillStyle = "#193b51";
-                  c.fillRect(x, top + size * 0.29, 2, size * (hit.type === 6 ? 0.19 : 0.36));
-                  c.fillStyle = "#89d3e4";
-                  c.fillRect(x, top + size * 0.3, 2, size * 0.035);
-                }
-                if (map.id === "freight" && Math.floor(hit.u * 24) % 3 === 0) {
-                  c.fillStyle = "#15263055";
-                  c.fillRect(x, top + size * 0.08, 2, size * 0.85);
-                }
-                // Horizontal mortar / steel panel seams.
-                c.fillStyle = "#272c2a";
-                for (let j = 1; j < 4; j++)
-                  c.fillRect(x, top + (size * j) / 4, 2, Math.max(1, size * 0.008));
-                if (hit.type === 3 && Math.floor(hit.u * 10) % 2 === 0) {
-                  c.fillStyle = "#222b30";
-                  c.fillRect(x, top + size * 0.64, 2, size * 0.19);
-                }
-                if (hit.type === 2 && hit.u > 0.16 && hit.u < 0.84) {
-                  c.fillStyle = "#163c43";
-                  c.fillRect(x, top + size * 0.3, 2, size * 0.03);
-                  c.fillRect(x, top + size * 0.38, 2, size * 0.03);
-                }
-                if (hit.type === 1 && Math.floor(hit.u * 28) % 7 === 0) {
-                  c.fillStyle = "#603f2d";
-                  c.fillRect(x, top + size * (0.12 + hit.u * 0.25), 2, size * 0.045);
-                }
-              }
-              if (d > 5) {
-                c.fillStyle = `rgba(35,28,32,${Math.min(0.55, (d - 5) * 0.035)})`;
-                c.fillRect(x, top, 2, size);
-              }
-            }
-          }
-          // Render a billboard once, then copy visible strips against the wall depth buffer.
-          lootSprite(isCore) {
-            const sprite = document.createElement("canvas");
-            const density =
-              this.academy.preset === "high" ? 3 : this.academy.preset === "balanced" ? 2 : 1;
-            sprite.width = 128 * density;
-            sprite.height = 160 * density;
-            const c = sprite.getContext("2d");
-            c.scale(density, density);
-            c.strokeStyle = "#101720";
-            c.lineWidth = 7;
-            c.lineJoin = "round";
-            if (isCore) {
-              c.fillStyle = "#152b2d77";
-              c.beginPath();
-              c.ellipse(64, 145, 35, 8, 0, 0, TAU);
-              c.fill();
-              c.fillStyle = "#62f0d5";
-              c.beginPath();
-              c.moveTo(64, 55);
-              c.lineTo(103, 79);
-              c.lineTo(89, 119);
-              c.lineTo(39, 119);
-              c.lineTo(25, 79);
-              c.closePath();
-              c.fill();
-              c.stroke();
-              c.fillStyle = "#d3fff0";
-              c.beginPath();
-              c.moveTo(68, 64);
-              c.lineTo(44, 88);
-              c.lineTo(64, 88);
-              c.lineTo(52, 110);
-              c.lineTo(85, 80);
-              c.lineTo(64, 80);
-              c.closePath();
-              c.fill();
-            } else {
-              c.fillStyle = "#0005";
-              c.beginPath();
-              c.ellipse(64, 147, 54, 9, 0, 0, TAU);
-              c.fill();
-              c.fillStyle = "#d79345";
-              c.fillRect(12, 48, 104, 96);
-              c.strokeRect(12, 48, 104, 96);
-              c.fillStyle = "#885532";
-              c.fillRect(91, 50, 23, 92);
-              c.fillStyle = "#f4be61";
-              c.fillRect(15, 50, 73, 13);
-              c.fillStyle = "#253b44";
-              c.fillRect(13, 70, 100, 13);
-              c.fillRect(13, 120, 100, 12);
-              c.strokeRect(40, 86, 47, 32);
-              c.fillStyle = "#62f0d5";
-              c.font = "bold 25px monospace";
-              c.fillText("+", 55, 111);
-            }
-            return sprite;
-          }
-          propSprite(prop) {
-            if (!this.arena || !["dummy", "wreck", "luggage", "sign"].includes(prop.kind))
-              return this.art.scenery(prop);
-            this.propSprites ??= new Map();
-            const key = prop.kind + prop.label;
-            if (this.propSprites.has(key)) return this.propSprites.get(key);
-            const s = document.createElement("canvas");
-            s.width = 128;
-            s.height = 160;
-            const c = s.getContext("2d");
-            c.lineWidth = 6;
-            c.strokeStyle = "#101720";
-            c.lineJoin = "round";
-            const box = (x, y, w, h, fill) => {
-              c.fillStyle = fill;
-              c.fillRect(x, y, w, h);
-              c.strokeRect(x, y, w, h);
-            };
-            if (prop.kind === "dummy") {
-              box(46, 46, 36, 36, "#f3d7a8");
-              box(34, 83, 58, 48, "#8bbaa9");
-              box(35, 132, 18, 22, "#394f56");
-              box(75, 132, 18, 22, "#394f56");
-              box(13, 85, 19, 35, "#efd2a5");
-              box(95, 85, 19, 35, "#efd2a5");
-            } else if (prop.kind === "wreck") {
-              box(5, 96, 118, 45, "#53636a");
-              box(42, 76, 40, 39, "#92b4be");
-              box(5, 111, 34, 15, "#e1b452");
-              c.beginPath();
-              c.moveTo(12, 79);
-              c.lineTo(117, 65);
-              c.moveTo(64, 67);
-              c.lineTo(85, 44);
-              c.stroke();
-            } else if (prop.kind === "luggage") {
-              box(16, 80, 42, 69, "#ec965e");
-              box(63, 100, 49, 49, "#64939d");
-              box(27, 69, 20, 12, "#151f27");
-            } else {
-              box(57, 90, 13, 64, "#536971");
-              box(4, 43, 120, 52, "#2b5461");
-              c.fillStyle = "#ffc455";
-              c.font = "bold 12px monospace";
-              c.textAlign = "center";
-              c.fillText(prop.label, 64, 74);
-            }
-            this.propSprites.set(key, s);
-            return s;
-          }
-          drawCombatEffects() {
-            const c = this.ctx,
-              p = this.camera(),
-              ca = Math.cos(p.a),
-              sa = Math.sin(p.a),
-              horizon = this.h * 0.5 + this.viewPitch;
-            const point = (x, y, height = 0) => {
-              const dx = x - p.x,
-                dy = y - p.y,
-                z = dx * ca + dy * sa;
-              if (z <= 0.12) return null;
-              const sx = this.w * 0.5 + ((-dx * sa + dy * ca) * this.projection) / z;
-              if (sx < 0 || sx >= this.w || z > this.depth[Math.floor(sx)] + 0.1) return null;
-              return { x: sx, y: horizon + (this.projection * (0.5 - height)) / z, z };
-            };
-            for (const f of this.arena.fields) {
-              const v = point(f.x, f.y);
-              if (!v) continue;
-              const r = Math.min(this.w, (this.projection * f.radius) / v.z);
-              c.fillStyle = "#6ee58c55";
-              c.strokeStyle = "#14262c";
-              c.lineWidth = 3;
-              c.beginPath();
-              c.ellipse(v.x, v.y, r, r * 0.25, 0, 0, TAU);
-              c.fill();
-              c.stroke();
-              for (let i = -3; i <= 3; i++) {
-                c.strokeStyle = "#9de374";
-                c.beginPath();
-                c.moveTo(v.x + (i * r) / 4, v.y);
-                c.lineTo(v.x + (i * r) / 4 - 6, v.y - r * 0.18);
-                c.stroke();
-              }
-            }
-            this.weapons.combat(point);
-          }
-
-          drawAlternateWeapon() {
-            const c = this.ctx,
-              w = weaponOf(this.player.weapon),
-              recoil = Math.max(0, 1 - (this.animationTime - this.shotAt) * 9),
-              scale = Math.min(this.w / 850, this.h / 620) * 1.3;
-            const reload = this.reloadUntil
-              ? Math.sin(clamp((this.reloadUntil - this.animationTime) / 1.4, 0, 1) * Math.PI) * 70
-              : 0;
-            c.save();
-            c.translate(
-              this.w * 0.58 + Math.sin(this.step) * 3,
-              this.h + 18 + reload + recoil * 14,
-            );
-            c.scale(scale, scale);
-            c.lineWidth = 6;
-            c.strokeStyle = "#101720";
-            c.lineJoin = "round";
-            const poly = (pts, fill) => {
-              c.fillStyle = this.academy.materialFill(c, this.retention?.paint(fill) || fill, pts);
-              c.beginPath();
-              pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
-              c.closePath();
-              c.fill();
-              c.stroke();
-            };
-            const gun = (x, width = 44) => {
-              poly(
-                [
-                  [x - 30, 0],
-                  [x - 50, -90],
-                  [x - 12, -126],
-                  [x + 55, -105],
-                  [x + 72, 0],
-                ],
-                "#8e634d",
-              );
-              poly(
-                [
-                  [x - width, -85],
-                  [x - width, -190],
-                  [x + width * 0.6, -228],
-                  [x + width, -180],
-                  [x + width, -80],
-                ],
-                w.color,
-              );
-              poly(
-                [
-                  [x - 13, -180],
-                  [x - 11, -250],
-                  [x + 13, -250],
-                  [x + 16, -180],
-                ],
-                "#273d49",
-              );
-              c.fillStyle = "#f4e4c1";
-              c.fillRect(x - 8, -246, 17, 8);
-            };
-            if (w.kind === "burst") {
-              gun(-70, 27);
-              gun(65, 27);
-            } else if (w.kind === "melee") {
-              for (const x of [-105, 75]) {
-                poly(
-                  [
-                    [x - 35, 0],
-                    [x - 50, -135],
-                    [x + 35, -151],
-                    [x + 60, 0],
-                  ],
-                  "#77584e",
-                );
-                poly(
-                  [
-                    [x - 51, -128],
-                    [x - 51, -193],
-                    [x + 35, -211],
-                    [x + 50, -152],
-                  ],
-                  w.color,
-                );
-                for (let i = 0; i < 3; i++) {
-                  c.fillStyle = "#b3cbd0";
-                  c.fillRect(x - 36 + i * 24, -190, 15, 25);
-                }
-              }
-            } else if (w.kind === "dash") {
-              poly(
-                [
-                  [-20, 0],
-                  [3, -258],
-                  [27, -258],
-                  [22, 0],
-                ],
-                "#574753",
-              );
-              poly(
-                [
-                  [10, -251],
-                  [66, -294],
-                  [156, -273],
-                  [182, -239],
-                  [107, -254],
-                  [35, -230],
-                ],
-                w.color,
-              );
-            } else if (["blades", "poison"].includes(w.kind)) {
-              poly(
-                [
-                  [-72, 0],
-                  [-98, -116],
-                  [-33, -150],
-                  [27, -88],
-                  [49, 0],
-                ],
-                "#a27c61",
-              );
-              for (let i = -1; i <= 1; i++)
-                poly(
-                  [
-                    [-37 + i * 28, -111],
-                    [-69 + i * 43, -218],
-                    [-44 + i * 40, -229],
-                    [-8 + i * 28, -122],
-                  ],
-                  w.color,
-                );
-            } else if (w.kind === "shard") {
-              poly(
-                [
-                  [-70, 0],
-                  [-81, -101],
-                  [-21, -143],
-                  [35, -71],
-                  [46, 0],
-                ],
-                "#a27c61",
-              );
-              c.fillStyle = w.color;
-              c.beginPath();
-              c.arc(-30, -183, 47, 0, TAU);
-              c.fill();
-              c.stroke();
-              for (let i = 0; i < 8; i++) {
-                const a = (i * TAU) / 8;
-                poly(
-                  [
-                    [-30 + Math.cos(a) * 37, -183 + Math.sin(a) * 37],
-                    [-30 + Math.cos(a) * 64, -183 + Math.sin(a) * 64],
-                    [-30 + Math.cos(a + 0.2) * 40, -183 + Math.sin(a + 0.2) * 40],
-                  ],
-                  "#e7f3bd",
-                );
-              }
-            } else if (w.kind === "lob") {
-              gun(0, 40);
-              for (const x of [-29, 18]) {
-                poly(
-                  [
-                    [x, -110],
-                    [x - 5, -224],
-                    [x + 22, -234],
-                    [x + 28, -110],
-                  ],
-                  w.color,
-                );
-                c.fillStyle = "#ed6445";
-                c.fillRect(x, -212, 18, 70);
-              }
-            } else {
-              gun(0, w.kind === "rocket" ? 65 : w.id === "breach" ? 57 : 47);
-              if (w.kind === "rocket") {
-                c.fillStyle = "#111d25";
-                c.beginPath();
-                c.ellipse(0, -242, 44, 19, 0, 0, TAU);
-                c.fill();
-                c.stroke();
-                c.fillStyle = "#ffac62";
-                c.beginPath();
-                c.ellipse(0, -242, 21, 10, 0, 0, TAU);
-                c.fill();
-              }
-            }
-            c.fillStyle = "#fff0cc";
-            c.font = "bold 13px monospace";
-            c.fillText(w.name.toUpperCase(), -70, -70);
-            if (
-              recoil > 0.5 &&
-              !["melee", "dash", "shard", "lob", "blades", "poison"].includes(w.kind)
-            )
-              poly(
-                [
-                  [-30, -254],
-                  [-50, -298],
-                  [-10, -287],
-                  [9, -330],
-                  [24, -284],
-                  [57, -301],
-                  [41, -257],
-                ],
-                "#ffcf61",
-              );
-            c.restore();
-          }
-          drawEnemies() {
-            if (!this.boxSprite) this.boxSprite = this.lootSprite(false);
-            if (!this.coreSprite) this.coreSprite = this.lootSprite(true);
-            const p = this.camera(),
-              c = this.ctx,
-              ca = Math.cos(p.a),
-              sa = Math.sin(p.a),
-              horizon = this.h * 0.5 + this.viewPitch;
-            const objects = [
-              ...this.enemies
-                .filter(
-                  (e) =>
-                    (e.hp > 0 || this.characters.defeatedVisible(e)) &&
-                    (!(e.cloakedUntil > this.time) ||
-                      (this.mode === "duo" && e.team === this.player.team) ||
-                      Math.hypot(e.x - p.x, e.y - p.y) < 1.3),
-                )
-                .map((e) => ({
-                  e,
-                  character: true,
-                  size: 0.94,
-                  aspect: 2 / 3,
-                })),
-              ...this.crates
-                .filter((e) => e.hp > 0)
-                .map((e) => ({ e, sprite: this.boxSprite, size: 0.72 })),
-              ...this.cores.map((e) => ({ e, sprite: this.coreSprite, size: 0.55 })),
-              ...[...mapOf(this.arena.mapId).props, ...this.art.extras()].map((e) => ({
-                e,
-                sprite: this.propSprite(e),
-                size: e.size || (e.kind === "wreck" ? 0.65 : e.kind === "dummy" ? 0.8 : 0.9),
-                aspect: e.aspect || (e.kind === "wreck" ? 2.2 : 0.8),
-              })),
-            ];
-            const visible = objects
-              .map((o) => {
-                const dx = o.e.x - p.x,
-                  dy = o.e.y - p.y;
-                return { ...o, z: dx * ca + dy * sa, lateral: -dx * sa + dy * ca };
-              })
-              .filter((v) => v.z > 0.15 && (!v.e.kind || v.z < this.academy.options.distance))
-              .sort((a, b) => b.z - a.z);
-            for (const { e, sprite, character, size, aspect, z, lateral } of visible) {
-              const height = (this.projection * size) / z,
-                width = height * (aspect || 0.8),
-                sx = this.w * 0.5 + (lateral * this.projection) / z - width / 2;
-              // All billboards share the same world floor, regardless of their height.
-              const sy =
-                horizon +
-                (this.projection * 0.5) / z -
-                height +
-                (character
-                  ? height * (17 / 288)
-                  : Math.sin(this.animationTime * 3 + (e.phase || 0)) * height * 0.015);
-              const left = Math.max(0, Math.floor(sx)),
-                right = Math.min(this.w, Math.ceil(sx + width));
-              if (right <= left) continue;
-              // Build animation frames only for characters visible past wall depth.
-              if (character && !this.depth.slice(left, right).some((depth) => z < depth)) continue;
-              const frame = character ? this.characters.sprite(e) : sprite;
-              // Adjacent visible columns form one source crop, rather than one
-              // Canvas draw per pixel. Wall depth still clips every column.
-              c.imageSmoothingEnabled = !!character;
-              for (let x = left; x < right;) {
-                if (z >= this.depth[x]) {
-                  x++;
-                  continue;
-                }
-                const start = x++;
-                while (x < right && z < this.depth[x]) x++;
-                const end = x;
-                if (this.academy.options.shadows) {
-                  const ground = horizon + (this.projection * 0.5) / z;
-                  c.save();
-                  c.beginPath();
-                  c.rect(start, ground - height * 0.05, end - start, height * 0.1);
-                  c.clip();
-                  c.fillStyle = "#10172065";
-                  c.beginPath();
-                  c.ellipse(sx + width / 2, ground, width / 2, height * 0.045, 0, 0, TAU);
-                  c.fill();
-                  c.restore();
-                }
-                const sourceLeft = clamp(((start - sx) / width) * frame.width, 0, frame.width),
-                  sourceRight = clamp(((end - sx) / width) * frame.width, 0, frame.width);
-                if (sourceRight > sourceLeft)
-                  c.drawImage(
-                    frame,
-                    sourceLeft,
-                    0,
-                    sourceRight - sourceLeft,
-                    frame.height,
-                    start,
-                    sy,
-                    end - start,
-                    height,
-                  );
-              }
-              c.imageSmoothingEnabled = false;
-              const center = Math.round(sx + width / 2),
-                indicatorY = sy + (character ? height * (30 / 288) : 0);
-              if (
-                this.mode !== "training" &&
-                e.hp &&
-                center >= 0 &&
-                center < this.w &&
-                z < this.depth[center]
-              ) {
-                c.fillStyle = "#101720";
-                c.fillRect(sx, indicatorY - 7, width, 4);
-                c.fillStyle = e.id.startsWith("crate")
-                  ? "#ffc455"
-                  : this.mode === "duo" && e.team === this.player.team
-                    ? "#71ebd5"
-                    : "#ef795b";
-                c.fillRect(sx + 1, indicatorY - 6, ((width - 2) * e.hp) / e.maxHp, 2);
-                if (
-                  !e.id.startsWith("crate") &&
-                  (!e.bot || (this.mode === "duo" && e.team === this.player.team))
-                ) {
-                  c.fillStyle =
-                    this.mode === "duo" && e.team === this.player.team ? "#71ebd5" : "#fff4dc";
-                  c.font = "bold 11px system-ui";
-                  c.fillText(
-                    (e.team === this.player.team && this.mode === "duo" ? "PARTNER / " : "") +
-                      e.name,
-                    sx,
-                    indicatorY - 14,
-                  );
-                }
-                if (e.cores) {
-                  c.fillStyle = "#71ebd5";
-                  c.font = "bold 11px system-ui";
-                  c.fillText("CORE " + e.cores, sx, indicatorY - 12);
-                }
-              }
-            }
-          }
-          drawHaze() {
-            if (this.mode === "training" || this.time <= this.zone.delay) return;
-            const c = this.ctx,
-              p = this.camera(),
-              h = this.zone.half,
-              min = this.zone.cx - h,
-              max = this.zone.cx + h;
-            // The ray's exit from the safe rectangle forms a vertical fog curtain.
-            if (!this.outsideSafe(p))
-              for (let x = 0; x < this.w; x += 8) {
-                const q = ((2 * x) / this.w - 1) * this.viewPlane,
-                  dx = Math.cos(p.a) - Math.sin(p.a) * q,
-                  dy = Math.sin(p.a) + Math.cos(p.a) * q;
-                const tx = (dx > 0 ? max - p.x : min - p.x) / (dx || 1e-12),
-                  ty = (dy > 0 ? max - p.y : min - p.y) / (dy || 1e-12),
-                  d = Math.min(tx, ty);
-                if (d > 0 && d < this.depth[x]) {
-                  const size = this.projection / d,
-                    top = this.h * 0.5 + this.viewPitch - size / 2;
-                  c.fillStyle = "#b52d5955";
-                  c.fillRect(x, top, 8, size);
-                }
-              }
-            if (this.outsideSafe(p)) {
-              c.fillStyle = "#b52d5948";
-              c.fillRect(0, 0, this.w, this.h);
-            }
-          }
-          drawWeapon() {
-            if (this.weapons.draw()) return;
-            if (this.player.weapon !== "carbine") {
-              this.drawAlternateWeapon();
-              return;
-            }
-            const c = this.ctx,
-              scale = Math.min(this.w / 900, this.h / 550) * 1.2;
-            const recoil = Math.max(0, 1 - (this.animationTime - this.shotAt) / 0.12),
-              reload = this.reloadUntil
-                ? Math.sin(clamp((this.reloadUntil - this.animationTime) / 1.4, 0, 1) * Math.PI)
-                : 0;
-            c.save();
-            c.translate(
-              this.w * 0.59 + Math.sin(this.step) * 4,
-              this.h + Math.abs(Math.cos(this.step)) * 3 + reload * 110 + recoil * 25,
-            );
-            c.scale(scale, scale);
-            c.lineWidth = 5;
-            c.strokeStyle = "#0c131b";
-            c.lineJoin = "round";
-            const poly = (pts, color) => {
-              c.fillStyle = this.academy.materialFill(
-                c,
-                this.retention?.paint(color) || color,
-                pts,
-              );
-              c.beginPath();
-              pts.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
-              c.closePath();
-              c.fill();
-              c.stroke();
-            };
-            poly(
-              [
-                [-90, 10],
-                [-95, -80],
-                [-42, -135],
-                [10, -100],
-                [40, 10],
-              ],
-              "#a1795a",
-            );
-            poly(
-              [
-                [83, 10],
-                [70, -93],
-                [105, -118],
-                [145, -70],
-                [160, 10],
-              ],
-              "#b78a65",
-            );
-            poly(
-              [
-                [-55, 10],
-                [-55, -107],
-                [-28, -165],
-                [49, -164],
-                [89, -95],
-                [93, 10],
-              ],
-              "#273b49",
-            );
-            poly(
-              [
-                [-40, -103],
-                [-27, -186],
-                [-8, -234],
-                [36, -234],
-                [61, -187],
-                [65, -103],
-              ],
-              "#4a6873",
-            );
-            poly(
-              [
-                [13, -105],
-                [13, -213],
-                [36, -234],
-                [61, -187],
-                [65, -103],
-              ],
-              "#294450",
-            );
-            poly(
-              [
-                [-33, -147],
-                [-25, -187],
-                [49, -187],
-                [58, -147],
-              ],
-              "#edb14f",
-            );
-            poly(
-              [
-                [-9, -213],
-                [-7, -252],
-                [29, -252],
-                [36, -213],
-              ],
-              "#1b2a34",
-            );
-            c.fillStyle = "#a4b9b4";
-            c.fillRect(-1, -248, 20, 8);
-            c.fillStyle = "#e55e3c";
-            c.fillRect(-20, -169, 64, 7);
-            c.fillStyle = "#142831";
-            c.fillRect(-25, -126, 72, 14);
-            c.fillStyle = "#d4c9a9";
-            c.font = "bold 14px monospace";
-            c.fillText("VX–7", -20, -110);
-            if (recoil > 0.3) {
-              poly(
-                [
-                  [10, -260],
-                  [-27, -287],
-                  [-7, -289],
-                  [-24, -321],
-                  [8, -305],
-                  [26, -337],
-                  [30, -302],
-                  [65, -319],
-                  [46, -286],
-                  [63, -269],
-                  [28, -268],
-                ],
-                "#ffbf3b",
-              );
-              poly(
-                [
-                  [6, -265],
-                  [0, -291],
-                  [20, -311],
-                  [31, -279],
-                  [39, -268],
-                ],
-                "#fff2bc",
-              );
-            }
-            c.restore();
           }
           drawMap() {
             const c = this.ctx,
@@ -3771,7 +3273,7 @@
                 c.fillRect(ox + x * s, oy + y * s, s - 1, s - 1);
               }),
             );
-            if (this.mode !== "training") {
+            if (this.mode !== "protocol" && this.mode !== "training") {
               if (this.time > this.zone.delay) {
                 const low = this.zone.cx - this.zone.half,
                   high = this.zone.cx + this.zone.half;
@@ -3802,12 +3304,19 @@
             for (const e of this.enemies)
               if (
                 e.hp > 0 &&
+                (this.mode !== "protocol" ||
+                  (Math.hypot(e.x - this.player.x, e.y - this.player.y) < 2.2 &&
+                    this.arena.visible(this.player, e))) &&
                 (!(e.cloakedUntil > this.time) ||
                   (e.team === this.player.team && this.mode === "duo") ||
                   Math.hypot(e.x - this.player.x, e.y - this.player.y) < 1.3)
               ) {
                 c.fillStyle =
-                  this.mode === "duo" && e.team === this.player.team ? "#71ebd5" : "#fa6751";
+                  this.mode === "protocol"
+                    ? "#c6d4d4"
+                    : this.mode === "duo" && e.team === this.player.team
+                      ? "#71ebd5"
+                      : "#fa6751";
                 c.fillRect(ox + e.x * s - 1.5, oy + e.y * s - 1.5, 3, 3);
               }
             const p = this.player;
@@ -3823,15 +3332,18 @@
             c.stroke();
           }
           render() {
+            // A transparent HUD over a neutral status screen while 3D loads or
+            // recovers: no legacy world, character, weapon or effect drawing.
+            if (!this.militaryLoaded) {
+              this.ctx.clearRect(0, 0, this.w, this.h);
+              return;
+            }
             this.observeCombat();
-            this.art.observe();
-            this.characters.observe();
-            this.weapons.observe();
             this.retention.observe();
             const c = this.ctx,
               now = performance.now(),
               hurt = Math.max(0, (this.damageUntil - now) / 520);
-            if (this.militaryLoaded) c.clearRect(0, 0, this.w, this.h);
+            c.clearRect(0, 0, this.w, this.h);
             c.save();
             const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
             if (!this.militaryLoaded && this.deathSequence && !reducedMotion) {
@@ -3852,21 +3364,7 @@
                   hurt *
                   (matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1),
               );
-            if (this.militaryLoaded) {
-              this.military.render();
-            } else {
-              this.drawWorld();
-              this.art.lighting();
-              this.drawEnemies();
-              this.drawHaze();
-              this.drawCombatEffects();
-              this.art.effectsWorld();
-              if (this.player.hp > 0) {
-                this.art.weaponBefore();
-                this.drawWeapon();
-                this.art.weaponAfter();
-              }
-            }
+            this.military.render();
             c.restore();
             this.drawMap();
             if (this.deathSequence) {
@@ -3929,7 +3427,15 @@
             this.visualTime = this.online
               ? Math.min(this.time + 0.15, Math.max(this.time, (this.visualTime ?? this.time) + dt))
               : this.time;
-            this.render();
+            // Frozen/menu backgrounds do not need full-rate GPU work. Inputs and
+            // online timers continue every frame; live field rendering stays uncapped.
+            const quietProtocol =
+              this.mode === "protocol" &&
+              (!this.$(".mf-modal").hidden || this.protocolUI?.hasDialogOpen());
+            if (!quietProtocol || now - (this.lastSceneRenderAt || 0) >= 100) {
+              this.render();
+              this.lastSceneRenderAt = now;
+            }
             if (
               this.budget.sample(
                 performance.now() - start,
@@ -3948,6 +3454,7 @@
             this.frame = requestAnimationFrame(this.loop);
           }
           destroy() {
+            this.protocolUI?.dispose();
             clearTimeout(this.loadingTimer);
             window.outpostLoading?.stop();
             this.military?.dispose();

@@ -79,6 +79,12 @@ export class Academy {
       `<aside class="mf-lesson" hidden aria-live="polite"><small></small><b></b><p></p><div><button class="mf-lesson-next">SKIP STEP</button><button class="mf-lesson-exit">EXIT TRAINING</button></div></aside><dialog class="mf-book" aria-label="Outpost field guide"><div class="mf-bookhead"><b>OUTPOST / FIELD MANUAL</b><button class="mf-bookclose">BACK</button></div><div class="mf-bookbody"></div></dialog>`,
     );
     game.on(game.$(".mf-boot"), "click", () => {
+      // Mission help must preserve the rescue instead of switching it into
+      // the separate shooting-range tutorial and discarding its progress.
+      if (game.mode === "protocol" && game.protocolUI) {
+        game.protocolUI.showGuide();
+        return;
+      }
       if (game.online) {
         game.$(".mf-kitnote").textContent =
           "Leave your online room before starting offline Boot Camp.";
@@ -163,14 +169,19 @@ export class Academy {
 
   open(kind) {
     const g = this.g;
+    if (kind === "guide" && g.mode === "protocol" && g.protocolUI) {
+      g.protocolUI.showGuide();
+      return;
+    }
     if (g.running) g.pause();
     this.returnFocus = document.activeElement;
     if (kind === "graphics") this.settings();
     else {
       g.$(".mf-bookbody").innerHTML =
-        `<p class="mf-bookintro">KNOW YOUR GROUND. KNOW YOUR GEAR.</p><p>WASD / left stick moves. Mouse / right-side drag aims. Click, Space or FIRE shoots. Shift / SPRINT runs; C, Ctrl or SLIDE slides while sprinting forward. R reloads; Q uses a fully charged ability. Escape or P opens the menu. Damage flashes red; below 30% health, vitals pulse. Hit markers confirm damage.</p><h2>Match rules</h2><p>Field Ops: eliminate six sentries. Last Signal: eight combatants, one survivor. Supply Crates drop Charge Cores (+25 max health, +8 power rating; scales weapon damage). Red Haze closes after 12 seconds and hurts more the longer you stay outside. Pair Ops: four pairs, no friendly fire, two returns each after 8 seconds while your partner lives. Losing both partners ends your team.</p><p>Online: create or join a room, share its invite, pick a loadout and team, then the host deploys. Bots fill empty seats. The host selects the map before starting. <b>Online matches keep running while reading this guide.</b></p><h2>Arenas / ${Object.keys(MAPS).length}</h2><div class="mf-guidegrid">${Object.values(
+        `<p class="mf-bookintro">KNOW YOUR GROUND. KNOW YOUR GEAR.</p><p>WASD / left stick moves. Mouse / right-side drag aims. Click, Space or FIRE shoots. Shift / SPRINT runs; Ctrl or SLIDE slides while sprinting forward. R reloads; Q uses a fully charged ability. Escape or P opens the menu. Damage flashes red; below 30% health, vitals pulse. Hit markers confirm damage.</p><h2>Match rules</h2><p>Blackout Protocol / Lifeline Run: gather and load 13 medical items at Breakwater, then fly Lifeline Medevac to wounded soldiers. Save at least one surviving patient by delivering aid. A sabotaged autopilot requires an operator at the helm to trim flight level and course for three seconds before restoring it. Patients and flight safety keep advancing during meetings. Use the Blackout Protocol manual for the full cargo, rescue and flight controls.</p><p>Field Ops: eliminate six sentries. Last Signal: eight combatants, one survivor. Supply Crates drop Charge Cores (+25 max health, +8 power rating; scales weapon damage). Red Haze closes after 12 seconds and hurts more the longer you stay outside. Pair Ops: four pairs, no friendly fire, two returns each after 8 seconds while your partner lives. Losing both partners ends your team.</p><p>Online: create or join a room, share its invite, pick a loadout and team, then the host deploys. Bots fill empty seats. The host selects the map before starting. <b>Online matches keep running while reading this guide.</b></p><h2>Arenas / ${Object.values(MAPS).filter((map) => !["breakwater", "medevac"].includes(map.id)).length}</h2><div class="mf-guidegrid">${Object.values(
           MAPS,
         )
+          .filter((map) => !["breakwater", "medevac"].includes(map.id))
           .map(
             (m) =>
               `<article><canvas class="mf-mapdiagram" data-map="${m.id}" aria-label="${m.name} overhead layout"></canvas><h3>${m.name}</h3><small>${m.tag}</small><p>${m.description}</p></article>`,
@@ -191,20 +202,13 @@ export class Academy {
         canvas.width = canvas.height = 192;
         const c = canvas.getContext("2d"),
           tile = 192 / size;
-        c.fillStyle = map.theme.floor;
+        c.fillStyle = "#4f686d";
         c.fillRect(0, 0, 192, 192);
-        for (const z of map.zones) {
-          c.fillStyle = z.color;
-          c.fillRect(z.x * tile, z.y * tile, z.w * tile, z.h * tile);
-        }
         map.level.forEach((row, y) =>
           row.forEach((v, x) => {
             if (v) {
-              c.fillStyle = map.theme.walls[v]?.[0] || "#111";
+              c.fillStyle = v === 1 ? "#9aa9a4" : "#768b88";
               c.fillRect(x * tile, y * tile, tile, tile);
-              c.strokeStyle = "#101720";
-              c.lineWidth = 1;
-              c.strokeRect(x * tile, y * tile, tile, tile);
             }
           }),
         );
@@ -213,7 +217,8 @@ export class Academy {
     g.$(".mf-book").showModal();
   }
   settings(target = this.g.$(".mf-bookbody")) {
-    target.innerHTML = `<p class="mf-bookintro">INK, STEEL & SUNLIGHT</p><p>Sharpen the comic artwork without changing the bold colors and black outlines. High increases rendering cost; choose Performance if your device gets warm or play feels slow.</p><label class="mf-setting">Graphics preset<select data-preset aria-label="Graphics preset">${Object.keys(
+    const shadowSize = this.preset === "high" ? 4096 : this.preset === "performance" ? 1024 : 2048;
+    target.innerHTML = `<p class="mf-bookintro">CINEMATIC GRAPHICS</p><p>Realistic materials, dynamic lighting and wet-surface reflections. High increases rendering cost; choose Performance if your device gets warm or play feels slow.</p><label class="mf-setting">Graphics preset<select data-preset aria-label="Graphics preset">${Object.keys(
       PRESETS,
     )
       .map(
@@ -222,7 +227,7 @@ export class Academy {
       )
       .join(
         "",
-      )}</select></label><p>${this.options.texture} texel materials · up to ${this.options.width}px render width · floor sampling every ${this.options.floor}px · scenery range ${this.options.distance} tiles</p><p class="mf-perfstatus">120 FPS target · 30 FPS animation</p><label class="mf-setting"><span>Automatic resolution for 120 FPS</span><input type="checkbox" data-option="adaptive" ${this.options.adaptive ? "checked" : ""}></label><p>Resolution adapts to rendering cost. Actual FPS depends on your device and display refresh rate. Turn this off to keep the selected render resolution.</p><label class="mf-setting"><span>Defined contact shadows</span><input type="checkbox" data-option="shadows" ${this.options.shadows ? "checked" : ""}></label><label class="mf-setting"><span>Cel material lighting</span><input type="checkbox" data-option="lighting" ${this.options.lighting ? "checked" : ""}></label><p>Texture resolution sharpens mortar, scuffs and metal seams. Distance-filtered texture levels reduce shimmer on angled walls and floors. Detail distance keeps scenery visible farther away. Contact shadows ground characters and crates; material lighting adds stepped highlights and dark recesses. These are Canvas effects, rather than GPU anisotropic filtering, screen-space shadows or shader settings. Preferences are saved on this device.</p>`;
+      )}</select></label><p>Up to ${this.options.width}px render width · ${shadowSize}px shadow maps${this.preset === "performance" ? " · streamlined lighting" : " · cinematic finishing"}</p><p class="mf-perfstatus">120 FPS target · 30 FPS animation</p><label class="mf-setting"><span>Automatic resolution for 120 FPS</span><input type="checkbox" data-option="adaptive" ${this.options.adaptive ? "checked" : ""}></label><p>Resolution adapts to rendering cost. Actual FPS depends on your device and display refresh rate. Turn this off to keep the selected render resolution.</p><label class="mf-setting"><span>Dynamic and contact shadows</span><input type="checkbox" data-option="shadows" ${this.options.shadows ? "checked" : ""}></label><label class="mf-setting"><span>Cinematic material lighting</span><input type="checkbox" data-option="lighting" ${this.options.lighting ? "checked" : ""}></label><p>Photographic color, normal and roughness maps add surface detail. Anisotropic filtering keeps angled textures clear. Balanced and High reflect characters and cover in wet ground; High adds screen-space contact shadows and larger shadow and reflection maps. Preferences are saved on this device.</p>`;
   }
   begin() {
     const g = this.g;
