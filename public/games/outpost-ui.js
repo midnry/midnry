@@ -60,10 +60,10 @@ export class MenuUI {
     modes.after(g.$(".mf-start"));
     const help = document.createElement("details");
     help.className = "mf-controlshelp";
-    help.innerHTML = "<summary>Controls & shortcuts</summary>";
+    help.innerHTML = "<summary>How to play on this device</summary>";
     const instructions = g.$(".mf-help");
     instructions.innerHTML =
-      "<b>Touch:</b> left stick to move; drag the right side to aim. SPRINT toggles sprinting; SLIDE slides while moving forward. FIRE shoots, R reloads, and the ability button uses your charged super.<br><b>Keyboard:</b> WASD to move, mouse to aim, click or Space to fire. R reloads, Q uses your super, Hold Shift to sprint; press C or Ctrl while sprinting forward to slide. Esc or P opens the menu.";
+      "<b>Phone:</b> left stick moves. SPRINT and SLIDE stack above it. FIRE and reload are on the right. Drag the open middle of the screen to aim.<br><b>Keyboard:</b> WASD moves, mouse aims, click or Space fires. R reloads, Q uses your super, Shift sprints, and C or Ctrl slides. Esc or P opens the menu.";
     help.append(instructions);
     panel.append(help);
     const network = g.$(".mf-network");

@@ -46,7 +46,7 @@ function OutpostZeroPage() {
       <nav
         aria-label="Game navigation"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
-        className="flex min-h-11 shrink-0 items-center justify-between gap-3 border-b border-white/15 px-4 text-xs"
+        className="flex h-9 shrink-0 items-center justify-between gap-3 border-b border-white/15 px-3 text-xs"
       >
         <Link to="/" className="inline-flex min-h-11 items-center font-semibold hover:underline">
           ← Midnry
@@ -55,14 +55,14 @@ function OutpostZeroPage() {
           to="/discover/outpost-zero"
           className="inline-flex min-h-11 items-center hover:underline"
         >
-          About Outpost Zero
+          About
         </Link>
       </nav>
       {/* The static document owns its Canvas, styles and inputs. Unmounting the
           iframe tears down the game, and its scripts never run during SSR. */}
       <iframe
         ref={frame}
-        src={`/games/outpost-zero.html?renderer=military&v=natural-realism-20261012${room ? `&room=${encodeURIComponent(room)}` : ""}`}
+        src={`/games/outpost-zero.html?renderer=military&v=mobile-layout-20261012${room ? `&room=${encodeURIComponent(room)}` : ""}`}
         title="Outpost Zero first-person shooter"
         className="block min-h-0 w-full flex-1 border-0"
         allow="fullscreen"
