@@ -172,7 +172,7 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-patient { font-size:11px;display:grid;grid-template-columns:1fr auto;gap:3px 8px; }
       midnry-fps .mf-protocol-patient meter { width:100%;grid-column:1 / -1;height:8px;accent-color:#9fcca4; }
       midnry-fps .mf-protocol-patient[data-critical="true"] { color:#ffbd9c; }
-      midnry-fps .mf-protocol-piloting .mf-stick,midnry-fps .mf-protocol-piloting .mf-protocol-tasks { display:none !important; }
+      midnry-fps .mf-protocol-piloting :is(.mf-stick, .mf-sprint, .mf-slide, .mf-protocol-tasks) { display:none !important; }
       midnry-fps .mf-protocol-flight { position:absolute;z-index:5;bottom:106px;left:50%;transform:translateX(-50%);width:min(350px,calc(100% - 28px));padding:13px 15px;color:#f0f6ef;background:#122321ed;border:1px solid #a4b89a66;border-radius:16px;font-size:12px;line-height:1.5; }
       midnry-fps .mf-protocol-flight b { display:block;font-size:14px;color:#e2eccd; }
       midnry-fps .mf-protocol-flight meter { width:100%;height:12px;accent-color:#b6daa4; }
@@ -188,7 +188,14 @@ export class ProtocolUI {
       @media(pointer:coarse) { midnry-fps .mf-protocol-flight { bottom:184px; } }
       @media(pointer:coarse) { midnry-fps .mf-protocol-piloting .mf-protocol-actions { max-width:calc(100% - 190px); } }
       @media(pointer:fine) { midnry-fps .mf-protocol-flightpad { display:none; } }
-      @media(max-height:570px) { midnry-fps .mf-protocol-flight { bottom:85px;left:54%;width:300px;font-size:11px;padding:9px 12px; } midnry-fps .mf-protocol-piloting .mf-protocol-patients { display:none; } midnry-fps .mf-protocol-hud { width:250px; } midnry-fps .mf-protocol-alert { max-height:56px;overflow:auto; } }
+      @media(max-width:900px) {
+        midnry-fps .mf-protocol-actions { bottom: calc(16px + var(--mf-safe-bottom, 0px)); right: 12px; max-width: min(210px, calc(100% - 146px)); }
+        midnry-fps .mf-protocol-context { bottom: 250px; width: min(340px, calc(100% - 20px)); }
+        midnry-fps .mf-protocol-tactics { bottom: 250px; right: 12px; }
+        midnry-fps .mf-protocol-flight { bottom: 250px; }
+        midnry-fps .mf-protocol-hud { top: 64px; left: 12px; width: min(240px, calc(100% - 24px)); }
+      }
+      @media(max-height:570px) { midnry-fps .mf-protocol-flight { bottom:85px;left:54%;width:300px;font-size:11px;padding:9px 12px; } midnry-fps .mf-protocol-piloting .mf-protocol-patients { display:none; } midnry-fps .mf-protocol-hud { width:250px; } midnry-fps .mf-protocol-alert { max-height:56px;overflow:auto; } midnry-fps .mf-protocol-context { bottom:96px; } }
     `;
     g.shell.append(this.style);
     this.hud = element("aside", "mf-protocol-hud");
@@ -1655,7 +1662,7 @@ export class ProtocolUI {
     if (instructions)
       setText(
         instructions,
-        "On foot: WASD / left joystick moves; hold E / the action button to collect, load, depart, repair or deliver. F reports, C calls a meeting, X eliminates, B opens tactics. At the helm: W/S adjusts flight level; A/D steers. Hold both gauges in their safe bands for three seconds, restore autopilot, then release the helm. Escape / P opens the menu.",
+        "Phone: left stick moves, SPRINT and SLIDE stack above it, and the action buttons sit on the right. Drag the open middle to look around. Hold the action button to collect, load, depart, repair or deliver. At the aircraft helm, use the flight pad on the left. Keyboard: WASD moves, mouse aims, E acts, F reports, C calls a meeting, X eliminates, B opens tactics. Esc or P opens the menu.",
       );
     if (g.state === "fresh" && !g.online) setText(g.$(".mf-start"), "ENTER BLACKOUT PROTOCOL →");
     if (g.state === "ended") this.result();

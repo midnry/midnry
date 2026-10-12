@@ -1646,6 +1646,137 @@
           --mf-panel-inset: 14px;
         }
       }
+      /* Phones and portrait tablets. Desktop layout above 900px is unchanged. */
+      @media (max-width: 900px) {
+        midnry-fps .mf-shell:has(.mf-modal:not([hidden])) :is(
+          .mf-top, .mf-touch, .mf-super, .mf-bottom, .mf-objective, .mf-match, .mf-cross, .mf-movement
+        ) {
+          visibility: hidden;
+        }
+        midnry-fps .mf-modal {
+          align-items: stretch;
+          padding: 8px;
+        }
+        midnry-fps .mf-panel {
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+          max-height: calc(100% - 72px);
+          margin-bottom: 72px;
+          padding: 14px 14px 8px;
+          background: #18212bf2;
+        }
+        midnry-fps .mf-eyebrow { order: 1; }
+        midnry-fps .mf-panel > h1 {
+          order: 2;
+          font-size: 30px;
+          margin: 2px 0 6px;
+          letter-spacing: -1px;
+          flex-shrink: 0;
+        }
+        midnry-fps .mf-copy {
+          order: 3;
+          flex-shrink: 0;
+          max-height: 4.4em;
+          overflow: hidden;
+          margin: 0 0 8px;
+        }
+        midnry-fps .mf-modes {
+          order: 4;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          margin: 0;
+          flex-shrink: 0;
+        }
+        midnry-fps .mf-modes button {
+          min-height: 56px;
+          padding: 8px;
+          font-size: 14px;
+        }
+        midnry-fps .mf-panel > .mf-start {
+          position: absolute;
+          left: 16px;
+          right: 16px;
+          bottom: 8px;
+          z-index: 5;
+          width: auto;
+          margin: 0;
+          min-height: 52px;
+          letter-spacing: 0.04em;
+          font-size: 15px;
+          background: #ffc455;
+        }
+        midnry-fps .mf-protocol-menu { order: 6; margin-top: 4px; }
+        midnry-fps .mf-protocol-menu p {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        midnry-fps .mf-network { order: 7; }
+        midnry-fps .mf-kit {
+          order: 8;
+          grid-template-columns: 1fr;
+        }
+        midnry-fps .mf-kit select { width: 100%; }
+        midnry-fps .mf-kitnotes { order: 9; }
+        midnry-fps .mf-learn { order: 10; }
+        midnry-fps .mf-exit { order: 11; }
+        midnry-fps .mf-controlshelp { order: 12; }
+        midnry-fps .mf-progresslabel { order: 13; }
+        midnry-fps .mf-results,
+        midnry-fps .mf-protocol-results { order: 14; }
+        midnry-fps .mf-compat-open {
+          grid-column: 1 / -1;
+          white-space: normal;
+          line-height: 1.3;
+        }
+        midnry-fps .mf-stick {
+          left: calc(14px + var(--mf-safe-left));
+          bottom: calc(16px + var(--mf-safe-bottom));
+          width: 104px;
+          height: 104px;
+        }
+        midnry-fps .mf-stick i { left: 33px; top: 33px; width: 34px; height: 34px; }
+        midnry-fps .mf-sprint {
+          left: calc(14px + var(--mf-safe-left));
+          bottom: calc(130px + var(--mf-safe-bottom));
+          width: 104px;
+        }
+        midnry-fps .mf-slide {
+          left: calc(14px + var(--mf-safe-left));
+          right: auto;
+          bottom: calc(182px + var(--mf-safe-bottom));
+          width: 104px;
+        }
+        midnry-fps .mf-fire {
+          right: calc(14px + var(--mf-safe-right));
+          bottom: calc(16px + var(--mf-safe-bottom));
+          width: 84px;
+          height: 84px;
+        }
+        midnry-fps .mf-reload {
+          right: calc(28px + var(--mf-safe-right));
+          bottom: calc(110px + var(--mf-safe-bottom));
+          width: 56px;
+          height: 56px;
+        }
+        midnry-fps .mf-super {
+          bottom: calc(188px + var(--mf-safe-bottom));
+          max-width: 32%;
+          font-size: 12px;
+        }
+        midnry-fps .mf-movement {
+          bottom: calc(246px + var(--mf-safe-bottom));
+        }
+        midnry-fps .mf-bottom {
+          left: calc(128px + var(--mf-safe-left));
+          right: calc(108px + var(--mf-safe-right));
+          bottom: calc(18px + var(--mf-safe-bottom));
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+        }
+      }
       /* Progressive enhancement: continuous corners where supported. Ordinary
          border-radius remains the fallback for Safari and older browsers. */
       @supports (corner-shape: squircle) {
@@ -1684,7 +1815,7 @@
         </div>
       </div>
       <footer class="mf-loadfooter">
-        <div class="mf-loadtip"><b>FIELD TIP</b><p>Hold Shift to sprint. Press C or Ctrl while sprinting forward to slide into cover.</p></div>
+        <div class="mf-loadtip"><b>FIELD TIP</b><p>On a phone, use the left stick to move. SPRINT is above it, and SLIDE is above that. Drag the open area to aim.</p></div>
         <div class="mf-loadprogress"><progress aria-label="Game loading progress" max="100" value="0"></progress><span class="mf-loadpercent" aria-hidden="true">0%</span></div>
         <p class="mf-loadstatus" role="status" aria-live="polite">Preparing field operations…</p>
         <a href="" class="mf-loadretry" hidden>Retry loading</a>
@@ -1695,7 +1826,7 @@
       (() => {
         const screen = document.querySelector(".mf-loading");
         const slides = [
-          ["outpost", "ARENA / 01", "Dust Outpost", "Sandstone cover. Open sightlines. Make every move count.", "Hold Shift to sprint. Press C or Ctrl while sprinting forward to slide into cover."],
+          ["outpost", "ARENA / 01", "Dust Outpost", "Sandstone cover. Open sightlines. Make every move count.", "On a phone, use the left stick to move. SPRINT is above it, and SLIDE is above that. Drag the open area to aim."],
           ["carbine", "LOADOUT / 01", "VX–7 Carbine", "Your automatic all-rounder. Built for the middle distance.", "Reload with R before pushing a new lane. On mobile, tap the reload button."],
           ["operator", "CHARACTER / FIELD OPS", "Field Operators", "Boots on the ground. Keep your squad in the fight.", "In Duo, you can spectate your surviving teammate after you go down."],
           ["skyport", "ARENA / 02", "Skyport", "Aircraft shells, hangars and room to flank.", "Keep moving in Last Signal: the safe zone shrinks as the match goes on."],
