@@ -1,7 +1,6 @@
 import { randomBytes, createHash, timingSafeEqual } from "node:crypto";
 import { getSql } from "@/lib/db";
 import {
-  Arena,
   MAPS,
   WEAPONS,
   OUTFITS,
@@ -11,6 +10,7 @@ import {
   type ArenaState,
   type Input,
 } from "../../../public/games/outpost-sim.js";
+import { createArena, restoreArena, protocolView } from "../../../public/games/outpost-protocol.js";
 
 // HTTPS polling deliberately works on both Render and serverless deployments.
 // Rooms live in the existing database, not a process-local host tab or socket.
@@ -28,7 +28,7 @@ type Member = {
 };
 type Room = {
   difficulty?: Difficulty;
-  mode: "signal" | "duo";
+  mode: "protocol" | "signal" | "duo";
   mapId: string;
   phase: "lobby" | "playing" | "ended";
   host: string;
@@ -68,35 +68,73 @@ function authorize(room: Room, id: unknown, token: unknown) {
     throw new OutpostError("Room session is invalid. Join again.", 401);
   return member;
 }
-function publicRoom(code: string, room: Room) {
+// Full protocol state is database-only. Every response is generated for the
+// authenticated recipient, including the create/join and leave responses.
+export function publicRoom(code: string, room: Room, selfId: string) {
+  const protocol = room.mode === "protocol";
+  const arena = room.arena ? protocolView(room.arena, selfId) : null;
   return {
     code,
     difficulty: room.difficulty || "normal",
     mode: room.mode,
-    mapId: room.mapId || "outpost",
+    // The aircraft is reached by the authoritative mission transition, never
+    // selected from a lobby. Keep the room envelope in sync with that map.
+    mapId: protocol
+      ? room.phase !== "lobby" && room.arena
+        ? room.arena.mapId || "breakwater"
+        : "breakwater"
+      : room.mapId || "outpost",
     phase: room.phase,
     host: room.host,
     members: room.members.map(({ id, name, team, weapon, outfit, lastSeen }) => ({
       id,
       name,
-      team,
-      weapon: weapon || "carbine",
-      outfit: outfit || "ranger",
+      ...(protocol ? {} : { team }),
+      weapon: protocol ? "carbine" : weapon || "carbine",
+      outfit: protocol ? "ranger" : outfit || "ranger",
       connected: Date.now() - lastSeen < 20000,
     })),
-    arena: room.arena
-      ? { ...room.arena, entities: room.arena.entities.map((e) => ({ ...e, path: [] })) }
-      : null,
+    arena: arena ? { ...arena, entities: arena.entities.map((e) => ({ ...e, path: [] })) } : null,
   };
 }
-function inputOf(value: unknown): Input {
-  if (!value || typeof value !== "object") return {};
+const PROTOCOL_OPS = new Set([
+  "report",
+  "meeting",
+  "eliminate",
+  "sabotage",
+  "vent",
+  "vote",
+  "chat",
+  "wire",
+  "drag",
+  "helm",
+  "release-helm",
+  "autopilot",
+  "cargo-sabotage",
+  "disable-autopilot",
+]);
+// Mission maps have different spawn/objective rules from the combat arenas.
+// The transport map is internal even in protocol lobbies: loading supplies is
+// the only route to it, so clients cannot skip the gathering phase.
+export function lobbyMapOf(mode: Room["mode"], value: unknown = undefined): string {
+  if (value === "medevac")
+    throw new OutpostError("The medevac route opens after loading the mission supplies.");
+  if (mode === "protocol") return "breakwater";
+  const mapId = value === undefined ? "outpost" : value;
+  if (typeof mapId !== "string" || !Object.hasOwn(MAPS, mapId) || mapId === "breakwater")
+    throw new OutpostError("Choose a valid combat map.");
+  return mapId;
+}
+// Only intent crosses this boundary: simulation decides roles, locations,
+// progress, cooldowns and outcomes. Large strings and forged fields are dropped.
+export function inputOf(value: unknown): Input {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   const v = value as Record<string, unknown>,
     number = (k: string, limit: number) =>
       typeof v[k] === "number" && Number.isFinite(v[k])
         ? Math.max(-limit, Math.min(limit, v[k] as number))
         : 0;
-  return {
+  const input: Input = {
     forward: number("forward", 1),
     strafe: number("strafe", 1),
     aim: number("aim", 100000),
@@ -106,16 +144,61 @@ function inputOf(value: unknown): Input {
     fire: v.fire === true,
     reload: v.reload === true,
     super: v.super === true,
+    interact: v.interact === true,
   };
+  const vehicle = v.vehicleInput;
+  if (vehicle && typeof vehicle === "object" && !Array.isArray(vehicle)) {
+    const axes = vehicle as Record<string, unknown>;
+    const axis = (key: string) =>
+      typeof axes[key] === "number" && Number.isFinite(axes[key])
+        ? Math.max(-1, Math.min(1, axes[key] as number))
+        : 0;
+    input.vehicleInput = { pitch: axis("pitch"), steer: axis("steer") };
+  }
+  const action = v.protocolAction;
+  if (action && typeof action === "object" && !Array.isArray(action)) {
+    const a = action as Record<string, unknown>;
+    const seq = a.seq;
+    if (
+      typeof seq === "number" &&
+      Number.isSafeInteger(seq) &&
+      seq >= 0 &&
+      typeof a.op === "string" &&
+      PROTOCOL_OPS.has(a.op)
+    ) {
+      // Reject malformed optional fields rather than truncating an entity ID or
+      // silently submitting a different arming code than the player requested.
+      const targetValid =
+        a.target === undefined ||
+        (typeof a.target === "string" &&
+          a.target.length <= 80 &&
+          !/[\u0000-\u001f\u007f]/.test(a.target));
+      const valueValid =
+        a.value === undefined ||
+        (typeof a.value === "string" &&
+          a.value.length <= 180 &&
+          !/[\u0000-\u001f\u007f]/.test(a.value));
+      if (targetValid && valueValid) {
+        input.protocolAction = {
+          seq,
+          op: a.op,
+          ...(typeof a.target === "string" ? { target: a.target.trim() } : {}),
+          ...(typeof a.value === "string" ? { value: a.value.trim() } : {}),
+        };
+      }
+    }
+  }
+  return input;
 }
 function advance(room: Room, now: number) {
   if (room.phase !== "playing" || !room.arena) {
     room.updatedAt = now;
     return;
   }
-  const arena = Arena.restore(room.arena);
-  // Stop held movement/fire after a short silence; disconnects forfeit after
-  // 20 seconds. Neither tab throttling nor a host leaving pauses everyone else.
+  const arena = restoreArena(room.arena);
+  // Stop held movement, interactions and flight axes after a short silence.
+  // Disconnects forfeit after 20 seconds. Tab throttling or a host leaving
+  // never pauses everyone else.
   for (const member of room.members) if (now - member.lastSeen > 20000) arena.detach(member.id);
   const inputs: Record<string, Input> = {};
   for (const member of room.members)
@@ -144,13 +227,15 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
       until: rate && rate.until > now ? rate.until : now + 60000,
     });
     for (const [k, v] of rates) if (v.until < now) rates.delete(k);
-    if (body.mode !== "signal" && body.mode !== "duo")
-      throw new OutpostError("Choose Last Signal or Pair Ops.");
+    const mode = body.mode === undefined ? "protocol" : body.mode;
+    if (mode !== "protocol" && mode !== "signal" && mode !== "duo")
+      throw new OutpostError("Choose Blackout Protocol, Last Signal or Pair Ops.");
     const difficulty = body.difficulty === undefined ? "normal" : body.difficulty;
     if (typeof difficulty !== "string" || !Object.hasOwn(DIFFICULTIES, difficulty))
       throw new OutpostError("Invalid bot difficulty.");
-    const mapId = body.mapId === undefined ? "outpost" : body.mapId;
-    const weapon = body.weapon === undefined ? "carbine" : body.weapon;
+    const mapId = lobbyMapOf(mode, body.mapId);
+    const weapon =
+      mode === "protocol" ? "carbine" : body.weapon === undefined ? "carbine" : body.weapon;
     if (
       typeof mapId !== "string" ||
       !Object.hasOwn(MAPS, mapId) ||
@@ -173,7 +258,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
       input: {},
     };
     const room: Room = {
-      mode: body.mode,
+      mode,
       difficulty: difficultyOf(difficulty),
       mapId,
       phase: "lobby",
@@ -190,7 +275,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
       const code = roomCode();
       const rows =
         await sql`insert into outpost_room (code,state,expires_at) values (${code},${JSON.stringify(room)}::jsonb,now()+interval '20 minutes') on conflict do nothing returning code`;
-      if (rows.length) return { ...publicRoom(code, room), id, token };
+      if (rows.length) return { ...publicRoom(code, room, id), id, token };
     }
     throw new OutpostError("Could not create a room. Try again.", 503);
   }
@@ -230,10 +315,13 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
       room.members = room.members.filter((m) => now - m.lastSeen < 20000);
       if (room.members.length >= 8) throw new OutpostError("Room is full.", 409);
       const team =
-        room.mode === "duo"
-          ? ([0, 1, 2, 3].find((t) => room.members.filter((m) => m.team === t).length < 2) ?? 0)
-          : room.members.length;
-      const weapon = body.weapon === undefined ? "carbine" : body.weapon;
+        room.mode === "protocol"
+          ? 0
+          : room.mode === "duo"
+            ? ([0, 1, 2, 3].find((t) => room.members.filter((m) => m.team === t).length < 2) ?? 0)
+            : room.members.length;
+      const weapon =
+        room.mode === "protocol" ? "carbine" : body.weapon === undefined ? "carbine" : body.weapon;
       if (typeof weapon !== "string" || !Object.hasOwn(WEAPONS, weapon))
         throw new OutpostError("Choose a valid loadout.");
       member = {
@@ -256,16 +344,24 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
     advance(room, now);
     member.lastSeen = now;
     if (body.op === "poll") {
-      const seq = typeof body.seq === "number" && Number.isSafeInteger(body.seq) ? body.seq : -1;
+      const seq =
+        typeof body.seq === "number" && Number.isSafeInteger(body.seq) && body.seq >= 0
+          ? body.seq
+          : -1;
       if (seq > member.seq) {
         member.seq = seq;
         member.input = inputOf(body.input);
+        if (room.mode === "protocol") {
+          member.input.fire = false;
+          member.input.super = false;
+          member.input.reload = false;
+        }
         member.inputAt = now;
         if (room.phase === "playing" && room.arena) {
-          const arena = Arena.restore(room.arena),
+          const arena = restoreArena(room.arena),
             self = arena.entities.find((e) => e.id === member.id);
           // The packet can request a shot, never supply a target, damage or position.
-          if (self && (member.input.fire || member.input.super)) {
+          if (room.mode !== "protocol" && self && (member.input.fire || member.input.super)) {
             self.a = member.input.aim ?? self.a;
             self.pitch = member.input.pitch ?? 0;
             if (member.input.super) arena.super(self);
@@ -282,10 +378,26 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
         throw new OutpostError("Only the host can choose match settings.", 403);
       if (room.phase !== "lobby")
         throw new OutpostError("Choose match settings before starting.", 409);
-      if (body.mapId !== undefined) {
-        if (typeof body.mapId !== "string" || !Object.hasOwn(MAPS, body.mapId))
-          throw new OutpostError("Invalid map.");
-        room.mapId = body.mapId;
+      if (body.mode !== undefined) {
+        if (body.mode !== "protocol" && body.mode !== "signal" && body.mode !== "duo")
+          throw new OutpostError("Invalid mode.");
+        const previousMode = room.mode;
+        room.mode = body.mode;
+        if (previousMode !== room.mode) {
+          room.members.forEach((m, i) => {
+            m.team = room.mode === "protocol" ? 0 : room.mode === "duo" ? Math.floor(i / 2) : i;
+          });
+          if (previousMode === "protocol" && room.mode !== "protocol") room.mapId = "outpost";
+        }
+      }
+      if (room.mode === "protocol") {
+        room.mapId = lobbyMapOf(room.mode, body.mapId);
+        for (const m of room.members) {
+          m.team = 0;
+          m.weapon = "carbine";
+        }
+      } else if (body.mapId !== undefined) {
+        room.mapId = lobbyMapOf(room.mode, body.mapId);
       }
       if (body.difficulty !== undefined) {
         if (typeof body.difficulty !== "string" || !Object.hasOwn(DIFFICULTIES, body.difficulty))
@@ -296,10 +408,13 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
     if (body.op === "loadout") {
       if (room.phase !== "lobby")
         throw new OutpostError("Choose your loadout before starting.", 409);
-      if (typeof body.weapon !== "string" || !Object.hasOwn(WEAPONS, body.weapon))
+      if (
+        room.mode !== "protocol" &&
+        (typeof body.weapon !== "string" || !Object.hasOwn(WEAPONS, body.weapon))
+      )
         throw new OutpostError("Invalid loadout.");
-      const outfit = body.outfit === undefined ? member.outfit || "ranger" : outfitId(body.outfit);
-      member.weapon = body.weapon;
+      const outfit = room.mode === "protocol" ? "ranger" : body.outfit === undefined ? member.outfit || "ranger" : outfitId(body.outfit);
+      member.weapon = room.mode === "protocol" ? "carbine" : (body.weapon as string);
       member.outfit = outfit;
     }
     if (body.op === "team") {
@@ -319,11 +434,20 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
     if (body.op === "start" || body.op === "restart" || body.op === "rematch") {
       if (room.host !== member.id)
         throw new OutpostError("Only the room host can start a match.", 403);
+      if (room.mode === "protocol") {
+        room.mapId = "breakwater";
+        for (const m of room.members) {
+          m.team = 0;
+          m.weapon = "carbine";
+        }
+      } else {
+        room.mapId = lobbyMapOf(room.mode, room.mapId);
+      }
       if (body.op === "rematch") {
         if (room.phase !== "ended")
           throw new OutpostError("Finish this match before starting another.", 409);
         room.members = room.members.filter((m) => now - m.lastSeen < 20000);
-        room.arena = new Arena({
+        room.arena = createArena({
           mode: room.mode,
           mapId: room.mapId || "outpost",
           difficulty: room.difficulty || "normal",
@@ -346,7 +470,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
       } else {
         if (room.phase !== "lobby") throw new OutpostError("Match already started.", 409);
         room.members = room.members.filter((m) => now - m.lastSeen < 20000);
-        room.arena = new Arena({
+        room.arena = createArena({
           mode: room.mode,
           mapId: room.mapId || "outpost",
           difficulty: room.difficulty || "normal",
@@ -368,7 +492,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
     }
     if (body.op === "leave") {
       if (room.arena) {
-        const arena = Arena.restore(room.arena);
+        const arena = restoreArena(room.arena);
         arena.detach(member.id);
         room.arena = arena.snapshot();
         if (arena.state === "ended") room.phase = "ended";
@@ -380,7 +504,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
       await sql`update outpost_room set state=${JSON.stringify(room)}::jsonb,version=version+1,expires_at=now()+interval '20 minutes' where code=${code} and version=${version} returning version`;
     if (updated.length)
       return {
-        ...publicRoom(code, room),
+        ...publicRoom(code, room, member.id),
         ...(body.op === "join" ? { id: joinedId, token: joinedToken } : {}),
       };
   }

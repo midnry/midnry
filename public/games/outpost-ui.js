@@ -7,7 +7,14 @@ export class MenuUI {
       modes = g.$(".mf-modes"),
       learn = g.$(".mf-learn");
     g.$("h1").innerHTML = "Outpost <em>Zero.</em>";
-    g.$(".mf-eyebrow").textContent = "MIDNRY / FIELD OPERATIONS";
+    g.$(".mf-eyebrow").textContent = "MIDNRY / TACTICAL OPERATIONS";
+    for (const option of g.$(".mf-mapselect").options) {
+      if (g.mode !== "protocol" && ["breakwater", "medevac"].includes(option.value))
+        option.hidden = option.disabled = true;
+    }
+    g.$('[data-mode="protocol"]').innerHTML =
+      "Blackout Protocol<small>Lifeline Run · default</small>";
+    g.$('[data-mode="protocol"]').setAttribute("aria-label", "Blackout Protocol");
     const practice = g.$('[data-mode="training"]');
     practice.textContent = "Practice";
     for (const [id, title, detail] of [
@@ -50,7 +57,7 @@ export class MenuUI {
         `<canvas class="mf-preview mf-${type}preview" width="240" height="112" role="img"></canvas><small class="mf-${type}hint"></small>`,
       );
     }
-    notes.after(g.$(".mf-start"));
+    modes.after(g.$(".mf-start"));
     const help = document.createElement("details");
     help.className = "mf-controlshelp";
     help.innerHTML = "<summary>Controls & shortcuts</summary>";
@@ -67,7 +74,7 @@ export class MenuUI {
     g.$(".mf-onlinechoice").setAttribute("aria-controls", network.id);
     network.querySelector("summary").textContent = "Online room";
     network.querySelector("p").textContent =
-      "Create a room or enter a friend's code. The host starts; bots fill empty seats. Choose Solo or Duo above before creating a room. Online matches keep running while menus are open.";
+      "Create a room or enter a friend's code. The host starts; bots fill empty seats. Choose Blackout Protocol, Solo or Duo before creating a room. Online matches keep running while menus are open.";
     network.insertAdjacentHTML("afterbegin", '<p class="mf-roomformat"></p>');
     // Online options are grouped near the play choices and remain collapsible.
     modes.after(network);
@@ -166,7 +173,13 @@ export class MenuUI {
     // In the menu, keep keyboard focus out of the underlying combat controls.
     // Native nested dialogs handle their own focus containment and Escape key.
     g.on(g.shell, "keydown", (event) => {
-      if (event.key !== "Tab" || g.$(".mf-modal").hidden || event.target.closest("dialog")) return;
+      if (
+        !g.militaryLoaded ||
+        event.key !== "Tab" ||
+        g.$(".mf-modal").hidden ||
+        event.target.closest("dialog")
+      )
+        return;
       const items = [
         ...g.$(".mf-modal").querySelectorAll("button, select, input, summary, a[href]"),
       ].filter((e) => !e.disabled && e.getClientRects().length && !e.closest("[hidden]"));
@@ -275,17 +288,23 @@ export class MenuUI {
       button.setAttribute("aria-pressed", String(button.dataset.mode === g.mode));
     g.$(".mf-onlinechoice").setAttribute("aria-expanded", String(g.$(".mf-network").open));
     g.$(".mf-roomformat").textContent =
-      `${g.mode === "duo" ? "Duo · teams of two" : "Solo · every player for themselves"}${g.online ? " · Room " + g.online.code : ""}`;
+      `${g.mode === "protocol" ? "Blackout Protocol · medical rescue & hidden infiltrators" : g.mode === "duo" ? "Duo · teams of two" : "Solo · every player for themselves"}${g.online ? " · Room " + g.online.code : ""}`;
     if (!g.online && g.state === "fresh")
       g.$(".mf-start").textContent =
-        g.mode === "training" ? "START PRACTICE →" : `START ${g.mode === "duo" ? "DUO" : "SOLO"} →`;
+        g.mode === "protocol"
+          ? "START BLACKOUT PROTOCOL →"
+          : g.mode === "training"
+            ? "START PRACTICE →"
+            : `START ${g.mode === "duo" ? "DUO" : "SOLO"} →`;
     if (!g.online && g.state === "fresh")
       g.$(".mf-copy").textContent =
-        g.mode === "duo"
-          ? "Team up with an AI partner. Protect each other and be the last pair standing."
-          : g.mode === "signal"
-            ? "Outlast seven rivals. Collect Charge Cores and stay ahead of the Red Haze."
-            : "A low-pressure range: eliminate six sentries. Try Tutorial for guided lessons.";
+        g.mode === "protocol"
+          ? "Gather medical supplies, board Lifeline Medevac and deliver aid to wounded soldiers. Hidden infiltrators can sabotage the cargo and aircraft."
+          : g.mode === "duo"
+            ? "Team up with an AI partner. Protect each other and be the last pair standing."
+            : g.mode === "signal"
+              ? "Outlast seven rivals. Collect Charge Cores and stay ahead of the Red Haze."
+              : "A low-pressure range: eliminate six sentries. Try Tutorial for guided lessons.";
     g.$(".mf-boot").disabled = Boolean(g.online);
     g.$('[data-mode="signal"] small').textContent = g.online
       ? "Last player standing"
@@ -294,7 +313,8 @@ export class MenuUI {
     g.$(".mf-maphint").textContent = map.tag;
     g.$(".mf-weaponhint").textContent = `${weapon.kind} · ${weapon.mag} rounds`;
     // Polling may refresh the menu ten times a second; redraw only on selection changes.
-    const key = `${map.id}:${weapon.id}`;
+    const key = `${map.id}:${weapon.id}:${Boolean(g.militaryLoaded)}:${Boolean(g.militaryError)}`;
+    g.protocolUI?.refreshMenu();
     if (key === this.previewKey) return;
     this.previewKey = key;
     this.mapPreview(map);
@@ -302,139 +322,39 @@ export class MenuUI {
   }
   mapPreview(map) {
     const canvas = this.g.$(".mf-mappreview"),
-      c = canvas.getContext("2d");
-    canvas.setAttribute("aria-label", `${map.name} overhead map preview`);
-    c.fillStyle = map.theme.floor;
-    c.fillRect(0, 0, 240, 112);
-    const size = 104 / map.level.length,
+      c = canvas.getContext("2d"),
+      size = 104 / map.level.length,
       left = 68;
-    for (const zone of map.zones) {
-      c.fillStyle = zone.color;
-      c.fillRect(left + zone.x * size, 4 + zone.y * size, zone.w * size, zone.h * size);
-    }
+    canvas.setAttribute("aria-label", `${map.name} tactical floor plan`);
+    // This is a navigation schematic, independent of the realistic world view.
+    c.fillStyle = "#18252a";
+    c.fillRect(0, 0, 240, 112);
+    c.fillStyle = "#4f686d";
+    c.fillRect(left, 4, 104, 104);
     map.level.forEach((row, y) =>
-      row.forEach((v, x) => {
-        if (!v) return;
-        c.fillStyle = map.theme.walls[v]?.[0] || "#263543";
+      row.forEach((tile, x) => {
+        if (!tile) return;
+        c.fillStyle = tile === 1 ? "#9aa9a4" : "#768b88";
         c.fillRect(left + x * size, 4 + y * size, size, size);
-        c.strokeStyle = "#101720";
-        c.lineWidth = 1;
-        c.strokeRect(left + x * size, 4 + y * size, size, size);
       }),
     );
   }
   weaponPreview(w) {
     const canvas = this.g.$(".mf-weaponpreview"),
       c = canvas.getContext("2d");
-    canvas.setAttribute("aria-label", `${w.name} ${w.kind} weapon illustration`);
-    c.fillStyle = "#253543";
+    canvas.setAttribute("aria-label", `${w.name} realistic 3D weapon preview`);
+    c.fillStyle = "#18252a";
     c.fillRect(0, 0, 240, 112);
-    if (this.g.militaryLoaded && this.g.military.preview(c, w.id, 240, 112)) return;
-    if (this.g.weapons?.preview(c, w.id, 240, 112)) return;
-    const shape = (points) => {
-      c.beginPath();
-      points.forEach(([x, y], i) => (i ? c.lineTo(x, y) : c.moveTo(x, y)));
-      c.closePath();
-      c.fill();
-      c.stroke();
-    };
-    c.lineWidth = 4;
-    c.strokeStyle = "#101720";
-    c.fillStyle = w.color;
-    if (["shard", "lob"].includes(w.kind)) {
-      c.beginPath();
-      c.arc(120, 59, 29, 0, Math.PI * 2);
-      c.fill();
-      c.stroke();
-      c.fillStyle = "#ffd16b";
-      shape([
-        [113, 23],
-        [128, 23],
-        [132, 36],
-        [110, 36],
-      ]);
-      c.fillStyle = "#101720";
-      c.fillRect(102, 52, 36, 8);
-    } else if (["blades", "poison", "dash"].includes(w.kind)) {
-      shape([
-        [67, 77],
-        [171, 27],
-        [147, 68],
-        [89, 87],
-      ]);
-      c.fillStyle = "#e5d7ac";
-      shape([
-        [83, 72],
-        [156, 35],
-        [140, 63],
-      ]);
-    } else if (w.kind === "melee") {
-      shape([
-        [74, 35],
-        [153, 35],
-        [173, 70],
-        [158, 90],
-        [86, 90],
-        [66, 65],
-      ]);
-      c.fillStyle = "#ffd16b";
-      for (let i = 0; i < 3; i++) {
-        c.fillRect(83 + i * 24, 45, 16, 16);
-        c.strokeRect(83 + i * 24, 45, 16, 16);
-      }
-    } else {
-      shape([
-        [49, 44],
-        [180, 44],
-        [192, 57],
-        [178, 70],
-        [113, 70],
-        [106, 93],
-        [87, 89],
-        [88, 69],
-        [49, 73],
-      ]);
-      c.fillStyle = "#a9bac0";
-      shape([
-        [153, 47],
-        [209, 47],
-        [209, 61],
-        [153, 61],
-      ]);
-      c.fillStyle = "#ffd16b";
-      c.fillRect(72, 49, 40, 8);
-      if (w.kind === "shotgun") {
-        c.fillStyle = "#73564a";
-        shape([
-          [115, 62],
-          [165, 62],
-          [158, 78],
-          [112, 78],
-        ]);
-      }
-      if (w.kind === "rocket") {
-        c.fillStyle = w.color;
-        shape([
-          [149, 36],
-          [215, 36],
-          [220, 48],
-          [215, 72],
-          [149, 72],
-        ]);
-      }
-      if (w.kind === "burst") {
-        c.fillStyle = w.color;
-        shape([
-          [51, 24],
-          [104, 24],
-          [112, 36],
-          [85, 42],
-          [77, 56],
-          [62, 53],
-          [62, 40],
-          [51, 40],
-        ]);
-      }
-    }
+    if (this.g.militaryLoaded && this.g.military?.preview(c, w.id, 240, 112)) return;
+    // Asset loading or unavailable WebGL never substitutes illustrated weapons.
+    const unavailable = this.g.militaryError || this.g.military?.disposed;
+    c.fillStyle = "#cad4d0";
+    c.textAlign = "center";
+    c.font = "13px system-ui, sans-serif";
+    c.fillText(unavailable ? "3D preview unavailable" : "Loading 3D armory…", 120, 57);
+    canvas.setAttribute(
+      "aria-label",
+      `${w.name}: ${unavailable ? "3D preview unavailable" : "loading 3D weapon preview"}`,
+    );
   }
 }

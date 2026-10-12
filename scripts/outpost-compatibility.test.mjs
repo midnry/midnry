@@ -1,5 +1,34 @@
-import { test } from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
+import { newCompatibilityReport, checkBrowser, performanceRecommendation } from "../public/games/outpost-compatibility.js";
+
+const features = {
+  ResizeObserver: class {}, PointerEvent: class {},
+  WebAssembly: { instantiate() {} }, HTMLDialogElement: class { showModal() {} },
+};
+test("unsupported browser is blocked before it tries creating a graphics context", () => {
+  let contextAttempted = false;
+  const report = newCompatibilityReport();
+  assert.equal(checkBrowser(report, { ...features, ResizeObserver: undefined, document: { createElement() { contextAttempted = true; } } }), false);
+  assert.equal(contextAttempted, false);
+  assert.equal(report.status, "unsupported");
+  assert.match(report.checks[0].detail, /ResizeObserver/);
+});
+test("disabled WebGL blocks play while retaining an actionable explanation", () => {
+  const report = newCompatibilityReport();
+  assert.equal(checkBrowser(report, { ...features, document: { createElement: () => ({ getContext: () => null }) } }), false);
+  assert.equal(report.status, "unsupported");
+  assert.match(report.checks[1].detail, /hardware acceleration/);
+  assert.equal(report.checks[2].status, "checking", "assets are not downloaded to prove an unsupported device");
+});
+test("measured performance recommends lower quality without claiming 120 FPS on a 60 Hz display", () => {
+  assert.deepEqual(performanceRecommendation(20, 60, "high").recommendedPreset, "balanced");
+  assert.deepEqual(performanceRecommendation(35, 28, "balanced").recommendedPreset, "performance");
+  const fast = performanceRecommendation(4, 60, "balanced");
+  assert.equal(fast.status, "ready");
+  assert.equal(fast.sampledFps, 60);
+  assert.equal(performanceRecommendation(NaN, 60, "balanced").status, "unsupported");
+});
 import {
   isAppleTouchDevice,
   graphicsProfile,

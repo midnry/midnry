@@ -23,9 +23,10 @@ const advance = (a, seconds) => {
   for (let t = 0; t < seconds; t += 0.025) a.advance(0.025);
 };
 test("five distinct arenas: sealed walls, connected lanes, valid spawns and safe centers", () => {
-  assert.equal(Object.keys(MAPS).length, 5);
+  const combatMaps = Object.keys(MAPS).filter((id) => !["breakwater", "medevac"].includes(id));
+  assert.equal(combatMaps.length, 5);
   const layouts = new Set();
-  for (const mapId of Object.keys(MAPS))
+  for (const mapId of combatMaps)
     for (const mode of ["training", "signal", "duo"]) {
       const a = new Arena({ mapId, mode, random: () => 0.5 }),
         n = a.level.length;

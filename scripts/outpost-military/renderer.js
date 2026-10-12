@@ -1,4 +1,4 @@
-/** Preview-only 3D presentation. Arena retains every movement, damage and network rule. */
+/** Cinematic 3D presentation. Arena retains every movement, damage and network rule. */
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/addons/loaders/RGBELoader.js";
@@ -9,8 +9,14 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { SSAOPass } from "three/addons/postprocessing/SSAOPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { Reflector } from "three/addons/objects/Reflector.js";
+import { loadRealismSurfaces, surfaceMaterial } from "./realism-surfaces.js";
+import { initNaturalLighting, updateNaturalLighting } from "./realism-lighting.js";
+import { decorateRealisticEnvironment } from "./realism-environment.js";
+import { prepareCharacterAsset, finishActor, updateActorPresentation } from "./realism-characters.js";
+import { weaponMaterials as realisticWeaponMaterials, buildRealisticHand, finishWeapon } from "./realism-weapons.js";
 import { outfitOf, weaponOf } from "../../public/games/outpost-content.js";
 import { skinPattern } from "../../public/games/outpost-skins.js";
 import { isAppleTouchDevice, graphicsProfile, renderSize } from "./compatibility.js";
@@ -23,6 +29,8 @@ const PROFILES = {
   skyport: { floor: "#bbc0bf", fog: "#bccbd0", metal: "#8e999b" },
   freight: { floor: "#747d7d", fog: "#a5b3bd", metal: "#647269" },
   estate: { floor: "#c6bca5", fog: "#c4c1ba", metal: "#81867b" },
+  breakwater: { floor: "#b2a38c", fog: "#a8bdc4", metal: "#77858b" },
+  medevac: { floor: "#7c888a", fog: "#b8c9d0", metal: "#92a1a3" },
 };
 export class MilitaryRenderer {
   constructor(g, onProgress = () => {}, { safeMode = false } = {}) {
@@ -34,10 +42,29 @@ export class MilitaryRenderer {
     this.cores = new Map();
     this.projectiles = new Map();
     this.fields = new Map();
+    // These caches contain presentation objects only. Charges always come from
+    // the recipient-safe view, never the authoritative match's private state.
+    this.protocolCharges = new Map();
+    this.protocolBodies = new Map();
+    this.protocolFixtures = [];
+    this.protocolScreens = new Map();
+    this.protocolLights = [];
+    this.protocolLightMaterials = [];
+    this.protocolPowerOut = false;
+    this.medicalStocks = new Map();
+    this.transportCargo = [];
+    this.transportTerrain = null;
+    this.transportInstrument = null;
+    this.transportInstrumentKey = "";
+    this.transportAlarm = null;
+    this.medevacRotor = null;
+    this.arrivalClinic = null;
+    this.arrivalPatients = new Map();
     this.materials = new Set();
     this.geometries = new Map();
     this.textures = new Set();
     this.worldTextures = new Set();
+    this.weaponTextures = new Set();
     this.lastTime = 0;
     this.lastPose = -1;
     this.mapKey = "";
@@ -79,10 +106,16 @@ export class MilitaryRenderer {
     this.contextLost = (event) => {
       event.preventDefault();
       if (this.disposed) return;
-      this.contextFailed = true;
-      g.recoverMilitary(new Error("The graphics context was lost."));
+      this.contextUnavailable = true;
+      g.handleMilitaryFailure?.("context-lost");
+    };
+    this.contextRestored = () => {
+      if (this.disposed) return;
+      this.contextUnavailable = false;
+      g.retryMilitary?.();
     };
     this.renderer.domElement.addEventListener("webglcontextlost", this.contextLost);
+    this.renderer.domElement.addEventListener("webglcontextrestored", this.contextRestored);
     this.renderer.domElement.className = "mf-webgl";
     this.renderer.domElement.setAttribute("aria-hidden", "true");
     this.renderer.domElement.style.cssText =
@@ -118,12 +151,26 @@ export class MilitaryRenderer {
     this.rim = new THREE.DirectionalLight("#94b9e7", 1.15);
     this.rim.position.set(25, 15, 35);
     this.scene.add(this.rim);
+    // Reuse four nearest interior lights rather than allocating one light per
+    // room. This keeps the large operating base affordable on mobile GPUs.
+    for (let i = 0; i < 4; i++) {
+      const light = new THREE.PointLight("#c9e6eb", 0, 18, 2);
+      light.visible = false;
+      this.scene.add(light);
+      this.protocolLights.push(light);
+    }
+    this.protocolTorch = new THREE.SpotLight("#d4e8ea", 0, 8, 0.6, 0.65, 2);
+    this.protocolTorch.castShadow = false;
+    this.protocolTorch.visible = false;
+    this.scene.add(this.protocolTorch, this.protocolTorch.target);
     this.weaponScene = new THREE.Scene();
     this.weaponCamera = new THREE.PerspectiveCamera(52, 1, 0.01, 10);
     this.weaponScene.add(new THREE.HemisphereLight("#e5ecf1", "#786852", 2));
     const key = new THREE.DirectionalLight("#fff0d7", 4);
     key.position.set(-2, 3, -4);
     this.weaponScene.add(key);
+    this.weaponKey = key;
+    initNaturalLighting(this);
     this.rig = new THREE.Group();
     this.weaponScene.add(this.rig);
     this.flash = new THREE.PointLight("#ffdcb0", 0, 4);
@@ -140,26 +187,21 @@ export class MilitaryRenderer {
       this.composer.addPass(new RenderPass(this.scene, this.camera));
       if (this.profile.ambientOcclusion) {
         this.ao = new SSAOPass(this.scene, this.camera, 512, 512, 12);
-        this.ao.kernelRadius = 0.7;
+        this.ao.kernelRadius = 0.45;
         this.ao.minDistance = 0.001;
-        this.ao.maxDistance = 0.07;
+        this.ao.maxDistance = 0.045;
         this.composer.addPass(this.ao);
       }
       const hands = new RenderPass(this.weaponScene, this.weaponCamera);
       hands.clear = false;
       hands.clearDepth = true;
       this.composer.addPass(hands);
+      this.fxaa = new ShaderPass(FXAAShader);
+      this.composer.addPass(this.fxaa);
       this.grade = new ShaderPass({
         uniforms: { tDiffuse: { value: null } },
         vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
-        fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv;
-        void main(){ vec4 c=texture2D(tDiffuse,vUv);
-          // Subtle warm highlights, cool shadows, and lens falloff; no animated grain.
-          float l=dot(c.rgb,vec3(.2126,.7152,.0722));
-          c.rgb=mix(vec3(l),c.rgb,1.04);
-          c.rgb*=mix(vec3(.90,.97,1.06),vec3(1.045,1.015,.97),smoothstep(.15,1.1,l));
-          vec2 d=(vUv-.5)*vec2(1.,.75);
-          c.rgb*=1.-.32*dot(d,d); gl_FragColor=c; }`,
+        fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ gl_FragColor=texture2D(tDiffuse,vUv); }`,
       });
       this.composer.addPass(this.grade);
       this.composer.addPass(new OutputPass());
@@ -261,6 +303,7 @@ export class MilitaryRenderer {
     if (this.groundColor) this.groundColor.colorSpace = THREE.SRGBColorSpace;
     if (this.metalColor) this.metalColor.colorSpace = THREE.SRGBColorSpace;
     await Promise.all([
+      loadRealismSurfaces(this),
       (async () => {
         try {
           const gltf = await new GLTFLoader().loadAsync(ASSET + "models/soldier.glb");
@@ -280,6 +323,7 @@ export class MilitaryRenderer {
               }
             }
           });
+          prepareCharacterAsset(this, gltf);
         } catch {
           this.assetErrors.push("soldier");
         } finally {
@@ -320,7 +364,7 @@ export class MilitaryRenderer {
     this.renderer.shadowMap.enabled = options.shadows;
     const size = Math.min(
       this.profile.maxShadowSize,
-      preset === "high" ? 4096 : preset === "performance" ? 1024 : 2048,
+      preset === "high" ? 2048 : 1024,
     );
     if (this.sun.shadow.mapSize.x !== size) {
       this.sun.shadow.mapSize.set(size, size);
@@ -330,7 +374,27 @@ export class MilitaryRenderer {
     this.sun.intensity = options.lighting ? 4.2 : 1.7;
     this.hemisphere.intensity = options.lighting ? 0.55 : 1.3;
     if (this.ao) this.ao.enabled = preset === "high" && options.shadows;
-    if (this.grade) this.grade.enabled = options.lighting;
+    if (this.composer) {
+    // Canvas antialiasing does not cover an offscreen composer. Resolve
+    // actual geometry edges with WebGL 2 multisampling on its render targets.
+    if (this.offscreenSamples === undefined) {
+      const gl = this.renderer.getContext();
+      const format = this.composer.renderTarget1.texture.type === THREE.HalfFloatType ? gl.RGBA16F : gl.RGBA8;
+      const supported = gl.getInternalformatParameter(gl.RENDERBUFFER, format, gl.SAMPLES);
+      this.offscreenSamples = supported?.length ? Math.max(...supported) : 0;
+    }
+    const samples = Math.min(this.offscreenSamples, this.renderer.capabilities.maxSamples || 0,
+      preset === "high" ? 4 : preset === "balanced" ? 2 : 0);
+    this.fxaa.enabled = preset !== "performance" && samples === 0;
+    for (const target of [this.composer.renderTarget1, this.composer.renderTarget2]) {
+      if (target.samples !== samples) {
+        target.dispose();
+        target.samples = samples;
+      }
+    }
+    // No screen-space color filter; exposure/tone mapping remain in OutputPass.
+    this.grade.enabled = false;
+    }
     if (this.reflection) {
       this.reflection.visible = this.profile.reflections && preset !== "performance";
       this.reflection
@@ -344,6 +408,7 @@ export class MilitaryRenderer {
     const [renderWidth, renderHeight] = renderSize(w, h, this.profile);
     this.renderer.setSize(renderWidth, renderHeight, false);
     this.composer?.setSize(renderWidth, renderHeight);
+    this.fxaa?.uniforms.resolution.value.set(1 / renderWidth, 1 / renderHeight);
     this.camera.aspect = w / h;
     // Match the shared projection used by classic rendering and aim.
     this.camera.fov = THREE.MathUtils.radToDeg(this.g.verticalFov);
@@ -365,6 +430,11 @@ export class MilitaryRenderer {
   }
   clearWorld() {
     this.reflection?.dispose();
+    for (const patient of this.arrivalPatients.values()) {
+      patient.mixer?.stopAllAction();
+      patient.model.traverse((object) => { if (object.isSkinnedMesh) object.skeleton.dispose(); });
+    }
+    this.arrivalPatients.clear();
     this.world.traverse((o) => {
       if (o.isInstancedMesh) o.dispose();
       if (o.userData.ownedGeometry) o.geometry.dispose();
@@ -380,10 +450,29 @@ export class MilitaryRenderer {
     }
     this.worldTextures.clear();
     this.world.clear();
+    this.realismDecor = null;
     this.wallMeshes = null;
     this.fittings = [];
     this.fittingMaterial = null;
     this.reflection = null;
+    this.protocolFixtures = [];
+    this.protocolScreens.clear();
+    this.protocolLightMaterials = [];
+    this.protocolPowerOut = false;
+    this.medicalStocks.clear();
+    this.transportCargo = [];
+    this.transportTerrain = null;
+    this.transportInstrument = null;
+    this.transportInstrumentKey = "";
+    this.transportAlarm = null;
+    this.medevacRotor = null;
+    this.arrivalClinic = null;
+    for (const light of this.protocolLights) {
+      light.intensity = 0;
+      light.visible = false;
+    }
+    this.protocolTorch.intensity = 0;
+    this.protocolTorch.visible = false;
   }
   buildWorld() {
     const g = this.g,
@@ -391,17 +480,21 @@ export class MilitaryRenderer {
       profile = PROFILES[id] || PROFILES.outpost,
       n = g.level.length;
     this.clearWorld();
+    this.buildingWorld = true;
     this.mapKey = id;
     this.wallKeys = "";
     this.scene.fog.color.set(profile.fog);
     this.scene.fog.density = id === "freight" ? 0.021 : 0.012;
+    // Asphalt belongs on the apron/street; its photographed aggregate stays
+    // at a three metre repeat rather than swelling to nine metre stones.
     const ground = this.material({
-      color: profile.floor,
-      map: this.tileTexture(this.groundColor, n / 3),
-      normalMap: this.tileTexture(this.groundNormal, n / 3),
-      roughnessMap: this.tileTexture(this.groundRough, n / 3),
-      roughness: 0.65,
-      normalScale: new THREE.Vector2(1.2, 1.2),
+      color: "#d7d4cd",
+      map: this.tileTexture(this.groundColor, n),
+      normalMap: this.tileTexture(this.groundNormal, n),
+      roughnessMap: this.tileTexture(this.groundRough, n),
+      roughness: 0.94,
+      normalScale: new THREE.Vector2(0.38, 0.38),
+      metalness: 0,
     });
     ground.userData.world = true;
     const floor = this.mesh(
@@ -413,24 +506,34 @@ export class MilitaryRenderer {
     );
     floor.rotation.x = -Math.PI / 2;
     floor.castShadow = false;
+    floor.visible = id !== "medevac";
     this.wallMaterials = Array.from({ length: 7 }, (_, type) => {
-      const colors = [
-        "#8e948a",
-        profile.metal,
-        "#707f78",
-        "#b0a489",
-        "#84776b",
-        "#909a9d",
-        "#bcc2bd",
-      ];
-      const m = this.material({
+      const colors =
+        id === "breakwater"
+          ? ["#b7b4a8", "#a29882", "#7c9094", "#9b927d", "#747b73", "#a3aaa1", "#718086"]
+          : id === "testblock"
+            ? ["#b5b0a3", "#929689", "#78928d", "#7d8881", "#aa8374", "#b8b8ac", "#8f9998"]
+          : ["#8e948a", profile.metal, "#707f78", "#b0a489", "#84776b", "#909a9d", "#bcc2bd"];
+      const substrates = id === "freight" || id === "medevac"
+        ? ["concrete", "metal", "metal", "metal", "concrete", "metal", "metal"]
+        : id === "breakwater"
+          ? ["concrete", "plaster", "plaster", "concrete", "metal", "concrete", "metal"]
+          : id === "testblock"
+            ? ["concrete", "concrete", "plaster", "metal", "plaster", "plaster", "metal"]
+            : ["concrete", "concrete", "plaster", "metal", "brick", "plaster", "metal"];
+      const substrate = substrates[type];
+      const m = substrate === "metal" ? this.material({
         color: colors[type],
         map: this.metalColor,
         normalMap: this.metalNormal,
         roughnessMap: this.metalRough,
-        roughness: 0.74,
-        metalness: 0.45,
-        normalScale: new THREE.Vector2(0.8, 0.8),
+        // Painted shipping panels are a dielectric coating over metal.
+        roughness: 0.9, metalness: 0.06,
+        normalScale: new THREE.Vector2(0.45, 0.45),
+      }) : surfaceMaterial(this, substrate, {
+        color: colors[type], repeat: [1.5, 1.75],
+        roughness: substrate === "plaster" ? 0.93 : 0.9,
+        metalness: 0, normalStrength: substrate === "brick" ? 0.55 : 0.3,
       });
       m.userData.world = true;
       return m;
@@ -438,7 +541,7 @@ export class MilitaryRenderer {
     this.rebuildWalls();
     const rail = this.material({ color: "#555c58", metalness: 0.7, roughness: 0.65 });
     rail.userData.world = true;
-    for (let side = 0; side < 4; side++)
+    for (let side = 0; side < (id === "medevac" ? 0 : 4); side++)
       for (let i = 0; i < n; i += 4) {
         const x = side === 0 ? 1 : side === 1 ? n - 1 : i + 1,
           z = side === 2 ? 1 : side === 3 ? n - 1 : i + 1;
@@ -449,8 +552,10 @@ export class MilitaryRenderer {
         for (const dx of [-0.3, 0.3])
           this.box(this.world, rail, [x * SCALE + dx, 6.55, z * SCALE], [0.25, 0.18, 0.2]);
       }
-    this.addLandmarks(id, n, rail);
-    this.makePuddles(id, n);
+    if (["breakwater", "medevac"].includes(id) && this.protocolMetadata())
+      this.buildProtocolBase(this.protocolMetadata());
+    else this.addLandmarks(id, n, rail);
+    if (id !== "medevac") this.makePuddles(id, n);
     // World props stay non-colliding, just like the prior cosmetic scenery.
     const props =
       {
@@ -487,6 +592,16 @@ export class MilitaryRenderer {
     this.sun.target.position.set((n * SCALE) / 2, 0, (n * SCALE) / 2);
     this.sun.position.set((n * SCALE) / 2 - 36, 24, (n * SCALE) / 2 - 18);
     this.sun.target.updateMatrixWorld();
+    const shadowSpan = id === "breakwater" ? 48 : 35;
+    Object.assign(this.sun.shadow.camera, {
+      left: -shadowSpan,
+      right: shadowSpan,
+      top: shadowSpan,
+      bottom: -shadowSpan,
+    });
+    this.sun.shadow.camera.updateProjectionMatrix();
+    this.buildingWorld = false;
+    decorateRealisticEnvironment(this, id, n);
   }
   rebuildWalls() {
     const g = this.g,
@@ -513,7 +628,14 @@ export class MilitaryRenderer {
     for (let type = 1; type <= 6; type++) {
       const tiles = [];
       for (let y = 0; y < g.level.length; y++)
-        for (let x = 0; x < g.level[y].length; x++) if (g.level[y][x] === type) tiles.push([x, y]);
+        for (let x = 0; x < g.level[y].length; x++)
+          if (
+            g.level[y][x] === type &&
+            !this.protocolPropTile(x, y) &&
+            !this.transportWindowTile(x, y) &&
+            !this.transportHiddenWall(x, y)
+          )
+            tiles.push([x, y]);
       if (!tiles.length) continue;
       const mesh = new THREE.InstancedMesh(
         this.wallGeometry,
@@ -522,9 +644,11 @@ export class MilitaryRenderer {
       );
       mesh.castShadow = true;
       mesh.receiveShadow = true;
+      mesh.userData.tiles = tiles;
       tiles.forEach(([x, y], i) => {
-        dummy.position.set((x + 0.5) * SCALE, 1.5, (y + 0.5) * SCALE);
-        dummy.scale.set(SCALE, 3, SCALE);
+        const height = ["breakwater", "medevac"].includes(g.arena.mapId) ? 3.5 : 3;
+        dummy.position.set((x + 0.5) * SCALE, height / 2, (y + 0.5) * SCALE);
+        dummy.scale.set(SCALE, height, SCALE);
         dummy.rotation.set(0, 0, 0);
         dummy.updateMatrix();
         mesh.setMatrixAt(i, dummy.matrix);
@@ -534,16 +658,18 @@ export class MilitaryRenderer {
       this.wallMeshes.push(mesh);
     }
     this.wallFittings();
+    if (!this.buildingWorld) decorateRealisticEnvironment(this, g.arena.mapId, g.level.length);
   }
   wallFittings() {
     // Small fittings hug existing collision walls; never obstruct an open lane.
     const steel = this.material({
-      color: "#59615d",
-      map: this.gunColor,
-      normalMap: this.gunNormal,
-      roughnessMap: this.gunRough,
+      color: "#8b9390",
+      map: this.realismSurfaces.weaponMetal.color,
+      normalMap: this.realismSurfaces.weaponMetal.normal,
+      roughnessMap: this.realismSurfaces.weaponMetal.roughness,
       metalness: 0.8,
-      roughness: 0.6,
+      roughness: 0.68,
+      normalScale: new THREE.Vector2(0.12, 0.12),
     });
     steel.userData.world = true;
     this.fittingMaterial = steel;
@@ -552,7 +678,16 @@ export class MilitaryRenderer {
     const level = this.g.level;
     for (let y = 0; y < level.length; y++)
       for (let x = 0; x < level[y].length; x++) {
-        if (!level[y][x]) continue;
+        if (
+          !level[y][x] ||
+          // Concrete and plaster have architectural joints, not black steel
+          // outlines around every tile. Keep hardware on real panel walls.
+          this.wallMaterials[level[y][x]]?.userData.realismSurface ||
+          this.protocolPropTile(x, y) ||
+          this.transportWindowTile(x, y) ||
+          this.transportHiddenWall(x, y)
+        )
+          continue;
         for (const [dx, dz] of [
           [0, 1],
           [0, -1],
@@ -595,6 +730,820 @@ export class MilitaryRenderer {
       this.world.add(mesh);
       this.fittings.push(mesh);
     }
+  }
+  protocolMetadata() {
+    return this.g.arena.mapId === "medevac" ? this.g.transportMap : this.g.protocolMap;
+  }
+  transportWindowTile(x, y) {
+    if (this.g.arena.mapId !== "medevac") return false;
+    return this.transportWindows().some((window) => window.x === x && window.y === y);
+  }
+  transportWindows() {
+    const windows = this.g.transportMap?.windows || [];
+    // A delivery-side viewing window keeps the receiving clinic visible from
+    // the cargo console; its wall cell retains the existing collision rule.
+    if (windows.some((window) => window.x === 11 && window.y === 15)) return windows;
+    return [...windows, { x: 11, y: 15, dx: -1, dy: 0, w: 0.84, h: 0.5, sill: 0.3 }];
+  }
+  transportHiddenWall(x, y) {
+    if (this.g.arena.mapId !== "medevac") return false;
+    const level = this.g.level;
+    return ![
+      [0, -1],
+      [-1, 0],
+      [1, 0],
+      [0, 1],
+    ].some(([dx, dy]) => level[y + dy]?.[x + dx] === 0);
+  }
+  protocolPropTile(x, y) {
+    if (!["breakwater", "medevac"].includes(this.g.arena.mapId)) return false;
+    return (this.protocolMetadata()?.props || []).some(
+      (prop) =>
+        prop.solid &&
+        ["vehicle", "generator", "medevac-seat", "medical-cargo"].includes(prop.kind) &&
+        x >= prop.x - prop.w / 2 &&
+        x < prop.x + prop.w / 2 &&
+        y >= prop.y - prop.h / 2 &&
+        y < prop.y + prop.h / 2,
+    );
+  }
+  protocolMaterial(options) {
+    const material = this.material(options);
+    material.userData.world = true;
+    return material;
+  }
+  protocolSign(title, subtitle = "BREAKWATER / FIELD OPERATIONS", color = "#81b7bd") {
+    const canvas = document.createElement("canvas");
+    canvas.width = 768;
+    canvas.height = 224;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#18272b";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, 12, canvas.height);
+    let fontSize = 62;
+    ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
+    // Font weight and size are separate: this bounded fit also handles long room names.
+    while (fontSize > 12 && ctx.measureText(title.toUpperCase()).width > 700) {
+      fontSize -= 2;
+      ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
+    }
+    ctx.fillStyle = "#e3eee9";
+    ctx.fillText(title.toUpperCase(), 36, 106);
+    ctx.fillStyle = color;
+    ctx.font = "22px monospace";
+    ctx.fillText(subtitle.toUpperCase().slice(0, 56), 38, 160);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
+    this.textures.add(texture);
+    this.worldTextures.add(texture);
+    return this.protocolMaterial({ map: texture, roughness: 0.85, metalness: 0.08 });
+  }
+  // Mount a panel against the closest adjacent collision wall. Its maximum
+  // protrusion is 0.10 tile, so an open corridor remains fully traversable.
+  protocolMount(x, y, height = 1.25) {
+    const tx = Math.floor(x),
+      ty = Math.floor(y),
+      level = this.g.level;
+    const directions = [
+      [0, -1],
+      [-1, 0],
+      [1, 0],
+      [0, 1],
+    ];
+    const [dx, dz] = directions.find(([a, b]) => level[ty + b]?.[tx + a]) || [0, -1];
+    const root = new THREE.Group();
+    root.position.set((tx + 0.5 + dx * 0.485) * SCALE, height, (ty + 0.5 + dz * 0.485) * SCALE);
+    root.rotation.y = Math.atan2(-dx, -dz);
+    return root;
+  }
+  batchProtocolStatic(root) {
+    // Instance repeated fixtures, trims and panel parts after positioning them.
+    // Dynamic screens, charges and bodies are deliberately excluded.
+    root.updateMatrixWorld(true);
+    const groups = new Map();
+    root.traverse((object) => {
+      if (!object.isMesh || object.isInstancedMesh || object.userData.noBatch) return;
+      const key = object.geometry.uuid + ":" + object.material.uuid;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(object);
+    });
+    const inverse = root.matrixWorld.clone().invert();
+    for (const meshes of groups.values()) {
+      if (meshes.length < 2) continue;
+      const batch = new THREE.InstancedMesh(meshes[0].geometry, meshes[0].material, meshes.length);
+      batch.castShadow = meshes.some((mesh) => mesh.castShadow);
+      batch.receiveShadow = meshes.some((mesh) => mesh.receiveShadow);
+      meshes.forEach((mesh, i) => {
+        batch.setMatrixAt(i, new THREE.Matrix4().multiplyMatrices(inverse, mesh.matrixWorld));
+        mesh.parent.remove(mesh);
+      });
+      root.add(batch);
+    }
+  }
+  buildProtocolBase(map) {
+    const root = new THREE.Group();
+    this.world.add(root);
+    const steel = surfaceMaterial(this, "weaponMetal", {
+      color: "#656d6c", roughness: 0.62, metalness: 0.8, normalStrength: 0.12,
+    });
+    steel.userData.world = true;
+    const paint = this.protocolMaterial({
+      color: "#9da7a1",
+      roughness: 0.88,
+      metalness: 0,
+    });
+    const rubber = this.protocolMaterial({ color: "#263333", roughness: 0.96 });
+    const amber = this.protocolMaterial({ color: "#c9aa67", roughness: 0.75 });
+    const lamp = this.protocolMaterial({
+      color: "#d3edf0",
+      emissive: "#a5dae4",
+      emissiveIntensity: 1.6,
+      roughness: 0.6,
+    });
+    this.protocolLightMaterials.push(lamp);
+    const ceiling = surfaceMaterial(this, "plaster", {
+      color: "#c2c5bd", repeat: [1.5, 1.5], roughness: 0.94,
+      metalness: 0, normalStrength: 0.14,
+    });
+    ceiling.userData.world = true;
+    const rooms = [...(map.rooms || []), ...(map.corridors || [])];
+    const roofTiles = new Set();
+    for (const room of rooms) {
+      if (room.roofed === false) continue;
+      const roomFloor = surfaceMaterial(this, map.id === "medevac" ? "fabric" : "concrete", {
+        color: /maintenance|generat|ammo/.test(room.id || "") ? "#687570" : "#a0aaa3",
+        repeat: [room.w * 1.5, room.h * 1.5], roughness: 0.94,
+        metalness: 0, normalStrength: 0.2,
+      });
+      roomFloor.userData.world = true;
+      const floor = this.mesh(
+        root,
+        this.geo("floor", () => new THREE.PlaneGeometry(1, 1)),
+        roomFloor,
+        [(room.x + room.w / 2) * SCALE, 0.026, (room.y + room.h / 2) * SCALE],
+        [room.w * SCALE, room.h * SCALE, 1],
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.castShadow = false;
+      for (let y = room.y; y < room.y + room.h; y++)
+        for (let x = room.x; x < room.x + room.w; x++) roofTiles.add(`${x},${y}`);
+      // A ceiling and an overhead conduit make the interior read as a room,
+      // instead of sky appearing above every corridor.
+      this.cylinder(
+        root,
+        steel,
+        [(room.x + room.w / 2) * SCALE, 3.28, (room.y + 0.22) * SCALE],
+        0.065,
+        room.w * SCALE,
+        "x",
+        16,
+      );
+      const spacing = room.w <= 2 ? 4 : 3;
+      const axisLength = room.w <= 2 ? room.h : room.w;
+      for (let k = 1.2; k < axisLength; k += spacing) {
+        const x = (room.x + (room.w <= 2 ? room.w / 2 : k)) * SCALE,
+          z = (room.y + (room.w <= 2 ? k : room.h / 2)) * SCALE;
+        this.box(root, steel, [x, 3.36, z], [1.45, 0.1, 0.23]);
+        const bulb = this.box(root, lamp, [x, 3.29, z], [1.22, 0.045, 0.15]);
+        bulb.castShadow = false;
+        this.protocolFixtures.push({ x, y: 3.08, z });
+      }
+      if (room.name && !(map.id === "medevac" && room.id === "cockpit")) {
+        const signRoot = this.protocolMount(room.x + room.w / 2, room.y + 0.5, 2.6);
+        root.add(signRoot);
+        const sign = this.mesh(
+          signRoot,
+          this.geo("protocol-sign", () => new THREE.PlaneGeometry(2.5, 0.73)),
+          this.protocolSign(
+            room.name,
+            room.roofed === false ? "EXTERNAL AREA" : "AUTHORIZED PERSONNEL",
+          ),
+          [0, 0, 0.03],
+        );
+        sign.castShadow = false;
+        sign.userData.noBatch = true;
+      }
+    }
+    const roof = new THREE.InstancedMesh(
+      this.geo("protocol-roof", () => new THREE.BoxGeometry(1, 1, 1)),
+      ceiling,
+      roofTiles.size,
+    );
+    const dummy = new THREE.Object3D();
+    let tileIndex = 0;
+    for (const tile of roofTiles) {
+      const [x, y] = tile.split(",").map(Number);
+      dummy.position.set((x + 0.5) * SCALE, 3.58, (y + 0.5) * SCALE);
+      // Adjacent opaque panels meet exactly. Overlap makes their bottom
+      // surfaces fight for depth and creates flickering diagonal seams.
+      dummy.scale.set(SCALE, 0.16, SCALE);
+      dummy.updateMatrix();
+      roof.setMatrixAt(tileIndex++, dummy.matrix);
+    }
+    roof.castShadow = roof.receiveShadow = true;
+    root.add(roof);
+    for (const station of map.stations || []) {
+      // The flight deck has its own low instrument console; a second generic
+      // wall terminal would overlap it and obscure the pilot's windshield.
+      if (map.id === "medevac" && station.kind === "helm") continue;
+      const panel = this.protocolMount(station.x, station.y, 1.34);
+      if (map.id === "medevac" && station.kind === "cargo") panel.position.z -= 1.1;
+      root.add(panel);
+      this.box(panel, steel, [0, 0, 0.07], [1.05, 0.88, 0.14]);
+      this.box(panel, paint, [0, -0.47, 0.07], [1.12, 0.11, 0.22]);
+      const screenMaterial = this.protocolMaterial({
+        color: "#acd4d3",
+        emissive: "#4b8588",
+        emissiveIntensity: 0.75,
+        roughness: 0.35,
+        metalness: 0.15,
+      });
+      const screen = this.box(panel, screenMaterial, [0, 0.06, 0.153], [0.79, 0.52, 0.028]);
+      screen.userData.noBatch = true;
+      this.protocolScreens.set(station.id, screenMaterial);
+      for (let i = 0; i < 5; i++)
+        this.box(panel, rubber, [-0.32 + i * 0.16, -0.3, 0.163], [0.1, 0.045, 0.025]);
+      const label = this.mesh(
+        panel,
+        this.geo("protocol-label", () => new THREE.PlaneGeometry(1.18, 0.34)),
+        this.protocolSign(station.name, "HOLD TO SERVICE"),
+        [0, 0.69, 0.05],
+      );
+      label.castShadow = false;
+      label.userData.noBatch = true;
+      if (/fuel|generator|power/.test(station.kind || "")) {
+        for (const x of [-0.39, 0.39])
+          this.cylinder(panel, amber, [x, -0.04, 0.18], 0.07, 0.018, "z", 16);
+      } else if (/radio|radar|comms|intel/.test(station.kind || "")) {
+        for (let i = 0; i < 3; i++)
+          this.box(panel, lamp, [-0.28 + i * 0.22, 0.38, 0.157], [0.075, 0.035, 0.02]);
+      }
+    }
+    // These neutral access covers are ordinary public map scenery. A cover
+    // never signals whether it currently contains a hidden charge.
+    for (const site of map.sites || []) {
+      const cover = this.protocolMount(site.x, site.y, 0.58);
+      root.add(cover);
+      this.box(cover, paint, [0, 0, 0.055], [0.9, 0.8, 0.11]);
+      this.box(cover, steel, [0.32, 0, 0.125], [0.035, 0.22, 0.025]);
+      for (let i = 0; i < 5; i++)
+        this.box(cover, rubber, [0, -0.22 + i * 0.105, 0.117], [0.52, 0.026, 0.018]);
+    }
+    for (const vent of map.vents || []) {
+      const grate = new THREE.Group();
+      grate.position.set(vent.x * SCALE, 0.045, vent.y * SCALE);
+      root.add(grate);
+      this.box(grate, steel, [0, 0, 0], [1.13, 0.045, 1.13]);
+      this.box(grate, rubber, [0, 0.025, 0], [0.95, 0.015, 0.95]);
+      for (let i = 0; i < 9; i++)
+        this.box(grate, paint, [-0.41 + i * 0.103, 0.04, 0], [0.044, 0.025, 0.88]);
+      for (const x of [-0.53, 0.53]) this.box(grate, amber, [x, 0.05, 0], [0.025, 0.01, 1.07]);
+    }
+    if (map.emergency) {
+      const alarm = new THREE.Group();
+      alarm.position.set(map.emergency.x * SCALE, 1.32, map.emergency.y * SCALE);
+      root.add(alarm);
+      this.box(alarm, steel, [0, -0.68, 0], [0.13, 1.28, 0.13]);
+      this.box(alarm, steel, [0, -1.26, 0], [0.55, 0.08, 0.55]);
+      this.box(alarm, steel, [0, 0, 0.06], [0.58, 0.82, 0.12]);
+      this.box(alarm, amber, [0, 0, 0.14], [0.41, 0.56, 0.03]);
+      const red = this.protocolMaterial({ color: "#c66051", roughness: 0.45 });
+      this.cylinder(alarm, red, [0, 0, 0.2], 0.13, 0.06, "z", 24);
+      const label = this.mesh(
+        alarm,
+        this.geo("protocol-label", () => new THREE.PlaneGeometry(1.18, 0.34)),
+        this.protocolSign("RADIO ASSEMBLY", "EMERGENCY MEETING", "#d3ae75"),
+        [0, 0.7, 0.04],
+      );
+      label.userData.noBatch = true;
+    }
+    for (const prop of map.props || []) {
+      if (
+        !prop.solid ||
+        !["vehicle", "generator", "medevac-seat", "medical-cargo"].includes(prop.kind)
+      )
+        continue;
+      const equipment = new THREE.Group();
+      equipment.position.set(prop.x * SCALE, 0, prop.y * SCALE);
+      root.add(equipment);
+      if (prop.kind === "medevac-seat") {
+        this.box(equipment, steel, [0, 0.35, 0], [1.36, 0.6, 1.4]);
+        this.box(equipment, rubber, [0, 1.18, 0.38], [1.38, 1.36, 0.25]);
+        this.box(equipment, rubber, [0, 0.69, -0.11], [1.4, 0.18, 1.24]);
+        for (const x of [-0.67, 0.67])
+          this.box(equipment, paint, [x, 0.87, -0.04], [0.095, 0.17, 1.18]);
+      } else if (prop.kind === "medical-cargo") {
+        for (const y of [0.45, 1.3])
+          for (const z of [-1.35, 1.35]) {
+            this.box(equipment, paint, [0, y, z], [2.15, 0.82, 2.36]);
+            this.box(equipment, steel, [0, y + 0.43, z], [2.2, 0.045, 2.4]);
+            this.box(equipment, lamp, [1.09, y, z], [0.026, 0.14, 0.36]);
+          }
+      } else if (prop.kind === "vehicle" && map.loading) {
+        this.buildMedevacExterior(equipment, paint, steel, rubber, lamp);
+      } else if (prop.kind === "vehicle") {
+        this.box(equipment, paint, [0, 0.91, 0], [2.15, 0.9, 7.6]);
+        this.box(equipment, steel, [0, 1.57, -2.1], [1.92, 1.13, 2.8]);
+        this.box(equipment, rubber, [0, 1.72, -3.52], [1.65, 0.55, 0.045]);
+        for (const x of [-1.05, 1.05])
+          for (const z of [-2.4, 2.45])
+            this.cylinder(equipment, rubber, [x, 0.52, z], 0.51, 0.24, "x", 24);
+        for (const x of [-0.72, 0.72]) {
+          this.box(equipment, lamp, [x, 0.95, -3.84], [0.29, 0.13, 0.035]);
+          this.box(equipment, steel, [x, 1.45, 1.6], [0.07, 1.3, 3.7]);
+        }
+      } else {
+        for (const z of [-2.55, 0, 2.55]) {
+          this.box(equipment, steel, [0, 1.05, z], [2.25, 2.1, 2.15]);
+          this.box(equipment, paint, [0, 2.12, z], [2.32, 0.16, 2.23]);
+          for (let i = 0; i < 7; i++)
+            this.box(equipment, rubber, [1.14, 0.63 + i * 0.18, z], [0.025, 0.09, 1.55]);
+          this.cylinder(equipment, amber, [0, 2.52, z], 0.075, 0.65, "y", 16);
+        }
+      }
+    }
+    const communications = (map.rooms || []).find((room) => /communicat|radar/.test(room.id || ""));
+    if (communications) {
+      const x = (communications.x + communications.w / 2) * SCALE,
+        z = (communications.y + communications.h / 2) * SCALE;
+      this.cylinder(root, steel, [x, 6.5, z], 0.14, 5.8, "y", 24);
+      for (const h of [4.2, 6, 7.8]) this.box(root, steel, [x, h, z], [3.8, 0.11, 0.11]);
+      const dish = this.mesh(
+        root,
+        this.geo(
+          "radar-dish",
+          () => new THREE.SphereGeometry(1.25, 24, 12, 0, TAU, 0, Math.PI / 2),
+        ),
+        paint,
+        [x, 8.8, z],
+      );
+      dish.rotation.x = Math.PI / 2;
+      this.cylinder(root, amber, [x, 8.8, z + 0.8], 0.045, 1.1, "z", 12);
+    }
+    this.buildMedicalFixtures(map, root, { steel, paint, rubber, amber, lamp });
+    if (map.id === "medevac")
+      this.buildTransportInterior(map, root, { steel, paint, rubber, amber, lamp });
+    this.batchProtocolStatic(root);
+  }
+  buildMedevacExterior(root, paint, steel, rubber, lamp) {
+    // The fuselage stays inside the map's blocked vehicle footprint. Rotor
+    // blades clear the walking/player head height and never change collision.
+    this.mesh(
+      root,
+      this.geo("medevac-fuselage", () => new THREE.SphereGeometry(1, 32, 20)),
+      paint,
+      [0, 1.35, 0],
+      [1.1, 0.96, 3.65],
+    );
+    const glass = this.protocolMaterial({
+      color: "#253f48",
+      metalness: 0,
+      roughness: 0.12,
+      transparent: true,
+      opacity: 0.9,
+    });
+    this.mesh(
+      root,
+      this.geo("medevac-canopy", () => new THREE.SphereGeometry(1, 32, 16)),
+      glass,
+      [0, 1.57, -2.52],
+      [0.91, 0.66, 1.03],
+    );
+    for (const x of [-0.92, 0.92]) {
+      this.box(root, steel, [x, 0.34, 0.3], [0.09, 0.11, 6.7]);
+      for (const z of [-1.55, 2.05]) {
+        const leg = this.box(root, steel, [x * 0.78, 0.68, z], [0.08, 0.85, 0.08]);
+        leg.rotation.z = x < 0 ? 0.3 : -0.3;
+      }
+      this.box(root, rubber, [x * 1.13, 1.35, 0.3], [0.035, 0.76, 1.35]);
+      this.box(root, lamp, [x * 0.68, 1.1, -3.25], [0.15, 0.1, 0.055]);
+    }
+    this.cylinder(root, steel, [0, 2.64, 0], 0.09, 0.47, "y", 24);
+    const rotor = new THREE.Group();
+    rotor.position.set(0, 2.94, 0);
+    root.add(rotor);
+    for (const angle of [0, Math.PI / 2]) {
+      const blade = this.box(rotor, steel, [0, 0, 0], [6.4, 0.035, 0.21]);
+      blade.rotation.y = angle;
+      blade.userData.noBatch = true;
+    }
+    this.medevacRotor = rotor;
+  }
+  buildMedicalFixtures(map, root, materials) {
+    const { steel, paint, lamp } = materials;
+    const shell = this.protocolMaterial({
+      color: "#a8bab2",
+      roughness: 0.84,
+      metalness: 0,
+    });
+    const band = this.protocolMaterial({ color: "#357b73", roughness: 0.78 });
+    const symbol = this.protocolMaterial({ color: "#e1ebe4", roughness: 0.75 });
+    const medicalCase = (parent, position, movable = false) => {
+      const group = new THREE.Group();
+      group.position.set(...position);
+      parent.add(group);
+      this.box(group, shell, [0, 0, 0], [0.78, 0.4, 0.26]);
+      this.box(group, band, [0, 0, 0.14], [0.33, 0.32, 0.025]);
+      this.box(group, symbol, [0, 0, 0.16], [0.2, 0.045, 0.02]);
+      this.box(group, symbol, [0, 0, 0.162], [0.045, 0.2, 0.02]);
+      if (movable)
+        group.traverse((object) => {
+          if (object.isMesh) object.userData.noBatch = true;
+        });
+      return group;
+    };
+    for (const fixture of map.supplies || []) {
+      const cabinet = this.protocolMount(fixture.x, fixture.y, 0.57);
+      root.add(cabinet);
+      this.box(cabinet, steel, [0, 0.01, 0.08], [1.08, 1.12, 0.16]);
+      this.box(cabinet, paint, [0, 0.6, 0.1], [1.14, 0.06, 0.23]);
+      const cases = [
+        medicalCase(cabinet, [0, -0.23, 0.15], true),
+        medicalCase(cabinet, [0, 0.23, 0.15], true),
+      ];
+      this.medicalStocks.set(fixture.id, cases);
+      const label = this.mesh(
+        cabinet,
+        this.geo("medical-label", () => new THREE.PlaneGeometry(1.55, 0.45)),
+        this.protocolSign(fixture.name, "MEDICAL RESUPPLY", "#a1c7b7"),
+        [0, 0.98, 0.12],
+      );
+      label.castShadow = false;
+      label.userData.noBatch = true;
+    }
+    if (map.loading) {
+      const pad = map.loading;
+      const x = pad.x * SCALE,
+        z = pad.y * SCALE;
+      const marking = this.protocolMaterial({ color: "#abc6b9", roughness: 0.85 });
+      for (const dx of [-0.75, 0.75])
+        this.box(root, marking, [x + dx, 0.04, z], [0.035, 0.018, 1.6]);
+      for (const dz of [-0.8, 0.8]) this.box(root, marking, [x, 0.04, z + dz], [1.5, 0.018, 0.035]);
+      const labelRoot = this.protocolMount(pad.x, pad.y, 2.6);
+      const label = this.mesh(
+        labelRoot,
+        this.geo("loading-label", () => new THREE.PlaneGeometry(2.8, 0.82)),
+        this.protocolSign("LIFELINE MEDEVAC", "LOAD SUPPLIES / BOARD TO DEPART", "#a1c7b7"),
+        [0, 0, 0.03],
+      );
+      label.userData.noBatch = true;
+      root.add(labelRoot);
+    }
+    if (map.id === "medevac") {
+      const room = (map.rooms || []).find((item) => item.id === "cargo");
+      if (!room) return;
+      // Fixed, wall-side cargo slots: public manifest counts control visibility.
+      // No carried cargo, owner, allegiance or private objectives are inspected.
+      for (let i = 0; i < 13; i++) {
+        const column = i % 5,
+          row = Math.floor(i / 5);
+        const group = medicalCase(
+          root,
+          [
+            (room.x + 0.65) * SCALE + column * 0.87,
+            0.31 + row * 0.47,
+            (room.y + room.h) * SCALE - 0.22,
+          ],
+          true,
+        );
+        this.transportCargo.push(group);
+      }
+      this.transportAlarm = this.protocolMaterial({
+        color: "#89c6b5",
+        emissive: "#457d71",
+        emissiveIntensity: 0.75,
+        roughness: 0.6,
+      });
+      const alarmRoot = this.protocolMount(map.avionics?.x || 4.5, map.avionics?.y || 6.5, 2.4);
+      const alarm = this.box(alarmRoot, this.transportAlarm, [0, 0, 0.07], [0.38, 0.16, 0.07]);
+      alarm.userData.noBatch = true;
+      root.add(alarmRoot);
+      this.protocolLightMaterials.push(lamp);
+    }
+  }
+  buildTransportInterior(map, root, materials) {
+    const { steel, paint, rubber } = materials;
+    const glass = this.protocolMaterial({
+      color: "#a6c7d2",
+      metalness: 0.15,
+      roughness: 0.08,
+      transparent: true,
+      opacity: 0.14,
+      side: THREE.DoubleSide,
+    });
+    for (const window of this.transportWindows()) {
+      const nx = window.dx || 0,
+        nz = window.dy || 0;
+      const panel = new THREE.Group();
+      panel.position.set(
+        (window.x + 0.5 + nx * 0.5) * SCALE,
+        0,
+        (window.y + 0.5 + nz * 0.5) * SCALE,
+      );
+      panel.rotation.y = Math.atan2(nx, nz);
+      root.add(panel);
+      const width = (window.w || 0.84) * SCALE,
+        height = (window.h || 0.5) * SCALE,
+        sill = (window.sill || 0.42) * SCALE;
+      this.box(panel, paint, [0, sill / 2, -0.05], [SCALE, sill, 0.16]);
+      this.box(
+        panel,
+        paint,
+        [0, (sill + height + 3.5) / 2, -0.05],
+        [SCALE, 3.5 - sill - height, 0.16],
+      );
+      for (const x of [-(width + SCALE) / 4, (width + SCALE) / 4])
+        this.box(panel, steel, [x, sill + height / 2, -0.02], [(SCALE - width) / 2, height, 0.2]);
+      for (const y of [sill, sill + height])
+        this.box(panel, steel, [0, y, 0.035], [width, 0.075, 0.08]);
+      const pane = this.mesh(
+        panel,
+        this.geo("transport-glass", () => new THREE.PlaneGeometry(1, 1)),
+        glass,
+        [0, sill + height / 2, 0.025],
+        [width, height, 1],
+      );
+      pane.castShadow = false;
+    }
+    const cabin = (map.rooms || []).find((room) => room.id === "cabin");
+    if (cabin) {
+      const fabric = surfaceMaterial(this, "fabric", {
+        color: "#78857c", repeat: [2, 2], roughness: 0.96,
+        metalness: 0, normalStrength: 0.2,
+      });
+      fabric.userData.world = true;
+      // Folded troop seats hug the hull, leaving the actual walking lane clear.
+      for (const side of [0, 1])
+        for (let i = 0; i < 4; i++) {
+          const seat = new THREE.Group();
+          seat.position.set(
+            (cabin.x + (side ? cabin.w - 0.12 : 0.12)) * SCALE,
+            0,
+            (cabin.y + 0.8 + i * 1.3) * SCALE,
+          );
+          seat.rotation.y = side ? -Math.PI / 2 : Math.PI / 2;
+          root.add(seat);
+          this.box(seat, steel, [0, 0.78, 0], [0.9, 1.4, 0.035]);
+          this.box(seat, fabric, [0, 0.93, 0.05], [0.81, 0.77, 0.08]);
+          this.box(seat, fabric, [0, 0.5, 0.12], [0.82, 0.08, 0.24]);
+          this.box(seat, rubber, [0, 0.97, 0.11], [0.043, 0.73, 0.018]);
+        }
+    }
+    if (map.helm) {
+      const helm = this.protocolMount(map.helm.x, map.helm.y, 1.05);
+      root.add(helm);
+      this.box(helm, steel, [0, 0, 0.08], [1.48, 0.62, 0.16]);
+      this.box(helm, rubber, [0, -0.35, 0.12], [1.5, 0.14, 0.22]);
+      const canvas = document.createElement("canvas");
+      canvas.width = 768;
+      canvas.height = 320;
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      this.textures.add(texture);
+      this.worldTextures.add(texture);
+      const material = this.protocolMaterial({
+        map: texture,
+        emissiveMap: texture,
+        emissive: "#8caead",
+        emissiveIntensity: 0.85,
+        roughness: 0.6,
+      });
+      const screen = this.mesh(
+        helm,
+        this.geo("flight-instrument", () => new THREE.PlaneGeometry(1.34, 0.55)),
+        material,
+        [0, 0.06, 0.175],
+      );
+      screen.castShadow = false;
+      screen.userData.noBatch = true;
+      this.transportInstrument = { canvas, texture, material };
+      for (const x of [-0.61, 0.61]) {
+        this.cylinder(helm, steel, [x, -0.24, 0.24], 0.045, 0.09, "z", 16);
+        this.box(helm, paint, [x, -0.38, 0.27], [0.06, 0.14, 0.04]);
+      }
+    }
+    // A finite 3D heightfield moves beneath the aircraft. No object spawning,
+    // physics changes, sprite landscapes or extra network state are involved.
+    const terrain = new THREE.Group();
+    this.world.add(terrain);
+    const geometry = this.geo("medevac-terrain", () => {
+      const mesh = new THREE.PlaneGeometry(620, 900, 44, 58);
+      mesh.rotateX(-Math.PI / 2);
+      const vertices = mesh.attributes.position;
+      for (let i = 0; i < vertices.count; i++) {
+        const x = vertices.getX(i),
+          z = vertices.getZ(i);
+        const ridge = Math.max(0, Math.sin(x * 0.022 + Math.cos(z * 0.013) * 1.4));
+        vertices.setY(
+          i,
+          ridge * ridge * 48 + Math.sin(z * 0.038 + x * 0.04) * 5 - Math.max(0, x - 110) * 0.45,
+        );
+      }
+      mesh.computeVertexNormals();
+      return mesh;
+    });
+    const earth = this.protocolMaterial({
+      color: "#9c947e",
+      map: this.tileTexture(this.groundColor, 16),
+      normalMap: this.tileTexture(this.groundNormal, 16),
+      roughness: 0.95,
+      normalScale: new THREE.Vector2(0.3, 0.3),
+    });
+    const land = this.mesh(terrain, geometry, earth, [-100, 0, 0]);
+    land.castShadow = false;
+    const seaMaterial = this.protocolMaterial({
+      color: "#436f79",
+      metalness: 0.18,
+      roughness: 0.24,
+      envMapIntensity: 0.8,
+    });
+    const sea = this.mesh(
+      terrain,
+      this.geo("floor", () => new THREE.PlaneGeometry(1, 1)),
+      seaMaterial,
+      [220, -1, 0],
+      [440, 950, 1],
+    );
+    sea.rotation.x = -Math.PI / 2;
+    sea.castShadow = false;
+    this.transportTerrain = terrain;
+    this.buildArrivalClinic(map, materials);
+  }
+  buildArrivalClinic(map, materials) {
+    const clinic = new THREE.Group();
+    clinic.visible = false;
+    this.world.add(clinic);
+    const { steel, paint } = materials;
+    const ground = this.protocolMaterial({ color: "#a6a38d", map: this.tileTexture(this.groundColor, 18),
+      normalMap: this.tileTexture(this.groundNormal, 18), roughness: 0.94 });
+    const apron = this.mesh(clinic, this.geo("floor", () => new THREE.PlaneGeometry(1, 1)),
+      ground, [27, 0, 27], [210, 210, 1]);
+    apron.rotation.x = -Math.PI / 2;
+    apron.castShadow = false;
+    const fabric = surfaceMaterial(this, "fabric", { color: "#71847b", repeat: [2, 3],
+      roughness: 0.96, metalness: 0, normalStrength: 0.2 });
+    fabric.userData.world = true;
+    this.box(clinic, paint, [42.8, 3.9, 46.5], [11.2, 0.16, 10.3]);
+    for (const x of [37.35, 48.25]) for (const z of [41.5, 51.5])
+      this.box(clinic, steel, [x, 1.85, z], [0.11, 3.7, 0.11]);
+    const slots = [];
+    for (let i = 0; i < 4; i++) {
+      const x = 39.5 + (i % 2) * 3.45, z = 44.6 + Math.floor(i / 2) * 3.8;
+      slots.push({ x, z });
+      this.box(clinic, steel, [x, 0.99, z], [0.84, 0.075, 2.57]);
+      this.box(clinic, fabric, [x, 1.05, z], [0.77, 0.15, 2.42]);
+      for (const dx of [-0.37, 0.37]) for (const dz of [-0.99, 0.99]) {
+        this.box(clinic, steel, [x + dx, 0.53, z + dz], [0.04, 0.91, 0.04]);
+        this.cylinder(clinic, steel, [x + dx, 0.07, z + dz], 0.07, 0.035, "x", 16);
+      }
+      this.box(clinic, fabric, [x, 1.16, z + 0.82], [0.51, 0.16, 0.42]);
+      // Wounded operators' helmeted heads and raised heels are supported by
+      // actual pads, rather than an idle standing pose floating over a sheet.
+      this.box(clinic, fabric, [x, 1.16, z - 0.94], [0.63, 0.12, 0.4]);
+    }
+    const sign = this.mesh(clinic, this.geo("clinic-sign", () => new THREE.PlaneGeometry(4.4, 0.9)),
+      this.protocolSign("FIELD CLINIC", "MEDICAL CARGO / RECEIVING BAY", "#a9c6b7"), [46.9, 2.52, 46.5]);
+    sign.rotation.y = -Math.PI / 2;
+    sign.castShadow = false;
+    this.arrivalClinic = { root: clinic, slots };
+    this.batchProtocolStatic(clinic);
+    for (const z of [44.6, 48.4]) this.protocolFixtures.push({ x: 41.5, y: 3.55, z, arrivalOnly: true });
+  }
+  updateArrivalClinic(mission) {
+    if (!this.arrivalClinic) return;
+    const arrived = !!mission.vehicle?.arrived;
+    this.arrivalClinic.root.visible = arrived;
+    if (!arrived || !this.soldier) return;
+    const patients = (mission.patients || []).slice(0, 4), ids = new Set(patients.map((patient) => patient.id));
+    for (const [id, presentation] of this.arrivalPatients) if (!ids.has(id)) {
+      presentation.mixer?.stopAllAction();
+      presentation.root.parent?.remove(presentation.root);
+      presentation.root.traverse((object) => {
+        if (object.isSkinnedMesh) object.skeleton.dispose();
+        if (object.isMesh) {
+          object.material.dispose();
+          this.materials.delete(object.material);
+        }
+      });
+      this.arrivalPatients.delete(id);
+    }
+    for (const [index, patient] of patients.entries()) {
+      let presentation = this.arrivalPatients.get(patient.id);
+      const slot = this.arrivalClinic.slots[index];
+      if (!presentation) {
+        const temporaryId = "clinic-patient:" + patient.id;
+        presentation = this.makeActor({ id: temporaryId, x: 0, y: 0, team: null });
+        this.actors.delete(temporaryId);
+        presentation.mixer?.stopAllAction();
+        presentation.root.traverse((object) => {
+          if (object.isMesh) object.material.userData.world = true;
+        });
+        this.arrivalClinic.root.add(presentation.root);
+        presentation.root.rotation.set(Math.PI / 2, 0, 0);
+        this.arrivalPatients.set(patient.id, presentation);
+      }
+      // Positions and patient status are purely the public destination scene.
+      // Cloned skeletons share source geometry; uniforms never encode roles.
+      presentation.root.position.set(slot.x, 1.4, slot.z - 1.1);
+      presentation.root.visible = true;
+      presentation.patch.color.set(patient.rescued ? "#afc4b2" : "#97a79b");
+    }
+  }
+  updateMedicalMission(mission, animationTime) {
+    if (!mission) return;
+    for (const fixture of mission.supplyStock || []) {
+      const cases = this.medicalStocks.get(fixture.id);
+      if (cases)
+        cases.forEach((object, i) => {
+          object.visible = Number(fixture.stock) > i;
+        });
+    }
+    if (this.medevacRotor)
+      this.medevacRotor.rotation.y = this.motion.matches
+        ? 0
+        : (Math.floor(animationTime * 30) / 30) * 5;
+    const loaded = (mission.manifest || []).reduce(
+      (sum, entry) => sum + Math.max(0, Number(entry.loaded) || 0),
+      0,
+    );
+    this.transportCargo.forEach((object, i) => {
+      object.visible = i < loaded;
+    });
+    if (this.g.arena.mapId !== "medevac" || !mission.vehicle) return;
+    const vehicle = mission.vehicle,
+      altitude = THREE.MathUtils.clamp(Number(vehicle.altitude) || 0, 0, 1.5),
+      heading = THREE.MathUtils.clamp(Number(vehicle.heading) || 0, -2, 2),
+      progress = THREE.MathUtils.clamp((Number(vehicle.progress) || 0) / Math.max(1, Number(vehicle.duration) || 120), 0, 1),
+      alarm = !vehicle.autopilot && !vehicle.underControl;
+    if (this.transportTerrain) {
+      this.transportTerrain.position.set(
+        (this.g.level.length * SCALE) / 2 - heading * 25,
+        -31 - altitude * 40,
+        -380 + progress * 150,
+      );
+      this.transportTerrain.rotation.y = -heading * 0.18;
+      // The stationary landing apron replaces the airborne heightfield at
+      // arrival, making the clinic and aircraft share the same ground plane.
+      this.transportTerrain.visible = !vehicle.arrived;
+    }
+    this.updateArrivalClinic(mission);
+    if (this.transportAlarm) {
+      this.transportAlarm.color.set(alarm || vehicle.cargoDamage > 0 ? "#bc6758" : "#89c6b5");
+      this.transportAlarm.emissive.set(alarm || vehicle.cargoDamage > 0 ? "#8e3326" : "#457d71");
+      this.transportAlarm.emissiveIntensity = alarm ? 1 : 0.65;
+    }
+    if (!this.transportInstrument) return;
+    const key = [
+      Math.round(altitude * 100),
+      Math.round(heading * 100),
+      Math.round(progress * 100),
+      !!vehicle.autopilot,
+      !!vehicle.underControl,
+      !!vehicle.arrived,
+      Math.round(vehicle.cargoDamage || 0),
+    ].join(":");
+    if (key === this.transportInstrumentKey) return;
+    this.transportInstrumentKey = key;
+    const ctx = this.transportInstrument.canvas.getContext("2d");
+    ctx.fillStyle = "#13262c";
+    ctx.fillRect(0, 0, 768, 320);
+    ctx.fillStyle = alarm ? "#e9aa8a" : "#a6d8cd";
+    ctx.font = "600 36px system-ui, sans-serif";
+    ctx.fillText(
+      vehicle.arrived
+        ? "FIELD CLINIC / LANDED"
+        : vehicle.autopilot
+          ? "LIFELINE / AUTOPILOT"
+          : "LIFELINE / MANUAL CONTROL",
+      25,
+      51,
+    );
+    ctx.font = "22px monospace";
+    ctx.fillStyle = "#d8e4dc";
+    ctx.fillText("ALTITUDE", 28, 102);
+    ctx.fillText("HEADING", 288, 102);
+    ctx.fillText("ROUTE", 545, 102);
+    ctx.font = "46px monospace";
+    ctx.fillText(Math.round(altitude * 100) + "%", 28, 160);
+    ctx.fillText((heading > 0 ? "+" : "") + Math.round(heading * 100), 288, 160);
+    ctx.fillText(Math.round(progress * 100) + "%", 545, 160);
+    ctx.fillStyle = "#355b60";
+    ctx.fillRect(28, 199, 700, 10);
+    ctx.fillStyle = alarm ? "#c78b6d" : "#87bcad";
+    ctx.fillRect(28, 199, 700 * progress, 10);
+    ctx.font = "24px monospace";
+    ctx.fillText(
+      alarm
+        ? "RECOVER FLIGHT CONTROL"
+        : vehicle.arrived
+          ? "DELIVER MEDICAL CARGO"
+          : "MEDICAL RESUPPLY / COASTAL ROUTE",
+      28,
+      264,
+    );
+    this.transportInstrument.texture.needsUpdate = true;
   }
   addLandmarks(id, n, mat) {
     const signCanvas = document.createElement("canvas");
@@ -642,7 +1591,7 @@ export class MilitaryRenderer {
         Math.PI,
       );
       const fuselage = this.mesh(this.world, hullGeometry, aluminum, [20 * SCALE, 3, 11 * SCALE]);
-      fuselage.rotation.x = Math.PI / 2;
+      fuselage.rotation.x = -Math.PI / 2;
       fuselage.userData.ownedGeometry = true;
       aluminum.side = THREE.DoubleSide;
       this.box(this.world, aluminum, [20 * SCALE, 3.1, 11 * SCALE], [14, 0.12, 3]);
@@ -664,9 +1613,9 @@ export class MilitaryRenderer {
     const shader = {
       uniforms: THREE.UniformsUtils.clone(Reflector.ReflectorShader.uniforms),
       vertexShader: Reflector.ReflectorShader.vertexShader
-        .replace("varying vec4 vUv;", "varying vec4 vUv; varying vec2 wetUv;")
-        .replace("vUv = textureMatrix", "wetUv = position.xy; vUv = textureMatrix"),
-      fragmentShader: `uniform sampler2D tDiffuse; varying vec4 vUv; varying vec2 wetUv;
+        .replace("varying vec4 vUv;", "varying vec4 vUv; varying vec2 wetUv; varying vec3 wetWorld;")
+        .replace("vUv = textureMatrix", "wetUv = position.xy; wetWorld=(modelMatrix*vec4(position,1.0)).xyz; vUv = textureMatrix"),
+      fragmentShader: `uniform sampler2D tDiffuse; varying vec4 vUv; varying vec2 wetUv; varying vec3 wetWorld;
         #include <logdepthbuf_pars_fragment>
         float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
         float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
@@ -674,12 +1623,16 @@ export class MilitaryRenderer {
         void main(){
           #include <logdepthbuf_fragment>
           float n=noise(wetUv*.22)+.28*noise(wetUv*.72);
-          float mask=smoothstep(.49,.69,n);
+          float mask=smoothstep(.72,.91,n);
           if(mask<.015) discard;
           vec2 uv=vUv.xy/vUv.w;
           vec2 ripple=vec2(noise(wetUv*5.),noise(wetUv*5.+17.))-.5;
           vec3 reflection=texture2D(tDiffuse,uv+ripple*.0015).rgb;
-          gl_FragColor=vec4(reflection*vec3(.75,.83,.88),mask*.65);
+          // Water is a dielectric: weak reflection straight down, stronger
+          // at grazing angles. Keep the dry aggregate visible around pools.
+          float facing=abs(normalize(cameraPosition-wetWorld).y);
+          float fresnel=.02+.98*pow(1.-facing,5.);
+          gl_FragColor=vec4(reflection,mask*clamp(fresnel,.025,.82));
           #include <tonemapping_fragment>
           #include <colorspace_fragment>
         }`,
@@ -732,20 +1685,22 @@ export class MilitaryRenderer {
       });
       const bounds = new THREE.Box3().setFromObject(model),
         height = bounds.max.y - bounds.min.y,
-        factor = 2.25 / height;
+        factor = 1.82 / height;
       model.scale.multiplyScalar(factor);
       model.position.y -= bounds.min.y * factor;
+      finishActor(this, model, e);
+      if (this.g.mode !== "protocol") {
       model.traverse((o) => {
         if (o.isMesh) {
-          o.material = o.material.clone();
           const uniform = outfitOf(e.outfit),
             texture = this.skinTexture(uniform);
           o.material.color.set("#ffffff");
           o.material.map ||= texture;
-          o.material.roughness = 0.88;
           o.geometry.computeBoundingBox();
           const bounds = o.geometry.boundingBox;
+          const physicalShader = o.material.onBeforeCompile;
           o.material.onBeforeCompile = (shader) => {
+            physicalShader(shader);
             shader.uniforms.fabricPattern = { value: texture };
             shader.uniforms.lowerPattern = {
               value:
@@ -781,12 +1736,13 @@ export class MilitaryRenderer {
               diffuseColor.rgb=pattern*(.72+fabricLuma*.28);`,
             );
           };
-          o.material.customProgramCacheKey = () => "outpost-reference-fabric-v1";
+          o.material.customProgramCacheKey = () => "outpost-reference-physical-fabric-v2";
           o.castShadow = true;
           o.receiveShadow = true;
           this.materials.add(o.material);
         }
       });
+      }
       root.add(model);
     } else {
       model = new THREE.Group();
@@ -813,10 +1769,15 @@ export class MilitaryRenderer {
         );
     }
     const patch = this.material({
-      color: e.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465",
+      color:
+        this.g.mode === "protocol"
+          ? "#97a79b"
+          : e.team === this.g.player.team && this.g.mode === "duo"
+            ? "#a2c8b1"
+            : "#9b7465",
       roughness: 0.9,
     });
-    this.box(root, patch, [0.32, 1.62, 0.05], [0.06, 0.15, 0.1]);
+    this.box(root, patch, [0.26, 1.33, 0.05], [0.045, 0.12, 0.085]);
     const actor = {
       root,
       model,
@@ -831,7 +1792,7 @@ export class MilitaryRenderer {
       lastSample: null,
       deadAt: null,
     };
-    this.dressActor(actor, e);
+    if (this.g.mode !== "protocol") this.dressActor(actor, e);
     this.equipActor(actor, e);
     actor.ownedMaterials = [...this.materials].filter((m) => !before.has(m));
     this.actors.set(e.id, actor);
@@ -875,6 +1836,7 @@ export class MilitaryRenderer {
     a.mixer?.stopAllAction();
     a.root.traverse((o) => {
       if (o.userData.ownedGeometry) o.geometry.dispose();
+      if (o.isSkinnedMesh) o.skeleton.dispose();
     });
     for (const material of a.ownedMaterials || []) {
       material.dispose();
@@ -1198,9 +2160,12 @@ export class MilitaryRenderer {
         a = null;
       }
       if (!a) a = this.makeActor(e);
-      const moving = Math.hypot(e.x - a.x, e.y - a.y) > 0.001;
       a.patch.color.set(
-        e.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465",
+        this.g.mode === "protocol"
+          ? "#97a79b"
+          : e.team === this.g.player.team && this.g.mode === "duo"
+            ? "#a2c8b1"
+            : "#9b7465",
       );
       const alive = e.hp > 0,
         cloaked = e.cloakedUntil > this.g.time && e.team !== this.g.player.team;
@@ -1213,6 +2178,7 @@ export class MilitaryRenderer {
         (!cloaked || Math.hypot(e.x - camera.x, e.y - camera.y) < 1.3);
       const sliding = alive && e.slideUntil > this.g.time;
       a.root.scale.y = sliding ? 0.55 : 1;
+      if (this.g.mode === "protocol" && this.protocolPowerOut && Math.hypot(e.x-camera.x,e.y-camera.y)>2.2) a.root.visible=false;
       a.root.position.set(
         e.x * SCALE,
         Math.sin(Math.min(1, Math.max(0, ((e.jumpUntil || 0) - this.g.time) / 0.5)) * Math.PI) *
@@ -1220,23 +2186,7 @@ export class MilitaryRenderer {
         e.y * SCALE,
       );
       a.root.rotation.y = -Math.PI / 2 - e.a;
-      const next =
-        alive && moving && !this.motion.matches && !sliding
-          ? e.sprinting || e.speedUntil > this.g.time
-            ? "Run"
-            : "Walk"
-          : "Idle";
-      if (next !== a.action) {
-        a.actions[a.action]?.fadeOut(0.12);
-        a.actions[next]?.reset().fadeIn(0.12).play();
-        a.action = next;
-      }
-      if (a.mixer && a.lastSample !== sample) {
-        a.mixer.update(
-          a.lastSample === null ? 0 : Math.max(0, Math.min(0.1, sample - a.lastSample)),
-        );
-        a.lastSample = sample;
-      }
+      updateActorPresentation(this, a, e, Math.max(0, Math.min(0.1, t - this.lastTime)), sample);
       a.x = e.x;
       a.y = e.y;
       // Short physical recoil and hit flinch layered on skeletal locomotion.
@@ -1250,7 +2200,7 @@ export class MilitaryRenderer {
           a.weaponAnchor.getWorldPosition(a.equipment.position);
           a.root.worldToLocal(a.equipment.position);
           a.equipment.position.z -= 0.05;
-        } else a.equipment.position.y = 1.25 + (moving ? Math.sin(t * 7 + e.phase) * 0.025 : 0);
+        } else a.equipment.position.y = 1.25 + (a.action !== "Idle" ? Math.sin(t * 7 + e.phase) * 0.025 : 0);
         a.equipment.rotation.x = t - e.shotAt < 0.15 ? -0.12 : 0;
       }
     }
@@ -1261,68 +2211,15 @@ export class MilitaryRenderer {
       }
   }
   weaponMaterials(firstPerson = true) {
-    const materials = {
-      metal: this.material({
-        color: "#555c59",
-        map: this.gunColor,
-        metalness: 0.85,
-        roughness: 0.55,
-        normalMap: this.gunNormal,
-        normalScale: new THREE.Vector2(0.35, 0.35),
-        roughnessMap: this.gunRough,
-      }),
-      polymer: this.material({ color: "#555344", metalness: 0.05, roughness: 0.88 }),
-      steel: this.material({ color: "#5a6261", metalness: 0.9, roughness: 0.35 }),
-      cloth: this.material({
-        color: "#666b55",
-        map: this.gloveColor,
-        normalMap: this.gloveNormal,
-        roughnessMap: this.gloveRough,
-        roughness: 0.92,
-      }),
-      rubber: this.material({
-        color: "#45483d",
-        map: this.gloveColor,
-        normalMap: this.gloveNormal,
-        roughnessMap: this.gloveRough,
-        normalScale: new THREE.Vector2(0.4, 0.4),
-        roughness: 0.9,
-      }),
-      skin: this.material({ color: "#b48a6d", roughness: 0.76 }),
-    };
-    const uniform = outfitOf(this.g.player.outfit);
-    materials.cloth.color.set("#ffffff");
-    materials.cloth.map = this.skinTexture(uniform);
-    materials.rubber.color.set("#303638");
-    Object.values(materials).forEach((m) => (m.userData.weapon = firstPerson));
+    const materials = realisticWeaponMaterials(this, firstPerson);
+    if (this.g.mode !== "protocol") {
+      materials.cloth.map = this.skinTexture(outfitOf(this.g.player.outfit));
+      materials.cloth.color.set("#ffffff");
+    }
     return materials;
   }
   hand(parent, x, y, z, m) {
-    const arm = this.mesh(
-      parent,
-      this.geo("arm", () => new THREE.CapsuleGeometry(0.045, 0.34, 8, 24)),
-      m.cloth,
-      [x, y - 0.17, z + 0.15],
-    );
-    arm.rotation.x = -0.65;
-    arm.rotation.z = x < 0 ? -0.28 : 0.12;
-    this.box(parent, m.rubber, [x, y, z], [0.11, 0.075, 0.17]);
-    for (let i = 0; i < 4; i++) {
-      this.mesh(
-        parent,
-        this.geo("knuckle", () => new THREE.SphereGeometry(0.016, 16, 12)),
-        m.cloth,
-        [x - 0.04 + i * 0.025, y + 0.032, z + 0.018],
-        [1, 0.55, 0.8],
-      );
-      const finger = this.mesh(
-        parent,
-        this.geo("finger", () => new THREE.CapsuleGeometry(0.011, 0.045, 6, 16)),
-        m.rubber,
-        [x - 0.04 + i * 0.025, y + 0.035, z - 0.045],
-      );
-      finger.rotation.x = Math.PI / 2;
-    }
+    return buildRealisticHand(this, parent, x, y, z, m);
   }
   firearm(parent, m, kind = "rifle", offset = 0, hands = true) {
     const gun = new THREE.Group();
@@ -1400,13 +2297,18 @@ export class MilitaryRenderer {
         this.materials.delete(mat);
       }
     this.rig.clear();
+    for (const texture of this.weaponTextures) {
+      texture.dispose();
+      this.textures.delete(texture);
+    }
+    this.weaponTextures.clear();
     this.weaponId = id;
     this.weaponOutfit = this.g.player.outfit;
     const m = this.weaponMaterials();
     this.buildWeapon(this.rig, id, m);
-    this.mergeStatic(this.rig);
     this.rig.position.set(id === "twin" || id === "brawler" ? 0.05 : 0.23, -0.2, 0);
     this.rig.rotation.set(0.02, -0.07, -0.025);
+    finishWeapon(this, id);
   }
   buildWeapon(parent, id, m, hands = true) {
     const hand = (...args) => {
@@ -1519,7 +2421,7 @@ export class MilitaryRenderer {
     }
   }
   preview(c, id, width, height) {
-    if (this.disposed || !this.soldier) return false;
+    if (this.disposed || this.contextUnavailable || !this.soldier) return false;
     const key = id + ":" + width + ":" + height;
     this.previews ||= new Map();
     if (this.previews.has(key)) {
@@ -1712,6 +2614,14 @@ export class MilitaryRenderer {
       }
   }
   updateProjectiles(t) {
+    if (this.g.mode === "protocol") {
+      for (const projectile of this.projectiles.values()) this.dynamic.remove(projectile);
+      for (const tracer of this.tracers) this.dynamic.remove(tracer.mesh);
+      this.projectiles.clear();
+      this.tracers = [];
+      this.seenShots.clear();
+      return;
+    }
     const mat =
       this.bulletMaterial ||
       (this.bulletMaterial = this.material({ color: "#c5ab71", metalness: 0.8, roughness: 0.32 }));
@@ -1804,33 +2714,192 @@ export class MilitaryRenderer {
     });
     for (const id of this.seenShots.keys()) if (!seen.has(id)) this.seenShots.delete(id);
   }
+  removeProtocolObject(root, disposeMaterials = false) {
+    this.dynamic.remove(root);
+    if (!disposeMaterials) return;
+    const materials = new Set();
+    root.traverse((object) => {
+      if (object.isSkinnedMesh) object.skeleton.dispose();
+      if (object.isMesh)
+        for (const material of Array.isArray(object.material) ? object.material : [object.material])
+          materials.add(material);
+    });
+    for (const material of materials) {
+      material.dispose();
+      this.materials.delete(material);
+    }
+  }
+  clearProtocolDynamic() {
+    for (const root of this.protocolCharges.values()) this.removeProtocolObject(root);
+    for (const body of this.protocolBodies.values()) {
+      body.mixer?.stopAllAction();
+      this.removeProtocolObject(body.root, true);
+    }
+    this.protocolCharges.clear();
+    this.protocolBodies.clear();
+  }
+  updateProtocol(view, camera) {
+    const protocol = view?.protocol;
+    if (this.g.mode !== "protocol" || !protocol) {
+      this.clearProtocolDynamic();
+      this.protocolPowerOut = false;
+      for (const light of this.protocolLights) {
+        light.intensity = 0;
+        light.visible = false;
+      }
+      this.protocolTorch.intensity = 0;
+      this.protocolTorch.visible = false;
+      this.sun.intensity = this.g.academy.options.lighting ? 4.2 : 1.7;
+      this.hemisphere.intensity = this.g.academy.options.lighting ? 0.55 : 1.3;
+      this.rim.intensity = 1.15;
+      this.scene.environmentIntensity = 0.45;
+      return;
+    }
+    const powerOut = protocol.sabotage?.powerUntil > this.g.time;
+    this.protocolPowerOut = powerOut;
+    const lighting = this.g.academy.options.lighting;
+    const inside = [
+      ...(this.protocolMetadata()?.rooms || []),
+      ...(this.protocolMetadata()?.corridors || []),
+    ].some(
+      (room) =>
+        room.roofed !== false &&
+        camera.x >= room.x &&
+        camera.x < room.x + room.w &&
+        camera.y >= room.y &&
+        camera.y < room.y + room.h,
+    );
+    this.sun.intensity = powerOut ? 0.28 : lighting ? 4.2 : 1.7;
+    this.rim.intensity = powerOut ? 0.08 : 1.15;
+    this.hemisphere.intensity = powerOut ? 0.07 : lighting ? (inside ? 0.43 : 0.55) : 1.3;
+    this.scene.environmentIntensity = powerOut ? 0.035 : inside ? 0.28 : 0.45;
+    for (const material of this.protocolLightMaterials) {
+      material.emissiveIntensity = powerOut ? 0.035 : 1.6;
+      material.color.set(powerOut ? "#414d4f" : "#d3edf0");
+    }
+    const tasks = protocol.self?.tasks || [];
+    for (const [id, material] of this.protocolScreens) {
+      const task = tasks.find((item) => item.stationId === id);
+      material.emissiveIntensity = powerOut ? 0.015 : task && !task.done ? 0.9 : 0.4;
+      material.color.set(powerOut ? "#233538" : task?.done ? "#659d80" : "#a0bdc0");
+    }
+    const fixtures = this.protocolFixtures.filter((fixture) => !fixture.arrivalOnly ||
+      protocol.mission?.vehicle?.arrived).sort(
+      (a, b) =>
+        Math.hypot(a.x - camera.x * SCALE, a.z - camera.y * SCALE) -
+        Math.hypot(b.x - camera.x * SCALE, b.z - camera.y * SCALE),
+    );
+    this.protocolLights.forEach((light, index) => {
+      const fixture = fixtures[index];
+      light.intensity = fixture && !powerOut ? (lighting ? 38 : 28) : 0;
+      light.visible = !!fixture && !powerOut;
+      if (fixture) light.position.set(fixture.x, fixture.y, fixture.z);
+    });
+    // Power loss gives everyone the same short cone of sight. The light is
+    // cosmetic; actor visibility is independently bounded to the same range.
+    this.protocolTorch.intensity = powerOut ? 12 : 0;
+    this.protocolTorch.visible = powerOut;
+    this.protocolTorch.position.set(camera.x * SCALE, 1.42, camera.y * SCALE);
+    this.protocolTorch.target.position.set(
+      (camera.x + Math.cos(camera.a) * 2) * SCALE,
+      1.2,
+      (camera.y + Math.sin(camera.a) * 2) * SCALE,
+    );
+    this.protocolTorch.target.updateMatrixWorld();
+    const chargeIds = new Set();
+    // Read only the public, already redacted list. Do not consult map sites,
+    // authoritative protocol.players, private planted coordinates or roles.
+    for (const charge of protocol.bombs || []) {
+      if (charge.state !== "armed") continue;
+      chargeIds.add(charge.id);
+      let root = this.protocolCharges.get(charge.id);
+      if (!root) {
+        root = new THREE.Group();
+        this.dynamic.add(root);
+        this.chargeCaseMaterial ||= this.material({
+          color: "#273638",
+          map: this.gunColor,
+          normalMap: this.gunNormal,
+          metalness: 0.4,
+          roughness: 0.78,
+        });
+        this.chargeBandMaterial ||= this.material({ color: "#858b7d", roughness: 0.75 });
+        this.chargeIndicatorMaterial ||= this.material({
+          color: "#d09769",
+          emissive: "#9b5a39",
+          emissiveIntensity: 0.7,
+          roughness: 0.6,
+        });
+        this.box(root, this.chargeCaseMaterial, [0, 0.095, 0], [0.46, 0.19, 0.36]);
+        for (const x of [-0.16, 0.16])
+          this.box(root, this.chargeBandMaterial, [x, 0.2, 0], [0.026, 0.02, 0.3]);
+        this.box(root, this.chargeIndicatorMaterial, [0, 0.2, 0.03], [0.11, 0.017, 0.08]);
+        this.protocolCharges.set(charge.id, root);
+      }
+      root.position.set(charge.x * SCALE, 0.045, charge.y * SCALE);
+      root.visible = !powerOut || Math.hypot(charge.x - camera.x, charge.y - camera.y) <= 2.2;
+    }
+    for (const [id, root] of this.protocolCharges)
+      if (!chargeIds.has(id)) {
+        this.removeProtocolObject(root);
+        this.protocolCharges.delete(id);
+      }
+    const bodyIds = new Set();
+    for (const corpse of protocol.bodies || []) {
+      bodyIds.add(corpse.id);
+      let body = this.protocolBodies.get(corpse.id);
+      if (!body) {
+        // Reuse the same uniform and pose geometry as living participants.
+        // No body tint or equipment reveals the victim's private allegiance.
+        const tempId = "protocol-body:" + corpse.id;
+        body = this.makeActor({ id: tempId, x: corpse.x, y: corpse.y, team: null });
+        this.actors.delete(tempId);
+        body.mixer?.stopAllAction();
+        body.root.rotation.set(0, 0, -Math.PI / 2);
+        body.model.rotation.set(0, 0, 0);
+        this.protocolBodies.set(corpse.id, body);
+      }
+      body.root.position.set(corpse.x * SCALE - 1, 0.3, corpse.y * SCALE);
+      body.root.visible = !powerOut || Math.hypot(corpse.x - camera.x, corpse.y - camera.y) <= 2.2;
+    }
+    for (const [id, body] of this.protocolBodies)
+      if (!bodyIds.has(id)) {
+        this.removeProtocolObject(body.root, true);
+        this.protocolBodies.delete(id);
+      }
+  }
   render() {
-    if (this.disposed) return false;
+    if (this.disposed || this.contextUnavailable) return false;
     this.configure();
     const g = this.g,
       t = g.animationTime;
     if (this.mapKey !== g.arena.mapId || this.loadedMap !== !!this.soldier) {
       this.loadedMap = !!this.soldier;
+      this.clearProtocolDynamic();
       for (const a of this.actors.values()) this.disposeActor(a);
       this.actors.clear();
       this.buildWorld();
     }
     this.rebuildWalls();
     const p = g.camera(),
-      pitch = Math.atan(g.viewPitch / g.projection);
-    const now = performance.now(),
-      dt = Math.min(0.1, (now - (this.lastRenderAt || now)) / 1000),
-      targetHeight = p.slideUntil > g.time ? 0.7 : 1.5;
+      pitch = Math.atan(g.viewPitch / g.projection),
+      protocolView = g.mode === "protocol" ? g.protocolView?.() : null,
+      seatedPilot = g.arena.mapId === "medevac" && protocolView?.protocol?.mission?.vehicle?.pilotId === g.selfId;
+    const now = performance.now(), dt = Math.min(0.1,(now-(this.lastRenderAt||now))/1000),
+      targetHeight = p.slideUntil > g.time ? 0.7 : 1.65;
     this.lastRenderAt = now;
-    this.eyeHeight ??= 1.5;
-    this.eyeHeight += (targetHeight - this.eyeHeight) * (1 - Math.exp(-dt * 18));
-    const fall = this.motion.matches ? 0 : (g.deathProgress || 0) ** 2;
-    this.camera.position.set(
-      p.x * SCALE,
-      g.deathSequence ? 1.5 - fall * 1.25 : this.eyeHeight,
-      p.y * SCALE,
-    );
-    this.camera.rotation.set(pitch - fall * 0.25, -p.a - Math.PI / 2, fall * 0.5, "YXZ");
+    this.eyeHeight ??= 1.65;
+    this.eyeHeight += (targetHeight-this.eyeHeight)*(1-Math.exp(-dt*18));
+    const fall = this.motion.matches ? 0 : (g.deathProgress || 0)**2;
+    this.camera.position.set(p.x*SCALE,g.deathSequence ? 1.65-fall*1.4 : this.eyeHeight,p.y*SCALE+(seatedPilot?0.85:0));
+    this.camera.rotation.set(pitch-fall*.25,-p.a-Math.PI/2,fall*.5,"YXZ");
+    this.updateProtocol(protocolView,p);
+    this.updateMedicalMission(protocolView?.protocol?.mission,t);
+    updateNaturalLighting(this,protocolView,p);
+    if (g.arena.mapId === "medevac" && !this.motion.matches) {
+      const heading = Number(protocolView?.protocol?.mission?.vehicle?.heading)||0;
+      this.camera.rotation.z=THREE.MathUtils.clamp(-heading*.055,-.085,.085);
+    }
     this.updateActors(t);
     this.updatePickups(t);
     this.updateFields();
@@ -1843,10 +2912,11 @@ export class MilitaryRenderer {
     }
     this.updateProjectiles(t);
     this.updateWeapon();
-    const recoil = Math.max(0, 1 - (t - g.shotAt) / 0.16),
+    const recoil = g.mode === "protocol" ? 0 : Math.max(0, 1 - (t - g.shotAt) / 0.16),
       reload = Math.max(0, Math.min(1, (g.reloadUntil - t) / 1.4));
     this.rig.position.y =
       -0.2 * Math.max(1, this.g.h / this.g.w) -
+      (g.mode === "protocol" ? 0.075 : 0) -
       (reload > 0 ? Math.sin(reload * Math.PI) * 0.25 : 0) +
       (this.motion.matches ? 0 : Math.sin(g.step) * 0.005);
     this.rig.position.y -= fall * 0.65;
@@ -1854,13 +2924,19 @@ export class MilitaryRenderer {
     this.rig.rotation.x = 0.02 - recoil * 0.075;
     this.rig.rotation.z = -0.025 + Math.sin(reload * Math.PI) * 0.3;
     this.flash.intensity = recoil > 0.65 ? 3 : 0;
-    this.rig.visible = g.player.hp > 0 || (!!g.deathSequence && g.deathProgress < 0.65);
+    this.rig.visible = (g.player.hp>0 || (!!g.deathSequence && g.deathProgress<.65)) && !seatedPilot;
     const outside =
-      g.mode !== "training" &&
+      !["training", "protocol"].includes(g.mode) &&
       g.time > g.zone.delay &&
       (Math.abs(p.x - g.zone.cx) > g.zone.half || Math.abs(p.y - g.zone.cy) > g.zone.half);
-    this.scene.fog.color.set(outside ? "#827276" : PROFILES[g.arena.mapId].fog);
-    this.scene.fog.density = outside ? 0.065 : 0.009;
+    this.scene.fog.color.set(
+      this.protocolPowerOut
+        ? "#101d22"
+        : outside
+          ? "#827276"
+          : (PROFILES[g.arena.mapId] || PROFILES.outpost).fog,
+    );
+    this.scene.fog.density = this.protocolPowerOut ? 0.12 : outside ? 0.065 : g.arena.mapId === "medevac" && !protocolView?.protocol?.mission?.vehicle?.arrived ? 0.002 : 0.009;
     this.renderer.info.reset();
     if (!this.composer || g.academy.preset === "performance") {
       this.renderer.autoClear = true;
@@ -1884,7 +2960,11 @@ export class MilitaryRenderer {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
-    for (const a of this.actors.values()) a.mixer?.stopAllAction();
+    for (const a of this.actors.values()) {
+      a.mixer?.stopAllAction();
+      a.model.traverse((o) => { if (o.isSkinnedMesh) o.skeleton.dispose(); });
+    }
+    this.clearProtocolDynamic();
     this.previewTarget?.dispose();
     this.composer?.dispose();
     for (const pass of this.composer?.passes || []) pass.dispose?.();
@@ -1894,11 +2974,13 @@ export class MilitaryRenderer {
     for (const t of this.textures) t.dispose();
     if (this.soldier) this.disposeObject(this.soldier.scene);
     this.renderer.domElement.removeEventListener("webglcontextlost", this.contextLost);
+    this.renderer.domElement.removeEventListener("webglcontextrestored", this.contextRestored);
     this.renderer.dispose();
     this.renderer.forceContextLoss();
     this.renderer.domElement.remove();
     this.actors.clear();
     this.materials.clear();
     this.textures.clear();
+    this.weaponTextures.clear();
   }
 }

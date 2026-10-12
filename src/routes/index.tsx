@@ -199,17 +199,17 @@ function FeaturedApps() {
           className="group flex flex-col rounded-3xl border-2 border-[#080e15] bg-[#18212b] p-5 text-[#fff4dc] shadow-line transition hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2"
         >
           <div className="flex items-center gap-3">
-            <img src="/outpost-zero.svg" alt="" className="size-12 shrink-0 rounded-xl" />
+            <img src="/games/military/lifeline-mission.png" alt="" loading="lazy" className="size-12 shrink-0 rounded-xl object-cover" />
             <div className="min-w-0">
               <p className="text-xl font-black tracking-tight">Outpost Zero</p>
               <p className="text-xs font-semibold tracking-widest text-[#ffc455] uppercase">
-                Free game · Arena shooter
+                Free game · Medical rescue
               </p>
             </div>
           </div>
           <p className="mt-3 flex-1 text-sm text-pretty text-[#c6c8c6]">
-            Five arenas, eleven loadouts. Play Solo or Duo with bots or friends online, collect
-            Charge Cores, and escape Red Haze.
+            Gather medical supplies, protect a sabotaged medevac flight, and save wounded
+            soldiers. Play with bots or friends online, plus Solo and Duo combat.
           </p>
           <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#ffc455]">
             See the game{" "}

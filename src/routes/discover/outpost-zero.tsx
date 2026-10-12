@@ -4,11 +4,11 @@ import { Shell } from "@/components/shell";
 export const Route = createFileRoute("/discover/outpost-zero")({
   head: () => ({
     meta: [
-      { title: "Outpost Zero — a comic arena shooter | Midnry" },
+      { title: "Blackout Protocol — Outpost Zero | Midnry" },
       {
         name: "description",
         content:
-          "Play Outpost Zero, a free first-person arena shooter with comic graphics, Solo and Duo survival, online rooms, and desktop or touch controls.",
+          "Blackout Protocol: gather medical supplies, pilot a medevac aircraft, and save wounded soldiers while hidden infiltrators sabotage the rescue. Bots or friends, desktop and mobile.",
       },
     ],
   }),
@@ -25,9 +25,10 @@ function OutpostZeroDiscovery() {
           </p>
           <h1 className="mt-5 text-5xl font-black tracking-tight sm:text-6xl">Outpost Zero.</h1>
           <p className="mt-5 max-w-lg text-lg leading-relaxed text-[#c6c8c6]">
-            A sun-scorched outpost. Fight solo in Last Signal or team up in Pair Ops. Choose from
-            five arenas and eleven loadouts, invite friends online, and battle rivals as Red Haze
-            closes in.
+            Blackout Protocol is the default: gather medical equipment at Breakwater Base, then
+            transport it by medevac aircraft to wounded soldiers. Hidden infiltrators sabotage
+            supplies, the crew and the flight. Play with bots or
+            friends. Last Signal and Pair Ops remain available for Solo and Duo combat.
           </p>
           <Link
             to="/games/outpost-zero"
@@ -41,12 +42,12 @@ function OutpostZeroDiscovery() {
         </div>
         <div className="rounded-2xl border-2 border-[#080e15] bg-[#263b44] p-8 text-center shadow-[6px_6px_0_#080e15]">
           <img
-            src="/outpost-zero.svg"
-            alt="An outlined rogue sentry with a glowing red visor"
-            className="mx-auto w-48 max-w-full"
+            src="/games/military/lifeline-mission.png"
+            alt="Wounded soldiers waiting at the medevac destination clinic"
+            className="mx-auto w-full rounded-xl"
           />
           <p className="mt-5 text-xs font-extrabold tracking-[0.25em] text-[#ffc455]">
-            SOLO + DUO · ONLINE + BOTS
+            BLACKOUT PROTOCOL · ONLINE + BOTS
           </p>
         </div>
       </section>
@@ -54,24 +55,27 @@ function OutpostZeroDiscovery() {
         <article className="rounded-2xl bg-card p-6 shadow-line">
           <h2 className="font-display text-xl">On your computer</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted">
-            WASD to move. Mouse to aim. Click or Space to fire. R to reload, Shift to sprint, and
-            Escape or P to pause. Q activates your charged ability. Arrow keys also move and turn.
+            WASD to move and mouse to look. Hold E to collect, load or deliver supplies. At the
+            helm, W/S controls altitude and A/D corrects heading. F
+            reports a body, C calls the command console, and Escape or P opens the menu. In combat
+            modes, click or Space fires and R reloads.
           </p>
         </article>
         <article className="rounded-2xl bg-card p-6 shadow-line">
           <h2 className="font-display text-xl">On your phone</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted">
-            Move with the left stick. Drag the right side to aim, hold FIRE to shoot, and tap R to
-            reload. Try landscape for a wider view.
+            Move with the left stick and drag the right side to look. Hold the nearby-action button
+            to collect and load supplies. Cockpit controls, reporting, tactical actions and voting have
+            touch controls. Try landscape for a wider view.
           </p>
         </article>
         <article className="rounded-2xl bg-card p-6 shadow-line">
-          <h2 className="font-display text-xl">Keep the last signal</h2>
+          <h2 className="font-display text-xl">Two phases. One rescue.</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted">
-            In Last Signal, break Supply Crates and collect Charge Cores for lasting health and
-            damage boosts. Follow the safe zone before Red Haze closes in. Be the last player or
-            pair alive. In Pair Ops, a living partner can bring you back twice. Play with AI or
-            share an online room code.
+            Six operators and two infiltrators share identical uniforms. Load the medical
+            manifest, board the aircraft and deliver aid before the wounded soldiers die. If
+            autopilot is disabled, an operator must take control and stabilize the aircraft
+            before restoring it. The crew loses if every operator or every patient dies.
           </p>
         </article>
       </section>
@@ -79,24 +83,25 @@ function OutpostZeroDiscovery() {
         className="mt-5 rounded-2xl bg-card p-6 shadow-line"
         aria-label="Learn and customize"
       >
-        <h2 className="font-display text-xl">Learn the ropes. Sharpen the ink.</h2>
+        <h2 className="font-display text-xl">Learn the rules. Choose your graphics.</h2>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          Open Boot Camp in the game menu for guided hands-on training. The Field Guide explains
-          every map, loadout and ability. Graphics offers Performance, Balanced and High presets
-          with sharper comic textures, contact shadows and cel material lighting.
+          The loading screen checks browser features, 3D graphics, game files and rendering
+          performance. Review the result in Device Check. Mission rules explain supplies,
+          patient vitals, manual flight and sabotage. All graphics presets use cinematic 3D.
         </p>
       </section>
       <section className="mt-5 grid gap-5 sm:grid-cols-2" aria-label="Maps and loadouts">
         <article className="rounded-2xl bg-card p-6 shadow-line">
-          <h2 className="font-display text-xl">Five arenas</h2>
+          <h2 className="font-display text-xl">Base, aircraft and five combat arenas</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted">
-            Dust Outpost, Test Block’s facing houses, Skyport’s halls and aircraft, Freight Rush’s
-            tight container lanes, and Wreck Estate’s crash site and pool courtyard. Choose your
-            arena before deploying; the host chooses online.
+            Blackout Protocol uses Breakwater’s command rooms, barracks, armory, generators, hangar,
+            radar and maintenance corridors, then transitions into Lifeline's cockpit and cabin.
+            Combat modes offer Dust Outpost, Test Block, Skyport,
+            Freight Rush and Wreck Estate.
           </p>
         </article>
         <article className="rounded-2xl bg-card p-6 shadow-line">
-          <h2 className="font-display text-xl">Eleven loadouts</h2>
+          <h2 className="font-display text-xl">Combat modes: eleven loadouts</h2>
           <p className="mt-3 text-sm leading-relaxed text-muted">
             Carbine, scatterguns, dual-pistol bursts, shard pods, spinning blades, poison darts,
             lifesteal punches, a dash scythe, rockets, and arcing fuses. Deal damage to charge a

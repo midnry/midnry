@@ -1,4 +1,9 @@
+export type ProtocolAction = { seq: number; op: string; target?: string; value?: string };
+export type VehicleInput = { pitch: number; steer: number };
 export type Input = {
+  interact?: boolean;
+  protocolAction?: ProtocolAction;
+  vehicleInput?: VehicleInput;
   forward?: number;
   strafe?: number;
   aim?: number;
@@ -67,6 +72,7 @@ export const DIFFICULTIES: Record<
 >;
 export function difficultyOf(id: string): Difficulty;
 export type ArenaState = {
+  protocol?: Record<string, unknown>;
   difficulty?: Difficulty;
   countdown?: number;
   roundId?: string;

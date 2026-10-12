@@ -184,6 +184,10 @@ export default defineConfig(({ command, isPreview }) => ({
                 [
                   "outpost-zero.html",
                   "outpost-sim.js",
+                  "outpost-protocol.js",
+                  "outpost-protocol-map.js",
+                  "outpost-protocol-ui.js",
+                  "outpost-compatibility.js",
                   "outpost-content.js",
                   "outpost-academy.js",
                   "outpost-art.js",

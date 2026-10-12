@@ -12,7 +12,7 @@ export const Route = createFileRoute("/games/outpost-zero")({
       {
         name: "description",
         content:
-          "A free tactical shooter with cinematic 3D graphics. Play Solo or Duo survival with bots or friends online, Charge Cores and shrinking Red Haze.",
+          "Blackout Protocol: gather medical supplies and fly a medevac rescue while hidden infiltrators sabotage the mission. Device checks, bots and online play.",
       },
     ],
   }),
@@ -62,7 +62,7 @@ function OutpostZeroPage() {
           iframe tears down the game, and its scripts never run during SSR. */}
       <iframe
         ref={frame}
-        src={`/games/outpost-zero.html?renderer=military&v=ipad-3d-20261011${room ? `&room=${encodeURIComponent(room)}` : ""}`}
+        src={`/games/outpost-zero.html?renderer=military&v=natural-realism-20261012${room ? `&room=${encodeURIComponent(room)}` : ""}`}
         title="Outpost Zero first-person shooter"
         className="block min-h-0 w-full flex-1 border-0"
         allow="fullscreen"

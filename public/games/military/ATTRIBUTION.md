@@ -15,6 +15,8 @@ The bundled maps use the 1K diffuse, OpenGL normal, and roughness photographs:
 
 ## Character and animation
 
+The realism overhaul adds substrate-specific maps listed in [REALISM-ASSETS.md](REALISM-ASSETS.md).
+
 `models/soldier.glb` is the Mixamo Soldier/Vanguard model distributed in the Three.js skinning/blending example:
 https://github.com/mrdoob/three.js/blob/dev/examples/models/gltf/Soldier.glb
 https://threejs.org/examples/webgl_animation_skinning_blending.html
