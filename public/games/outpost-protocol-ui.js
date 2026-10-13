@@ -33,7 +33,7 @@ const GUIDE = [
   ],
   [
     "Recover a sabotaged aircraft",
-    "If autopilot is disabled, an operator must reach the cockpit and take the helm. W raises flight level; S lowers it. A steers left; D steers right. On touch, hold the flight-direction buttons. Keep flight level between 50% and 85% and course offset within ±18% for three seconds. Then press Restore autopilot. Recovery requires actual steering and a seated pilot; autopilot never fixes itself. Extreme attitude or an expired 18-second recovery timer causes a crash. Release the helm only after restoring autopilot.",
+    "Complete three routine aircraft duties: test medical oxygen, secure trauma packs, and confirm landing coordinates. Use the Info panel to track them. They are required before aid delivery; cargo sabotage unsecures trauma packs. Autopilot only fails through sabotage or abandoned unsafe manual flight. If autopilot is disabled, an operator must reach the cockpit and take the helm. W raises flight level; S lowers it. A steers left; D steers right. On touch, hold the flight-direction buttons. Keep flight level between 50% and 85% and course offset within ±18% for three seconds. Then press Restore autopilot. Recovery requires actual steering and a seated pilot; autopilot never fixes itself. Extreme attitude or an expired 18-second recovery timer causes a crash. Release the helm only after restoring autopilot.",
   ],
   [
     "Infiltrators: stop the rescue",
@@ -45,11 +45,11 @@ const GUIDE = [
   ],
   [
     "Witnesses and radio meetings",
-    "Report a nearby fallen operator with F or Report, or call the emergency console with C. Each operator gets one emergency call. Meetings allow fifteen seconds of discussion and fifteen seconds to vote. Patient vitals and flight safety keep advancing during meetings; new meetings are blocked while autopilot is disengaged during flight. Ties or a winning Skip vote detain nobody. Detained roles stay secret until the round ends, and eliminated players can only observe.",
+    "Report a nearby fallen operator with F or Report, or call the emergency console with C. Each operator gets one emergency call. Meetings allow fifteen seconds of discussion and fifteen seconds to vote. Patient vitals and flight safety keep advancing during meetings; new meetings are blocked while autopilot is disengaged during flight. More than half the living patrol must vote for one suspect. The accused fights every other survivor after a five-second preparation. Ties and Skip return to the rescue. A 90-second limit prevents hiding indefinitely; expiry forfeits the accused. Combat eliminations are permanent. Allegiances stay secret until the mission ends, and eliminated players can only observe.",
   ],
   [
     "Controls",
-    "On foot: WASD / left joystick moves; mouse / right-side drag or arrow keys aims. Hold E / the contextual action button to collect, load, depart, repair, sabotage or deliver. F reports, C calls a meeting, X eliminates as an infiltrator, and B opens tactics. At the helm, WASD controls the aircraft and walking is disabled; use the Release helm button to leave the seat. Escape or P opens the menu. Weapons do not fire in Blackout Protocol. Radio discussion uses text.",
+    "On foot: WASD / left joystick moves; mouse / right-side drag or arrow keys aims. Hold E / the contextual action button to collect, load, depart, repair, sabotage or deliver. F reports, C calls a meeting, X eliminates as an infiltrator, and B opens tactics. At the helm, WASD controls the aircraft and walking is disabled; use the Release helm button to leave the seat. Escape or P opens the menu. Weapons unlock only during Last Stand: click / Space or the touch Fire button shoots; R reloads. After elimination, watch surviving players through their first-person viewpoints. Use Left / Right arrows, [ / ], or the Previous / Next touch buttons to switch. Observation never allows tasks, voting or radio messages. Radio discussion uses text.",
   ],
 ];
 
@@ -78,6 +78,14 @@ export class ProtocolUI {
     this.build();
     this.bind();
     this.focus = new ProtocolFocus(g, this);
+    this.combatStats = element("div", "mf-protocol-combatstats");
+    this.combatStats.hidden = true;
+    this.combatStats.setAttribute("role", "status");
+    g.shell.append(this.combatStats);
+    this.combatMarker = element("div", "mf-protocol-combattarget");
+    this.combatMarker.hidden = true;
+    this.combatMarker.setAttribute("aria-hidden", "true");
+    g.shell.append(this.combatMarker);
     this.refreshMenu();
   }
 
@@ -87,6 +95,13 @@ export class ProtocolUI {
     // Every selector is scoped to this game; [hidden] takes priority over layout.
     this.style.textContent = `
       midnry-fps .mf-protocol :is(.mf-super,.mf-ammo,.mf-bottom,.mf-fire,.mf-reload,.mf-match,.mf-objective) { display:none !important; }
+      midnry-fps .mf-protocol-combat :is(.mf-fire,.mf-reload) { display:flex !important;align-items:center;justify-content:center; }
+      midnry-fps .mf-protocol-combat :is(.mf-protocol-actions,.mf-protocol-context,.mf-protocol-flight,.mf-protocol-flightpad) { display:none !important; }
+      midnry-fps .mf-protocol-combattarget { position:absolute;z-index:4;transform:translate(-50%,-100%);padding:4px 8px;border:1px solid #dc9b83;border-radius:8px;background:#472f26df;color:#ffe7d6;font:700 11px system-ui;max-width:170px;pointer-events:none; }
+      midnry-fps .mf-protocol-combat .mf-fire { width:64px;height:64px;right:calc(18px + var(--mf-safe-right));bottom:calc(18px + var(--mf-safe-bottom));font-size:12px; }
+      midnry-fps .mf-protocol-combat .mf-reload { width:44px;height:44px;right:calc(28px + var(--mf-safe-right));bottom:calc(94px + var(--mf-safe-bottom)); }
+      midnry-fps .mf-protocol-combatstats { position:absolute;z-index:6;right:calc(14px + var(--mf-safe-right));bottom:calc(148px + var(--mf-safe-bottom));padding:8px 12px;max-width:230px;background:#16231fe6;border:1px solid #bfc5ab66;border-radius:12px;color:#f1f3e7;font:700 12px system-ui;pointer-events:none; }
+      @media(pointer:fine) and (min-width:701px) { midnry-fps .mf-protocol-combat :is(.mf-fire,.mf-reload) { display:none !important; } midnry-fps .mf-protocol-combatstats { bottom:20px; } }
       midnry-fps .mf-protocol .mf-modes { grid-template-columns:repeat(2,minmax(0,1fr)); }
       midnry-fps .mf-protocol [hidden], midnry-fps .mf-protocol-dialog [hidden], midnry-fps .mf-protocol-menu[hidden], midnry-fps .mf-protocol-results[hidden] { display:none !important; }
       midnry-fps .mf-protocol-hud { position:absolute;z-index:4;top:86px;left:24px;width:290px;pointer-events:none;color:#f2f5f3; }
@@ -266,8 +281,8 @@ export class ProtocolUI {
       this.guide.append(element("h3", "", title), element("p", "", copy));
     this.arming = this.dialog("mf-protocol-codeform", "Arming-code challenge");
     this.arming.innerHTML = `<div class="mf-protocol-kicker">Final stage / Stay stationary</div><h2>Confirm the arming code</h2><p>Enter the displayed three-digit code. A wrong code, movement or an expired timer resets this planting attempt.</p><div class="mf-protocol-armingnumber" aria-label="Required arming code"></div><p class="mf-protocol-armingtimer" role="status"></p><form class="mf-protocol-code"><input type="text" inputmode="numeric" pattern="[0-9]{3}" maxlength="3" autocomplete="off" aria-label="Enter the displayed three-digit arming code" required><button type="submit">Arm charge</button></form>`;
-    this.meeting = this.dialog("mf-protocol-meeting", "Radio meeting and detention vote");
-    this.meeting.innerHTML = `<div class="mf-protocol-dialoghead"><div><span class="mf-protocol-kicker">Command radio / Movement paused</span><h2>Emergency meeting</h2><span class="mf-protocol-meetingphase"></span></div><button class="mf-protocol-meetingmenu">Menu</button></div><p class="mf-protocol-meetingreason"></p><div class="mf-protocol-radio" role="log" aria-live="polite" aria-label="Meeting discussion"></div><form class="mf-protocol-chatform"><input type="text" maxlength="180" autocomplete="off" aria-label="Radio discussion message" placeholder="Where were you? What did you see?"><button type="submit">Send</button></form><p class="mf-protocol-meetinghint"></p><div class="mf-protocol-votes" role="group" aria-label="Vote to detain a suspect"></div><button class="mf-protocol-skip" aria-pressed="false">Skip detention</button>`;
+    this.meeting = this.dialog("mf-protocol-meeting", "Radio meeting and Last Stand vote");
+    this.meeting.innerHTML = `<div class="mf-protocol-dialoghead"><div><span class="mf-protocol-kicker">Command radio / Movement paused</span><h2>Emergency meeting</h2><span class="mf-protocol-meetingphase"></span></div><button class="mf-protocol-meetingmenu">Menu</button></div><p class="mf-protocol-meetingreason"></p><div class="mf-protocol-radio" role="log" aria-live="polite" aria-label="Meeting discussion"></div><form class="mf-protocol-chatform"><input type="text" maxlength="180" autocomplete="off" aria-label="Radio discussion message" placeholder="Where were you? What did you see?"><button type="submit">Send</button></form><p class="mf-protocol-meetinghint"></p><div class="mf-protocol-votes" role="group" aria-label="Vote for a Last Stand suspect"></div><button class="mf-protocol-skip" aria-pressed="false">Skip combat</button>`;
     this.live = element("div", "mf-sr-only");
     this.live.setAttribute("role", "status");
     this.live.setAttribute("aria-live", "polite");
@@ -450,9 +465,7 @@ export class ProtocolUI {
     g.on(this.actionBar.querySelector(".mf-protocol-report"), "click", () => this.report());
     g.on(this.actionBar.querySelector(".mf-protocol-emergency"), "click", () => this.emergency());
     g.on(this.actionBar.querySelector(".mf-protocol-eliminate"), "click", () => this.eliminate());
-    g.on(this.g.$(".mf-protocol-openactions"), "click", () =>
-      this.toggleTactics(),
-    );
+    g.on(this.g.$(".mf-protocol-openactions"), "click", () => this.toggleTactics());
     g.on(this.tactics, "click", (event) => {
       const sabotage = event.target.closest("[data-sabotage]");
       const vent = event.target.closest("[data-vent]");
@@ -467,10 +480,12 @@ export class ProtocolUI {
     });
     g.on(this.hud.querySelector(".mf-protocol-role"), "click", () => this.showBrief());
     g.on(this.hud.querySelector(".mf-protocol-tasklist"), "click", (event) => {
-      const task = event.target.closest("[data-supply]");
+      const task = event.target.closest("[data-supply],[data-flight-task]");
       if (task && !task.disabled) {
-        this.trackedSupply = task.dataset.supply;
+        if (task.dataset.flightTask) this.trackedFlightTask = task.dataset.flightTask;
+        else this.trackedSupply = task.dataset.supply;
         this.taskKey = "";
+        this.update(true);
       }
     });
     g.on(this.menu.querySelector("select"), "change", (event) => {
@@ -568,7 +583,9 @@ export class ProtocolUI {
     return { pitch: clamp(pitch, -1, 1), steer: clamp(steer, -1, 1) };
   }
   hasDialogOpen() {
-    return [this.brief, this.guide, this.arming, this.meeting, this.focus?.info].some((dialog) => dialog?.open);
+    return [this.brief, this.guide, this.arming, this.meeting, this.focus?.info].some(
+      (dialog) => dialog?.open,
+    );
   }
   visibleGameplay() {
     return (
@@ -607,7 +624,8 @@ export class ProtocolUI {
 
   /** A one-shot stays queued through failed HTTP polls; the server deduplicates seq. */
   controls() {
-    if (!this.visibleGameplay() || this.brief.open || this.guide.open || this.focus?.info.open) return { interact: false };
+    if (!this.visibleGameplay() || this.brief.open || this.guide.open || this.focus?.info.open)
+      return { interact: false };
     const phase = this.view?.protocol?.phase;
     const interact =
       phase === "roam" &&
@@ -633,6 +651,7 @@ export class ProtocolUI {
     this.held = false;
     this.trackedTask = null;
     this.trackedSupply = null;
+    this.trackedFlightTask = null;
     this.patientKey = "";
     this.clearFlightInput();
     this.taskKey = this.meetingKey = this.voteKey = this.messageKey = this.ventKey = "";
@@ -669,7 +688,7 @@ export class ProtocolUI {
   resumeFocus() {
     if (
       !this.visibleGameplay() ||
-      this.view?.protocol?.phase !== "roam" ||
+      !["roam", "combat"].includes(this.view?.protocol?.phase) ||
       this.arming.open ||
       this.meeting.open ||
       this.brief.open ||
@@ -699,7 +718,7 @@ export class ProtocolUI {
       this.brief.querySelector(".mf-protocol-brieffoot"),
       infiltrator
         ? `${partners ? `Your covert partner: ${partners}. ` : ""}Tactics opens sabotage and maintenance hatches. A close-range elimination creates a body; it does not complete your mission.`
-        : "If autopilot is sabotaged, take the cockpit helm, trim flight level and course into their safe bands for three seconds, then restore autopilot. At arrival, repair any damaged cargo and deliver aid. Detaining infiltrators does not replace the rescue mission.",
+        : "If autopilot is sabotaged, take the cockpit helm, trim flight level and course into their safe bands for three seconds, then restore autopilot. At arrival, repair any damaged cargo and deliver aid. Winning Last Stand does not replace the rescue mission.",
     );
     this.releaseMouse();
     if (!this.brief.open) this.brief.showModal();
@@ -768,6 +787,7 @@ export class ProtocolUI {
         : null;
     const carriedBody = protocol.bodies.find((body) => body.carriedBy === this.g.selfId);
     const allLoaded = mission?.manifest?.every((item) => item.loaded >= item.required);
+    const flightReady = mission?.flightTasks?.every((task) => task.done);
     const loading = !transporting && mission ? this.closest([mission.loading], 1.4) : null;
     const supplies =
       !transporting && mission
@@ -823,7 +843,14 @@ export class ProtocolUI {
           "Hold for six uninterrupted seconds. Aid cannot be delivered while cargo is damaged.",
           cargo,
         );
-      else if (transporting && !infiltrator && cargo && mission.vehicle.arrived && allLoaded)
+      else if (
+        transporting &&
+        !infiltrator &&
+        cargo &&
+        mission.vehicle.arrived &&
+        allLoaded &&
+        flightReady
+      )
         context = at(
           "deliver",
           cargo.id,
@@ -868,7 +895,26 @@ export class ProtocolUI {
           "Hold to restore this system. Moving interrupts the repair.",
           repair,
         );
-      else if (!transporting && loading && self.cargo)
+      else if (transporting && mission.flightTasks) {
+        const task = this.closest(
+          mission.flightTasks,
+          1.4,
+          (task) =>
+            !task.done &&
+            (!task.system || protocol.sabotage[`${task.system}Until`] <= view.time) &&
+            (task.id !== "trauma" || mission.vehicle.cargoDamage === 0),
+        );
+        if (task)
+          context = at(
+            "flight-task",
+            task.id,
+            `${infiltrator ? "Pretend to: " : ""}${task.name}`,
+            infiltrator
+              ? "Hold to blend in. This will not advance the crew's preparation."
+              : `Hold for ${task.duration} uninterrupted seconds. Required before aid delivery.`,
+            task,
+          );
+      } else if (!transporting && loading && self.cargo)
         context = at(
           "load",
           loading.id,
@@ -966,7 +1012,8 @@ export class ProtocolUI {
       return;
     if (!this.focus.info.open) this.focus.open();
     this.tactics.hidden = forceOpen ? false : !this.tactics.hidden;
-    this.g.$(".mf-protocol-openactions")
+    this.g
+      .$(".mf-protocol-openactions")
       .setAttribute("aria-expanded", String(!this.tactics.hidden));
     if (!this.tactics.hidden) {
       this.releaseMouse();
@@ -981,8 +1028,15 @@ export class ProtocolUI {
     this.lastUpdate = now;
     const g = this.g,
       active = g.mode === "protocol";
+    g.spectator?.update();
     g.shell.classList.toggle("mf-protocol", active);
     const gameplay = active && this.visibleGameplay();
+    g.shell.classList.toggle(
+      "mf-protocol-combat",
+      gameplay && g.arena.protocol?.phase === "combat",
+    );
+    this.combatStats.hidden = true;
+    this.combatMarker.hidden = true;
     this.hud.hidden = !gameplay;
     this.actionBar.hidden = !gameplay;
     this.context.hidden = !gameplay;
@@ -1024,7 +1078,7 @@ export class ProtocolUI {
           ? "INFILTRATOR"
           : "OPERATOR"
         : infiltrator
-          ? "DETAINED / OBSERVER"
+          ? "ELIMINATED / OBSERVER"
           : "OPERATOR / OBSERVER",
     );
     setText(
@@ -1066,8 +1120,8 @@ export class ProtocolUI {
     if (!alive)
       notices.push(
         infiltrator
-          ? "You are observing. No actions or radio messages."
-          : "Observing only. Living operators cannot hear you; mission actions and voting are disabled.",
+          ? "You are observing. Switch viewpoints with ← / → or the spectator buttons. No actions or radio messages."
+          : "Observing only. Switch viewpoints with ← / → or the spectator buttons. Living operators cannot hear you; mission actions and voting are disabled.",
       );
     const alert = this.hud.querySelector(".mf-protocol-alert");
     alert.hidden = !notices.length;
@@ -1076,11 +1130,13 @@ export class ProtocolUI {
     this.updateActions(view);
     this.updateArming(view);
     this.updateMeeting(view);
+    this.updateCombat(view);
     this.focus?.update(view, gameplay);
     if (protocol.phase === "roam" && this.briefRound !== view.roundId && !this.arming.open) {
       this.briefRound = view.roundId;
       this.showBrief();
     }
+    g.spectator?.update();
   }
 
   updateTasks(view) {
@@ -1088,6 +1144,38 @@ export class ProtocolUI {
       details = this.hud.querySelector(".mf-protocol-tasks");
     if (!mission) {
       details.hidden = true;
+      return;
+    }
+    if (mission.phase === "transport") {
+      const tasks = mission.flightTasks || [];
+      if (!tasks.some((task) => task.id === this.trackedFlightTask && !task.done))
+        this.trackedFlightTask = tasks.find((task) => !task.done)?.id;
+      setText(
+        details.querySelector("summary"),
+        `Aircraft duties ${tasks.filter((task) => task.done).length}/${tasks.length}`,
+      );
+      const key = `flight:${tasks.map((task) => `${task.id}:${task.done}`).join("|")}:${this.trackedFlightTask}`;
+      if (this.taskKey === key) return;
+      this.taskKey = key;
+      const list = details.querySelector(".mf-protocol-tasklist");
+      list.replaceChildren();
+      for (const task of tasks) {
+        const button = element("button", "mf-protocol-task");
+        button.dataset.flightTask = task.id;
+        button.disabled = task.done;
+        button.setAttribute("aria-pressed", String(task.id === this.trackedFlightTask));
+        button.append(
+          element("span", "", task.name),
+          element(
+            "small",
+            "",
+            task.done
+              ? "Complete"
+              : `${this.roomName(task.room)} · ${task.duration}s hold · select to track`,
+          ),
+        );
+        list.append(button);
+      }
       return;
     }
     const manifest = mission.manifest || [],
@@ -1254,6 +1342,7 @@ export class ProtocolUI {
           depart: "Boarding Lifeline Medevac",
           deliver: "Delivering lifesaving aid",
           "repair-cargo": "Repairing medical cargo",
+          "flight-task": "Preparing aircraft equipment",
           "disable-autopilot": "Disabling aircraft autopilot",
           "cargo-sabotage": "Damaging medical cargo",
         }[channel.kind] || "Working on objective";
@@ -1282,18 +1371,25 @@ export class ProtocolUI {
               ? "Blend in with the medical detail"
               : "Gather the medical manifest";
       } else {
+        const task =
+          mission.flightTasks?.find((task) => !task.done && task.id === this.trackedFlightTask) ??
+          mission.flightTasks?.find((task) => !task.done);
         destination =
           !mission.vehicle.autopilot && !mission.vehicle.underControl && !infiltrator
             ? TRANSPORT_MAP.helm
-            : TRANSPORT_MAP.cargo;
+            : mission.vehicle.cargoDamage > 0
+              ? TRANSPORT_MAP.cargo
+              : task || TRANSPORT_MAP.cargo;
         title =
           !mission.vehicle.autopilot && !mission.vehicle.underControl && !infiltrator
             ? "Recover the aircraft at the cockpit helm"
             : mission.vehicle.cargoDamage > 0 && !infiltrator
               ? "Repair the damaged medical cargo"
-              : mission.vehicle.arrived
-                ? "Deliver aid at the cargo station"
-                : "Protect the medical flight";
+              : task
+                ? `${infiltrator ? "Blend in: " : ""}${task.name}`
+                : mission.vehicle.arrived
+                  ? "Deliver aid at the cargo station"
+                  : "Protect the medical flight";
       }
       if (destination) {
         const p = this.g.player,
@@ -1337,6 +1433,7 @@ export class ProtocolUI {
             depart: "Hold to depart",
             deliver: "Hold to deliver",
             "repair-cargo": "Hold to repair",
+            "flight-task": "Hold to prepare",
             "disable-autopilot": "Hold to sabotage",
             "cargo-sabotage": "Hold to sabotage",
           }[context.kind] || "Hold to interact"
@@ -1397,8 +1494,7 @@ export class ProtocolUI {
         ? `Ready in ${Math.ceil(self.killReadyAt - time)}s`
         : "X · close range",
     );
-    this.g.$(".mf-protocol-openactions").hidden =
-      !alive || !roam || !infiltrator;
+    this.g.$(".mf-protocol-openactions").hidden = !alive || !roam || !infiltrator;
     if (!alive || !roam || !infiltrator) this.tactics.hidden = true;
     for (const button of this.tactics.querySelectorAll("[data-sabotage]"))
       button.disabled =
@@ -1507,7 +1603,7 @@ export class ProtocolUI {
     const caller = view.entities.find((item) => item.id === meeting.caller);
     setText(
       this.meeting.querySelector(".mf-protocol-meetingreason"),
-      `${caller?.name || "An operator"} called this meeting: ${meeting.reason || "radio assembly"}. Share observations and positions. Roles remain secret after a detention.`,
+      `${caller?.name || "An operator"} called this meeting: ${meeting.reason || "radio assembly"}. Share observations and positions. Allegiances remain secret during and after Last Stand.`,
     );
     setText(
       this.meeting.querySelector(".mf-protocol-meetinghint"),
@@ -1518,7 +1614,7 @@ export class ProtocolUI {
           : pendingVote
             ? "Submitting your vote…"
             : votePhase
-              ? "Choose a suspect, or skip if you do not have enough evidence. A tie detains nobody."
+              ? "More than half the living patrol must vote for one suspect to begin Last Stand: accused versus every other survivor. Ties and Skip return to the mission."
               : "Discuss first. Voting opens when the discussion timer ends.",
     );
     const input = this.meeting.querySelector("input");
@@ -1572,16 +1668,49 @@ export class ProtocolUI {
       setText(
         this.live,
         votePhase
-          ? "Voting is open. Choose a suspect or skip detention."
+          ? "Voting is open. Choose a suspect or skip combat."
           : "Radio meeting started. Discuss your observations.",
       );
     }
+  }
+
+  updateCombat(view) {
+    const g = this.g,
+      c = view.protocol.combat,
+      active = view.protocol.phase === "combat" && !!c,
+      alive = this.alive(),
+      ready = active && view.time >= c.startsAt;
+    this.combatStats.hidden = !active;
+    for (const selector of [".mf-fire", ".mf-reload"]) {
+      const button = g.$(selector);
+      button.hidden = !active || !alive;
+      button.disabled = !ready || !alive;
+    }
+    if (!active) return;
+    this.tactics.hidden = true;
+    this.held = false;
+    this.clearFlightInput();
+    const crew = view.entities.filter(
+        (e) => c.participants.includes(e.id) && e.id !== c.targetId && e.hp > 0 && !e.departed,
+      ).length,
+      label = !alive ? "OBSERVER" : g.selfId === c.targetId ? "ACCUSED" : "PATROL";
+    setText(
+      this.combatStats,
+      `${label} · HP ${Math.ceil(g.player.hp)} · ${g.player.reloadUntil > view.time ? "Reloading" : `${g.player.ammo} rounds`} · ${crew} vs 1`,
+    );
+    setText(
+      this.live,
+      !ready
+        ? "Last Stand is preparing. Weapons unlock after the countdown."
+        : "Last Stand. Fire with click or Space; reload with R. Only opposing sides take damage.",
+    );
   }
 
   refreshMenu() {
     if (this.disposed) return;
     const g = this.g,
       active = g.mode === "protocol";
+    g.spectator?.update();
     g.shell.classList.toggle("mf-protocol", active);
     this.menu.hidden = !active;
     this.results.hidden = !active || g.state !== "ended";
@@ -1603,9 +1732,12 @@ export class ProtocolUI {
     preference.value = g.rolePreference || "operator";
     preference.disabled = Boolean(g.online);
     preference.closest("label").hidden = Boolean(g.online) || g.ui?.playChoice === "online";
-    setText(this.menu.querySelector("p"), g.online || g.ui?.playChoice === "online"
-      ? "Online roles are secret and assigned by the server. Smart bots fill unused seats."
-      : "Smart operators gather, repair and pilot; infiltrators plan sabotage and avoid witnesses. Changing your role starts a fresh offline mission.");
+    setText(
+      this.menu.querySelector("p"),
+      g.online || g.ui?.playChoice === "online"
+        ? "Online roles are secret and assigned by the server. Smart bots fill unused seats."
+        : "Smart operators gather, repair and pilot; infiltrators plan sabotage and avoid witnesses. Changing your role starts a fresh offline mission.",
+    );
     if (!active) {
       this.hud.hidden =
         this.actionBar.hidden =
@@ -1638,7 +1770,7 @@ export class ProtocolUI {
     if (this.description)
       setText(
         this.description,
-        "First-person social deduction and medical rescue. On foot, WASD moves; mouse or arrow keys aims. Hold E to collect, load, depart, repair or deliver aid. F reports, C calls a meeting, X eliminates as an infiltrator, and B opens tactics. At the aircraft helm, W/S raises or lowers flight level; A/D steers. Stabilize both gauges for three seconds, restore autopilot, then release the helm. Touch uses the movement joystick on foot and four directional buttons at the helm. Escape or P opens the menu. Weapon fire is disabled.",
+        "First-person social deduction and medical rescue. On foot, WASD moves; mouse or arrow keys aims. Hold E to collect, load, depart, repair or deliver aid. F reports, C calls a meeting, X eliminates as an infiltrator, and B opens tactics. At the aircraft helm, W/S raises or lowers flight level; A/D steers. Stabilize both gauges for three seconds, restore autopilot, then release the helm. Touch uses the movement joystick on foot and four directional buttons at the helm. Escape or P opens the menu. Weapons unlock only during a voted Last Stand; click / Space fires and R reloads.",
       );
     const matchStatus = g.$(".mf-accessstatus"),
       view = this.safeView();
@@ -1655,7 +1787,7 @@ export class ProtocolUI {
     setText(g.$(".mf-weaponhint"), "Standard issue · identical for every role");
     setText(
       g.$(".mf-weaponinfo"),
-      "Every operator carries the same standard-issue kit. Infiltrators eliminate at close range; ordinary weapon fire is disabled in this mode.",
+      "Every operator carries the same standard-issue kit. Infiltrators eliminate at close range; weapons unlock only when a majority vote starts Last Stand.",
     );
     const copy = g.$(".mf-copy");
     if (g.state === "fresh")
@@ -1760,10 +1892,12 @@ export class ProtocolUI {
       this.live,
       this.flight,
       this.flightPad,
+      this.combatStats,
+      this.combatMarker,
     ]) {
       if (node?.tagName === "DIALOG" && node.open) node.close();
       node?.remove();
     }
-    this.g.shell.classList.remove("mf-protocol", "mf-protocol-piloting");
+    this.g.shell.classList.remove("mf-protocol", "mf-protocol-piloting", "mf-protocol-combat");
   }
 }

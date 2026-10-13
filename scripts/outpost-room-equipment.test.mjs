@@ -5,6 +5,7 @@ import { readFile, writeFile, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { restoreArena } from "../public/games/outpost-protocol.js";
 // Exercise the actual room handler, substituting only its SQL transport.
 const rooms = new Map();
 globalThis.__outpostEquipmentTestSql = async (strings, ...values) => {
@@ -50,34 +51,141 @@ const modulePath = join(temporary, "rooms.mjs");
 await writeFile(modulePath, source);
 const { roomAction } = await import(pathToFileURL(modulePath).href);
 const create = () => roomAction({ op: "create", mode: "protocol" }, "protocol-room-test");
-const session = r => ({ code:r.code, id:r.id, token:r.token });
+const session = (r) => ({ code: r.code, id: r.id, token: r.token });
 test("new rooms accept only Blackout Protocol and retired clients cannot switch modes", async () => {
-  for (const mode of ["training","signal","duo","__proto__",null])
-    await assert.rejects(roomAction({op:"create",mode},"old-client-"+mode),/Only Blackout Protocol/);
+  for (const mode of ["training", "signal", "duo", "__proto__", null])
+    await assert.rejects(
+      roomAction({ op: "create", mode }, "old-client-" + mode),
+      /Only Blackout Protocol/,
+    );
   const host = await create();
-  assert.equal(host.mode,"protocol");
-  assert.equal(host.mapId,"breakwater");
+  assert.equal(host.mode, "protocol");
+  assert.equal(host.mapId, "breakwater");
   const before = JSON.stringify(rooms.get(host.code));
-  for (const mode of ["training","signal","duo"])
-    await assert.rejects(roomAction({op:"settings",...session(host),mode},"host"),/Only Blackout Protocol/);
-  assert.equal(JSON.stringify(rooms.get(host.code)),before);
+  for (const mode of ["training", "signal", "duo"])
+    await assert.rejects(
+      roomAction({ op: "settings", ...session(host), mode }, "host"),
+      /Only Blackout Protocol/,
+    );
+  assert.equal(JSON.stringify(rooms.get(host.code)), before);
 });
 test("Blackout rooms keep matching kits, private roles, bot-filled seats and authoritative rematches", async () => {
   const host = await create();
-  const guest = await roomAction({op:"join",code:host.code,weapon:"rocket",outfit:"hazard"},"guest");
-  assert.ok(guest.members.every(m=>m.weapon==="carbine"&&m.outfit==="ranger"));
-  assert.ok(guest.members.every(m=>!("team" in m)));
-  await assert.rejects(roomAction({op:"poll",...session(guest),id:host.id},"guest"),/session is invalid/);
-  const started = await roomAction({op:"start",...session(host)},"host");
-  assert.equal(started.arena.mode,"protocol");
-  assert.equal(started.arena.entities.length,8);
-  assert.equal(started.arena.entities.filter(e=>e.bot).length,6);
-  assert.ok(started.arena.entities.every(e=>e.weapon==="carbine"));
+  const guest = await roomAction(
+    { op: "join", code: host.code, weapon: "rocket", outfit: "hazard" },
+    "guest",
+  );
+  assert.ok(guest.members.every((m) => m.weapon === "carbine" && m.outfit === "ranger"));
+  assert.ok(guest.members.every((m) => !("team" in m)));
+  await assert.rejects(
+    roomAction({ op: "poll", ...session(guest), id: host.id }, "guest"),
+    /session is invalid/,
+  );
+  const started = await roomAction({ op: "start", ...session(host) }, "host");
+  assert.equal(started.arena.mode, "protocol");
+  assert.equal(started.arena.entities.length, 8);
+  assert.equal(started.arena.entities.filter((e) => e.bot).length, 6);
+  assert.ok(started.arena.entities.every((e) => e.weapon === "carbine"));
   assert.ok(started.arena.protocol.self);
-  assert.equal(started.arena.protocol.players,undefined);
-  const saved=rooms.get(host.code); saved.state.phase="ended";saved.state.arena.state="ended";
-  const rematch=await roomAction({op:"rematch",...session(host)},"host");
-  assert.equal(rematch.mode,"protocol");assert.equal(rematch.arena.entities.length,8);
+  assert.equal(started.arena.protocol.players, undefined);
+  const saved = rooms.get(host.code);
+  saved.state.phase = "ended";
+  saved.state.arena.state = "ended";
+  const rematch = await roomAction({ op: "rematch", ...session(host) }, "host");
+  assert.equal(rematch.mode, "protocol");
+  assert.equal(rematch.arena.entities.length, 8);
+});
+test("authenticated online votes unlock Last Stand weapons only for opposing public sides", async () => {
+  const host = await create(),
+    members = [host];
+  for (let i = 0; i < 7; i++)
+    members.push(await roomAction({ op: "join", code: host.code }, `last-stand-${i}`));
+  await roomAction({ op: "start", ...session(host) }, "host");
+  const row = rooms.get(host.code),
+    a = restoreArena(row.state.arena),
+    e = a.entities.find((e) => e.id === host.id),
+    target = a.entities.find((e) => e.id === members[1].id);
+  for (const entity of a.entities) {
+    entity.x = 14.5;
+    entity.y = 14.5;
+    entity.bot = false;
+  }
+  Object.assign(e, { x: a.protocol.emergency.x, y: a.protocol.emergency.y });
+  a.entities.find((e) => e.id === members[7].id).hp = 0;
+  a.action(e, { seq: 0, op: "meeting" });
+  a.protocol.phase = "vote";
+  a.time = a.protocol.meeting.discussionUntil;
+  row.state.arena = JSON.parse(JSON.stringify(a.snapshot()));
+  for (const member of members.slice(0, 4)) {
+    row.state.updatedAt = Date.now() - 60;
+    await roomAction(
+      {
+        op: "poll",
+        ...session(member),
+        seq: 1,
+        input: { protocolAction: { seq: 1, op: "vote", target: target.id } },
+      },
+      "vote",
+    );
+  }
+  row.state.arena.protocol.meeting.voteUntil = row.state.arena.time + 0.001;
+  row.state.updatedAt = Date.now() - 100;
+  const combat = await roomAction({ op: "poll", ...session(host), seq: 2, input: {} }, "host");
+  assert.equal(combat.arena.protocol.phase, "combat");
+  assert.equal(combat.arena.protocol.combat.participants.length, 7);
+  assert.equal(combat.arena.entities.find((e) => e.id === target.id).hp, 100);
+  const state = row.state.arena,
+    shooter = state.entities.find((e) => e.id === host.id),
+    enemy = state.entities.find((e) => e.id === target.id),
+    mate = state.entities.find((e) => e.id === members[2].id);
+  Object.assign(shooter, { x: 3.5, y: 5.5, a: 0 });
+  Object.assign(enemy, { x: 6.5, y: 5.5 });
+  Object.assign(mate, { x: 4.5, y: 5.5 });
+  const early = await roomAction(
+    {
+      op: "poll",
+      ...session(host),
+      seq: 3,
+      input: { fire: true, aim: 0, damage: 999, target: target.id },
+    },
+    "host",
+  );
+  assert.equal(
+    early.arena.entities.find((e) => e.id === target.id).hp,
+    100,
+    "countdown blocks firing",
+  );
+  row.state.arena.protocol.combat.startsAt = row.state.arena.time - 0.1;
+  const friendly = await roomAction(
+    { op: "poll", ...session(host), seq: 4, input: { fire: true, aim: 0 } },
+    "host",
+  );
+  assert.equal(
+    friendly.arena.entities.find((e) => e.id === mate.id).hp,
+    100,
+    "friendly crew cannot be damaged",
+  );
+  row.state.arena.entities.find((e) => e.id === mate.id).x = 14.5;
+  for (let seq = 5; seq <= 7; seq++) {
+    await new Promise((resolve) => setTimeout(resolve, 160));
+    await roomAction({ op: "poll", ...session(host), seq, input: { fire: true, aim: 0 } }, "host");
+  }
+  row.state.updatedAt = Date.now() - 100;
+  const resumed = await roomAction(
+    {
+      op: "poll",
+      ...session(host),
+      seq: 8,
+      input: { fire: true, combat: { phase: "combat" }, hp: 999 },
+    },
+    "host",
+  );
+  assert.equal(resumed.arena.entities.find((e) => e.id === target.id).hp, 0);
+  assert.equal(resumed.arena.protocol.phase, "roam");
+  assert.equal(resumed.arena.entities.find((e) => e.id === host.id).ammo, 0);
+  assert.equal(resumed.arena.protocol.players, undefined);
+  assert.equal(resumed.arena.protocol.revealedRoles, undefined);
+  assert.ok(resumed.arena.entities.filter((e) => e.id !== host.id).every((e) => e.team === -1));
 });
 test.after(async () => {
   delete globalThis.__outpostEquipmentTestSql;

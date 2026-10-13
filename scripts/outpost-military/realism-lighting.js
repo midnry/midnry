@@ -19,8 +19,8 @@ export function initNaturalLighting(r) {
     localDirection: new THREE.Vector3(),
     weaponKey,
     weaponSky,
-    fixtureIndices: new Int32Array(4),
-    fixtureDistances: new Float64Array(4),
+    fixtureIndices: new Int32Array(r.protocolLights.length),
+    fixtureDistances: new Float64Array(r.protocolLights.length),
     environment: null,
     metadata: null,
     decorRooms: null,
@@ -130,12 +130,17 @@ export function updateNaturalLighting(r, protocolView, camera) {
   // The sun remains outside a roofed room. Roofs and walls occlude it rather
   // than replacing it with arbitrary ambient illumination from every side.
   r.sun.intensity = powerOut ? 0.16 : lighting ? 3.1 : 2.05;
-  r.hemisphere.intensity = powerOut ? 0.018 : inside ? 0.18 : lighting ? 0.32 : 0.46;
-  r.scene.environmentIntensity = powerOut ? 0.028 : inside ? 0.2 : 0.48;
+  // Emergency bounce illumination leaves walls/doorways readable outside the
+  // torch hotspot; fixtures still go dark and limited sight still applies.
+  r.hemisphere.intensity = powerOut ? 0.09 : inside ? 0.18 : lighting ? 0.32 : 0.46;
+  r.scene.environmentIntensity = powerOut ? 0.065 : inside ? 0.2 : 0.48;
   r.scene.backgroundIntensity = powerOut ? 0.13 : 0.58;
   r.renderer.toneMappingExposure = powerOut ? 0.92 : inside ? 0.96 : 0.91;
 
-  const shadowSize = Math.min(r.profile?.maxShadowSize || 2048, r.g.academy.preset === "high" ? 2048 : 1024),
+  const shadowSize = Math.min(
+      r.profile?.maxShadowSize || 2048,
+      r.g.academy.preset === "high" ? 2048 : 1024,
+    ),
     span = inside ? 18 : 26;
   r.renderer.shadowMap.enabled = !!options.shadows;
   r.sun.castShadow = !!options.shadows;
@@ -190,9 +195,9 @@ export function updateNaturalLighting(r, protocolView, camera) {
         dz = fixture.z - z,
         distance = dx * dx + dz * dz + (sameRoom ? 0 : 80);
       if (distance > 360) continue;
-      for (let slot = 0; slot < 4; slot++)
+      for (let slot = 0; slot < state.fixtureIndices.length; slot++)
         if (distance < state.fixtureDistances[slot]) {
-          for (let next = 3; next > slot; next--) {
+          for (let next = state.fixtureIndices.length - 1; next > slot; next--) {
             state.fixtureDistances[next] = state.fixtureDistances[next - 1];
             state.fixtureIndices[next] = state.fixtureIndices[next - 1];
           }
@@ -204,18 +209,18 @@ export function updateNaturalLighting(r, protocolView, camera) {
   for (let i = 0; i < r.protocolLights.length; i++) {
     const light = r.protocolLights[i],
       fixture = fixtures[state.fixtureIndices[i]];
-    light.visible = !!fixture && !powerOut;
-    light.intensity = light.visible ? (lighting ? 22 : 18) : 0;
+    light.visible = true;
+    light.intensity = fixture && !powerOut ? (lighting ? 22 : 18) : 0;
     light.color.set("#e2ebdf");
     light.distance = 13;
     if (fixture) light.position.set(fixture.x, fixture.y, fixture.z);
   }
 
-  r.weaponScene.environmentIntensity = powerOut ? 0.028 : inside ? 0.22 : 0.48;
+  r.weaponScene.environmentIntensity = powerOut ? 0.065 : inside ? 0.22 : 0.48;
   if (state.weaponSky) {
     state.weaponSky.color.copy(r.hemisphere.color);
     state.weaponSky.groundColor.copy(r.hemisphere.groundColor);
-    state.weaponSky.intensity = powerOut ? 0.035 : inside ? 0.28 : 0.58;
+    state.weaponSky.intensity = powerOut ? 0.12 : inside ? 0.28 : 0.58;
   }
   if (state.weaponKey) {
     const fixture = fixtures[state.fixtureIndices[0]];
@@ -226,6 +231,6 @@ export function updateNaturalLighting(r, protocolView, camera) {
     state.localDirection.transformDirection(r.camera.matrixWorldInverse);
     state.weaponKey.position.copy(state.localDirection).multiplyScalar(5);
     state.weaponKey.color.copy(fixture && inside ? r.protocolLights[0].color : r.sun.color);
-    state.weaponKey.intensity = powerOut ? 0.16 : inside ? 1.1 : lighting ? 2.65 : 2.05;
+    state.weaponKey.intensity = powerOut ? 0.35 : inside ? 1.1 : lighting ? 2.65 : 2.05;
   }
 }

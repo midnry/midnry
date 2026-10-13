@@ -224,6 +224,41 @@ const helm = { id: "medevac-helm", name: "Flight controls", kind: "helm", x: 8.5
 const avionics = { id: "medevac-avionics", name: "Autopilot avionics", kind: "avionics", x: 4.5, y: 6.5, room: "avionics" };
 const cargo = { id: "medevac-cargo", name: "Medical cargo / aid delivery", kind: "cargo", x: 10.5, y: 15.5, room: "cargo" };
 
+// Routine flight work is separate from aircraft sabotage/recovery. Each point
+// is reachable from the cabin; no fixture occupies a door or collision prop.
+export const AIRCRAFT_TASKS = Object.freeze([
+  {
+    id: "oxygen",
+    name: "Test the medical oxygen supply",
+    kind: "flight-task",
+    x: 10.5,
+    y: 9.5,
+    room: "cabin",
+    duration: 5,
+    system: "power",
+  },
+  {
+    id: "trauma",
+    name: "Secure the trauma packs",
+    kind: "flight-task",
+    x: 9.5,
+    y: 13.5,
+    room: "cargo",
+    duration: 6,
+    system: null,
+  },
+  {
+    id: "landing",
+    name: "Confirm the landing coordinates",
+    kind: "flight-task",
+    x: 10.5,
+    y: 5.5,
+    room: "cabin",
+    duration: 5,
+    system: "comms",
+  },
+]);
+
 export const TRANSPORT_MAP = {
   id: "medevac",
   name: "Lifeline Medevac",
@@ -255,6 +290,7 @@ export const TRANSPORT_MAP = {
   emergency: { id: "medevac-radio-assembly", name: "Cabin radio assembly", x: 7.5, y: 10.5, room: "cabin" },
   stations: [
     helm, avionics, cargo,
+    ...AIRCRAFT_TASKS.filter(task=>task.id!=="landing"),
     { id: "medevac-radio", name: "Aircraft radio uplink", kind: "comms", x: 10.5, y: 5.5, room: "cabin" },
     { id: "medevac-power", name: "Aircraft power distribution", kind: "power", x: 5.5, y: 9.5, room: "avionics" },
   ],

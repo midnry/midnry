@@ -454,6 +454,15 @@ async function manualRecovery(page, mobile) {
 }
 
 async function deliverAid(page, mobile) {
+  for (const task of (await view(page)).protocol.mission.flightTasks) {
+    if (task.done) continue;
+    await position(page, task);
+    await hold(page, mobile, task.duration + 0.2);
+    assert.equal(
+      (await view(page)).protocol.mission.flightTasks.find((item) => item.id === task.id).done,
+      true,
+    );
+  }
   let safe = await view(page);
   const craft = safe.protocol.mission.vehicle;
   await tick(page, Math.max(0, craft.duration - craft.progress) + 0.3);
@@ -631,32 +640,64 @@ async function meetings(page) {
     "vote travels through one-shot authoritative controls",
   );
   await page.screenshot({ path: "/workspace/screenshots/outpost-protocol-meeting.png" });
+  // Other local fixture participants submit legal votes through the same
+  // authoritative validator; one human ballot cannot constitute a majority.
+  await page.evaluate((targetId) => {
+    const g = document.querySelector("midnry-fps").engine;
+    for (const e of g.arena.entities.filter((e) => e.hp > 0 && e.id !== g.selfId).slice(0, 4))
+      g.arena.action(e, { seq: g.arena.privateFor(e).actionSeq + 1, op: "vote", target: targetId });
+  }, target.id);
   await tick(page, 15.2);
   safe = await view(page);
-  assert.equal(safe.protocol.phase, "roam");
+  assert.equal(safe.protocol.phase, "combat");
   assert.equal(
     safe.entities.find((e) => e.id === target.id).hp,
-    0,
-    "majority vote detains the selected suspect",
+    100,
+    "majority vote gives the selected suspect a Last Stand",
   );
   assert.equal(
     safe.protocol.revealedRoles,
     undefined,
-    "detainment does not reveal the suspect's role during a live round",
+    "Last Stand does not reveal the suspect's role during a live round",
   );
+  await page.evaluate((targetId) => {
+    const g = document.querySelector("midnry-fps").engine;
+    for (const e of g.arena.entities) {
+      e.x = 14.5;
+      e.y = 14.5;
+    }
+    Object.assign(g.player, { x: 3.5, y: 5.5, a: 0 });
+    g.viewPitch = 0;
+    Object.assign(
+      g.arena.entities.find((e) => e.id === targetId),
+      { x: 6.5, y: 5.5 },
+    );
+  }, target.id);
+  await tick(page, 5.2);
+  await page.locator(".mf-shell").focus();
+  await page.keyboard.down(" ");
+  await tick(page, 0.6);
+  await page.keyboard.up(" ");
+  safe = await view(page);
+  assert.equal(
+    safe.entities.find((e) => e.id === target.id).hp,
+    0,
+    "Last Stand resolves through real weapon input",
+  );
+  assert.equal(safe.protocol.phase, "roam");
 }
 
 async function playConnections(page) {
   await pause(page);
-  assert.equal(await page.locator("[data-mode]").count(),0);
-  assert.equal(await page.locator("[data-play]").count(),2);
+  assert.equal(await page.locator("[data-mode]").count(), 0);
+  assert.equal(await page.locator("[data-play]").count(), 2);
   await page.locator(".mf-onlinechoice").click();
-  assert.equal(await page.locator(".mf-network").isVisible(),true);
-  assert.equal(await page.locator(".mf-start").isDisabled(),true);
+  assert.equal(await page.locator(".mf-network").isVisible(), true);
+  assert.equal(await page.locator(".mf-start").isDisabled(), true);
   await page.locator(".mf-offlinechoice").click();
-  assert.equal(await page.locator(".mf-network").isVisible(),false);
-  assert.equal(await page.locator(".mf-start").isDisabled(),false);
-  return ["offline-smart-ai","online-friends-and-bots"];
+  assert.equal(await page.locator(".mf-network").isVisible(), false);
+  assert.equal(await page.locator(".mf-start").isDisabled(), false);
+  return ["offline-smart-ai", "online-friends-and-bots"];
 }
 
 async function compatibilityChecks(page) {

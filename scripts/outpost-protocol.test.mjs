@@ -70,6 +70,9 @@ const transport = () => {
   tick(arena, 3.05, { [e.id]: { interact: true } });
   assert.equal(arena.mapId, TRANSPORT_MAP.id);
   assert.equal(arena.protocol.mission.phase, "transport");
+  // These legacy flight-physics fixtures begin after cabin preparation.
+  // The systems suite separately validates real, uninterrupted duty holds.
+  for (const task of arena.protocol.mission.flightTasks) task.done = true;
   return arena;
 };
 const sabotageAircraft = (arena) => {
@@ -360,7 +363,7 @@ test("radio assemblies freeze movement, plants, sabotage timers and the detonati
   assert.ok(Object.values(arena.protocol.players).every((p) => p.channel === null));
 });
 
-test("vote is immutable, skip/ties protect patrols, majority detains without revealing allegiance", () => {
+test("vote is immutable, skip/ties protect patrols, majority starts Last Stand without revealing allegiance", () => {
   const arena = fresh(),
     e = operator(arena),
     suspect = arena.entities.find((x) => x !== e && x.team === 0);
@@ -375,8 +378,8 @@ test("vote is immutable, skip/ties protect patrols, majority detains without rev
   for (const voter of arena.entities.filter((x) => x !== e).slice(4))
     send(arena, voter, "vote", "skip");
   tick(arena, 15.1);
-  assert.equal(suspect.hp, 0);
-  assert.equal(arena.protocol.phase, "roam");
+  assert.equal(suspect.hp, 100);
+  assert.equal(arena.protocol.phase, "combat");
   const view = protocolView(arena.snapshot(), e.id);
   assert.equal(view.protocol.revealedRoles, undefined);
   assert.match(view.protocol.meeting.result, /classified/);
@@ -701,6 +704,11 @@ test("full medical mission gathers every required item, boards the aircraft and 
     roles,
   );
   assert.ok(arena.entities.every((e) => arena.canMove(e.x, e.y)));
+  for (const task of mission.flightTasks) {
+    position(crew, task);
+    tick(arena, task.duration + 0.05, { [crew.id]: { interact: true } });
+  }
+  assert.ok(mission.flightTasks.every((task) => task.done));
   tick(arena, 120.1);
   assert.equal(mission.vehicle.arrived, true);
   assert.equal(arena.state, "playing"); // Arrival still needs an aid delivery.
@@ -978,6 +986,10 @@ test("damaged cargo requires crew repair before delivery; remaining living patie
   assert.equal(v.cargoDamage, 20);
   tick(arena, 6.05, { [crew.id]: { interact: true } });
   assert.equal(v.cargoDamage, 0);
+  const trauma = arena.protocol.mission.flightTasks.find((task) => task.id === "trauma");
+  position(crew, trauma);
+  tick(arena, trauma.duration + 0.05, { [crew.id]: { interact: true } });
+  position(crew, TRANSPORT_MAP.cargo);
   for (const patient of arena.protocol.mission.patients.slice(0, 3)) patient.hp = 0;
   tick(arena, 4.55, { [crew.id]: { interact: true } });
   assert.equal(arena.winner, 0);

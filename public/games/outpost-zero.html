@@ -1786,6 +1786,7 @@
       import { createArena, restoreArena, protocolView } from "./outpost-protocol.js";
       import { PROTOCOL_MAP, TRANSPORT_MAP } from "./outpost-protocol-map.js";
       import { ProtocolUI } from "./outpost-protocol-ui.js";
+      import { SpectatorUI } from "./outpost-spectator.js";
       import { Academy, FrameBudget, PRESETS } from "./outpost-academy.js";
       import { newCompatibilityReport, updateCheck, checkBrowser, checkScene } from "./outpost-compatibility.js";
       import { Retention } from "./outpost-retention.js";
@@ -1891,6 +1892,7 @@
             this.retention = new Retention(this);
             this.ui = new MenuUI(this);
             this.protocolUI = new ProtocolUI(this);
+            this.spectator = new SpectatorUI(this);
             this.protocolUI.refreshMenu();
             this.initMilitaryStatus();
             // Every entry point uses the same cinematic renderer. Query strings
@@ -2059,7 +2061,7 @@
               updateCheck(this.compatibilityReport, "performance", "checking", "The loaded scene will be tested at your selected graphics quality.");
               this.refreshCompatibility();
               const { MilitaryRenderer } = await import(
-                `./outpost-military.js?v=protocol-focus-20261013&retry=${attempt - 1}`
+                `./outpost-military.js?v=protocol-spectator-20261013&retry=${attempt - 1}`
               );
               if (this.abort.signal.aborted) return;
               const renderer = new MilitaryRenderer(this, (done,total) => {
@@ -2126,6 +2128,7 @@
           // Last Signal uses the same arena, with a clear center for the final zone.
           reset() {
             this.mode = "protocol";
+            this.spectator?.reset();
             this.shell.classList.remove("mf-dying");
             this.deathSequence = null;
             this.deathProgress = 0;
@@ -2267,16 +2270,31 @@
           }
           camera() {
             if (this.deathSequence) return this.deathSequence.origin;
-            if (this.mode === "protocol" || this.player.hp > 0) return this.player;
+            if (this.mode === "protocol") return this.spectator?.camera() || this.player;
+            if (this.player.hp > 0) return this.player;
             return (
               this.enemies.find((e) => e.team === this.player.team && e.hp > 0) ||
               this.enemies.find((e) => e.hp > 0) ||
               this.player
             );
           }
+          get cameraPitch() {
+            // Follow the watched participant's public aim; local input must
+            // never turn their body or reveal their private mission orders.
+            if (this.spectator?.active())
+              return clamp(Math.atan(this.camera().pitch || 0), -PITCH_LIMIT, PITCH_LIMIT);
+            return this.lookPitch || 0;
+          }
           controls() {
+            if (this.player.hp <= 0 || this.player.departed) return {
+              forward: 0, strafe: 0, aim: this.player.a, pitch: this.player.pitch || 0,
+              sprint: false, slide: false, fire: false, reload: false, super: false,
+              interact: false, vehicleInput: { pitch: 0, steer: 0 },
+            };
             const protocol = this.mode === "protocol",
-              frozen = protocol && this.arena.protocol?.phase !== "roam";
+              fighting = protocol && this.arena.protocol?.phase === "combat",
+              frozen = protocol && (fighting ? this.time < this.arena.protocol.combat.startsAt : this.arena.protocol?.phase !== "roam"),
+              dialogOpen = this.protocolUI?.hasDialogOpen();
             const controls = {
               forward:
                 Number(this.keys.has("w") || this.keys.has("arrowup")) -
@@ -2292,7 +2310,8 @@
               super: this.pendingSuper,
             };
             if (protocol) {
-              controls.fire = controls.reload = controls.super = false;
+              controls.super = false;
+              if (!fighting || frozen || dialogOpen) controls.fire = controls.reload = false;
               controls.sprint = false;
               if (frozen || this.protocolUI?.piloting || this.protocolUI?.hasDialogOpen()) controls.forward = controls.strafe = 0;
               Object.assign(controls, this.protocolUI?.controls() || {});
@@ -2328,6 +2347,8 @@
             this.running = false;
             this.keys.clear();
             this.firing = false;
+            this.pendingShot = 0;
+            this.pendingReload = this.pendingSuper = false;
             this.pendingSlide = false;
             this.touchSprint = false;
             this.touch = { x: 0, y: 0 };
@@ -2359,6 +2380,7 @@
               this.running = true;
               this.shell.focus({ preventScroll: true });
             } else this.pause();
+            this.updateHUD();
           }
           chooseOutfit(id) {
             if (this.mode === "protocol") return;
@@ -2676,6 +2698,7 @@
               this.arena = next;
               this.protocolCache = null;
               if (starting) {
+                this.spectator?.reset();
                 this.protocolUI?.reset();
                 this.retention?.reset();
                 this.shell.classList.remove("mf-dying");
@@ -2879,6 +2902,13 @@
                 return;
               }
               if (!this.running) return;
+              if (this.spectator?.active()) {
+                if (["arrowleft", "arrowright", "[", "]"].includes(k)) {
+                  e.preventDefault();
+                  if (!e.repeat) this.spectator.cycle(k === "arrowleft" || k === "[" ? -1 : 1);
+                }
+                return;
+              }
               this.keys.add(k);
               if (k === "r") this.reload();
               if (k === "q" && !e.repeat) this.useSuper();
@@ -2914,6 +2944,7 @@
             this.on(this.canvas, "pointerdown", (e) => {
               if (!this.running) return;
               this.shell.focus({ preventScroll: true });
+              if (this.player.hp <= 0 || this.player.departed) return;
               if (e.pointerType === "mouse" && e.button === 0) {
                 this.firing = true;
                 this.shoot();
@@ -2954,7 +2985,7 @@
                 `translate(${this.touch.x * 34}px,${this.touch.y * 34}px)`;
             };
             this.on(stick, "pointerdown", (e) => {
-              if (!this.running) return;
+              if (!this.running || this.player.hp <= 0 || this.player.departed) return;
               this.stickId = e.pointerId;
               stick.setPointerCapture(e.pointerId);
               moveStick(e);
@@ -2970,13 +3001,13 @@
             this.on(stick, "pointerup", endStick);
             this.on(stick, "pointercancel", endStick);
             this.on(this.$(".mf-fire"), "pointerdown", (e) => {
-              if (!this.running) return;
+              if (!this.running || this.player.hp <= 0 || this.player.departed) return;
               e.preventDefault();
               e.currentTarget.setPointerCapture(e.pointerId);
               this.firing = true;
               this.shoot();
             });
-            for (const type of ["pointerup", "pointercancel"])
+            for (const type of ["pointerup", "pointercancel", "lostpointercapture"])
               this.on(this.$(".mf-fire"), type, () => (this.firing = false));
             this.on(this.$(".mf-reload"), "click", () => this.reload());
           }
@@ -3128,8 +3159,8 @@
             this.toastUntil = this.time + duration;
           }
           reload() {
-            if (this.mode === "protocol") return;
-            if (!this.running) return;
+            if (this.mode === "protocol" && (this.arena.protocol?.phase !== "combat" || this.protocolUI?.hasDialogOpen())) return;
+            if (!this.running || this.player.hp <= 0 || this.player.departed) return;
             if (this.online) {
               this.pendingReload = true;
               return;
@@ -3138,7 +3169,7 @@
             this.flushEvents();
           }
           shoot() {
-            if (this.mode === "protocol") return;
+            if (this.mode === "protocol" && (this.arena.protocol?.phase !== "combat" || this.protocolUI?.hasDialogOpen())) return;
             if (!this.running || this.player.hp <= 0) return;
             if (this.online) {
               this.pendingShot = (this.pendingShot || 0) + 1;
@@ -3157,6 +3188,7 @@
             this.lastHUD = now;
             if (this.mode === "protocol" && this.protocolUI) {
               this.protocolUI.update();
+              this.spectator?.update();
               return;
             }
             const p = this.player,
@@ -3219,7 +3251,7 @@
           update(dt) {
             const turn =
               (Number(this.keys.has("arrowright")) - Number(this.keys.has("arrowleft"))) * dt * 2;
-            if (this.running && (this.player.hp > 0 || this.mode === "protocol"))
+            if (this.running && this.player.hp > 0 && !this.player.departed)
               this.player.a += turn;
             if (this.mode === "protocol" && !this.online && this.protocolUI?.brief.open) {
               this.updateHUD(false);
@@ -3450,6 +3482,7 @@
             this.frame = requestAnimationFrame(this.loop);
           }
           destroy() {
+            this.spectator?.dispose();
             this.protocolUI?.dispose();
             clearTimeout(this.loadingTimer);
             window.outpostLoading?.stop();
