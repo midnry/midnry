@@ -26,6 +26,7 @@ export type Entity = {
   hp: number;
   sprinting?: boolean;
   slideUntil?: number;
+  crouching?: boolean;
   slideCooldown?: number;
   slideHeld?: boolean;
   slideDx?: number;

@@ -1787,6 +1787,10 @@
       import { PROTOCOL_MAP, TRANSPORT_MAP } from "./outpost-protocol-map.js";
       import { ProtocolUI } from "./outpost-protocol-ui.js";
       import { SpectatorUI } from "./outpost-spectator.js";
+      import { deathTiming, deathFrame } from "./outpost-death.js";
+      import { VictimDeathUI } from "./outpost-death-ui.js";
+      import { ConnectionUI } from "./outpost-connection.js";
+      import { AssetCacheUI } from "./outpost-asset-cache.js";
       import { Academy, FrameBudget, PRESETS } from "./outpost-academy.js";
       import { newCompatibilityReport, updateCheck, checkBrowser, checkScene } from "./outpost-compatibility.js";
       import { Retention } from "./outpost-retention.js";
@@ -1884,6 +1888,7 @@
               }
             });
             this.on(this.$(".mf-super"), "click", () => this.useSuper());
+            this.deathUI = new VictimDeathUI(this);
             this.reset();
             this.bindInputs();
             this.bindOnline();
@@ -1893,6 +1898,8 @@
             this.ui = new MenuUI(this);
             this.protocolUI = new ProtocolUI(this);
             this.spectator = new SpectatorUI(this);
+            this.connection = new ConnectionUI(this);
+            this.assetCache = new AssetCacheUI(this);
             this.protocolUI.refreshMenu();
             this.initMilitaryStatus();
             // Every entry point uses the same cinematic renderer. Query strings
@@ -2061,7 +2068,7 @@
               updateCheck(this.compatibilityReport, "performance", "checking", "The loaded scene will be tested at your selected graphics quality.");
               this.refreshCompatibility();
               const { MilitaryRenderer } = await import(
-                `./outpost-military.js?v=protocol-spectator-20261013&retry=${attempt - 1}`
+                `./outpost-military.js?v=protocol-tactical-20261013&retry=${attempt - 1}`
               );
               if (this.abort.signal.aborted) return;
               const renderer = new MilitaryRenderer(this, (done,total) => {
@@ -2120,6 +2127,7 @@
             this.loadingScreen.hidden = true;
             this.loadingScreen.querySelector("progress").value = 100;
             window.outpostLoading?.stop();
+            void this.connection?.check();
           }
           recoverMilitary(error) {
             if (this.abort.signal.aborted) return;
@@ -2131,6 +2139,9 @@
             this.spectator?.reset();
             this.shell.classList.remove("mf-dying");
             this.deathSequence = null;
+            this.deathStage = null;
+            this.takedownProgress = 0;
+            this.deathUI?.update();
             this.deathProgress = 0;
             this.deathSeen = false;
             this.pendingResult = null;
@@ -2338,13 +2349,25 @@
             this.deathSeen = true;
             this.shell.classList.add("mf-dying");
             this.deathProgress = 0;
+            const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches,
+              event = (this.protocolCache = null, this.protocolView()?.protocol?.self?.deathScene),
+              timing = deathTiming(event, reduced);
             this.deathSequence = {
               at: now,
-              duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 350 : 1200,
+              duration: timing.total,
+              takedownDuration: timing.takedown,
+              fallDuration: timing.fall,
+              kind: timing.kind,
               origin: { ...this.player },
               resume: this.running,
             };
+            this.deathStage = timing.takedown ? "takedown" : "fall";
+            this.takedownProgress = 0;
+            this.deathUI.update();
             this.running = false;
+            this.hadLock = false;
+            if(document.pointerLockElement === this.canvas)document.exitPointerLock();
+            this.$(".mf-toast").textContent = "";
             this.keys.clear();
             this.firing = false;
             this.pendingShot = 0;
@@ -2357,7 +2380,7 @@
             this.$(".mf-stick i").style.transform = "";
             this.$(".mf-sprint").setAttribute("aria-pressed", "false");
             this.$(".mf-modal").hidden = true;
-            this.$(".mf-death").hidden = false;
+            this.$(".mf-death").hidden = this.deathStage === "takedown";
             this.$(".mf-cross").hidden = true;
             this.updateHUD();
             this.ui?.syncAccessibility();
@@ -2367,11 +2390,18 @@
             if (this.player.hp <= 0 && !this.deathSeen && this.state !== "fresh" &&
                 this.state !== "ended") this.beginDeath(now);
             if (!this.deathSequence) return;
-            this.deathProgress = clamp((now - this.deathSequence.at) / this.deathSequence.duration, 0, 1);
-            if (this.deathProgress < 1) return;
+            const frame = deathFrame(this.deathSequence, now);
+            this.deathStage = frame.stage;
+            this.$(".mf-death").hidden = frame.stage === "takedown";
+            this.takedownProgress = frame.takedown;
+            this.deathProgress = frame.fall;
+            this.deathUI.update();
+            if (!frame.done) return;
             const resume = this.deathSequence.resume, result = this.pendingResult;
             this.shell.classList.remove("mf-dying");
             this.deathSequence = null;
+            this.deathStage = null;
+            this.deathUI.update();
             this.deathProgress = 0;
             this.pendingResult = null;
             this.$(".mf-death").hidden = true;
@@ -2381,6 +2411,12 @@
               this.shell.focus({ preventScroll: true });
             } else this.pause();
             this.updateHUD();
+          }
+          skipTakedown() {
+            if (this.deathStage !== "takedown" || !this.deathSequence) return;
+            this.deathSequence.at = performance.now() - this.deathSequence.takedownDuration;
+            this.updateDeath(performance.now());
+            this.shell.focus({ preventScroll: true });
           }
           chooseOutfit(id) {
             if (this.mode === "protocol") return;
@@ -2703,6 +2739,8 @@
                 this.retention?.reset();
                 this.shell.classList.remove("mf-dying");
                 this.deathSequence = null;
+                this.deathStage = null;
+                this.deathUI.update();
                 this.deathProgress = 0;
                 this.deathSeen = false;
                 this.pendingResult = null;
@@ -3370,7 +3408,7 @@
             this.retention.observe();
             const c = this.ctx,
               now = performance.now(),
-              hurt = Math.max(0, (this.damageUntil - now) / 520);
+              hurt = this.deathStage === "takedown" ? 0 : Math.max(0, (this.damageUntil - now) / 520);
             c.clearRect(0, 0, this.w, this.h);
             c.save();
             const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -3482,6 +3520,9 @@
             this.frame = requestAnimationFrame(this.loop);
           }
           destroy() {
+            this.assetCache?.dispose();
+            this.connection?.dispose();
+            this.deathUI?.dispose();
             this.spectator?.dispose();
             this.protocolUI?.dispose();
             clearTimeout(this.loadingTimer);

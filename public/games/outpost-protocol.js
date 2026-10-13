@@ -4,6 +4,7 @@
  * channels, roles, witnesses, charges, cooldowns and victories live here.
  */
 import { Arena, clamp } from "./outpost-sim.js";
+import { recordVictimTakedown } from "./outpost-death.js";
 import {
   PROTOCOL_MAP,
   TRANSPORT_MAP,
@@ -95,6 +96,7 @@ const ENTITY_FIELDS = [
   "y",
   "a",
   "pitch",
+  "crouching",
   "hp",
   "maxHp",
   "weapon",
@@ -724,6 +726,7 @@ export class ProtocolArena extends Arena {
     target.damageTotal += 100;
     target.damageAngle = Math.atan2(entity.y - target.y, entity.x - target.x);
     target.hit = this.time;
+    recordVictimTakedown(this, target, entity);
     this.privateFor(target).channel = null;
     player.channel = null;
     player.killReadyAt = this.time + PROTOCOL_RULES.killCooldown;
@@ -1656,6 +1659,7 @@ export class ProtocolArena extends Arena {
       this.countdown = Math.max(0, this.countdown - dt);
       return;
     }
+    for(const entity of this.entities)entity.crouching=false;
     this.time += dt;
     this.updateMedical(dt, inputs);
     this.checkResult();
@@ -1738,6 +1742,11 @@ export class ProtocolArena extends Arena {
           body.y = y;
         }
       }
+    // Visible working posture is shared for genuine and pretend work. It
+    // exposes no channel kind, task progress, role or target; combat is upright.
+    for(const entity of this.entities)
+      entity.crouching=this.active(entity)&&this.protocol.phase==="roam"&&
+        !!(this.privateFor(entity).channel||(!entity.bot&&inputs[entity.id]?.interact));
     this.checkResult();
   }
 }
@@ -1969,6 +1978,9 @@ export function protocolView(data, selfId) {
     self: player
       ? {
           role: player.role,
+          deathScene: !isLiving && player.deathScene
+            ? { id: player.deathScene.id, kind: player.deathScene.kind, at: player.deathScene.at }
+            : null,
           tasks: clone(player.tasks),
           channel,
           cargo: player.cargo ? { supplyId: player.cargo.supplyId, name: player.cargo.name } : null,

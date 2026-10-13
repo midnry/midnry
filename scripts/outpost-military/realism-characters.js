@@ -16,7 +16,46 @@ function materialKind(material) {
   return "uniform";
 }
 
-function configureMaterial(material, kind) {
+function configureMaterial(material, kind, r) {
+  if (material.userData.operatorMaterial) {
+    material.userData.realismCharacterKind = kind;
+    const fabric = r?.realismSurfaces?.fabric;
+    if (material.name === "Scanned skin" && r?.faceColor) {
+      material.map = r.faceColor;
+      material.normalMap = r.faceNormal;
+      material.roughnessMap = r.faceRough;
+      material.normalScale = new THREE.Vector2(0.3, 0.3);
+      material.roughness = 0.85;
+    }
+    if (/fabric|webbing/i.test(material.name) && fabric) {
+      material.map = fabric.color;
+      material.normalMap = fabric.normal;
+      material.roughnessMap = fabric.roughness;
+      material.normalScale = new THREE.Vector2(0.16, 0.16);
+      material.roughness = 0.93;
+      material.metalness = 0;
+      // The source photograph is blue denim. Preserve its photographed weave
+      // and seams without multiplying blue albedo into the khaki uniform. The
+      // bounded luminance response represents the dyed cloth's actual albedo,
+      // rather than changing scene exposure or adding a screen-space filter.
+      material.onBeforeCompile = (shader) => {
+        shader.fragmentShader = shader.fragmentShader.replace(
+          "#include <map_fragment>",
+          `#ifdef USE_MAP
+             vec4 clothPhoto = texture2D(map, vMapUv);
+             float clothLuma = dot(clothPhoto.rgb, vec3(.2126,.7152,.0722));
+             float clothResponse = clamp(clothLuma / .19, .60, 1.12);
+             diffuseColor.rgb *= vec3(clothResponse);
+             diffuseColor.a *= clothPhoto.a;
+           #endif`,
+        );
+      };
+      material.customProgramCacheKey = () => "outpost-photographed-khaki-v2";
+    }
+    material.envMapIntensity = /metal/i.test(material.name) ? 0.8 : 0.45;
+    material.needsUpdate = true;
+    return;
+  }
   // Retain the original atlas, its UVs, stitching, chipped paint and insignia.
   // The Vanguard body is a single material mixing cloth and painted plates;
   // it has no exposed skin atlas and cannot become a different sculpt here.
@@ -67,7 +106,7 @@ export function prepareCharacterAsset(r, gltf) {
     for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
       if (!material || materials.has(material)) continue;
       materials.add(material);
-      configureMaterial(material, materialKind(material));
+      configureMaterial(material, materialKind(material), r);
       r.materials.add(material);
       for (const key of ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap"]) {
         const texture = material[key];
@@ -186,13 +225,40 @@ function makeLeg(model, side) {
 
 /** Clone only actor-owned materials; geometry/textures stay shared resources. */
 export function finishActor(r, model, e) {
+  // glTF material primitives share bones. SkeletonUtils clones each primitive's
+  // palette; reunite identical palettes so the renderer uploads one per actor,
+  // without merging away separate materials or changing any bind transforms.
+  const palettes = [];
+  model.traverse((object) => {
+    if (!object.isSkinnedMesh) return;
+    const current = object.skeleton;
+    const shared = palettes.find(
+      (s) =>
+        s.bones.length === current.bones.length &&
+        s.bones.every(
+          (bone, i) =>
+            bone === current.bones[i] &&
+            s.boneInverses[i].elements.every(
+              (v, k) => Math.abs(v - current.boneInverses[i].elements[k]) < 1e-8,
+            ),
+        ),
+    );
+    if (shared && shared !== current) {
+      current.dispose();
+      object.skeleton = shared;
+    } else if (!shared) palettes.push(current);
+  });
   const clones = new Map();
   model.traverse((object) => {
     if (!object.isMesh) return;
     const copy = (source) => {
       if (!clones.has(source)) {
         const material = source.clone();
-        configureMaterial(material, source.userData.realismCharacterKind || materialKind(source));
+        configureMaterial(
+          material,
+          source.userData.realismCharacterKind || materialKind(source),
+          r,
+        );
         r.materials.add(material);
         clones.set(source, material);
       }
@@ -214,6 +280,15 @@ export function finishActor(r, model, e) {
     speed: 0,
     baseY: model.position.y,
     previousYaw: null,
+    head: bone(model, "Head"),
+    spine: bone(model, "Spine1"),
+    hip: bone(model, "Hips"),
+    leftKnee: bone(model, "LeftLeg"),
+    rightKnee: bone(model, "RightLeg"),
+    rightArm: bone(model, "RightArm"),
+    leftArm: bone(model, "LeftArm"),
+    rightElbow: bone(model, "RightForeArm"),
+    leftElbow: bone(model, "LeftForeArm"),
     legs: [makeLeg(model, "Left"), makeLeg(model, "Right")].filter(Boolean),
   };
   characterState.set(model, state);
@@ -290,6 +365,8 @@ function plantFoot(model, leg, ground, dt, moving, reset) {
 export function updateActorPresentation(r, actor, e, delta, sample) {
   const state = characterState.get(actor.model);
   if (!state || !actor.mixer) return false;
+  if (e.hp <= 0) return updateDeathPose(r, actor, state);
+  state.deathPose = null;
   const dx = e.x - state.previousX,
     dy = e.y - state.previousY;
   const travelled = Math.hypot(dx, dy) * TILE_METRES;
@@ -326,6 +403,30 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
   state.distance = 0;
   state.signedDistance = 0;
   actor.mixer.update(dt);
+  const sliding = e.slideUntil > r.g.time,
+    crouching = sliding || e.crouching;
+  actor.model.position.y = state.baseY - (sliding ? 0.45 : crouching ? 0.28 : 0);
+  if (crouching) {
+    if (state.hip) state.hip.rotation.x += 0.22;
+    if (state.leftKnee) state.leftKnee.rotation.x -= 0.7;
+    if (state.rightKnee) state.rightKnee.rotation.x -= 0.65;
+    if (state.spine) state.spine.rotation.x += 0.22;
+  }
+  const aim = clamp(Math.atan(e.pitch || 0), -0.65, 0.65),
+    hit = Math.max(0, 1 - (r.g.time - e.hit) / 0.24);
+  if (state.head) state.head.rotation.x += aim * 0.65;
+  if (state.spine) {
+    state.spine.rotation.x += aim * 0.22;
+    state.spine.rotation.z += hit * 0.06;
+  }
+  const firing = r.g.time - e.shotAt < 0.32,
+    reloading = e.reloadUntil > r.g.time;
+  if (firing || reloading) {
+    if (state.rightArm) state.rightArm.rotation.z -= 0.3;
+    if (state.leftArm) state.leftArm.rotation.z += 0.28;
+    if (state.rightElbow) state.rightElbow.rotation.x += 0.35;
+    if (state.leftElbow) state.leftElbow.rotation.x += reloading ? 0.75 : 0.45;
+  }
   actor.model.updateMatrixWorld(true);
   const yaw = actor.root.rotation.y;
   const turned =
@@ -341,9 +442,64 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
         actor.root.position.y,
         dt,
         moving,
-        teleport || turned || actor.root.position.y > 0.05,
+        teleport || turned || crouching || actor.root.position.y > 0.05,
       );
   else for (const leg of state.legs) leg.planted = false;
+  actor.model.updateMatrixWorld(true);
+  return true;
+}
+
+/** A real dead pose is independent of mission time, which pauses offline.
+ * Force a fully weighted idle pose before bending joints: faded-out clips must
+ * never leave a corpse in the skeleton's bind/T pose. No IK runs on corpses.
+ */
+function updateDeathPose(r, actor, state) {
+  const now = performance.now() / 1000,
+    sample = Math.floor(now * 30);
+  if (!state.deathPose) {
+    actor.model.position.y = state.baseY;
+    actor.mixer.stopAllAction();
+    const idle = actor.actions.Idle;
+    if (idle) {
+      idle.reset().setEffectiveWeight(1).setEffectiveTimeScale(1).play();
+      actor.mixer.update(0);
+    }
+    actor.action = "Dead";
+    state.deathPose = [
+      ["Spine", 0.22, 0, 0],
+      ["Spine1", 0.18, 0, -0.12],
+      ["Head", 0.25, 0.12, -0.1],
+      ["LeftForeArm", 0.42, 0, 0.18],
+      ["RightForeArm", 0.5, 0, -0.15],
+      ["LeftUpLeg", 0.28, 0, 0.09],
+      ["RightUpLeg", -0.1, 0, -0.08],
+      ["LeftLeg", -0.48, 0, 0],
+      ["RightLeg", -0.26, 0, 0],
+    ]
+      .map(([name, x, y, z]) => {
+        const joint = bone(actor.model, name);
+        return joint
+          ? {
+              joint,
+              base: joint.quaternion.clone(),
+              offset: new THREE.Euler(x, y, z),
+              rotation: new THREE.Quaternion(),
+            }
+          : null;
+      })
+      .filter(Boolean);
+    for (const leg of state.legs) leg.planted = false;
+    state.deadSample = null;
+  }
+  if (state.deadSample === sample) return false;
+  state.deadSample = sample;
+  const progress = r.motion?.matches ? 1 : clamp((now - (actor.deadAt ?? now)) / 0.85, 0, 1);
+  for (const pose of state.deathPose) {
+    pose.rotation.setFromEuler(
+      new THREE.Euler(pose.offset.x * progress, pose.offset.y * progress, pose.offset.z * progress),
+    );
+    pose.joint.quaternion.copy(pose.base).multiply(pose.rotation);
+  }
   actor.model.updateMatrixWorld(true);
   return true;
 }

@@ -24,9 +24,13 @@ import {
   weaponMaterials as realisticWeaponMaterials,
   buildRealisticHand,
   finishWeapon,
+  batchWeapon,
 } from "./realism-weapons.js";
+import { buildCarbine, animateCarbine } from "./realism-carbine.js";
 import { outfitOf, weaponOf } from "../../public/games/outpost-content.js";
 import { skinPattern } from "../../public/games/outpost-skins.js";
+import { VictimTakedown } from "./takedowns.js";
+import { ASSET_CACHE } from "../../public/games/outpost-asset-manifest.js";
 import { isAppleTouchDevice, graphicsProfile, renderSize } from "./compatibility.js";
 const SCALE = 3,
   ASSET = "/games/military/",
@@ -261,11 +265,11 @@ export class MilitaryRenderer {
   }
   async loadAssets() {
     let completed = 0;
-    const complete = () => this.onProgress(++completed, 14);
+    const complete = () => this.onProgress(++completed, 17);
     const loader = new THREE.TextureLoader();
     const load = async (path) => {
       try {
-        const t = await loader.loadAsync(ASSET + path);
+        const t = await loader.loadAsync(ASSET + path + "?assetVersion=" + ASSET_CACHE);
         if (this.disposed) {
           t.dispose();
           return null;
@@ -295,6 +299,9 @@ export class MilitaryRenderer {
         "glove-color.jpg",
         "glove-normal.jpg",
         "glove-roughness.jpg",
+        "operator-skin-color.jpg",
+        "operator-skin-normal.jpg",
+        "operator-skin-roughness.jpg",
       ].map((name) => load("textures/" + name)),
     );
     [
@@ -310,16 +317,20 @@ export class MilitaryRenderer {
       this.gloveColor,
       this.gloveNormal,
       this.gloveRough,
+      this.faceColor,
+      this.faceNormal,
+      this.faceRough,
     ] = maps;
     if (this.gunColor) this.gunColor.colorSpace = THREE.SRGBColorSpace;
     if (this.gloveColor) this.gloveColor.colorSpace = THREE.SRGBColorSpace;
+    if (this.faceColor) this.faceColor.colorSpace = THREE.SRGBColorSpace;
     if (this.groundColor) this.groundColor.colorSpace = THREE.SRGBColorSpace;
     if (this.metalColor) this.metalColor.colorSpace = THREE.SRGBColorSpace;
     await Promise.all([
       loadRealismSurfaces(this),
       (async () => {
         try {
-          const gltf = await new GLTFLoader().loadAsync(ASSET + "models/soldier.glb");
+          const gltf = await new GLTFLoader().loadAsync(ASSET + "models/operator-v1.glb?assetVersion=" + ASSET_CACHE);
           if (this.disposed) {
             this.disposeObject(gltf.scene);
             return;
@@ -348,7 +359,7 @@ export class MilitaryRenderer {
           // PMREM requires floating-point render targets. Keep direct cinematic lights
           // when the device cannot render those targets, rather than losing all 3D.
           if (!this.profile.halfFloat) return;
-          const hdr = await new RGBELoader().loadAsync(ASSET + "sky.hdr");
+          const hdr = await new RGBELoader().loadAsync(ASSET + "sky.hdr?assetVersion=" + ASSET_CACHE);
           if (this.disposed) {
             hdr.dispose();
             return;
@@ -368,6 +379,9 @@ export class MilitaryRenderer {
         }
       })(),
     ]);
+    // Source materials also serve the destination's resting patients. Finish
+    // their maps after the concurrently loaded cloth surfaces are available.
+    if(this.soldier) prepareCharacterAsset(this,this.soldier);
   }
   configure() {
     const preset = this.g.academy.preset,
@@ -1481,8 +1495,9 @@ export class MilitaryRenderer {
         presentation.root.traverse((object) => {
           if (object.isSkinnedMesh) object.skeleton.dispose();
           if (object.isMesh) {
-            object.material.dispose();
-            this.materials.delete(object.material);
+            for(const material of Array.isArray(object.material)?object.material:[object.material]){
+              material.dispose();this.materials.delete(material);
+            }
           }
         });
         this.arrivalPatients.delete(id);
@@ -1495,8 +1510,11 @@ export class MilitaryRenderer {
         presentation = this.makeActor({ id: temporaryId, x: 0, y: 0, team: null });
         this.actors.delete(temporaryId);
         presentation.mixer?.stopAllAction();
+        const resting=presentation.actions.Idle;
+        if(resting){resting.reset().setEffectiveWeight(1).play();presentation.mixer.update(0);resting.paused=true;}
+        if(presentation.equipment)presentation.equipment.visible=false;
         presentation.root.traverse((object) => {
-          if (object.isMesh) object.material.userData.world = true;
+          if (object.isMesh)for(const material of Array.isArray(object.material)?object.material:[object.material])material.userData.world = true;
         });
         this.arrivalClinic.root.add(presentation.root);
         presentation.root.rotation.set(Math.PI / 2, 0, 0);
@@ -1670,6 +1688,16 @@ export class MilitaryRenderer {
   }
   makePuddles(id, n) {
     if (!this.profile.reflections) return;
+    if(id === "medevac") return; // Dry aircraft flooring is not a water mirror.
+    const wetPixels=new Uint8Array(n*n*4);
+    const rooms=id==="breakwater"?this.g.protocolMap?.rooms||[]:[];
+    for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+      const roof=rooms.some(room=>room.roofed!==false&&x>=room.x&&x<room.x+room.w&&y>=room.y&&y<room.y+room.h);
+      const value=!this.g.level[y]?.[x]&&!roof?255:0,offset=(y*n+x)*4;
+      wetPixels[offset]=wetPixels[offset+1]=wetPixels[offset+2]=value;wetPixels[offset+3]=255;
+    }
+    const wetAreas=new THREE.DataTexture(wetPixels,n,n,THREE.RGBAFormat);wetAreas.needsUpdate=true;
+    wetAreas.magFilter=wetAreas.minFilter=THREE.NearestFilter;this.textures.add(wetAreas);this.worldTextures.add(wetAreas);
     // One reflection camera covers the arena, with an irregular water mask.
     // This reflects moving characters and walls, rather than a painted highlight.
     const shader = {
@@ -1683,7 +1711,7 @@ export class MilitaryRenderer {
           "vUv = textureMatrix",
           "wetUv = position.xy; wetWorld=(modelMatrix*vec4(position,1.0)).xyz; vUv = textureMatrix",
         ),
-      fragmentShader: `uniform sampler2D tDiffuse; varying vec4 vUv; varying vec2 wetUv; varying vec3 wetWorld;
+      fragmentShader: `uniform sampler2D tDiffuse; uniform sampler2D wetAreas; uniform float arenaMetres; varying vec4 vUv; varying vec2 wetUv; varying vec3 wetWorld;
         #include <logdepthbuf_pars_fragment>
         float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
         float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
@@ -1691,7 +1719,7 @@ export class MilitaryRenderer {
         void main(){
           #include <logdepthbuf_fragment>
           float n=noise(wetUv*.22)+.28*noise(wetUv*.72);
-          float mask=smoothstep(.72,.91,n);
+          float mask=smoothstep(.72,.91,n)*texture2D(wetAreas,wetWorld.xz/arenaMetres).r;
           if(mask<.015) discard;
           vec2 uv=vUv.xy/vUv.w;
           vec2 ripple=vec2(noise(wetUv*5.),noise(wetUv*5.+17.))-.5;
@@ -1705,6 +1733,7 @@ export class MilitaryRenderer {
           #include <colorspace_fragment>
         }`,
     };
+    shader.uniforms.wetAreas={value:wetAreas};shader.uniforms.arenaMetres={value:n*SCALE};
     const size = this.g.academy.preset === "high" ? 1024 : 512;
     const reflector = new Reflector(new THREE.PlaneGeometry(n * SCALE, n * SCALE), {
       textureWidth: size,
@@ -1920,7 +1949,9 @@ export class MilitaryRenderer {
     const equipment = new THREE.Group();
     a.root.add(equipment);
     this.buildWeapon(equipment, e.weapon, m, false);
-    this.mergeStatic(equipment);
+    if(e.weapon === "carbine") equipment.userData.carbine.position.z=.445;
+    if(e.weapon === "carbine") batchWeapon(this, equipment);
+    else this.mergeStatic(equipment);
     equipment.position.set(0.15, 1.25, -0.14);
     equipment.scale.setScalar(1.1);
     a.equipment = equipment;
@@ -2254,7 +2285,7 @@ export class MilitaryRenderer {
         (alive || now - a.deadAt < 2.5) &&
         (!cloaked || Math.hypot(e.x - camera.x, e.y - camera.y) < 1.3);
       const sliding = alive && e.slideUntil > this.g.time;
-      a.root.scale.y = sliding ? 0.55 : 1;
+      a.root.scale.y = 1;
       if (
         this.g.mode === "protocol" &&
         this.protocolPowerOut &&
@@ -2286,10 +2317,14 @@ export class MilitaryRenderer {
           a.weaponAnchor.getWorldPosition(a.equipment.position);
           a.root.worldToLocal(a.equipment.position);
           a.equipment.position.z -= 0.05;
+          if(e.weapon === "carbine") a.equipment.position.y += .10;
         } else if (!a.weaponAnchor)
           a.equipment.position.y =
             1.25 + (a.action !== "Idle" ? Math.sin(t * 7 + e.phase) * 0.025 : 0);
         a.equipment.rotation.x = t - e.shotAt < 0.15 ? -0.12 : 0;
+        animateCarbine(a.equipment.userData.carbine,
+          Math.max(0,Math.min(1,(e.reloadUntil-this.g.time)/1.4)),
+          Math.max(0,1-(t-e.shotAt)/.16));
       }
     }
     for (const [id, a] of this.actors)
@@ -2399,6 +2434,7 @@ export class MilitaryRenderer {
     finishWeapon(this, id);
   }
   buildWeapon(parent, id, m, hands = true) {
+    if(id === "carbine") { buildCarbine(this,parent,m,hands); return; }
     const hand = (...args) => {
       if (hands) this.hand(...args);
     };
@@ -2988,7 +3024,7 @@ export class MilitaryRenderer {
         protocolView?.protocol?.mission?.vehicle?.pilotId === p.id;
     const now = performance.now(),
       dt = Math.min(0.1, (now - (this.lastRenderAt || now)) / 1000),
-      targetHeight = p.slideUntil > g.time ? 0.7 : 1.65;
+      targetHeight = p.slideUntil > g.time ? 0.7 : p.crouching ? 1.17 : 1.65;
     this.lastRenderAt = now;
     this.eyeHeight ??= 1.65;
     this.eyeHeight += (targetHeight - this.eyeHeight) * (1 - Math.exp(-dt * 18));
@@ -3007,6 +3043,7 @@ export class MilitaryRenderer {
       this.camera.rotation.z = THREE.MathUtils.clamp(-heading * 0.055, -0.085, 0.085);
     }
     this.updateActors(t);
+    const takedown = (this.takedown ||= new VictimTakedown(this)).update(g);
     // Mark only the publicly accused participant, within ordinary sight and
     // wall occlusion. This identifies combat's one opposing uniform without
     // revealing any secret role or leaving markers visible through walls.
@@ -3015,7 +3052,7 @@ export class MilitaryRenderer {
       accused = battle && g.arena.entities.find((e) => e.id === battle.targetId);
     if (marker) {
       let show =
-        !!accused &&
+        !takedown && !!accused &&
         accused.id !== p.id &&
         accused.hp > 0 &&
         Math.hypot(accused.x - p.x, accused.y - p.y) <= (this.protocolPowerOut ? 2.6 : 7) &&
@@ -3057,8 +3094,9 @@ export class MilitaryRenderer {
     this.rig.rotation.x = 0.02 - recoil * 0.075;
     this.rig.rotation.z = -0.025 + Math.sin(reload * Math.PI) * 0.3;
     this.flash.intensity = recoil > 0.65 ? 3 : 0;
+    animateCarbine(this.rig.userData.carbine,reload,recoil);
     this.rig.visible =
-      (p.hp > 0 || (!!g.deathSequence && g.deathProgress < 0.65)) && !seatedPilot;
+      (p.hp > 0 || (!!g.deathSequence && g.deathProgress < 0.65)) && !seatedPilot && !takedown;
     const outside =
       !["training", "protocol"].includes(g.mode) &&
       g.time > g.zone.delay &&
@@ -3096,6 +3134,7 @@ export class MilitaryRenderer {
       this.renderer.render(this.weaponScene, this.weaponCamera);
       this.renderer.autoClear = true;
     } else this.composer.render();
+    this.takedown.restoreActors();
     this.lastTime = t;
     return true;
   }
@@ -3110,6 +3149,7 @@ export class MilitaryRenderer {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
+    this.takedown?.dispose();
     for (const a of this.actors.values()) {
       a.mixer?.stopAllAction();
       a.model.traverse((o) => {

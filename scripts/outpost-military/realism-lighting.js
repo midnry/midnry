@@ -5,6 +5,11 @@ const SCALE = 3;
 
 export function initNaturalLighting(r) {
   if (r.naturalLighting) return;
+  // A cached diffuse room probe approximates first-bounce illumination from
+  // matte walls and ceiling fixtures. It adds no shadow/render camera passes.
+  r.roomBounce = new THREE.LightProbe(new THREE.SphericalHarmonics3(), 1);
+  r.scene.add(r.roomBounce);
+  r.bakedRoomProbes = new Map();
   let weaponKey = null,
     weaponSky = null;
   for (const light of r.weaponScene.children) {
@@ -125,6 +130,22 @@ export function updateNaturalLighting(r, protocolView, camera) {
   state.inside = inside;
   state.roomId = room?.id || null;
   state.powerOut = powerOut;
+  const probeKey = `${r.g.arena.mapId}:${room?.id || "outside"}`;
+  let probe = r.bakedRoomProbes.get(probeKey);
+  if (!probe) {
+    probe = new THREE.SphericalHarmonics3();
+    if (room) {
+      const wall = new THREE.Color(r.g.arena.mapId === "medevac" ? "#b6bebc" : "#b7ad96");
+      // Larger rooms lose more fixture energy to distance; wall albedo sets
+      // the colour of the bounce instead of a universal white ambient boost.
+      const energy = 0.17 / Math.sqrt(Math.max(1, (room.w * room.h) / 10));
+      probe.coefficients[0].set(wall.r, wall.g, wall.b).multiplyScalar(energy);
+      probe.coefficients[1].copy(probe.coefficients[0]).multiplyScalar(0.22);
+    }
+    r.bakedRoomProbes.set(probeKey, probe);
+  }
+  r.roomBounce.sh.copy(probe);
+  r.roomBounce.intensity = powerOut ? 0.06 : 1;
   r.rim.visible = false;
   r.rim.intensity = 0;
   // The sun remains outside a roofed room. Roofs and walls occlude it rather
