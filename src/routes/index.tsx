@@ -209,7 +209,7 @@ function FeaturedApps() {
           </div>
           <p className="mt-3 flex-1 text-sm text-pretty text-[#c6c8c6]">
             Gather medical supplies, protect a sabotaged medevac flight, and save wounded
-            soldiers. Play with bots or friends online, plus Solo and Duo combat.
+            soldiers. Play Blackout Protocol offline with smart AI or online with friends.
           </p>
           <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#ffc455]">
             See the game{" "}

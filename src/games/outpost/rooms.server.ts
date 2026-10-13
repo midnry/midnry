@@ -125,6 +125,11 @@ export function lobbyMapOf(mode: Room["mode"], value: unknown = undefined): stri
     throw new OutpostError("Choose a valid combat map.");
   return mapId;
 }
+/** Public play is Blackout Protocol only; old clients cannot re-enable combat. */
+export function playableModeOf(value: unknown = undefined): "protocol" {
+  if (value === undefined || value === "protocol") return "protocol";
+  throw new OutpostError("Only Blackout Protocol is available. Update the game and create a new room.");
+}
 // Only intent crosses this boundary: simulation decides roles, locations,
 // progress, cooldowns and outcomes. Large strings and forged fields are dropped.
 export function inputOf(value: unknown): Input {
@@ -227,9 +232,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
       until: rate && rate.until > now ? rate.until : now + 60000,
     });
     for (const [k, v] of rates) if (v.until < now) rates.delete(k);
-    const mode = body.mode === undefined ? "protocol" : body.mode;
-    if (mode !== "protocol" && mode !== "signal" && mode !== "duo")
-      throw new OutpostError("Choose Blackout Protocol, Last Signal or Pair Ops.");
+    const mode = playableModeOf(body.mode);
     const difficulty = body.difficulty === undefined ? "normal" : body.difficulty;
     if (typeof difficulty !== "string" || !Object.hasOwn(DIFFICULTIES, difficulty))
       throw new OutpostError("Invalid bot difficulty.");
@@ -250,7 +253,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
       hash: sha(token),
       name: "Ranger 1",
       weapon,
-      outfit: outfitId(body.outfit),
+      outfit: "ranger",
       team: 0,
       lastSeen: now,
       inputAt: now,
@@ -304,6 +307,8 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
       throw new OutpostError("Room not found or expired. Create another room.", 404);
     const { version } = rows[0],
       room = rows[0].state;
+    if (room.mode !== "protocol" && body.op !== "leave")
+      throw new OutpostError("This room uses a retired mode. Create a Blackout Protocol room.", 409);
     const now = Math.max(Date.now(), room.updatedAt);
     let member: Member;
     if (body.op === "join") {
@@ -326,7 +331,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
         throw new OutpostError("Choose a valid loadout.");
       member = {
         weapon,
-        outfit: outfitId(body.outfit),
+        outfit: "ranger",
         id: joinedId,
         hash: sha(joinedToken),
         name: "Ranger " + room.nextName++,
@@ -379,16 +384,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
       if (room.phase !== "lobby")
         throw new OutpostError("Choose match settings before starting.", 409);
       if (body.mode !== undefined) {
-        if (body.mode !== "protocol" && body.mode !== "signal" && body.mode !== "duo")
-          throw new OutpostError("Invalid mode.");
-        const previousMode = room.mode;
-        room.mode = body.mode;
-        if (previousMode !== room.mode) {
-          room.members.forEach((m, i) => {
-            m.team = room.mode === "protocol" ? 0 : room.mode === "duo" ? Math.floor(i / 2) : i;
-          });
-          if (previousMode === "protocol" && room.mode !== "protocol") room.mapId = "outpost";
-        }
+        room.mode = playableModeOf(body.mode);
       }
       if (room.mode === "protocol") {
         room.mapId = lobbyMapOf(room.mode, body.mapId);

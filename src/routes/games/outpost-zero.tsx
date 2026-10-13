@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/games/outpost-zero")({
@@ -22,16 +22,15 @@ export const Route = createFileRoute("/games/outpost-zero")({
 function OutpostZeroPage() {
   const { room } = Route.useSearch();
   const frame = useRef<HTMLIFrameElement>(null);
+  const [playing, setPlaying] = useState(false);
   useEffect(() => {
     const onExit = (event: MessageEvent) => {
-      if (
-        event.origin === window.location.origin &&
-        event.source === frame.current?.contentWindow &&
-        event.data?.type === "midnry-outpost-exit"
-      )
-        window.location.assign("/");
+      if (event.origin !== window.location.origin || event.source !== frame.current?.contentWindow) return;
+      if (event.data?.type === "midnry-outpost-exit") window.location.assign("/");
+      if (event.data?.type === "midnry-outpost-focus") setPlaying(event.data.active === true);
     };
     window.addEventListener("message", onExit);
+    frame.current?.contentWindow?.postMessage({ type: "midnry-outpost-host-ready" }, window.location.origin);
     return () => window.removeEventListener("message", onExit);
   }, []);
   return (
@@ -46,7 +45,7 @@ function OutpostZeroPage() {
       <nav
         aria-label="Game navigation"
         style={{ paddingTop: "env(safe-area-inset-top)" }}
-        className="flex min-h-11 shrink-0 items-center justify-between gap-3 border-b border-white/15 px-4 text-xs"
+        className={playing ? "hidden" : "flex min-h-11 shrink-0 items-center justify-between gap-3 border-b border-white/15 px-4 text-xs"}
       >
         <Link to="/" className="inline-flex min-h-11 items-center font-semibold hover:underline">
           ← Midnry
@@ -62,7 +61,7 @@ function OutpostZeroPage() {
           iframe tears down the game, and its scripts never run during SSR. */}
       <iframe
         ref={frame}
-        src={`/games/outpost-zero.html?renderer=military&v=natural-realism-20261012${room ? `&room=${encodeURIComponent(room)}` : ""}`}
+        src={`/games/outpost-zero.html?renderer=military&v=protocol-focus-20261013${room ? `&room=${encodeURIComponent(room)}` : ""}`}
         title="Outpost Zero first-person shooter"
         className="block min-h-0 w-full flex-1 border-0"
         allow="fullscreen"

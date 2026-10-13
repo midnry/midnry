@@ -8,34 +8,13 @@ export class MenuUI {
       learn = g.$(".mf-learn");
     g.$("h1").innerHTML = "Outpost <em>Zero.</em>";
     g.$(".mf-eyebrow").textContent = "MIDNRY / TACTICAL OPERATIONS";
-    for (const option of g.$(".mf-mapselect").options) {
-      if (g.mode !== "protocol" && ["breakwater", "medevac"].includes(option.value))
-        option.hidden = option.disabled = true;
-    }
-    g.$('[data-mode="protocol"]').innerHTML =
-      "Blackout Protocol<small>Lifeline Run · default</small>";
-    g.$('[data-mode="protocol"]').setAttribute("aria-label", "Blackout Protocol");
-    const practice = g.$('[data-mode="training"]');
-    practice.textContent = "Practice";
-    for (const [id, title, detail] of [
-      ["signal", "Play Solo", "You + 7 rivals"],
-      ["duo", "Play Duo", "You + an AI partner"],
-    ]) {
-      const button = g.$(`[data-mode="${id}"]`);
-      button.innerHTML = `${title}<small>${detail}</small>`;
-      button.setAttribute("aria-label", title);
-    }
-    modes.insertAdjacentHTML(
-      "beforeend",
-      '<button class="mf-onlinechoice" aria-label="Play Online" aria-expanded="false" aria-controls="outpost-room">Play Online<small>Invite your friends</small></button>',
-    );
-    // Reuse the existing buttons and listeners, so keyboard and touch share behavior.
-    learn.prepend(practice);
-    g.$(".mf-boot").textContent = "Tutorial";
-    g.$(".mf-guide").textContent = "Field Guide";
+    this.playChoice = new URLSearchParams(location.search).has("room") ? "online" : "offline";
+    modes.setAttribute("aria-label", "Play Blackout Protocol");
+    modes.innerHTML = '<button class="mf-offlinechoice" data-play="offline" aria-pressed="true">Offline<small>Smart AI operators & infiltrators</small></button><button class="mf-onlinechoice" data-play="online" aria-pressed="false">Online<small>Friends + smart bots</small></button>';
+    g.$(".mf-boot").hidden = true;
+    g.$(".mf-guide").textContent = "Mission guide";
     g.$(".mf-graphics").textContent = "Settings";
-    learn.append(g.$(".mf-lockeropen"));
-    g.$(".mf-lockeropen").textContent = "Locker";
+    g.$(".mf-lockeropen").hidden = true;
     const level = g.$(".mf-level");
     level.classList.add("mf-progresslabel");
     panel.append(level);
@@ -73,22 +52,12 @@ export class MenuUI {
     network.id = "outpost-room-" + Math.random().toString(36).slice(2);
     g.$(".mf-onlinechoice").setAttribute("aria-controls", network.id);
     network.querySelector("summary").textContent = "Online room";
-    network.querySelector("p").textContent =
-      "Create a room or enter a friend's code. The host starts; bots fill empty seats. Choose Blackout Protocol, Solo or Duo before creating a room. Online matches keep running while menus are open.";
+    network.querySelector("p").textContent = "Create a Blackout Protocol room or enter a friend's code. The host starts; smart bots fill unused seats. Online missions continue while menus are open.";
     network.insertAdjacentHTML("afterbegin", '<p class="mf-roomformat"></p>');
-    // Online options are grouped near the play choices and remain collapsible.
     modes.after(network);
-    g.on(g.$(".mf-onlinechoice"), "click", () => {
-      if (g.mode === "training" && !g.online) g.$('[data-mode="signal"]').click();
-      network.open = !network.open;
-      this.refresh();
-      if (network.open) g.$(g.online ? ".mf-copyinvite" : ".mf-codeinput").focus();
-    });
+    for (const button of modes.querySelectorAll("[data-play]"))
+      g.on(button, "click", () => this.choosePlay(button.dataset.play));
     g.on(network, "toggle", () => this.refresh());
-    for (const button of modes.querySelectorAll(".mf-mode"))
-      g.on(button, "click", () => {
-        if (!g.online) network.open = false;
-      });
     g.shell.insertAdjacentHTML(
       "beforeend",
       '<dialog class="mf-settings" aria-label="Settings"><div class="mf-settingshead"><h2>Settings</h2><button class="mf-settingsclose">Done</button></div><div class="mf-settingsbody"><h3>Camera & aim</h3><div class="mf-aimsettings"></div><h3>Gameplay & sound</h3><div class="mf-experience"></div><h3>Graphics</h3><div class="mf-graphicsettings"></div><p class="mf-settingsnotice"></p></div></dialog>',
@@ -100,6 +69,9 @@ export class MenuUI {
     for (const child of [...old.children]) if (child.tagName !== "SUMMARY") controls.append(child);
     g.$(".mf-experience").append(controls);
     old.remove();
+    const difficulty = g.$(".mf-difficulty").closest("label");
+    difficulty.nextElementSibling?.remove();
+    difficulty.remove();
     g.on(g.$(".mf-settingsclose"), "click", () => g.$(".mf-settings").close());
     g.on(g.$(".mf-settings"), "keydown", (e) => e.stopPropagation());
     g.on(g.$(".mf-graphicsettings"), "change", (e) =>
@@ -275,46 +247,46 @@ export class MenuUI {
     g.retention.menu();
     g.academy.settings(g.$(".mf-graphicsettings"));
     g.$(".mf-settingsnotice").textContent = g.online
-      ? "Online play continues while Settings is open. Only the host can change bot difficulty in the lobby."
-      : "Offline matches pause while Settings is open. Changing difficulty starts a fresh round.";
+      ? "Online play continues while Settings is open. Smart bots fill unused seats."
+      : "Offline Blackout Protocol pauses while Settings is open.";
     g.$(".mf-settings").showModal();
+  }
+  choosePlay(choice) {
+    const g = this.g;
+    if (choice === "offline" && g.online) {
+      this.confirm("Leave online mission?", "You will leave this room and start an offline Blackout Protocol mission with smart bots.", "Play offline", confirmed => {
+        if (!confirmed) return;
+        g.leaveOnline(); this.playChoice = "offline"; g.reset(); this.refresh();
+      });
+      return;
+    }
+    this.playChoice = choice;
+    this.refresh();
+    if (choice === "online") g.$(".mf-codeinput").focus({ preventScroll: true });
   }
   refresh() {
     this.syncAccessibility();
-    const g = this.g,
-      map = mapOf(g.mapId),
-      weapon = weaponOf(g.weapon);
-    for (const button of g.root.querySelectorAll(".mf-mode"))
-      button.setAttribute("aria-pressed", String(button.dataset.mode === g.mode));
-    g.$(".mf-onlinechoice").setAttribute("aria-expanded", String(g.$(".mf-network").open));
-    g.$(".mf-roomformat").textContent =
-      `${g.mode === "protocol" ? "Blackout Protocol · medical rescue & hidden infiltrators" : g.mode === "duo" ? "Duo · teams of two" : "Solo · every player for themselves"}${g.online ? " · Room " + g.online.code : ""}`;
-    if (!g.online && g.state === "fresh")
-      g.$(".mf-start").textContent =
-        g.mode === "protocol"
-          ? "START BLACKOUT PROTOCOL →"
-          : g.mode === "training"
-            ? "START PRACTICE →"
-            : `START ${g.mode === "duo" ? "DUO" : "SOLO"} →`;
-    if (!g.online && g.state === "fresh")
-      g.$(".mf-copy").textContent =
-        g.mode === "protocol"
-          ? "Gather medical supplies, board Lifeline Medevac and deliver aid to wounded soldiers. Hidden infiltrators can sabotage the cargo and aircraft."
-          : g.mode === "duo"
-            ? "Team up with an AI partner. Protect each other and be the last pair standing."
-            : g.mode === "signal"
-              ? "Outlast seven rivals. Collect Charge Cores and stay ahead of the Red Haze."
-              : "A low-pressure range: eliminate six sentries. Try Tutorial for guided lessons.";
-    g.$(".mf-boot").disabled = Boolean(g.online);
-    g.$('[data-mode="signal"] small').textContent = g.online
-      ? "Last player standing"
-      : "You + 7 rivals";
-    g.$('[data-mode="duo"] small').textContent = g.online ? "Teams of two" : "You + an AI partner";
+    const g = this.g, map = mapOf(g.mapId), weapon = weaponOf(g.weapon), network = g.$(".mf-network");
+    if (g.online) this.playChoice = "online";
+    for (const button of g.root.querySelectorAll("[data-play]"))
+      button.setAttribute("aria-pressed", String(button.dataset.play === this.playChoice));
+    network.hidden = this.playChoice !== "online";
+    network.open = this.playChoice === "online";
+    g.$(".mf-onlinechoice").setAttribute("aria-expanded", String(network.open));
+    g.$(".mf-roomformat").textContent = "Blackout Protocol" + (g.online ? " · Room " + g.online.code : " · Friends + smart bots");
+    g.$(".mf-copy").textContent = "Gather medical supplies, protect the medevac flight and save wounded soldiers. Hidden infiltrators sabotage the rescue.";
+    g.protocolUI?.refreshMenu();
+    if (!g.online && this.playChoice === "online") {
+      g.$(".mf-start").disabled = true;
+      g.$(".mf-start").textContent = "CREATE OR JOIN A ROOM";
+    } else if (!g.online) {
+      g.$(".mf-start").disabled = !g.militaryLoaded;
+      if (g.state === "fresh") g.$(".mf-start").textContent = "PLAY OFFLINE →";
+    }
     g.$(".mf-maphint").textContent = map.tag;
     g.$(".mf-weaponhint").textContent = `${weapon.kind} · ${weapon.mag} rounds`;
     // Polling may refresh the menu ten times a second; redraw only on selection changes.
     const key = `${map.id}:${weapon.id}:${Boolean(g.militaryLoaded)}:${Boolean(g.militaryError)}`;
-    g.protocolUI?.refreshMenu();
     if (key === this.previewKey) return;
     this.previewKey = key;
     this.mapPreview(map);

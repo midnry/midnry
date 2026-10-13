@@ -2,6 +2,14 @@
 
 The game is a scoped HTML/JavaScript component with a locally bundled Three.js WebGL renderer (`outpost-military.js`). Canvas is used only for HUD and tactical diagrams. Serve the `public/games/` modules and `public/games/military/` assets over HTTP. Offline play needs no backend or runtime CDN; online rooms use the Midnry API and database. The retired comic art modules and atlases are no longer imported or rendered by the game.
 
+## Current play options
+
+Blackout Protocol is the only public game mode. Choose **Offline** for a full eight-person mission with smart AI, or **Online** to create/join a room with friends and bots filling unused seats. The public room API rejects retired modes; the retained combat simulation is internal compatibility code and has no play entry point.
+
+The compact HUD keeps the scene visible. **Info** opens the medical manifest, patient vitals, map, role orders and infiltrator tactics. Offline play pauses while this panel is open; online play continues. Relevant nearby actions and urgent warnings remain visible. The host navigation hides during play and returns in the menu. Text selection and touch callouts are suppressed on game chrome; room-code, chat and arming-code inputs remain editable.
+
+`outpost-protocol-focus.js` owns the compact presentation. Validate viewport visibility, Info, connection choices and selection with `node scripts/check-outpost-focus.mjs [local-base]`. `check-outpost-protocol.mjs --online` verifies the medical mission and recipient-private eight-player rooms. Bot regression tests cover autonomous supply collection, transport, delivery and actual autopilot recovery.
+
 ## Midnry integration
 
 The homepage links to `/discover/outpost-zero`, which launches `/games/outpost-zero`. That route embeds the static HTML with a return link to Midnry. Both routes are included in the sitemap. No account or subscription is required.

@@ -3,6 +3,7 @@
  * All objectives, votes, cooldowns and arming checks belong to the shared
  * simulation. This module reads ONLY the recipient-safe view and sends inputs.
  */
+import { ProtocolFocus } from "./outpost-protocol-focus.js";
 import { protocolView } from "./outpost-protocol.js";
 import { PROTOCOL_MAP, TRANSPORT_MAP } from "./outpost-protocol-map.js";
 
@@ -76,6 +77,7 @@ export class ProtocolUI {
     g.rolePreference ||= "operator";
     this.build();
     this.bind();
+    this.focus = new ProtocolFocus(g, this);
     this.refreshMenu();
   }
 
@@ -397,10 +399,13 @@ export class ProtocolUI {
       if (!this.canInteract()) return;
       event.preventDefault();
       this.held = true;
+      this.touchHold = event.pointerType !== "mouse";
       this.holdButton.setPointerCapture(event.pointerId);
       this.holdButton.setAttribute("aria-pressed", "true");
     });
     const release = () => {
+      if (this.touchHold) this.g.ignoreMissionTapUntil = performance.now() + 450;
+      this.touchHold = false;
       this.held = false;
       this.holdButton.setAttribute("aria-pressed", "false");
     };
@@ -445,7 +450,7 @@ export class ProtocolUI {
     g.on(this.actionBar.querySelector(".mf-protocol-report"), "click", () => this.report());
     g.on(this.actionBar.querySelector(".mf-protocol-emergency"), "click", () => this.emergency());
     g.on(this.actionBar.querySelector(".mf-protocol-eliminate"), "click", () => this.eliminate());
-    g.on(this.actionBar.querySelector(".mf-protocol-openactions"), "click", () =>
+    g.on(this.g.$(".mf-protocol-openactions"), "click", () =>
       this.toggleTactics(),
     );
     g.on(this.tactics, "click", (event) => {
@@ -563,12 +568,12 @@ export class ProtocolUI {
     return { pitch: clamp(pitch, -1, 1), steer: clamp(steer, -1, 1) };
   }
   hasDialogOpen() {
-    return [this.brief, this.guide, this.arming, this.meeting].some((dialog) => dialog.open);
+    return [this.brief, this.guide, this.arming, this.meeting, this.focus?.info].some((dialog) => dialog?.open);
   }
   visibleGameplay() {
     return (
       this.g.mode === "protocol" &&
-      this.g.running &&
+      (this.g.running || this.focus?.pausedOffline) &&
       this.g.state === "playing" &&
       this.g.$(".mf-modal").hidden
     );
@@ -602,7 +607,7 @@ export class ProtocolUI {
 
   /** A one-shot stays queued through failed HTTP polls; the server deduplicates seq. */
   controls() {
-    if (!this.visibleGameplay() || this.brief.open || this.guide.open) return { interact: false };
+    if (!this.visibleGameplay() || this.brief.open || this.guide.open || this.focus?.info.open) return { interact: false };
     const phase = this.view?.protocol?.phase;
     const interact =
       phase === "roam" &&
@@ -623,6 +628,7 @@ export class ProtocolUI {
   }
 
   reset() {
+    this.focus?.close();
     this.actions = [];
     this.held = false;
     this.trackedTask = null;
@@ -958,9 +964,9 @@ export class ProtocolUI {
       this.view.protocol.phase !== "roam"
     )
       return;
+    if (!this.focus.info.open) this.focus.open();
     this.tactics.hidden = forceOpen ? false : !this.tactics.hidden;
-    this.actionBar
-      .querySelector(".mf-protocol-openactions")
+    this.g.$(".mf-protocol-openactions")
       .setAttribute("aria-expanded", String(!this.tactics.hidden));
     if (!this.tactics.hidden) {
       this.releaseMouse();
@@ -981,11 +987,13 @@ export class ProtocolUI {
     this.actionBar.hidden = !gameplay;
     this.context.hidden = !gameplay;
     if (!gameplay) {
+      this.focus?.update(null, false);
       this.flight.hidden = this.flightPad.hidden = true;
       this.clearFlightInput();
       g.shell.classList.remove("mf-protocol-piloting");
     }
     if (!active) {
+      this.focus?.close();
       for (const dialog of [this.brief, this.arming, this.meeting]) if (dialog.open) dialog.close();
       this.tactics.hidden = true;
       this.held = false;
@@ -1002,6 +1010,7 @@ export class ProtocolUI {
     if (!gameplay) {
       this.held = false;
       this.tactics.hidden = true;
+      this.focus?.close();
       for (const dialog of [this.brief, this.arming, this.meeting]) if (dialog.open) dialog.close();
       return;
     }
@@ -1067,6 +1076,7 @@ export class ProtocolUI {
     this.updateActions(view);
     this.updateArming(view);
     this.updateMeeting(view);
+    this.focus?.update(view, gameplay);
     if (protocol.phase === "roam" && this.briefRound !== view.roundId && !this.arming.open) {
       this.briefRound = view.roundId;
       this.showBrief();
@@ -1333,7 +1343,7 @@ export class ProtocolUI {
         : "Find an objective",
     );
     this.holdButton.disabled = !this.canInteract();
-    this.holdButton.hidden = this.piloting;
+    this.holdButton.hidden = this.piloting || !context;
   }
 
   updateActions(view) {
@@ -1376,7 +1386,7 @@ export class ProtocolUI {
     this.actionBar.querySelector(".mf-protocol-emergency").hidden =
       !alive || !roam || !this.nearby.emergency;
     const kill = this.actionBar.querySelector(".mf-protocol-eliminate");
-    kill.hidden = !alive || !roam || !infiltrator;
+    kill.hidden = !alive || !roam || !infiltrator || !this.nearby.target;
     kill.disabled =
       !this.nearby.target ||
       time < self.killReadyAt ||
@@ -1387,7 +1397,7 @@ export class ProtocolUI {
         ? `Ready in ${Math.ceil(self.killReadyAt - time)}s`
         : "X · close range",
     );
-    this.actionBar.querySelector(".mf-protocol-openactions").hidden =
+    this.g.$(".mf-protocol-openactions").hidden =
       !alive || !roam || !infiltrator;
     if (!alive || !roam || !infiltrator) this.tactics.hidden = true;
     for (const button of this.tactics.querySelectorAll("[data-sabotage]"))
@@ -1576,6 +1586,7 @@ export class ProtocolUI {
     this.menu.hidden = !active;
     this.results.hidden = !active || g.state !== "ended";
     if (!this.visibleGameplay()) {
+      this.focus?.update(null, false);
       this.hud.hidden =
         this.actionBar.hidden =
         this.context.hidden =
@@ -1585,11 +1596,16 @@ export class ProtocolUI {
       this.clearFlightInput();
       this.tactics.hidden = true;
       this.held = false;
+      this.focus?.close();
       for (const dialog of [this.brief, this.arming, this.meeting]) if (dialog.open) dialog.close();
     }
     const preference = this.menu.querySelector("select");
     preference.value = g.rolePreference || "operator";
     preference.disabled = Boolean(g.online);
+    preference.closest("label").hidden = Boolean(g.online) || g.ui?.playChoice === "online";
+    setText(this.menu.querySelector("p"), g.online || g.ui?.playChoice === "online"
+      ? "Online roles are secret and assigned by the server. Smart bots fill unused seats."
+      : "Smart operators gather, repair and pilot; infiltrators plan sabotage and avoid witnesses. Changing your role starts a fresh offline mission.");
     if (!active) {
       this.hud.hidden =
         this.actionBar.hidden =
@@ -1657,7 +1673,7 @@ export class ProtocolUI {
         instructions,
         "On foot: WASD / left joystick moves; hold E / the action button to collect, load, depart, repair or deliver. F reports, C calls a meeting, X eliminates, B opens tactics. At the helm: W/S adjusts flight level; A/D steers. Hold both gauges in their safe bands for three seconds, restore autopilot, then release the helm. Escape / P opens the menu.",
       );
-    if (g.state === "fresh" && !g.online) setText(g.$(".mf-start"), "ENTER BLACKOUT PROTOCOL →");
+    if (g.state === "fresh" && !g.online) setText(g.$(".mf-start"), "PLAY OFFLINE →");
     if (g.state === "ended") this.result();
   }
 
@@ -1673,6 +1689,7 @@ export class ProtocolUI {
       this.flight.hidden =
       this.flightPad.hidden =
         true;
+    this.focus?.close();
     this.clearFlightInput();
     this.tactics.hidden = true;
     if (this.resultRound === view.roundId) return;
@@ -1724,6 +1741,7 @@ export class ProtocolUI {
   draw() {}
 
   dispose() {
+    this.focus?.dispose();
     this.disposed = true;
     this.actions = [];
     this.held = false;

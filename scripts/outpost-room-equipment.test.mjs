@@ -49,84 +49,35 @@ source = source
 const modulePath = join(temporary, "rooms.mjs");
 await writeFile(modulePath, source);
 const { roomAction } = await import(pathToFileURL(modulePath).href);
-const create = () =>
-  roomAction({ op: "create", mode: "duo", weapon: "carbine", outfit: "ranger" }, "equipment-test");
-const session = (r) => ({ code: r.code, id: r.id, token: r.token });
-test("room uniforms validate on create, join and loadout without altering a rejected request", async () => {
-  await assert.rejects(
-    roomAction(
-      { op: "create", mode: "duo", weapon: "carbine", outfit: "fake" },
-      "invalid-equipment",
-    ),
-    /valid outfit/,
-  );
+const create = () => roomAction({ op: "create", mode: "protocol" }, "protocol-room-test");
+const session = r => ({ code:r.code, id:r.id, token:r.token });
+test("new rooms accept only Blackout Protocol and retired clients cannot switch modes", async () => {
+  for (const mode of ["training","signal","duo","__proto__",null])
+    await assert.rejects(roomAction({op:"create",mode},"old-client-"+mode),/Only Blackout Protocol/);
   const host = await create();
-  await assert.rejects(
-    roomAction({ op: "join", code: host.code, weapon: "rocket", outfit: "__proto__" }, "guest"),
-    /valid outfit/,
-  );
-  assert.equal(rooms.get(host.code).state.members.length, 1);
-  const guest = await roomAction(
-    { op: "join", code: host.code, weapon: "rocket", outfit: "hazard" },
-    "guest",
-  );
-  assert.equal(guest.members.find((m) => m.id === guest.id).outfit, "hazard");
-  for (const outfit of [
-    "ranger",
-    "desert",
-    "urban",
-    "medic",
-    "recon",
-    "engineer",
-    "alpine",
-    "sentinel",
-    "shadow",
-    "hazard",
-  ]) {
-    const response = await roomAction(
-      { op: "loadout", ...session(host), weapon: "veil", outfit },
-      "host",
-    );
-    assert.equal(response.members.find((m) => m.id === host.id).outfit, outfit);
-  }
+  assert.equal(host.mode,"protocol");
+  assert.equal(host.mapId,"breakwater");
   const before = JSON.stringify(rooms.get(host.code));
-  await assert.rejects(
-    roomAction({ op: "loadout", ...session(host), weapon: "rocket", outfit: "invalid" }, "host"),
-    /valid outfit/,
-  );
-  assert.equal(JSON.stringify(rooms.get(host.code)), before);
-  await assert.rejects(
-    roomAction(
-      { op: "loadout", ...session(guest), id: host.id, weapon: "rocket", outfit: "medic" },
-      "guest",
-    ),
-    /session is invalid/,
-  );
+  for (const mode of ["training","signal","duo"])
+    await assert.rejects(roomAction({op:"settings",...session(host),mode},"host"),/Only Blackout Protocol/);
+  assert.equal(JSON.stringify(rooms.get(host.code)),before);
 });
-test("authoritative start and rematch retain human uniforms and varied bot equipment", async () => {
-  const host = await create(),
-    guest = await roomAction(
-      { op: "join", code: host.code, weapon: "rocket", outfit: "hazard" },
-      "guest",
-    );
-  await roomAction({ op: "loadout", ...session(host), weapon: "reaper", outfit: "medic" }, "host");
-  const started = await roomAction({ op: "start", ...session(host) }, "host");
-  assert.equal(started.arena.entities.find((e) => e.id === host.id).outfit, "medic");
-  assert.equal(started.arena.entities.find((e) => e.id === guest.id).weapon, "rocket");
-  assert.equal(started.arena.entities.find((e) => e.id === guest.id).outfit, "hazard");
-  const bots = started.arena.entities.filter((e) => e.bot);
-  assert.equal(new Set(bots.map((e) => e.weapon)).size, bots.length);
-  assert.equal(new Set(bots.map((e) => e.outfit)).size, bots.length);
-  await assert.rejects(
-    roomAction({ op: "loadout", ...session(host), weapon: "carbine", outfit: "urban" }, "host"),
-    /before starting/,
-  );
-  const saved = rooms.get(host.code);
-  saved.state.phase = "ended";
-  saved.state.arena.state = "ended";
-  const rematch = await roomAction({ op: "rematch", ...session(host) }, "host");
-  assert.equal(rematch.arena.entities.find((e) => e.id === host.id).outfit, "medic");
-  assert.equal(rematch.arena.entities.find((e) => e.id === guest.id).outfit, "hazard");
+test("Blackout rooms keep matching kits, private roles, bot-filled seats and authoritative rematches", async () => {
+  const host = await create();
+  const guest = await roomAction({op:"join",code:host.code,weapon:"rocket",outfit:"hazard"},"guest");
+  assert.ok(guest.members.every(m=>m.weapon==="carbine"&&m.outfit==="ranger"));
+  assert.ok(guest.members.every(m=>!("team" in m)));
+  await assert.rejects(roomAction({op:"poll",...session(guest),id:host.id},"guest"),/session is invalid/);
+  const started = await roomAction({op:"start",...session(host)},"host");
+  assert.equal(started.arena.mode,"protocol");
+  assert.equal(started.arena.entities.length,8);
+  assert.equal(started.arena.entities.filter(e=>e.bot).length,6);
+  assert.ok(started.arena.entities.every(e=>e.weapon==="carbine"));
+  assert.ok(started.arena.protocol.self);
+  assert.equal(started.arena.protocol.players,undefined);
+  const saved=rooms.get(host.code); saved.state.phase="ended";saved.state.arena.state="ended";
+  const rematch=await roomAction({op:"rematch",...session(host)},"host");
+  assert.equal(rematch.mode,"protocol");assert.equal(rematch.arena.entities.length,8);
 });
 test.after(async () => {
   delete globalThis.__outpostEquipmentTestSql;

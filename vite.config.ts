@@ -187,6 +187,7 @@ export default defineConfig(({ command, isPreview }) => ({
                   "outpost-protocol.js",
                   "outpost-protocol-map.js",
                   "outpost-protocol-ui.js",
+                  "outpost-protocol-focus.js",
                   "outpost-compatibility.js",
                   "outpost-content.js",
                   "outpost-academy.js",

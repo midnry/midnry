@@ -1808,7 +1808,7 @@
         <div class="mf-damage" role="status" aria-live="polite"></div><div class="mf-hitmark" aria-hidden="true"></div><button class="mf-super" aria-label="Use charged ability">Q · SUPER <b>0%</b></button>
         <div class="mf-bottom"><div class="mf-stat">VITALS<strong class="mf-hp">100</strong><div class="mf-health"><i></i></div></div><div class="mf-stat mf-ammo">VX–7 / AUTO CARBINE<strong class="mf-rounds">24 <span>/ ∞</span></strong></div></div>
         <div class="mf-movement" hidden role="status" aria-live="polite"></div><div class="mf-death" hidden role="status" aria-live="polite">SIGNAL LOST</div><div class="mf-touch"><button class="mf-sprint" aria-label="Toggle sprint" aria-pressed="false">SPRINT</button><button class="mf-slide" aria-label="Slide while sprinting">SLIDE</button><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
-        <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">Field operations in a weathered compound. Choose a loadout and deploy.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="protocol" aria-pressed="true">BLACKOUT PROTOCOL</button><button class="mf-mode" data-mode="training" aria-pressed="false">FIELD OPS</button><button class="mf-mode" data-mode="signal" aria-pressed="false">LAST SIGNAL · SOLO</button><button class="mf-mode" data-mode="duo" aria-pressed="false">PAIR OPS · DUO</button></div><div class="mf-kit"><label>Arena<select class="mf-mapselect" aria-label="Choose arena"></select></label><label>Loadout<select class="mf-weaponselect" aria-label="Choose loadout"></select></label><label class="mf-outfitlabel"><span>Outfit<select class="mf-outfitselect" aria-label="Choose outfit"></select></span><img class="mf-outfitpreview" alt="Selected outfit" width="120" height="150"></label></div><p class="mf-mapinfo"></p><p class="mf-weaponinfo"></p><p class="mf-kitnote">Choose before deploying. Offline changes start a fresh round; online, the host chooses the arena.</p><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Click or Space · fire<br>R · reload &nbsp; / &nbsp; Shift · sprint &nbsp; / &nbsp; Esc or P · pause &nbsp; / &nbsp; Q · super<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
+        <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">Field operations in a weathered compound. Choose a loadout and deploy.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="protocol" aria-pressed="true">BLACKOUT PROTOCOL</button></div><div class="mf-kit"><label>Arena<select class="mf-mapselect" aria-label="Choose arena"></select></label><label>Loadout<select class="mf-weaponselect" aria-label="Choose loadout"></select></label><label class="mf-outfitlabel"><span>Outfit<select class="mf-outfitselect" aria-label="Choose outfit"></select></span><img class="mf-outfitpreview" alt="Selected outfit" width="120" height="150"></label></div><p class="mf-mapinfo"></p><p class="mf-weaponinfo"></p><p class="mf-kitnote">Choose before deploying. Offline changes start a fresh round; online, the host chooses the arena.</p><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Click or Space · fire<br>R · reload &nbsp; / &nbsp; Shift · sprint &nbsp; / &nbsp; Esc or P · pause &nbsp; / &nbsp; Q · super<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
       </div>`;
             this.engine = new Game(this);
           }
@@ -2059,7 +2059,7 @@
               updateCheck(this.compatibilityReport, "performance", "checking", "The loaded scene will be tested at your selected graphics quality.");
               this.refreshCompatibility();
               const { MilitaryRenderer } = await import(
-                `./outpost-military.js?v=natural-realism-20261012&retry=${attempt - 1}`
+                `./outpost-military.js?v=protocol-focus-20261013&retry=${attempt - 1}`
               );
               if (this.abort.signal.aborted) return;
               const renderer = new MilitaryRenderer(this, (done,total) => {
@@ -2125,6 +2125,7 @@
           }
           // Last Signal uses the same arena, with a clear center for the final zone.
           reset() {
+            this.mode = "protocol";
             this.shell.classList.remove("mf-dying");
             this.deathSequence = null;
             this.deathProgress = 0;
@@ -2293,7 +2294,7 @@
             if (protocol) {
               controls.fire = controls.reload = controls.super = false;
               controls.sprint = false;
-              if (frozen || this.protocolUI?.piloting) controls.forward = controls.strafe = 0;
+              if (frozen || this.protocolUI?.piloting || this.protocolUI?.hasDialogOpen()) controls.forward = controls.strafe = 0;
               Object.assign(controls, this.protocolUI?.controls() || {});
               if (controls.protocolAction?.op === "helm") {
                 this.player.a = controls.aim = TRANSPORT_MAP.helm.a;
@@ -2502,19 +2503,10 @@
             }
             this.state = "ended";
             this.pause();
-            this.message(
-              won
-                ? this.mode === "training"
-                  ? "CONTRACT COMPLETE"
-                  : this.mode === "duo"
-                    ? "PAIR OPS: TEAM SECURED"
-                    : "LAST SIGNAL: YOURS"
-                : "SIGNAL LOST",
-              999,
-            );
+            this.message(won ? "RESCUE COMPLETE" : "RESCUE LOST", 3);
             this.$(".mf-copy").textContent = won
-              ? `Victory. ${this.kills} eliminations. ${this.online ? "The host can return the room to the lobby for another round." : "Deploy again for a fresh match."}`
-              : `Your ${this.mode === "duo" ? "team was" : "signal was"} eliminated. ${this.online ? "Watch the remaining players or wait for the next round." : "Deploy to try again."}`;
+              ? "Lifesaving aid delivered. Start a new Blackout Protocol mission when ready."
+              : "The rescue was lost. Start a fresh mission and protect the medical shipment.";
             this.retention?.finish(won);
             if (this.mode === "protocol") this.protocolUI?.result(won);
           }
@@ -2571,7 +2563,7 @@
             for (const button of this.root.querySelectorAll(".mf-connectrow button"))
               button.disabled = true;
             try {
-              const mode = this.mode === "training" ? "signal" : this.mode;
+              const mode = "protocol";
               const controller = new AbortController();
               this.connectionAbort = controller;
               const timer = setTimeout(() => controller.abort(), 10000);
@@ -2611,6 +2603,7 @@
             }
           }
           applyRoom(data) {
+            if (data.mode !== "protocol") throw Error("This room uses a retired mode. Create a Blackout Protocol room.");
             const net = this.online;
             if (!net) return;
             // A guest may miss the ended snapshot if the host rematches immediately.
@@ -3005,6 +2998,7 @@
           }
 
           start() {
+            if (this.ui?.playChoice === "online" && !this.online) return;
             if (!this.militaryLoaded || this.loading || this.deathSequence) return;
             this.retention?.audio.unlock();
             if (this.online) {
@@ -3026,6 +3020,7 @@
             else this.lockMouse();
           }
           pause() {
+            this.protocolUI?.focus?.close();
             if (this.deathSequence) return;
             this.pendingSlide = false;
             this.touchSprint = false;
@@ -3259,6 +3254,7 @@
             this.updateHUD(false);
           }
           drawMap() {
+            if (this.mode === "protocol") return;
             const c = this.ctx,
               n = this.level.length,
               layout = this.hudMap || { right: 24, top: 76, size: 128 },
