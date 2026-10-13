@@ -35,6 +35,7 @@ import { Route as SectionsGenreRouteImport } from './routes/sections/$genre'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiAvatarIdRouteImport } from './routes/api/avatar/$id'
 import { Route as ApiGamesOutpostRouteImport } from './routes/api/games/outpost'
+import { Route as ApiGamesOutpostConnectionRouteImport } from './routes/api/games/outpost-connection'
 import { Route as ApiPaystackWebhookRouteImport } from './routes/api/paystack/webhook'
 import { Route as ApiRemindTickRouteImport } from './routes/api/remind/tick'
 import { Route as ApiRemindCalendarTokenRouteImport } from './routes/api/remind/calendar/$token'
@@ -170,6 +171,12 @@ const ApiGamesOutpostRoute = ApiGamesOutpostRouteImport.update({
   path: '/api/games/outpost',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGamesOutpostConnectionRoute =
+  ApiGamesOutpostConnectionRouteImport.update({
+    id: '/api/games/outpost-connection',
+    path: '/api/games/outpost-connection',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPaystackWebhookRoute = ApiPaystackWebhookRouteImport.update({
   id: '/api/paystack/webhook',
   path: '/api/paystack/webhook',
@@ -219,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/games/outpost': typeof ApiGamesOutpostRoute
+  '/api/games/outpost-connection': typeof ApiGamesOutpostConnectionRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
   '/api/remind/tick': typeof ApiRemindTickRoute
   '/api/remind/calendar/$token': typeof ApiRemindCalendarTokenRoute
@@ -251,6 +259,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/games/outpost': typeof ApiGamesOutpostRoute
+  '/api/games/outpost-connection': typeof ApiGamesOutpostConnectionRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
   '/api/remind/tick': typeof ApiRemindTickRoute
   '/api/remind/calendar/$token': typeof ApiRemindCalendarTokenRoute
@@ -284,6 +293,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/games/outpost': typeof ApiGamesOutpostRoute
+  '/api/games/outpost-connection': typeof ApiGamesOutpostConnectionRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
   '/api/remind/tick': typeof ApiRemindTickRoute
   '/api/remind/calendar/$token': typeof ApiRemindCalendarTokenRoute
@@ -318,6 +328,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/avatar/$id'
     | '/api/games/outpost'
+    | '/api/games/outpost-connection'
     | '/api/paystack/webhook'
     | '/api/remind/tick'
     | '/api/remind/calendar/$token'
@@ -350,6 +361,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/avatar/$id'
     | '/api/games/outpost'
+    | '/api/games/outpost-connection'
     | '/api/paystack/webhook'
     | '/api/remind/tick'
     | '/api/remind/calendar/$token'
@@ -382,6 +394,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/avatar/$id'
     | '/api/games/outpost'
+    | '/api/games/outpost-connection'
     | '/api/paystack/webhook'
     | '/api/remind/tick'
     | '/api/remind/calendar/$token'
@@ -415,6 +428,7 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAvatarIdRoute: typeof ApiAvatarIdRoute
   ApiGamesOutpostRoute: typeof ApiGamesOutpostRoute
+  ApiGamesOutpostConnectionRoute: typeof ApiGamesOutpostConnectionRoute
   ApiPaystackWebhookRoute: typeof ApiPaystackWebhookRoute
   ApiRemindTickRoute: typeof ApiRemindTickRoute
   ApiRemindCalendarTokenRoute: typeof ApiRemindCalendarTokenRoute
@@ -605,6 +619,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGamesOutpostRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/games/outpost-connection': {
+      id: '/api/games/outpost-connection'
+      path: '/api/games/outpost-connection'
+      fullPath: '/api/games/outpost-connection'
+      preLoaderRoute: typeof ApiGamesOutpostConnectionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/paystack/webhook': {
       id: '/api/paystack/webhook'
       path: '/api/paystack/webhook'
@@ -663,6 +684,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAvatarIdRoute: ApiAvatarIdRoute,
   ApiGamesOutpostRoute: ApiGamesOutpostRoute,
+  ApiGamesOutpostConnectionRoute: ApiGamesOutpostConnectionRoute,
   ApiPaystackWebhookRoute: ApiPaystackWebhookRoute,
   ApiRemindTickRoute: ApiRemindTickRoute,
   ApiRemindCalendarTokenRoute: ApiRemindCalendarTokenRoute,

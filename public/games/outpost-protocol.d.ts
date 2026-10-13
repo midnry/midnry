@@ -36,6 +36,7 @@ export type ProtocolChannel = {
 };
 export type ProtocolSelf = {
   role: ProtocolRole;
+  deathScene?: { id: string; kind: string; at: number } | null;
   tasks: ProtocolTask[];
   channel: ProtocolChannel | null;
   actionSeq: number;

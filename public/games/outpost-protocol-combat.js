@@ -3,6 +3,7 @@
  * Existing raycasting, ammunition, reload, damage and collision remain in use.
  */
 import { Arena } from "./outpost-sim.js";
+import { recordVictimTakedown } from "./outpost-death.js";
 import { weaponOf } from "./outpost-content.js";
 export const LAST_STAND = Object.freeze({ preparation: 5, duration: 90 });
 
@@ -66,6 +67,7 @@ function recordLoss(arena, entity, source = null) {
   arena.clearPilot(entity);
   entity.eliminatedAt = arena.time;
   arena.privateFor(entity).channel = null;
+  recordVictimTakedown(arena, entity, source);
   arena.protocol.bodies.push({
     id: `body-${arena.protocol.nextId++}`,
     victimId: entity.id,

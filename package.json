@@ -22,8 +22,11 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "build:outpost-military": "node scripts/build-outpost-military.mjs",
-    "prebuild": "npm run build:outpost-military",
-    "prebuild:render": "npm run build:outpost-military"
+    "build:outpost-operator": "node scripts/build-outpost-operator.mjs",
+    "build:outpost-cache": "node scripts/build-outpost-cache.mjs",
+    "prebuild": "npm run build:outpost-operator && npm run build:outpost-cache && npm run build:outpost-military",
+    "prebuild:render": "npm run build:outpost-operator && npm run build:outpost-cache && npm run build:outpost-military",
+    "postbuild:render": "node scripts/check-outpost-release-files.mjs .output/public"
   },
   "engines": {
     "node": ">=22"

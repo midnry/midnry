@@ -696,7 +696,7 @@ export class ProtocolUI {
     )
       return;
     this.g.shell.focus({ preventScroll: true });
-    this.g.lockMouse?.();
+    if(this.alive())this.g.lockMouse?.();
   }
 
   showBrief() {

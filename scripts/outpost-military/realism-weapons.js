@@ -24,7 +24,8 @@ function weaponMaterial(r, options) {
 /** Same material keys as the renderer's firearm builders. */
 export function weaponMaterials(r, firstPerson = true) {
   const fabric = r.realismSurfaces?.fabric;
-  const texture = (source, repeat) => firstPerson ? ownedTexture(r, source, repeat) : source || null;
+  const texture = (source, repeat) =>
+    firstPerson ? ownedTexture(r, source, repeat) : source || null;
   const materials = {
     // The former gun texture is diamond-tread industrial flooring. It cannot
     // describe a precision receiver: use the correct coating/metal response.
@@ -74,7 +75,8 @@ export function weaponMaterials(r, firstPerson = true) {
     roughnessMap: texture(r.gloveRough, 1.8),
     normalScale: new THREE.Vector2(0.14, 0.14),
   });
-  for (const material of [...Object.values(materials), palm]) material.userData.weapon = firstPerson;
+  for (const material of [...Object.values(materials), palm])
+    material.userData.weapon = firstPerson;
   if (firstPerson) {
     r.realismGlovePalm = palm;
     r.realismWeaponMaterials = materials;
@@ -265,18 +267,18 @@ function firearmDetails(r, gun, m, id, etch) {
 }
 
 /** Static components share pose; merging preserves recoil and reload transforms. */
-function batchWeapon(r) {
-  r.rig.updateMatrixWorld(true);
-  const inverse = new THREE.Matrix4().copy(r.rig.matrixWorld).invert();
+export function batchWeapon(r, root = r.rig) {
+  root.updateMatrixWorld(true);
+  const inverse = new THREE.Matrix4().copy(root.matrixWorld).invert();
   const buckets = new Map(),
     originals = [],
     mergedMaterials = new Set();
-  r.rig.traverse((mesh) => {
+  root.traverse((mesh) => {
     if (!mesh.isMesh || !mesh.visible || mesh.material.transparent || Array.isArray(mesh.material))
       return;
     // Hidden shotgun magazines must not reappear when converted to one mesh.
-    for (let parent = mesh.parent; parent && parent !== r.rig; parent = parent.parent)
-      if (!parent.visible) return;
+    for (let parent = mesh.parent; parent && parent !== root; parent = parent.parent)
+      if (!parent.visible || parent.userData.weaponMoving) return;
     const geometry = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry.clone();
     if (!geometry.attributes.normal) geometry.computeVertexNormals();
     if (!geometry.attributes.uv)
@@ -296,7 +298,7 @@ function batchWeapon(r) {
     for (const temporary of geometries) temporary.dispose();
     if (!geometry) continue;
     mergedMaterials.add(material);
-    const mesh = r.mesh(r.rig, geometry, material);
+    const mesh = r.mesh(root, geometry, material);
     mesh.userData.ownedGeometry = true;
     mesh.userData.weaponBatch = true;
   }
@@ -311,6 +313,11 @@ export function finishWeapon(r, id) {
   const m = r.realismWeaponMaterials;
   if (!m) return;
   const etch = etchedMaterial(r, id);
+  if (id === "carbine") {
+    label(r, r.rig, etch, [-0.0315, 0.025, -0.512], 0.09, 0.018);
+    batchWeapon(r);
+    return;
+  }
   if (["carbine", "scatter", "breach", "twin"].includes(id)) {
     for (const gun of [...r.rig.children].filter(
       (child) => child.isGroup && child.name !== "realistic-gloved-hand",
