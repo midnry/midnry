@@ -114,7 +114,6 @@ async function pause(page) {
 
 async function freshRole(page, role) {
   await pause(page);
-  await page.locator('[data-mode="protocol"]').click();
   await selectRole(page, role);
   await deploy(page);
 }
@@ -647,59 +646,17 @@ async function meetings(page) {
   );
 }
 
-async function legacyModes(page) {
+async function playConnections(page) {
   await pause(page);
-  const coverage = [];
-  for (const mode of ["training", "signal", "duo"]) {
-    await page.locator(`[data-mode="${mode}"]`).click();
-    assert.equal(await page.locator(".mf-mapselect").isDisabled(), false);
-    const maps = await page
-      .locator(".mf-mapselect option")
-      .evaluateAll((options) =>
-        options
-          .filter((option) => !option.hidden && !option.disabled)
-          .map((option) => option.value),
-      );
-    assert.equal(maps.length, 5, "original modes retain five arenas");
-    assert.equal(maps.includes("breakwater"), false);
-    assert.equal(maps.includes("medevac"), false);
-    await page.locator(".mf-mapselect").selectOption("freight");
-    await page.locator(".mf-weaponselect").selectOption("rocket");
-    await deploy(page);
-    assert.equal(
-      await page.evaluate(() =>
-        document.querySelector("midnry-fps").engine.shell.classList.contains("mf-protocol"),
-      ),
-      false,
-      "combat controls return outside protocol",
-    );
-    await page.locator(".mf-shell").focus();
-    await page.keyboard.down("a");
-    assert.equal(
-      await page.evaluate(() => document.querySelector("midnry-fps").engine.controls().strafe),
-      -1,
-    );
-    await page.keyboard.up("a");
-    await page.keyboard.down("d");
-    assert.equal(
-      await page.evaluate(() => document.querySelector("midnry-fps").engine.controls().strafe),
-      1,
-    );
-    await page.keyboard.up("d");
-    await page.keyboard.press("Space");
-    await tick(page, 1 / 30);
-    assert.ok(
-      await page.evaluate(
-        () => document.querySelector("midnry-fps").engine.arena.projectiles.length > 0,
-      ),
-      "original rocket firing still works",
-    );
-    coverage.push(mode);
-    await pause(page);
-  }
-  await page.locator('[data-mode="protocol"]').click();
-  assert.equal(await page.locator(".mf-mapselect").inputValue(), "breakwater");
-  return coverage;
+  assert.equal(await page.locator("[data-mode]").count(),0);
+  assert.equal(await page.locator("[data-play]").count(),2);
+  await page.locator(".mf-onlinechoice").click();
+  assert.equal(await page.locator(".mf-network").isVisible(),true);
+  assert.equal(await page.locator(".mf-start").isDisabled(),true);
+  await page.locator(".mf-offlinechoice").click();
+  assert.equal(await page.locator(".mf-network").isVisible(),false);
+  assert.equal(await page.locator(".mf-start").isDisabled(),false);
+  return ["offline-smart-ai","online-friends-and-bots"];
 }
 
 async function compatibilityChecks(page) {
@@ -780,7 +737,7 @@ async function clientChecks(mobile) {
     assert.equal(initial.mode, "protocol", "Blackout Protocol is the new default mode");
     assert.equal(initial.mapId, "breakwater");
     assert.equal(initial.entities.length, 8);
-    assert.equal(await page.locator('[data-mode="protocol"]').getAttribute("aria-pressed"), "true");
+    assert.equal(await page.locator(".mf-offlinechoice").getAttribute("aria-pressed"), "true");
     assert.ok(
       await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
       "menu fits the viewport horizontally",
@@ -813,7 +770,7 @@ async function clientChecks(mobile) {
       await crewFailure(page);
       await meetings(page);
     }
-    const modes = await legacyModes(page);
+    const modes = await playConnections(page);
     await freshRole(page, "operator");
     const safe = await view(page);
     await position(page, { x: 3.5, y: 5.5, a: 0 });
@@ -848,7 +805,7 @@ async function clientChecks(mobile) {
       aidDelivery: "passed",
       crashAndCrewPatientLoss: mobile ? "desktop covered" : "passed",
       meetings: mobile ? "desktop covered" : "passed",
-      legacyModes: modes,
+      playConnections: modes,
       renderPure: pure,
       renderer: military ? "military" : "classic",
       errors,

@@ -28,7 +28,7 @@ function OutpostZeroDiscovery() {
             Blackout Protocol is the default: gather medical equipment at Breakwater Base, then
             transport it by medevac aircraft to wounded soldiers. Hidden infiltrators sabotage
             supplies, the crew and the flight. Play with bots or
-            friends. Last Signal and Pair Ops remain available for Solo and Duo combat.
+            friends. Play Blackout Protocol offline with smart AI or create an online room.
           </p>
           <Link
             to="/games/outpost-zero"
@@ -90,23 +90,14 @@ function OutpostZeroDiscovery() {
           patient vitals, manual flight and sabotage. All graphics presets use cinematic 3D.
         </p>
       </section>
-      <section className="mt-5 grid gap-5 sm:grid-cols-2" aria-label="Maps and loadouts">
+      <section className="mt-5 grid gap-5 sm:grid-cols-2" aria-label="Ways to play">
         <article className="rounded-2xl bg-card p-6 shadow-line">
-          <h2 className="font-display text-xl">Base, aircraft and five combat arenas</h2>
-          <p className="mt-3 text-sm leading-relaxed text-muted">
-            Blackout Protocol uses Breakwater’s command rooms, barracks, armory, generators, hangar,
-            radar and maintenance corridors, then transitions into Lifeline's cockpit and cabin.
-            Combat modes offer Dust Outpost, Test Block, Skyport,
-            Freight Rush and Wreck Estate.
-          </p>
+          <h2 className="font-display text-xl">Offline · smart AI</h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted">AI operators gather supplies, repair systems and pilot the aircraft. Infiltrators plan sabotage and avoid witnesses. Choose an offline role to learn either side.</p>
         </article>
         <article className="rounded-2xl bg-card p-6 shadow-line">
-          <h2 className="font-display text-xl">Combat modes: eleven loadouts</h2>
-          <p className="mt-3 text-sm leading-relaxed text-muted">
-            Carbine, scatterguns, dual-pistol bursts, shard pods, spinning blades, poison darts,
-            lifesteal punches, a dash scythe, rockets, and arcing fuses. Deal damage to charge a
-            special ability. Stronger hit feedback makes every exchange easier to read.
-          </p>
+          <h2 className="font-display text-xl">Online · friends and bots</h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted">Create or join an eight-player room. Smart bots fill unused seats. Open Info for your medical manifest, patient vitals, map and tactics; urgent warnings stay visible during play.</p>
         </article>
       </section>
     </Shell>

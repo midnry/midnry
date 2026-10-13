@@ -8,7 +8,7 @@ import { createServer } from "vite";
 // database. This checks the full response envelope as well as the simulation
 // view, so a later roster/settings change cannot accidentally reveal roles.
 const root = fileURLToPath(new URL("../", import.meta.url));
-let server, inputOf, publicRoom, lobbyMapOf, createArena;
+let server, inputOf, publicRoom, lobbyMapOf, playableModeOf, createArena;
 before(async () => {
   server = await createServer({
     configFile: false,
@@ -18,7 +18,7 @@ before(async () => {
     server: { middlewareMode: true, ws: false, watch: null },
     appType: "custom",
   });
-  ({ inputOf, publicRoom, lobbyMapOf } = await server.ssrLoadModule(
+  ({ inputOf, publicRoom, lobbyMapOf, playableModeOf } = await server.ssrLoadModule(
     "/src/games/outpost/rooms.server.ts",
   ));
   ({ createArena } = await server.ssrLoadModule("/public/games/outpost-protocol.js"));
@@ -314,4 +314,10 @@ test("classic room envelope retains duo teams and strips private paths", () => {
   assert.equal(view.members[0].weapon, "scatter");
   assert.deepEqual(view.arena.entities[0].path, []);
   assert.equal(view.arena.entities[0].team, 0);
+});
+
+test("the public mode policy rejects retired combat modes and malformed values", () => {
+  assert.equal(playableModeOf(),"protocol");assert.equal(playableModeOf("protocol"),"protocol");
+  for (const mode of ["training","signal","duo","",null,{},[],"__proto__"])
+    assert.throws(()=>playableModeOf(mode),/Only Blackout Protocol/);
 });
