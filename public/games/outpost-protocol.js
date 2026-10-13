@@ -4,7 +4,13 @@
  * channels, roles, witnesses, charges, cooldowns and victories live here.
  */
 import { Arena, clamp } from "./outpost-sim.js";
-import { PROTOCOL_MAP, TRANSPORT_MAP, MEDICAL_SUPPLIES } from "./outpost-protocol-map.js";
+import {
+  PROTOCOL_MAP,
+  TRANSPORT_MAP,
+  MEDICAL_SUPPLIES,
+  AIRCRAFT_TASKS,
+} from "./outpost-protocol-map.js";
+import { beginCombat, advanceCombat, combatDamage, canFight } from "./outpost-protocol-combat.js";
 
 export const PROTOCOL_RULES = Object.freeze({
   seats: 8,
@@ -194,6 +200,7 @@ export class ProtocolArena extends Arena {
       vents: clone(PROTOCOL_MAP.vents),
       emergency: clone(PROTOCOL_MAP.emergency),
       meeting: null,
+      combat: null,
       log: [],
       self: null,
       players: Object.create(null),
@@ -293,6 +300,10 @@ export class ProtocolArena extends Arena {
         player.vehicleInput = { pitch: 0, steer: 0 };
       }
     }
+    // Rolling-deployment saves receive flight work; recipient views never
+    // invent shared objectives or upgrade themselves to authoritative state.
+    if (!arena.presentationOnly && !arena.protocol.mission.flightTasks)
+      arena.protocol.mission.flightTasks = AIRCRAFT_TASKS.map((task) => ({ ...task, done: false }));
     return arena;
   }
 
@@ -301,6 +312,7 @@ export class ProtocolArena extends Arena {
       version: 1,
       phase: "base",
       title: "Lifeline Run",
+      flightTasks: AIRCRAFT_TASKS.map((task) => ({ ...task, done: false })),
       manifest: MEDICAL_SUPPLIES.map((item) => ({
         id: item.id,
         name: item.name,
@@ -375,12 +387,18 @@ export class ProtocolArena extends Arena {
   updateZone() {}
   applyHaze() {}
   collectCores() {}
-  shoot() {}
+  shoot(entity) {
+    if (canFight(this, entity)) Arena.prototype.shoot.call(this, entity);
+  }
   super() {
     return false;
   }
-  reload() {}
-  damage() {} // Eliminations use the validated contextual action, never gunfire.
+  reload(entity) {
+    if (canFight(this, entity)) Arena.prototype.reload.call(this, entity);
+  }
+  damage(target, amount, source) {
+    combatDamage(this, target, amount, source);
+  }
 
   finish(winner, reason) {
     if (this.state === "ended") return;
@@ -447,6 +465,10 @@ export class ProtocolArena extends Arena {
 
   manifestComplete() {
     return this.protocol.mission.manifest.every((item) => item.loaded >= item.required);
+  }
+
+  flightTasksComplete() {
+    return this.protocol.mission.flightTasks.every((task) => task.done);
   }
 
   returnCargo(entity) {
@@ -765,7 +787,11 @@ export class ProtocolArena extends Arena {
     const meeting = this.protocol.meeting;
     const tally = new Map();
     for (const [voterId, target] of Object.entries(meeting.votes)) {
-      if (!meeting.participants.includes(voterId)) continue;
+      if (
+        !meeting.participants.includes(voterId) ||
+        !this.active(this.entities.find((e) => e.id === voterId))
+      )
+        continue;
       tally.set(target, (tally.get(target) ?? 0) + 1);
     }
     const choices = [...tally.entries()]
@@ -774,28 +800,27 @@ export class ProtocolArena extends Arena {
     const [targetId, votes] = choices[0] ?? [null, 0];
     const target = this.entities.find((e) => e.id === targetId);
     const tied = choices[1]?.[1] === votes;
-    const cast = [...tally.values()].reduce((sum, value) => sum + value, 0);
-    // An absolute majority of cast votes is needed. Missing votes abstain.
+    const eligible = meeting.participants.filter((id) =>
+      this.active(this.entities.find((e) => e.id === id)),
+    ).length;
+    // More than half the living assembly must agree. One vote and seven
+    // abstentions cannot force the entire patrol into Last Stand.
     if (
       target &&
       this.active(target) &&
-      votes > cast / 2 &&
+      votes > eligible / 2 &&
       votes > (tally.get("skip") ?? 0) &&
       !tied
     ) {
-      this.returnCargo(target);
-      this.clearPilot(target);
-      target.hp = 0;
-      target.eliminatedAt = this.time;
-      this.privateFor(target).channel = null;
-      meeting.result = `${target.name} detained. Their allegiance remains classified.`;
+      beginCombat(this, target);
+      meeting.result = `${target.name} faces ${eligible - 1} remaining patrols in Last Stand. Allegiance remains classified.`;
       this.addLog(meeting.result);
     } else {
-      meeting.result = "No detention. The patrol returns to duty.";
+      meeting.result = "No majority. The patrol returns to duty.";
       this.addLog(meeting.result);
     }
     meeting.resultUntil = this.time + 5;
-    this.protocol.phase = "roam";
+    if (this.protocol.phase !== "combat") this.protocol.phase = "roam";
     this.checkResult();
   }
 
@@ -1026,7 +1051,12 @@ export class ProtocolArena extends Arena {
 
   context(entity) {
     const player = this.privateFor(entity);
-    if (!this.active(entity) || this.protocol.mission.vehicle.pilotId === entity.id) return null;
+    if (
+      this.protocol.phase !== "roam" ||
+      !this.active(entity) ||
+      this.protocol.mission.vehicle.pilotId === entity.id
+    )
+      return null;
     const mission = this.protocol.mission;
     const nearest = (list) =>
       list
@@ -1081,7 +1111,7 @@ export class ProtocolArena extends Arena {
             target: TRANSPORT_MAP.cargo.id,
             duration: PROTOCOL_RULES.cargoRepairDuration,
           };
-        if (mission.vehicle.arrived && this.manifestComplete())
+        if (mission.vehicle.arrived && this.manifestComplete() && this.flightTasksComplete())
           return {
             kind: "deliver",
             target: TRANSPORT_MAP.cargo.id,
@@ -1128,6 +1158,18 @@ export class ProtocolArena extends Arena {
             return { kind: "collect", target: supply.id, duration: PROTOCOL_RULES.collectDuration };
         }
       }
+    }
+    if (mission.phase === "transport") {
+      const flightTask = nearest(
+        mission.flightTasks.filter(
+          (task) =>
+            !task.done &&
+            (!task.system || this.protocol.sabotage[`${task.system}Until`] <= this.time) &&
+            (task.id !== "trauma" || mission.vehicle.cargoDamage === 0),
+        ),
+      );
+      if (flightTask)
+        return { kind: "flight-task", target: flightTask.id, duration: flightTask.duration };
     }
     const task =
       player.role === INFILTRATORS &&
@@ -1228,6 +1270,14 @@ export class ProtocolArena extends Arena {
       else this.returnCargo(entity);
     } else if (channel.kind === "depart") {
       this.departMission(entity);
+    } else if (channel.kind === "flight-task") {
+      const task = this.protocol.mission.flightTasks.find((task) => task.id === channel.target);
+      if (task && !task.done && player.role === OPERATORS) {
+        task.done = true;
+        this.observe("task", entity);
+        this.addLog(`Aircraft duty completed: ${task.name}.`);
+      } else if (player.role === INFILTRATORS)
+        this.emit(entity.id, "Flight-duty cover maintained. Shared preparation is unchanged.");
     } else if (channel.kind === "disable-autopilot") {
       if (
         player.role === INFILTRATORS &&
@@ -1247,6 +1297,8 @@ export class ProtocolArena extends Arena {
           60,
           this.protocol.mission.vehicle.cargoDamage + 20,
         );
+        const trauma = this.protocol.mission.flightTasks.find((task) => task.id === "trauma");
+        if (trauma) trauma.done = false;
         player.sabotageReadyAt = this.time + PROTOCOL_RULES.sabotageCooldown;
         this.observe("cargo-sabotage", entity);
         this.addLog("Medical cargo damaged. Repair the cargo restraint system before delivery.");
@@ -1260,7 +1312,8 @@ export class ProtocolArena extends Arena {
         player.role === OPERATORS &&
         mission.vehicle.arrived &&
         !mission.vehicle.cargoDamage &&
-        this.manifestComplete()
+        this.manifestComplete() &&
+        this.flightTasksComplete()
       ) {
         let rescued = 0;
         for (const patient of mission.patients)
@@ -1478,8 +1531,17 @@ export class ProtocolArena extends Arena {
       if (player.role === OPERATORS && this.active(entity)) {
         if (mission.phase === "transport") {
           if (!vehicle.autopilot && !vehicle.pilotId && !vehicle.arrived) goal = TRANSPORT_MAP.helm;
-          else if (vehicle.cargoDamage || vehicle.arrived) goal = TRANSPORT_MAP.cargo;
-          else goal = TRANSPORT_MAP.cargo;
+          else if (vehicle.cargoDamage) goal = TRANSPORT_MAP.cargo;
+          else
+            goal =
+              mission.flightTasks
+                .filter(
+                  (task) =>
+                    !task.done &&
+                    (!task.system || this.protocol.sabotage[`${task.system}Until`] <= this.time),
+                )
+                .sort((a, b) => distance(entity, a) - distance(entity, b))[0] ??
+              TRANSPORT_MAP.cargo;
         }
         goal =
           this.protocol.bombs
@@ -1598,8 +1660,13 @@ export class ProtocolArena extends Arena {
     this.updateMedical(dt, inputs);
     this.checkResult();
     if (this.state === "ended") return;
-    const wasMeeting = ["discussion", "vote"].includes(this.protocol.phase);
+    const wasMeeting = ["discussion", "vote", "combat"].includes(this.protocol.phase);
     if (wasMeeting) this.freezeDeadlines(dt);
+    if (this.protocol.phase === "combat") {
+      advanceCombat(this, dt, inputs);
+      this.checkResult();
+      return;
+    }
     // Resolve one-shot actions before held interactions. Humans may report an
     // event immediately; entering a meeting cancels every pending installation.
     for (const entity of this.entities)
@@ -1797,6 +1864,16 @@ export function protocolView(data, selfId) {
         version: mission.version,
         phase: mission.phase,
         title: mission.title,
+        flightTasks: (mission.flightTasks || []).map((task) => ({
+          id: task.id,
+          name: task.name,
+          x: task.x,
+          y: task.y,
+          room: task.room,
+          duration: task.duration,
+          system: task.system,
+          done: task.done,
+        })),
         manifest: mission.manifest.map((item) => ({
           id: item.id,
           name: item.name,
@@ -1878,6 +1955,17 @@ export function protocolView(data, selfId) {
       : null,
     log: clone(p.log),
     mission: publicMission,
+    combat: p.combat
+      ? {
+          id: p.combat.id,
+          targetId: p.combat.targetId,
+          participants: [...p.combat.participants],
+          startsAt: p.combat.startsAt,
+          endsAt: p.combat.endsAt,
+          result: p.combat.result,
+          resultUntil: p.combat.resultUntil,
+        }
+      : null,
     self: player
       ? {
           role: player.role,

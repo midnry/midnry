@@ -10,7 +10,12 @@ import {
   type ArenaState,
   type Input,
 } from "../../../public/games/outpost-sim.js";
-import { createArena, restoreArena, protocolView } from "../../../public/games/outpost-protocol.js";
+import {
+  createArena,
+  restoreArena,
+  protocolView,
+  type ProtocolArenaState,
+} from "../../../public/games/outpost-protocol.js";
 
 // HTTPS polling deliberately works on both Render and serverless deployments.
 // Rooms live in the existing database, not a process-local host tab or socket.
@@ -128,7 +133,9 @@ export function lobbyMapOf(mode: Room["mode"], value: unknown = undefined): stri
 /** Public play is Blackout Protocol only; old clients cannot re-enable combat. */
 export function playableModeOf(value: unknown = undefined): "protocol" {
   if (value === undefined || value === "protocol") return "protocol";
-  throw new OutpostError("Only Blackout Protocol is available. Update the game and create a new room.");
+  throw new OutpostError(
+    "Only Blackout Protocol is available. Update the game and create a new room.",
+  );
 }
 // Only intent crosses this boundary: simulation decides roles, locations,
 // progress, cooldowns and outcomes. Large strings and forged fields are dropped.
@@ -308,7 +315,10 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
     const { version } = rows[0],
       room = rows[0].state;
     if (room.mode !== "protocol" && body.op !== "leave")
-      throw new OutpostError("This room uses a retired mode. Create a Blackout Protocol room.", 409);
+      throw new OutpostError(
+        "This room uses a retired mode. Create a Blackout Protocol room.",
+        409,
+      );
     const now = Math.max(Date.now(), room.updatedAt);
     let member: Member;
     if (body.op === "join") {
@@ -357,21 +367,24 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
         member.seq = seq;
         member.input = inputOf(body.input);
         if (room.mode === "protocol") {
-          member.input.fire = false;
+          // Only the server's voted combat phase unlocks weapon intentions.
+          // A client-sent phase/target/damage never changes this decision.
+          const fighting = (room.arena as ProtocolArenaState | null)?.protocol?.phase === "combat";
+          if (!fighting) member.input.fire = member.input.reload = false;
           member.input.super = false;
-          member.input.reload = false;
         }
         member.inputAt = now;
         if (room.phase === "playing" && room.arena) {
           const arena = restoreArena(room.arena),
             self = arena.entities.find((e) => e.id === member.id);
           // The packet can request a shot, never supply a target, damage or position.
-          if (room.mode !== "protocol" && self && (member.input.fire || member.input.super)) {
+          if (self && (member.input.fire || member.input.super || member.input.reload)) {
             self.a = member.input.aim ?? self.a;
             self.pitch = member.input.pitch ?? 0;
             if (member.input.super) arena.super(self);
             member.input.super = false;
             if (member.input.fire) arena.shoot(self);
+            if (member.input.reload) arena.reload(self);
           }
           room.arena = arena.snapshot();
           if (arena.state === "ended") room.phase = "ended";
@@ -409,7 +422,12 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
         (typeof body.weapon !== "string" || !Object.hasOwn(WEAPONS, body.weapon))
       )
         throw new OutpostError("Invalid loadout.");
-      const outfit = room.mode === "protocol" ? "ranger" : body.outfit === undefined ? member.outfit || "ranger" : outfitId(body.outfit);
+      const outfit =
+        room.mode === "protocol"
+          ? "ranger"
+          : body.outfit === undefined
+            ? member.outfit || "ranger"
+            : outfitId(body.outfit);
       member.weapon = room.mode === "protocol" ? "carbine" : (body.weapon as string);
       member.outfit = outfit;
     }

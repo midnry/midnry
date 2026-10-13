@@ -1,7 +1,7 @@
 import { Arena, type ArenaState, type Difficulty, type Entity, type Input } from "./outpost-sim.js";
 
 export type ProtocolRole = "operator" | "infiltrator";
-export type ProtocolPhase = "roam" | "discussion" | "vote" | "result";
+export type ProtocolPhase = "roam" | "discussion" | "vote" | "combat" | "result";
 export type ProtocolTask = { id: string; stationId: string; name: string; done: boolean };
 export type ProtocolStation = {
   id: string;
@@ -25,6 +25,7 @@ export type ProtocolChannel = {
     | "depart"
     | "deliver"
     | "repair-cargo"
+    | "flight-task"
     | "disable-autopilot"
     | "cargo-sabotage";
   target: string;
@@ -50,6 +51,16 @@ export type MedicalMission = {
   version: 1;
   phase: "base" | "transport" | "delivered";
   title: string;
+  flightTasks: {
+    id: string;
+    name: string;
+    x: number;
+    y: number;
+    room: string;
+    duration: number;
+    system: string | null;
+    done: boolean;
+  }[];
   manifest: { id: string; name: string; required: number; loaded: number }[];
   supplyStock: {
     id: string;
@@ -132,6 +143,15 @@ export type PublicProtocolState = {
   vents: ProtocolVent[];
   emergency: { id?: string; x: number; y: number };
   meeting: ProtocolMeeting | null;
+  combat: {
+    id: string;
+    targetId: string;
+    participants: string[];
+    startsAt: number;
+    endsAt: number;
+    result: string | null;
+    resultUntil: number | null;
+  } | null;
   log: { id: number; text: string }[];
   self: ProtocolSelf | null;
   revealedRoles?: Record<string, ProtocolRole>;
@@ -220,6 +240,7 @@ export class ProtocolArena extends Arena {
   detach(id: string): void;
   departMission(entity: Entity): boolean;
   manifestComplete(): boolean;
+  flightTasksComplete(): boolean;
   context(entity: Entity):
     | (Pick<ProtocolChannel, "kind" | "target" | "duration"> & {
         taskId?: string;

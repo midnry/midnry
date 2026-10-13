@@ -125,6 +125,7 @@ export class Arena {
   snapshot(): ArenaState;
   advance(dt: number, inputs?: Record<string, Input>): void;
   shoot(e: Entity): void;
+  reload(e: Entity): void;
   super(e: Entity): boolean;
   detach(id: string): void;
 }

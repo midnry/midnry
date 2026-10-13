@@ -15,8 +15,16 @@ import { Reflector } from "three/addons/objects/Reflector.js";
 import { loadRealismSurfaces, surfaceMaterial } from "./realism-surfaces.js";
 import { initNaturalLighting, updateNaturalLighting } from "./realism-lighting.js";
 import { decorateRealisticEnvironment } from "./realism-environment.js";
-import { prepareCharacterAsset, finishActor, updateActorPresentation } from "./realism-characters.js";
-import { weaponMaterials as realisticWeaponMaterials, buildRealisticHand, finishWeapon } from "./realism-weapons.js";
+import {
+  prepareCharacterAsset,
+  finishActor,
+  updateActorPresentation,
+} from "./realism-characters.js";
+import {
+  weaponMaterials as realisticWeaponMaterials,
+  buildRealisticHand,
+  finishWeapon,
+} from "./realism-weapons.js";
 import { outfitOf, weaponOf } from "../../public/games/outpost-content.js";
 import { skinPattern } from "../../public/games/outpost-skins.js";
 import { isAppleTouchDevice, graphicsProfile, renderSize } from "./compatibility.js";
@@ -153,15 +161,20 @@ export class MilitaryRenderer {
     this.scene.add(this.rim);
     // Reuse four nearest interior lights rather than allocating one light per
     // room. This keeps the large operating base affordable on mobile GPUs.
-    for (let i = 0; i < 4; i++) {
+    const interiorLightCount = matchMedia("(pointer:coarse)").matches ? 2 : 4;
+    for (let i = 0; i < interiorLightCount; i++) {
       const light = new THREE.PointLight("#c9e6eb", 0, 18, 2);
-      light.visible = false;
+      // Keep the light roster stable. Zero intensity switches a fixture off
+      // without compiling a different shader on every room/power transition.
+      light.visible = true;
       this.scene.add(light);
       this.protocolLights.push(light);
     }
-    this.protocolTorch = new THREE.SpotLight("#d4e8ea", 0, 8, 0.6, 0.65, 2);
+    this.protocolTorch = new THREE.SpotLight("#f3ecdc", 0, 16, 0.64, 0.5, 2);
     this.protocolTorch.castShadow = false;
-    this.protocolTorch.visible = false;
+    this.protocolTorch.visible = true;
+    this.torchDirection = new THREE.Vector3();
+    this.renderer.shadowMap.autoUpdate = false;
     this.scene.add(this.protocolTorch, this.protocolTorch.target);
     this.weaponScene = new THREE.Scene();
     this.weaponCamera = new THREE.PerspectiveCamera(52, 1, 0.01, 10);
@@ -362,10 +375,7 @@ export class MilitaryRenderer {
     if (this.lastPreset === preset + options.shadows + options.lighting) return;
     this.lastPreset = preset + options.shadows + options.lighting;
     this.renderer.shadowMap.enabled = options.shadows;
-    const size = Math.min(
-      this.profile.maxShadowSize,
-      preset === "high" ? 2048 : 1024,
-    );
+    const size = Math.min(this.profile.maxShadowSize, preset === "high" ? 2048 : 1024);
     if (this.sun.shadow.mapSize.x !== size) {
       this.sun.shadow.mapSize.set(size, size);
       this.sun.shadow.map?.dispose();
@@ -375,25 +385,29 @@ export class MilitaryRenderer {
     this.hemisphere.intensity = options.lighting ? 0.55 : 1.3;
     if (this.ao) this.ao.enabled = preset === "high" && options.shadows;
     if (this.composer) {
-    // Canvas antialiasing does not cover an offscreen composer. Resolve
-    // actual geometry edges with WebGL 2 multisampling on its render targets.
-    if (this.offscreenSamples === undefined) {
-      const gl = this.renderer.getContext();
-      const format = this.composer.renderTarget1.texture.type === THREE.HalfFloatType ? gl.RGBA16F : gl.RGBA8;
-      const supported = gl.getInternalformatParameter(gl.RENDERBUFFER, format, gl.SAMPLES);
-      this.offscreenSamples = supported?.length ? Math.max(...supported) : 0;
-    }
-    const samples = Math.min(this.offscreenSamples, this.renderer.capabilities.maxSamples || 0,
-      preset === "high" ? 4 : preset === "balanced" ? 2 : 0);
-    this.fxaa.enabled = preset !== "performance" && samples === 0;
-    for (const target of [this.composer.renderTarget1, this.composer.renderTarget2]) {
-      if (target.samples !== samples) {
-        target.dispose();
-        target.samples = samples;
+      // Canvas antialiasing does not cover an offscreen composer. Resolve
+      // actual geometry edges with WebGL 2 multisampling on its render targets.
+      if (this.offscreenSamples === undefined) {
+        const gl = this.renderer.getContext();
+        const format =
+          this.composer.renderTarget1.texture.type === THREE.HalfFloatType ? gl.RGBA16F : gl.RGBA8;
+        const supported = gl.getInternalformatParameter(gl.RENDERBUFFER, format, gl.SAMPLES);
+        this.offscreenSamples = supported?.length ? Math.max(...supported) : 0;
       }
-    }
-    // No screen-space color filter; exposure/tone mapping remain in OutputPass.
-    this.grade.enabled = false;
+      const samples = Math.min(
+        this.offscreenSamples,
+        this.renderer.capabilities.maxSamples || 0,
+        preset === "high" ? 4 : preset === "balanced" ? 2 : 0,
+      );
+      this.fxaa.enabled = preset !== "performance" && samples === 0;
+      for (const target of [this.composer.renderTarget1, this.composer.renderTarget2]) {
+        if (target.samples !== samples) {
+          target.dispose();
+          target.samples = samples;
+        }
+      }
+      // No screen-space color filter; exposure/tone mapping remain in OutputPass.
+      this.grade.enabled = false;
     }
     if (this.reflection) {
       this.reflection.visible = this.profile.reflections && preset !== "performance";
@@ -432,7 +446,9 @@ export class MilitaryRenderer {
     this.reflection?.dispose();
     for (const patient of this.arrivalPatients.values()) {
       patient.mixer?.stopAllAction();
-      patient.model.traverse((object) => { if (object.isSkinnedMesh) object.skeleton.dispose(); });
+      patient.model.traverse((object) => {
+        if (object.isSkinnedMesh) object.skeleton.dispose();
+      });
     }
     this.arrivalPatients.clear();
     this.world.traverse((o) => {
@@ -475,6 +491,7 @@ export class MilitaryRenderer {
     this.protocolTorch.visible = false;
   }
   buildWorld() {
+    this.lastShadowAt = 0;
     const g = this.g,
       id = g.arena.mapId,
       profile = PROFILES[id] || PROFILES.outpost,
@@ -513,28 +530,35 @@ export class MilitaryRenderer {
           ? ["#b7b4a8", "#a29882", "#7c9094", "#9b927d", "#747b73", "#a3aaa1", "#718086"]
           : id === "testblock"
             ? ["#b5b0a3", "#929689", "#78928d", "#7d8881", "#aa8374", "#b8b8ac", "#8f9998"]
-          : ["#8e948a", profile.metal, "#707f78", "#b0a489", "#84776b", "#909a9d", "#bcc2bd"];
-      const substrates = id === "freight" || id === "medevac"
-        ? ["concrete", "metal", "metal", "metal", "concrete", "metal", "metal"]
-        : id === "breakwater"
-          ? ["concrete", "plaster", "plaster", "concrete", "metal", "concrete", "metal"]
-          : id === "testblock"
-            ? ["concrete", "concrete", "plaster", "metal", "plaster", "plaster", "metal"]
-            : ["concrete", "concrete", "plaster", "metal", "brick", "plaster", "metal"];
+            : ["#8e948a", profile.metal, "#707f78", "#b0a489", "#84776b", "#909a9d", "#bcc2bd"];
+      const substrates =
+        id === "freight" || id === "medevac"
+          ? ["concrete", "metal", "metal", "metal", "concrete", "metal", "metal"]
+          : id === "breakwater"
+            ? ["concrete", "plaster", "plaster", "concrete", "metal", "concrete", "metal"]
+            : id === "testblock"
+              ? ["concrete", "concrete", "plaster", "metal", "plaster", "plaster", "metal"]
+              : ["concrete", "concrete", "plaster", "metal", "brick", "plaster", "metal"];
       const substrate = substrates[type];
-      const m = substrate === "metal" ? this.material({
-        color: colors[type],
-        map: this.metalColor,
-        normalMap: this.metalNormal,
-        roughnessMap: this.metalRough,
-        // Painted shipping panels are a dielectric coating over metal.
-        roughness: 0.9, metalness: 0.06,
-        normalScale: new THREE.Vector2(0.45, 0.45),
-      }) : surfaceMaterial(this, substrate, {
-        color: colors[type], repeat: [1.5, 1.75],
-        roughness: substrate === "plaster" ? 0.93 : 0.9,
-        metalness: 0, normalStrength: substrate === "brick" ? 0.55 : 0.3,
-      });
+      const m =
+        substrate === "metal"
+          ? this.material({
+              color: colors[type],
+              map: this.metalColor,
+              normalMap: this.metalNormal,
+              roughnessMap: this.metalRough,
+              // Painted shipping panels are a dielectric coating over metal.
+              roughness: 0.9,
+              metalness: 0.06,
+              normalScale: new THREE.Vector2(0.45, 0.45),
+            })
+          : surfaceMaterial(this, substrate, {
+              color: colors[type],
+              repeat: [1.5, 1.75],
+              roughness: substrate === "plaster" ? 0.93 : 0.9,
+              metalness: 0,
+              normalStrength: substrate === "brick" ? 0.55 : 0.3,
+            });
       m.userData.world = true;
       return m;
     });
@@ -846,7 +870,10 @@ export class MilitaryRenderer {
     const root = new THREE.Group();
     this.world.add(root);
     const steel = surfaceMaterial(this, "weaponMetal", {
-      color: "#656d6c", roughness: 0.62, metalness: 0.8, normalStrength: 0.12,
+      color: "#656d6c",
+      roughness: 0.62,
+      metalness: 0.8,
+      normalStrength: 0.12,
     });
     steel.userData.world = true;
     const paint = this.protocolMaterial({
@@ -864,8 +891,11 @@ export class MilitaryRenderer {
     });
     this.protocolLightMaterials.push(lamp);
     const ceiling = surfaceMaterial(this, "plaster", {
-      color: "#c2c5bd", repeat: [1.5, 1.5], roughness: 0.94,
-      metalness: 0, normalStrength: 0.14,
+      color: "#c2c5bd",
+      repeat: [1.5, 1.5],
+      roughness: 0.94,
+      metalness: 0,
+      normalStrength: 0.14,
     });
     ceiling.userData.world = true;
     const rooms = [...(map.rooms || []), ...(map.corridors || [])];
@@ -874,8 +904,10 @@ export class MilitaryRenderer {
       if (room.roofed === false) continue;
       const roomFloor = surfaceMaterial(this, map.id === "medevac" ? "fabric" : "concrete", {
         color: /maintenance|generat|ammo/.test(room.id || "") ? "#687570" : "#a0aaa3",
-        repeat: [room.w * 1.5, room.h * 1.5], roughness: 0.94,
-        metalness: 0, normalStrength: 0.2,
+        repeat: [room.w * 1.5, room.h * 1.5],
+        roughness: 0.94,
+        metalness: 0,
+        normalStrength: 0.2,
       });
       roomFloor.userData.world = true;
       const floor = this.mesh(
@@ -1270,8 +1302,11 @@ export class MilitaryRenderer {
     const cabin = (map.rooms || []).find((room) => room.id === "cabin");
     if (cabin) {
       const fabric = surfaceMaterial(this, "fabric", {
-        color: "#78857c", repeat: [2, 2], roughness: 0.96,
-        metalness: 0, normalStrength: 0.2,
+        color: "#78857c",
+        repeat: [2, 2],
+        roughness: 0.96,
+        metalness: 0,
+        normalStrength: 0.2,
       });
       fabric.userData.world = true;
       // Folded troop seats hug the hull, leaving the actual walking lane clear.
@@ -1376,59 +1411,82 @@ export class MilitaryRenderer {
     clinic.visible = false;
     this.world.add(clinic);
     const { steel, paint } = materials;
-    const ground = this.protocolMaterial({ color: "#a6a38d", map: this.tileTexture(this.groundColor, 18),
-      normalMap: this.tileTexture(this.groundNormal, 18), roughness: 0.94 });
-    const apron = this.mesh(clinic, this.geo("floor", () => new THREE.PlaneGeometry(1, 1)),
-      ground, [27, 0, 27], [210, 210, 1]);
+    const ground = this.protocolMaterial({
+      color: "#a6a38d",
+      map: this.tileTexture(this.groundColor, 18),
+      normalMap: this.tileTexture(this.groundNormal, 18),
+      roughness: 0.94,
+    });
+    const apron = this.mesh(
+      clinic,
+      this.geo("floor", () => new THREE.PlaneGeometry(1, 1)),
+      ground,
+      [27, 0, 27],
+      [210, 210, 1],
+    );
     apron.rotation.x = -Math.PI / 2;
     apron.castShadow = false;
-    const fabric = surfaceMaterial(this, "fabric", { color: "#71847b", repeat: [2, 3],
-      roughness: 0.96, metalness: 0, normalStrength: 0.2 });
+    const fabric = surfaceMaterial(this, "fabric", {
+      color: "#71847b",
+      repeat: [2, 3],
+      roughness: 0.96,
+      metalness: 0,
+      normalStrength: 0.2,
+    });
     fabric.userData.world = true;
     this.box(clinic, paint, [42.8, 3.9, 46.5], [11.2, 0.16, 10.3]);
-    for (const x of [37.35, 48.25]) for (const z of [41.5, 51.5])
-      this.box(clinic, steel, [x, 1.85, z], [0.11, 3.7, 0.11]);
+    for (const x of [37.35, 48.25])
+      for (const z of [41.5, 51.5]) this.box(clinic, steel, [x, 1.85, z], [0.11, 3.7, 0.11]);
     const slots = [];
     for (let i = 0; i < 4; i++) {
-      const x = 39.5 + (i % 2) * 3.45, z = 44.6 + Math.floor(i / 2) * 3.8;
+      const x = 39.5 + (i % 2) * 3.45,
+        z = 44.6 + Math.floor(i / 2) * 3.8;
       slots.push({ x, z });
       this.box(clinic, steel, [x, 0.99, z], [0.84, 0.075, 2.57]);
       this.box(clinic, fabric, [x, 1.05, z], [0.77, 0.15, 2.42]);
-      for (const dx of [-0.37, 0.37]) for (const dz of [-0.99, 0.99]) {
-        this.box(clinic, steel, [x + dx, 0.53, z + dz], [0.04, 0.91, 0.04]);
-        this.cylinder(clinic, steel, [x + dx, 0.07, z + dz], 0.07, 0.035, "x", 16);
-      }
+      for (const dx of [-0.37, 0.37])
+        for (const dz of [-0.99, 0.99]) {
+          this.box(clinic, steel, [x + dx, 0.53, z + dz], [0.04, 0.91, 0.04]);
+          this.cylinder(clinic, steel, [x + dx, 0.07, z + dz], 0.07, 0.035, "x", 16);
+        }
       this.box(clinic, fabric, [x, 1.16, z + 0.82], [0.51, 0.16, 0.42]);
       // Wounded operators' helmeted heads and raised heels are supported by
       // actual pads, rather than an idle standing pose floating over a sheet.
       this.box(clinic, fabric, [x, 1.16, z - 0.94], [0.63, 0.12, 0.4]);
     }
-    const sign = this.mesh(clinic, this.geo("clinic-sign", () => new THREE.PlaneGeometry(4.4, 0.9)),
-      this.protocolSign("FIELD CLINIC", "MEDICAL CARGO / RECEIVING BAY", "#a9c6b7"), [46.9, 2.52, 46.5]);
+    const sign = this.mesh(
+      clinic,
+      this.geo("clinic-sign", () => new THREE.PlaneGeometry(4.4, 0.9)),
+      this.protocolSign("FIELD CLINIC", "MEDICAL CARGO / RECEIVING BAY", "#a9c6b7"),
+      [46.9, 2.52, 46.5],
+    );
     sign.rotation.y = -Math.PI / 2;
     sign.castShadow = false;
     this.arrivalClinic = { root: clinic, slots };
     this.batchProtocolStatic(clinic);
-    for (const z of [44.6, 48.4]) this.protocolFixtures.push({ x: 41.5, y: 3.55, z, arrivalOnly: true });
+    for (const z of [44.6, 48.4])
+      this.protocolFixtures.push({ x: 41.5, y: 3.55, z, arrivalOnly: true });
   }
   updateArrivalClinic(mission) {
     if (!this.arrivalClinic) return;
     const arrived = !!mission.vehicle?.arrived;
     this.arrivalClinic.root.visible = arrived;
     if (!arrived || !this.soldier) return;
-    const patients = (mission.patients || []).slice(0, 4), ids = new Set(patients.map((patient) => patient.id));
-    for (const [id, presentation] of this.arrivalPatients) if (!ids.has(id)) {
-      presentation.mixer?.stopAllAction();
-      presentation.root.parent?.remove(presentation.root);
-      presentation.root.traverse((object) => {
-        if (object.isSkinnedMesh) object.skeleton.dispose();
-        if (object.isMesh) {
-          object.material.dispose();
-          this.materials.delete(object.material);
-        }
-      });
-      this.arrivalPatients.delete(id);
-    }
+    const patients = (mission.patients || []).slice(0, 4),
+      ids = new Set(patients.map((patient) => patient.id));
+    for (const [id, presentation] of this.arrivalPatients)
+      if (!ids.has(id)) {
+        presentation.mixer?.stopAllAction();
+        presentation.root.parent?.remove(presentation.root);
+        presentation.root.traverse((object) => {
+          if (object.isSkinnedMesh) object.skeleton.dispose();
+          if (object.isMesh) {
+            object.material.dispose();
+            this.materials.delete(object.material);
+          }
+        });
+        this.arrivalPatients.delete(id);
+      }
     for (const [index, patient] of patients.entries()) {
       let presentation = this.arrivalPatients.get(patient.id);
       const slot = this.arrivalClinic.slots[index];
@@ -1475,7 +1533,11 @@ export class MilitaryRenderer {
     const vehicle = mission.vehicle,
       altitude = THREE.MathUtils.clamp(Number(vehicle.altitude) || 0, 0, 1.5),
       heading = THREE.MathUtils.clamp(Number(vehicle.heading) || 0, -2, 2),
-      progress = THREE.MathUtils.clamp((Number(vehicle.progress) || 0) / Math.max(1, Number(vehicle.duration) || 120), 0, 1),
+      progress = THREE.MathUtils.clamp(
+        (Number(vehicle.progress) || 0) / Math.max(1, Number(vehicle.duration) || 120),
+        0,
+        1,
+      ),
       alarm = !vehicle.autopilot && !vehicle.underControl;
     if (this.transportTerrain) {
       this.transportTerrain.position.set(
@@ -1613,8 +1675,14 @@ export class MilitaryRenderer {
     const shader = {
       uniforms: THREE.UniformsUtils.clone(Reflector.ReflectorShader.uniforms),
       vertexShader: Reflector.ReflectorShader.vertexShader
-        .replace("varying vec4 vUv;", "varying vec4 vUv; varying vec2 wetUv; varying vec3 wetWorld;")
-        .replace("vUv = textureMatrix", "wetUv = position.xy; wetWorld=(modelMatrix*vec4(position,1.0)).xyz; vUv = textureMatrix"),
+        .replace(
+          "varying vec4 vUv;",
+          "varying vec4 vUv; varying vec2 wetUv; varying vec3 wetWorld;",
+        )
+        .replace(
+          "vUv = textureMatrix",
+          "wetUv = position.xy; wetWorld=(modelMatrix*vec4(position,1.0)).xyz; vUv = textureMatrix",
+        ),
       fragmentShader: `uniform sampler2D tDiffuse; varying vec4 vUv; varying vec2 wetUv; varying vec3 wetWorld;
         #include <logdepthbuf_pars_fragment>
         float hash(vec2 p){ return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453); }
@@ -1690,58 +1758,61 @@ export class MilitaryRenderer {
       model.position.y -= bounds.min.y * factor;
       finishActor(this, model, e);
       if (this.g.mode !== "protocol") {
-      model.traverse((o) => {
-        if (o.isMesh) {
-          const uniform = outfitOf(e.outfit),
-            texture = this.skinTexture(uniform);
-          o.material.color.set("#ffffff");
-          o.material.map ||= texture;
-          o.geometry.computeBoundingBox();
-          const bounds = o.geometry.boundingBox;
-          const physicalShader = o.material.onBeforeCompile;
-          o.material.onBeforeCompile = (shader) => {
-            physicalShader(shader);
-            shader.uniforms.fabricPattern = { value: texture };
-            shader.uniforms.lowerPattern = {
-              value:
-                uniform.id === "urban"
-                  ? this.skinTexture({
-                      ...uniform,
-                      id: "urban-pants",
-                      pattern: "woodland",
-                      palette: ["#536548", "#7f8b61", "#354333", "#aba77d"],
-                    })
-                  : texture,
-            };
-            shader.uniforms.splitLegs = { value: uniform.id === "urban" };
-            shader.uniforms.fabricHeight = {
-              value: new THREE.Vector2(bounds.min.y, Math.max(0.001, bounds.max.y - bounds.min.y)),
-            };
-            shader.vertexShader =
-              "varying float vFabricHeight; uniform vec2 fabricHeight;\n" + shader.vertexShader;
-            shader.vertexShader = shader.vertexShader.replace(
-              "#include <begin_vertex>",
-              "#include <begin_vertex>\nvFabricHeight=(position.y-fabricHeight.x)/fabricHeight.y;",
-            );
-            shader.fragmentShader =
-              "uniform sampler2D fabricPattern; uniform sampler2D lowerPattern; uniform bool splitLegs; varying float vFabricHeight;\n" +
-              shader.fragmentShader;
-            shader.fragmentShader = shader.fragmentShader.replace(
-              "#include <map_fragment>",
-              `#include <map_fragment>
+        model.traverse((o) => {
+          if (o.isMesh) {
+            const uniform = outfitOf(e.outfit),
+              texture = this.skinTexture(uniform);
+            o.material.color.set("#ffffff");
+            o.material.map ||= texture;
+            o.geometry.computeBoundingBox();
+            const bounds = o.geometry.boundingBox;
+            const physicalShader = o.material.onBeforeCompile;
+            o.material.onBeforeCompile = (shader) => {
+              physicalShader(shader);
+              shader.uniforms.fabricPattern = { value: texture };
+              shader.uniforms.lowerPattern = {
+                value:
+                  uniform.id === "urban"
+                    ? this.skinTexture({
+                        ...uniform,
+                        id: "urban-pants",
+                        pattern: "woodland",
+                        palette: ["#536548", "#7f8b61", "#354333", "#aba77d"],
+                      })
+                    : texture,
+              };
+              shader.uniforms.splitLegs = { value: uniform.id === "urban" };
+              shader.uniforms.fabricHeight = {
+                value: new THREE.Vector2(
+                  bounds.min.y,
+                  Math.max(0.001, bounds.max.y - bounds.min.y),
+                ),
+              };
+              shader.vertexShader =
+                "varying float vFabricHeight; uniform vec2 fabricHeight;\n" + shader.vertexShader;
+              shader.vertexShader = shader.vertexShader.replace(
+                "#include <begin_vertex>",
+                "#include <begin_vertex>\nvFabricHeight=(position.y-fabricHeight.x)/fabricHeight.y;",
+              );
+              shader.fragmentShader =
+                "uniform sampler2D fabricPattern; uniform sampler2D lowerPattern; uniform bool splitLegs; varying float vFabricHeight;\n" +
+                shader.fragmentShader;
+              shader.fragmentShader = shader.fragmentShader.replace(
+                "#include <map_fragment>",
+                `#include <map_fragment>
               float fabricLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));
               vec3 pattern=texture2D(fabricPattern,vMapUv*2.0).rgb;
               if(splitLegs && vFabricHeight<.46) pattern=texture2D(lowerPattern,vMapUv*2.0).rgb;
               if(vFabricHeight<.105) pattern=vec3(.095,.115,.105);
               diffuseColor.rgb=pattern*(.72+fabricLuma*.28);`,
-            );
-          };
-          o.material.customProgramCacheKey = () => "outpost-reference-physical-fabric-v2";
-          o.castShadow = true;
-          o.receiveShadow = true;
-          this.materials.add(o.material);
-        }
-      });
+              );
+            };
+            o.material.customProgramCacheKey = () => "outpost-reference-physical-fabric-v2";
+            o.castShadow = true;
+            o.receiveShadow = true;
+            this.materials.add(o.material);
+          }
+        });
       }
       root.add(model);
     } else {
@@ -2137,7 +2208,7 @@ export class MilitaryRenderer {
   updateSkinParts(a) {
     if (!a.skinParts) return;
     a.root.updateMatrixWorld(true);
-    const inverseRoot = a.root.matrixWorld.clone().invert();
+    const inverseRoot = (a.inverseRoot ||= new THREE.Matrix4()).copy(a.root.matrixWorld).invert();
     for (const group of a.skinParts)
       if (group.userData.inverseBind) {
         group.matrix
@@ -2151,8 +2222,14 @@ export class MilitaryRenderer {
     const camera = this.g.camera();
     const sample = Math.floor(t * 30) / 30;
     for (const e of this.g.arena.entities) {
-      if (e.id === camera.id) continue;
       current.add(e.id);
+      if (e.id === camera.id) {
+        // Retain an existing actor when switching POV: hide the watched body
+        // without repeatedly disposing/rebuilding its skeleton and materials.
+        const watched = this.actors.get(e.id);
+        if (watched) watched.root.visible = false;
+        continue;
+      }
       let a = this.actors.get(e.id);
       if (a && (a.outfit !== outfitOf(e.outfit).id || a.weapon !== e.weapon)) {
         this.disposeActor(a);
@@ -2178,7 +2255,12 @@ export class MilitaryRenderer {
         (!cloaked || Math.hypot(e.x - camera.x, e.y - camera.y) < 1.3);
       const sliding = alive && e.slideUntil > this.g.time;
       a.root.scale.y = sliding ? 0.55 : 1;
-      if (this.g.mode === "protocol" && this.protocolPowerOut && Math.hypot(e.x-camera.x,e.y-camera.y)>2.2) a.root.visible=false;
+      if (
+        this.g.mode === "protocol" &&
+        this.protocolPowerOut &&
+        Math.hypot(e.x - camera.x, e.y - camera.y) > 2.6
+      )
+        a.root.visible = false;
       a.root.position.set(
         e.x * SCALE,
         Math.sin(Math.min(1, Math.max(0, ((e.jumpUntil || 0) - this.g.time) / 0.5)) * Math.PI) *
@@ -2186,21 +2268,27 @@ export class MilitaryRenderer {
         e.y * SCALE,
       );
       a.root.rotation.y = -Math.PI / 2 - e.a;
-      updateActorPresentation(this, a, e, Math.max(0, Math.min(0.1, t - this.lastTime)), sample);
+      const poseChanged =
+        a.root.visible &&
+        updateActorPresentation(this, a, e, Math.max(0, Math.min(0.1, t - this.lastTime)), sample);
       a.x = e.x;
       a.y = e.y;
       // Short physical recoil and hit flinch layered on skeletal locomotion.
       const hit = Math.max(0, 1 - (this.g.time - e.hit) / 0.18);
       a.model.rotation.z = 0;
       a.root.rotation.z = alive ? hit * 0.05 : this.motion.matches ? Math.PI / 2 : fall * 1.5;
-      this.updateSkinParts(a);
+      // Gear bindings are local to the skeleton. Root interpolation remains
+      // full rate; expensive bone/gear transforms run only on a new 30Hz pose.
+      if (poseChanged) this.updateSkinParts(a);
       if (a.equipment) {
-        if (a.weaponAnchor) {
+        if (a.weaponAnchor && poseChanged) {
           a.root.updateMatrixWorld(true);
           a.weaponAnchor.getWorldPosition(a.equipment.position);
           a.root.worldToLocal(a.equipment.position);
           a.equipment.position.z -= 0.05;
-        } else a.equipment.position.y = 1.25 + (a.action !== "Idle" ? Math.sin(t * 7 + e.phase) * 0.025 : 0);
+        } else if (!a.weaponAnchor)
+          a.equipment.position.y =
+            1.25 + (a.action !== "Idle" ? Math.sin(t * 7 + e.phase) * 0.025 : 0);
         a.equipment.rotation.x = t - e.shotAt < 0.15 ? -0.12 : 0;
       }
     }
@@ -2213,7 +2301,7 @@ export class MilitaryRenderer {
   weaponMaterials(firstPerson = true) {
     const materials = realisticWeaponMaterials(this, firstPerson);
     if (this.g.mode !== "protocol") {
-      materials.cloth.map = this.skinTexture(outfitOf(this.g.player.outfit));
+      materials.cloth.map = this.skinTexture(outfitOf(this.g.camera().outfit));
       materials.cloth.color.set("#ffffff");
     }
     return materials;
@@ -2279,8 +2367,8 @@ export class MilitaryRenderer {
     if (hands) this.hand(gun, -0.045, -0.058, -0.75, m);
     return gun;
   }
-  updateWeapon(id = this.g.player.weapon) {
-    if (id === this.weaponId && this.weaponOutfit === this.g.player.outfit) return;
+  updateWeapon(id = this.g.camera().weapon) {
+    if (id === this.weaponId && this.weaponOutfit === this.g.camera().outfit) return;
     this.rig.traverse((o) => {
       if (o.isMesh) {
         if (o.userData.ownedGeometry) o.geometry.dispose();
@@ -2303,7 +2391,7 @@ export class MilitaryRenderer {
     }
     this.weaponTextures.clear();
     this.weaponId = id;
-    this.weaponOutfit = this.g.player.outfit;
+    this.weaponOutfit = this.g.camera().outfit;
     const m = this.weaponMaterials();
     this.buildWeapon(this.rig, id, m);
     this.rig.position.set(id === "twin" || id === "brawler" ? 0.05 : 0.23, -0.2, 0);
@@ -2614,7 +2702,7 @@ export class MilitaryRenderer {
       }
   }
   updateProjectiles(t) {
-    if (this.g.mode === "protocol") {
+    if (this.g.mode === "protocol" && this.g.arena.protocol?.phase !== "combat") {
       for (const projectile of this.projectiles.values()) this.dynamic.remove(projectile);
       for (const tracer of this.tracers) this.dynamic.remove(tracer.mesh);
       this.projectiles.clear();
@@ -2745,10 +2833,10 @@ export class MilitaryRenderer {
       this.protocolPowerOut = false;
       for (const light of this.protocolLights) {
         light.intensity = 0;
-        light.visible = false;
+        light.visible = true;
       }
       this.protocolTorch.intensity = 0;
-      this.protocolTorch.visible = false;
+      this.protocolTorch.visible = true;
       this.sun.intensity = this.g.academy.options.lighting ? 4.2 : 1.7;
       this.hemisphere.intensity = this.g.academy.options.lighting ? 0.55 : 1.3;
       this.rim.intensity = 1.15;
@@ -2779,32 +2867,25 @@ export class MilitaryRenderer {
     }
     const tasks = protocol.self?.tasks || [];
     for (const [id, material] of this.protocolScreens) {
-      const task = tasks.find((item) => item.stationId === id);
+      const task =
+        protocol.mission?.flightTasks?.find(
+          (item) => item.id === id || (item.id === "landing" && id === "medevac-radio"),
+        ) || tasks.find((item) => item.stationId === id);
       material.emissiveIntensity = powerOut ? 0.015 : task && !task.done ? 0.9 : 0.4;
       material.color.set(powerOut ? "#233538" : task?.done ? "#659d80" : "#a0bdc0");
     }
-    const fixtures = this.protocolFixtures.filter((fixture) => !fixture.arrivalOnly ||
-      protocol.mission?.vehicle?.arrived).sort(
-      (a, b) =>
-        Math.hypot(a.x - camera.x * SCALE, a.z - camera.y * SCALE) -
-        Math.hypot(b.x - camera.x * SCALE, b.z - camera.y * SCALE),
-    );
-    this.protocolLights.forEach((light, index) => {
-      const fixture = fixtures[index];
-      light.intensity = fixture && !powerOut ? (lighting ? 38 : 28) : 0;
-      light.visible = !!fixture && !powerOut;
-      if (fixture) light.position.set(fixture.x, fixture.y, fixture.z);
-    });
-    // Power loss gives everyone the same short cone of sight. The light is
-    // cosmetic; actor visibility is independently bounded to the same range.
-    this.protocolTorch.intensity = powerOut ? 12 : 0;
-    this.protocolTorch.visible = powerOut;
-    this.protocolTorch.position.set(camera.x * SCALE, 1.42, camera.y * SCALE);
-    this.protocolTorch.target.position.set(
-      (camera.x + Math.cos(camera.a) * 2) * SCALE,
-      1.2,
-      (camera.y + Math.sin(camera.a) * 2) * SCALE,
-    );
+    // Natural lighting already selects fixtures within the occupied room.
+    // The stronger beam follows vertical aim as well as heading. It improves
+    // surface visibility without extending the authoritative 2.6-tile sight.
+    this.protocolTorch.intensity = powerOut ? 115 : 0;
+    this.protocolTorch.visible = true;
+    this.camera.updateMatrixWorld();
+    this.camera.getWorldDirection(this.torchDirection);
+    this.protocolTorch.position.copy(this.camera.position);
+    this.protocolTorch.position.y -= 0.14;
+    this.protocolTorch.target.position
+      .copy(this.protocolTorch.position)
+      .addScaledVector(this.torchDirection, 12);
     this.protocolTorch.target.updateMatrixWorld();
     const chargeIds = new Set();
     // Read only the public, already redacted list. Do not consult map sites,
@@ -2881,26 +2962,77 @@ export class MilitaryRenderer {
       this.buildWorld();
     }
     this.rebuildWalls();
+    // Mission presentation needs 30Hz, whereas camera/actor root movement
+    // stays full rate. Avoid rebuilding the deeply redacted recipient view
+    // (hundreds of copied fields) on every 120Hz render.
+    const rawProtocol = g.arena.protocol,
+      projectionKey =
+        g.mode === "protocol"
+          ? `${rawProtocol.phase}:${rawProtocol.sabotage.powerUntil}:${rawProtocol.mission?.phase}:${rawProtocol.mission?.vehicle?.autopilot}:${rawProtocol.mission?.vehicle?.arrived}`
+          : "none";
+    if (
+      this.frameProtocolArena !== g.arena ||
+      this.frameProtocolKey !== projectionKey ||
+      Math.abs(g.time - (this.frameProtocolTime ?? -1)) >= 1 / 30
+    ) {
+      this.frameProtocolArena = g.arena;
+      this.frameProtocolKey = projectionKey;
+      this.frameProtocolTime = g.time;
+      this.frameProtocolView = g.mode === "protocol" ? g.protocolView?.() : null;
+    }
     const p = g.camera(),
-      pitch = Math.atan(g.viewPitch / g.projection),
-      protocolView = g.mode === "protocol" ? g.protocolView?.() : null,
-      seatedPilot = g.arena.mapId === "medevac" && protocolView?.protocol?.mission?.vehicle?.pilotId === g.selfId;
-    const now = performance.now(), dt = Math.min(0.1,(now-(this.lastRenderAt||now))/1000),
+      pitch = g.cameraPitch,
+      protocolView = this.frameProtocolView,
+      seatedPilot =
+        g.arena.mapId === "medevac" &&
+        protocolView?.protocol?.mission?.vehicle?.pilotId === p.id;
+    const now = performance.now(),
+      dt = Math.min(0.1, (now - (this.lastRenderAt || now)) / 1000),
       targetHeight = p.slideUntil > g.time ? 0.7 : 1.65;
     this.lastRenderAt = now;
     this.eyeHeight ??= 1.65;
-    this.eyeHeight += (targetHeight-this.eyeHeight)*(1-Math.exp(-dt*18));
-    const fall = this.motion.matches ? 0 : (g.deathProgress || 0)**2;
-    this.camera.position.set(p.x*SCALE,g.deathSequence ? 1.65-fall*1.4 : this.eyeHeight,p.y*SCALE+(seatedPilot?0.85:0));
-    this.camera.rotation.set(pitch-fall*.25,-p.a-Math.PI/2,fall*.5,"YXZ");
-    this.updateProtocol(protocolView,p);
-    this.updateMedicalMission(protocolView?.protocol?.mission,t);
-    updateNaturalLighting(this,protocolView,p);
+    this.eyeHeight += (targetHeight - this.eyeHeight) * (1 - Math.exp(-dt * 18));
+    const fall = this.motion.matches ? 0 : (g.deathProgress || 0) ** 2;
+    this.camera.position.set(
+      p.x * SCALE,
+      g.deathSequence ? 1.65 - fall * 1.4 : this.eyeHeight,
+      p.y * SCALE + (seatedPilot ? 0.85 : 0),
+    );
+    this.camera.rotation.set(pitch - fall * 0.25, -p.a - Math.PI / 2, fall * 0.5, "YXZ");
+    this.updateProtocol(protocolView, p);
+    this.updateMedicalMission(protocolView?.protocol?.mission, t);
+    updateNaturalLighting(this, protocolView, p);
     if (g.arena.mapId === "medevac" && !this.motion.matches) {
-      const heading = Number(protocolView?.protocol?.mission?.vehicle?.heading)||0;
-      this.camera.rotation.z=THREE.MathUtils.clamp(-heading*.055,-.085,.085);
+      const heading = Number(protocolView?.protocol?.mission?.vehicle?.heading) || 0;
+      this.camera.rotation.z = THREE.MathUtils.clamp(-heading * 0.055, -0.085, 0.085);
     }
     this.updateActors(t);
+    // Mark only the publicly accused participant, within ordinary sight and
+    // wall occlusion. This identifies combat's one opposing uniform without
+    // revealing any secret role or leaving markers visible through walls.
+    const marker = g.protocolUI?.combatMarker,
+      battle = protocolView?.protocol?.phase === "combat" && protocolView.protocol.combat,
+      accused = battle && g.arena.entities.find((e) => e.id === battle.targetId);
+    if (marker) {
+      let show =
+        !!accused &&
+        accused.id !== p.id &&
+        accused.hp > 0 &&
+        Math.hypot(accused.x - p.x, accused.y - p.y) <= (this.protocolPowerOut ? 2.6 : 7) &&
+        g.arena.visible(p, accused);
+      if (show) {
+        const point = (this.markerPoint ||= new THREE.Vector3())
+          .set(accused.x * SCALE, 2.06, accused.y * SCALE)
+          .project(this.camera);
+        show = point.z >= -1 && point.z <= 1 && Math.abs(point.x) < 1 && Math.abs(point.y) < 1;
+        if (show) {
+          marker.style.left = `${(point.x * 0.5 + 0.5) * 100}%`;
+          marker.style.top = `${(-point.y * 0.5 + 0.5) * 100}%`;
+          marker.textContent = accused.name;
+        }
+      }
+      marker.hidden = !show;
+    }
     this.updatePickups(t);
     this.updateFields();
     if (t < this.lastTime) {
@@ -2912,11 +3044,12 @@ export class MilitaryRenderer {
     }
     this.updateProjectiles(t);
     this.updateWeapon();
-    const recoil = g.mode === "protocol" ? 0 : Math.max(0, 1 - (t - g.shotAt) / 0.16),
-      reload = Math.max(0, Math.min(1, (g.reloadUntil - t) / 1.4));
+    const combat = protocolView?.protocol?.phase === "combat",
+      recoil = g.mode === "protocol" && !combat ? 0 : Math.max(0, 1 - (t - p.shotAt) / 0.16),
+      reload = Math.max(0, Math.min(1, (p.reloadUntil - t) / 1.4));
     this.rig.position.y =
       -0.2 * Math.max(1, this.g.h / this.g.w) -
-      (g.mode === "protocol" ? 0.075 : 0) -
+      (g.mode === "protocol" && !combat ? 0.075 : 0) -
       (reload > 0 ? Math.sin(reload * Math.PI) * 0.25 : 0) +
       (this.motion.matches ? 0 : Math.sin(g.step) * 0.005);
     this.rig.position.y -= fall * 0.65;
@@ -2924,7 +3057,8 @@ export class MilitaryRenderer {
     this.rig.rotation.x = 0.02 - recoil * 0.075;
     this.rig.rotation.z = -0.025 + Math.sin(reload * Math.PI) * 0.3;
     this.flash.intensity = recoil > 0.65 ? 3 : 0;
-    this.rig.visible = (g.player.hp>0 || (!!g.deathSequence && g.deathProgress<.65)) && !seatedPilot;
+    this.rig.visible =
+      (p.hp > 0 || (!!g.deathSequence && g.deathProgress < 0.65)) && !seatedPilot;
     const outside =
       !["training", "protocol"].includes(g.mode) &&
       g.time > g.zone.delay &&
@@ -2936,7 +3070,23 @@ export class MilitaryRenderer {
           ? "#827276"
           : (PROFILES[g.arena.mapId] || PROFILES.outpost).fog,
     );
-    this.scene.fog.density = this.protocolPowerOut ? 0.12 : outside ? 0.065 : g.arena.mapId === "medevac" && !protocolView?.protocol?.mission?.vehicle?.arrived ? 0.002 : 0.009;
+    this.scene.fog.density = this.protocolPowerOut
+      ? 0.045
+      : outside
+        ? 0.065
+        : g.arena.mapId === "medevac" && !protocolView?.protocol?.mission?.vehicle?.arrived
+          ? 0.002
+          : 0.009;
+    // A 30Hz shadow refresh matches visible skeletal animation. Reusing the
+    // shadow texture between samples avoids a second full geometry pass at
+    // 120Hz; camera and player movement continue on every animation frame.
+    if (
+      this.renderer.shadowMap.enabled &&
+      (!this.lastShadowAt || now - this.lastShadowAt >= 1000 / 30)
+    ) {
+      this.renderer.shadowMap.needsUpdate = true;
+      this.lastShadowAt = now;
+    }
     this.renderer.info.reset();
     if (!this.composer || g.academy.preset === "performance") {
       this.renderer.autoClear = true;
@@ -2962,7 +3112,9 @@ export class MilitaryRenderer {
     this.disposed = true;
     for (const a of this.actors.values()) {
       a.mixer?.stopAllAction();
-      a.model.traverse((o) => { if (o.isSkinnedMesh) o.skeleton.dispose(); });
+      a.model.traverse((o) => {
+        if (o.isSkinnedMesh) o.skeleton.dispose();
+      });
     }
     this.clearProtocolDynamic();
     this.previewTarget?.dispose();

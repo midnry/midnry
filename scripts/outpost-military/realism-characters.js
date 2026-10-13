@@ -289,7 +289,7 @@ function plantFoot(model, leg, ground, dt, moving, reset) {
 /** Called every render; only skeletal changes occur on the 30 FPS sample. */
 export function updateActorPresentation(r, actor, e, delta, sample) {
   const state = characterState.get(actor.model);
-  if (!state || !actor.mixer) return;
+  if (!state || !actor.mixer) return false;
   const dx = e.x - state.previousX,
     dy = e.y - state.previousY;
   const travelled = Math.hypot(dx, dy) * TILE_METRES;
@@ -300,7 +300,7 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
     state.distance += travelled;
     state.signedDistance += (dx * Math.cos(e.a || 0) + dy * Math.sin(e.a || 0)) * TILE_METRES;
   } else for (const leg of state.legs) leg.planted = false;
-  if (state.lastSample === sample) return;
+  if (state.lastSample === sample) return false;
   const dt = state.lastSample === null ? 0 : clamp(sample - state.lastSample, 0, 0.1);
   state.lastSample = sample;
   actor.lastSample = sample;
@@ -345,4 +345,5 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
       );
   else for (const leg of state.legs) leg.planted = false;
   actor.model.updateMatrixWorld(true);
+  return true;
 }

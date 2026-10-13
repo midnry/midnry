@@ -54,10 +54,12 @@ export class ProtocolFocus {
     this.button.setAttribute("aria-expanded", "false");
     g.shell.append(this.button);
     this.info = ui.dialog("mf-protocol-info", "Mission information");
-    this.info.innerHTML = '<div class="mf-protocol-dialoghead"><h2>Mission info</h2><button class="mf-protocol-infoclose">Done</button></div><p class="mf-protocol-infonote"></p><h3>Next objective</h3><p class="mf-protocol-infoobjective"></p>';
+    this.info.innerHTML =
+      '<div class="mf-protocol-dialoghead"><h2>Mission info</h2><button class="mf-protocol-infoclose">Done</button></div><p class="mf-protocol-infonote"></p><h3>Next objective</h3><p class="mf-protocol-infoobjective"></p>';
     this.info.append(ui.hud);
     this.mapDetails = document.createElement("details");
-    this.mapDetails.innerHTML = '<summary>Map & location</summary><canvas class="mf-protocol-infomap" width="280" height="280" aria-label="Mission map with your location" role="img"></canvas><p class="mf-protocol-infomapkey">The light marker is your location. Other players’ locations are hidden.</p>';
+    this.mapDetails.innerHTML =
+      '<summary>Map & location</summary><canvas class="mf-protocol-infomap" width="280" height="280" aria-label="Mission map with your location" role="img"></canvas><p class="mf-protocol-infomapkey">The light marker is your location. Other players’ locations are hidden.</p>';
     this.info.append(this.mapDetails);
     this.tacticsButton = ui.actionBar.querySelector(".mf-protocol-openactions");
     this.info.append(this.tacticsButton, ui.tactics);
@@ -68,38 +70,72 @@ export class ProtocolFocus {
     this.urgent.setAttribute("aria-live", "polite");
     g.shell.append(this.urgent);
     g.on(this.button, "click", () => this.open());
-    g.on(window, "message", event => {
-      if (event.origin === location.origin && event.source === window.parent && event.data?.type === "midnry-outpost-host-ready")
-        window.parent.postMessage({ type: "midnry-outpost-focus", active: this.lastGameplay === true }, location.origin);
+    g.on(window, "message", (event) => {
+      if (
+        event.origin === location.origin &&
+        event.source === window.parent &&
+        event.data?.type === "midnry-outpost-host-ready"
+      )
+        window.parent.postMessage(
+          { type: "midnry-outpost-focus", active: this.lastGameplay === true },
+          location.origin,
+        );
     });
     g.on(this.info.querySelector(".mf-protocol-infoclose"), "click", () => this.info.close());
     g.on(this.info, "close", () => {
       this.button.setAttribute("aria-expanded", "false");
-      if (this.pausedOffline && g.state === "playing" && g.$(".mf-modal").hidden && g.militaryLoaded)
+      if (
+        this.pausedOffline &&
+        g.state === "playing" &&
+        g.$(".mf-modal").hidden &&
+        g.militaryLoaded
+      )
         g.running = true;
       this.pausedOffline = false;
       ui.resumeFocus();
     });
-    g.on(this.info, "click", event => {
-      if (event.target.closest(".mf-protocol-role")) this.info.close();
-    }, { capture: true });
-    g.on(ui.tactics, "click", event => {
+    g.on(
+      this.info,
+      "click",
+      (event) => {
+        if (event.target.closest(".mf-protocol-role")) this.info.close();
+      },
+      { capture: true },
+    );
+    g.on(ui.tactics, "click", (event) => {
       if (event.target.closest("button:not(:disabled)")) this.info.close();
     });
-    const editable = event => event.target.closest?.('input,textarea,[contenteditable="true"]');
+    const editable = (event) => event.target.closest?.('input,textarea,[contenteditable="true"]');
     for (const type of ["selectstart", "contextmenu", "dragstart"])
-      g.on(g.root, type, event => { if ((g.running || this.info.open) && !editable(event)) event.preventDefault(); });
+      g.on(g.root, type, (event) => {
+        if ((g.running || this.info.open) && !editable(event)) event.preventDefault();
+      });
     // Completing a touch hold can reveal the menu beneath the finger. Keep
     // its synthesized click from activating a different menu control.
-    g.on(g.root, "click", event => {
-      if (!g.$(".mf-modal").hidden && performance.now() < (g.ignoreMissionTapUntil || 0) && event.detail > 0 && event.pointerType !== "mouse") {
-        event.preventDefault(); event.stopImmediatePropagation();
-      }
-    }, { capture:true });
+    g.on(
+      g.root,
+      "click",
+      (event) => {
+        if (
+          !g.$(".mf-modal").hidden &&
+          performance.now() < (g.ignoreMissionTapUntil || 0) &&
+          event.detail > 0 &&
+          event.pointerType !== "mouse"
+        ) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+        }
+      },
+      { capture: true },
+    );
   }
 
   open() {
-    if (!this.ui.visibleGameplay() || this.ui.piloting && !this.ui.safeView()?.protocol.mission.vehicle.autopilot) return;
+    if (
+      !this.ui.visibleGameplay() ||
+      (this.ui.piloting && !this.ui.safeView()?.protocol.mission.vehicle.autopilot)
+    )
+      return;
     this.pausedOffline = !this.g.online && this.g.running;
     this.ui.releaseMouse();
     if (this.pausedOffline) this.g.running = false;
@@ -118,7 +154,11 @@ export class ProtocolFocus {
   update(view, gameplay) {
     if (this.lastGameplay !== gameplay) {
       this.lastGameplay = gameplay;
-      if (window.parent !== window) window.parent.postMessage({ type: "midnry-outpost-focus", active: gameplay }, location.origin);
+      if (window.parent !== window)
+        window.parent.postMessage(
+          { type: "midnry-outpost-focus", active: gameplay },
+          location.origin,
+        );
     }
     this.button.hidden = !gameplay;
     const mission = view?.protocol?.mission;
@@ -128,42 +168,78 @@ export class ProtocolFocus {
       return;
     }
     const loaded = mission.manifest.reduce((sum, item) => sum + item.loaded, 0);
-    const actionCount = [...this.ui.actionBar.querySelectorAll("button")].filter(button => !button.hidden).length;
+    const actionCount = [...this.ui.actionBar.querySelectorAll("button")].filter(
+      (button) => !button.hidden,
+    ).length;
     if (this.actionCount !== actionCount) {
       this.actionCount = actionCount;
-      this.g.shell.style.setProperty("--mf-action-height", Math.max(48, actionCount*48+Math.max(0,actionCount-1)*6)+"px");
+      this.g.shell.style.setProperty(
+        "--mf-action-height",
+        Math.max(48, actionCount * 48 + Math.max(0, actionCount - 1) * 6) + "px",
+      );
     }
     const total = mission.manifest.reduce((sum, item) => sum + item.required, 0);
-    this.button.textContent = mission.phase === "base" ? `Info · ${loaded}/${total}` : "Info · Flight";
-    this.button.disabled = this.ui.piloting && !mission.vehicle.autopilot && !mission.vehicle.arrived;
+    this.button.textContent =
+      view.protocol.phase === "combat"
+        ? "Info · Fight"
+        : mission.phase === "base"
+          ? `Info · ${loaded}/${total}`
+          : "Info · Flight";
+    this.button.disabled =
+      this.ui.piloting && !mission.vehicle.autopilot && !mission.vehicle.arrived;
     if (this.button.disabled && this.info.open) this.info.close();
     const p = view.protocol;
     const warnings = [];
-    if (!mission.vehicle.autopilot && mission.phase === "transport" && !mission.vehicle.arrived)
-      warnings.push(mission.vehicle.underControl ? "Manual flight" : `Autopilot off · ${Math.max(0, Math.ceil((mission.vehicle.recoveryDeadline || view.time) - view.time))}s to recover`);
-    else if (p.detonateAt != null) warnings.push(`Base detonation · ${Math.max(0, Math.ceil(p.detonateAt-view.time))}s`);
-    else if (mission.patients.some(patient => patient.hp > 0 && patient.hp <= 25)) warnings.push("Patients critical · deliver aid");
+    if (p.phase === "combat" && p.combat) {
+      const target = view.entities.find((e) => e.id === p.combat.targetId);
+      warnings.push(
+        view.time < p.combat.startsAt
+          ? `Last Stand · starts in ${Math.ceil(p.combat.startsAt - view.time)}s`
+          : `Last Stand · ${target?.name || "Accused"} · ${Math.max(0, Math.ceil(p.combat.endsAt - view.time))}s`,
+      );
+    } else if (
+      !mission.vehicle.autopilot &&
+      mission.phase === "transport" &&
+      !mission.vehicle.arrived
+    )
+      warnings.push(
+        mission.vehicle.underControl
+          ? "Manual flight"
+          : `Autopilot off · ${Math.max(0, Math.ceil((mission.vehicle.recoveryDeadline || view.time) - view.time))}s to recover`,
+      );
+    else if (p.detonateAt != null)
+      warnings.push(`Base detonation · ${Math.max(0, Math.ceil(p.detonateAt - view.time))}s`);
+    else if (mission.patients.some((patient) => patient.hp > 0 && patient.hp <= 25))
+      warnings.push("Patients critical · deliver aid");
     else if (p.sabotage.powerUntil > view.time) warnings.push("Power down");
     else if (p.sabotage.commsUntil > view.time) warnings.push("Comms jammed");
     const warning = warnings.join(" · ");
     this.urgent.hidden = !warning;
     if (this.urgent.textContent !== warning) this.urgent.textContent = warning;
     if (this.info.open) {
-      this.info.querySelector(".mf-protocol-infoobjective").textContent = `${this.ui.context.querySelector("b").textContent}. ${this.ui.context.querySelector("p").textContent}`;
+      this.info.querySelector(".mf-protocol-infoobjective").textContent =
+        `${this.ui.context.querySelector("b").textContent}. ${this.ui.context.querySelector("p").textContent}`;
       if (this.mapDetails.open && performance.now() - (this.mapAt || 0) > 500) this.drawMap();
     }
   }
   drawMap() {
     this.mapAt = performance.now();
-    const canvas = this.info.querySelector("canvas"), c = canvas.getContext("2d"),
-      map = this.ui.map(), s = canvas.width / map.level.length;
-    c.fillStyle = "#14251e"; c.fillRect(0, 0, canvas.width, canvas.height);
-    map.level.forEach((row, y) => row.forEach((tile, x) => {
-      c.fillStyle = tile ? "#8b9e8b" : "#294035";
-      c.fillRect(x*s, y*s, Math.max(1,s-1), Math.max(1,s-1));
-    }));
+    const canvas = this.info.querySelector("canvas"),
+      c = canvas.getContext("2d"),
+      map = this.ui.map(),
+      s = canvas.width / map.level.length;
+    c.fillStyle = "#14251e";
+    c.fillRect(0, 0, canvas.width, canvas.height);
+    map.level.forEach((row, y) =>
+      row.forEach((tile, x) => {
+        c.fillStyle = tile ? "#8b9e8b" : "#294035";
+        c.fillRect(x * s, y * s, Math.max(1, s - 1), Math.max(1, s - 1));
+      }),
+    );
     c.fillStyle = "#f0ebc5";
-    c.beginPath(); c.arc(this.g.player.x*s, this.g.player.y*s, 4, 0, Math.PI*2); c.fill();
+    c.beginPath();
+    c.arc(this.g.player.x * s, this.g.player.y * s, 4, 0, Math.PI * 2);
+    c.fill();
   }
   dispose() {
     this.close();
