@@ -1,4 +1,5 @@
 /** Device-local cosmetic progression. No combat stats or account data. */
+import { contributionsOf } from "./outpost-mission-progress.js";
 export const FINISHES = [
   { id: "standard", name: "Field Issue", xp: 0, color: null },
   { id: "copper", name: "Copper Signal", xp: 200, color: "#cb8750" },
@@ -11,7 +12,7 @@ export function profileOf(data = {}) {
   const xp = bounded(data?.xp, 10000000);
   const skin = FINISHES.find((f) => f.id === data?.skin && f.xp <= xp)?.id || "standard";
   return {
-    version: 1,
+    version: 2,
     xp,
     skin,
     matches: bounded(data?.matches, 1000000),
@@ -26,8 +27,24 @@ export function profileOf(data = {}) {
         )
       : [],
     milestones: Array.isArray(data?.milestones)
-      ? data.milestones.filter((v) => ["first-three", "explorer"].includes(v))
+      ? data.milestones.filter((v) =>
+          ["first-three", "explorer", "supply-detail", "flight-ready", "lifeline"].includes(v),
+        )
       : [],
+    career: Object.fromEntries(
+      [
+        "supplies",
+        "checks",
+        "repairs",
+        "patients",
+        "recoveries",
+        "defuses",
+        "sabotage",
+        "charges",
+        "cover",
+        "pilotSeconds",
+      ].map((key) => [key, bounded(data?.career?.[key], 1000000)]),
+    ),
   };
 }
 export function awardMatch(data, result) {
@@ -49,9 +66,32 @@ export function awardMatch(data, result) {
     Math.min(40, bounded(result.damage / 50, 40)) +
     Math.min(40, bounded(result.cores, 8) * 5) +
     (result.won ? 40 : 0);
+  const mission = result.mode === "protocol";
+  if (mission) {
+    const c = contributionsOf(result.contributions);
+    const work =
+      result.role === "infiltrator"
+        ? c.sabotage * 12 + c.charges * 24 + c.cover * 6
+        : c.supplies * 6 +
+          c.checks * 10 +
+          c.repairs * 12 +
+          c.defuses * 16 +
+          c.patients * 24 +
+          Math.floor(c.pilotSeconds / 10) * 4 +
+          c.recoveries * 20;
+    const teamRescue = result.role === "operator" ? bounded(result.rescued, 4) * 10 : 0;
+    xp = 40 + (result.won ? 40 : 0) + Math.min(225, work) + teamRescue;
+    for (const key of Object.keys(profile.career))
+      profile.career[key] = Math.min(1000000, profile.career[key] + Math.floor(c[key]));
+    if (work) bonuses.push("Mission contribution");
+    if (teamRescue) bonuses.push("Team rescue");
+  }
   for (const [id, complete, name] of [
     ["first-three", profile.matches >= 3, "Three rounds completed"],
-    ["explorer", profile.weapons.length >= 3, "Three loadouts explored"],
+    ["explorer", !mission && profile.weapons.length >= 3, "Three loadouts explored"],
+    ["supply-detail", mission && profile.career.supplies >= 13, "Medical supply detail"],
+    ["flight-ready", mission && profile.career.checks >= 3, "Flight ready"],
+    ["lifeline", mission && profile.career.patients >= 4, "Lifeline rescuer"],
   ]) {
     if (complete && !profile.milestones.includes(id)) {
       profile.milestones.push(id);

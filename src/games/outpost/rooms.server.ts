@@ -139,6 +139,9 @@ export function publicRoom(code: string, room: Room, selfId: string) {
   };
 }
 const PROTOCOL_OPS = new Set([
+  "task-begin",
+  "task-step",
+  "task-cancel",
   "report",
   "meeting",
   "eliminate",
@@ -410,6 +413,7 @@ export function applyRoomAction(
         throw new OutpostError("Finish this match before starting another.", 409);
       room.members = room.members.filter((m) => now - m.lastSeen < 20000);
       room.arena = createArena({
+        interactiveTasks: true,
         mode: room.mode,
         mapId: room.mapId || "outpost",
         difficulty: room.difficulty || "normal",
@@ -433,6 +437,7 @@ export function applyRoomAction(
       if (room.phase !== "lobby") throw new OutpostError("Match already started.", 409);
       room.members = room.members.filter((m) => now - m.lastSeen < 20000);
       room.arena = createArena({
+        interactiveTasks: true,
         mode: room.mode,
         mapId: room.mapId || "outpost",
         difficulty: room.difficulty || "normal",

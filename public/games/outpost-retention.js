@@ -221,13 +221,27 @@ export class Retention {
             ).size + 1),
       practice: false,
     };
+    const missionView = g.mode === "protocol" ? g.protocolUI?.safeView()?.protocol : null;
+    if (missionView?.self) {
+      summary.mode = "protocol";
+      summary.role = missionView.self.role;
+      summary.contributions = missionView.self.contributions;
+      summary.rescued = missionView.mission?.patients.filter(p => p.rescued).length || 0;
+    }
     const earned = awardMatch(this.profile, summary);
     this.profile = earned.profile;
     write("midnry-outpost-profile", this.profile);
     this.summary = summary;
     g.$(".mf-results").hidden = false;
     g.$(".mf-results h2").textContent = won ? "VICTORY / ROUND DEBRIEF" : "ROUND DEBRIEF";
-    const stats = [
+    const c = summary.contributions || {};
+    const stats = summary.mode === "protocol" ? summary.role === "infiltrator" ? [
+      ["Sabotages",c.sabotage || 0], ["Charges armed",c.charges || 0], ["Cover checks",c.cover || 0],
+      ["Mission time",`${summary.seconds}s`], ["Patients rescued",summary.rescued], ["Level",levelOf(this.profile)],
+    ] : [
+      ["Supplies loaded",c.supplies || 0], ["Aircraft checks",c.checks || 0], ["Repairs / defuses",`${c.repairs || 0} / ${c.defuses || 0}`],
+      ["Safe piloting",`${Math.floor(c.pilotSeconds || 0)}s`], ["Patients rescued",summary.rescued], ["Level",levelOf(this.profile)],
+    ] : [
       [
         "Placement",
         g.mode === "training"
@@ -281,7 +295,7 @@ export class Retention {
         )
         .join(
           "",
-        )}</div><h3>Optional challenges</h3><p>Complete three rounds: ${Math.min(3, p.matches)}/3 · ${p.milestones.includes("first-three") ? "Reward earned" : "50 bonus XP"}</p><p>Finish rounds with three loadouts: ${Math.min(3, p.weapons.length)}/3 · ${p.milestones.includes("explorer") ? "Reward earned" : "50 bonus XP"}</p><p>XP rewards completed matches and victories. Boot Camp and losses under 15 seconds do not earn XP. All rewards change appearance only. There are no streak penalties or purchases.</p><p>Progress is saved on this browser and device. Clearing browser data removes it; it does not sync between devices.</p>`;
+        )}</div><h3>Optional challenges</h3><p>Complete three rounds: ${Math.min(3, p.matches)}/3 · ${p.milestones.includes("first-three") ? "Reward earned" : "50 bonus XP"}</p><p>Load 13 medical supplies: ${Math.min(13,p.career.supplies)}/13 · ${p.milestones.includes("supply-detail") ? "Reward earned" : "50 bonus XP"}</p><p>Complete three aircraft checks: ${Math.min(3,p.career.checks)}/3 · ${p.milestones.includes("flight-ready") ? "Reward earned" : "50 bonus XP"}</p><p>Deliver aid to four patients: ${Math.min(4,p.career.patients)}/4 · ${p.milestones.includes("lifeline") ? "Reward earned" : "50 bonus XP"}</p><p>XP rewards completed missions, supplies loaded, equipment checks, repairs, defuses, safe piloting and rescues. Infiltrators earn mission credit for validated sabotage, charges and cover checks. Repeated collection without loading and idle time do not earn contribution XP. Losses under 15 seconds do not earn XP. All rewards change appearance only. There are no streak penalties or purchases.</p><p>Progress is saved on this browser and device. Clearing browser data removes it; it does not sync between devices.</p>`;
     if (focused) this.g.$(`[data-outfit="${focused}"]`)?.focus({ preventScroll: true });
   }
   locker() {

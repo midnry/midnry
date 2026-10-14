@@ -27,6 +27,16 @@ after(async () => {
   await server?.close();
 });
 
+test("room boundary accepts equipment intentions and drops forged contribution totals", () => {
+  for (const op of ["task-begin", "task-step", "task-cancel"]) {
+    const input = inputOf({ protocolAction:{seq:9,op,target:"check-123",value:"1",completed:true}, contributions:{supplies:13}, channel:{progress:99} });
+    assert.deepEqual(input.protocolAction,{seq:9,op,target:"check-123",value:"1"});
+    assert.equal(input.contributions,undefined);
+    assert.equal(input.channel,undefined);
+  }
+  assert.equal(inputOf({protocolAction:{seq:0,op:"task-step",target:"bad\u0000id"}}).protocolAction,undefined);
+});
+
 test("room input accepts only bounded protocol intent and ignores forged state", () => {
   const input = inputOf({
     forward: 10,

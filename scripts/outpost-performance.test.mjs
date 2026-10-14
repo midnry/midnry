@@ -2,6 +2,18 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { FrameBudget } from "../public/games/outpost-academy.js";
 import { ANIMATION_FPS } from "../public/games/outpost-characters.js";
+import { FrameDiagnostics } from "../public/games/outpost-frame-diagnostics.js";
+test("device diagnostics measure gameplay cadence and retain it through menus", () => {
+  const d=new FrameDiagnostics();
+  for(let i=0;i<240;i++)d.sample(i*1000/120,3,4,true);
+  assert.equal(d.report.fps,120);
+  assert.ok(Math.abs(d.report.p95-1000/120)<.01);
+  const before=structuredClone(d.report);
+  for(let i=0;i<50;i++)d.sample(3000+i*100,1,null,false);
+  assert.deepEqual(d.report,before);
+  d.sample(10000,3,4,true);
+  assert.equal(d.frames.at(-1).interval<9,true,"pause is not counted as a gameplay hitch");
+});
 test("120Hz and 60Hz cadence report measured FPS without inventing display frames", () => {
   for (const hz of [60, 120, 144]) {
     const b = new FrameBudget();

@@ -3,6 +3,8 @@
  * All objectives, votes, cooldowns and arming checks belong to the shared
  * simulation. This module reads ONLY the recipient-safe view and sends inputs.
  */
+import { MissionTaskPanel } from "./outpost-task-ui.js";
+import { INTERACTIVE_TASKS } from "./outpost-task-games.js";
 import { ProtocolFocus } from "./outpost-protocol-focus.js";
 import { protocolView } from "./outpost-protocol.js";
 import { PROTOCOL_MAP, TRANSPORT_MAP } from "./outpost-protocol-map.js";
@@ -29,11 +31,11 @@ const GUIDE = [
   ],
   [
     "Operators: deliver aid before patients die",
-    "A stocked medical fixture takes 4.5 uninterrupted seconds to collect an item; loading takes three seconds. Watch the remote patient vitals while your team gathers supplies. The 120-second flight leads to the casualty site. Once you arrive, repair damaged cargo if needed and hold at the cargo station for 4.5 seconds to deliver aid. Saving at least one surviving patient wins; saving more patients gives a better rescue outcome. Completing old assignments, waiting or detaining infiltrators does not finish this mission.",
+    "At a stocked fixture, tap Check equipment or press E to inspect the packing checklist. Stay at the station while its 4.5-second equipment cycle finishes; loading still takes a three-second hold. Watch the remote patient vitals while your team gathers supplies. The 120-second flight leads to the casualty site. Once you arrive, repair damaged cargo if needed and complete the casualty delivery checklist at the cargo station to deliver aid. Saving at least one surviving patient wins; saving more patients gives a better rescue outcome. Completing old assignments, waiting or detaining infiltrators does not finish this mission.",
   ],
   [
     "Recover a sabotaged aircraft",
-    "Complete three routine aircraft duties: test medical oxygen, secure trauma packs, and confirm landing coordinates. Use the Info panel to track them. They are required before aid delivery; cargo sabotage unsecures trauma packs. Autopilot only fails through sabotage or abandoned unsafe manual flight. If autopilot is disabled, an operator must reach the cockpit and take the helm. W raises flight level; S lowers it. A steers left; D steers right. On touch, hold the flight-direction buttons. Keep flight level between 50% and 85% and course offset within ±18% for three seconds. Then press Restore autopilot. Recovery requires actual steering and a seated pilot; autopilot never fixes itself. Extreme attitude or an expired 18-second recovery timer causes a crash. Release the helm only after restoring autopilot.",
+    "Complete three routine aircraft duties: test medical oxygen, secure trauma packs, and confirm landing coordinates. Use the Info panel to track them. Check the oxygen gauge, match the landing beacon, and secure the cargo restraints in the equipment panels. They are required before aid delivery; cargo sabotage unsecures trauma packs. Autopilot only fails through sabotage or abandoned unsafe manual flight. If autopilot is disabled, an operator must reach the cockpit and take the helm. W raises flight level; S lowers it. A steers left; D steers right. On touch, hold the flight-direction buttons. Keep flight level between 50% and 85% and course offset within ±18% for three seconds. Then press Restore autopilot. Recovery requires actual steering and a seated pilot; autopilot never fixes itself. Extreme attitude or an expired 18-second recovery timer causes a crash. Release the helm only after restoring autopilot.",
   ],
   [
     "Infiltrators: stop the rescue",
@@ -78,6 +80,7 @@ export class ProtocolUI {
     this.build();
     this.bind();
     this.focus = new ProtocolFocus(g, this);
+    this.taskPanel = new MissionTaskPanel(this);
     this.combatStats = element("div", "mf-protocol-combatstats");
     this.combatStats.hidden = true;
     this.combatStats.setAttribute("role", "status");
@@ -413,6 +416,7 @@ export class ProtocolUI {
     g.on(this.holdButton, "pointerdown", (event) => {
       if (!this.canInteract()) return;
       event.preventDefault();
+      if (this.startEquipmentCheck()) return;
       this.held = true;
       this.touchHold = event.pointerType !== "mouse";
       this.holdButton.setPointerCapture(event.pointerId);
@@ -434,6 +438,7 @@ export class ProtocolUI {
       if ([" ", "Enter"].includes(event.key) && this.canInteract()) {
         event.preventDefault();
         event.stopPropagation();
+        if (this.startEquipmentCheck()) return;
         this.held = true;
         this.holdButton.setAttribute("aria-pressed", "true");
       }
@@ -583,7 +588,7 @@ export class ProtocolUI {
     return { pitch: clamp(pitch, -1, 1), steer: clamp(steer, -1, 1) };
   }
   hasDialogOpen() {
-    return [this.brief, this.guide, this.arming, this.meeting, this.focus?.info].some(
+    return [this.brief, this.guide, this.arming, this.meeting, this.focus?.info, this.taskPanel?.dialog].some(
       (dialog) => dialog?.open,
     );
   }
@@ -602,6 +607,7 @@ export class ProtocolUI {
       !this.brief.open &&
       !this.guide.open &&
       !this.arming.open &&
+      !this.taskPanel?.dialog.open &&
       this.alive() &&
       Boolean(this.nearby?.context)
     );
@@ -620,6 +626,13 @@ export class ProtocolUI {
     if (target != null) action.target = String(target);
     if (value != null) action.value = String(value);
     this.actions.push(action);
+  }
+
+  startEquipmentCheck() {
+    const context = this.nearby?.context;
+    if (!this.view?.protocol?.mission?.interactiveTasks || !INTERACTIVE_TASKS.has(context?.kind)) return false;
+    this.enqueue("task-begin",context.target);
+    return true;
   }
 
   /** A one-shot stays queued through failed HTTP polls; the server deduplicates seq. */
@@ -646,6 +659,7 @@ export class ProtocolUI {
   }
 
   reset() {
+    this.taskPanel?.reset();
     this.focus?.close();
     this.actions = [];
     this.held = false;
@@ -1041,6 +1055,7 @@ export class ProtocolUI {
     this.actionBar.hidden = !gameplay;
     this.context.hidden = !gameplay;
     if (!gameplay) {
+      this.taskPanel?.close();
       this.focus?.update(null, false);
       this.flight.hidden = this.flightPad.hidden = true;
       this.clearFlightInput();
@@ -1128,6 +1143,7 @@ export class ProtocolUI {
     setText(alert, notices.join(" "));
     this.updateContext(view);
     this.updateActions(view);
+    this.taskPanel?.update(view, gameplay);
     this.updateArming(view);
     this.updateMeeting(view);
     this.updateCombat(view);
@@ -1348,7 +1364,7 @@ export class ProtocolUI {
           "disable-autopilot": "Disabling aircraft autopilot",
           "cargo-sabotage": "Damaging medical cargo",
         }[channel.kind] || "Working on objective";
-      copy = "Keep holding. Stay stationary; releasing or moving interrupts progress.";
+      copy = channel.challenge ? "Complete the equipment checks. Stay at the station while the cycle finishes." : "Keep holding. Stay stationary; releasing or moving interrupts progress.";
     }
     if (!title && mission) {
       const infiltrator = protocol.self.role === "infiltrator",
@@ -1441,6 +1457,7 @@ export class ProtocolUI {
           }[context.kind] || "Hold to interact"
         : "Find an objective",
     );
+    if (mission?.interactiveTasks && INTERACTIVE_TASKS.has(context?.kind)) setText(this.holdButton.firstChild, "Check equipment");
     this.holdButton.disabled = !this.canInteract();
     this.holdButton.hidden = this.piloting || !context;
   }
@@ -1805,7 +1822,7 @@ export class ProtocolUI {
     if (instructions)
       setText(
         instructions,
-        "On foot: WASD / left joystick moves; hold E / the action button to collect, load, depart, repair or deliver. F reports, C calls a meeting, X eliminates, B opens tactics. At the helm: W/S adjusts flight level; A/D steers. Hold both gauges in their safe bands for three seconds, restore autopilot, then release the helm. Escape / P opens the menu.",
+        "On foot: WASD / left joystick moves. Press E / Check equipment for packing, repairs, aircraft checks and delivery. Hold E / the action button to load, depart, disable a charge or sabotage. F reports, C calls a meeting, X eliminates, B opens tactics. At the helm: W/S adjusts flight level; A/D steers. Hold both gauges in their safe bands for three seconds, restore autopilot, then release the helm. Escape / P opens the menu.",
       );
     if (g.state === "fresh" && !g.online) setText(g.$(".mf-start"), "PLAY OFFLINE →");
     if (g.state === "ended") this.result();
@@ -1875,6 +1892,7 @@ export class ProtocolUI {
   draw() {}
 
   dispose() {
+    this.taskPanel?.dispose();
     this.focus?.dispose();
     this.disposed = true;
     this.actions = [];
