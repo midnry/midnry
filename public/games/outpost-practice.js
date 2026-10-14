@@ -8,7 +8,7 @@ export const PRACTICE_STEPS = Object.freeze([
   {
     id: "pack",
     title: "Pack a medical kit",
-    hint: "Follow the arrow to the medic locker. Press E or the action button, then complete the three packaging checks.",
+    hint: "Follow the ground trail to the medic locker. Press E or the action button, then complete the three packaging checks.",
     detail:
       "Move with WASD or the left joystick; aim with the mouse or a right-side drag. This rehearsal needs one trauma kit. In a live mission the crew gathers all 13 items. Wrong answers can be corrected.",
   },
@@ -17,7 +17,7 @@ export const PRACTICE_STEPS = Object.freeze([
     title: "Load the medevac",
     hint: "Carry the kit to the hangar. Hold E or Load until the progress bar finishes.",
     detail:
-      "You carry one medical item at a time. Moving or taking damage interrupts a hold. Follow the corridor arrow; Info opens the map.",
+      "You carry one medical item at a time. Moving or taking damage interrupts a hold. Follow the ground trail; Info opens the map.",
   },
   {
     id: "defuse",
@@ -50,7 +50,7 @@ export const PRACTICE_STEPS = Object.freeze([
   {
     id: "oxygen",
     title: "Test aircraft oxygen",
-    hint: "Follow the arrow to the oxygen panel. Secure the connection and adjust its test gauge.",
+    hint: "Follow the ground trail to the oxygen panel. Secure the connection and adjust its test gauge.",
     detail:
       "Flight has routine work as well as sabotage. The training crew handles restraints and landing checks while you test oxygen. Flight progress waits during this drill.",
   },
@@ -518,13 +518,13 @@ export class ProtocolPractice {
     this.title = title;
     this.coach.querySelector("b").textContent = title;
     const cue = {
-      pack: "Follow arrow · E / action to inspect",
-      load: "Follow arrow · hold Load",
-      defuse: "Follow arrow · hold Disable charge",
+      pack: "Follow trail · E / action to inspect",
+      load: "Follow trail · hold Load",
+      defuse: "Follow trail · hold Disable charge",
       report: "Approach casualty · F / Report",
       vote: "Discuss, then vote",
-      board: "Follow arrow · hold Board",
-      oxygen: "Follow arrow · E / action to test",
+      board: "Follow trail · hold Board",
+      oxygen: "Follow trail · E / action to test",
       pilot: "Take helm · stabilize · restore autopilot",
       fake: "Walk to the panel ahead · hold E",
       eliminate: "X / Eliminate the training operator",

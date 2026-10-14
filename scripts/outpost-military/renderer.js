@@ -38,6 +38,7 @@ import { isAppleTouchDevice, graphicsProfile, renderSize } from "./compatibility
 import { RenderTelemetry, actorInView } from "./telemetry.js";
 import { batchStaticByMaterial } from "./static-batches.js";
 import { WorldVisibility } from "./world-visibility.js";
+import { GroundTrail } from "./ground-trail.js";
 const SCALE = 3,
   ASSET = "/games/military/",
   TAU = Math.PI * 2;
@@ -3085,6 +3086,7 @@ export class MilitaryRenderer {
     }
     this.updateActors(t);
     const takedown = (this.takedown ||= new VictimTakedown(this)).update(g);
+    (this.groundTrail ||= new GroundTrail(this)).update(protocolView, p, takedown, now);
     if (!takedown) this.hideCameraBody(p);
     this.camera.updateMatrixWorld(true);
     (this.worldVisibility ||= new WorldVisibility(this)).update(p, takedown ? 1 : pitch, now);
@@ -3201,6 +3203,7 @@ export class MilitaryRenderer {
     if (this.disposed) return;
     this.disposed = true;
     this.telemetry?.dispose();
+    this.groundTrail?.dispose();
     this.identification?.dispose();
     this.takedown?.dispose();
     disposeRiggedHands(this.rig);

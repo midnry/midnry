@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {navigationGoals,navigationRoutes,chooseNavigation,navigationBearing} from '../public/games/outpost-navigation.js';
+import {navigationGoals,navigationRoutes,chooseNavigation,navigationBearing,navigationTrail} from '../public/games/outpost-navigation.js';
 import {ProtocolArena,protocolView} from '../public/games/outpost-protocol.js';
 import {PROTOCOL_MAP,TRANSPORT_MAP} from '../public/games/outpost-protocol-map.js';
 const fresh=()=>new ProtocolArena({humans:Array.from({length:8},(_,i)=>({id:'p'+i,name:'Patrol '+i})),rolePreference:'operator',random:()=>.4});
@@ -83,4 +83,30 @@ test('all public base and aircraft tasks remain reachable by walking; route sele
   const farthest=routes.toSorted((a,b)=>b.metres-a.metres)[0];
   assert.equal(chooseNavigation(routes,null,farthest.goal.id).goal.id,farthest.goal.id);
  }
+});
+
+
+test('ground trail turns around cover and advances from the current corridor cell',()=>{
+ const level=[[1,1,1,1,1],[1,0,1,0,1],[1,0,1,0,1],[1,0,0,0,1],[1,1,1,1,1]],start={x:1.5,y:1.5};
+ const route=navigationRoutes(level,start,[{id:'goal',x:3.5,y:1.5,priority:30}])[0];
+ const before=JSON.stringify({level,start,route}),trail=navigationTrail(level,start,route.path);
+ assert.ok(trail.markers.length>10);assert.deepEqual(trail.end,{x:3.5,y:1.5});
+ assert.ok(trail.markers.every(p=>level[Math.floor(p.y)][Math.floor(p.x)]===0));
+ assert.ok(trail.markers.some(p=>p.y===3.5&&p.x>1.5&&p.x<3.5));
+ assert.equal(JSON.stringify({level,start,route}),before);
+ const advanced=navigationTrail(level,{x:1.5,y:2.8},route.path);
+ assert.ok(advanced.markers[0].y>2.8,'passed cells do not pull the trail backwards');
+ const shifted=navigationTrail(level,{x:1.5,y:1.7},route.path);
+ const fixed=new Set(trail.markers.map(p=>`${p.x}:${p.y}`));
+ assert.ok(shifted.markers.every(p=>fixed.has(`${p.x}:${p.y}`)),'remaining marks stay fixed on the floor while walking');
+});
+test('ground trail has a fixed visible budget and rejects stale routes through changed cover',()=>{
+ const level=[Array(42).fill(1),[1,...Array(40).fill(0),1],Array(42).fill(1)],start={x:1.5,y:1.5};
+ const route=navigationRoutes(level,start,[{id:'far',x:40.5,y:1.5}])[0];
+ const trail=navigationTrail(level,start,route.path);
+ assert.ok(trail.markers.length<=32);assert.equal(trail.end,null);
+ assert.ok(trail.markers.every(p=>Math.hypot(p.x-start.x,p.y-start.y)<=8));
+ level[1][3]=1;
+ assert.deepEqual(navigationTrail(level,start,route.path),{markers:[],end:null});
+ assert.deepEqual(navigationTrail(level,start,[]),{markers:[],end:null});
 });

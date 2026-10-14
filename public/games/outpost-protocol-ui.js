@@ -1050,7 +1050,7 @@ export class ProtocolUI {
     if(p.sabotage.commsUntil>view.time&&!this.nearby?.emergency) {
       this.g.navigation.requestMeeting=true;this.g.navigation.pinned='meeting-console';
       this.focus?.close(true);this.g.navigation.nextUpdate=0;this.g.navigation.update(view);
-      this.g.message('RADIO JAMMED · FOLLOW THE ARROW TO THE WIRED CONSOLE',4);return;
+      this.g.message('RADIO JAMMED · FOLLOW THE GROUND TRAIL TO THE WIRED CONSOLE',4);return;
     }
     this.focus?.close(true);
     this.enqueue("meeting");
