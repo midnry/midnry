@@ -199,7 +199,7 @@ export class ProtocolFocus {
       this.radio.querySelector('p').textContent=self.emergenciesLeft<=0?'Your emergency call has been used. You can still report nearby bodies.'
         :wait>0?`Radio assembly available in ${wait}s. Body reports remain available.`
           :unsafe?'Recover flight control before calling an assembly.'
-            :jammed?'Communications are jammed. Follow the arrow to the wired console, or repair the radio.'
+            :jammed?'Communications are jammed. Follow the ground trail to the wired console, or repair the radio.'
               :'C calls over radio from anywhere. You have one emergency call; nearby body reports use F or Report body.';
     }
     if (!gameplay || !mission) {
