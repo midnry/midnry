@@ -1,0 +1,221 @@
+/** Social reasoning uses only this bot's memories and the public radio log.
+ * No opponent roles, planted-charge positions or other bots' plans enter here. */
+export const EVIDENCE_WEIGHTS = Object.freeze({
+  eliminate: 10,
+  plant: 4,
+  vent: 3,
+  drag: 4,
+  "flight-sabotage": 8,
+  "cargo-sabotage": 6,
+});
+export function rememberObservation(player, evidence) {
+  player.observations ||= [];
+  player.caseEvidence ||= player.observations.filter((e) => EVIDENCE_WEIGHTS[e.kind]);
+  player.observations.push(evidence);
+  if (player.observations.length > 24) player.observations.shift();
+  if (EVIDENCE_WEIGHTS[evidence.kind]) {
+    player.caseEvidence.push({ ...evidence });
+    // Keep decisive attacks even if many lesser incidents follow them.
+    if (player.caseEvidence.length > 48) {
+      const weakest = player.caseEvidence.reduce(
+        (best, e, i, a) => (EVIDENCE_WEIGHTS[e.kind] < EVIDENCE_WEIGHTS[a[best].kind] ? i : best),
+        0,
+      );
+      player.caseEvidence.splice(weakest, 1);
+    }
+  }
+}
+export function evidenceFor(player) {
+  const unique = new Map();
+  for (const e of [...(player.caseEvidence || []), ...(player.observations || [])])
+    if (EVIDENCE_WEIGHTS[e.kind]) unique.set(`${e.kind}:${e.actorId}:${e.subjectId}:${e.at}`, e);
+  return [...unique.values()];
+}
+const living = (e) => e?.hp > 0 && !e.departed;
+const hash = (text) => [...text].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7);
+const eligible = (ctx, id) =>
+  id !== ctx.self.id && !ctx.allies.includes(id) && living(ctx.entities.find((e) => e.id === id));
+const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/** Names are public; duplicate names are ambiguous and never resolve to an ID. */
+export function accusationTargets(text, entities) {
+  const lower = String(text || "").toLowerCase(),
+    targets = [];
+  if (
+    !/\b(kill|killed|killer|attack|attacked|suspect|suspicious|accuse|accusing|lying|lie|traitor|infiltrator|impostor|imposter|did it|where|alibi|explain|vote for)\b/.test(
+      lower,
+    )
+  )
+    return targets;
+  for (const e of entities) {
+    const name = e.name?.trim().toLowerCase();
+    if (!name || entities.filter((p) => p.name?.trim().toLowerCase() === name).length !== 1)
+      continue;
+    const match = new RegExp(
+      "(?:^|[^\\p{L}\\p{N}_])(" + escape(name) + ")(?=$|[^\\p{L}\\p{N}_])",
+      "u",
+    ).exec(lower);
+    if (!match) continue;
+    const end = match.index + match[0].length;
+    const after = lower
+      .slice(end)
+      .split(/[.!?;]/)[0]
+      .slice(0, 65);
+    const before = lower.slice(0, end - name.length).slice(-35);
+    // A victim's name or a reply's addressee is not automatically the accused.
+    if (
+      /\b(kill|killed|killer|attack|attacked|suspicious|lying|lie|traitor|infiltrator|impostor|imposter|did it|where|alibi|explain|explained)\b/.test(
+        after,
+      ) ||
+      /\b(suspect|accuse|accusing|blame|vote for)\s*$/.test(before)
+    )
+      targets.push(e.id);
+  }
+  return targets;
+}
+export function suspectScores(ctx) {
+  const scores = new Map(),
+    add = (id, n) => {
+      if (eligible(ctx, id)) scores.set(id, (scores.get(id) || 0) + n);
+    };
+  const direct = evidenceFor(ctx.player);
+  for (const e of direct)
+    // A witnessed kill lasts the round; routine work never erases it.
+    if (e.kind === "eliminate" || ctx.time - e.at < 240) add(e.actorId, EVIDENCE_WEIGHTS[e.kind]);
+  const helpful = new Set(
+    (ctx.player.observations || [])
+      .filter((e) => e.kind === "task" && ctx.time - e.at < 90)
+      .map((e) => e.actorId),
+  );
+  for (const id of helpful) add(id, -0.7);
+  const claims = new Map();
+  for (const message of ctx.meeting?.messages || []) {
+    if (
+      message.sender === ctx.self.id ||
+      !living(ctx.entities.find((e) => e.id === message.sender))
+    )
+      continue;
+    const firstHand =
+      /\bI saw\b/i.test(message.text) &&
+      /\b(attack|attacked|kill|killed|disable|damage)\b/i.test(message.text);
+    const weight = firstHand ? 2 : 0.4;
+    for (const id of accusationTargets(message.text, ctx.entities)) {
+      const key = message.sender + ":" + id;
+      claims.set(key, { id, weight: Math.max(weight, claims.get(key)?.weight || 0) });
+    }
+  }
+  for (const claim of claims.values()) add(claim.id, claim.weight);
+  return scores;
+}
+export function chooseSuspect(ctx) {
+  // Firsthand fatal evidence wins over rumours, repeated accusations and alibis.
+  const killer = evidenceFor(ctx.player).find(
+    (e) => e.kind === "eliminate" && eligible(ctx, e.actorId),
+  );
+  if (killer) return killer.actorId;
+  const best = [...suspectScores(ctx)].sort((a, b) => b[1] - a[1])[0];
+  return best?.[1] >= 2.4 ? best[0] : "skip";
+}
+function witnessStatement(ctx, evidence) {
+  const actor = ctx.entities.find((e) => e.id === evidence.actorId),
+    victim = ctx.entities.find((e) => e.id === evidence.subjectId);
+  if (!actor) return null;
+  const action = {
+    eliminate: "attack a patrol" + (victim ? ": " + victim.name : ""),
+    plant: "work on a concealed socket",
+    vent: "use a maintenance hatch",
+    drag: "move a fallen patrol",
+    "flight-sabotage": "disable the autopilot circuit",
+    "cargo-sabotage": "damage the medical cargo",
+  }[evidence.kind];
+  return `I saw ${actor.name} ${action} in ${evidence.room}. ${Math.floor(Math.max(0, ctx.time - evidence.at))} seconds ago.`;
+}
+export function strongestEvidence(ctx) {
+  return evidenceFor(ctx.player)
+    .filter(
+      (e) =>
+        e.actorId !== ctx.self.id &&
+        !ctx.allies.includes(e.actorId) &&
+        (e.kind === "eliminate" || ctx.time - e.at < 240),
+    )
+    .sort((a, b) => EVIDENCE_WEIGHTS[b.kind] - EVIDENCE_WEIGHTS[a.kind] || b.at - a.at)[0];
+}
+/** At most three intentional messages: opening evidence/alibi, then replies.
+ * Infiltrators can lie, but their claims have the same credibility as any voice. */
+export function nextStatement(ctx) {
+  const state = ctx.player.botDialogue;
+  if (!state || state.sent >= 3) return null;
+  const messages = ctx.meeting.messages || [],
+    proof = strongestEvidence(ctx);
+  const accusation = [...messages]
+    .reverse()
+    .find(
+      (m) =>
+        m.sender !== ctx.self.id &&
+        !state.replied.includes(m.id) &&
+        accusationTargets(m.text, ctx.entities).includes(ctx.self.id),
+    );
+  const cover = ctx.player.activities?.at(-1)?.room || ctx.room || "the supply route";
+  const candidates = ctx.entities.filter((e) => eligible(ctx, e.id));
+  const contacts = (ctx.player.contacts || []).filter(
+    (c) => ctx.time - c.at < 90 && eligible(ctx, c.id),
+  );
+  const framed =
+    ctx.entities.find((e) => e.id === contacts.at(-1)?.id) ||
+    candidates[hash(ctx.self.id + ctx.meeting.id) % Math.max(1, candidates.length)];
+  if (accusation) {
+    const speaker = ctx.entities.find((e) => e.id === accusation.sender)?.name || "Patrol";
+    const denial = [
+      "That accusation is wrong.",
+      "That is not what happened.",
+      "I did not attack anyone.",
+    ][hash(ctx.self.id + accusation.id) % 3];
+    const text =
+      ctx.player.role === "infiltrator"
+        ? `${denial} I was checking ${cover}. ${framed ? `Ask ${framed.name} where they were.` : "Who actually saw the attack?"}`
+        : proof
+          ? `${denial} ${witnessStatement(ctx, proof)}`
+          : `${denial} I was in ${cover}. ${speaker}, tell us when and where you saw it; someone can confirm my route.`;
+    return { text, replyTo: accusation.id };
+  }
+  if (!state.opened) {
+    if (proof && ctx.player.role !== "infiltrator") return { text: witnessStatement(ctx, proof) };
+    if (ctx.player.role === "infiltrator") {
+      const style = hash(ctx.self.id + ctx.meeting.id) % 3;
+      return {
+        text:
+          style === 0 && framed
+            ? `${framed.name}, where were you when the patrol went down? Your route sounds suspicious.`
+            : style === 1
+              ? ctx.reportedBody
+                ? `Wait, ${ctx.reportedBody.name} is down? Which room? I was checking ${cover}. Who found them?`
+                : `What happened? I heard the radio call while checking ${cover}. Is a system down?`
+              : `I was checking ${cover}. I did not see an attack. We need locations before voting.`,
+      };
+    }
+    return {
+      text: ctx.player.activities?.length
+        ? `I was checking supplies in ${cover}. I did not witness an attack.`
+        : "I have no clear witness evidence. Who saw the attack, and where?",
+    };
+  }
+  const claim = [...messages]
+    .reverse()
+    .find(
+      (m) =>
+        m.sender !== ctx.self.id &&
+        !state.replied.includes(m.id) &&
+        accusationTargets(m.text, ctx.entities).length,
+    );
+  if (!claim) return null;
+  if (proof && accusationTargets(claim.text, ctx.entities).includes(proof.actorId))
+    return { text: witnessStatement(ctx, proof), replyTo: claim.id };
+  if (ctx.player.role === "infiltrator" && framed)
+    return {
+      text: `I am not convinced. ${framed.name} has not explained their route. Are we sure about this accusation?`,
+      replyTo: claim.id,
+    };
+  return {
+    text: "Was that an eyewitness account or a guess? I cannot confirm it from my patrol. Check the locations before voting.",
+    replyTo: claim.id,
+  };
+}

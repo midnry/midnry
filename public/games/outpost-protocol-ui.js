@@ -47,7 +47,7 @@ const GUIDE = [
   ],
   [
     "Witnesses and radio meetings",
-    "Report a nearby fallen operator with F or Report, or call the emergency console with C. Each operator gets one emergency call. Meetings allow fifteen seconds of discussion and fifteen seconds to vote. Patient vitals and flight safety keep advancing during meetings; new meetings are blocked while autopilot is disengaged during flight. More than half the living patrol must vote for one suspect. The accused fights every other survivor after a five-second preparation. Ties and Skip return to the rescue. A 90-second limit prevents hiding indefinitely; expiry forfeits the accused. Combat eliminations are permanent. Allegiances stay secret until the mission ends, and eliminated players can only observe.",
+    "Report a nearby fallen operator with F or Report body. Press C or use Info → Emergency radio to call from anywhere with working communications. If jammed, use the wired emergency console or restore communications. Each player gets one emergency call. Meetings allow fifteen seconds of discussion and fifteen seconds to vote. Patient vitals and flight safety keep advancing during meetings; new meetings are blocked while autopilot is disengaged during flight. More than half the living patrol must vote for one suspect. The accused fights every other survivor after a five-second preparation. Ties and Skip return to the rescue. A 90-second limit prevents hiding indefinitely; expiry forfeits the accused. Combat eliminations are permanent. Allegiances stay secret until the mission ends, and eliminated players can only observe.",
   ],
   [
     "Controls",
@@ -133,6 +133,7 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-actions .mf-protocol-hold { min-width:128px;background:#d1e1b6;color:#152219;border-color:#e5f4d2;font-weight:700; }
       midnry-fps .mf-protocol-actions .mf-protocol-hold small { color:#304732; }
       midnry-fps .mf-protocol-actions .mf-protocol-eliminate { border-color:#d39c87;background:#442d25;color:#ffe3d3; }
+      midnry-fps .mf-protocol-actions .mf-protocol-report { border-color:#eed0a0;background:#edd7ad;color:#241d14;font-weight:750; }
       midnry-fps .mf-protocol-actions button:disabled { opacity:.5;cursor:default; }
       midnry-fps .mf-protocol-actions button:active:not(:disabled),midnry-fps .mf-protocol-hold[aria-pressed="true"] { transform:scale(.97); }
       midnry-fps .mf-protocol-tactics { position:absolute;z-index:6;bottom:94px;right:24px;width:290px;max-width:calc(100% - 24px);padding:14px;color:#edf4ed; }
@@ -419,11 +420,15 @@ export class ProtocolUI {
       if (this.startEquipmentCheck()) return;
       this.held = true;
       this.touchHold = event.pointerType !== "mouse";
+      this.touchHoldSerial = g.missionPointerSerial;
       this.holdButton.setPointerCapture(event.pointerId);
       this.holdButton.setAttribute("aria-pressed", "true");
     });
     const release = () => {
-      if (this.touchHold) this.g.ignoreMissionTapUntil = performance.now() + 450;
+      if (this.touchHold) {
+        this.g.ignoreMissionTapUntil = performance.now() + 450;
+        this.g.ignoreMissionTapSerial = this.touchHoldSerial;
+      }
       this.touchHold = false;
       this.held = false;
       this.holdButton.setAttribute("aria-pressed", "false");
@@ -1003,8 +1008,16 @@ export class ProtocolUI {
       this.enqueue("report", this.nearby.body.id);
   }
   emergency() {
-    if (this.nearby?.emergency && this.alive() && this.view?.protocol?.phase === "roam")
-      this.enqueue("meeting");
+    const view=this.safeView(),p=view?.protocol;
+    if(!this.alive()||p?.phase!=='roam'||p.self.emergenciesLeft<=0||p.emergencyReadyAt>view.time)return;
+    if(p.mission?.phase==='transport'&&!p.mission.vehicle.autopilot&&!p.mission.vehicle.arrived)return;
+    if(p.sabotage.commsUntil>view.time&&!this.nearby?.emergency) {
+      this.g.navigation.requestMeeting=true;this.g.navigation.pinned='meeting-console';
+      this.focus?.close(true);this.g.navigation.nextUpdate=0;this.g.navigation.update(view);
+      this.g.message('RADIO JAMMED · FOLLOW THE ARROW TO THE WIRED CONSOLE',4);return;
+    }
+    this.focus?.close(true);
+    this.enqueue("meeting");
   }
   eliminate() {
     if (
@@ -1155,6 +1168,7 @@ export class ProtocolUI {
       this.showBrief();
     }
     g.spectator?.update();
+    g.practice?.refresh();
   }
 
   updateTasks(view) {
@@ -1499,8 +1513,10 @@ export class ProtocolUI {
     );
     this.actionBar.querySelector(".mf-protocol-report").hidden =
       !alive || !roam || !this.nearby.body;
+    setText(this.actionBar.querySelector('.mf-protocol-report').firstChild,'Report body');
     this.actionBar.querySelector(".mf-protocol-emergency").hidden =
       !alive || !roam || !this.nearby.emergency;
+    this.actionBar.querySelector('.mf-protocol-emergency').disabled=self.emergenciesLeft<=0||protocol.emergencyReadyAt>time;
     const kill = this.actionBar.querySelector(".mf-protocol-eliminate");
     kill.hidden = !alive || !roam || !infiltrator || !this.nearby.target;
     kill.disabled =
@@ -1727,6 +1743,7 @@ export class ProtocolUI {
 
   refreshMenu() {
     if (this.disposed) return;
+    this.g.practice?.refresh();
     const g = this.g,
       active = g.mode === "protocol";
     g.spectator?.update();

@@ -9,6 +9,7 @@ const sessions = [],
   pages = [],
   errors = [];
 async function nativeClick(page, selector) {
+  await page.bringToFront();
   const element = page.locator(selector);
   await element.evaluate(e => e.scrollIntoView({block:"center",behavior:"instant"}));
   await page.waitForFunction(() => !document.pointerLockElement);
@@ -124,6 +125,9 @@ try {
   for (let i = 0; i < pages.length; i++) {
     const p = pages[i],
       session = chosen[i].s;
+    // Pointer lock and keyboard input belong to the foreground tab. Both
+    // desktop and touch pages exist at once during this online-room check.
+    await p.bringToFront();
     await p.evaluate(
       (s) => document.querySelector("midnry-fps").engine.connectOnline("resume", s),
       session,
@@ -142,6 +146,7 @@ try {
       g.render();
     });
     if (i === 0) {
+      await p.locator(".mf-shell").focus();
       await p.keyboard.press("i");
       await p.waitForFunction(() => !document.pointerLockElement);
     } else await p.getByRole("button", { name: "Open mission information", exact: true }).click();

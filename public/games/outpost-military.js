@@ -15890,7 +15890,10 @@ function tf(e, t, n = {}) {
 //#endregion
 //#region scripts/outpost-military/realism-lighting.js
 var nf = 3;
-function rf(e) {
+function rf(e, t = !0) {
+	return t ? 1 - Math.exp(-Math.max(0, Math.min(.1, e || 0)) / .32) : 1;
+}
+function af(e) {
 	if (e.naturalLighting) return;
 	e.roomBounce = new Zo(new Xo(), 1), e.scene.add(e.roomBounce), e.bakedRoomProbes = /* @__PURE__ */ new Map();
 	let t = null, n = null;
@@ -15912,10 +15915,14 @@ function rf(e) {
 		roomId: null,
 		inside: !1,
 		powerOut: !1,
-		span: 0
+		span: 0,
+		initialized: !1,
+		activeFixtures: new Int32Array(e.protocolLights.length).fill(-1),
+		desiredFixtures: new Int32Array(e.protocolLights.length).fill(-1),
+		assignedFixtures: new Uint8Array(e.protocolLights.length)
 	}, e.rim.intensity = 0, e.rim.visible = !1, e.sun.color.set("#fff4df"), e.hemisphere.color.set("#cad9e1"), e.hemisphere.groundColor.set("#746c5c"), e.sun.shadow.bias = -12e-5, e.sun.shadow.normalBias = .018, e.sun.shadow.radius = 1.5, e.renderer.toneMappingExposure = .92;
 }
-function af(e, t) {
+function of(e, t) {
 	let n = e.scene.environment;
 	if (!n || t.environment === n) return;
 	t.environment = n;
@@ -15933,85 +15940,102 @@ function af(e, t) {
 	let d = ((s + .5) / r.width - .5) * Math.PI * 2, p = ((n.flipY ? 1 - (c + .5) / r.height : (c + .5) / r.height) - .5) * Math.PI;
 	t.direction.set(Math.cos(p) * Math.cos(d), Math.sin(p), Math.cos(p) * Math.sin(d));
 }
-function of(e, t, n) {
-	e.naturalLighting || rf(e);
-	let r = e.naturalLighting, i = e.g.academy.options, a = t?.protocol, o = e.g.mode === "protocol" ? e.protocolMetadata?.() : null, s = e.realismDecor?.rooms, c = Number(n?.x) * nf, l = Number(n?.y) * nf;
-	if (!Number.isFinite(c) || !Number.isFinite(l)) return;
-	if (af(e, r), r.metadata !== o || r.decorRooms !== s) {
-		r.metadata = o, r.decorRooms = s, r.rooms = [];
-		for (let e of o?.rooms || []) r.rooms.push(e);
-		for (let e of o?.corridors || []) r.rooms.push(e);
-		for (let e of s || []) r.rooms.push(e);
+function sf(e, t, n, r = 1 / 60) {
+	e.naturalLighting || af(e);
+	let i = e.naturalLighting, a = e.g.academy.options, o = t?.protocol, s = e.g.mode === "protocol" ? e.protocolMetadata?.() : null, c = e.realismDecor?.rooms, l = Number(n?.x) * nf, u = Number(n?.y) * nf;
+	if (!Number.isFinite(l) || !Number.isFinite(u)) return;
+	if (of(e, i), i.metadata !== s || i.decorRooms !== c) {
+		i.metadata = s, i.decorRooms = c, i.rooms = [];
+		for (let e of s?.rooms || []) i.rooms.push(e);
+		for (let e of s?.corridors || []) i.rooms.push(e);
+		for (let e of c || []) i.rooms.push(e);
 	}
-	let u = null;
-	for (let e of r.rooms) if (e.roofed !== !1 && n.x >= e.x && n.x < e.x + e.w && n.y >= e.y && n.y < e.y + e.h) {
-		u = e;
+	let d = null;
+	for (let e of i.rooms) if (e.roofed !== !1 && n.x >= e.x && n.x < e.x + e.w && n.y >= e.y && n.y < e.y + e.h) {
+		d = e;
 		break;
 	}
-	let d = !!u, f = e.g.mode === "protocol" && Number(a?.sabotage?.powerUntil) > e.g.time, p = !!i.lighting, m = !!a?.mission?.vehicle?.arrived;
-	r.inside = d, r.roomId = u?.id || null, r.powerOut = f;
-	let h = `${e.g.arena.mapId}:${u?.id || "outside"}`, g = e.bakedRoomProbes.get(h);
-	if (!g) {
-		if (g = new Xo(), u) {
-			let t = new K(e.g.arena.mapId === "medevac" ? "#b6bebc" : "#b7ad96"), n = .17 / Math.sqrt(Math.max(1, u.w * u.h / 10));
-			g.coefficients[0].set(t.r, t.g, t.b).multiplyScalar(n), g.coefficients[1].copy(g.coefficients[0]).multiplyScalar(.22);
+	let f = !!d, p = e.g.mode === "protocol" && Number(o?.sabotage?.powerUntil) > e.g.time, m = !!a.lighting, h = !!o?.mission?.vehicle?.arrived;
+	i.inside = f, i.roomId = d?.id || null, i.powerOut = p;
+	let g = rf(r, i.initialized), _ = (e, t, n) => {
+		e[t] = i.initialized ? e[t] + (n - e[t]) * g : n;
+	}, v = `${e.g.arena.mapId}:${d?.id || "outside"}`, y = e.bakedRoomProbes.get(v);
+	if (!y) {
+		if (y = new Xo(), d) {
+			let t = new K(e.g.arena.mapId === "medevac" ? "#b6bebc" : "#b7ad96"), n = .17 / Math.sqrt(Math.max(1, d.w * d.h / 10));
+			y.coefficients[0].set(t.r, t.g, t.b).multiplyScalar(n), y.coefficients[1].copy(y.coefficients[0]).multiplyScalar(.22);
 		}
-		e.bakedRoomProbes.set(h, g);
+		e.bakedRoomProbes.set(v, y);
 	}
-	e.roomBounce.sh.copy(g), e.roomBounce.intensity = f ? .06 : 1, e.rim.visible = !1, e.rim.intensity = 0, e.sun.intensity = f ? .16 : p ? 3.1 : 2.05, e.hemisphere.intensity = f ? .09 : d ? .18 : p ? .32 : .46, e.scene.environmentIntensity = f ? .065 : d ? .2 : .48, e.scene.backgroundIntensity = f ? .13 : .58, e.renderer.toneMappingExposure = f ? .92 : d ? .96 : .91;
-	let _ = Math.min(e.profile?.maxShadowSize || 2048, e.g.academy.preset === "high" ? 2048 : 1024), v = d ? 18 : 26;
-	e.renderer.shadowMap.enabled = !!i.shadows, e.sun.castShadow = !!i.shadows, e.sun.shadow.mapSize.x !== _ && (e.sun.shadow.mapSize.set(_, _), e.sun.shadow.map?.dispose(), e.sun.shadow.map = null), (r.span !== v || e.sun.shadow.camera.right !== v) && (r.span = v, Object.assign(e.sun.shadow.camera, {
-		left: -v,
-		right: v,
-		top: v,
-		bottom: -v,
+	for (let t = 0; t < 9; t++) e.roomBounce.sh.coefficients[t].lerp(y.coefficients[t], g);
+	_(e.roomBounce, "intensity", p ? .06 : 1), e.rim.visible = !1, e.rim.intensity = 0, _(e.sun, "intensity", p ? .16 : m ? 3.1 : 2.05), _(e.hemisphere, "intensity", p ? .09 : f ? .18 : m ? .32 : .46), _(e.scene, "environmentIntensity", p ? .065 : f ? .2 : .48), _(e.scene, "backgroundIntensity", p ? .13 : .58), _(e.renderer, "toneMappingExposure", p ? .92 : f ? .96 : .91);
+	let b = Math.min(e.profile?.maxShadowSize || 2048, e.g.academy.preset === "high" ? 2048 : 1024);
+	e.renderer.shadowMap.enabled = !!a.shadows, e.sun.castShadow = !!a.shadows, e.sun.shadow.mapSize.x !== b && (e.sun.shadow.mapSize.set(b, b), e.sun.shadow.map?.dispose(), e.sun.shadow.map = null), (i.span !== 26 || e.sun.shadow.camera.right !== 26) && (i.span = 26, Object.assign(e.sun.shadow.camera, {
+		left: -26,
+		right: 26,
+		top: 26,
+		bottom: -26,
 		near: .1,
 		far: 145
-	}), e.sun.shadow.camera.updateProjectionMatrix()), r.focus.set(c, .65, l), r.right.set(r.direction.z, 0, -r.direction.x).normalize(), r.up.crossVectors(r.direction, r.right).normalize();
-	let y = v * 2 / _, b = r.focus.dot(r.right), x = r.focus.dot(r.up);
-	r.focus.addScaledVector(r.right, Math.round(b / y) * y - b), r.focus.addScaledVector(r.up, Math.round(x / y) * y - x), e.sun.target.position.copy(r.focus), e.sun.position.copy(r.focus).addScaledVector(r.direction, 72), e.sun.target.updateMatrixWorld(), r.fixtureIndices.fill(-1), r.fixtureDistances.fill(Infinity);
-	let S = e.protocolFixtures;
-	if (!f) for (let e = 0; e < S.length; e++) {
-		let t = S[e];
-		if (t.arrivalOnly && !m) continue;
-		let n = u && t.x >= u.x * nf && t.x < (u.x + u.w) * nf && t.z >= u.y * nf && t.z < (u.y + u.h) * nf;
-		if (!n && !(m && t.arrivalOnly)) continue;
-		let i = t.x - c, a = t.z - l, o = i * i + a * a + (n ? 0 : 80);
+	}), e.sun.shadow.camera.updateProjectionMatrix()), i.focus.set(l, .65, u), i.right.set(i.direction.z, 0, -i.direction.x).normalize(), i.up.crossVectors(i.direction, i.right).normalize();
+	let x = 52 / b, S = i.focus.dot(i.right), C = i.focus.dot(i.up);
+	i.focus.addScaledVector(i.right, Math.round(S / x) * x - S), i.focus.addScaledVector(i.up, Math.round(C / x) * x - C), e.sun.target.position.copy(i.focus), e.sun.position.copy(i.focus).addScaledVector(i.direction, 72), e.sun.target.updateMatrixWorld(), i.fixtureIndices.fill(-1), i.fixtureDistances.fill(Infinity);
+	let w = e.protocolFixtures;
+	if (!p) for (let e = 0; e < w.length; e++) {
+		let t = w[e];
+		if (t.arrivalOnly && !h) continue;
+		let n = d && t.x >= d.x * nf && t.x < (d.x + d.w) * nf && t.z >= d.y * nf && t.z < (d.y + d.h) * nf;
+		if (!n && !(h && t.arrivalOnly)) continue;
+		let r = t.x - l, a = t.z - u, o = r * r + a * a + (n ? 0 : 80);
 		if (!(o > 360)) {
-			for (let t = 0; t < r.fixtureIndices.length; t++) if (o < r.fixtureDistances[t]) {
-				for (let e = r.fixtureIndices.length - 1; e > t; e--) r.fixtureDistances[e] = r.fixtureDistances[e - 1], r.fixtureIndices[e] = r.fixtureIndices[e - 1];
-				r.fixtureDistances[t] = o, r.fixtureIndices[t] = e;
+			for (let t = 0; t < i.fixtureIndices.length; t++) if (o < i.fixtureDistances[t]) {
+				for (let e = i.fixtureIndices.length - 1; e > t; e--) i.fixtureDistances[e] = i.fixtureDistances[e - 1], i.fixtureIndices[e] = i.fixtureIndices[e - 1];
+				i.fixtureDistances[t] = o, i.fixtureIndices[t] = e;
 				break;
 			}
 		}
 	}
+	i.desiredFixtures.fill(-1), i.assignedFixtures.fill(0);
 	for (let t = 0; t < e.protocolLights.length; t++) {
-		let n = e.protocolLights[t], i = S[r.fixtureIndices[t]];
-		n.visible = !0, n.intensity = i && !f ? p ? 22 : 18 : 0, n.color.set("#e2ebdf"), n.distance = 13, i && n.position.set(i.x, i.y, i.z);
+		let e = i.fixtureIndices.indexOf(i.activeFixtures[t]);
+		i.activeFixtures[t] >= 0 && e >= 0 && !i.assignedFixtures[e] && (i.desiredFixtures[t] = i.activeFixtures[t], i.assignedFixtures[e] = 1);
 	}
-	if (e.weaponScene.environmentIntensity = f ? .065 : d ? .22 : .48, r.weaponSky && (r.weaponSky.color.copy(e.hemisphere.color), r.weaponSky.groundColor.copy(e.hemisphere.groundColor), r.weaponSky.intensity = f ? .12 : d ? .28 : .58), r.weaponKey) {
-		let t = S[r.fixtureIndices[0]];
-		t && d ? r.localDirection.set(t.x - c, t.y - 1.65, t.z - l).normalize() : r.localDirection.copy(r.direction), e.camera.updateMatrixWorld(), r.localDirection.transformDirection(e.camera.matrixWorldInverse), r.weaponKey.position.copy(r.localDirection).multiplyScalar(5), r.weaponKey.color.copy(t && d ? e.protocolLights[0].color : e.sun.color), r.weaponKey.intensity = f ? .35 : d ? 1.1 : p ? 2.65 : 2.05;
+	for (let t = 0; t < e.protocolLights.length; t++) if (i.desiredFixtures[t] < 0) {
+		for (let e = 0; e < i.fixtureIndices.length; e++) if (i.fixtureIndices[e] >= 0 && !i.assignedFixtures[e]) {
+			i.desiredFixtures[t] = i.fixtureIndices[e], i.assignedFixtures[e] = 1;
+			break;
+		}
 	}
+	for (let t = 0; t < e.protocolLights.length; t++) {
+		let n = e.protocolLights[t], r = i.desiredFixtures[t];
+		(!i.initialized || i.activeFixtures[t] !== r && n.intensity < .15) && (i.activeFixtures[t] = r, n.intensity = 0);
+		let a = w[i.activeFixtures[t]];
+		n.visible = !0, _(n, "intensity", a && i.activeFixtures[t] === r && !p ? m ? 22 : 18 : 0), n.color.set("#e2ebdf"), n.distance = 13, a && n.position.set(a.x, a.y, a.z);
+	}
+	if (_(e.weaponScene, "environmentIntensity", p ? .065 : f ? .22 : .48), i.weaponSky && (i.weaponSky.color.copy(e.hemisphere.color), i.weaponSky.groundColor.copy(e.hemisphere.groundColor), _(i.weaponSky, "intensity", p ? .12 : f ? .28 : .58)), i.weaponKey) {
+		let t = w[i.fixtureIndices[0]];
+		t && f ? i.localDirection.set(t.x - l, t.y - 1.65, t.z - u).normalize() : i.localDirection.copy(i.direction), e.camera.updateMatrixWorld(), i.localDirection.transformDirection(e.camera.matrixWorldInverse), i.weaponKey.position.lerp(i.localDirection.multiplyScalar(5), g), i.weaponKey.color.lerp(t && f ? e.protocolLights[0].color : e.sun.color, g), _(i.weaponKey, "intensity", p ? .35 : f ? 1.1 : m ? 2.65 : 2.05);
+	}
+	i.initialized = !0;
 }
 //#endregion
 //#region scripts/outpost-military/realism-environment.js
-var Q = 3, sf = [
+var Q = 3, cf = [
 	[0, 1],
 	[0, -1],
 	[1, 0],
 	[-1, 0]
 ];
-function cf(e) {
+function lf(e) {
 	return e.map((e) => e.join("")).join("");
 }
-function lf(e, t, n) {
-	let r = e.g.level, i = `${t}:${cf(r)}`;
+function uf(e, t, n) {
+	let r = e.g.level, i = `${t}:${lf(r)}`;
 	if (e.realismDecor?.key === i && e.realismDecor.group.parent === e.world) return e.realismDecor;
 	e.realismDecor?.dispose();
 	let a = new J();
 	a.name = "Realistic architecture / collision-preserving detail", e.world.add(a);
-	let o = new Set(e.worldTextures), s = /* @__PURE__ */ new Set(), c = [], l = [], u = [], d = [], f = /* @__PURE__ */ new Map(), p = e.geo("realism-environment:box", () => new Xn(1, 1, 1)), m = e.geo("realism-environment:plane", () => new Wa(1, 1)), h = ["breakwater", "medevac"].includes(t) ? 3.5 : 3, g = sf.map(([e, t]) => new H().setFromAxisAngle(new U(0, 1, 0), Math.atan2(e, t)));
+	let o = new Set(e.worldTextures), s = /* @__PURE__ */ new Set(), c = [], l = [], u = [], d = [], f = /* @__PURE__ */ new Map(), p = e.geo("realism-environment:box", () => new Xn(1, 1, 1)), m = e.geo("realism-environment:plane", () => new Wa(1, 1)), h = ["breakwater", "medevac"].includes(t) ? 3.5 : 3, g = cf.map(([e, t]) => new H().setFromAxisAngle(new U(0, 1, 0), Math.atan2(e, t)));
 	function _(e) {
 		return e.userData.world = !0, s.add(e), e;
 	}
@@ -16057,17 +16081,18 @@ function lf(e, t, n) {
 		color: "#515752",
 		roughness: .98
 	}));
-	function D(e, t, n, r, i, a = !0) {
-		let o = `${e.uuid}:${t.uuid}:${a}`, s = f.get(o);
-		s || (s = {
+	function D(e, t, n, r, i, a = !0, o = !1) {
+		let s = `${e.uuid}:${t.uuid}:${a}:${o}`, c = f.get(s);
+		c || (c = {
 			geometry: e,
 			material: t,
 			matrices: [],
-			shadows: a
-		}, f.set(o, s)), s.matrices.push(new G().compose(new U(...n), i || new H(), new U(...r)));
+			shadows: a,
+			persistent: o
+		}, f.set(s, c)), c.matrices.push(new G().compose(new U(...n), i || new H(), new U(...r)));
 	}
 	function O(e, t, n) {
-		let [r, i] = sf[n];
+		let [r, i] = cf[n];
 		return {
 			x: e,
 			y: t,
@@ -16183,10 +16208,10 @@ function lf(e, t, n) {
 	for (let i = 0; i < n; i++) for (let a = 0; a < n; a++) {
 		let n = r[i]?.[a];
 		if (!n || N(a, i)) continue;
-		let o = sf.map(([e, t], n) => r[i + t]?.[a + e] === 0 ? n : -1).filter((e) => e >= 0);
+		let o = cf.map(([e, t], n) => r[i + t]?.[a + e] === 0 ? n : -1).filter((e) => e >= 0);
 		if (!o.length) continue;
 		let s = o.find((e) => {
-			let [t, o] = sf[e];
+			let [t, o] = cf[e];
 			return t ? r[i - 1]?.[a] === n && r[i + 1]?.[a] === n : r[i]?.[a - 1] === n && r[i]?.[a + 1] === n;
 		});
 		t === "freight" && [2, 4].includes(n) ? M(O(a, i, o[0]), n, !0) : s !== void 0 && P(a, i, n) && (a + i) % 2 == 0 && M(O(a, i, s), n);
@@ -16546,7 +16571,7 @@ function lf(e, t, n) {
 			], [
 				1.24,
 				.075,
-				.18
+				.32
 			]), D(p, t, [
 				i,
 				3.305,
@@ -16554,8 +16579,8 @@ function lf(e, t, n) {
 			], [
 				1.08,
 				.025,
-				.105
-			], void 0, !1);
+				.26
+			], void 0, !1, !0);
 			let o = {
 				x: i,
 				y: 3.13,
@@ -16574,7 +16599,7 @@ function lf(e, t, n) {
 				], [
 					1.2,
 					.055,
-					.17
+					.32
 				]), D(p, t, [
 					s,
 					h - .055,
@@ -16582,8 +16607,8 @@ function lf(e, t, n) {
 				], [
 					1.06,
 					.023,
-					.105
-				], void 0, !1);
+					.26
+				], void 0, !1, !0);
 				let u = {
 					x: s,
 					y: h - .18,
@@ -16596,7 +16621,7 @@ function lf(e, t, n) {
 	for (let e of f.values()) {
 		if (!e.matrices.length) continue;
 		let t = new Gr(e.geometry, e.material, e.matrices.length);
-		t.name = "Instanced architectural detail", t.castShadow = e.shadows, t.receiveShadow = !0, e.matrices.forEach((e, n) => t.setMatrixAt(n, e)), t.instanceMatrix.needsUpdate = !0, t.computeBoundingSphere(), a.add(t);
+		t.name = "Instanced architectural detail", t.castShadow = e.shadows, t.receiveShadow = !0, e.persistent && (t.userData.noRoomCull = !0, t.frustumCulled = !1), e.matrices.forEach((e, n) => t.setMatrixAt(n, e)), t.instanceMatrix.needsUpdate = !0, t.computeBoundingSphere(), a.add(t);
 	}
 	let re = [...e.worldTextures].filter((e) => !o.has(e)), ie = !1, ae = {
 		group: a,
@@ -16624,12 +16649,12 @@ function lf(e, t, n) {
 }
 //#endregion
 //#region scripts/outpost-military/realism-characters.js
-var uf = 1.82, df = 3, ff = /* @__PURE__ */ new WeakMap(), pf = B.clamp, mf = B.lerp;
-function hf(e) {
+var df = 1.82, ff = 3, pf = /* @__PURE__ */ new WeakMap(), mf = B.clamp, hf = B.lerp;
+function gf(e) {
 	let t = (e.name || "").toLowerCase();
 	return /visor|lens|glass/.test(t) ? "visor" : /skin|face|head/.test(t) ? "skin" : /steel|chrome|metal/.test(t) ? "metal" : "uniform";
 }
-function gf(e, t, n) {
+function _f(e, t, n) {
 	if (e.userData.riggedOperator) {
 		e.userData.realismCharacterKind = t, e.metalness = 0, e.roughness = t === "skin" ? .76 : .93, e.normalScale?.set(.55, .55), e.envMapIntensity = .35, e.needsUpdate = !0;
 		return;
@@ -16646,7 +16671,7 @@ function gf(e, t, n) {
 		e.fragmentShader = e.fragmentShader.replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\n         float characterLuma = dot(diffuseColor.rgb, vec3(.2126,.7152,.0722));\n         float characterWarm = smoothstep(.015,.07,diffuseColor.r-diffuseColor.b);\n         float characterSteel = smoothstep(.008,.04,diffuseColor.b-diffuseColor.r)\n           * smoothstep(.035,.10,characterLuma) * (1.-characterWarm);\n         float characterDark = 1.-smoothstep(.008,.055,characterLuma);\n         roughnessFactor = mix(mix(.88,.76,characterWarm),.48,characterSteel);\n         roughnessFactor = mix(roughnessFactor,.94,characterDark);"), e.fragmentShader = e.fragmentShader.replace("#include <metalnessmap_fragment>", "#include <metalnessmap_fragment>\n         metalnessFactor = characterSteel*.62;");
 	}), e.needsUpdate = !0;
 }
-function _f(e, t) {
+function vf(e, t) {
 	t.scene.traverse((e) => {
 		e.userData.riggedOperator && (t.scene.userData.riggedOperator = !0);
 	});
@@ -16655,7 +16680,7 @@ function _f(e, t) {
 		if (t.isMesh) {
 			t.userData.operatorLOD === 1 && (t.visible = !1), t.castShadow = !0, t.receiveShadow = !0;
 			for (let a of Array.isArray(t.material) ? t.material : [t.material]) if (a && !n.has(a)) {
-				n.add(a), gf(a, a.userData.realismCharacterKind || hf(a), e), e.materials.add(a);
+				n.add(a), _f(a, a.userData.realismCharacterKind || gf(a), e), e.materials.add(a);
 				for (let t of [
 					"map",
 					"normalMap",
@@ -16668,20 +16693,20 @@ function _f(e, t) {
 				}
 			}
 		}
-	}), t.realismCharacterProfile = yf(t), e.characterProfile = t.realismCharacterProfile;
+	}), t.realismCharacterProfile = bf(t), e.characterProfile = t.realismCharacterProfile;
 }
-function vf(e, t) {
+function yf(e, t) {
 	let n = null;
 	return e.traverse((e) => {
 		e.isBone && e.name.replace(/[^a-z0-9]/gi, "").endsWith(t) && (n = e);
 	}), n;
 }
-function yf(e) {
+function bf(e) {
 	let t = e.scene, n = new vs(t), r = e.animations.find((e) => e.name === "Idle");
 	r && n.clipAction(r).play(), n.update(0), t.updateMatrixWorld(!0), t.traverse((e) => {
 		e.isSkinnedMesh && (e.skeleton.update(), e.computeBoundingBox());
 	});
-	let i = new Je().setFromObject(t), a = uf / Math.max(.1, i.max.y - i.min.y), o = vf(t, "RightFoot"), s = new U(), c = {
+	let i = new Je().setFromObject(t), a = df / Math.max(.1, i.max.y - i.min.y), o = yf(t, "RightFoot"), s = new U(), c = {
 		Walk: 1.45,
 		Run: 2.25
 	};
@@ -16702,12 +16727,12 @@ function yf(e) {
 				e > .1 && u.push(e);
 			}
 		}
-		u.sort((e, t) => e - t), u.length && (c[r] = pf(u[Math.floor(u.length / 2)] * i.duration * a, .8, 3.4));
+		u.sort((e, t) => e - t), u.length && (c[r] = mf(u[Math.floor(u.length / 2)] * i.duration * a, .8, 3.4));
 	}
 	return n.stopAllAction(), r && (n.clipAction(r).play(), n.update(0)), t.updateMatrixWorld(!0), n.uncacheRoot(t), c;
 }
-function bf(e, t) {
-	let n = vf(e, `${t}UpLeg`), r = vf(e, `${t}Leg`), i = vf(e, `${t}Foot`);
+function xf(e, t) {
+	let n = yf(e, `${t}UpLeg`), r = yf(e, `${t}Leg`), i = yf(e, `${t}Foot`);
 	if (!n || !r || !i) return null;
 	let a = {
 		hip: n,
@@ -16733,7 +16758,7 @@ function bf(e, t) {
 	};
 	return i.getWorldPosition(a.footPoint), a.contactHeight = a.footPoint.y, a;
 }
-function xf(e, t, n) {
+function Sf(e, t, n) {
 	let r = [];
 	t.traverse((e) => {
 		if (!e.isSkinnedMesh) return;
@@ -16746,7 +16771,7 @@ function xf(e, t, n) {
 		let n = (t) => {
 			if (!i.has(t)) {
 				let n = t.clone();
-				gf(n, t.userData.realismCharacterKind || hf(t), e), e.materials.add(n), i.set(t, n);
+				_f(n, t.userData.realismCharacterKind || gf(t), e), e.materials.add(n), i.set(t, n);
 			}
 			return i.get(t);
 		};
@@ -16761,23 +16786,23 @@ function xf(e, t, n) {
 		speed: 0,
 		baseY: t.position.y,
 		previousYaw: null,
-		head: vf(t, "Head"),
-		spine: vf(t, "Spine1"),
-		hip: vf(t, "Hips"),
-		leftKnee: vf(t, "LeftLeg"),
-		rightKnee: vf(t, "RightLeg"),
-		rightArm: vf(t, "RightArm"),
-		leftArm: vf(t, "LeftArm"),
-		rightElbow: vf(t, "RightForeArm"),
-		leftElbow: vf(t, "LeftForeArm"),
-		legs: [bf(t, "Left"), bf(t, "Right")].filter(Boolean)
+		head: yf(t, "Head"),
+		spine: yf(t, "Spine1"),
+		hip: yf(t, "Hips"),
+		leftKnee: yf(t, "LeftLeg"),
+		rightKnee: yf(t, "RightLeg"),
+		rightArm: yf(t, "RightArm"),
+		leftArm: yf(t, "LeftArm"),
+		rightElbow: yf(t, "RightForeArm"),
+		leftElbow: yf(t, "LeftForeArm"),
+		legs: [xf(t, "Left"), xf(t, "Right")].filter(Boolean)
 	};
-	return ff.set(t, a), a;
+	return pf.set(t, a), a;
 }
-function Sf(e, t, n, r) {
+function Cf(e, t, n, r) {
 	t.getWorldPosition(e.current), n.getWorldPosition(e.desired), e.desired.sub(e.current).normalize(), e.current.copy(r).sub(t.getWorldPosition(e.target)).normalize(), e.rotation.setFromUnitVectors(e.desired, e.current), t.getWorldQuaternion(e.worldRotation), e.worldRotation.premultiply(e.rotation), t.parent.getWorldQuaternion(e.parentRotation).invert(), t.quaternion.copy(e.parentRotation).multiply(e.worldRotation);
 }
-function Cf(e, t, n, r, i, a) {
+function wf(e, t, n, r, i, a) {
 	t.hip.getWorldPosition(t.hipPoint), t.knee.getWorldPosition(t.kneePoint), t.foot.getWorldPosition(t.footPoint);
 	let o = t.footPoint.y <= n + t.contactHeight + .028;
 	if (a || !i || !o) {
@@ -16789,58 +16814,58 @@ function Cf(e, t, n, r, i, a) {
 		return;
 	}
 	t.target.copy(t.anchor).sub(t.footPoint).clampLength(0, .09).add(t.footPoint);
-	let s = t.hipPoint.distanceTo(t.kneePoint), c = t.kneePoint.distanceTo(t.footPoint), l = pf(t.hipPoint.distanceTo(t.target), Math.abs(s - c) + .001, s + c - .001);
+	let s = t.hipPoint.distanceTo(t.kneePoint), c = t.kneePoint.distanceTo(t.footPoint), l = mf(t.hipPoint.distanceTo(t.target), Math.abs(s - c) + .001, s + c - .001);
 	if (t.direction.copy(t.target).sub(t.hipPoint).normalize(), t.bend.copy(t.kneePoint).sub(t.hipPoint), t.bend.addScaledVector(t.direction, -t.bend.dot(t.direction)), t.bend.lengthSq() < 1e-6) {
 		t.planted = !1;
 		return;
 	}
 	t.bend.normalize();
 	let u = (s * s - c * c + l * l) / (2 * l), d = Math.sqrt(Math.max(0, s * s - u * u));
-	t.wantedKnee.copy(t.hipPoint).addScaledVector(t.direction, u).addScaledVector(t.bend, d), t.foot.getWorldQuaternion(t.footRotation), t.ikTarget.copy(t.target), Sf(t, t.hip, t.knee, t.wantedKnee), e.updateMatrixWorld(!0), Sf(t, t.knee, t.foot, t.ikTarget), e.updateMatrixWorld(!0), t.foot.parent.getWorldQuaternion(t.parentRotation).invert(), t.foot.quaternion.copy(t.parentRotation).multiply(t.footRotation);
+	t.wantedKnee.copy(t.hipPoint).addScaledVector(t.direction, u).addScaledVector(t.bend, d), t.foot.getWorldQuaternion(t.footRotation), t.ikTarget.copy(t.target), Cf(t, t.hip, t.knee, t.wantedKnee), e.updateMatrixWorld(!0), Cf(t, t.knee, t.foot, t.ikTarget), e.updateMatrixWorld(!0), t.foot.parent.getWorldQuaternion(t.parentRotation).invert(), t.foot.quaternion.copy(t.parentRotation).multiply(t.footRotation);
 }
-function wf(e, t, n, r, i) {
-	let a = ff.get(t.model);
+function Tf(e, t, n, r, i) {
+	let a = pf.get(t.model);
 	if (!a || !t.mixer) return !1;
-	if (n.hp <= 0) return Tf(e, t, a);
+	if (n.hp <= 0) return Ef(e, t, a);
 	a.capturedDeath && (t.actions.Death.stop(), a.capturedDeath = !1, a.deadSample = null, t.deathAnimated = !1, t.action = "", t.actions.Idle.reset().setEffectiveWeight(1).play()), a.deathPose = null;
-	let o = n.x - a.previousX, s = n.y - a.previousY, c = Math.hypot(o, s) * df;
+	let o = n.x - a.previousX, s = n.y - a.previousY, c = Math.hypot(o, s) * ff;
 	a.previousX = n.x, a.previousY = n.y;
 	let l = c > 3;
-	if (!l) a.distance += c, a.signedDistance += (o * Math.cos(n.a || 0) + s * Math.sin(n.a || 0)) * df;
+	if (!l) a.distance += c, a.signedDistance += (o * Math.cos(n.a || 0) + s * Math.sin(n.a || 0)) * ff;
 	else for (let e of a.legs) e.planted = !1;
 	if (a.lastSample === i) return !1;
-	let u = a.lastSample === null ? 0 : pf(i - a.lastSample, 0, .1);
+	let u = a.lastSample === null ? 0 : mf(i - a.lastSample, 0, .1);
 	a.lastSample = i, t.lastSample = i;
 	let d = u > 0 ? a.distance / u : 0;
-	a.speed = mf(a.speed, d, .6);
+	a.speed = hf(a.speed, d, .6);
 	let f = e.motion?.matches, p = !f && a.speed > .15 && n.hp > 0 && !(n.slideUntil > e.g.time), m = a.signedDistance < -a.distance * .35, h = (n.crouching || n.slideUntil > e.g.time) && t.actions.Crouch, g = h ? "Crouch" : p ? m && t.actions.BackWalk ? "BackWalk" : a.speed > 2.5 && !m ? "Run" : "Walk" : "Idle";
 	g !== t.action && (t.actions[t.action]?.fadeOut(.15), t.actions[g]?.reset().fadeIn(.15).play(), t.action = g);
 	let _ = t.actions[g];
 	if (_) {
 		let t = _.getClip().duration, n = e.characterProfile?.[g] || (g === "Run" ? 2.25 : 1.45);
-		_.setEffectiveTimeScale(p && !h ? (m && g !== "BackWalk" ? -1 : 1) * pf(d * t / n, .25, 3) : 1);
+		_.setEffectiveTimeScale(p && !h ? (m && g !== "BackWalk" ? -1 : 1) * mf(d * t / n, .25, 3) : 1);
 	}
 	a.distance = 0, a.signedDistance = 0;
 	let v = n.reloadUntil > e.g.time;
 	if (t.actions.Reload) {
 		let r = t.actions.Reload;
-		a.reloadWeight = mf(a.reloadWeight || 0, +!!v, 1 - Math.exp(-u * 20)), r.enabled = !0, r.setEffectiveWeight(a.reloadWeight).setEffectiveTimeScale(0).play(), v && (r.time = pf(1 - (n.reloadUntil - e.g.time) / 1.4, 0, 1) * r.getClip().duration);
+		a.reloadWeight = hf(a.reloadWeight || 0, +!!v, 1 - Math.exp(-u * 20)), r.enabled = !0, r.setEffectiveWeight(a.reloadWeight).setEffectiveTimeScale(0).play(), v && (r.time = mf(1 - (n.reloadUntil - e.g.time) / 1.4, 0, 1) * r.getClip().duration);
 	}
 	if (t.actions.Hit) {
 		let r = t.actions.Hit, i = e.g.time - (n.hit ?? -100);
-		r.enabled = !0, r.setEffectiveTimeScale(0).setEffectiveWeight(i >= 0 && i < .35 ? Math.sin(i / .35 * Math.PI) * .45 : 0).play(), r.time = pf(i / .35, 0, 1) * r.getClip().duration;
+		r.enabled = !0, r.setEffectiveTimeScale(0).setEffectiveWeight(i >= 0 && i < .35 ? Math.sin(i / .35 * Math.PI) * .45 : 0).play(), r.time = mf(i / .35, 0, 1) * r.getClip().duration;
 	}
 	t.mixer.update(u);
 	let y = n.slideUntil > e.g.time, b = y || n.crouching;
 	t.model.position.y = a.baseY - (h ? 0 : y ? .45 : b ? .28 : 0), b && !h && (a.hip && (a.hip.rotation.x += .22), a.leftKnee && (a.leftKnee.rotation.x -= .7), a.rightKnee && (a.rightKnee.rotation.x -= .65), a.spine && (a.spine.rotation.x += .22));
-	let x = pf(Math.atan(n.pitch || 0), -.65, .65), S = Math.max(0, 1 - (e.g.time - n.hit) / .24);
+	let x = mf(Math.atan(n.pitch || 0), -.65, .65), S = Math.max(0, 1 - (e.g.time - n.hit) / .24);
 	a.head && (a.head.rotation.x += x * .65), a.spine && (a.spine.rotation.x += x * .22, a.spine.rotation.z += S * .06), (e.g.time - n.shotAt < .16 || v) && !t.actions.Reload && (a.rightArm && (a.rightArm.rotation.z -= .3), a.leftArm && (a.leftArm.rotation.z += .28), a.rightElbow && (a.rightElbow.rotation.x += .35), a.leftElbow && (a.leftElbow.rotation.x += v ? .75 : .45)), t.model.updateMatrixWorld(!0);
 	let C = t.root.rotation.y, w = a.previousYaw !== null && Math.abs(Math.atan2(Math.sin(C - a.previousYaw), Math.cos(C - a.previousYaw))) > .2;
 	if (a.previousYaw = C, f) for (let e of a.legs) e.planted = !1;
-	else for (let e of a.legs) Cf(t.model, e, t.root.position.y, u, p, l || w || b || t.root.position.y > .05);
+	else for (let e of a.legs) wf(t.model, e, t.root.position.y, u, p, l || w || b || t.root.position.y > .05);
 	return t.model.updateMatrixWorld(!0), !0;
 }
-function Tf(e, t, n) {
+function Ef(e, t, n) {
 	let r = performance.now() / 1e3, i = Math.floor(r * 30);
 	if (t.actions.Death) {
 		if (!n.capturedDeath) {
@@ -16849,7 +16874,7 @@ function Tf(e, t, n) {
 		}
 		if (n.deadSample === i) return !1;
 		n.deadSample = i;
-		let a = e.motion?.matches ? 1 : pf((r - (t.deadAt ?? r)) / .85, 0, 1);
+		let a = e.motion?.matches ? 1 : mf((r - (t.deadAt ?? r)) / .85, 0, 1);
 		return t.actions.Death.time = a * t.actions.Death.getClip().duration, t.mixer.update(0), t.model.position.y = n.baseY, t.model.updateMatrixWorld(!0), !0;
 	}
 	if (!n.deathPose) {
@@ -16911,7 +16936,7 @@ function Tf(e, t, n) {
 				0
 			]
 		].map(([e, n, r, i]) => {
-			let a = vf(t.model, e);
+			let a = yf(t.model, e);
 			return a ? {
 				joint: a,
 				base: a.quaternion.clone(),
@@ -16924,39 +16949,39 @@ function Tf(e, t, n) {
 	}
 	if (n.deadSample === i) return !1;
 	n.deadSample = i;
-	let a = e.motion?.matches ? 1 : pf((r - (t.deadAt ?? r)) / .85, 0, 1);
+	let a = e.motion?.matches ? 1 : mf((r - (t.deadAt ?? r)) / .85, 0, 1);
 	for (let e of n.deathPose) e.rotation.setFromEuler(new At(e.offset.x * a, e.offset.y * a, e.offset.z * a)), e.joint.quaternion.copy(e.base).multiply(e.rotation);
 	return t.model.updateMatrixWorld(!0), !0;
 }
 //#endregion
 //#region scripts/outpost-military/realism-weapons.js
-function Ef(t, n, r = 1) {
+function Df(t, n, r = 1) {
 	if (!n) return null;
 	let i = n.clone();
 	return i.wrapS = i.wrapT = e, i.repeat.set(r, r), i.needsUpdate = !0, i.userData.weapon = !0, t.weaponTextures ||= /* @__PURE__ */ new Set(), t.weaponTextures.add(i), t.textures.add(i), i;
 }
-function Df(e, t) {
+function Of(e, t) {
 	let n = e.material(t);
 	return n.userData.weapon = !0, n;
 }
-function Of(e, t = !0) {
-	let n = e.realismSurfaces?.fabric, r = (n, r) => t ? Ef(e, n, r) : n || null, i = {
-		metal: Df(e, {
+function kf(e, t = !0) {
+	let n = e.realismSurfaces?.fabric, r = (n, r) => t ? Df(e, n, r) : n || null, i = {
+		metal: Of(e, {
 			color: "#414747",
 			metalness: .72,
 			roughness: .43
 		}),
-		polymer: Df(e, {
+		polymer: Of(e, {
 			color: "#41463c",
 			metalness: 0,
 			roughness: .74
 		}),
-		steel: Df(e, {
+		steel: Of(e, {
 			color: "#889293",
 			metalness: 1,
 			roughness: .3
 		}),
-		cloth: Df(e, {
+		cloth: Of(e, {
 			color: "#707665",
 			metalness: 0,
 			roughness: .92,
@@ -16965,17 +16990,17 @@ function Of(e, t = !0) {
 			roughnessMap: r(n?.roughness, 2.4),
 			normalScale: new V(.22, .22)
 		}),
-		rubber: Df(e, {
+		rubber: Of(e, {
 			color: "#252c28",
 			metalness: 0,
 			roughness: .87
 		}),
-		skin: Df(e, {
+		skin: Of(e, {
 			color: "#a77961",
 			metalness: 0,
 			roughness: .66
 		})
-	}, a = Df(e, {
+	}, a = Of(e, {
 		color: "#606754",
 		metalness: 0,
 		roughness: .78,
@@ -16987,7 +17012,7 @@ function Of(e, t = !0) {
 	for (let e of [...Object.values(i), a]) e.userData.weapon = t;
 	return t && (e.realismGlovePalm = a, e.realismWeaponMaterials = i), i;
 }
-function kf(e, t, n, r, i, a) {
+function Af(e, t, n, r, i, a) {
 	let o = new U(...r), s = new U(...i).sub(o), c = s.length(), l = e.mesh(t, e.geo("realism-hand-bone", () => new Ti(1, 1, 1, 12)), n, r.map((e, t) => (e + i[t]) / 2), [
 		a,
 		c,
@@ -16995,10 +17020,10 @@ function kf(e, t, n, r, i, a) {
 	]);
 	return l.quaternion.setFromUnitVectors(new U(0, 1, 0), s.normalize()), l;
 }
-function Af(e, t, n, r, i) {
+function jf(e, t, n, r, i) {
 	return e.mesh(t, e.geo("realism-hand-joint", () => new Ka(1, 20, 14)), n, r, i);
 }
-function jf(e, t, n, r, i, a) {
+function Mf(e, t, n, r, i, a) {
 	let o = new J();
 	o.position.set(n, r, i), o.name = "realistic-gloved-hand", t.add(o);
 	let s = e.realismGlovePalm || a.rubber, c = n < 0 ? 1 : -1, l = e.geo("realism-tapered-sleeve", () => new Ua([
@@ -17014,7 +17039,7 @@ function jf(e, t, n, r, i, a) {
 		-.014,
 		.054
 	]);
-	u.rotation.x = Math.PI / 2 + .43, u.rotation.z = n < 0 ? -.1 : .09, u.scale.x = 1.04, Af(e, o, s, [
+	u.rotation.x = Math.PI / 2 + .43, u.rotation.z = n < 0 ? -.1 : .09, u.scale.x = 1.04, jf(e, o, s, [
 		0,
 		0,
 		-.001
@@ -17022,7 +17047,7 @@ function jf(e, t, n, r, i, a) {
 		.045,
 		.027,
 		.06
-	]), Af(e, o, a.cloth, [
+	]), jf(e, o, a.cloth, [
 		0,
 		.022,
 		.004
@@ -17030,7 +17055,7 @@ function jf(e, t, n, r, i, a) {
 		.041,
 		.012,
 		.055
-	]), Af(e, o, s, [
+	]), jf(e, o, s, [
 		c * .031,
 		-.004,
 		.008
@@ -17088,15 +17113,15 @@ function jf(e, t, n, r, i, a) {
 			-.028,
 			r[2] + .013
 		];
-		kf(e, o, a.cloth, n, r, t.radius), kf(e, o, s, r, i, t.radius * .92), kf(e, o, s, i, c, t.radius * .8), Af(e, o, a.cloth, n, [
+		Af(e, o, a.cloth, n, r, t.radius), Af(e, o, s, r, i, t.radius * .92), Af(e, o, s, i, c, t.radius * .8), jf(e, o, a.cloth, n, [
 			t.radius * 1.2,
 			t.radius * .8,
 			t.radius
-		]), Af(e, o, s, r, [
+		]), jf(e, o, s, r, [
 			t.radius,
 			t.radius,
 			t.radius
-		]), Af(e, o, s, i, [
+		]), jf(e, o, s, i, [
 			t.radius * .88,
 			t.radius * .88,
 			t.radius * .88
@@ -17119,7 +17144,7 @@ function jf(e, t, n, r, i, a) {
 			-.04
 		]
 	];
-	return kf(e, o, a.cloth, f[0], f[1], .014), kf(e, o, s, f[1], f[2], .011), Af(e, o, s, f[1], [
+	return Af(e, o, a.cloth, f[0], f[1], .014), Af(e, o, s, f[1], f[2], .011), jf(e, o, s, f[1], [
 		.013,
 		.013,
 		.013
@@ -17141,7 +17166,7 @@ function jf(e, t, n, r, i, a) {
 		.017
 	]), o;
 }
-function Mf(e, t) {
+function Nf(e, t) {
 	let n = document.createElement("canvas");
 	n.width = 512, n.height = 96;
 	let r = n.getContext("2d");
@@ -17155,7 +17180,7 @@ function Mf(e, t) {
 		shard: "SHARD"
 	}[t] || t.toUpperCase()}`, 10, 37), r.font = "20px ui-monospace, monospace", r.fillText("FIELD ISSUE / 0147", 12, 77);
 	let i = new xi(n);
-	return i.colorSpace = E, i.userData.weapon = !0, e.weaponTextures ||= /* @__PURE__ */ new Set(), e.weaponTextures.add(i), e.textures.add(i), Df(e, {
+	return i.colorSpace = E, i.userData.weapon = !0, e.weaponTextures ||= /* @__PURE__ */ new Set(), e.weaponTextures.add(i), e.textures.add(i), Of(e, {
 		map: i,
 		color: "#b1b7b2",
 		metalness: .35,
@@ -17164,7 +17189,7 @@ function Mf(e, t) {
 		side: 2
 	});
 }
-function Nf(e, t, n, r, i = .12, a = .022) {
+function Pf(e, t, n, r, i = .12, a = .022) {
 	let o = e.mesh(t, e.geo("realism-etch-plane", () => new Wa(1, 1)), n, r, [
 		i,
 		a,
@@ -17172,7 +17197,7 @@ function Nf(e, t, n, r, i = .12, a = .022) {
 	]);
 	o.rotation.y = -Math.PI / 2, o.castShadow = !1;
 }
-function Pf(e, t, n, r, i) {
+function Ff(e, t, n, r, i) {
 	e.box(t, n.rubber, [
 		-.0432,
 		-.03,
@@ -17207,7 +17232,7 @@ function Pf(e, t, n, r, i) {
 		.006,
 		.022
 	]);
-	a.rotation.x = .45, Nf(e, t, i, [
+	a.rotation.x = .45, Pf(e, t, i, [
 		-.0435,
 		.017,
 		-.545
@@ -17253,7 +17278,7 @@ function Pf(e, t, n, r, i) {
 		], .009, .002, "x", 16), r.receiveShadow = !0;
 	}
 }
-function Ff(e, t = e.rig) {
+function If(e, t = e.rig) {
 	t.updateMatrixWorld(!0);
 	let n = new G().copy(t.matrixWorld).invert(), r = /* @__PURE__ */ new Map(), i = [], a = /* @__PURE__ */ new Set();
 	t.traverse((e) => {
@@ -17278,16 +17303,16 @@ function Ff(e, t = e.rig) {
 	}
 	for (let e of i) a.has(e.material) && (e.parent.remove(e), e.userData.ownedGeometry && e.geometry.dispose());
 }
-function If(e, t) {
+function Lf(e, t) {
 	let n = e.realismWeaponMaterials;
 	if (!n) return;
-	let r = Mf(e, t);
+	let r = Nf(e, t);
 	if (t === "carbine") {
-		Nf(e, e.rig, r, [
+		Pf(e, e.rig, r, [
 			-.0315,
 			.025,
 			-.512
-		], .09, .018), Ff(e);
+		], .09, .018), If(e);
 		return;
 	}
 	if ([
@@ -17295,7 +17320,7 @@ function If(e, t) {
 		"scatter",
 		"breach",
 		"twin"
-	].includes(t)) for (let i of [...e.rig.children].filter((e) => e.isGroup && e.name !== "realistic-gloved-hand")) Pf(e, i, n, t, r);
+	].includes(t)) for (let i of [...e.rig.children].filter((e) => e.isGroup && e.name !== "realistic-gloved-hand")) Ff(e, i, n, t, r);
 	else if (t === "rocket") {
 		for (let t of [
 			-.38,
@@ -17306,7 +17331,7 @@ function If(e, t) {
 			0,
 			t
 		], .097, .018, "z", 24);
-		Nf(e, e.rig, r, [
+		Pf(e, e.rig, r, [
 			-.078,
 			.015,
 			-.62
@@ -17321,7 +17346,7 @@ function If(e, t) {
 			t,
 			-.52
 		], .056, .007, "y", 24);
-		Nf(e, e.rig, r, [
+		Pf(e, e.rig, r, [
 			i - .056,
 			-.08,
 			-.52
@@ -17343,18 +17368,18 @@ function If(e, t) {
 			e.isMesh && e.userData.ownedGeometry && e.material === n.steel && (e.geometry.dispose(), e.geometry = t, e.userData.ownedGeometry = !1);
 		});
 	}
-	Ff(e);
+	If(e);
 }
 //#endregion
 //#region scripts/outpost-military/realism-hands.js
-var Lf = (e) => e.replace(/^.*mixamorig\d*[:_]?/i, ""), Rf = (e, t) => {
+var Rf = (e) => e.replace(/^.*mixamorig\d*[:_]?/i, ""), zf = (e, t) => {
 	let n;
 	return e.traverse((e) => {
-		e.isBone && Lf(e.name) === t && (n = e);
+		e.isBone && Rf(e.name) === t && (n = e);
 	}), n;
 };
-function zf(e, t) {
-	let n = e.geometry, r = n.attributes.skinIndex, i = n.attributes.skinWeight, a = e.skeleton.bones.map((e) => RegExp("^" + t + "(Hand|ForeArm)").test(Lf(e.name))), o = (e) => {
+function Bf(e, t) {
+	let n = e.geometry, r = n.attributes.skinIndex, i = n.attributes.skinWeight, a = e.skeleton.bones.map((e) => RegExp("^" + t + "(Hand|ForeArm)").test(Rf(e.name))), o = (e) => {
 		let t = 0;
 		for (let n = 0; n < 4; n++) a[r.getComponent(e, n)] && (t += i.getComponent(e, n));
 		return t > .55;
@@ -17376,7 +17401,7 @@ function zf(e, t) {
 	}
 	return u.setIndex(s), u.computeBoundingBox(), u.computeBoundingSphere(), u;
 }
-function Bf(e, t, n, r, i) {
+function Vf(e, t, n, r, i) {
 	if (!e.soldier?.scene.userData.riggedOperator) return null;
 	let a = n < 0 ? "Left" : "Right", o = Ed(e.soldier.scene), s = new vs(o), c = e.soldier.animations.find((e) => e.name === "Idle"), l = e.soldier.animations.find((e) => e.name === "Reload"), u = {
 		Idle: s.clipAction(c),
@@ -17396,20 +17421,20 @@ function Bf(e, t, n, r, i) {
 		}
 		let n = t.geometry.uuid + ":" + a;
 		if (!e.handGeometries.has(n)) {
-			let r = zf(t, a);
+			let r = Bf(t, a);
 			e.handGeometries.set(n, r), r && e.geometries.set("hand:" + n, r);
 		}
 		let r = e.handGeometries.get(n);
 		r ? t.geometry = r : f.push(t);
 	});
 	for (let e of f) e.removeFromParent();
-	xf(e, o, {
+	Sf(e, o, {
 		x: 0,
 		y: 0
 	});
 	let p = new J();
 	p.name = a + " captured glove", p.userData.weaponMoving = !0, p.position.set(n, r, i), p.add(o), t.add(p);
-	let m = Rf(o, a + "Hand"), h = Rf(o, a + "HandMiddle1") || m;
+	let m = zf(o, a + "Hand"), h = zf(o, a + "HandMiddle1") || m;
 	return p.userData.handRig = {
 		r: e,
 		model: o,
@@ -17420,9 +17445,9 @@ function Bf(e, t, n, r, i) {
 		palm: new U(),
 		point: new U(),
 		sample: null
-	}, Vf(p, 0, 0), p;
+	}, Hf(p, 0, 0), p;
 }
-function Vf(e, t, n) {
+function Hf(e, t, n) {
 	let r = e?.userData.handRig;
 	if (!r) return;
 	let i = Math.floor(n * 30), a = (t > 0 ? "reload:" : "idle:") + i;
@@ -17431,7 +17456,7 @@ function Vf(e, t, n) {
 	let o = t > 0 && r.actions.Reload ? r.actions.Reload : r.actions.Idle;
 	o.reset().setEffectiveWeight(1).setEffectiveTimeScale(0).play(), o.time = r.r.motion.matches ? 0 : t > 0 ? (1 - t) * o.getClip().duration : n % o.getClip().duration, r.mixer.update(0), r.model.position.set(0, 0, 0), e.updateWorldMatrix(!0, !0), r.hand.getWorldPosition(r.palm), r.knuckle.getWorldPosition(r.point), r.palm.lerp(r.point, .5), e.worldToLocal(r.palm), r.model.position.copy(r.palm).negate(), e.updateWorldMatrix(!0, !0);
 }
-function Hf(e) {
+function Uf(e) {
 	let t = /* @__PURE__ */ new Set();
 	e.traverse((e) => {
 		e.userData.handRig && e.userData.handRig.mixer.stopAllAction(), e.isSkinnedMesh && t.add(e.skeleton);
@@ -17440,8 +17465,8 @@ function Hf(e) {
 }
 //#endregion
 //#region scripts/outpost-military/realism-carbine.js
-var Uf = (e) => (e = B.clamp(e, 0, 1), e * e * (3 - 2 * e)), Wf = (e, t, n) => Uf((e - t) / (n - t));
-function Gf(e, t, n, r = !0) {
+var Wf = (e) => (e = B.clamp(e, 0, 1), e * e * (3 - 2 * e)), Gf = (e, t, n) => Wf((e - t) / (n - t));
+function Kf(e, t, n, r = !0) {
 	n.polymer.color.set("#343b34"), n.metal.color.set("#343c3d"), n.metal.metalness = .3, n.metal.roughness = .54;
 	let i = new J();
 	i.name = "VX-7 / machined field carbine", t.add(i);
@@ -17676,19 +17701,19 @@ function Gf(e, t, n, r = !0) {
 	};
 	return i.userData.carbineParts = h, t.userData.carbine = i, i;
 }
-function Kf(e, t, n) {
+function qf(e, t, n) {
 	let r = e?.userData.carbineParts;
 	if (!r) return;
 	let i = performance.now() / 1e3;
-	Vf(r.firingHand, t, i), Vf(r.supportHand, t, i);
-	let a = 1 - t, o = t > 0 ? Wf(a, .12, .4) * (1 - Wf(a, .61, .82)) : 0;
+	Hf(r.firingHand, t, i), Hf(r.supportHand, t, i);
+	let a = 1 - t, o = t > 0 ? Gf(a, .12, .4) * (1 - Gf(a, .61, .82)) : 0;
 	r.magazine.position.y = -.067 - o * .24, r.magazine.position.x = -o * .065, r.magazine.rotation.z = -o * .2, r.magazine.visible = !(t > 0 && a > .42 && a < .6);
-	let s = t > 0 ? Math.sin(Wf(a, .84, .99) * Math.PI) : 0;
+	let s = t > 0 ? Math.sin(Gf(a, .84, .99) * Math.PI) : 0;
 	r.bolt.position.z = n * .024 + s * .03, r.handle.position.z = s * .055, r.supportHand && (r.supportHand.position.set(-.044 - o * .055, -.056 - o * .14, -.757 + o * .18), r.supportHand.rotation.x = o * .25);
 }
 //#endregion
 //#region scripts/outpost-military/realism-identification.js
-var qf = class {
+var Jf = class {
 	constructor(e) {
 		this.r = e, this.labels = /* @__PURE__ */ new Map(), this.point = new U(), this.root = document.createElement("div"), this.root.className = "mf-playernames", this.style = document.createElement("style"), this.style.textContent = "\n   midnry-fps .mf-playernames{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}\n   midnry-fps .mf-playername{position:absolute;transform:translate(-50%,-100%);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:3px 7px;border-radius:7px;color:#f3f7f1;background:#111b21bd;border:1px solid #b7c6c233;font:600 12px/1.2 system-ui;text-shadow:0 1px 2px #000}\n   midnry-fps .mf-playername[hidden]{display:none}\n   midnry-fps .mf-playername-accused{border-color:#b79478;background:#35291fed}\n   @media(max-width:700px){midnry-fps .mf-playername{max-width:100px;font-size:11px;padding:3px 6px}}\n  ", e.g.shell.append(this.style, this.root);
 	}
@@ -17716,13 +17741,13 @@ var qf = class {
 	dispose() {
 		this.root.remove(), this.style.remove(), this.labels.clear();
 	}
-}, Jf = (e, t) => {
+}, Yf = (e, t) => {
 	let n;
 	return e.traverse((e) => {
 		e.isBone && e.name.replace(/[^a-z0-9]/gi, "").endsWith(t) && (n = e);
 	}), n;
 };
-function Yf(e, t, n, r, i) {
+function Xf(e, t, n, r, i) {
 	let a = e.getWorldPosition(new U()), o = t.getWorldPosition(new U()), s = n.getWorldPosition(new U()), c = a.distanceTo(o), l = o.distanceTo(s), u = B.clamp(a.distanceTo(r), Math.abs(c - l) + .003, c + l - .003), d = r.clone().sub(a).normalize(), f = o.clone().sub(a);
 	f.addScaledVector(d, -f.dot(d)), f.lengthSq() < 1e-5 && f.set(-.4, -1, .1).transformDirection(i.matrixWorld), f.normalize();
 	let p = (c * c - l * l + u * u) / (2 * u), m = a.clone().addScaledVector(d, p).addScaledVector(f, Math.sqrt(Math.max(0, c * c - p * p))), h = (e, t, n) => {
@@ -17731,22 +17756,22 @@ function Yf(e, t, n, r, i) {
 	};
 	h(e, t, m), h(t, n, r);
 }
-function Xf(e) {
+function Zf(e) {
 	if (!e.model.userData.riggedOperator) return;
 	e.root.updateMatrixWorld(!0);
-	let t = e.weaponAnchor, n = Jf(e.model, "RightHandMiddle1");
+	let t = e.weaponAnchor, n = Yf(e.model, "RightHandMiddle1");
 	t && n && (e.grip = {
 		hand: t,
 		knuckle: n,
 		orientation: t.getWorldQuaternion(new H()).invert().multiply(e.root.getWorldQuaternion(new H())),
-		arm: Jf(e.model, "LeftArm"),
-		elbow: Jf(e.model, "LeftForeArm"),
-		support: Jf(e.model, "LeftHand"),
+		arm: Yf(e.model, "LeftArm"),
+		elbow: Yf(e.model, "LeftForeArm"),
+		support: Yf(e.model, "LeftHand"),
 		point: new U(),
 		palm: new U()
 	});
 }
-function Zf(e, t) {
+function Qf(e, t) {
 	let n = e.grip;
 	if (!n) return !1;
 	let r = e.equipment;
@@ -17756,17 +17781,17 @@ function Zf(e, t) {
 	let a = new U(0, -.109, -.001).applyQuaternion(r.quaternion);
 	if (r.position.copy(n.point).sub(a), r.updateMatrixWorld(!0), n.arm && n.elbow && n.support) {
 		let i = 1 - t, a = t > 0 && i > .13 && i < .82 ? new U(0, -.18 - (i < .6 ? .15 : 0), -.12) : new U(-.035, -.056, -.312);
-		a.applyMatrix4(r.matrixWorld), Yf(n.arm, n.elbow, n.support, a, e.root);
+		a.applyMatrix4(r.matrixWorld), Xf(n.arm, n.elbow, n.support, a, e.root);
 	}
 	return !0;
 }
 //#endregion
 //#region public/games/outpost-protocol-map.js
-var Qf = 28, $f = Array.from({ length: Qf }, () => Array(Qf).fill(1));
-function ep(e, t, n, r, i = 0) {
-	for (let a = t; a < t + r; a++) for (let t = e; t < e + n; t++) $f[a][t] = i;
+var $f = 28, ep = Array.from({ length: $f }, () => Array($f).fill(1));
+function tp(e, t, n, r, i = 0) {
+	for (let a = t; a < t + r; a++) for (let t = e; t < e + n; t++) ep[a][t] = i;
 }
-var tp = [
+var np = [
 	{
 		id: "command",
 		name: "Command / Operations",
@@ -17939,8 +17964,8 @@ var tp = [
 		roofed: !0
 	}
 ];
-for (let e of tp) ep(e.x, e.y, e.w, e.h);
-ep(1, 21, 1, 5), ep(26, 21, 1, 5);
+for (let e of np) tp(e.x, e.y, e.w, e.h);
+tp(1, 21, 1, 5), tp(26, 21, 1, 5);
 for (let [e, t] of [
 	[8, 6],
 	[8, 7],
@@ -18000,8 +18025,8 @@ for (let [e, t] of [
 	[22, 25],
 	[23, 25],
 	[25, 23]
-]) $f[t][e] = 0;
-ep(5, 4, 2, 1, 2), ep(4, 7, 1, 1, 2), ep(13, 5, 1, 2, 3), ep(22, 5, 2, 1, 5), ep(5, 14, 1, 1, 4), ep(22, 15, 1, 3, 2), ep(20, 17, 1, 1, 2), ep(5, 20, 1, 3, 3), ep(13, 21, 1, 1, 1), ep(14, 23, 1, 1, 1), ep(22, 24, 1, 1, 3);
+]) ep[t][e] = 0;
+tp(5, 4, 2, 1, 2), tp(4, 7, 1, 1, 2), tp(13, 5, 1, 2, 3), tp(22, 5, 2, 1, 5), tp(5, 14, 1, 1, 4), tp(22, 15, 1, 3, 2), tp(20, 17, 1, 1, 2), tp(5, 20, 1, 3, 3), tp(13, 21, 1, 1, 1), tp(14, 23, 1, 1, 1), tp(22, 24, 1, 1, 3);
 for (let [e, t] of [
 	[9, 7],
 	[10, 15],
@@ -18009,14 +18034,14 @@ for (let [e, t] of [
 	[18, 6],
 	[17, 14],
 	[18, 23]
-]) $f[t][e] = 1;
-var np = {
+]) ep[t][e] = 1;
+var rp = {
 	id: "breakwater",
 	name: "Breakwater Forward Base",
 	protocolOnly: !0,
 	tag: "BLACKOUT PROTOCOL / FORWARD BASE",
 	description: "An enclosed coastal forward base. Command, barracks, radar and utility rooms link through narrow service corridors around a small supply courtyard.",
-	level: $f,
+	level: ep,
 	theme: {
 		sky: "#a7b7ba",
 		floor: "#5b615e",
@@ -18054,7 +18079,7 @@ var np = {
 			]
 		}
 	},
-	rooms: tp,
+	rooms: np,
 	spawns: [
 		[3.5, 5.5],
 		[14.5, 7.5],
@@ -18458,14 +18483,14 @@ var np = {
 		solid: !0,
 		label: "GENERATOR BANK"
 	}],
-	zones: tp.map((e) => ({
+	zones: np.map((e) => ({
 		x: e.x,
 		y: e.y,
 		w: e.w,
 		h: e.h,
 		color: e.roofed === !1 ? "#777864" : "#65716c"
 	}))
-}, rp = 18, ip = Array.from({ length: rp }, () => Array(rp).fill(1)), ap = [
+}, ip = 18, ap = Array.from({ length: ip }, () => Array(ip).fill(1)), op = [
 	{
 		id: "cockpit",
 		name: "Flight Deck",
@@ -18503,7 +18528,7 @@ var np = {
 		roofed: !0
 	}
 ];
-for (let e of ap) for (let t = e.y; t < e.y + e.h; t++) for (let n = e.x; n < e.x + e.w; n++) ip[t][n] = 0;
+for (let e of op) for (let t = e.y; t < e.y + e.h; t++) for (let n = e.x; n < e.x + e.w; n++) ap[t][n] = 0;
 for (let [e, t] of [
 	[8, 4],
 	[9, 4],
@@ -18511,9 +18536,9 @@ for (let [e, t] of [
 	[9, 11],
 	[6, 7],
 	[6, 8]
-]) ip[t][e] = 0;
-ip[9][7] = 4, ip[8][10] = 4, ip[14][7] = ip[15][7] = 3;
-var op = Object.freeze([
+]) ap[t][e] = 0;
+ap[9][7] = 4, ap[8][10] = 4, ap[14][7] = ap[15][7] = 3;
+var sp = Object.freeze([
 	{
 		id: "oxygen",
 		name: "Test the medical oxygen supply",
@@ -18545,7 +18570,7 @@ var op = Object.freeze([
 		system: "comms"
 	}
 ]);
-({ ...np.theme }), { ...np.theme.walls }, [...op.filter((e) => e.id !== "landing")], [
+({ ...rp.theme }), { ...rp.theme.walls }, [...sp.filter((e) => e.id !== "landing")], [
 	...[
 		7,
 		8,
@@ -18589,7 +18614,7 @@ var op = Object.freeze([
 		h: .38,
 		sill: .48
 	}))
-], ap.map((e) => ({
+], op.map((e) => ({
 	x: e.x,
 	y: e.y,
 	w: e.w,
@@ -18613,7 +18638,7 @@ var op = Object.freeze([
 	"1000000000000001",
 	"1111111111111111"
 ].map((e) => [...e].map(Number));
-function sp(e, t) {
+function cp(e, t) {
 	let n = Array.from({ length: e }, (t, n) => Array.from({ length: e }, (t, r) => +(r === 0 || n === 0 || r === e - 1 || n === e - 1))), r = (e, t, r, i, a = 1) => {
 		for (let o = t; o < t + i; o++) for (let t = e; t < e + r; t++) n[o][t] = a;
 	};
@@ -18623,7 +18648,7 @@ function sp(e, t) {
 	for (let t = e / 2 - 1; t <= e / 2; t++) for (let r = e / 2 - 1; r <= e / 2; r++) n[t][r] = 0;
 	return n;
 }
-var cp = {
+var lp = {
 	sky: "#f4cd87",
 	floor: "#73564a",
 	sun: "#ffe7a1",
@@ -18660,7 +18685,7 @@ var cp = {
 		]
 	}
 };
-sp(16, (e, t, n) => {
+cp(16, (e, t, n) => {
 	t(3, 4, 4, 8, 2), t(9, 4, 4, 8, 4);
 	for (let e of [
 		3,
@@ -18669,7 +18694,7 @@ sp(16, (e, t, n) => {
 		12
 	]) for (let t of [6, 9]) n[t][e] = 0;
 	e(7, 4, 2, 1, 3), e(7, 11, 2, 1, 3);
-}), { ...cp }, sp(24, (e, t, n) => {
+}), { ...lp }, cp(24, (e, t, n) => {
 	t(3, 3, 12, 9, 5);
 	for (let e of [
 		5,
@@ -18684,9 +18709,9 @@ sp(16, (e, t, n) => {
 		15
 	]) n[e][18] = 0;
 	n[17][19] = 0, e(5, 16, 2, 3, 3), e(9, 17, 3, 1, 2), e(15, 19, 2, 2, 3);
-}), { ...cp }, { ...cp.walls }, sp(12, (e) => {
+}), { ...lp }, { ...lp.walls }, cp(12, (e) => {
 	e(3, 3, 2, 2, 2), e(7, 3, 2, 2, 4), e(3, 7, 2, 2, 4), e(7, 7, 2, 2, 2);
-}), { ...cp }, sp(20, (e, t, n) => {
+}), { ...lp }, cp(20, (e, t, n) => {
 	t(3, 3, 5, 5, 1), t(12, 3, 5, 5, 5);
 	for (let e of [
 		3,
@@ -18696,8 +18721,8 @@ sp(16, (e, t, n) => {
 	]) n[5][e] = 0;
 	for (let e of [5, 14]) n[7][e] = 0;
 	e(9, 7, 2, 1, 3), e(9, 12, 2, 1, 3), e(3, 12, 2, 3, 1), e(16, 12, 1, 4, 2), e(6, 16, 3, 1, 1);
-}), { ...cp };
-var lp = {
+}), { ...lp };
+var up = {
 	carbine: {
 		id: "carbine",
 		name: "VX–7 Carbine",
@@ -18838,7 +18863,7 @@ var lp = {
 		super: "Big Bang",
 		description: "Twin fuses arc over walls. Super: a heavy cover-breaking barrel with knockback."
 	}
-}, up = (e) => Object.hasOwn(lp, e) ? lp[e] : lp.carbine, dp = {
+}, dp = (e) => Object.hasOwn(up, e) ? up[e] : up.carbine, fp = {
 	ranger: {
 		id: "ranger",
 		name: "Field Ranger",
@@ -19009,10 +19034,10 @@ var lp = {
 		head: "respirator",
 		description: "Yellow and charcoal digital camouflage, sealed respirator and reinforced armour."
 	}
-}, fp = (e) => Object.hasOwn(dp, e) ? dp[e] : dp.ranger, pp = /* @__PURE__ */ new Map();
-function mp(e, t = 512) {
+}, pp = (e) => Object.hasOwn(fp, e) ? fp[e] : fp.ranger, mp = /* @__PURE__ */ new Map();
+function hp(e, t = 512) {
 	let n = `${e.id}:${t}`;
-	if (pp.has(n)) return pp.get(n);
+	if (mp.has(n)) return mp.get(n);
 	let r = document.createElement("canvas");
 	r.width = r.height = t;
 	let i = r.getContext("2d"), a = e.palette || [e.primary, e.accent], o = [...e.id].reduce((e, t) => Math.imul(e, 31) + t.charCodeAt(0), 19) >>> 0, s = () => (o = Math.imul(o, 1664525) + 1013904223 >>> 0) / 4294967296;
@@ -19037,18 +19062,18 @@ function mp(e, t = 512) {
 	i.globalAlpha = .12, i.fillStyle = "#101817";
 	for (let e = 0; e < t; e += 4) i.fillRect(e, 0, 1, t);
 	for (let e = 0; e < 1200; e++) i.globalAlpha = s() * .14, i.fillRect(s() * t, s() * t, 1 + s() * 3, 1);
-	return i.globalAlpha = 1, pp.set(n, r), r;
+	return i.globalAlpha = 1, mp.set(n, r), r;
 }
 //#endregion
 //#region scripts/outpost-military/takedowns.js
-var hp = (e) => (e = B.clamp(e, 0, 1), e * e * (3 - 2 * e)), gp = (e, t, n) => hp((e - t) / (n - t));
-function _p(e, t) {
+var gp = (e) => (e = B.clamp(e, 0, 1), e * e * (3 - 2 * e)), _p = (e, t, n) => gp((e - t) / (n - t));
+function vp(e, t) {
 	let n;
 	return e.traverse((e) => {
 		e.isBone && e.name.replace(/[^a-z0-9]/gi, "").endsWith(t) && (n = e);
 	}), n;
 }
-var vp = class {
+var yp = class {
 	constructor(e) {
 		this.r = e, this.root = new J(), this.root.name = "Private victim takedown", this.root.visible = !1, e.scene.add(this.root), this.cameraPoint = new U(), this.lookPoint = new U(), this.hiddenActors = [];
 	}
@@ -19060,7 +19085,7 @@ var vp = class {
 			e.isSkinnedMesh && (e.skeleton.update(), e.computeBoundingBox());
 		});
 		let o = new Je().setFromObject(t), s = 1.82 / Math.max(.1, o.max.y - o.min.y);
-		t.scale.multiplyScalar(s), t.position.y -= o.min.y * s, xf(e, t, {
+		t.scale.multiplyScalar(s), t.position.y -= o.min.y * s, Sf(e, t, {
 			x: 0,
 			y: 0
 		});
@@ -19151,7 +19176,7 @@ var vp = class {
 		for (let t of e.bones.values()) t.joint.quaternion.copy(t.base);
 	}
 	bend(e, t, n = 0, r = 0, i = 0) {
-		let a = _p(e.model, t);
+		let a = vp(e.model, t);
 		if (!a) return;
 		this.root.updateMatrixWorld(!0);
 		let o = a.parent.getWorldQuaternion(new H()), s = this.root.getWorldQuaternion(new H()), c = o.clone().invert().multiply(s).multiply(new H().setFromEuler(new At(n, r, i))).multiply(s.clone().invert()).multiply(o);
@@ -19163,11 +19188,11 @@ var vp = class {
 	}
 	bodyPoint(e, t, n) {
 		this.root.updateMatrixWorld(!0);
-		let r = _p(e.model, t).getWorldPosition(new U());
+		let r = vp(e.model, t).getWorldPosition(new U());
 		return this.root.worldToLocal(r), r.add(new U(...n)), r.toArray();
 	}
 	reach(e, t, n) {
-		let r = _p(e.model, t + "Arm"), i = _p(e.model, t + "ForeArm"), a = _p(e.model, t + "Hand");
+		let r = vp(e.model, t + "Arm"), i = vp(e.model, t + "ForeArm"), a = vp(e.model, t + "Hand");
 		if (!r || !i || !a) return;
 		this.root.updateMatrixWorld(!0);
 		let o = r.getWorldPosition(new U()), s = i.getWorldPosition(new U()), c = a.getWorldPosition(new U()), l = new U(...n).applyMatrix4(this.root.matrixWorld), u = o.distanceTo(s), d = s.distanceTo(c), f = B.clamp(o.distanceTo(l), Math.abs(u - d) + .005, u + d - .005), p = l.clone().sub(o).normalize(), m = new U(t === "Left" ? -.35 : .35, -1, .35).transformDirection(this.root.matrixWorld);
@@ -19179,7 +19204,7 @@ var vp = class {
 		_(r, i, g), _(i, a, l);
 	}
 	handProp(e, t) {
-		let n = _p(this.attacker.model, t + "Hand");
+		let n = vp(this.attacker.model, t + "Hand");
 		n && (this.root.updateMatrixWorld(!0), e.position.copy(n.getWorldPosition(new U())), this.root.worldToLocal(e.position));
 	}
 	update(e) {
@@ -19193,7 +19218,7 @@ var vp = class {
 			this.resetHuman(e), this.resetHuman(t);
 			let a = n.kind === "suffocation" || n.kind === "neck-breaker" ? "Struggle" : "Hit", o = n.kind === "back-stab" ? "Stab" : n.kind === "back-breaker" ? "Grapple" : n.kind === "suppressed-shot" ? "Idle" : "Stealth";
 			this.capturedPose(e, a, r * .65), this.capturedPose(t, o, r * .78), t.root.position.z = .42;
-			let s = gp(r, .08, .32), c = gp(r, .38, .53), l = gp(r, .76, 1);
+			let s = _p(r, .08, .32), c = _p(r, .38, .53), l = _p(r, .76, 1);
 			this.knife.visible = n.kind === "back-stab", this.pistol.visible = n.kind === "suppressed-shot", this.flash.visible = n.kind === "suppressed-shot" && r > .45 && r < .5 && !this.r.motion.matches;
 			let u = this.r.motion.matches ? .25 : 1;
 			n.kind === "back-stab" ? (this.bend(e, "Spine", c * .26 * u), this.reach(t, "Left", this.bodyPoint(e, "LeftShoulder", [
@@ -19308,10 +19333,10 @@ var vp = class {
 };
 //#endregion
 //#region scripts/outpost-military/compatibility.js
-function yp(e) {
+function bp(e) {
 	return /iPad|iPhone|iPod/.test(e.userAgent || "") || /Mac/.test(e.platform || "") && e.maxTouchPoints > 1;
 }
-function bp({ appleTouch: e = !1, safeMode: t = !1, halfFloat: n = !0, maxTextureSize: r = 4096 } = {}) {
+function xp({ appleTouch: e = !1, safeMode: t = !1, halfFloat: n = !0, maxTextureSize: r = 4096 } = {}) {
 	return {
 		safeMode: t,
 		halfFloat: n,
@@ -19322,13 +19347,13 @@ function bp({ appleTouch: e = !1, safeMode: t = !1, halfFloat: n = !0, maxTextur
 		reflections: !t
 	};
 }
-function xp(e, t, n) {
+function Sp(e, t, n) {
 	let r = Math.min(1, Math.sqrt(n.maxPixels / (e * t)), n.maxTextureSize / Math.max(e, t));
 	return [Math.max(1, Math.floor(e * r)), Math.max(1, Math.floor(t * r))];
 }
 //#endregion
 //#region scripts/outpost-military/telemetry.js
-var Sp = class {
+var Cp = class {
 	constructor(e) {
 		this.renderer = e, this.gl = e.getContext(), this.ext = this.gl.getExtension("EXT_disjoint_timer_query_webgl2"), this.pending = [], this.frame = 0, this.gpuMs = null, e.info.autoReset = !1;
 	}
@@ -19355,7 +19380,7 @@ var Sp = class {
 		this.pending = [];
 	}
 };
-function Cp(e, t, n, r) {
+function wp(e, t, n, r) {
 	let i = Math.hypot(n.x - t.x, n.y - t.y);
 	if (i < .65) return !0;
 	let a = Math.atan2(n.y - t.y, n.x - t.x) - t.a;
@@ -19372,19 +19397,19 @@ function Cp(e, t, n, r) {
 }
 //#endregion
 //#region scripts/outpost-military/static-batches.js
-function wp(e, t = 6) {
+function Tp(e, t = 6) {
 	e.updateMatrixWorld(!0);
 	let n = /* @__PURE__ */ new Map(), r = e.matrixWorld.clone().invert();
 	e.traverse((e) => {
 		if (!e.isMesh || e.isSkinnedMesh || e.isInstancedMesh || e.userData.noBatch || !e.visible || Array.isArray(e.material) || e.material.transparent || Object.keys(e.geometry.morphAttributes).length || e.matrixWorld.determinant() < 0) return;
-		let r = new U().setFromMatrixPosition(e.matrixWorld), i = `${!!e.geometry.index}:` + Object.entries(e.geometry.attributes).sort(([e], [t]) => e.localeCompare(t)).map(([e, t]) => `${e}/${t.itemSize}/${t.normalized}/${t.array.constructor.name}`).join(","), a = `${e.material.uuid}:${Math.floor(r.x / (t * 3))}:${Math.floor(r.z / (t * 3))}:${e.castShadow}:${e.receiveShadow}:${i}`;
+		let r = new U().setFromMatrixPosition(e.matrixWorld), i = `${!!e.geometry.index}:` + Object.entries(e.geometry.attributes).sort(([e], [t]) => e.localeCompare(t)).map(([e, t]) => `${e}/${t.itemSize}/${t.normalized}/${t.array.constructor.name}`).join(","), a = `${e.material.uuid}:${Math.floor(r.x / (t * 3))}:${Math.floor(r.z / (t * 3))}:${e.castShadow}:${e.receiveShadow}:${!!e.userData.noRoomCull}:${e.frustumCulled}:${i}`;
 		n.has(a) || n.set(a, []), n.get(a).push(e);
 	});
 	for (let t of n.values()) {
 		if (t.length < 2) continue;
 		if (t.every((e) => e.geometry === t[0].geometry)) {
 			let n = new Gr(t[0].geometry, t[0].material, t.length);
-			n.castShadow = t[0].castShadow, n.receiveShadow = t[0].receiveShadow, t.forEach((e, t) => {
+			n.castShadow = t[0].castShadow, n.receiveShadow = t[0].receiveShadow, n.userData.noRoomCull = !!t[0].userData.noRoomCull, n.frustumCulled = t[0].frustumCulled, t.forEach((e, t) => {
 				n.setMatrixAt(t, new G().multiplyMatrices(r, e.matrixWorld)), e.parent.remove(e);
 			}), n.computeBoundingBox(), n.computeBoundingSphere(), e.add(n);
 			continue;
@@ -19394,14 +19419,14 @@ function wp(e, t = 6) {
 		if (!i) continue;
 		i.computeBoundingBox(), i.computeBoundingSphere();
 		let a = new qn(i, t[0].material);
-		a.castShadow = t[0].castShadow, a.receiveShadow = t[0].receiveShadow, a.userData.ownedGeometry = !0;
+		a.castShadow = t[0].castShadow, a.receiveShadow = t[0].receiveShadow, a.userData.noRoomCull = !!t[0].userData.noRoomCull, a.frustumCulled = t[0].frustumCulled, a.userData.ownedGeometry = !0;
 		for (let e of t) e.parent.remove(e);
 		e.add(a);
 	}
 }
 //#endregion
 //#region scripts/outpost-military/world-visibility.js
-function Tp(e, t, n, r, i, a = () => !1) {
+function Ep(e, t, n, r, i, a = () => !1) {
 	let o = /* @__PURE__ */ new Set(), s = e.length, c = (t, n) => {
 		t >= 0 && n >= 0 && n < s && t < e[n].length && o.add(n * s + t);
 	}, l = Math.ceil(s * 6);
@@ -19416,7 +19441,7 @@ function Tp(e, t, n, r, i, a = () => !1) {
 	for (let e = -2; e <= 2; e++) for (let r = -2; r <= 2; r++) c(Math.floor(t) + r, Math.floor(n) + e);
 	return o;
 }
-var Ep = class {
+var Dp = class {
 	constructor(e) {
 		this.r = e, this.entries = [], this.dirty = !0;
 	}
@@ -19454,7 +19479,7 @@ var Ep = class {
 			pitch: t,
 			at: n
 		};
-		let i = B.degToRad(r.camera.fov), a = 2 * Math.atan(Math.tan(i / 2) * r.camera.aspect), o = Tp(r.g.level, e.x, e.y, e.a, Math.abs(t) > .65 ? Math.PI * 2 : Math.min(Math.PI * 2, a + .8), (e, t) => r.protocolPropTile(e, t) || r.transportWindowTile(e, t) || r.transportHiddenWall(e, t)), s = 0;
+		let i = B.degToRad(r.camera.fov), a = 2 * Math.atan(Math.tan(i / 2) * r.camera.aspect), o = Ep(r.g.level, e.x, e.y, e.a, Math.abs(t) > .65 ? Math.PI * 2 : Math.min(Math.PI * 2, a + .8), (e, t) => r.protocolPropTile(e, t) || r.transportWindowTile(e, t) || r.transportHiddenWall(e, t)), s = 0;
 		for (let e of this.entries) {
 			let t = !1;
 			for (let n = e.y0; n <= e.y1 && !t; n++) for (let i = e.x0; i <= e.x1; i++) if (o.has(n * r.g.level.length + i)) {
@@ -19468,7 +19493,7 @@ var Ep = class {
 			worldCulled: this.entries.length - s
 		};
 	}
-}, $ = 3, Dp = "/games/military/", Op = Math.PI * 2, kp = {
+}, $ = 3, Op = "/games/military/", kp = Math.PI * 2, Ap = {
 	outpost: {
 		floor: "#a69980",
 		fog: "#bbc2c3",
@@ -19504,10 +19529,10 @@ var Ep = class {
 		fog: "#b8c9d0",
 		metal: "#92a1a3"
 	}
-}, Ap = class {
+}, jp = class {
 	constructor(e, t = () => {}, { safeMode: n = !1 } = {}) {
 		this.g = e, this.onProgress = t, this.disposed = !1, this.actors = /* @__PURE__ */ new Map(), this.crates = /* @__PURE__ */ new Map(), this.cores = /* @__PURE__ */ new Map(), this.projectiles = /* @__PURE__ */ new Map(), this.fields = /* @__PURE__ */ new Map(), this.protocolCharges = /* @__PURE__ */ new Map(), this.protocolBodies = /* @__PURE__ */ new Map(), this.protocolFixtures = [], this.protocolScreens = /* @__PURE__ */ new Map(), this.protocolLights = [], this.protocolLightMaterials = [], this.protocolPowerOut = !1, this.medicalStocks = /* @__PURE__ */ new Map(), this.transportCargo = [], this.transportTerrain = null, this.transportInstrument = null, this.transportInstrumentKey = "", this.transportAlarm = null, this.medevacRotor = null, this.arrivalClinic = null, this.arrivalPatients = /* @__PURE__ */ new Map(), this.materials = /* @__PURE__ */ new Set(), this.geometries = /* @__PURE__ */ new Map(), this.textures = /* @__PURE__ */ new Set(), this.worldTextures = /* @__PURE__ */ new Set(), this.weaponTextures = /* @__PURE__ */ new Set(), this.lastTime = 0, this.lastPose = -1, this.mapKey = "", this.wallKeys = "", this.seenShots = /* @__PURE__ */ new Map(), this.tracers = [], this.lastPreset = "", this.assetErrors = [], this.motion = matchMedia("(prefers-reduced-motion: reduce)"), this.mobileDevice = matchMedia("(pointer: coarse)").matches;
-		let r = yp(navigator), i, a;
+		let r = bp(navigator), i, a;
 		for (let e of [{
 			antialias: !r && !n,
 			powerPreference: "default"
@@ -19522,7 +19547,7 @@ var Ep = class {
 		this.renderer = new Su({
 			canvas: i,
 			context: a
-		}), this.profile = bp({
+		}), this.profile = xp({
 			appleTouch: r,
 			safeMode: n,
 			halfFloat: this.renderer.extensions.has("EXT_color_buffer_float") || this.renderer.extensions.has("EXT_color_buffer_half_float"),
@@ -19556,7 +19581,7 @@ var Ep = class {
 			}
 		}, this.scene.add(this.protocolTorch, this.protocolTorch.target), this.weaponScene = new vr(), this.weaponCamera = new lr(52, 1, .01, 10), this.weaponScene.add(new Fo("#e5ecf1", "#786852", 2));
 		let c = new Yo("#fff0d7", 4);
-		if (c.position.set(-2, 3, -4), this.weaponScene.add(c), this.weaponKey = c, rf(this), this.rig = new J(), this.weaponScene.add(this.rig), this.flash = new Ko("#ffdcb0", 0, 4), this.flash.position.set(.22, -.08, -.95), this.weaponScene.add(this.flash), this.boxGeometry = this.geo("rounded", () => new Ad(1, 1, 1, 3, .025)), this.wallGeometry = this.geo("wall", () => new Ad(1, 1, 1, 2, .008)), !n) {
+		if (c.position.set(-2, 3, -4), this.weaponScene.add(c), this.weaponKey = c, af(this), this.rig = new J(), this.weaponScene.add(this.rig), this.flash = new Ko("#ffdcb0", 0, 4), this.flash.position.set(.22, -.08, -.95), this.weaponScene.add(this.flash), this.boxGeometry = this.geo("rounded", () => new Ad(1, 1, 1, 3, .025)), this.wallGeometry = this.geo("wall", () => new Ad(1, 1, 1, 2, .008)), !n) {
 			let e = new Ge(1, 1, { type: this.profile.halfFloat ? f : l });
 			this.composer = new zd(this.renderer, e), this.composer.addPass(new Bd(this.scene, this.camera)), this.profile.ambientOcclusion && (this.ao = new Gd(this.scene, this.camera, 512, 512, 12), this.ao.kernelRadius = .45, this.ao.minDistance = .001, this.ao.maxDistance = .045, this.composer.addPass(this.ao));
 			let t = new Bd(this.weaponScene, this.weaponCamera);
@@ -19603,7 +19628,7 @@ var Ep = class {
 	async loadAssets() {
 		let t = 0, n = () => this.onProgress(++t, 14), r = new No(), i = async (t) => {
 			try {
-				let n = await r.loadAsync(Dp + t + "?assetVersion=" + Xd);
+				let n = await r.loadAsync(Op + t + "?assetVersion=" + Xd);
 				return this.disposed ? (n.dispose(), null) : (n.wrapS = n.wrapT = e, n.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy()), this.textures.add(n), n);
 			} catch {
 				return this.assetErrors.push(t), null;
@@ -19628,14 +19653,14 @@ var Ep = class {
 			$d(this),
 			(async () => {
 				try {
-					let e = await new Eu().loadAsync(Dp + "models/operator-v1.glb?assetVersion=" + Xd);
+					let e = await new Eu().loadAsync(Op + "models/operator-v1.glb?assetVersion=" + Xd);
 					if (this.disposed) {
 						this.disposeObject(e.scene);
 						return;
 					}
 					this.soldier = e, this.soldier.scene.traverse((e) => {
 						e.isMesh && (e.castShadow = !0, e.receiveShadow = !0, e.material && (e.material.roughness = .8, e.material.metalness = .1, this.materials.add(e.material)));
-					}), _f(this, e);
+					}), vf(this, e);
 				} catch {
 					this.assetErrors.push("soldier");
 				} finally {
@@ -19645,7 +19670,7 @@ var Ep = class {
 			(async () => {
 				try {
 					if (!this.profile.halfFloat) return;
-					let e = await new Td().loadAsync(Dp + "sky.hdr?assetVersion=" + Xd);
+					let e = await new Td().loadAsync(Op + "sky.hdr?assetVersion=" + Xd);
 					if (this.disposed) {
 						e.dispose();
 						return;
@@ -19657,7 +19682,7 @@ var Ep = class {
 					n();
 				}
 			})()
-		]), this.soldier && _f(this, this.soldier);
+		]), this.soldier && vf(this, this.soldier);
 	}
 	configure() {
 		let e = this.g.academy.preset, t = this.g.academy.options;
@@ -19678,7 +19703,7 @@ var Ep = class {
 	}
 	resize() {
 		if (this.disposed) return;
-		let { w: e, h: t } = this.g, [n, r] = xp(e, t, this.profile);
+		let { w: e, h: t } = this.g, [n, r] = Sp(e, t, this.profile);
 		this.renderer.setSize(n, r, !1), this.composer?.setSize(n, r), this.fxaa?.uniforms.resolution.value.set(1 / n, 1 / r), this.camera.aspect = e / t, this.camera.fov = B.radToDeg(this.g.verticalFov), this.camera.updateProjectionMatrix(), this.weaponCamera.aspect = e / t, this.weaponCamera.fov = B.radToDeg(2 * Math.atan(Math.tan(B.degToRad(26)) / (e / t))), this.weaponCamera.updateProjectionMatrix();
 	}
 	tileTexture(e, t) {
@@ -19702,7 +19727,7 @@ var Ep = class {
 	}
 	buildWorld() {
 		this.lastShadowAt = 0;
-		let e = this.g, t = e.arena.mapId, n = kp[t] || kp.outpost, r = e.level.length;
+		let e = this.g, t = e.arena.mapId, n = Ap[t] || Ap.outpost, r = e.level.length;
 		this.clearWorld(), this.buildingWorld = !0, this.mapKey = t, this.wallKeys = "", this.scene.fog.color.set(n.fog), this.scene.fog.density = t === "freight" ? .021 : .012;
 		let i = this.material({
 			color: "#d7d4cd",
@@ -19857,7 +19882,7 @@ var Ep = class {
 			right: c,
 			top: c,
 			bottom: -c
-		}), this.sun.shadow.camera.updateProjectionMatrix(), this.buildingWorld = !1, lf(this, t, r);
+		}), this.sun.shadow.camera.updateProjectionMatrix(), this.buildingWorld = !1, uf(this, t, r);
 	}
 	rebuildWalls() {
 		let e = this.g, t = e.level.map((e) => e.join("")).join("");
@@ -19883,7 +19908,7 @@ var Ep = class {
 				}), i.instanceMatrix.needsUpdate = !0, this.world.add(i), this.wallMeshes.push(i);
 			}
 		}
-		this.worldVisibility && (this.worldVisibility.dirty = !0), this.wallFittings(), this.buildingWorld || lf(this, e.arena.mapId, e.level.length);
+		this.worldVisibility && (this.worldVisibility.dirty = !0), this.wallFittings(), this.buildingWorld || uf(this, e.arena.mapId, e.level.length);
 	}
 	wallFittings() {
 		let e = this.material({
@@ -20029,7 +20054,7 @@ var Ep = class {
 		return c.position.set((r + .5 + o * .485) * $, n, (i + .5 + s * .485) * $), c.rotation.y = Math.atan2(-o, -s), c;
 	}
 	batchProtocolStatic(e) {
-		wp(e), this.worldVisibility && (this.worldVisibility.dirty = !0);
+		Tp(e), this.worldVisibility && (this.worldVisibility.dirty = !0);
 	}
 	buildProtocolBase(e) {
 		let t = new J();
@@ -20103,7 +20128,7 @@ var Ep = class {
 				], [
 					1.45,
 					.1,
-					.23
+					.32
 				]);
 				let s = this.box(t, o, [
 					i,
@@ -20112,9 +20137,9 @@ var Ep = class {
 				], [
 					1.22,
 					.045,
-					.15
+					.26
 				]);
-				s.castShadow = !1, this.protocolFixtures.push({
+				s.castShadow = !1, s.userData.noRoomCull = !0, s.frustumCulled = !1, this.protocolFixtures.push({
 					x: i,
 					y: 3.08,
 					z: a
@@ -20503,7 +20528,7 @@ var Ep = class {
 				.11,
 				.11
 			]);
-			let o = this.mesh(t, this.geo("radar-dish", () => new Ka(1.25, 24, 12, 0, Op, 0, Math.PI / 2)), r, [
+			let o = this.mesh(t, this.geo("radar-dish", () => new Ka(1.25, 24, 12, 0, kp, 0, Math.PI / 2)), r, [
 				e,
 				8.8,
 				i
@@ -21244,9 +21269,9 @@ var Ep = class {
 				e.isSkinnedMesh && (e.skeleton.update(), e.computeBoundingBox());
 			});
 			let o = new Je().setFromObject(r), s = 1.82 / (o.max.y - o.min.y);
-			r.scale.multiplyScalar(s), r.position.y -= o.min.y * s, xf(this, r, e), this.g.mode !== "protocol" && r.traverse((t) => {
+			r.scale.multiplyScalar(s), r.position.y -= o.min.y * s, Sf(this, r, e), this.g.mode !== "protocol" && r.traverse((t) => {
 				if (t.isMesh) {
-					let n = fp(e.outfit), r = this.skinTexture(n);
+					let n = pp(e.outfit), r = this.skinTexture(n);
 					t.material.color.set("#ffffff"), t.material.map ||= r, t.geometry.computeBoundingBox();
 					let i = t.geometry.boundingBox, a = t.material.onBeforeCompile;
 					t.material.onBeforeCompile = (e) => {
@@ -21301,7 +21326,7 @@ var Ep = class {
 		let s = {
 			root: n,
 			model: r,
-			outfit: fp(e.outfit).id,
+			outfit: pp(e.outfit).id,
 			weapon: e.weapon,
 			mixer: i,
 			actions: a,
@@ -21342,17 +21367,17 @@ var Ep = class {
 		let n = this.weaponMaterials(!1);
 		e.equipmentMaterials = Object.values(n);
 		let r = new J();
-		e.root.add(r), this.buildWeapon(r, t.weapon, n, !1), t.weapon === "carbine" && (r.userData.carbine.position.z = .445), t.weapon === "carbine" ? Ff(this, r) : this.mergeStatic(r), r.position.set(.15, 1.25, -.14), r.scale.setScalar(1.1), e.equipment = r, e.model.traverse((t) => {
+		e.root.add(r), this.buildWeapon(r, t.weapon, n, !1), t.weapon === "carbine" && (r.userData.carbine.position.z = .445), t.weapon === "carbine" ? If(this, r) : this.mergeStatic(r), r.position.set(.15, 1.25, -.14), r.scale.setScalar(1.1), e.equipment = r, e.model.traverse((t) => {
 			t.name.endsWith("RightHand") && (e.weaponAnchor = t);
-		}), t.weapon === "carbine" && e.model.userData.riggedOperator && (r.scale.setScalar(1), Xf(e));
+		}), t.weapon === "carbine" && e.model.userData.riggedOperator && (r.scale.setScalar(1), Zf(e));
 	}
 	skinTexture(t) {
 		if (this.skinTextures ??= /* @__PURE__ */ new Map(), this.skinTextures.has(t.id)) return this.skinTextures.get(t.id);
-		let n = new xi(mp(t));
+		let n = new xi(hp(t));
 		return n.colorSpace = E, n.wrapS = n.wrapT = e, n.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy()), this.textures.add(n), this.skinTextures.set(t.id, n), n;
 	}
 	dressActor(e, t) {
-		let n = fp(t.outfit), r = this.skinTexture(n), i = this.material({
+		let n = pp(t.outfit), r = this.skinTexture(n), i = this.material({
 			color: "#ffffff",
 			map: r,
 			roughness: .93
@@ -21537,7 +21562,7 @@ var Ep = class {
 				.04
 			]);
 		} else {
-			this.mesh(m, this.geo("combatHelmet", () => new Ka(1, 24, 16, 0, Op, 0, Math.PI * .6)), i, [
+			this.mesh(m, this.geo("combatHelmet", () => new Ka(1, 24, 16, 0, kp, 0, Math.PI * .6)), i, [
 				0,
 				2.09,
 				.025
@@ -21914,11 +21939,11 @@ var Ep = class {
 				continue;
 			}
 			let o = this.actors.get(a.id);
-			o && (o.outfit !== fp(a.outfit).id || o.weapon !== a.weapon) && (this.disposeActor(o), this.actors.delete(a.id), o = null), o ||= this.makeActor(a), o.patch.color.set(this.g.mode === "protocol" ? "#97a79b" : a.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465");
+			o && (o.outfit !== pp(a.outfit).id || o.weapon !== a.weapon) && (this.disposeActor(o), this.actors.delete(a.id), o = null), o ||= this.makeActor(a), o.patch.color.set(this.g.mode === "protocol" ? "#97a79b" : a.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465");
 			let s = a.hp > 0, c = a.cloakedUntil > this.g.time && a.team !== this.g.player.team, l = performance.now() / 1e3;
 			s ? o.deadAt = null : o.deadAt === null && (o.deadAt = l);
 			let u = s ? 0 : Math.min(1, (l - o.deadAt) / .85);
-			o.root.visible = (s || l - o.deadAt < 2.5) && (!c || Math.hypot(a.x - n.x, a.y - n.y) < 1.3), s && (a.slideUntil, this.g.time), o.root.scale.y = 1, this.g.mode === "protocol" && this.protocolPowerOut && Math.hypot(a.x - n.x, a.y - n.y) > 2.6 && (o.root.visible = !1), o.root.visible = o.root.visible && Cp(this.g.arena, n, a, i);
+			o.root.visible = (s || l - o.deadAt < 2.5) && (!c || Math.hypot(a.x - n.x, a.y - n.y) < 1.3), s && (a.slideUntil, this.g.time), o.root.scale.y = 1, this.g.mode === "protocol" && this.protocolPowerOut && Math.hypot(a.x - n.x, a.y - n.y) > 2.6 && (o.root.visible = !1), o.root.visible = o.root.visible && wp(this.g.arena, n, a, i);
 			let d = Math.hypot(a.x - n.x, a.y - n.y), f = d > (this.mobileDevice ? 3.8 : 6);
 			(o.farDetail === void 0 || Math.abs(d - (this.mobileDevice ? 3.8 : 6)) > .4) && (o.farDetail = f), o.detailMeshes ||= (() => {
 				let e = [];
@@ -21928,19 +21953,19 @@ var Ep = class {
 			})();
 			for (let e of o.detailMeshes) e.visible = e.userData.operatorLOD === +!!o.farDetail;
 			o.root.visible ? (this.actorStats.visible++, o.farDetail && this.actorStats.distant++) : this.actorStats.culled++, o.root.position.set(a.x * $, Math.sin(Math.min(1, Math.max(0, ((a.jumpUntil || 0) - this.g.time) / .5)) * Math.PI) * $, a.y * $), o.root.rotation.y = -Math.PI / 2 - a.a;
-			let p = o.root.visible && wf(this, o, a, Math.max(0, Math.min(.1, e - this.lastTime)), r);
+			let p = o.root.visible && Tf(this, o, a, Math.max(0, Math.min(.1, e - this.lastTime)), r);
 			o.x = a.x, o.y = a.y;
 			let m = Math.max(0, 1 - (this.g.time - a.hit) / .18);
-			o.model.rotation.z = 0, o.root.rotation.z = s ? m * .05 : o.deathAnimated ? 0 : this.motion.matches ? Math.PI / 2 : u * 1.5, p && this.updateSkinParts(o), o.equipment && o.root.visible && (p && Zf(o, Math.max(0, Math.min(1, (a.reloadUntil - this.g.time) / 1.4))) || (o.weaponAnchor && p ? (o.root.updateMatrixWorld(!0), o.weaponAnchor.getWorldPosition(o.equipment.position), o.root.worldToLocal(o.equipment.position), o.equipment.position.z -= .05, a.weapon === "carbine" && (o.equipment.position.y += .1)) : o.weaponAnchor || (o.equipment.position.y = 1.25 + (o.action === "Idle" ? 0 : Math.sin(e * 7 + a.phase) * .025))), o.grip || (o.equipment.rotation.x = e - a.shotAt < .15 ? -.12 : 0), Kf(o.equipment.userData.carbine, Math.max(0, Math.min(1, (a.reloadUntil - this.g.time) / 1.4)), Math.max(0, 1 - (e - a.shotAt) / .16)));
+			o.model.rotation.z = 0, o.root.rotation.z = s ? m * .05 : o.deathAnimated ? 0 : this.motion.matches ? Math.PI / 2 : u * 1.5, p && this.updateSkinParts(o), o.equipment && o.root.visible && (p && Qf(o, Math.max(0, Math.min(1, (a.reloadUntil - this.g.time) / 1.4))) || (o.weaponAnchor && p ? (o.root.updateMatrixWorld(!0), o.weaponAnchor.getWorldPosition(o.equipment.position), o.root.worldToLocal(o.equipment.position), o.equipment.position.z -= .05, a.weapon === "carbine" && (o.equipment.position.y += .1)) : o.weaponAnchor || (o.equipment.position.y = 1.25 + (o.action === "Idle" ? 0 : Math.sin(e * 7 + a.phase) * .025))), o.grip || (o.equipment.rotation.x = e - a.shotAt < .15 ? -.12 : 0), qf(o.equipment.userData.carbine, Math.max(0, Math.min(1, (a.reloadUntil - this.g.time) / 1.4)), Math.max(0, 1 - (e - a.shotAt) / .16)));
 		}
 		for (let [e, n] of this.actors) t.has(e) || (this.disposeActor(n), this.actors.delete(e));
 	}
 	weaponMaterials(e = !0) {
-		let t = Of(this, e);
-		return this.g.mode !== "protocol" && (t.cloth.map = this.skinTexture(fp(this.g.camera().outfit)), t.cloth.color.set("#ffffff")), t;
+		let t = kf(this, e);
+		return this.g.mode !== "protocol" && (t.cloth.map = this.skinTexture(pp(this.g.camera().outfit)), t.cloth.color.set("#ffffff")), t;
 	}
 	hand(e, t, n, r, i) {
-		return Bf(this, e, t, n, r) || jf(this, e, t, n, r, i);
+		return Vf(this, e, t, n, r) || Mf(this, e, t, n, r, i);
 	}
 	firearm(e, t, n = "rifle", r = 0, i = !0) {
 		let a = new J();
@@ -22129,7 +22154,7 @@ var Ep = class {
 	}
 	updateWeapon(e = this.g.camera().weapon) {
 		if (e === this.weaponId && this.weaponOutfit === this.g.camera().outfit) return;
-		Hf(this.rig), this.rig.traverse((e) => {
+		Uf(this.rig), this.rig.traverse((e) => {
 			if (e.isMesh) {
 				e.userData.ownedGeometry && e.geometry.dispose();
 				let t = Array.isArray(e.material) ? e.material : [e.material];
@@ -22141,17 +22166,17 @@ var Ep = class {
 		for (let e of this.weaponTextures) e.dispose(), this.textures.delete(e);
 		this.weaponTextures.clear(), this.weaponId = e, this.weaponOutfit = this.g.camera().outfit;
 		let t = this.weaponMaterials();
-		this.buildWeapon(this.rig, e, t), this.rig.position.set(e === "twin" || e === "brawler" ? .05 : .23, -.2, 0), this.rig.rotation.set(.02, -.07, -.025), If(this, e);
+		this.buildWeapon(this.rig, e, t), this.rig.position.set(e === "twin" || e === "brawler" ? .05 : .23, -.2, 0), this.rig.rotation.set(.02, -.07, -.025), Lf(this, e);
 	}
 	buildWeapon(e, t, n, r = !0) {
 		if (t === "carbine") {
-			Gf(this, e, n, r);
+			Kf(this, e, n, r);
 			return;
 		}
 		let i = (...e) => {
 			r && this.hand(...e);
 		};
-		if (n.polymer.color.set(up(t).color).multiplyScalar(.55), t === "venom" && n.steel.color.set("#6eb75a"), t === "veil" && n.steel.color.set("#c6b6e0"), [
+		if (n.polymer.color.set(dp(t).color).multiplyScalar(.55), t === "venom" && n.steel.color.set("#6eb75a"), t === "veil" && n.steel.color.set("#c6b6e0"), [
 			"carbine",
 			"scatter",
 			"twin",
@@ -22616,19 +22641,17 @@ var Ep = class {
 		}
 		let r = n.sabotage?.powerUntil > this.g.time;
 		this.protocolPowerOut = r;
-		let i = this.g.academy.options.lighting, a = [...this.protocolMetadata()?.rooms || [], ...this.protocolMetadata()?.corridors || []].some((e) => e.roofed !== !1 && t.x >= e.x && t.x < e.x + e.w && t.y >= e.y && t.y < e.y + e.h);
-		this.sun.intensity = r ? .28 : i ? 4.2 : 1.7, this.rim.intensity = r ? .08 : 1.15, this.hemisphere.intensity = r ? .07 : i ? a ? .43 : .55 : 1.3, this.scene.environmentIntensity = r ? .035 : a ? .28 : .45;
 		for (let e of this.protocolLightMaterials) e.emissiveIntensity = r ? .035 : 1.6, e.color.set(r ? "#414d4f" : "#d3edf0");
-		let o = n.self?.tasks || [];
+		let i = n.self?.tasks || [];
 		for (let [e, t] of this.protocolScreens) {
-			let i = n.mission?.flightTasks?.find((t) => t.id === e || t.id === "landing" && e === "medevac-radio") || o.find((t) => t.stationId === e);
-			t.emissiveIntensity = r ? .015 : i && !i.done ? .9 : .4, t.color.set(r ? "#233538" : i?.done ? "#659d80" : "#a0bdc0");
+			let a = n.mission?.flightTasks?.find((t) => t.id === e || t.id === "landing" && e === "medevac-radio") || i.find((t) => t.stationId === e);
+			t.emissiveIntensity = r ? .015 : a && !a.done ? .9 : .4, t.color.set(r ? "#233538" : a?.done ? "#659d80" : "#a0bdc0");
 		}
 		this.protocolTorch.intensity = r ? 115 : 0, this.protocolTorch.visible = !0, this.camera.updateMatrixWorld(), this.camera.getWorldDirection(this.torchDirection), this.protocolTorch.position.copy(this.camera.position), this.protocolTorch.position.y -= .14, this.protocolTorch.target.position.copy(this.protocolTorch.position).addScaledVector(this.torchDirection, 12), this.protocolTorch.target.updateMatrixWorld();
-		let s = /* @__PURE__ */ new Set();
+		let a = /* @__PURE__ */ new Set();
 		for (let e of n.bombs || []) {
 			if (e.state !== "armed") continue;
-			s.add(e.id);
+			a.add(e.id);
 			let n = this.protocolCharges.get(e.id);
 			if (!n) {
 				n = new J(), this.dynamic.add(n), this.chargeCaseMaterial ||= this.material({
@@ -22675,10 +22698,10 @@ var Ep = class {
 			}
 			n.position.set(e.x * $, .045, e.y * $), n.visible = !r || Math.hypot(e.x - t.x, e.y - t.y) <= 2.2;
 		}
-		for (let [e, t] of this.protocolCharges) s.has(e) || (this.removeProtocolObject(t), this.protocolCharges.delete(e));
-		let c = /* @__PURE__ */ new Set();
+		for (let [e, t] of this.protocolCharges) a.has(e) || (this.removeProtocolObject(t), this.protocolCharges.delete(e));
+		let o = /* @__PURE__ */ new Set();
 		for (let i of n.bodies || []) {
-			c.add(i.id);
+			o.add(i.id);
 			let n = this.protocolBodies.get(i.id);
 			if (!n) {
 				let e = "protocol-body:" + i.id;
@@ -22695,9 +22718,14 @@ var Ep = class {
 				} else n.root.rotation.set(0, 0, -Math.PI / 2);
 				n.equipment && (n.equipment.visible = !1), this.protocolBodies.set(i.id, n);
 			}
-			n.root.position.set(i.x * $, n.corpseGround ?? .3, i.y * $), n.actions.Death && (n.root.rotation.y = -Math.PI / 2 - (e.entities.find((e) => e.id === i.victimId)?.a || 0)), n.root.visible = (!r || Math.hypot(i.x - t.x, i.y - t.y) <= 2.2) && !this.actors.get(i.victimId)?.root.visible;
+			n.victimId = i.victimId, n.root.position.set(i.x * $, n.corpseGround ?? .3, i.y * $), n.actions.Death && (n.root.rotation.y = -Math.PI / 2 - (e.entities.find((e) => e.id === i.victimId)?.a || 0)), n.root.visible = (!r || Math.hypot(i.x - t.x, i.y - t.y) <= 2.2) && !this.actors.get(i.victimId)?.root.visible;
 		}
-		for (let [e, t] of this.protocolBodies) c.has(e) || (this.removeProtocolObject(t.root, !0), this.protocolBodies.delete(e));
+		for (let [e, t] of this.protocolBodies) o.has(e) || (this.removeProtocolObject(t.root, !0), this.protocolBodies.delete(e));
+	}
+	hideCameraBody(e) {
+		let t = this.actors.get(e.id);
+		t && (t.root.visible = !1);
+		for (let t of this.protocolBodies.values()) t.victimId === e.id && (t.root.visible = !1);
 	}
 	render() {
 		if (this.disposed || this.contextUnavailable) return !1;
@@ -22714,13 +22742,13 @@ var Ep = class {
 		let i = e.camera(), a = e.cameraPitch, o = this.frameProtocolView, s = e.arena.mapId === "medevac" && o?.protocol?.mission?.vehicle?.pilotId === i.id, c = performance.now(), l = Math.min(.1, (c - (this.lastRenderAt || c)) / 1e3), u = i.slideUntil > e.time ? .7 : i.crouching ? 1.17 : 1.65;
 		this.lastRenderAt = c, this.eyeHeight ??= 1.65, this.eyeHeight += (u - this.eyeHeight) * (1 - Math.exp(-l * 18));
 		let d = this.motion.matches ? 0 : (e.deathProgress || 0) ** 2;
-		if (this.camera.position.set(i.x * $, e.deathSequence ? 1.65 - d * 1.4 : this.eyeHeight, i.y * $ + (s ? .85 : 0)), this.camera.rotation.set(a - d * .25, -i.a - Math.PI / 2, d * .5, "YXZ"), this.updateProtocol(o, i), this.updateMedicalMission(o?.protocol?.mission, t), of(this, o, i), e.arena.mapId === "medevac" && !this.motion.matches) {
+		if (this.camera.position.set(i.x * $, e.deathSequence ? 1.65 - d * 1.4 : this.eyeHeight, i.y * $ + (s ? .85 : 0)), this.camera.rotation.set(a - d * .25, -i.a - Math.PI / 2, d * .5, "YXZ"), this.updateProtocol(o, i), this.updateMedicalMission(o?.protocol?.mission, t), sf(this, o, i, l), e.arena.mapId === "medevac" && !this.motion.matches) {
 			let e = Number(o?.protocol?.mission?.vehicle?.heading) || 0;
 			this.camera.rotation.z = B.clamp(-e * .055, -.085, .085);
 		}
 		this.updateActors(t);
-		let f = (this.takedown ||= new vp(this)).update(e);
-		this.camera.updateMatrixWorld(!0), (this.worldVisibility ||= new Ep(this)).update(i, f ? 1 : a, c), (this.identification ||= new qf(this)).update(o, i, f);
+		let f = (this.takedown ||= new yp(this)).update(e);
+		f || this.hideCameraBody(i), this.camera.updateMatrixWorld(!0), (this.worldVisibility ||= new Dp(this)).update(i, f ? 1 : a, c), (this.identification ||= new Jf(this)).update(o, i, f);
 		let p = e.protocolUI?.combatMarker, m = o?.protocol?.phase === "combat" && o.protocol.combat, h = m && e.arena.entities.find((e) => e.id === m.targetId);
 		if (p) {
 			let t = !f && !!h && h.id !== i.id && h.hp > 0 && Math.hypot(h.x - i.x, h.y - i.y) <= (this.protocolPowerOut ? 2.6 : 7) && e.arena.visible(i, h);
@@ -22737,15 +22765,15 @@ var Ep = class {
 		}
 		this.updateProjectiles(t), this.updateWeapon();
 		let g = o?.protocol?.phase === "combat", _ = e.mode === "protocol" && !g ? 0 : Math.max(0, 1 - (t - i.shotAt) / .16), v = Math.max(0, Math.min(1, (i.reloadUntil - t) / 1.4));
-		this.rig.position.y = -.2 * Math.max(1, this.g.h / this.g.w) - (e.mode === "protocol" && !g ? .075 : 0) - (v > 0 ? Math.sin(v * Math.PI) * .25 : 0) + (this.motion.matches ? 0 : Math.sin(e.step) * .005), this.rig.position.y -= d * .65, this.rig.position.z = _ * .04, this.rig.rotation.x = .02 - _ * .075, this.rig.rotation.z = -.025 + Math.sin(v * Math.PI) * .3, this.flash.intensity = _ > .65 ? 3 : 0, Kf(this.rig.userData.carbine, v, _), this.rig.visible = (i.hp > 0 || !!e.deathSequence && e.deathProgress < .65) && !s && !f;
+		this.rig.position.y = -.2 * Math.max(1, this.g.h / this.g.w) - (e.mode === "protocol" && !g ? .075 : 0) - (v > 0 ? Math.sin(v * Math.PI) * .25 : 0) + (this.motion.matches ? 0 : Math.sin(e.step) * .005), this.rig.position.y -= d * .65, this.rig.position.z = _ * .04, this.rig.rotation.x = .02 - _ * .075, this.rig.rotation.z = -.025 + Math.sin(v * Math.PI) * .3, this.flash.intensity = _ > .65 ? 3 : 0, qf(this.rig.userData.carbine, v, _), this.rig.visible = (i.hp > 0 || !!e.deathSequence && e.deathProgress < .65) && !s && !f;
 		let y = !["training", "protocol"].includes(e.mode) && e.time > e.zone.delay && (Math.abs(i.x - e.zone.cx) > e.zone.half || Math.abs(i.y - e.zone.cy) > e.zone.half);
-		return this.scene.fog.color.set(this.protocolPowerOut ? "#101d22" : y ? "#827276" : (kp[e.arena.mapId] || kp.outpost).fog), this.scene.fog.density = this.protocolPowerOut ? .045 : y ? .065 : e.arena.mapId === "medevac" && !o?.protocol?.mission?.vehicle?.arrived ? .002 : .009, this.renderer.shadowMap.enabled && (!this.lastShadowAt || c - this.lastShadowAt >= 1e3 / 30) && (this.renderer.shadowMap.needsUpdate = !0, this.lastShadowAt = c), this.renderer.info.reset(), (this.telemetry ||= new Sp(this.renderer)).begin(), !this.composer || e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), this.telemetry.end(), this.metrics = {
+		return this.scene.fog.color.set(this.protocolPowerOut ? "#101d22" : y ? "#827276" : (Ap[e.arena.mapId] || Ap.outpost).fog), this.scene.fog.density = this.protocolPowerOut ? .045 : y ? .065 : e.arena.mapId === "medevac" && !o?.protocol?.mission?.vehicle?.arrived ? .002 : .009, this.renderer.shadowMap.enabled && (!this.lastShadowAt || c - this.lastShadowAt >= 1e3 / 30) && (this.renderer.shadowMap.needsUpdate = !0, this.lastShadowAt = c), this.renderer.info.reset(), (this.telemetry ||= new Cp(this.renderer)).begin(), !this.composer || e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), this.telemetry.end(), this.metrics = {
 			gpuMs: this.telemetry.gpuMs,
 			drawCalls: this.renderer.info.render.calls,
 			triangles: this.renderer.info.render.triangles,
 			...this.actorStats,
 			...this.worldStats
-		}, this.takedown.restoreActors(), this.lastTime = t, !0;
+		}, this.takedown.restoreActors(), f || this.hideCameraBody(i), this.lastTime = t, !0;
 	}
 	disposeObject(e) {
 		e.traverse((e) => {
@@ -22757,7 +22785,7 @@ var Ep = class {
 	}
 	dispose() {
 		if (!this.disposed) {
-			this.disposed = !0, this.telemetry?.dispose(), this.identification?.dispose(), this.takedown?.dispose(), Hf(this.rig);
+			this.disposed = !0, this.telemetry?.dispose(), this.identification?.dispose(), this.takedown?.dispose(), Uf(this.rig);
 			for (let e of this.actors.values()) e.mixer?.stopAllAction(), e.model.traverse((e) => {
 				e.isSkinnedMesh && e.skeleton.dispose();
 			});
@@ -22772,4 +22800,4 @@ var Ep = class {
 	}
 };
 //#endregion
-export { Ap as MilitaryRenderer };
+export { jp as MilitaryRenderer };

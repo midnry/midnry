@@ -158,6 +158,7 @@ export type PublicProtocolState = {
   stations: ProtocolStation[];
   vents: ProtocolVent[];
   emergency: { id?: string; x: number; y: number };
+  emergencyReadyAt?: number;
   meeting: ProtocolMeeting | null;
   combat: {
     id: string;
