@@ -1,5 +1,6 @@
 /** Actual receiver, curved magazine, sights and independently moving hardware. */
 import * as THREE from "three";
+import {updateRiggedHand} from './realism-hands.js';
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 const smooth = (x) => {
   x = THREE.MathUtils.clamp(x, 0, 1);
@@ -115,13 +116,14 @@ export function buildCarbine(r, parent, m, hands = true) {
   handle.userData.weaponMoving = true;
   gun.add(handle);
   rounded(handle, m.metal, [-0.028, 0.04, -0.421], [0.047, 0.009, 0.014]);
-  let supportHand;
+  let supportHand, firingHand;
   if (hands) {
-    r.hand(gun, 0.032, -0.105, -0.442, m);
+    firingHand=r.hand(gun, 0.032, -0.105, -0.442, m);
+    firingHand.userData.weaponMoving=true;
     supportHand = r.hand(gun, -0.044, -0.056, -0.757, m);
     supportHand.userData.weaponMoving = true;
   }
-  const parts = { magazine, bolt, handle, supportHand };
+  const parts = { magazine, bolt, handle, supportHand, firingHand };
   gun.userData.carbineParts = parts;
   parent.userData.carbine = gun;
   return gun;
@@ -130,6 +132,9 @@ export function buildCarbine(r, parent, m, hands = true) {
 export function animateCarbine(gun, reload, recoil) {
   const parts = gun?.userData.carbineParts;
   if (!parts) return;
+  const time=performance.now()/1000;
+  updateRiggedHand(parts.firingHand,reload,time);
+  updateRiggedHand(parts.supportHand,reload,time);
   const t = 1 - reload,
     remove = reload > 0 ? phase(t, 0.12, 0.4) * (1 - phase(t, 0.61, 0.82)) : 0;
   parts.magazine.position.y = -0.067 - remove * 0.24;

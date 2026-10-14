@@ -1791,6 +1791,7 @@
       import { VictimDeathUI } from "./outpost-death-ui.js";
       import { ConnectionUI } from "./outpost-connection.js";
       import { AssetCacheUI } from "./outpost-asset-cache.js";
+      import { ObjectiveNavigation } from "./outpost-navigation.js";
       import { Academy, FrameBudget, PRESETS } from "./outpost-academy.js";
       import { newCompatibilityReport, updateCheck, checkBrowser, checkScene } from "./outpost-compatibility.js";
       import { Retention } from "./outpost-retention.js";
@@ -1899,6 +1900,7 @@
             this.protocolUI = new ProtocolUI(this);
             this.spectator = new SpectatorUI(this);
             this.connection = new ConnectionUI(this);
+            this.navigation = new ObjectiveNavigation(this, this.protocolUI);
             this.assetCache = new AssetCacheUI(this);
             this.protocolUI.refreshMenu();
             this.initMilitaryStatus();
@@ -2068,7 +2070,7 @@
               updateCheck(this.compatibilityReport, "performance", "checking", "The loaded scene will be tested at your selected graphics quality.");
               this.refreshCompatibility();
               const { MilitaryRenderer } = await import(
-                `./outpost-military.js?v=protocol-tactical-20261013&retry=${attempt - 1}`
+                `./outpost-military.js?v=protocol-wayfinding-20261013&retry=${attempt - 1}`
               );
               if (this.abort.signal.aborted) return;
               const renderer = new MilitaryRenderer(this, (done,total) => {
@@ -3520,6 +3522,7 @@
             this.frame = requestAnimationFrame(this.loop);
           }
           destroy() {
+            this.navigation?.dispose();
             this.assetCache?.dispose();
             this.connection?.dispose();
             this.deathUI?.dispose();

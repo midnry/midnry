@@ -11,7 +11,7 @@ const beat = (t, a, b) => ease((t - a) / (b - a));
 function joint(model, name) {
   let result;
   model.traverse((o) => {
-    if (o.isBone && o.name.replace(/[^a-z]/gi, "").endsWith(name)) result = o;
+    if (o.isBone && o.name.replace(/[^a-z0-9]/gi, "").endsWith(name)) result = o;
   });
   return result;
 }
@@ -32,6 +32,7 @@ export class VictimTakedown {
       model = clone(r.soldier.scene),
       before = new Set(r.materials);
     const mixer = new THREE.AnimationMixer(model);
+    const actions={};for(const clip of r.soldier.animations)actions[clip.name]=mixer.clipAction(clip);
     const clip = r.soldier.animations.find((c) => c.name === "Idle");
     if (clip) mixer.clipAction(clip).play();
     mixer.update(0);
@@ -55,7 +56,7 @@ export class VictimTakedown {
     model.traverse((o) => {
       if (o.isBone) bones.set(o.name, { joint: o, base: o.quaternion.clone() });
     });
-    return { root, model, mixer, bones, materials: [...r.materials].filter((m) => !before.has(m)) };
+    return { root, model, mixer, actions, baseY:model.position.y, bones, materials: [...r.materials].filter((m) => !before.has(m)) };
   }
   build() {
     this.victim = this.makeHuman();
@@ -110,7 +111,21 @@ export class VictimTakedown {
   bend(human, name, x = 0, y = 0, z = 0) {
     const bone = joint(human.model, name);
     if (!bone) return;
-    bone.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z)));
+    this.root.updateMatrixWorld(true);
+    const parent=bone.parent.getWorldQuaternion(new THREE.Quaternion()),basis=this.root.getWorldQuaternion(new THREE.Quaternion());
+    const delta=parent.clone().invert().multiply(basis).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z))).multiply(basis.clone().invert()).multiply(parent);
+    bone.quaternion.premultiply(delta);
+  }
+  capturedPose(human,name,t){
+    const action=human.actions[name];if(!action)return;
+    human.mixer.stopAllAction();action.reset().setEffectiveWeight(1).setEffectiveTimeScale(0).play();
+    action.time=THREE.MathUtils.clamp(t,0,.94)*action.getClip().duration;human.mixer.update(0);human.model.position.y=human.baseY;
+  }
+  /** Contact targets follow anatomy as captured reactions bend the body. */
+  bodyPoint(human,name,offset){
+    this.root.updateMatrixWorld(true);
+    const point=joint(human.model,name).getWorldPosition(new THREE.Vector3());
+    this.root.worldToLocal(point);point.add(new THREE.Vector3(...offset));return point.toArray();
   }
   /** Two-bone hand reach in scene space, preserving a bent elbow. */
   reach(human, side, point) {
@@ -177,6 +192,9 @@ export class VictimTakedown {
         a = this.attacker;
       this.resetHuman(v);
       this.resetHuman(a);
+      const reaction=sequence.kind==='suffocation'||sequence.kind==='neck-breaker'?'Struggle':'Hit';
+      const attack=sequence.kind==='back-stab'?'Stab':sequence.kind==='back-breaker'?'Grapple':sequence.kind==='suppressed-shot'?'Idle':'Stealth';
+      this.capturedPose(v,reaction,t*.65);this.capturedPose(a,attack,t*.78);
       a.root.position.z = 0.42;
       const grab = beat(t, 0.08, 0.32),
         strike = beat(t, 0.38, 0.53),
@@ -189,7 +207,7 @@ export class VictimTakedown {
       const amount = reduced ? 0.25 : 1;
       if (sequence.kind === "back-stab") {
         this.bend(v, "Spine", strike * 0.26 * amount);
-        this.reach(a, "Left", [-0.12, 1.47, 0.01]);
+        this.reach(a, "Left", this.bodyPoint(v,"LeftShoulder",[-.04,0,.08]));
         this.reach(a, "Right", [0.12, 1.12, 0.44 - strike * 0.22 + release * 0.18]);
         this.handProp(this.knife, "Right");
         this.knife.rotation.set(-Math.PI / 2, 0, 0.28);
@@ -204,17 +222,15 @@ export class VictimTakedown {
         this.bend(v, "Head", -strike * 0.15 * amount);
       } else if (sequence.kind === "back-breaker") {
         a.root.position.z = 0.3;
-        this.reach(a, "Left", [-0.13, 1.33, 0.0]);
-        this.reach(a, "Right", [0.13, 1.16, 0.0]);
         v.root.position.y = grab * 0.12 * amount;
         v.root.rotation.x = -strike * 0.42 * amount;
         this.bend(v, "Spine1", -strike * 0.42 * amount);
         this.bend(v, "LeftUpLeg", grab * 0.32 * amount);
         this.bend(a, "LeftUpLeg", strike * 0.3 * amount);
         this.bend(a, "LeftLeg", -strike * 0.45 * amount);
+        this.reach(a,"Left",this.bodyPoint(v,"Spine1",[-.17,.06,.08]));
+        this.reach(a,"Right",this.bodyPoint(v,"Spine",[.17,.03,.08]));
       } else if (sequence.kind === "neck-breaker") {
-        this.reach(a, "Left", [-0.065, 1.65, -0.015]);
-        this.reach(a, "Right", [0.065, 1.56, -0.035]);
         this.bend(
           v,
           "Head",
@@ -223,15 +239,17 @@ export class VictimTakedown {
           strike * 0.28 * amount,
         );
         this.bend(v, "Spine2", strike * 0.12 * amount);
-        this.reach(v, "Left", [-0.16, 1.53, -0.12]);
-        this.reach(v, "Right", [0.12, 1.55, -0.12]);
+        this.reach(a,"Left",this.bodyPoint(v,"Head",[-.10,.05,-.06]));
+        this.reach(a,"Right",this.bodyPoint(v,"Head",[.08,-.06,-.12]));
+        this.reach(v,"Left",this.bodyPoint(v,"Head",[-.16,-.14,-.14]));
+        this.reach(v,"Right",this.bodyPoint(v,"Head",[.14,-.12,-.14]));
       } else {
-        this.reach(a, "Right", [0.04, 1.61, -0.055]);
-        this.reach(a, "Left", [-0.1, 1.57, 0.0]);
-        this.reach(v, "Left", [-0.08, 1.57, -0.1]);
-        this.reach(v, "Right", [0.09, 1.55, -0.1]);
         this.bend(v, "Spine1", Math.sin(t * 22) * 0.04 * amount);
         this.bend(v, "Head", -0.13 * grab * amount);
+        this.reach(a,"Right",this.bodyPoint(v,"Head",[.04,-.03,-.13]));
+        this.reach(a,"Left",this.bodyPoint(v,"Neck",[-.10,.02,.05]));
+        this.reach(v,"Left",this.bodyPoint(v,"Head",[-.12,-.09,-.18]));
+        this.reach(v,"Right",this.bodyPoint(v,"Head",[.12,-.10,-.18]));
       }
       this.root.updateMatrixWorld(true);
     }

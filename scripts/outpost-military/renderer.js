@@ -27,6 +27,9 @@ import {
   batchWeapon,
 } from "./realism-weapons.js";
 import { buildCarbine, animateCarbine } from "./realism-carbine.js";
+import { PlayerIdentification } from "./realism-identification.js";
+import {buildRiggedHand,disposeRiggedHands} from './realism-hands.js';
+import {bindWeaponGrip,updateWeaponGrip} from './realism-grips.js';
 import { outfitOf, weaponOf } from "../../public/games/outpost-content.js";
 import { skinPattern } from "../../public/games/outpost-skins.js";
 import { VictimTakedown } from "./takedowns.js";
@@ -265,7 +268,7 @@ export class MilitaryRenderer {
   }
   async loadAssets() {
     let completed = 0;
-    const complete = () => this.onProgress(++completed, 17);
+    const complete = () => this.onProgress(++completed, 14);
     const loader = new THREE.TextureLoader();
     const load = async (path) => {
       try {
@@ -299,9 +302,6 @@ export class MilitaryRenderer {
         "glove-color.jpg",
         "glove-normal.jpg",
         "glove-roughness.jpg",
-        "operator-skin-color.jpg",
-        "operator-skin-normal.jpg",
-        "operator-skin-roughness.jpg",
       ].map((name) => load("textures/" + name)),
     );
     [
@@ -317,13 +317,9 @@ export class MilitaryRenderer {
       this.gloveColor,
       this.gloveNormal,
       this.gloveRough,
-      this.faceColor,
-      this.faceNormal,
-      this.faceRough,
     ] = maps;
     if (this.gunColor) this.gunColor.colorSpace = THREE.SRGBColorSpace;
     if (this.gloveColor) this.gloveColor.colorSpace = THREE.SRGBColorSpace;
-    if (this.faceColor) this.faceColor.colorSpace = THREE.SRGBColorSpace;
     if (this.groundColor) this.groundColor.colorSpace = THREE.SRGBColorSpace;
     if (this.metalColor) this.metalColor.colorSpace = THREE.SRGBColorSpace;
     await Promise.all([
@@ -1769,8 +1765,15 @@ export class MilitaryRenderer {
     if (this.soldier) {
       model = cloneSkeleton(this.soldier.scene);
       mixer = new THREE.AnimationMixer(model);
-      for (const clip of this.soldier.animations)
-        if (clip.name !== "TPose") actions[clip.name] = mixer.clipAction(clip);
+      const idleClip=this.soldier.animations.find(c=>c.name==="Idle");
+      for (const clip of this.soldier.animations) {
+        if (clip.name === "TPose") continue;
+        if (["Reload","Hit"].includes(clip.name) && idleClip) {
+          const layer=clip.clone();layer.tracks=layer.tracks.filter(t=>/Spine|Neck|Head|Arm|Hand/.test(t.name));
+          THREE.AnimationUtils.makeClipAdditive(layer,0,idleClip,30);
+          actions[clip.name]=mixer.clipAction(layer);actions[clip.name].setEffectiveWeight(0);
+        } else actions[clip.name]=mixer.clipAction(clip);
+      }
       actions.Idle?.play();
       mixer.update(0);
       model.updateMatrixWorld(true);
@@ -1877,7 +1880,7 @@ export class MilitaryRenderer {
             : "#9b7465",
       roughness: 0.9,
     });
-    this.box(root, patch, [0.26, 1.33, 0.05], [0.045, 0.12, 0.085]);
+    if(!model.userData.riggedOperator)this.box(root, patch, [0.26, 1.33, 0.05], [0.045, 0.12, 0.085]);
     const actor = {
       root,
       model,
@@ -1944,6 +1947,7 @@ export class MilitaryRenderer {
     }
   }
   equipActor(a, e) {
+    a.grip = null;
     const m = this.weaponMaterials(false);
     a.equipmentMaterials = Object.values(m);
     const equipment = new THREE.Group();
@@ -1958,6 +1962,7 @@ export class MilitaryRenderer {
     a.model.traverse((o) => {
       if (o.name.endsWith("RightHand")) a.weaponAnchor = o;
     });
+    if(e.weapon==='carbine'&&a.model.userData.riggedOperator){equipment.scale.setScalar(1);bindWeaponGrip(a);}
   }
   skinTexture(outfit) {
     this.skinTextures ??= new Map();
@@ -2307,12 +2312,14 @@ export class MilitaryRenderer {
       // Short physical recoil and hit flinch layered on skeletal locomotion.
       const hit = Math.max(0, 1 - (this.g.time - e.hit) / 0.18);
       a.model.rotation.z = 0;
-      a.root.rotation.z = alive ? hit * 0.05 : this.motion.matches ? Math.PI / 2 : fall * 1.5;
+      a.root.rotation.z = alive ? hit * 0.05 : a.deathAnimated ? 0 : this.motion.matches ? Math.PI / 2 : fall * 1.5;
       // Gear bindings are local to the skeleton. Root interpolation remains
       // full rate; expensive bone/gear transforms run only on a new 30Hz pose.
       if (poseChanged) this.updateSkinParts(a);
       if (a.equipment) {
-        if (a.weaponAnchor && poseChanged) {
+        if (poseChanged && updateWeaponGrip(a,Math.max(0,Math.min(1,(e.reloadUntil-this.g.time)/1.4)))) {
+          // The palm binding and support IK follow the captured animation.
+        } else if (a.weaponAnchor && poseChanged) {
           a.root.updateMatrixWorld(true);
           a.weaponAnchor.getWorldPosition(a.equipment.position);
           a.root.worldToLocal(a.equipment.position);
@@ -2321,7 +2328,7 @@ export class MilitaryRenderer {
         } else if (!a.weaponAnchor)
           a.equipment.position.y =
             1.25 + (a.action !== "Idle" ? Math.sin(t * 7 + e.phase) * 0.025 : 0);
-        a.equipment.rotation.x = t - e.shotAt < 0.15 ? -0.12 : 0;
+        if(!a.grip)a.equipment.rotation.x = t - e.shotAt < 0.15 ? -0.12 : 0;
         animateCarbine(a.equipment.userData.carbine,
           Math.max(0,Math.min(1,(e.reloadUntil-this.g.time)/1.4)),
           Math.max(0,1-(t-e.shotAt)/.16));
@@ -2342,7 +2349,7 @@ export class MilitaryRenderer {
     return materials;
   }
   hand(parent, x, y, z, m) {
-    return buildRealisticHand(this, parent, x, y, z, m);
+    return buildRiggedHand(this,parent,x,y,z)||buildRealisticHand(this, parent, x, y, z, m);
   }
   firearm(parent, m, kind = "rifle", offset = 0, hands = true) {
     const gun = new THREE.Group();
@@ -2404,6 +2411,7 @@ export class MilitaryRenderer {
   }
   updateWeapon(id = this.g.camera().weapon) {
     if (id === this.weaponId && this.weaponOutfit === this.g.camera().outfit) return;
+    disposeRiggedHands(this.rig);
     this.rig.traverse((o) => {
       if (o.isMesh) {
         if (o.userData.ownedGeometry) o.geometry.dispose();
@@ -2972,12 +2980,17 @@ export class MilitaryRenderer {
         body = this.makeActor({ id: tempId, x: corpse.x, y: corpse.y, team: null });
         this.actors.delete(tempId);
         body.mixer?.stopAllAction();
-        body.root.rotation.set(0, 0, -Math.PI / 2);
-        body.model.rotation.set(0, 0, 0);
+        if(body.actions.Death){
+          const action=body.actions.Death;action.reset().setEffectiveWeight(1).setEffectiveTimeScale(0).play();action.time=action.getClip().duration;body.mixer.update(0);
+          body.root.updateMatrixWorld(true);body.model.traverse(o=>{if(o.isSkinnedMesh){o.skeleton.update();o.computeBoundingBox();}});
+          body.corpseGround=.012-new THREE.Box3().setFromObject(body.model).min.y;
+        }else body.root.rotation.set(0,0,-Math.PI/2);
+        if(body.equipment)body.equipment.visible=false;
         this.protocolBodies.set(corpse.id, body);
       }
-      body.root.position.set(corpse.x * SCALE - 1, 0.3, corpse.y * SCALE);
-      body.root.visible = !powerOut || Math.hypot(corpse.x - camera.x, corpse.y - camera.y) <= 2.2;
+      body.root.position.set(corpse.x*SCALE,body.corpseGround??.3,corpse.y*SCALE);
+      if(body.actions.Death)body.root.rotation.y=-Math.PI/2-(view.entities.find(e=>e.id===corpse.victimId)?.a||0);
+      body.root.visible=(!powerOut||Math.hypot(corpse.x-camera.x,corpse.y-camera.y)<=2.2)&&!this.actors.get(corpse.victimId)?.root.visible;
     }
     for (const [id, body] of this.protocolBodies)
       if (!bodyIds.has(id)) {
@@ -3044,6 +3057,8 @@ export class MilitaryRenderer {
     }
     this.updateActors(t);
     const takedown = (this.takedown ||= new VictimTakedown(this)).update(g);
+    this.camera.updateMatrixWorld(true);
+    (this.identification ||= new PlayerIdentification(this)).update(protocolView,p,takedown);
     // Mark only the publicly accused participant, within ordinary sight and
     // wall occlusion. This identifies combat's one opposing uniform without
     // revealing any secret role or leaving markers visible through walls.
@@ -3068,7 +3083,9 @@ export class MilitaryRenderer {
           marker.textContent = accused.name;
         }
       }
-      marker.hidden = !show;
+      // The public accused highlight lives in the visible call sign. Retain
+      // the old marker when names are disabled or its tighter framing hides it.
+      marker.hidden = !show || (this.identification?.root.hidden === false && this.identification.labels.get(accused?.id)?.hidden === false);
     }
     this.updatePickups(t);
     this.updateFields();
@@ -3149,7 +3166,9 @@ export class MilitaryRenderer {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
+    this.identification?.dispose();
     this.takedown?.dispose();
+    disposeRiggedHands(this.rig);
     for (const a of this.actors.values()) {
       a.mixer?.stopAllAction();
       a.model.traverse((o) => {
