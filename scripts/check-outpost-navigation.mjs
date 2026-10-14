@@ -31,6 +31,23 @@ try{
   assert.equal(initial.skinRoughness,.76);
   assert.deepEqual(initial.assets,[]);assert.equal(initial.overflow,false);
   assert.ok(initial.navBounds.x>=0&&initial.navBounds.right<=width&&initial.navBounds.bottom<=height);
+  const lighting=await page.evaluate(()=>{
+   const g=document.querySelector('midnry-fps').engine,r=g.military;
+   Object.assign(g.player,{x:14.5,y:11.8,a:Math.PI/2});
+   r.naturalLighting.initialized=false;g.protocolCache=null;r.frameProtocolArena=null;g.render();
+   const before={ambient:r.scene.environmentIntensity,exposure:r.renderer.toneMappingExposure,span:r.sun.shadow.camera.right,inside:r.naturalLighting.inside};
+   // Walk through the courtyard doorway using the production control path.
+   g.keys.add('w');for(let i=0;i<16;i++)g.update(.05);g.keys.clear();
+   r.lastRenderAt=performance.now()-1000/120;g.render();
+   const after={ambient:r.scene.environmentIntensity,exposure:r.renderer.toneMappingExposure,span:r.sun.shadow.camera.right,inside:r.naturalLighting.inside};
+   Object.assign(g.player,{x:3.5,y:5.5,a:0});g.protocolCache=null;r.frameProtocolArena=null;g.protocolUI.update(true);g.render();
+   return{before,after};
+  });
+  assert.equal(lighting.before.inside,true);assert.equal(lighting.after.inside,false);
+  assert.ok(lighting.after.ambient>lighting.before.ambient&&lighting.after.ambient<.3);
+  assert.ok(lighting.after.exposure<lighting.before.exposure&&lighting.after.exposure>.92);
+  assert.equal(lighting.before.span,lighting.after.span);
+  const arrow=await page.locator('.mf-navbadge').boundingBox();assert.ok(arrow.width>=44&&arrow.height>=44);
   // Freeze only the simulation: matrix/pose/recipient caches are deliberately
   // invalidated when test fixtures teleport actors, as a real 30 Hz tick does.
   const sight=await page.evaluate(()=>{
@@ -70,7 +87,10 @@ try{
    const g=document.querySelector('midnry-fps').engine;g.arena.protocol.sabotage.powerUntil=g.time+30;g.protocolCache=null;g.military.frameProtocolArena=null;g.protocolUI.update(true);g.render();
    return{goal:g.navigation.route.goal.id,label:g.navigation.label.textContent,pin:g.navigation.pinned};
   });
-  assert.ok(repair.goal.startsWith('repair:'));assert.equal(repair.label,'Restore power');assert.equal(repair.pin,pin);
+  assert.ok(repair.goal.startsWith('repair:'));assert.equal(repair.label,'URGENT · Restore power');assert.equal(repair.pin,pin);
+  assert.equal(await page.locator('.mf-navline').getAttribute('data-urgent'),'true');
+  await page.emulateMedia({reducedMotion:'reduce'});
+  assert.equal(await page.locator('.mf-navbadge').evaluate(e=>getComputedStyle(e).animationName),'none');
   await page.screenshot({path:`/workspace/screenshots/outpost-navigation-repair-${name}.png`});
   const charge=await page.evaluate(()=>{
    const g=document.querySelector('midnry-fps').engine,p=g.arena.protocol;

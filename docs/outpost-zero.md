@@ -264,7 +264,7 @@ Validation: `outpost-compatibility.test.mjs` checks capability failures and hone
 
 ## Loading and startup
 
-A loading screen appears before module downloads, reports completion of the all required tactical assets, and keeps controls inert until the first 3D frame has rendered. Loading has a 45-second timeout; failed core module downloads show a retry link. Legacy classic links select the same cinematic renderer. `node scripts/check-outpost-loading.mjs [base-url]` checks desktop/mobile loading, default tactical graphics, low-power context retry, first deployment, context-loss cleanup, asset failure and the cinematic-only recovery. Set `CHROMIUM_PATH` to use a local Chromium installation.
+A loading screen appears before module downloads and reports progress through the required tactical assets and device check. Deployment stays disabled until the first 3D frame has rendered; loading navigation and recovery controls remain available. Failed core module downloads show a retry link. Legacy classic links select the same cinematic renderer. `node scripts/check-outpost-loading.mjs [base-url]` checks desktop/mobile loading, current game imagery, carousel controls, reduced motion, first deployment and optional artwork failure. Device rejection and recovery are checked separately by `check-outpost-compatibility.mjs`.
 
 
 ## Sprint, slide and death presentation
@@ -277,7 +277,7 @@ Validation: `node --test scripts/outpost-movement.test.mjs` verifies movement, c
 
 ### Loading showcase
 
-The startup screen cycles through stills captured from the tactical renderer: Dust Outpost, Skyport, Freight Rush, VX–7 Carbine, Flare Launcher and the operator. Matching field tips sit above real asset progress. Slides advance every 4.5 seconds; arrows and a pause button work before game modules finish downloading. Reduced motion starts paused. Optional image failures retain the previous still and never fail game loading; the carousel stops as soon as the playable menu is ready. The six compressed WebP assets total under 250 KB and are loaded on demand.
+The startup screen uses three stills captured from the current renderer: the Blackout base, a patrol operator and the Lifeline cockpit. Six briefings explain medical supplies, witness evidence, aircraft duties, sabotage, body reports/radio meetings and online/offline play. No retired game modes or old stylized character art appear. Slides advance every 4.5 seconds; arrows and a pause button work before game modules finish downloading. Reduced motion starts paused. Optional image failures retain the previous still and never fail game loading; the carousel stops as soon as the playable menu is ready. The three compressed WebP assets total about 134 KB and are loaded on demand. Regenerate them with `scripts/capture-outpost-loading.mjs` against the running game.
 
 Validate with `node scripts/check-outpost-loading.mjs [base-url]`.
 
@@ -327,3 +327,13 @@ The authored operator includes an index-only distant mesh: 19,450 triangles near
 The existing settings performance readout now includes frame rate, CPU time, draw calls, triangles and visible/hidden actors. When available, nonblocking disjoint-safe GPU timer queries inform adaptive resolution; unsupported devices retain CPU timing. No synchronous GPU fences or frame readbacks enter the gameplay loop. These changes reduce work but do not guarantee 120 FPS on every display/device. Browser mobile emulation verifies layout and touch controls; physical-phone profiling is still needed for hardware-specific targets.
 
 Validation: `node --test 'scripts/outpost-*.test.mjs'`, `npm run typecheck`, `NITRO_PRESET=render npm run build:render`, and `node scripts/check-outpost-realtime.mjs [base-url]`. The integration check exercises actual HTTP/WebSocket sessions, desktop/mobile browsers, real direct or relayed audio samples using fake browser-owned capture (including a native touch hold during a meeting), listen-only joining, denied microphone permission, push-to-talk, reconnection identity and capture cleanup.
+
+## Witness reasoning and emergency radio
+
+Offline and online bots share `outpost-protocol-ai.js`. They remember attacks seen within the normal sight range and line of sight, retaining fatal evidence for the round despite later task observations. Meeting testimony prioritizes attacks and names the attacker, victim, location and elapsed time. Bots offer alibis, question unsupported claims and respond to named accusations; infiltrators can frame a public patrol, feign confusion or defend themselves. Each bot sends at most three messages per discussion. Votes prioritize firsthand evidence and weigh independent public claims without consulting other players' hidden roles. The private evidence, contact and dialogue state survive arena restoration but never enter recipient snapshots.
+
+Press F or tap the contrasting **Report body** button beside a nearby casualty. Press C or open **Info → Emergency radio** to call an assembly from anywhere with working communications. A radio jam instead points navigation to the wired console; repairing communications also restores remote calls. Server validation retains one emergency call per player, the shared cooldown and the unsafe-flight restriction. Guided practice still requires an actual body report to finish its report drill.
+
+Ceiling emitters in both the base renderer and the architectural-detail batches bypass floor-grid and frustum culling. Wider emitting faces remain readable at distance, and power sabotage alone changes emission. Depth testing still hides lights behind walls; nearby direct lighting retains its existing mobile/desktop light budget and smooth transitions.
+
+Validation: `outpost-social-ai.test.mjs` covers retained evidence, truthful sight limits, role privacy, corroboration, bounded infiltrator replies, restoration and emergency-radio validation. `check-outpost-social.mjs [base-url]` uses native desktop/touch reports and chat, verifies an accused infiltrator's reply, calls remote meetings, checks jammed-console navigation and counts all ceiling fixtures across camera positions and a sabotage/restore cycle. Release preflight also parses the standalone game modules and inline scripts before comparing packaged assets with source.

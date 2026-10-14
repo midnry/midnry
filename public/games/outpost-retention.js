@@ -199,7 +199,7 @@ export class Retention {
   }
   finish(won) {
     const g = this.g;
-    if (g.academy?.active) return;
+    if (g.academy?.active || g.practice?.active) return;
     const p = g.player;
     const summary = {
       id: g.arena.roundId,

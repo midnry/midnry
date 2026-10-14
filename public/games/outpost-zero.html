@@ -2078,20 +2078,20 @@
     <div class="mf-loading" role="region" aria-label="Loading Outpost Zero">
       <img
         class="mf-loadimage is-active"
-        src="./loading/outpost.webp"
-        alt="Dust Outpost arena"
+        src="./loading/blackout-base.webp"
+        alt="Breakwater operating base in Blackout Protocol"
         fetchpriority="high"
         decoding="async"
       />
       <img class="mf-loadimage" alt="" decoding="async" />
       <header class="mf-loadheader">
-        <div class="mf-loadbrand">MIDNRY<small>FIELD OPERATIONS</small></div>
-        <div class="mf-loadtitle">OUTPOST ZERO<br />PREPARE TO DEPLOY</div>
+        <div class="mf-loadbrand">MIDNRY<small>BLACKOUT PROTOCOL</small></div>
+        <div class="mf-loadtitle">LIFELINE RUN<br />PREPARE TO DEPLOY</div>
       </header>
       <div class="mf-loadbody">
-        <div class="mf-loadcategory">ARENA / 01</div>
-        <h1 class="mf-slidetitle">Dust Outpost</h1>
-        <p class="mf-loaddescription">Sandstone cover. Open sightlines. Make every move count.</p>
+        <div class="mf-loadcategory">MISSION BRIEFING / BASE</div>
+        <h1 class="mf-slidetitle">Blackout Protocol</h1>
+        <p class="mf-loaddescription">Gather medical supplies. Protect the medevac. Save the wounded patrol.</p>
         <div class="mf-loadcontrols" role="group" aria-label="Loading slideshow controls">
           <button class="mf-loadprev" aria-label="Previous loading slide">←</button
           ><span class="mf-loadcount">01 / 06</span
@@ -2104,13 +2104,13 @@
       <footer class="mf-loadfooter">
         <div class="mf-loadtip">
           <b>FIELD TIP</b>
-          <p>Hold Shift to sprint. Press C or Ctrl while sprinting forward to slide into cover.</p>
+          <p>Start with Guided practice to learn packing, defusing, radio meetings and emergency flight control.</p>
         </div>
         <div class="mf-loadprogress">
           <progress aria-label="Game loading progress" max="100" value="0"></progress
           ><span class="mf-loadpercent" aria-hidden="true">0%</span>
         </div>
-        <p class="mf-loadstatus" role="status" aria-live="polite">Preparing field operations…</p>
+        <p class="mf-loadstatus" role="status" aria-live="polite">Checking your device and preparing Lifeline Run…</p>
         <a href="" class="mf-loadretry" hidden>Retry loading</a>
       </footer>
     </div>
@@ -2119,48 +2119,24 @@
       (() => {
         const screen = document.querySelector(".mf-loading");
         const slides = [
-          [
-            "outpost",
-            "ARENA / 01",
-            "Dust Outpost",
-            "Sandstone cover. Open sightlines. Make every move count.",
-            "Hold Shift to sprint. Press C or Ctrl while sprinting forward to slide into cover.",
-          ],
-          [
-            "carbine",
-            "LOADOUT / 01",
-            "VX–7 Carbine",
-            "Your automatic all-rounder. Built for the middle distance.",
-            "Reload with R before pushing a new lane. On mobile, tap the reload button.",
-          ],
-          [
-            "operator",
-            "CHARACTER / FIELD OPS",
-            "Field Operators",
-            "Boots on the ground. Keep your squad in the fight.",
-            "In Duo, you can spectate your surviving teammate after you go down.",
-          ],
-          [
-            "skyport",
-            "ARENA / 02",
-            "Skyport",
-            "Aircraft shells, hangars and room to flank.",
-            "Keep moving in Last Signal: the safe zone shrinks as the match goes on.",
-          ],
-          [
-            "rocket",
-            "LOADOUT / 02",
-            "Flare Launcher",
-            "Heavy firepower. Choose your moment.",
-            "Dealing damage charges your ability. When it is ready, press Q or tap SUPER.",
-          ],
-          [
-            "freight",
-            "ARENA / 03",
-            "Freight Rush",
-            "Container lanes. Tight angles. Watch the next corner.",
-            "On mobile, move with the left stick and drag the right side of the screen to aim.",
-          ],
+          ["blackout-base", "MISSION BRIEFING / BASE", "Blackout Protocol",
+            "Gather medical supplies at Breakwater. The wounded patrol is counting on Lifeline Run.",
+            "Guided practice teaches packing, loading, defusing, reporting, voting and aircraft recovery."],
+          ["blackout-patrol", "OPERATORS / TRUST", "Watch the patrol",
+            "Operators and infiltrators wear the same uniforms. Evidence matters more than appearances.",
+            "Approach a fallen patrol and press F or Report body. Witnesses remember attacks and can name who they saw."],
+          ["blackout-aircraft", "PHASE TWO / MEDEVAC", "Lifeline Medevac",
+            "Check oxygen, secure medical cargo and confirm landing coordinates while protecting the flight.",
+            "If autopilot is sabotaged, take the helm. Keep altitude and course in their safe bands for three seconds before restoring autopilot."],
+          ["blackout-base", "THREATS / SABOTAGE", "Protect the rescue",
+            "Repair power and communications, disable located charges and protect the medical shipment.",
+            "The amber navigation arrow marks urgent repairs. Concealed charges only get a route after your operator locates them."],
+          ["blackout-patrol", "RADIO / ASSEMBLY", "Report, discuss, decide",
+            "Share eyewitness accounts and challenge alibis. A majority sends the accused into Last Stand.",
+            "Press C or open Info → Emergency radio to call a meeting. If radio is jammed, use the wired console. You have one emergency call; body reports remain available."],
+          ["blackout-aircraft", "ONLINE / OFFLINE", "Every patrol matters",
+            "Play with friends online, or with smart bots that remember witnesses, question stories and defend themselves.",
+            "After elimination, use Previous / Next or Left / Right to follow surviving players. Observers cannot complete tasks, speak or vote."],
         ];
         const images = [...screen.querySelectorAll(".mf-loadimage")];
         const motion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -2314,6 +2290,7 @@
       import { ConnectionUI } from "./outpost-connection.js";
       import { AssetCacheUI } from "./outpost-asset-cache.js";
       import { ObjectiveNavigation } from "./outpost-navigation.js";
+      import { ProtocolPractice } from "./outpost-practice.js";
       import { RoomTransport } from "./outpost-realtime.js";
       import { ProximityVoice } from "./outpost-voice.js";
       import { FrameDiagnostics } from "./outpost-frame-diagnostics.js";
@@ -2443,6 +2420,7 @@
             this.spectator = new SpectatorUI(this);
             this.connection = new ConnectionUI(this);
             this.navigation = new ObjectiveNavigation(this, this.protocolUI);
+            this.practice = new ProtocolPractice(this);
             this.transport = new RoomTransport(this);
             this.voice = new ProximityVoice(this);
             this.assetCache = new AssetCacheUI(this);
@@ -2755,6 +2733,7 @@
           }
           // Last Signal uses the same arena, with a clear center for the final zone.
           reset() {
+            this.practice?.reset();
             this.mode = "protocol";
             this.spectator?.reset();
             this.shell.classList.remove("mf-dying");
@@ -3181,7 +3160,7 @@
             return result;
           }
           checkResult() {
-            if (this.academy?.active) return;
+            if (this.academy?.active || this.practice?.active) return;
             if (this.state === "ended") return;
             if (this.online) {
               if (this.arena.state === "ended")
@@ -3260,6 +3239,7 @@
           }
           async connectOnline(op, saved = null) {
             if (this.connecting || this.online) return;
+            if (this.practice?.active) this.practice.exit();
             this.retention?.audio.unlock();
             if (this.academy?.active) this.academy.finish();
             this.connecting = true;
@@ -4024,7 +4004,8 @@
               this.updateHUD(false);
               return;
             }
-            const input = this.controls();
+            const rawInput = this.controls();
+            const input = this.practice?.filterInput(rawInput) || rawInput;
             this.arena.advance(dt, { [this.selfId]: input });
             if (this.mode === "protocol" && this.mapId !== this.arena.mapId) {
               this.mapId = this.arena.mapId;
@@ -4041,6 +4022,7 @@
               (this.player.sprinting ? 14 : 9);
             this.flushEvents();
             this.academy?.update();
+            this.practice?.update();
             this.checkResult();
             this.updateHUD(false);
           }
@@ -4251,6 +4233,7 @@
             this.frame = requestAnimationFrame(this.loop);
           }
           destroy() {
+            this.practice?.dispose();
             this.voice?.dispose();
             this.transport?.dispose();
             this.navigation?.dispose();

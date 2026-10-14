@@ -473,7 +473,8 @@ test("one-shot sequence deduplication persists through JSON restore and invalid 
   const arena = fresh(),
     e = operator(arena);
   const input = { [e.id]: { protocolAction: { seq: 7, op: "meeting" } } };
-  arena.advance(0.05, input); // Too far: consumes intention, does not call a meeting.
+  arena.protocol.sabotage.commsUntil=40;
+  arena.advance(0.05, input); // Jammed radio and too far from wired console: intention consumed.
   position(e, arena.protocol.emergency);
   tick(arena, 1, input);
   assert.equal(arena.protocol.phase, "roam");

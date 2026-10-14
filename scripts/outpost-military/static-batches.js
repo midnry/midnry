@@ -29,7 +29,7 @@ export function batchStaticByMaterial(root, tiles = 6) {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([k, a]) => `${k}/${a.itemSize}/${a.normalized}/${a.array.constructor.name}`)
         .join(",");
-    const key = `${object.material.uuid}:${Math.floor(p.x / (tiles * 3))}:${Math.floor(p.z / (tiles * 3))}:${object.castShadow}:${object.receiveShadow}:${signature}`;
+    const key = `${object.material.uuid}:${Math.floor(p.x / (tiles * 3))}:${Math.floor(p.z / (tiles * 3))}:${object.castShadow}:${object.receiveShadow}:${!!object.userData.noRoomCull}:${object.frustumCulled}:${signature}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(object);
   });
@@ -41,6 +41,8 @@ export function batchStaticByMaterial(root, tiles = 6) {
       const batch = new THREE.InstancedMesh(meshes[0].geometry, meshes[0].material, meshes.length);
       batch.castShadow = meshes[0].castShadow;
       batch.receiveShadow = meshes[0].receiveShadow;
+      batch.userData.noRoomCull = !!meshes[0].userData.noRoomCull;
+      batch.frustumCulled = meshes[0].frustumCulled;
       meshes.forEach((mesh, i) => {
         batch.setMatrixAt(i, new THREE.Matrix4().multiplyMatrices(inverse, mesh.matrixWorld));
         mesh.parent.remove(mesh);
@@ -63,6 +65,8 @@ export function batchStaticByMaterial(root, tiles = 6) {
     const batch = new THREE.Mesh(geometry, meshes[0].material);
     batch.castShadow = meshes[0].castShadow;
     batch.receiveShadow = meshes[0].receiveShadow;
+    batch.userData.noRoomCull = !!meshes[0].userData.noRoomCull;
+    batch.frustumCulled = meshes[0].frustumCulled;
     batch.userData.ownedGeometry = true;
     for (const mesh of meshes) mesh.parent.remove(mesh);
     root.add(batch);
