@@ -696,7 +696,7 @@ export class ProtocolUI {
     )
       return;
     this.g.shell.focus({ preventScroll: true });
-    if(this.alive())this.g.lockMouse?.();
+    if (this.alive()) this.g.lockMouse?.();
   }
 
   showBrief() {
@@ -1133,6 +1133,7 @@ export class ProtocolUI {
     this.updateCombat(view);
     this.focus?.update(view, gameplay);
     g.navigation?.update(view);
+    g.voice?.sync();
     if (protocol.phase === "roam" && this.briefRound !== view.roundId && !this.arming.open) {
       this.briefRound = view.roundId;
       this.showBrief();

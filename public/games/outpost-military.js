@@ -15807,7 +15807,7 @@ Yd.ReflectorShader = {
 };
 //#endregion
 //#region public/games/outpost-asset-manifest.js
-var Xd = "outpost-assets-b88e3d2df8b3212c", Zd = Object.freeze({
+var Xd = "outpost-assets-3dfc300e9e960a17", Zd = Object.freeze({
 	concrete: {
 		roughness: .9,
 		metalness: 0,
@@ -16653,7 +16653,7 @@ function _f(e, t) {
 	let n = /* @__PURE__ */ new Set(), r = /* @__PURE__ */ new Set(), i = Math.min(8, e.renderer?.capabilities?.getMaxAnisotropy?.() || 1);
 	t.scene.traverse((t) => {
 		if (t.isMesh) {
-			t.castShadow = !0, t.receiveShadow = !0;
+			t.userData.operatorLOD === 1 && (t.visible = !1), t.castShadow = !0, t.receiveShadow = !0;
 			for (let a of Array.isArray(t.material) ? t.material : [t.material]) if (a && !n.has(a)) {
 				n.add(a), gf(a, a.userData.realismCharacterKind || hf(a), e), e.materials.add(a);
 				for (let t of [
@@ -17390,6 +17390,10 @@ function Bf(e, t, n, r, i) {
 	let f = [];
 	o.traverse((t) => {
 		if (!t.isSkinnedMesh) return;
+		if (t.userData.operatorLOD === 1) {
+			f.push(t);
+			return;
+		}
 		let n = t.geometry.uuid + ":" + a;
 		if (!e.handGeometries.has(n)) {
 			let r = zf(t, a);
@@ -19323,8 +19327,52 @@ function xp(e, t, n) {
 	return [Math.max(1, Math.floor(e * r)), Math.max(1, Math.floor(t * r))];
 }
 //#endregion
+//#region scripts/outpost-military/telemetry.js
+var Sp = class {
+	constructor(e) {
+		this.renderer = e, this.gl = e.getContext(), this.ext = this.gl.getExtension("EXT_disjoint_timer_query_webgl2"), this.pending = [], this.frame = 0, this.gpuMs = null, e.info.autoReset = !1;
+	}
+	begin() {
+		let e = this.gl, t = this.ext;
+		if (!t) return;
+		let n = e.getParameter(t.GPU_DISJOINT_EXT);
+		for (; this.pending.length && (n || e.getQueryParameter(this.pending[0], e.QUERY_RESULT_AVAILABLE));) {
+			let t = this.pending.shift();
+			if (!n) {
+				let n = e.getQueryParameter(t, e.QUERY_RESULT) / 1e6;
+				Number.isFinite(n) && n >= 0 && (this.gpuMs = this.gpuMs === null ? n : this.gpuMs * .8 + n * .2);
+			}
+			e.deleteQuery(t);
+		}
+		n && (this.gpuMs = null), !(++this.frame % 4 || this.pending.length >= 8) && (this.active = e.createQuery(), e.beginQuery(t.TIME_ELAPSED_EXT, this.active));
+	}
+	end() {
+		this.active &&= (this.gl.endQuery(this.ext.TIME_ELAPSED_EXT), this.pending.push(this.active), null);
+	}
+	dispose() {
+		this.active && (this.gl.endQuery(this.ext.TIME_ELAPSED_EXT), this.gl.deleteQuery(this.active));
+		for (let e of this.pending) this.gl.deleteQuery(e);
+		this.pending = [];
+	}
+};
+function Cp(e, t, n, r) {
+	let i = Math.hypot(n.x - t.x, n.y - t.y);
+	if (i < .65) return !0;
+	let a = Math.atan2(n.y - t.y, n.x - t.x) - t.a;
+	if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) > r / 2 + Math.atan2(.35, i)) return !1;
+	if (e.visible(t, n)) return !0;
+	let o = -Math.sin(t.a) * .22, s = Math.cos(t.a) * .22;
+	return e.visible(t, {
+		x: n.x + o,
+		y: n.y + s
+	}) || e.visible(t, {
+		x: n.x - o,
+		y: n.y - s
+	});
+}
+//#endregion
 //#region scripts/outpost-military/renderer.js
-var $ = 3, Sp = "/games/military/", Cp = Math.PI * 2, wp = {
+var $ = 3, wp = "/games/military/", Tp = Math.PI * 2, Ep = {
 	outpost: {
 		floor: "#a69980",
 		fog: "#bbc2c3",
@@ -19360,9 +19408,9 @@ var $ = 3, Sp = "/games/military/", Cp = Math.PI * 2, wp = {
 		fog: "#b8c9d0",
 		metal: "#92a1a3"
 	}
-}, Tp = class {
+}, Dp = class {
 	constructor(e, t = () => {}, { safeMode: n = !1 } = {}) {
-		this.g = e, this.onProgress = t, this.disposed = !1, this.actors = /* @__PURE__ */ new Map(), this.crates = /* @__PURE__ */ new Map(), this.cores = /* @__PURE__ */ new Map(), this.projectiles = /* @__PURE__ */ new Map(), this.fields = /* @__PURE__ */ new Map(), this.protocolCharges = /* @__PURE__ */ new Map(), this.protocolBodies = /* @__PURE__ */ new Map(), this.protocolFixtures = [], this.protocolScreens = /* @__PURE__ */ new Map(), this.protocolLights = [], this.protocolLightMaterials = [], this.protocolPowerOut = !1, this.medicalStocks = /* @__PURE__ */ new Map(), this.transportCargo = [], this.transportTerrain = null, this.transportInstrument = null, this.transportInstrumentKey = "", this.transportAlarm = null, this.medevacRotor = null, this.arrivalClinic = null, this.arrivalPatients = /* @__PURE__ */ new Map(), this.materials = /* @__PURE__ */ new Set(), this.geometries = /* @__PURE__ */ new Map(), this.textures = /* @__PURE__ */ new Set(), this.worldTextures = /* @__PURE__ */ new Set(), this.weaponTextures = /* @__PURE__ */ new Set(), this.lastTime = 0, this.lastPose = -1, this.mapKey = "", this.wallKeys = "", this.seenShots = /* @__PURE__ */ new Map(), this.tracers = [], this.lastPreset = "", this.assetErrors = [], this.motion = matchMedia("(prefers-reduced-motion: reduce)");
+		this.g = e, this.onProgress = t, this.disposed = !1, this.actors = /* @__PURE__ */ new Map(), this.crates = /* @__PURE__ */ new Map(), this.cores = /* @__PURE__ */ new Map(), this.projectiles = /* @__PURE__ */ new Map(), this.fields = /* @__PURE__ */ new Map(), this.protocolCharges = /* @__PURE__ */ new Map(), this.protocolBodies = /* @__PURE__ */ new Map(), this.protocolFixtures = [], this.protocolScreens = /* @__PURE__ */ new Map(), this.protocolLights = [], this.protocolLightMaterials = [], this.protocolPowerOut = !1, this.medicalStocks = /* @__PURE__ */ new Map(), this.transportCargo = [], this.transportTerrain = null, this.transportInstrument = null, this.transportInstrumentKey = "", this.transportAlarm = null, this.medevacRotor = null, this.arrivalClinic = null, this.arrivalPatients = /* @__PURE__ */ new Map(), this.materials = /* @__PURE__ */ new Set(), this.geometries = /* @__PURE__ */ new Map(), this.textures = /* @__PURE__ */ new Set(), this.worldTextures = /* @__PURE__ */ new Set(), this.weaponTextures = /* @__PURE__ */ new Set(), this.lastTime = 0, this.lastPose = -1, this.mapKey = "", this.wallKeys = "", this.seenShots = /* @__PURE__ */ new Map(), this.tracers = [], this.lastPreset = "", this.assetErrors = [], this.motion = matchMedia("(prefers-reduced-motion: reduce)"), this.mobileDevice = matchMedia("(pointer: coarse)").matches;
 		let r = yp(navigator), i, a;
 		for (let e of [{
 			antialias: !r && !n,
@@ -19449,7 +19497,7 @@ var $ = 3, Sp = "/games/military/", Cp = Math.PI * 2, wp = {
 	async loadAssets() {
 		let t = 0, n = () => this.onProgress(++t, 14), r = new No(), i = async (t) => {
 			try {
-				let n = await r.loadAsync(Sp + t + "?assetVersion=" + Xd);
+				let n = await r.loadAsync(wp + t + "?assetVersion=" + Xd);
 				return this.disposed ? (n.dispose(), null) : (n.wrapS = n.wrapT = e, n.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy()), this.textures.add(n), n);
 			} catch {
 				return this.assetErrors.push(t), null;
@@ -19474,7 +19522,7 @@ var $ = 3, Sp = "/games/military/", Cp = Math.PI * 2, wp = {
 			$d(this),
 			(async () => {
 				try {
-					let e = await new Eu().loadAsync(Sp + "models/operator-v1.glb?assetVersion=" + Xd);
+					let e = await new Eu().loadAsync(wp + "models/operator-v1.glb?assetVersion=" + Xd);
 					if (this.disposed) {
 						this.disposeObject(e.scene);
 						return;
@@ -19491,7 +19539,7 @@ var $ = 3, Sp = "/games/military/", Cp = Math.PI * 2, wp = {
 			(async () => {
 				try {
 					if (!this.profile.halfFloat) return;
-					let e = await new Td().loadAsync(Sp + "sky.hdr?assetVersion=" + Xd);
+					let e = await new Td().loadAsync(wp + "sky.hdr?assetVersion=" + Xd);
 					if (this.disposed) {
 						e.dispose();
 						return;
@@ -19548,7 +19596,7 @@ var $ = 3, Sp = "/games/military/", Cp = Math.PI * 2, wp = {
 	}
 	buildWorld() {
 		this.lastShadowAt = 0;
-		let e = this.g, t = e.arena.mapId, n = wp[t] || wp.outpost, r = e.level.length;
+		let e = this.g, t = e.arena.mapId, n = Ep[t] || Ep.outpost, r = e.level.length;
 		this.clearWorld(), this.buildingWorld = !0, this.mapKey = t, this.wallKeys = "", this.scene.fog.color.set(n.fog), this.scene.fog.density = t === "freight" ? .021 : .012;
 		let i = this.material({
 			color: "#d7d4cd",
@@ -20349,7 +20397,7 @@ var $ = 3, Sp = "/games/military/", Cp = Math.PI * 2, wp = {
 				.11,
 				.11
 			]);
-			let o = this.mesh(t, this.geo("radar-dish", () => new Ka(1.25, 24, 12, 0, Cp, 0, Math.PI / 2)), r, [
+			let o = this.mesh(t, this.geo("radar-dish", () => new Ka(1.25, 24, 12, 0, Tp, 0, Math.PI / 2)), r, [
 				e,
 				8.8,
 				i
@@ -21383,7 +21431,7 @@ var $ = 3, Sp = "/games/military/", Cp = Math.PI * 2, wp = {
 				.04
 			]);
 		} else {
-			this.mesh(m, this.geo("combatHelmet", () => new Ka(1, 24, 16, 0, Cp, 0, Math.PI * .6)), i, [
+			this.mesh(m, this.geo("combatHelmet", () => new Ka(1, 24, 16, 0, Tp, 0, Math.PI * .6)), i, [
 				0,
 				2.09,
 				.025
@@ -21747,23 +21795,37 @@ var $ = 3, Sp = "/games/military/", Cp = Math.PI * 2, wp = {
 		for (let n of e.skinParts) n.userData.inverseBind && (n.matrix.multiplyMatrices(t, n.userData.anchor.matrixWorld).multiply(n.userData.inverseBind), n.matrixWorldNeedsUpdate = !0);
 	}
 	updateActors(e) {
-		let t = /* @__PURE__ */ new Set(), n = this.g.camera(), r = Math.floor(e * 30) / 30;
-		for (let i of this.g.arena.entities) {
-			if (t.add(i.id), i.id === n.id) {
-				let e = this.actors.get(i.id);
+		let t = /* @__PURE__ */ new Set(), n = this.g.camera(), r = Math.floor(e * 30) / 30, i = 2 * Math.atan(Math.tan(this.camera.fov * Math.PI / 360) * this.camera.aspect);
+		this.actorStats = {
+			visible: 0,
+			culled: 0,
+			distant: 0
+		};
+		for (let a of this.g.arena.entities) {
+			if (t.add(a.id), a.id === n.id) {
+				let e = this.actors.get(a.id);
 				e && (e.root.visible = !1);
 				continue;
 			}
-			let a = this.actors.get(i.id);
-			a && (a.outfit !== fp(i.outfit).id || a.weapon !== i.weapon) && (this.disposeActor(a), this.actors.delete(i.id), a = null), a ||= this.makeActor(i), a.patch.color.set(this.g.mode === "protocol" ? "#97a79b" : i.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465");
-			let o = i.hp > 0, s = i.cloakedUntil > this.g.time && i.team !== this.g.player.team, c = performance.now() / 1e3;
-			o ? a.deadAt = null : a.deadAt === null && (a.deadAt = c);
-			let l = o ? 0 : Math.min(1, (c - a.deadAt) / .85);
-			a.root.visible = (o || c - a.deadAt < 2.5) && (!s || Math.hypot(i.x - n.x, i.y - n.y) < 1.3), o && (i.slideUntil, this.g.time), a.root.scale.y = 1, this.g.mode === "protocol" && this.protocolPowerOut && Math.hypot(i.x - n.x, i.y - n.y) > 2.6 && (a.root.visible = !1), a.root.position.set(i.x * $, Math.sin(Math.min(1, Math.max(0, ((i.jumpUntil || 0) - this.g.time) / .5)) * Math.PI) * $, i.y * $), a.root.rotation.y = -Math.PI / 2 - i.a;
-			let u = a.root.visible && wf(this, a, i, Math.max(0, Math.min(.1, e - this.lastTime)), r);
-			a.x = i.x, a.y = i.y;
-			let d = Math.max(0, 1 - (this.g.time - i.hit) / .18);
-			a.model.rotation.z = 0, a.root.rotation.z = o ? d * .05 : a.deathAnimated ? 0 : this.motion.matches ? Math.PI / 2 : l * 1.5, u && this.updateSkinParts(a), a.equipment && (u && Zf(a, Math.max(0, Math.min(1, (i.reloadUntil - this.g.time) / 1.4))) || (a.weaponAnchor && u ? (a.root.updateMatrixWorld(!0), a.weaponAnchor.getWorldPosition(a.equipment.position), a.root.worldToLocal(a.equipment.position), a.equipment.position.z -= .05, i.weapon === "carbine" && (a.equipment.position.y += .1)) : a.weaponAnchor || (a.equipment.position.y = 1.25 + (a.action === "Idle" ? 0 : Math.sin(e * 7 + i.phase) * .025))), a.grip || (a.equipment.rotation.x = e - i.shotAt < .15 ? -.12 : 0), Kf(a.equipment.userData.carbine, Math.max(0, Math.min(1, (i.reloadUntil - this.g.time) / 1.4)), Math.max(0, 1 - (e - i.shotAt) / .16)));
+			let o = this.actors.get(a.id);
+			o && (o.outfit !== fp(a.outfit).id || o.weapon !== a.weapon) && (this.disposeActor(o), this.actors.delete(a.id), o = null), o ||= this.makeActor(a), o.patch.color.set(this.g.mode === "protocol" ? "#97a79b" : a.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465");
+			let s = a.hp > 0, c = a.cloakedUntil > this.g.time && a.team !== this.g.player.team, l = performance.now() / 1e3;
+			s ? o.deadAt = null : o.deadAt === null && (o.deadAt = l);
+			let u = s ? 0 : Math.min(1, (l - o.deadAt) / .85);
+			o.root.visible = (s || l - o.deadAt < 2.5) && (!c || Math.hypot(a.x - n.x, a.y - n.y) < 1.3), s && (a.slideUntil, this.g.time), o.root.scale.y = 1, this.g.mode === "protocol" && this.protocolPowerOut && Math.hypot(a.x - n.x, a.y - n.y) > 2.6 && (o.root.visible = !1), o.root.visible = o.root.visible && Cp(this.g.arena, n, a, i);
+			let d = Math.hypot(a.x - n.x, a.y - n.y), f = d > (this.mobileDevice ? 3.8 : 6);
+			(o.farDetail === void 0 || Math.abs(d - (this.mobileDevice ? 3.8 : 6)) > .4) && (o.farDetail = f), o.detailMeshes ||= (() => {
+				let e = [];
+				return o.model.traverse((t) => {
+					t.isSkinnedMesh && t.userData.operatorLOD !== void 0 && e.push(t);
+				}), e;
+			})();
+			for (let e of o.detailMeshes) e.visible = e.userData.operatorLOD === +!!o.farDetail;
+			o.root.visible ? (this.actorStats.visible++, o.farDetail && this.actorStats.distant++) : this.actorStats.culled++, o.root.position.set(a.x * $, Math.sin(Math.min(1, Math.max(0, ((a.jumpUntil || 0) - this.g.time) / .5)) * Math.PI) * $, a.y * $), o.root.rotation.y = -Math.PI / 2 - a.a;
+			let p = o.root.visible && wf(this, o, a, Math.max(0, Math.min(.1, e - this.lastTime)), r);
+			o.x = a.x, o.y = a.y;
+			let m = Math.max(0, 1 - (this.g.time - a.hit) / .18);
+			o.model.rotation.z = 0, o.root.rotation.z = s ? m * .05 : o.deathAnimated ? 0 : this.motion.matches ? Math.PI / 2 : u * 1.5, p && this.updateSkinParts(o), o.equipment && o.root.visible && (p && Zf(o, Math.max(0, Math.min(1, (a.reloadUntil - this.g.time) / 1.4))) || (o.weaponAnchor && p ? (o.root.updateMatrixWorld(!0), o.weaponAnchor.getWorldPosition(o.equipment.position), o.root.worldToLocal(o.equipment.position), o.equipment.position.z -= .05, a.weapon === "carbine" && (o.equipment.position.y += .1)) : o.weaponAnchor || (o.equipment.position.y = 1.25 + (o.action === "Idle" ? 0 : Math.sin(e * 7 + a.phase) * .025))), o.grip || (o.equipment.rotation.x = e - a.shotAt < .15 ? -.12 : 0), Kf(o.equipment.userData.carbine, Math.max(0, Math.min(1, (a.reloadUntil - this.g.time) / 1.4)), Math.max(0, 1 - (e - a.shotAt) / .16)));
 		}
 		for (let [e, n] of this.actors) t.has(e) || (this.disposeActor(n), this.actors.delete(e));
 	}
@@ -22571,7 +22633,12 @@ var $ = 3, Sp = "/games/military/", Cp = Math.PI * 2, wp = {
 		let g = o?.protocol?.phase === "combat", _ = e.mode === "protocol" && !g ? 0 : Math.max(0, 1 - (t - i.shotAt) / .16), v = Math.max(0, Math.min(1, (i.reloadUntil - t) / 1.4));
 		this.rig.position.y = -.2 * Math.max(1, this.g.h / this.g.w) - (e.mode === "protocol" && !g ? .075 : 0) - (v > 0 ? Math.sin(v * Math.PI) * .25 : 0) + (this.motion.matches ? 0 : Math.sin(e.step) * .005), this.rig.position.y -= d * .65, this.rig.position.z = _ * .04, this.rig.rotation.x = .02 - _ * .075, this.rig.rotation.z = -.025 + Math.sin(v * Math.PI) * .3, this.flash.intensity = _ > .65 ? 3 : 0, Kf(this.rig.userData.carbine, v, _), this.rig.visible = (i.hp > 0 || !!e.deathSequence && e.deathProgress < .65) && !s && !f;
 		let y = !["training", "protocol"].includes(e.mode) && e.time > e.zone.delay && (Math.abs(i.x - e.zone.cx) > e.zone.half || Math.abs(i.y - e.zone.cy) > e.zone.half);
-		return this.scene.fog.color.set(this.protocolPowerOut ? "#101d22" : y ? "#827276" : (wp[e.arena.mapId] || wp.outpost).fog), this.scene.fog.density = this.protocolPowerOut ? .045 : y ? .065 : e.arena.mapId === "medevac" && !o?.protocol?.mission?.vehicle?.arrived ? .002 : .009, this.renderer.shadowMap.enabled && (!this.lastShadowAt || c - this.lastShadowAt >= 1e3 / 30) && (this.renderer.shadowMap.needsUpdate = !0, this.lastShadowAt = c), this.renderer.info.reset(), !this.composer || e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), this.takedown.restoreActors(), this.lastTime = t, !0;
+		return this.scene.fog.color.set(this.protocolPowerOut ? "#101d22" : y ? "#827276" : (Ep[e.arena.mapId] || Ep.outpost).fog), this.scene.fog.density = this.protocolPowerOut ? .045 : y ? .065 : e.arena.mapId === "medevac" && !o?.protocol?.mission?.vehicle?.arrived ? .002 : .009, this.renderer.shadowMap.enabled && (!this.lastShadowAt || c - this.lastShadowAt >= 1e3 / 30) && (this.renderer.shadowMap.needsUpdate = !0, this.lastShadowAt = c), this.renderer.info.reset(), (this.telemetry ||= new Sp(this.renderer)).begin(), !this.composer || e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), this.telemetry.end(), this.metrics = {
+			gpuMs: this.telemetry.gpuMs,
+			drawCalls: this.renderer.info.render.calls,
+			triangles: this.renderer.info.render.triangles,
+			...this.actorStats
+		}, this.takedown.restoreActors(), this.lastTime = t, !0;
 	}
 	disposeObject(e) {
 		e.traverse((e) => {
@@ -22583,7 +22650,7 @@ var $ = 3, Sp = "/games/military/", Cp = Math.PI * 2, wp = {
 	}
 	dispose() {
 		if (!this.disposed) {
-			this.disposed = !0, this.identification?.dispose(), this.takedown?.dispose(), Hf(this.rig);
+			this.disposed = !0, this.telemetry?.dispose(), this.identification?.dispose(), this.takedown?.dispose(), Hf(this.rig);
 			for (let e of this.actors.values()) e.mixer?.stopAllAction(), e.model.traverse((e) => {
 				e.isSkinnedMesh && e.skeleton.dispose();
 			});
@@ -22598,4 +22665,4 @@ var $ = 3, Sp = "/games/military/", Cp = Math.PI * 2, wp = {
 	}
 };
 //#endregion
-export { Tp as MilitaryRenderer };
+export { Dp as MilitaryRenderer };

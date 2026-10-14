@@ -1,5 +1,6 @@
 import { FINISHES, profileOf, awardMatch, levelOf } from "./outpost-progression.js";
 import { weaponOf, OUTFITS } from "./outpost-sim.js";
+import { spatialSound } from "./outpost-spatial-audio.js";
 const read = (key) => {
   try {
     return JSON.parse(localStorage.getItem(key));
@@ -45,7 +46,8 @@ class FieldAudio {
   }
   tone(frequency, duration = 0.1, gain = 0.12, pan = 0, type = "triangle", end = frequency) {
     const a = this.ctx;
-    if (!a || a.state !== "running" || this.muted || !this.volume || this.voices >= 16) return;
+    if (!a || a.state !== "running" || this.muted || !this.volume || gain <= 0 || this.voices >= 16)
+      return;
     const source = a.createOscillator();
     source.type = type;
     source.frequency.setValueAtTime(frequency, a.currentTime);
@@ -54,7 +56,8 @@ class FieldAudio {
   }
   hiss(duration = 0.12, gain = 0.12, frequency = 1800, pan = 0) {
     const a = this.ctx;
-    if (!a || a.state !== "running" || this.muted || !this.volume || this.voices >= 16) return;
+    if (!a || a.state !== "running" || this.muted || !this.volume || gain <= 0 || this.voices >= 16)
+      return;
     const source = a.createBufferSource();
     source.buffer = this.noise;
     const filter = a.createBiquadFilter();
@@ -85,12 +88,21 @@ class FieldAudio {
     source.start();
     source.stop(a.currentTime + duration + 0.01);
   }
-  shot(kind, pan = 0, gain = 1) {
+  shot(kind, pan = 0, gain = 1, cutoff = 10000) {
     const heavy = ["rocket", "lob", "shotgun"].includes(kind),
       melee = ["melee", "dash"].includes(kind);
-    this.hiss(heavy ? 0.22 : 0.085, 0.16 * gain, melee ? 700 : heavy ? 1300 : 3500, pan);
+    this.hiss(
+      heavy ? 0.22 : 0.085,
+      0.16 * gain,
+      Math.min(cutoff, melee ? 700 : heavy ? 1300 : 3500),
+      pan,
+    );
     if (!melee)
       this.tone(heavy ? 95 : 220, heavy ? 0.2 : 0.09, 0.13 * gain, pan, "square", heavy ? 35 : 70);
+  }
+  step(pan = 0, gain = 1, metal = false, cutoff = 10000) {
+    this.hiss(0.045, 0.055 * gain, Math.min(cutoff, metal ? 1100 : 420), pan);
+    this.tone(metal ? 120 : 70, 0.055, 0.045 * gain, pan, "sine", 35);
   }
   result(won) {
     for (const [i, n] of (won ? [440, 554, 659] : [220, 165]).entries())
@@ -307,7 +319,12 @@ export class Retention {
         this.countBeat = beat;
       }
     } else this.countBeat = 0;
-    const audible = g.running && pAlive(g) && !document.hidden;
+    const listener = g.camera(),
+      audible =
+        (g.running || g.online?.phase === "playing" || g.spectator?.active()) &&
+        listener.hp > 0 &&
+        !g.deathSequence &&
+        !document.hidden;
     for (const e of g.combatants()) {
       const old = this.seen.get(e.id);
       this.seen.set(e.id, {
@@ -318,31 +335,48 @@ export class Retention {
         cores: e.coresCollected,
         x: e.x,
         y: e.y,
+        steps: old?.steps || 0,
+        work: old?.work || 0,
       });
       if (!old || !audible) continue;
-      const p = g.player,
+      const p = listener,
         dist = Math.hypot(e.x - p.x, e.y - p.y),
         pan = Math.sin(Math.atan2(e.y - p.y, e.x - p.x) - p.a);
-      if (
-        old.shot !== e.shotAt &&
-        t - e.shotAt < 0.25 &&
-        (e.id === g.selfId || (dist < 10 && g.arena.visible(p, e)))
-      )
+      if (old.shot !== e.shotAt && t - e.shotAt < 0.25 && (e.id === p.id || dist < 10)) {
+        const v = spatialSound(p, e, g.arena.visible(p, e));
         this.audio.shot(
           weaponOf(e.weapon).kind,
-          e.id === g.selfId ? 0 : pan,
-          e.id === g.selfId ? 1 : Math.max(0.12, 0.65 - dist * 0.05),
+          e.id === p.id ? 0 : v.pan,
+          e.id === p.id ? 1 : v.gain * 0.7,
+          v.cutoff,
         );
+      }
+      const entry = this.seen.get(e.id),
+        distance = Math.hypot(e.x - old.x, e.y - old.y);
+      if (e.hp > 0 && distance < 0.5) {
+        entry.steps += distance;
+        if (entry.steps > 0.45) {
+          const v = spatialSound(p, e, g.arena.visible(p, e), 6);
+          this.audio.step(
+            e.id === p.id ? 0 : v.pan,
+            e.id === p.id ? 0.65 : v.gain,
+            g.mapId === "medevac",
+            v.cutoff,
+          );
+          entry.steps = 0;
+        }
+        // Real and pretend work share the public posture and generic sound.
+        if (e.crouching && t - entry.work > 0.8) {
+          const v = spatialSound(p, e, g.arena.visible(p, e), 4);
+          this.audio.hiss(0.06, 0.04 * v.gain, Math.min(1600, v.cutoff), v.pan);
+          entry.work = t;
+        }
+      }
       if (e.id === g.selfId) {
         if (e.reloadUntil !== old.reload) this.audio.hiss(0.07, 0.12, 600);
         if (e.hp < old.hp) this.audio.tone(90, 0.12, 0.18, 0, "sawtooth", 45);
         if (e.hitSeq !== old.hit) this.audio.tone(1100, 0.035, 0.045);
         if (e.coresCollected > old.cores) this.audio.tone(740, 0.17, 0.1, 0, "sine", 980);
-        this.stepDistance += Math.hypot(e.x - old.x, e.y - old.y);
-        if (this.stepDistance > 0.65) {
-          this.audio.hiss(0.045, 0.07, 260);
-          this.stepDistance = 0;
-        }
       }
     }
   }

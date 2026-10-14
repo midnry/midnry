@@ -32,7 +32,9 @@ export function buildRiggedHand(r,parent,x,y,z){
  const height=new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).y;model.scale.multiplyScalar(1.82/height);
  r.handGeometries ||= new Map();const remove=[];
  model.traverse(o=>{
-  if(!o.isSkinnedMesh)return;const cacheKey=o.geometry.uuid+':'+side;
+  if(!o.isSkinnedMesh)return;
+  if(o.userData.operatorLOD===1){remove.push(o);return;}
+  const cacheKey=o.geometry.uuid+':'+side;
   if(!r.handGeometries.has(cacheKey)){const geo=handGeometry(o,side);r.handGeometries.set(cacheKey,geo);if(geo)r.geometries.set('hand:'+cacheKey,geo);}
   const geo=r.handGeometries.get(cacheKey);if(!geo)remove.push(o);else o.geometry=geo;
  });for(const object of remove)object.removeFromParent();

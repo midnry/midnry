@@ -11,6 +11,8 @@ import { grokPwaPlugin } from "./scripts/grok-pwa-plugin.mjs";
 // @ts-expect-error JS plugin alongside the TS vite config
 import { appEnvPlugin } from "./scripts/app-env-plugin.mjs";
 import { isMigrationFile } from "./scripts/migration-plan.mjs";
+// @ts-expect-error Development adapter shares the native production socket hooks.
+import { outpostSocketPlugin } from "./scripts/outpost-socket-dev.mjs";
 
 /** The files `src/lib/db.ts` globs — same directory, same non-recursive scope. */
 function hasGlobbedMigrations(root: string): boolean {
@@ -159,6 +161,7 @@ export default defineConfig(({ command, isPreview }) => ({
   resolve: { tsconfigPaths: true },
   plugins: [
     pgliteBootstrapPlugin(),
+    outpostSocketPlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.
     authPopupPlugin(),
     // Dev-only /__app-env, read by scripts/check-auth-invariant.mjs.
@@ -177,6 +180,10 @@ export default defineConfig(({ command, isPreview }) => ({
             // manifest + head-tag middleware). Nitro v3 defaults serverDir to
             // false, so removing this silently unwires /?install=1 on deploys.
             serverDir: "./server",
+            features: { websocket: process.env.NITRO_PRESET === "render" },
+            routes: {
+              "/api/games/outpost/socket": "./src/routes/api/games/-outpost-socket.server.ts",
+            },
             // Returning players must revalidate game code and art after each release.
             routeRules: {
               // Revalidate stable game filenames so releases refresh for returning players.
@@ -190,6 +197,10 @@ export default defineConfig(({ command, isPreview }) => ({
                   "outpost-protocol-ui.js",
                   "outpost-protocol-focus.js",
                   "outpost-navigation.js",
+                  "outpost-realtime.js",
+                  "outpost-spatial-audio.js",
+                  "outpost-voice.js",
+                  "outpost-voice-worklet.js",
                   "outpost-spectator.js",
                   "outpost-death.js",
                   "outpost-death-ui.js",

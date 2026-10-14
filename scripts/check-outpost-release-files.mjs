@@ -21,6 +21,7 @@ function visit(path) {
 }
 visit("public/games/outpost-zero.html");
 visit("public/games/outpost-military.js");
+visit("public/games/outpost-voice-worklet.js");
 for (const path of ["public/games/military/models/soldier.glb", "public/games/military/sky.hdr", "public/games/military/lifeline-mission.png"])
   visit(path);
 visit("public/games/military/models/operator-v1.glb");

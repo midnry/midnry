@@ -64,7 +64,7 @@ function OutpostZeroPage() {
         src={`/games/outpost-zero.html?renderer=military&v=protocol-wayfinding-20261013${room ? `&room=${encodeURIComponent(room)}` : ""}`}
         title="Outpost Zero first-person shooter"
         className="block min-h-0 w-full flex-1 border-0"
-        allow="fullscreen"
+        allow="fullscreen; microphone"
       />
     </main>
   );

@@ -520,7 +520,7 @@ export class FrameBudget {
     this.cooldown = 0;
     this.slowFrames = 0;
   }
-  sample(cost, now, active, adaptive = true) {
+  sample(cost, now, active, adaptive = true, gpuMs = null) {
     if (!Number.isFinite(cost) || cost < 0 || !Number.isFinite(now)) return false;
     if (this.windowStart === null || now - this.windowStart > 2000) {
       this.windowStart = now;
@@ -532,9 +532,11 @@ export class FrameBudget {
       this.windowStart = now;
     }
     this.work = this.samples ? this.work * 0.9 + cost * 0.1 : cost;
+    this.gpu = Number.isFinite(gpuMs) && gpuMs >= 0 ? gpuMs : null;
+    const renderingCost = Math.max(this.work, this.gpu || 0);
     this.samples++;
     this.cooldown++;
-    if (active && cost > 7.5) this.slowFrames++;
+    if (active && Math.max(cost, this.gpu || 0) > 7.5) this.slowFrames++;
     if (!adaptive) {
       const changed = this.scale !== 1;
       this.scale = 1;
@@ -542,11 +544,11 @@ export class FrameBudget {
     }
     if (!active || this.samples < 60) return false;
     const previous = this.scale;
-    if ((this.work > 6.8 || this.slowFrames >= 3) && this.cooldown >= 60) {
+    if ((renderingCost > 6.8 || this.slowFrames >= 3) && this.cooldown >= 60) {
       this.scale = Math.max(0.5, Math.round(this.scale * 0.9 * 100) / 100);
       this.cooldown = 0;
       this.slowFrames = 0;
-    } else if (this.work < 3.2 && this.cooldown >= 480) {
+    } else if (renderingCost < 3.2 && this.cooldown >= 480) {
       this.scale = Math.min(1, this.scale + 0.04);
       this.cooldown = 0;
     }

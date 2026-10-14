@@ -106,6 +106,24 @@ export class ProtocolFocus {
       if (event.target.closest("button:not(:disabled)")) this.info.close();
     });
     const editable = (event) => event.target.closest?.('input,textarea,[contenteditable="true"]');
+    // Pointer lock captures desktop clicks; I opens information and releases
+    // the mouse before interacting with connection/voice settings.
+    this.button.title = "Mission information (I)";
+    g.on(
+      window,
+      "keydown",
+      (event) => {
+        if (event.code !== "KeyI" || event.repeat || editable(event)) return;
+        if (this.info.open) {
+          event.preventDefault();
+          this.info.close();
+        } else if (ui.visibleGameplay() && !ui.hasDialogOpen()) {
+          event.preventDefault();
+          this.open();
+        }
+      },
+      { capture: true },
+    );
     for (const type of ["selectstart", "contextmenu", "dragstart"])
       g.on(g.root, type, (event) => {
         if ((g.running || this.info.open) && !editable(event)) event.preventDefault();
