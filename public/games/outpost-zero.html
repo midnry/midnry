@@ -2314,6 +2314,7 @@
       import { ConnectionUI } from "./outpost-connection.js";
       import { AssetCacheUI } from "./outpost-asset-cache.js";
       import { ObjectiveNavigation } from "./outpost-navigation.js";
+      import { ProtocolPractice } from "./outpost-practice.js";
       import { RoomTransport } from "./outpost-realtime.js";
       import { ProximityVoice } from "./outpost-voice.js";
       import { FrameDiagnostics } from "./outpost-frame-diagnostics.js";
@@ -2443,6 +2444,7 @@
             this.spectator = new SpectatorUI(this);
             this.connection = new ConnectionUI(this);
             this.navigation = new ObjectiveNavigation(this, this.protocolUI);
+            this.practice = new ProtocolPractice(this);
             this.transport = new RoomTransport(this);
             this.voice = new ProximityVoice(this);
             this.assetCache = new AssetCacheUI(this);
@@ -2755,6 +2757,7 @@
           }
           // Last Signal uses the same arena, with a clear center for the final zone.
           reset() {
+            this.practice?.reset();
             this.mode = "protocol";
             this.spectator?.reset();
             this.shell.classList.remove("mf-dying");
@@ -3181,7 +3184,7 @@
             return result;
           }
           checkResult() {
-            if (this.academy?.active) return;
+            if (this.academy?.active || this.practice?.active) return;
             if (this.state === "ended") return;
             if (this.online) {
               if (this.arena.state === "ended")
@@ -3260,6 +3263,7 @@
           }
           async connectOnline(op, saved = null) {
             if (this.connecting || this.online) return;
+            if (this.practice?.active) this.practice.exit();
             this.retention?.audio.unlock();
             if (this.academy?.active) this.academy.finish();
             this.connecting = true;
@@ -4024,7 +4028,8 @@
               this.updateHUD(false);
               return;
             }
-            const input = this.controls();
+            const rawInput = this.controls();
+            const input = this.practice?.filterInput(rawInput) || rawInput;
             this.arena.advance(dt, { [this.selfId]: input });
             if (this.mode === "protocol" && this.mapId !== this.arena.mapId) {
               this.mapId = this.arena.mapId;
@@ -4041,6 +4046,7 @@
               (this.player.sprinting ? 14 : 9);
             this.flushEvents();
             this.academy?.update();
+            this.practice?.update();
             this.checkResult();
             this.updateHUD(false);
           }
@@ -4251,6 +4257,7 @@
             this.frame = requestAnimationFrame(this.loop);
           }
           destroy() {
+            this.practice?.dispose();
             this.voice?.dispose();
             this.transport?.dispose();
             this.navigation?.dispose();

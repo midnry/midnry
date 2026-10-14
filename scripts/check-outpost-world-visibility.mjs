@@ -53,12 +53,16 @@ try {
       g.protocolCache = null;
       r.frameProtocolArena = null;
       g.protocolUI.update(true);
+      // Compare static geometry with settled lighting. Doorway adaptation has
+      // its own movement test and must not change between these two captures.
+      r.naturalLighting.initialized = false;
       g.render();
       window.worldBefore = JSON.stringify(g.arena.snapshot());
       const v = r.worldVisibility;
       window.visibilityUpdate = v.update;
       v.update = () => {};
       for (const e of v.entries) e.mesh.layers.enable(0);
+      r.lastRenderAt = performance.now();
       g.render();
     }, view);
     const before = await page.screenshot({
@@ -72,6 +76,7 @@ try {
         v = g.military.worldVisibility;
       v.update = window.visibilityUpdate;
       v.last = null;
+      g.military.lastRenderAt = performance.now();
       g.render();
     });
     const after = await page.screenshot({

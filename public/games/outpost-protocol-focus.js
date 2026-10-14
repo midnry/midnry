@@ -128,6 +128,9 @@ export class ProtocolFocus {
       g.on(g.root, type, (event) => {
         if ((g.running || this.info.open) && !editable(event)) event.preventDefault();
       });
+    g.on(g.root, "pointerdown", () => {
+      g.missionPointerSerial = (g.missionPointerSerial || 0) + 1;
+    }, { capture: true });
     // Completing a touch hold can reveal the menu beneath the finger. Keep
     // its synthesized click from activating a different menu control.
     g.on(
@@ -135,8 +138,9 @@ export class ProtocolFocus {
       "click",
       (event) => {
         if (
-          !g.$(".mf-modal").hidden &&
+          (!g.$(".mf-modal").hidden || event.target.closest(".mf-protocol-actions")) &&
           performance.now() < (g.ignoreMissionTapUntil || 0) &&
+          g.ignoreMissionTapSerial === g.missionPointerSerial &&
           event.detail > 0 &&
           event.pointerType !== "mouse"
         ) {
@@ -151,7 +155,7 @@ export class ProtocolFocus {
   open() {
     if (
       !this.ui.visibleGameplay() ||
-      (this.ui.piloting && !this.ui.safeView()?.protocol.mission.vehicle.autopilot)
+      (this.ui.piloting && !this.ui.safeView()?.protocol.mission.vehicle.autopilot && !this.g.practice?.mission?.failed)
     )
       return;
     this.pausedOffline = !this.g.online && this.g.running;

@@ -419,11 +419,15 @@ export class ProtocolUI {
       if (this.startEquipmentCheck()) return;
       this.held = true;
       this.touchHold = event.pointerType !== "mouse";
+      this.touchHoldSerial = g.missionPointerSerial;
       this.holdButton.setPointerCapture(event.pointerId);
       this.holdButton.setAttribute("aria-pressed", "true");
     });
     const release = () => {
-      if (this.touchHold) this.g.ignoreMissionTapUntil = performance.now() + 450;
+      if (this.touchHold) {
+        this.g.ignoreMissionTapUntil = performance.now() + 450;
+        this.g.ignoreMissionTapSerial = this.touchHoldSerial;
+      }
       this.touchHold = false;
       this.held = false;
       this.holdButton.setAttribute("aria-pressed", "false");
@@ -1155,6 +1159,7 @@ export class ProtocolUI {
       this.showBrief();
     }
     g.spectator?.update();
+    g.practice?.refresh();
   }
 
   updateTasks(view) {
@@ -1727,6 +1732,7 @@ export class ProtocolUI {
 
   refreshMenu() {
     if (this.disposed) return;
+    this.g.practice?.refresh();
     const g = this.g,
       active = g.mode === "protocol";
     g.spectator?.update();

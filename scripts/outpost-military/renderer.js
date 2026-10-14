@@ -2913,22 +2913,7 @@ export class MilitaryRenderer {
     }
     const powerOut = protocol.sabotage?.powerUntil > this.g.time;
     this.protocolPowerOut = powerOut;
-    const lighting = this.g.academy.options.lighting;
-    const inside = [
-      ...(this.protocolMetadata()?.rooms || []),
-      ...(this.protocolMetadata()?.corridors || []),
-    ].some(
-      (room) =>
-        room.roofed !== false &&
-        camera.x >= room.x &&
-        camera.x < room.x + room.w &&
-        camera.y >= room.y &&
-        camera.y < room.y + room.h,
-    );
-    this.sun.intensity = powerOut ? 0.28 : lighting ? 4.2 : 1.7;
-    this.rim.intensity = powerOut ? 0.08 : 1.15;
-    this.hemisphere.intensity = powerOut ? 0.07 : lighting ? (inside ? 0.43 : 0.55) : 1.3;
-    this.scene.environmentIntensity = powerOut ? 0.035 : inside ? 0.28 : 0.45;
+    // Natural lighting owns these values; resetting them here defeats fading.
     for (const material of this.protocolLightMaterials) {
       material.emissiveIntensity = powerOut ? 0.035 : 1.6;
       material.color.set(powerOut ? "#414d4f" : "#d3edf0");
@@ -3012,6 +2997,7 @@ export class MilitaryRenderer {
         if(body.equipment)body.equipment.visible=false;
         this.protocolBodies.set(corpse.id, body);
       }
+      body.victimId = corpse.victimId;
       body.root.position.set(corpse.x*SCALE,body.corpseGround??.3,corpse.y*SCALE);
       if(body.actions.Death)body.root.rotation.y=-Math.PI/2-(view.entities.find(e=>e.id===corpse.victimId)?.a||0);
       body.root.visible=(!powerOut||Math.hypot(corpse.x-camera.x,corpse.y-camera.y)<=2.2)&&!this.actors.get(corpse.victimId)?.root.visible;
@@ -3021,6 +3007,14 @@ export class MilitaryRenderer {
         this.removeProtocolObject(body.root, true);
         this.protocolBodies.delete(id);
       }
+  }
+  hideCameraBody(camera) {
+    // Takedown cleanup can restore actor visibility after updateActors. Enforce
+    // first-person ownership again before drawing, including corpse models.
+    const actor = this.actors.get(camera.id);
+    if (actor) actor.root.visible = false;
+    for (const body of this.protocolBodies.values())
+      if (body.victimId === camera.id) body.root.visible = false;
   }
   render() {
     if (this.disposed || this.contextUnavailable) return false;
@@ -3074,13 +3068,14 @@ export class MilitaryRenderer {
     this.camera.rotation.set(pitch - fall * 0.25, -p.a - Math.PI / 2, fall * 0.5, "YXZ");
     this.updateProtocol(protocolView, p);
     this.updateMedicalMission(protocolView?.protocol?.mission, t);
-    updateNaturalLighting(this, protocolView, p);
+    updateNaturalLighting(this, protocolView, p, dt);
     if (g.arena.mapId === "medevac" && !this.motion.matches) {
       const heading = Number(protocolView?.protocol?.mission?.vehicle?.heading) || 0;
       this.camera.rotation.z = THREE.MathUtils.clamp(-heading * 0.055, -0.085, 0.085);
     }
     this.updateActors(t);
     const takedown = (this.takedown ||= new VictimTakedown(this)).update(g);
+    if (!takedown) this.hideCameraBody(p);
     this.camera.updateMatrixWorld(true);
     (this.worldVisibility ||= new WorldVisibility(this)).update(p, takedown ? 1 : pitch, now);
     (this.identification ||= new PlayerIdentification(this)).update(protocolView,p,takedown);
@@ -3180,6 +3175,7 @@ export class MilitaryRenderer {
     this.telemetry.end();
     this.metrics={gpuMs:this.telemetry.gpuMs,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,...this.actorStats,...this.worldStats};
     this.takedown.restoreActors();
+    if (!takedown) this.hideCameraBody(p);
     this.lastTime = t;
     return true;
   }

@@ -87,6 +87,28 @@ try {
       assert.equal(await page.evaluate(() => document.querySelector("midnry-fps").engine.camera().id), setup.targetId);
     }
     await refresh(page);
+    // Regression: stale takedown restoration must never resurrect the POV
+    // owner's model for even one main/reflection draw. Inspect actual draws,
+    // rather than just checking visibility after render cleanup.
+    const drawSafety = await page.evaluate(() => {
+      const g=document.querySelector('midnry-fps').engine,r=g.military;
+      const original=r.renderer.render.bind(r.renderer);let checks=0,leaks=0;
+      r.renderer.render=(scene,camera)=>{
+        if(scene===r.scene){checks++;if(r.actors.get(g.camera().id)?.root.visible)leaks++;}
+        return original(scene,camera);
+      };
+      try{
+        for(let i=0;i<3;i++){
+          g.spectator.cycle(1);const p=g.camera();
+          // Ensure the target has a cached actor from a previous viewpoint.
+          g.render();const actor=r.actors.get(p.id);
+          if(actor)r.takedown.hiddenActors.push([actor.root,true]);
+          p.crouching=i===1;g.render();
+        }
+      }finally{r.renderer.render=original;}
+      return{checks,leaks};
+    });
+    assert.ok(drawSafety.checks>=6);assert.equal(drawSafety.leaks,0);
     const camera = await page.evaluate(() => {
       const g = document.querySelector("midnry-fps").engine, p = g.camera(), r = g.military;
       const before = JSON.stringify(g.arena.snapshot());

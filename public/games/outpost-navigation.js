@@ -10,8 +10,9 @@ export function navigationGoals(view,selfId){
   if(m?.phase==='transport'&&!v.arrived&&!v.autopilot&&!v.pilotId)put(stations.find(s=>s.kind==='helm'),'recover-flight','Take flight control',0);
   for(const bomb of p.bombs||[])put(bomb,'defuse:'+bomb.id,'Disable located charge',2);
   for(const kind of ['power','comms'])if(p.sabotage?.[kind+'Until']>view.time)
-   for(const station of stations.filter(s=>s.kind===kind))put(station,'repair:'+station.id,kind==='power'?'Restore power':'Restore communications',kind==='power'?5:6);
+   for(const station of stations.filter(s=>kind==='power'?/power|generator/.test(s.kind):/comms|radio|radar/.test(s.kind)))put(station,'repair:'+station.id,kind==='power'?'Restore power':'Restore communications',kind==='power'?5:6);
   if(m?.phase==='transport'&&v.cargoDamage>0)put(stations.find(s=>s.kind==='cargo'),'repair-cargo','Repair medical cargo',8);
+  for(const body of p.bodies||[])if(!body.reported&&finite(body))put(body,'report:'+body.id,'Report fallen patrol',3);
  }
  if(!m){for(const task of self.tasks||[])if(!task.done)put(task,'task:'+task.id,task.name,30);return goals;}
  if(m.phase==='base'){
@@ -79,8 +80,14 @@ export class ObjectiveNavigation {
   this.style=document.createElement('style');this.style.textContent=`
    midnry-fps .mf-navline{display:flex;align-items:center;gap:9px;min-height:24px}
    midnry-fps .mf-navline[hidden]{display:none}
-   midnry-fps .mf-navarrow{display:inline-block;flex:0 0 20px;font:700 24px system-ui;line-height:24px;color:#d7e9d8;transform-origin:50% 50%}
-   midnry-fps .mf-navlabel{min-width:0;flex:1;font:600 12px/1.3 system-ui;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+   midnry-fps .mf-navbadge{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border:2px solid #dcf1c2;border-radius:50%;background:#102018;box-shadow:0 0 0 2px #0008,0 2px 8px #0009;color:#e2f7c9}
+   midnry-fps .mf-navarrow{display:block;width:30px;height:30px;filter:drop-shadow(0 1px 1px #000);transform-origin:50% 50%}
+   midnry-fps .mf-navline[data-urgent="true"] .mf-navbadge{border-color:#ffd392;color:#ffe1ac;background:#392818}
+   midnry-fps .mf-navline[data-urgent="true"] .mf-navlabel{color:#ffe1ac}
+   midnry-fps .mf-navline.mf-navnew .mf-navbadge{animation:mf-navnotice .6s ease-out 2}
+   @keyframes mf-navnotice{50%{box-shadow:0 0 0 5px #ffd39266,0 2px 8px #0009}}
+   @media(prefers-reduced-motion:reduce){midnry-fps .mf-navline.mf-navnew .mf-navbadge{animation:none}}
+   midnry-fps .mf-navlabel{min-width:0;flex:1;font:600 12px/1.3 system-ui;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal}
    midnry-fps .mf-navdistance{flex:0 0 auto;font:500 11px system-ui;color:#c1d0c5;font-variant-numeric:tabular-nums}
    midnry-fps .mf-navactive>b{display:none}
    midnry-fps .mf-navdetails{margin:12px 0}midnry-fps .mf-navdetails select{display:block;width:100%;min-height:44px;margin:10px 0;background:#17251f;color:#eef4ee;border:1px solid #84968b;border-radius:10px;padding:9px}
@@ -88,9 +95,11 @@ export class ObjectiveNavigation {
    midnry-fps .mf-namesetting{display:flex;align-items:center;gap:10px;min-height:44px}
   `;
   this.line=document.createElement('div');this.line.className='mf-navline';this.line.hidden=true;
-  this.arrow=document.createElement('span');this.arrow.className='mf-navarrow';this.arrow.textContent='↑';this.arrow.setAttribute('aria-hidden','true');
+  this.badge=document.createElement('span');this.badge.className='mf-navbadge';this.badge.setAttribute('aria-hidden','true');
+  this.badge.innerHTML='<svg class="mf-navarrow" viewBox="0 0 32 32" fill="currentColor"><path d="M16 2 29 20 20 17 20 30 12 30 12 17 3 20Z" stroke="#07130b" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+  this.arrow=this.badge.firstElementChild;
   this.label=document.createElement('span');this.label.className='mf-navlabel';this.distance=document.createElement('span');this.distance.className='mf-navdistance';
-  this.line.append(this.arrow,this.label,this.distance);ui.context.append(this.line);g.shell.append(this.style);
+  this.line.append(this.badge,this.label,this.distance);ui.context.append(this.line);g.shell.append(this.style);
   this.details=document.createElement('details');this.details.className='mf-navdetails';
   const summary=document.createElement('summary');summary.textContent='Navigation & player names';
   this.select=document.createElement('select');this.select.setAttribute('aria-label','Track an objective');
@@ -122,9 +131,15 @@ export class ObjectiveNavigation {
   }
   this.line.hidden=!this.route||!!view.protocol.self.channel;ui.context.classList.toggle('mf-navactive',!this.line.hidden);
   if(!this.route)return;
+  const urgent=this.route.goal.priority<10;
+  this.line.dataset.urgent=String(urgent);
+  if(this.noticeGoal!==this.route.goal.id){
+   this.noticeGoal=this.route.goal.id;this.line.classList.remove('mf-navnew');
+   if(urgent){void this.line.offsetWidth;this.line.classList.add('mf-navnew');}
+  }
   const bearing=navigationBearing(actor,actor.a||0,this.route.path);
   this.arrow.style.transform='rotate('+bearing+'rad)';
-  this.label.textContent=this.route.goal.label;
+  this.label.textContent=(urgent?'URGENT · ':'')+this.route.goal.label;
   this.distance.textContent=Math.max(1,Math.round(this.route.metres))+' m';
   this.line.title=this.route.goal.label+' · follow the corridor route';
  }

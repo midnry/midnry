@@ -3,6 +3,12 @@ import * as THREE from "three";
 
 const SCALE = 3;
 
+// Exponential adaptation stays consistent at 60/120Hz. A suspended tab cannot
+// turn a gradual doorway transition into a sudden flash on its next frame.
+export function lightingBlend(dt, initialized = true) {
+  return initialized ? 1 - Math.exp(-Math.max(0, Math.min(0.1, dt || 0)) / 0.32) : 1;
+}
+
 export function initNaturalLighting(r) {
   if (r.naturalLighting) return;
   // A cached diffuse room probe approximates first-bounce illumination from
@@ -34,6 +40,10 @@ export function initNaturalLighting(r) {
     inside: false,
     powerOut: false,
     span: 0,
+    initialized: false,
+    activeFixtures: new Int32Array(r.protocolLights.length).fill(-1),
+    desiredFixtures: new Int32Array(r.protocolLights.length).fill(-1),
+    assignedFixtures: new Uint8Array(r.protocolLights.length),
   };
   // A second, unrelated cool directional light is not a physical rim source.
   // Sky reflections still give silhouettes and metal their natural edge light.
@@ -91,7 +101,7 @@ function calibrateEnvironment(r, state) {
   );
 }
 
-export function updateNaturalLighting(r, protocolView, camera) {
+export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
   if (!r.naturalLighting) initNaturalLighting(r);
   const state = r.naturalLighting,
     options = r.g.academy.options,
@@ -130,6 +140,10 @@ export function updateNaturalLighting(r, protocolView, camera) {
   state.inside = inside;
   state.roomId = room?.id || null;
   state.powerOut = powerOut;
+  const blend = lightingBlend(dt, state.initialized);
+  const adapt = (object, key, target) => {
+    object[key] = state.initialized ? object[key] + (target - object[key]) * blend : target;
+  };
   const probeKey = `${r.g.arena.mapId}:${room?.id || "outside"}`;
   let probe = r.bakedRoomProbes.get(probeKey);
   if (!probe) {
@@ -144,25 +158,26 @@ export function updateNaturalLighting(r, protocolView, camera) {
     }
     r.bakedRoomProbes.set(probeKey, probe);
   }
-  r.roomBounce.sh.copy(probe);
-  r.roomBounce.intensity = powerOut ? 0.06 : 1;
+  for (let i = 0; i < 9; i++) r.roomBounce.sh.coefficients[i].lerp(probe.coefficients[i], blend);
+  adapt(r.roomBounce, "intensity", powerOut ? 0.06 : 1);
   r.rim.visible = false;
   r.rim.intensity = 0;
   // The sun remains outside a roofed room. Roofs and walls occlude it rather
   // than replacing it with arbitrary ambient illumination from every side.
-  r.sun.intensity = powerOut ? 0.16 : lighting ? 3.1 : 2.05;
+  adapt(r.sun, "intensity", powerOut ? 0.16 : lighting ? 3.1 : 2.05);
   // Emergency bounce illumination leaves walls/doorways readable outside the
   // torch hotspot; fixtures still go dark and limited sight still applies.
-  r.hemisphere.intensity = powerOut ? 0.09 : inside ? 0.18 : lighting ? 0.32 : 0.46;
-  r.scene.environmentIntensity = powerOut ? 0.065 : inside ? 0.2 : 0.48;
-  r.scene.backgroundIntensity = powerOut ? 0.13 : 0.58;
-  r.renderer.toneMappingExposure = powerOut ? 0.92 : inside ? 0.96 : 0.91;
+  adapt(r.hemisphere, "intensity", powerOut ? 0.09 : inside ? 0.18 : lighting ? 0.32 : 0.46);
+  adapt(r.scene, "environmentIntensity", powerOut ? 0.065 : inside ? 0.2 : 0.48);
+  adapt(r.scene, "backgroundIntensity", powerOut ? 0.13 : 0.58);
+  adapt(r.renderer, "toneMappingExposure", powerOut ? 0.92 : inside ? 0.96 : 0.91);
 
   const shadowSize = Math.min(
       r.profile?.maxShadowSize || 2048,
       r.g.academy.preset === "high" ? 2048 : 1024,
     ),
-    span = inside ? 18 : 26;
+    // Stable shadow resolution across roof boundaries prevents texel jumps.
+    span = 26;
   r.renderer.shadowMap.enabled = !!options.shadows;
   r.sun.castShadow = !!options.shadows;
   if (r.sun.shadow.mapSize.x !== shadowSize) {
@@ -227,21 +242,46 @@ export function updateNaturalLighting(r, protocolView, camera) {
           break;
         }
     }
+  // Keep a pooled light on its existing fixture when two nearby fixtures swap
+  // distance order. Otherwise ordinary walking would unnecessarily dim both.
+  state.desiredFixtures.fill(-1);
+  state.assignedFixtures.fill(0);
+  for (let i = 0; i < r.protocolLights.length; i++) {
+    const slot = state.fixtureIndices.indexOf(state.activeFixtures[i]);
+    if (state.activeFixtures[i] >= 0 && slot >= 0 && !state.assignedFixtures[slot]) {
+      state.desiredFixtures[i] = state.activeFixtures[i];
+      state.assignedFixtures[slot] = 1;
+    }
+  }
+  for (let i = 0; i < r.protocolLights.length; i++)
+    if (state.desiredFixtures[i] < 0)
+      for (let slot = 0; slot < state.fixtureIndices.length; slot++)
+        if (state.fixtureIndices[slot] >= 0 && !state.assignedFixtures[slot]) {
+          state.desiredFixtures[i] = state.fixtureIndices[slot];
+          state.assignedFixtures[slot] = 1;
+          break;
+        }
   for (let i = 0; i < r.protocolLights.length; i++) {
     const light = r.protocolLights[i],
-      fixture = fixtures[state.fixtureIndices[i]];
+      desired = state.desiredFixtures[i];
+    // Fade an old pooled fixture out before relocating it to another room.
+    if (!state.initialized || (state.activeFixtures[i] !== desired && light.intensity < 0.15)) {
+      state.activeFixtures[i] = desired;
+      light.intensity = 0;
+    }
+    const fixture = fixtures[state.activeFixtures[i]];
     light.visible = true;
-    light.intensity = fixture && !powerOut ? (lighting ? 22 : 18) : 0;
+    adapt(light, "intensity", fixture && state.activeFixtures[i] === desired && !powerOut ? (lighting ? 22 : 18) : 0);
     light.color.set("#e2ebdf");
     light.distance = 13;
     if (fixture) light.position.set(fixture.x, fixture.y, fixture.z);
   }
 
-  r.weaponScene.environmentIntensity = powerOut ? 0.065 : inside ? 0.22 : 0.48;
+  adapt(r.weaponScene, "environmentIntensity", powerOut ? 0.065 : inside ? 0.22 : 0.48);
   if (state.weaponSky) {
     state.weaponSky.color.copy(r.hemisphere.color);
     state.weaponSky.groundColor.copy(r.hemisphere.groundColor);
-    state.weaponSky.intensity = powerOut ? 0.12 : inside ? 0.28 : 0.58;
+    adapt(state.weaponSky, "intensity", powerOut ? 0.12 : inside ? 0.28 : 0.58);
   }
   if (state.weaponKey) {
     const fixture = fixtures[state.fixtureIndices[0]];
@@ -250,8 +290,9 @@ export function updateNaturalLighting(r, protocolView, camera) {
     else state.localDirection.copy(state.direction);
     r.camera.updateMatrixWorld();
     state.localDirection.transformDirection(r.camera.matrixWorldInverse);
-    state.weaponKey.position.copy(state.localDirection).multiplyScalar(5);
-    state.weaponKey.color.copy(fixture && inside ? r.protocolLights[0].color : r.sun.color);
-    state.weaponKey.intensity = powerOut ? 0.35 : inside ? 1.1 : lighting ? 2.65 : 2.05;
+    state.weaponKey.position.lerp(state.localDirection.multiplyScalar(5), blend);
+    state.weaponKey.color.lerp(fixture && inside ? r.protocolLights[0].color : r.sun.color, blend);
+    adapt(state.weaponKey, "intensity", powerOut ? 0.35 : inside ? 1.1 : lighting ? 2.65 : 2.05);
   }
+  state.initialized = true;
 }
