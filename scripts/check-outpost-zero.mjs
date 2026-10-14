@@ -12,11 +12,6 @@ const academy = readFileSync(
   new URL("../public/games/outpost-academy.js", import.meta.url),
   "utf8",
 );
-const art = readFileSync(new URL("../public/games/outpost-art.js", import.meta.url), "utf8");
-const characters = readFileSync(
-  new URL("../public/games/outpost-characters.js", import.meta.url),
-  "utf8",
-);
 const retention = readFileSync(
   new URL("../public/games/outpost-retention.js", import.meta.url),
   "utf8",
@@ -60,11 +55,7 @@ mkdirSync(screenshotDir, { recursive: true });
               ? content
               : route.request().url().endsWith("outpost-academy.js")
                 ? academy
-                : route.request().url().endsWith("outpost-art.js")
-                  ? art
-                  : route.request().url().endsWith("outpost-characters.js")
-                    ? characters
-                    : route.request().url().endsWith("outpost-retention.js")
+                : route.request().url().endsWith("outpost-retention.js")
                       ? retention
                       : route.request().url().endsWith("outpost-progression.js")
                         ? progression

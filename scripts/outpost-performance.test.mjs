@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { FrameBudget } from "../public/games/outpost-academy.js";
-import { ANIMATION_FPS } from "../public/games/outpost-characters.js";
 import { FrameDiagnostics } from "../public/games/outpost-frame-diagnostics.js";
 test("device diagnostics measure gameplay cadence and retain it through menus", () => {
   const d=new FrameDiagnostics();
@@ -22,7 +21,6 @@ test("120Hz and 60Hz cadence report measured FPS without inventing display frame
     assert.equal(b.target, 120);
     assert.equal(b.scale, 1);
   }
-  assert.equal(ANIMATION_FPS, 30);
 });
 test("sustained overload lowers resolution gradually and clamps its floor", () => {
   const b = new FrameBudget();
