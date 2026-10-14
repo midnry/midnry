@@ -39,6 +39,8 @@ export type Room = {
   reveal?: boolean;
   /** A locked match modifier id, or "random" (host setting). */
   modifier?: string;
+  /** Listed for Quick match: anyone can join while it is in the lobby. */
+  public?: boolean;
   mode: "protocol" | "signal" | "duo";
   mapId: string;
   phase: "lobby" | "playing" | "ended";
@@ -142,6 +144,7 @@ export function publicRoom(code: string, room: Room, selfId: string) {
     difficulty: room.difficulty || "normal",
     reveal: room.reveal !== false,
     modifier: modifierChoice(room.modifier),
+    public: room.public === true,
     mode: room.mode,
     // The aircraft is reached by the authoritative mission transition, never
     // selected from a lobby. Keep the room envelope in sync with that map.
@@ -401,6 +404,10 @@ export function applyRoomAction(
       if (typeof body.reveal !== "boolean") throw new OutpostError("Invalid reveal setting.");
       room.reveal = body.reveal;
     }
+    if (body.public !== undefined) {
+      if (typeof body.public !== "boolean") throw new OutpostError("Invalid room visibility.");
+      room.public = body.public;
+    }
     if (body.modifier !== undefined) {
       if (typeof body.modifier !== "string" || modifierChoice(body.modifier) !== body.modifier)
         throw new OutpostError("Invalid match modifier.");
@@ -519,9 +526,36 @@ export function applyRoomAction(
   return { id: member.id, ...(body.op === "join" ? { token: joinedToken } : {}) };
 }
 
-export async function roomAction(body: Record<string, unknown>, clientKey: string) {
+export async function roomAction(
+  body: Record<string, unknown>,
+  clientKey: string,
+): Promise<unknown> {
   const sql = await getSql(),
     now = Date.now();
+  if (body.op === "quick") {
+    // Quick match: join the fullest open public lobby whose players are still
+    // here; otherwise open a new public lobby with you as host.
+    const rows = await sql<{ code: string; state: Room }>`select code,state from outpost_room
+      where expires_at>now() and state->>'phase'='lobby' and state->>'public'='true'
+      order by expires_at desc limit 25`;
+    const open = rows
+      .map((row) => ({
+        code: row.code,
+        live: row.state.members.filter((m) => now - m.lastSeen < 20000).length,
+        mode: row.state.mode,
+      }))
+      .filter((row) => row.mode === "protocol" && row.live > 0 && row.live < 8)
+      .sort((a, b) => b.live - a.live);
+    for (const row of open) {
+      try {
+        return await roomAction({ ...body, op: "join", code: row.code }, clientKey);
+      } catch (error) {
+        // Filled up or started a moment ago: try the next lobby.
+        if (!(error instanceof OutpostError) || ![404, 409].includes(error.status)) throw error;
+      }
+    }
+    return roomAction({ ...body, op: "create", public: true }, clientKey);
+  }
   if (body.op === "create") {
     const rates = (rateState.__outpostCreateRate ??= new Map());
     const key = sha(clientKey),
@@ -571,6 +605,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
       arena: null,
       updatedAt: now,
       nextName: 2,
+      public: body.public === true,
     };
     await sql`delete from outpost_room where expires_at < now()`;
     const count = await sql<{ n: number }>`select count(*)::int as n from outpost_room`;

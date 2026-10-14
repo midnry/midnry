@@ -17,6 +17,12 @@ globalThis.__outpostEquipmentTestSql = async (strings, ...values) => {
     rooms.set(values[0], { version: 1, state: JSON.parse(values[1]) });
     return [{ code: values[0] }];
   }
+  if (query.startsWith("select code,state")) {
+    // Quick match lobby search: public rooms still in their lobby.
+    return [...rooms.entries()]
+      .filter(([, row]) => row.state.phase === "lobby" && row.state.public === true)
+      .map(([code, row]) => ({ code, state: JSON.parse(JSON.stringify(row.state)) }));
+  }
   if (query.startsWith("select version")) {
     const row = rooms.get(values[0]);
     return row ? [JSON.parse(JSON.stringify(row))] : [];
@@ -215,6 +221,27 @@ test("players choose display names; names are cleaned, unique and reach the matc
   assert.equal(kemi.outfit, "medic");
   assert.match(kemi.color, /^#[0-9a-f]{6}$/);
   assert.equal(new Set(started.arena.entities.map((e) => e.color)).size, 8);
+});
+test("quick match joins an open public lobby, else opens one; private and started rooms are skipped", async () => {
+  const before = new Set(rooms.keys());
+  const priv = await roomAction({ op: "create", mode: "protocol" }, "quick-private");
+  const first = await roomAction({ op: "quick", name: "First" }, "quick-1");
+  assert.notEqual(first.code, priv.code, "never lands in a private room");
+  assert.equal(first.public, true);
+  assert.equal(first.host, first.id);
+  const second = await roomAction({ op: "quick", name: "Second" }, "quick-2");
+  assert.equal(second.code, first.code, "joins the open public lobby");
+  assert.equal(second.members.length, 2);
+  // Once it starts, quick match opens a fresh lobby instead.
+  await roomAction({ op: "start", ...session(first) }, "quick-1");
+  const third = await roomAction({ op: "quick" }, "quick-3");
+  assert.notEqual(third.code, first.code);
+  // Hosts can hide or list a room.
+  const hidden = await roomAction({ op: "settings", ...session(third), public: false }, "quick-3");
+  assert.equal(hidden.public, false);
+  const fourth = await roomAction({ op: "quick" }, "quick-4");
+  assert.notEqual(fourth.code, third.code);
+  assert.ok(![...before].includes(fourth.code));
 });
 test("hosts lock a match modifier and the role reveal; guests and bad values are refused", async () => {
   const host = await create();

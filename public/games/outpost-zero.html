@@ -702,6 +702,35 @@
         line-height: 1.65;
         max-width: 410px;
       }
+      midnry-fps .mf-quick {
+        display: block;
+        width: 100%;
+        min-height: 48px;
+        margin: 10px 0 4px;
+        border: 0;
+        border-radius: 12px;
+        background: #e8c35a;
+        color: #1a1608;
+        font: 800 15px/1 system-ui;
+        letter-spacing: 0.06em;
+        cursor: pointer;
+      }
+      midnry-fps .mf-quick[hidden],
+      midnry-fps .mf-quicknote[hidden] {
+        display: none;
+      }
+      midnry-fps .mf-quicknote {
+        margin: 0 0 10px;
+        font-size: 12px;
+        opacity: 0.8;
+      }
+      midnry-fps .mf-publiclabel {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin: 8px 0;
+        font-size: 13px;
+      }
       midnry-fps .mf-start {
         margin-top: 15px;
         background: #ffc455;
@@ -2334,7 +2363,7 @@
         <div class="mf-damage" role="status" aria-live="polite"></div><div class="mf-hitmark" aria-hidden="true"></div><button class="mf-super" aria-label="Use charged ability">Q · SUPER <b>0%</b></button>
         <div class="mf-bottom"><div class="mf-stat">VITALS<strong class="mf-hp">100</strong><div class="mf-health"><i></i></div></div><div class="mf-stat mf-ammo">VX–7 / AUTO CARBINE<strong class="mf-rounds">24 <span>/ ∞</span></strong></div></div>
         <div class="mf-movement" hidden role="status" aria-live="polite"></div><div class="mf-death" hidden role="status" aria-live="polite">SIGNAL LOST</div><div class="mf-touch"><button class="mf-sprint" aria-label="Toggle sprint" aria-pressed="false">SPRINT</button><button class="mf-slide" aria-label="Slide while sprinting">SLIDE</button><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
-        <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">Field operations in a weathered compound. Choose a loadout and deploy.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="protocol" aria-pressed="true">BLACKOUT PROTOCOL</button></div><div class="mf-kit"><label>Arena<select class="mf-mapselect" aria-label="Choose arena"></select></label><label>Loadout<select class="mf-weaponselect" aria-label="Choose loadout"></select></label><label class="mf-outfitlabel"><span>Outfit<select class="mf-outfitselect" aria-label="Choose outfit"></select></span><img class="mf-outfitpreview" alt="Selected outfit" width="120" height="150"></label></div><p class="mf-mapinfo"></p><p class="mf-weaponinfo"></p><p class="mf-kitnote">Choose before deploying. Offline changes start a fresh round; online, the host chooses the arena.</p><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Hold E · interact &nbsp; / &nbsp; Esc or P · pause<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
+        <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">Field operations in a weathered compound. Choose a loadout and deploy.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="protocol" aria-pressed="true">BLACKOUT PROTOCOL</button></div><div class="mf-kit"><label>Arena<select class="mf-mapselect" aria-label="Choose arena"></select></label><label>Loadout<select class="mf-weaponselect" aria-label="Choose loadout"></select></label><label class="mf-outfitlabel"><span>Outfit<select class="mf-outfitselect" aria-label="Choose outfit"></select></span><img class="mf-outfitpreview" alt="Selected outfit" width="120" height="150"></label></div><p class="mf-mapinfo"></p><p class="mf-weaponinfo"></p><p class="mf-kitnote">Choose before deploying. Offline changes start a fresh round; online, the host chooses the arena.</p><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><button class="mf-quick">QUICK MATCH →</button><p class="mf-quicknote">Join an open public game, or start one that others can join. Bots fill empty seats.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><label class="mf-publiclabel"><input class="mf-public" type="checkbox"> Listed for Quick match</label><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Hold E · interact &nbsp; / &nbsp; Esc or P · pause<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
       </div>`;
             this.engine = new Game(this);
           }
@@ -3215,6 +3244,10 @@
           }
           bindOnline() {
             this.on(this.$(".mf-create"), "click", () => this.connectOnline("create"));
+            this.on(this.$(".mf-quick"), "click", () => this.connectOnline("quick"));
+            this.on(this.$(".mf-public"), "change", (e) =>
+              this.onlineAction("settings", { public: e.target.checked }),
+            );
             this.on(this.$(".mf-join"), "click", () => this.connectOnline("join"));
             this.on(this.$(".mf-codeinput"), "keydown", (e) => {
               if (e.key === "Enter") this.connectOnline("join");
@@ -3264,7 +3297,7 @@
             if (this.academy?.active) this.academy.finish();
             this.connecting = true;
             this.$(".mf-netstatus").textContent = "Connecting…";
-            for (const button of this.root.querySelectorAll(".mf-connectrow button"))
+            for (const button of this.root.querySelectorAll(".mf-connectrow button, .mf-quick"))
               button.disabled = true;
             try {
               const mode = "protocol";
@@ -3307,7 +3340,7 @@
                   error.name === "AbortError" ? "Connection timed out. Try again." : error.message;
             } finally {
               this.connecting = false;
-              for (const button of this.root.querySelectorAll(".mf-connectrow button"))
+              for (const button of this.root.querySelectorAll(".mf-connectrow button, .mf-quick"))
                 button.disabled = false;
             }
           }
@@ -3345,7 +3378,11 @@
               button.setAttribute("aria-pressed", String(button.dataset.mode === this.mode));
             }
             this.$(".mf-connectrow").hidden = true;
+            this.$(".mf-quick").hidden = this.$(".mf-quicknote").hidden = true;
             this.$(".mf-roompanel").hidden = false;
+            const listed = this.$(".mf-public");
+            listed.checked = data.public === true;
+            listed.disabled = data.host !== this.selfId || data.phase !== "lobby";
             this.$(".mf-network").open = true;
             this.$(".mf-roomcode").textContent = data.code;
             this.$(".mf-teamlabel").hidden = this.mode !== "duo" || data.phase !== "lobby";
@@ -3584,6 +3621,7 @@
             if (!this.abort.signal.aborted) {
               for (const button of this.root.querySelectorAll(".mf-mode")) button.disabled = false;
               this.$(".mf-connectrow").hidden = false;
+              this.$(".mf-quick").hidden = this.$(".mf-quicknote").hidden = false;
               this.$(".mf-roompanel").hidden = true;
               this.$(".mf-netstatus").textContent = "";
               this.$(".mf-tag").textContent = "TACTICAL 3D / LOADING";
