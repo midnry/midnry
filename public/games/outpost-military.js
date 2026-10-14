@@ -19493,7 +19493,102 @@ var Dp = class {
 			worldCulled: this.entries.length - s
 		};
 	}
-}, $ = 3, Op = "/games/military/", kp = Math.PI * 2, Ap = {
+}, Op = (e) => Number.isFinite(e?.x) && Number.isFinite(e?.y);
+function kp(e, t, n, { range: r = 8, spacing: i = .25, offset: a = .35 } = {}) {
+	let o = (t) => Op(t) && e?.[Math.floor(t.y)]?.[Math.floor(t.x)] === 0;
+	if (!o(t) || !Array.isArray(n) || !n.length || !(i > 0) || !(r > 0)) return {
+		markers: [],
+		end: null
+	};
+	let s = 0;
+	for (let e = 0; e < n.length; e++) Op(n[e]) && Math.floor(n[e].x) === Math.floor(t.x) && Math.floor(n[e].y) === Math.floor(t.y) && (s = Math.min(e + 1, n.length - 1));
+	let c = {
+		x: Math.floor(t.x) + .5,
+		y: Math.floor(t.y) + .5
+	}, l = n.slice(s).find((e) => Op(e) && Math.hypot(e.x - c.x, e.y - c.y) > 1e-6), u = l ? Math.atan2(l.y - c.y, l.x - c.x) : 0, d = (t.x - c.x) * Math.cos(u) + (t.y - c.y) * Math.sin(u), f = [], p = c, m = 0, h = 0;
+	for (let e of n.slice(s)) {
+		if (!o(e)) return {
+			markers: [],
+			end: null
+		};
+		let t = e.x - p.x, n = e.y - p.y, s = Math.hypot(t, n);
+		if (s < 1e-6) {
+			p = e;
+			continue;
+		}
+		for (let e = 1, r = Math.ceil(s / .1); e <= r; e++) if (!o({
+			x: p.x + t * e / r,
+			y: p.y + n * e / r
+		})) return {
+			markers: [],
+			end: null
+		};
+		for (; h <= m + s && h - d <= r;) {
+			let e = (h - m) / s;
+			h - d >= a && f.push({
+				x: p.x + t * e,
+				y: p.y + n * e,
+				angle: Math.atan2(n, t),
+				distance: h - d
+			}), h += i;
+		}
+		if (m += s, p = e, m - d > r) return {
+			markers: f,
+			end: null
+		};
+	}
+	return {
+		markers: f,
+		end: {
+			x: p.x,
+			y: p.y
+		}
+	};
+}
+//#endregion
+//#region scripts/outpost-military/ground-trail.js
+var Ap = 3, jp = .065, Mp = 40, Np = class {
+	constructor(e) {
+		this.r = e, this.root = new J(), this.root.name = "Objective floor trail", e.scene.add(this.root);
+		let t = document.createElement("canvas");
+		t.width = 64, t.height = 128;
+		let n = t.getContext("2d");
+		n.fillStyle = "#162422", n.beginPath(), n.roundRect(2, 2, 60, 124, 22), n.fill(), n.fillStyle = "#ffffff", n.beginPath(), n.roundRect(9, 8, 46, 112, 17), n.fill(), this.texture = new xi(t), this.texture.colorSpace = E, this.material = new gn({
+			color: "#b9eedb",
+			map: this.texture,
+			transparent: !0,
+			alphaTest: .2,
+			depthTest: !0,
+			depthWrite: !1,
+			toneMapped: !1
+		}), this.geometry = new Wa(.26, .62).rotateX(-Math.PI / 2), this.mesh = new Gr(this.geometry, this.material, Mp), this.mesh.instanceMatrix.setUsage(35048), this.mesh.frustumCulled = !1, this.mesh.count = 0, this.mesh.renderOrder = 2, this.ringGeometry = new Ga(.25, .32, 32).rotateX(-Math.PI / 2), this.ringMaterial = new gn({
+			color: "#b9eedb",
+			depthTest: !0,
+			depthWrite: !1,
+			toneMapped: !1
+		}), this.ring = new qn(this.ringGeometry, this.ringMaterial), this.ring.renderOrder = 2, this.root.add(this.mesh, this.ring), this.root.visible = !1, this.matrix = new G(), this.position = new U(), this.rotation = new H(), this.axis = new U(0, 1, 0), this.scale = new U(1, 1, 1);
+	}
+	update(e, t, n, r) {
+		let i = this.r.g, a = i.navigation, o = i.protocolUI, s = !!a?.route && a.mapId === e?.mapId && a.roundId === e?.roundId && !a.line.hidden && o.visibleGameplay() && !o.hasDialogOpen() && !o.piloting && !i.deathSequence && !n && t.id === i.selfId && t.hp > 0 && e?.state !== "ended" && e?.protocol?.phase === "roam" && !!e.protocol.self && !e.protocol.self?.channel;
+		if (this.root.visible = s, !s) {
+			this.nextUpdate = 0;
+			return;
+		}
+		let c = `${e.roundId}:${e.mapId}:${a.route.goal.id}`;
+		if (this.key === c && this.route === a.route && r < this.nextUpdate) return;
+		this.key = c, this.route = a.route, this.nextUpdate = r + 100, this.samples = kp(e.level, t, a.route.path);
+		let l = a.route.goal.priority < 10 ? "#ffd18c" : "#b9eedb";
+		this.material.color.set(l), this.ringMaterial.color.set(l), this.mesh.count = Math.min(Mp, this.samples.markers.length);
+		for (let e = 0; e < this.mesh.count; e++) {
+			let t = this.samples.markers[e];
+			this.position.set(t.x * Ap, jp, t.y * Ap), this.rotation.setFromAxisAngle(this.axis, -t.angle - Math.PI / 2), this.matrix.compose(this.position, this.rotation, this.scale), this.mesh.setMatrixAt(e, this.matrix);
+		}
+		this.mesh.instanceMatrix.needsUpdate = !0, this.ring.visible = !!this.samples.end, this.ring.visible && this.ring.position.set(this.samples.end.x * Ap, jp, this.samples.end.y * Ap);
+	}
+	dispose() {
+		this.root.remove(), this.mesh.dispose(), this.geometry.dispose(), this.ringGeometry.dispose(), this.material.dispose(), this.ringMaterial.dispose(), this.texture.dispose();
+	}
+}, $ = 3, Pp = "/games/military/", Fp = Math.PI * 2, Ip = {
 	outpost: {
 		floor: "#a69980",
 		fog: "#bbc2c3",
@@ -19529,7 +19624,7 @@ var Dp = class {
 		fog: "#b8c9d0",
 		metal: "#92a1a3"
 	}
-}, jp = class {
+}, Lp = class {
 	constructor(e, t = () => {}, { safeMode: n = !1 } = {}) {
 		this.g = e, this.onProgress = t, this.disposed = !1, this.actors = /* @__PURE__ */ new Map(), this.crates = /* @__PURE__ */ new Map(), this.cores = /* @__PURE__ */ new Map(), this.projectiles = /* @__PURE__ */ new Map(), this.fields = /* @__PURE__ */ new Map(), this.protocolCharges = /* @__PURE__ */ new Map(), this.protocolBodies = /* @__PURE__ */ new Map(), this.protocolFixtures = [], this.protocolScreens = /* @__PURE__ */ new Map(), this.protocolLights = [], this.protocolLightMaterials = [], this.protocolPowerOut = !1, this.medicalStocks = /* @__PURE__ */ new Map(), this.transportCargo = [], this.transportTerrain = null, this.transportInstrument = null, this.transportInstrumentKey = "", this.transportAlarm = null, this.medevacRotor = null, this.arrivalClinic = null, this.arrivalPatients = /* @__PURE__ */ new Map(), this.materials = /* @__PURE__ */ new Set(), this.geometries = /* @__PURE__ */ new Map(), this.textures = /* @__PURE__ */ new Set(), this.worldTextures = /* @__PURE__ */ new Set(), this.weaponTextures = /* @__PURE__ */ new Set(), this.lastTime = 0, this.lastPose = -1, this.mapKey = "", this.wallKeys = "", this.seenShots = /* @__PURE__ */ new Map(), this.tracers = [], this.lastPreset = "", this.assetErrors = [], this.motion = matchMedia("(prefers-reduced-motion: reduce)"), this.mobileDevice = matchMedia("(pointer: coarse)").matches;
 		let r = bp(navigator), i, a;
@@ -19628,7 +19723,7 @@ var Dp = class {
 	async loadAssets() {
 		let t = 0, n = () => this.onProgress(++t, 14), r = new No(), i = async (t) => {
 			try {
-				let n = await r.loadAsync(Op + t + "?assetVersion=" + Xd);
+				let n = await r.loadAsync(Pp + t + "?assetVersion=" + Xd);
 				return this.disposed ? (n.dispose(), null) : (n.wrapS = n.wrapT = e, n.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy()), this.textures.add(n), n);
 			} catch {
 				return this.assetErrors.push(t), null;
@@ -19653,7 +19748,7 @@ var Dp = class {
 			$d(this),
 			(async () => {
 				try {
-					let e = await new Eu().loadAsync(Op + "models/operator-v1.glb?assetVersion=" + Xd);
+					let e = await new Eu().loadAsync(Pp + "models/operator-v1.glb?assetVersion=" + Xd);
 					if (this.disposed) {
 						this.disposeObject(e.scene);
 						return;
@@ -19670,7 +19765,7 @@ var Dp = class {
 			(async () => {
 				try {
 					if (!this.profile.halfFloat) return;
-					let e = await new Td().loadAsync(Op + "sky.hdr?assetVersion=" + Xd);
+					let e = await new Td().loadAsync(Pp + "sky.hdr?assetVersion=" + Xd);
 					if (this.disposed) {
 						e.dispose();
 						return;
@@ -19727,7 +19822,7 @@ var Dp = class {
 	}
 	buildWorld() {
 		this.lastShadowAt = 0;
-		let e = this.g, t = e.arena.mapId, n = Ap[t] || Ap.outpost, r = e.level.length;
+		let e = this.g, t = e.arena.mapId, n = Ip[t] || Ip.outpost, r = e.level.length;
 		this.clearWorld(), this.buildingWorld = !0, this.mapKey = t, this.wallKeys = "", this.scene.fog.color.set(n.fog), this.scene.fog.density = t === "freight" ? .021 : .012;
 		let i = this.material({
 			color: "#d7d4cd",
@@ -20528,7 +20623,7 @@ var Dp = class {
 				.11,
 				.11
 			]);
-			let o = this.mesh(t, this.geo("radar-dish", () => new Ka(1.25, 24, 12, 0, kp, 0, Math.PI / 2)), r, [
+			let o = this.mesh(t, this.geo("radar-dish", () => new Ka(1.25, 24, 12, 0, Fp, 0, Math.PI / 2)), r, [
 				e,
 				8.8,
 				i
@@ -21562,7 +21657,7 @@ var Dp = class {
 				.04
 			]);
 		} else {
-			this.mesh(m, this.geo("combatHelmet", () => new Ka(1, 24, 16, 0, kp, 0, Math.PI * .6)), i, [
+			this.mesh(m, this.geo("combatHelmet", () => new Ka(1, 24, 16, 0, Fp, 0, Math.PI * .6)), i, [
 				0,
 				2.09,
 				.025
@@ -22748,7 +22843,7 @@ var Dp = class {
 		}
 		this.updateActors(t);
 		let f = (this.takedown ||= new yp(this)).update(e);
-		f || this.hideCameraBody(i), this.camera.updateMatrixWorld(!0), (this.worldVisibility ||= new Dp(this)).update(i, f ? 1 : a, c), (this.identification ||= new Jf(this)).update(o, i, f);
+		(this.groundTrail ||= new Np(this)).update(o, i, f, c), f || this.hideCameraBody(i), this.camera.updateMatrixWorld(!0), (this.worldVisibility ||= new Dp(this)).update(i, f ? 1 : a, c), (this.identification ||= new Jf(this)).update(o, i, f);
 		let p = e.protocolUI?.combatMarker, m = o?.protocol?.phase === "combat" && o.protocol.combat, h = m && e.arena.entities.find((e) => e.id === m.targetId);
 		if (p) {
 			let t = !f && !!h && h.id !== i.id && h.hp > 0 && Math.hypot(h.x - i.x, h.y - i.y) <= (this.protocolPowerOut ? 2.6 : 7) && e.arena.visible(i, h);
@@ -22767,7 +22862,7 @@ var Dp = class {
 		let g = o?.protocol?.phase === "combat", _ = e.mode === "protocol" && !g ? 0 : Math.max(0, 1 - (t - i.shotAt) / .16), v = Math.max(0, Math.min(1, (i.reloadUntil - t) / 1.4));
 		this.rig.position.y = -.2 * Math.max(1, this.g.h / this.g.w) - (e.mode === "protocol" && !g ? .075 : 0) - (v > 0 ? Math.sin(v * Math.PI) * .25 : 0) + (this.motion.matches ? 0 : Math.sin(e.step) * .005), this.rig.position.y -= d * .65, this.rig.position.z = _ * .04, this.rig.rotation.x = .02 - _ * .075, this.rig.rotation.z = -.025 + Math.sin(v * Math.PI) * .3, this.flash.intensity = _ > .65 ? 3 : 0, qf(this.rig.userData.carbine, v, _), this.rig.visible = (i.hp > 0 || !!e.deathSequence && e.deathProgress < .65) && !s && !f;
 		let y = !["training", "protocol"].includes(e.mode) && e.time > e.zone.delay && (Math.abs(i.x - e.zone.cx) > e.zone.half || Math.abs(i.y - e.zone.cy) > e.zone.half);
-		return this.scene.fog.color.set(this.protocolPowerOut ? "#101d22" : y ? "#827276" : (Ap[e.arena.mapId] || Ap.outpost).fog), this.scene.fog.density = this.protocolPowerOut ? .045 : y ? .065 : e.arena.mapId === "medevac" && !o?.protocol?.mission?.vehicle?.arrived ? .002 : .009, this.renderer.shadowMap.enabled && (!this.lastShadowAt || c - this.lastShadowAt >= 1e3 / 30) && (this.renderer.shadowMap.needsUpdate = !0, this.lastShadowAt = c), this.renderer.info.reset(), (this.telemetry ||= new Cp(this.renderer)).begin(), !this.composer || e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), this.telemetry.end(), this.metrics = {
+		return this.scene.fog.color.set(this.protocolPowerOut ? "#101d22" : y ? "#827276" : (Ip[e.arena.mapId] || Ip.outpost).fog), this.scene.fog.density = this.protocolPowerOut ? .045 : y ? .065 : e.arena.mapId === "medevac" && !o?.protocol?.mission?.vehicle?.arrived ? .002 : .009, this.renderer.shadowMap.enabled && (!this.lastShadowAt || c - this.lastShadowAt >= 1e3 / 30) && (this.renderer.shadowMap.needsUpdate = !0, this.lastShadowAt = c), this.renderer.info.reset(), (this.telemetry ||= new Cp(this.renderer)).begin(), !this.composer || e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), this.telemetry.end(), this.metrics = {
 			gpuMs: this.telemetry.gpuMs,
 			drawCalls: this.renderer.info.render.calls,
 			triangles: this.renderer.info.render.triangles,
@@ -22785,7 +22880,7 @@ var Dp = class {
 	}
 	dispose() {
 		if (!this.disposed) {
-			this.disposed = !0, this.telemetry?.dispose(), this.identification?.dispose(), this.takedown?.dispose(), Uf(this.rig);
+			this.disposed = !0, this.telemetry?.dispose(), this.groundTrail?.dispose(), this.identification?.dispose(), this.takedown?.dispose(), Uf(this.rig);
 			for (let e of this.actors.values()) e.mixer?.stopAllAction(), e.model.traverse((e) => {
 				e.isSkinnedMesh && e.skeleton.dispose();
 			});
@@ -22800,4 +22895,4 @@ var Dp = class {
 	}
 };
 //#endregion
-export { jp as MilitaryRenderer };
+export { Lp as MilitaryRenderer };

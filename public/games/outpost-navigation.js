@@ -18,7 +18,7 @@ export function navigationGoals(view,selfId,wantMeeting=false){
  if(!m){for(const task of self.tasks||[])if(!task.done)put(task,'task:'+task.id,task.name,30);return goals;}
  if(m.phase==='base'){
   // An alarm is public; undiscovered charge coordinates are not. Direct the
-  // player to known repairs, or leave the search instruction without an arrow.
+  // player to known repairs, or leave the search instruction without a trail.
   if(operator&&p.detonateAt!=null&&!(p.bombs||[]).length)return goals;
   if(self.cargo)put(m.loading,'load','Load '+self.cargo.name,15);
   else if(m.manifest.every(i=>i.loaded>=i.required))put(m.loading,'depart','Board the medevac',20);
@@ -75,19 +75,44 @@ export function navigationBearing(start,angle,path){
  return Math.atan2(Math.sin(a),Math.cos(a));
 }
 
+/** Sample a floor trail in map units (one tile = three metres). Start in the
+ * player's current cell, retaining right-angle corridor turns rather than
+ * smoothing through cover. This reads only the recipient's selected route. */
+export function navigationTrail(level,start,path,{range=8,spacing=.25,offset=.35}={}){
+ const walkable=p=>finite(p)&&level?.[Math.floor(p.y)]?.[Math.floor(p.x)]===0;
+ if(!walkable(start)||!Array.isArray(path)||!path.length||!(spacing>0)||!(range>0))return {markers:[],end:null};
+ let index=0;
+ for(let i=0;i<path.length;i++)if(finite(path[i])&&Math.floor(path[i].x)===Math.floor(start.x)&&Math.floor(path[i].y)===Math.floor(start.y))index=Math.min(i+1,path.length-1);
+ // Anchor the pattern to tile centres, so walking crops existing floor marks
+ // instead of sliding the entire pattern forward at each presentation tick.
+ const anchor={x:Math.floor(start.x)+.5,y:Math.floor(start.y)+.5},first=path.slice(index).find(p=>finite(p)&&Math.hypot(p.x-anchor.x,p.y-anchor.y)>1e-6);
+ const direction=first?Math.atan2(first.y-anchor.y,first.x-anchor.x):0;
+ const progress=(start.x-anchor.x)*Math.cos(direction)+(start.y-anchor.y)*Math.sin(direction);
+ const markers=[];let previous=anchor,travelled=0,next=0;
+ for(const point of path.slice(index)){
+  if(!walkable(point))return {markers:[],end:null};
+  const dx=point.x-previous.x,dy=point.y-previous.y,length=Math.hypot(dx,dy);
+  if(length<1e-6){previous=point;continue;}
+  // A stale route must never draw through newly changed cover or a teleport.
+  for(let i=1,n=Math.ceil(length/.1);i<=n;i++)if(!walkable({x:previous.x+dx*i/n,y:previous.y+dy*i/n}))return {markers:[],end:null};
+  while(next<=travelled+length&&next-progress<=range){
+   const f=(next-travelled)/length;
+   if(next-progress>=offset)markers.push({x:previous.x+dx*f,y:previous.y+dy*f,angle:Math.atan2(dy,dx),distance:next-progress});
+   next+=spacing;
+  }
+  travelled+=length;previous=point;
+  if(travelled-progress>range)return {markers,end:null};
+ }
+ return {markers,end:{x:previous.x,y:previous.y}};
+}
+
 export class ObjectiveNavigation {
  constructor(g,ui){
   this.g=g;this.ui=ui;this.pinned=null;this.route=null;this.nextUpdate=0;
   this.style=document.createElement('style');this.style.textContent=`
    midnry-fps .mf-navline{display:flex;align-items:center;gap:9px;min-height:24px}
    midnry-fps .mf-navline[hidden]{display:none}
-   midnry-fps .mf-navbadge{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border:2px solid #dcf1c2;border-radius:50%;background:#102018;box-shadow:0 0 0 2px #0008,0 2px 8px #0009;color:#e2f7c9}
-   midnry-fps .mf-navarrow{display:block;width:30px;height:30px;filter:drop-shadow(0 1px 1px #000);transform-origin:50% 50%}
-   midnry-fps .mf-navline[data-urgent="true"] .mf-navbadge{border-color:#ffd392;color:#ffe1ac;background:#392818}
    midnry-fps .mf-navline[data-urgent="true"] .mf-navlabel{color:#ffe1ac}
-   midnry-fps .mf-navline.mf-navnew .mf-navbadge{animation:mf-navnotice .6s ease-out 2}
-   @keyframes mf-navnotice{50%{box-shadow:0 0 0 5px #ffd39266,0 2px 8px #0009}}
-   @media(prefers-reduced-motion:reduce){midnry-fps .mf-navline.mf-navnew .mf-navbadge{animation:none}}
    midnry-fps .mf-navlabel{min-width:0;flex:1;font:600 12px/1.3 system-ui;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal}
    midnry-fps .mf-navdistance{flex:0 0 auto;font:500 11px system-ui;color:#c1d0c5;font-variant-numeric:tabular-nums}
    midnry-fps .mf-navactive>b{display:none}
@@ -96,16 +121,13 @@ export class ObjectiveNavigation {
    midnry-fps .mf-namesetting{display:flex;align-items:center;gap:10px;min-height:44px}
   `;
   this.line=document.createElement('div');this.line.className='mf-navline';this.line.hidden=true;
-  this.badge=document.createElement('span');this.badge.className='mf-navbadge';this.badge.setAttribute('aria-hidden','true');
-  this.badge.innerHTML='<svg class="mf-navarrow" viewBox="0 0 32 32" fill="currentColor"><path d="M16 2 29 20 20 17 20 30 12 30 12 17 3 20Z" stroke="#07130b" stroke-width="1.5" stroke-linejoin="round"/></svg>';
-  this.arrow=this.badge.firstElementChild;
   this.label=document.createElement('span');this.label.className='mf-navlabel';this.distance=document.createElement('span');this.distance.className='mf-navdistance';
-  this.line.append(this.badge,this.label,this.distance);ui.context.append(this.line);g.shell.append(this.style);
+  this.line.append(this.label,this.distance);ui.context.append(this.line);g.shell.append(this.style);
   this.details=document.createElement('details');this.details.className='mf-navdetails';
   const summary=document.createElement('summary');summary.textContent='Navigation & player names';
   this.select=document.createElement('select');this.select.setAttribute('aria-label','Track an objective');
   this.select.append(new Option('Automatic · next useful objective',''));
-  const note=document.createElement('p');note.textContent='The arrow follows the corridor route. Urgent repairs take priority. Hidden charges appear after you locate them.';
+  const note=document.createElement('p');note.textContent='Follow the mint trail on the ground. Amber trails mark urgent repairs and reports. The ring marks your destination. Hidden charges appear after you locate them.';
   const names=document.createElement('label');names.className='mf-namesetting';this.names=document.createElement('input');this.names.type='checkbox';
   try{this.names.checked=localStorage.getItem('midnry-outpost-names')!=='off';}catch{this.names.checked=true;}
   names.append(this.names,document.createTextNode('Show visible player names'));
@@ -122,6 +144,7 @@ export class ObjectiveNavigation {
   const now=performance.now();
   if(key!==this.key||now>=this.nextUpdate){
    this.key=key;this.nextUpdate=now+750;
+   this.mapId=view.mapId;this.roundId=view.roundId;
    const routes=navigationRoutes(view.level,actor,goals);
    this.route=chooseNavigation(routes,this.pinned,this.route?.goal.id);
    const optionsKey=goals.map(t=>t.id).join(',');
@@ -135,12 +158,6 @@ export class ObjectiveNavigation {
   if(!this.route)return;
   const urgent=this.route.goal.priority<10;
   this.line.dataset.urgent=String(urgent);
-  if(this.noticeGoal!==this.route.goal.id){
-   this.noticeGoal=this.route.goal.id;this.line.classList.remove('mf-navnew');
-   if(urgent){void this.line.offsetWidth;this.line.classList.add('mf-navnew');}
-  }
-  const bearing=navigationBearing(actor,actor.a||0,this.route.path);
-  this.arrow.style.transform='rotate('+bearing+'rad)';
   this.label.textContent=(urgent?'URGENT · ':'')+this.route.goal.label;
   this.distance.textContent=Math.max(1,Math.round(this.route.metres))+' m';
   this.line.title=this.route.goal.label+' · follow the corridor route';

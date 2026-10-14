@@ -47,7 +47,9 @@ try{
   assert.ok(lighting.after.ambient>lighting.before.ambient&&lighting.after.ambient<.3);
   assert.ok(lighting.after.exposure<lighting.before.exposure&&lighting.after.exposure>.92);
   assert.equal(lighting.before.span,lighting.after.span);
-  const arrow=await page.locator('.mf-navbadge').boundingBox();assert.ok(arrow.width>=44&&arrow.height>=44);
+  assert.equal(await page.locator('.mf-navbadge,.mf-navarrow').count(),0);
+  const trail=await page.evaluate(()=>{const g=document.querySelector('midnry-fps').engine,t=g.military.groundTrail;return {visible:t.root.visible,count:t.mesh.count,floor:t.mesh.instanceMatrix.array[13],depth:t.material.depthTest};});
+  assert.equal(trail.visible,true);assert.ok(trail.count>0&&trail.count<=32);assert.ok(Math.abs(trail.floor-.065)<1e-6);assert.equal(trail.depth,true);
   // Freeze only the simulation: matrix/pose/recipient caches are deliberately
   // invalidated when test fixtures teleport actors, as a real 30 Hz tick does.
   const sight=await page.evaluate(()=>{
@@ -67,12 +69,13 @@ try{
    return{wall,lit,blackout,restored,fixtures:!!blocked&&!!far};
   });
   assert.equal(sight.fixtures,true);assert.equal(sight.wall,false);assert.equal(sight.lit,true);assert.equal(sight.blackout,false);assert.equal(sight.restored,true);
-  await page.evaluate(()=>{const g=document.querySelector('midnry-fps').engine;g.arena.entities[1].name='Sato';g.protocolCache=null;g.military.frameProtocolArena=null;g.render();});
+  await page.evaluate(()=>{const g=document.querySelector('midnry-fps').engine;g.arena.entities[1].name='Sato';g.protocolCache=null;g.military.frameProtocolArena=null;const next=g.navigation.route.path[0];g.player.a=Math.atan2(next.y-g.player.y,next.x-g.player.x);g.viewPitch=-.18;g.render();});
   await page.screenshot({path:`/workspace/screenshots/outpost-navigation-${name}.png`});
   if(mobile)await page.locator('.mf-protocol-infoopen').tap();else await page.locator('.mf-protocol-infoopen').click();
   await page.locator('.mf-navdetails summary').click();
   await page.evaluate(()=>document.querySelector('midnry-fps').engine.render());
   assert.equal(await page.locator('.mf-playernames').isVisible(),false);
+  assert.equal(await page.evaluate(()=>document.querySelector('midnry-fps').engine.military.groundTrail.root.visible),false);
   const select=page.locator('.mf-navdetails select'),values=await select.locator('option').evaluateAll(nodes=>nodes.map(n=>n.value));
   assert.ok(values.length>3);await select.selectOption(values.at(-1));
   await page.locator('.mf-namesetting input').uncheck();
@@ -90,7 +93,8 @@ try{
   assert.ok(repair.goal.startsWith('repair:'));assert.equal(repair.label,'URGENT · Restore power');assert.equal(repair.pin,pin);
   assert.equal(await page.locator('.mf-navline').getAttribute('data-urgent'),'true');
   await page.emulateMedia({reducedMotion:'reduce'});
-  assert.equal(await page.locator('.mf-navbadge').evaluate(e=>getComputedStyle(e).animationName),'none');
+  const urgentTrail=await page.evaluate(()=>{const g=document.querySelector('midnry-fps').engine,t=g.military.groundTrail;t.nextUpdate=0;g.render();return {visible:t.root.visible,count:t.mesh.count,color:t.material.color.getHexString(),textures:t.texture.version};});
+  assert.equal(urgentTrail.visible,true);assert.ok(urgentTrail.count>0);assert.equal(urgentTrail.color,'ffd18c');
   await page.screenshot({path:`/workspace/screenshots/outpost-navigation-repair-${name}.png`});
   const charge=await page.evaluate(()=>{
    const g=document.querySelector('midnry-fps').engine,p=g.arena.protocol;
@@ -99,11 +103,25 @@ try{
    const hidden={goal:g.navigation.route?.goal.id||null,line:g.navigation.line.hidden};
    g.arena.privateFor(g.player).discoveredBombs.push('hidden-charge');refresh();
    const found=g.navigation.route?.goal.id;g.player.hp=0;refresh();
-   return{hidden,found,dead:g.navigation.line.hidden};
+   return{hidden,found,dead:g.navigation.line.hidden,trail:g.military.groundTrail.root.visible};
   });
-  assert.equal(charge.hidden.goal,null);assert.equal(charge.hidden.line,true);assert.equal(charge.found,'defuse:hidden-charge');assert.equal(charge.dead,true);
+  assert.equal(charge.hidden.goal,null);assert.equal(charge.hidden.line,true);assert.equal(charge.found,'defuse:hidden-charge');assert.equal(charge.dead,true);assert.equal(charge.trail,false);
+  const lifecycle=await page.evaluate(()=>{
+   const g=document.querySelector('midnry-fps').engine,refresh=()=>{g.protocolCache=null;g.military.frameProtocolArena=null;g.navigation.nextUpdate=0;g.protocolUI.update(true);g.render();};
+   g.reset();g.start();g.protocolUI.brief.close();for(const e of g.arena.entities)e.bot=false;
+   for(const item of g.arena.protocol.mission.manifest)item.loaded=item.required;
+   const pad=g.arena.protocol.mission.loading;Object.assign(g.player,{x:pad.x,y:pad.y});g.arena.departMission(g.player);refresh();
+   const t=g.military.groundTrail,flight={visible:t.root.visible,count:t.mesh.count,map:g.arena.mapId,selected:g.navigation.route?.goal.id};
+   g.arena.startMeeting(g.player,'Training radio assembly');refresh();const meeting=t.root.visible;
+   g.arena.protocol.phase='vote';const accused=g.arena.entities.find(e=>e.id!==g.selfId&&e.hp>0);for(const id of g.arena.protocol.meeting.participants)g.arena.protocol.meeting.votes[id]=accused.id;g.arena.resolveMeeting();refresh();const combat=t.root.visible;
+   g.arena.protocol.phase='roam';g.arena.protocol.meeting=null;
+   const helm=g.transportMap.helm;Object.assign(g.player,{x:helm.x,y:helm.y});g.arena.botAction(g.player,'helm');refresh();const pilot=t.root.visible;
+   return{flight,meeting,combat,pilot,helmOccupied:g.arena.protocol.mission.vehicle.pilotId===g.selfId};
+  });
+  assert.equal(lifecycle.flight.map,'medevac');assert.equal(lifecycle.flight.visible,true);assert.ok(lifecycle.flight.count>0);assert.ok(lifecycle.flight.selected.startsWith('flight:'));
+  assert.equal(lifecycle.meeting,false);assert.equal(lifecycle.combat,false);assert.equal(lifecycle.helmOccupied,true);assert.equal(lifecycle.pilot,false);
   assert.deepEqual(errors,[]);
-  console.log(JSON.stringify({name,identification:'visible only; plain text; toggle persists',navigation:'corridor route; manual target; urgent repair; hidden charge privacy',mobileHUD:'within viewport',riggedHands:'loaded',errors}));
+  console.log(JSON.stringify({name,identification:'visible only; plain text; toggle persists',navigation:'ground trail follows corridors; manual target; amber repair; hidden charge privacy',mobileHUD:'within viewport',riggedHands:'loaded',errors}));
   await page.close();
  }
 }finally{await browser.close();}
