@@ -63,11 +63,55 @@ export const PRACTICE_STEPS = Object.freeze([
   },
 ]);
 
+/** The infiltrator's side: five short drills on the real validators. */
+export const INFILTRATOR_STEPS = Object.freeze([
+  {
+    id: "fake",
+    title: "Blend in at a wall panel",
+    hint: "The wall panel in front of you is your cover assignment. Walk up to it and hold E or the action button until it finishes.",
+    detail:
+      "Cover checks make you look busy. Careful: a real pickup removes a case from a cabinet, and sharp operators notice when someone works and nothing changes.",
+  },
+  {
+    id: "eliminate",
+    title: "Eliminate an isolated operator",
+    hint: "A training operator is right in front of you. Press X or Eliminate while nobody else is watching.",
+    detail:
+      "Eliminations recharge for 25 seconds. A body stays where it falls until someone reports it, and anyone who saw you will remember.",
+  },
+  {
+    id: "vent",
+    title: "Escape through a hatch",
+    hint: "You are standing on a maintenance hatch. Press B for Tactics and pick a linked exit.",
+    detail:
+      "Hatches link distant rooms. Only infiltrators can use them, and leaving a crime scene fast is half the job.",
+  },
+  {
+    id: "sabotage",
+    title: "Cut the power",
+    hint: "Press B for Tactics, then choose Cut power.",
+    detail:
+      "Darkness shrinks everyone's sight to a few metres for 40 seconds, unless an operator repairs the generators first.",
+  },
+  {
+    id: "plant",
+    title: "Arm a base charge",
+    hint: "A concealed socket is right in front of you. Walk up, hold E for eight seconds, then type the three-digit arming code.",
+    detail:
+      "Three charges in three different rooms start a 75-second countdown. Operators can still find and disable one.",
+  },
+]);
+
+/** Which drills a track runs. */
+export const PRACTICE_TRACKS = Object.freeze({ operator: PRACTICE_STEPS, infiltrator: INFILTRATOR_STEPS });
+
 export class PracticeMission {
-  constructor(index = 0) {
-    this.arena = new ProtocolArena({ interactiveTasks: true, rolePreference: "operator" });
+  constructor(index = 0, track = "operator") {
+    this.track = PRACTICE_TRACKS[track] ? track : "operator";
+    this.steps = PRACTICE_TRACKS[this.track];
+    this.arena = new ProtocolArena({ interactiveTasks: true, rolePreference: this.track });
     this.selfId = "player";
-    this.index = Math.max(0, Math.min(PRACTICE_STEPS.length - 1, index));
+    this.index = Math.max(0, Math.min(this.steps.length - 1, index));
     this.complete = false;
     this.failed = false;
     const a = this.arena,
@@ -77,6 +121,10 @@ export class PracticeMission {
     // Normal offline smart AI and all online room rules remain unchanged.
     for (const e of a.entities) e.bot = false;
     for (const patient of m.patients) patient.decay = 0;
+    if (this.track === "infiltrator") {
+      this.prepare(true);
+      return;
+    }
     for (const item of m.manifest) item.required = item.id === "trauma" ? 1 : 0;
     this.stock = m.supplyStock.find((s) => s.id === "trauma-barracks");
     m.supplyStock = m.supplyStock.filter((s) => s.id === this.stock.id);
@@ -98,7 +146,18 @@ export class PracticeMission {
     return this.arena.entities.find((e) => e.id === this.selfId);
   }
   get step() {
-    return PRACTICE_STEPS[this.index];
+    return this.steps[this.index];
+  }
+  /** A walkable spot about `distance` tiles from a point (wall fixtures sit in walls). */
+  near(point, distance = 1.2) {
+    for (let r = distance; r <= distance + 1.5; r += 0.5)
+      for (let k = 0; k < 8; k++) {
+        const angle = (k * Math.PI) / 4,
+          x = point.x + Math.cos(angle) * r,
+          y = point.y + Math.sin(angle) * r;
+        if (this.arena.canMove(x, y)) return { x, y, a: angle + Math.PI };
+      }
+    return { x: point.x, y: point.y };
   }
   input(input) {
     // Keep departure locked until the base drills finish. This filters a local
@@ -114,6 +173,7 @@ export class PracticeMission {
     const a = this.arena,
       p = a.protocol,
       m = p.mission;
+    if (this.track === "infiltrator") return this.prepareInfiltrator(retry);
     if (this.step.id === "pack") this.place({ x: this.stock.x + 2, y: this.stock.y });
     if (this.step.id === "load" && retry) this.place(m.loading);
     if (this.step.id === "defuse") {
@@ -164,6 +224,52 @@ export class PracticeMission {
       }
     }
   }
+  prepareInfiltrator(retry) {
+    const a = this.arena,
+      p = a.protocol,
+      self = a.privateFor(this.player);
+    const id = this.step.id;
+    if (id === "fake") {
+      // Use a panel clear of supply cabinets and charge sockets (both take priority).
+      const clear = (st, list, r) => !list.some((o) => Math.hypot(o.x - st.x, o.y - st.y) < r);
+      const station =
+        p.stations.find((st) => clear(st, p.mission.supplyStock, 0.5) && clear(st, p.sites, 2.6)) ??
+        p.stations[0];
+      const task = self.tasks[0];
+      Object.assign(task, { stationId: station.id, name: station.name, done: false });
+      this.place(this.near(station, 2));
+    }
+    if (id === "eliminate") {
+      self.killReadyAt = 0;
+      // An open spot, the target 0.8 tiles further out, the player facing them.
+      const spot = this.near(PROTOCOL_MAP.emergency, 1.5),
+        out = spot.a - Math.PI;
+      let tx = spot.x + Math.cos(out) * 0.8,
+        ty = spot.y + Math.sin(out) * 0.8;
+      if (!a.canMove(tx, ty)) [tx, ty] = [spot.x, spot.y];
+      this.place({ x: tx === spot.x ? spot.x - Math.cos(out) * 0.8 : spot.x, y: ty === spot.y ? spot.y - Math.sin(out) * 0.8 : spot.y, a: out });
+      const target = a.entities.find((e) => e.team === 0 && e.hp > 0);
+      this.target = target.id;
+      Object.assign(target, { x: tx, y: ty, hp: 100 });
+    }
+    if (id === "vent") {
+      self.ventReadyAt = 0;
+      const vent = p.vents[0];
+      this.ventFrom = vent.id;
+      this.place({ x: vent.x, y: vent.y });
+    }
+    if (id === "sabotage") {
+      self.sabotageReadyAt = 0;
+      p.sabotage.powerUntil = p.sabotage.commsUntil = 0;
+    }
+    if (id === "plant") {
+      p.bombs = [];
+      p.armedCount = 0;
+      p.detonateAt = null;
+      const site = p.sites[0];
+      this.place(this.near(site, retry ? 1 : 2));
+    }
+  }
   update() {
     if (this.complete || this.failed) return false;
     const a = this.arena,
@@ -192,7 +298,13 @@ export class PracticeMission {
       for (const e of a.entities)
         if (e.id !== this.selfId && e.hp > 0 && !Object.hasOwn(p.meeting.votes, e.id))
           a.action(e, { seq: a.privateFor(e).actionSeq + 1, op: "vote", target: "skip" });
+    const vent = p.vents.find((v) => v.id !== this.ventFrom && Math.hypot(v.x - this.player.x, v.y - this.player.y) < 0.3);
     const passed = {
+      fake: self.tasks.some((t) => t.done),
+      eliminate: a.entities.find((e) => e.id === this.target)?.hp === 0,
+      vent: Boolean(vent),
+      sabotage: (p.sabotage.powerUntil > a.time || p.sabotage.commsUntil > a.time) && self.contributions.sabotage > 0,
+      plant: p.bombs.some((b) => b.ownerId === this.selfId),
       pack: !!self.cargo,
       load: m.manifest.find((i) => i.id === "trauma").loaded === 1,
       defuse: !p.bombs.some((b) => b.id === "training-charge") && self.contributions.defuses > 0,
@@ -207,7 +319,7 @@ export class PracticeMission {
       pilot: m.vehicle.autopilot && self.contributions.recoveries > 0,
     }[this.step.id];
     if (!passed) return false;
-    if (++this.index === PRACTICE_STEPS.length) {
+    if (++this.index === this.steps.length) {
       this.complete = true;
       return true;
     }
@@ -230,6 +342,12 @@ export class ProtocolPractice {
       midnry-fps .mf-practice-coach{position:absolute;z-index:5;top:calc(70px + var(--mf-safe-top));left:14px;width:min(400px,calc(100% - 28px));min-height:44px;padding:8px 12px;text-align:left;border:1px solid #c6d5b2;border-radius:12px;background:#14221fec;color:#edf5e6;font:600 12px/1.35 system-ui}
       midnry-fps .mf-practice-coach small{display:block;font:400 11px/1.4 system-ui;color:#c5d3c0;margin-top:3px}
       midnry-fps .mf-practice-details button{width:100%;min-height:44px;margin:5px 0}
+      midnry-fps .mf-practice-chooser{width:min(420px,calc(100% - 28px));padding:20px;border-radius:18px;border:1px solid #8a9a8c66;background:#13201b;color:#eef4ea;font:14px/1.45 system-ui}
+      midnry-fps .mf-practice-chooser::backdrop{background:rgba(5,12,9,.55)}
+      midnry-fps .mf-practice-chooser h2{margin:0 0 6px;font-size:20px}
+      midnry-fps .mf-practice-chooser button{display:block;width:100%;min-height:52px;margin:8px 0 0;text-align:left;padding:10px 14px;border-radius:12px;border:1px solid #8f9d7a;background:#2c3d28;color:#eef5e6;font:600 14px/1.35 system-ui}
+      midnry-fps .mf-practice-chooser button small{display:block;font-weight:400;color:#c5d3c0}
+      midnry-fps .mf-practice-chooser .mf-practice-cancel{text-align:center;background:#24302b}
       midnry-fps .mf-practice-details[hidden],midnry-fps .mf-practice-coach[hidden],midnry-fps .mf-practice-start[hidden]{display:none!important}
       midnry-fps .mf-practicing.mf-protocol-piloting .mf-practice-coach{display:none}
       @media(pointer:coarse),(max-width:700px){midnry-fps .mf-practice-coach{max-width:calc(100% - 28px)}}
@@ -247,7 +365,21 @@ export class ProtocolPractice {
     this.details.innerHTML =
       '<h3></h3><p class="mf-practice-hint"></p><p class="mf-practice-explanation"></p><button class="mf-practice-retry">Restart this drill</button><button class="mf-practice-exit">Leave practice · fresh offline mission</button>';
     g.protocolUI.focus.info.prepend(this.details);
-    g.on(this.startButton, "click", () => this.start());
+    // Track chooser: operator or infiltrator, with saved progress.
+    this.chooser = document.createElement("dialog");
+    this.chooser.className = "mf-practice-chooser";
+    this.chooser.setAttribute("aria-label", "Choose a practice track");
+    this.chooser.innerHTML =
+      '<h2>Practice</h2><p>Short guided drills on the real rules. Finish a track once for +75 XP.</p><button data-track="operator"></button><button data-track="infiltrator"></button><button class="mf-practice-cancel">Back</button>';
+    g.shell.append(this.chooser);
+    g.on(this.chooser, "keydown", (e) => e.stopPropagation());
+    g.on(this.chooser, "click", (e) => {
+      const button = e.target.closest("button");
+      if (!button) return;
+      this.chooser.close();
+      if (button.dataset.track) this.start(this.saved(button.dataset.track), button.dataset.track);
+    });
+    g.on(this.startButton, "click", () => this.choose());
     g.on(this.coach, "click", () => g.protocolUI.focus.open());
     g.on(this.details.querySelector(".mf-practice-retry"), "click", () => this.retry());
     g.on(this.details.querySelector(".mf-practice-exit"), "click", () => this.exit(true));
@@ -260,15 +392,52 @@ export class ProtocolPractice {
       this.g.militaryLoaded
     );
   }
-  start(index = 0) {
+  /** Saved drill index for a track (0 when finished or never started). */
+  saved(track) {
+    try {
+      const data = JSON.parse(localStorage.getItem("midnry-outpost-practice") || "{}");
+      const index = Number(data?.[track]);
+      return Number.isInteger(index) && index > 0 && index < PRACTICE_TRACKS[track].length ? index : 0;
+    } catch {
+      return 0;
+    }
+  }
+  save(track, index) {
+    try {
+      const data = JSON.parse(localStorage.getItem("midnry-outpost-practice") || "{}");
+      data[track] = index;
+      localStorage.setItem("midnry-outpost-practice", JSON.stringify(data));
+    } catch {}
+  }
+  choose() {
+    if (!this.available()) return;
+    const done = this.g.retention?.profile?.milestones || [];
+    for (const [track, label, blurb] of [
+      ["operator", "Operator", "Collect, load, defuse, report, vote, board, fly"],
+      ["infiltrator", "Infiltrator", "Blend in, eliminate, use hatches, sabotage, arm charges"],
+    ]) {
+      const steps = PRACTICE_TRACKS[track],
+        at = this.saved(track),
+        finished = done.includes(`practice-${track}`);
+      const button = this.chooser.querySelector(`[data-track="${track}"]`);
+      button.innerHTML = "";
+      button.append(`${label} · ${steps.length} drills${at ? ` · resume at ${at + 1}` : finished ? " · ✅ done" : " · +75 XP"}`);
+      const small = document.createElement("small");
+      small.textContent = blurb;
+      button.append(small);
+    }
+    this.chooser.showModal();
+    this.chooser.querySelector("[data-track]").focus({ preventScroll: true });
+  }
+  start(index = 0, track = this.mission?.track || "operator") {
     if (!this.available()) return false;
     const g = this.g;
     const preference = this.preference ?? g.rolePreference;
     g.reset();
     this.preference = preference;
-    g.rolePreference = "operator";
+    g.rolePreference = track;
     this.active = true;
-    this.mission = new PracticeMission(index);
+    this.mission = new PracticeMission(index, track);
     g.arena = this.mission.arena;
     g.mapId = g.arena.mapId;
     g.protocolCache = null;
@@ -282,7 +451,10 @@ export class ProtocolPractice {
   }
   retry() {
     if (this.active)
-      this.start(this.mission.index >= PRACTICE_STEPS.length ? 0 : this.mission.index);
+      this.start(
+        this.mission.index >= this.mission.steps.length ? 0 : this.mission.index,
+        this.mission.track,
+      );
   }
   reset() {
     this.active = false;
@@ -307,6 +479,9 @@ export class ProtocolPractice {
     }
     if (this.mission.update()) {
       this.g.protocolCache = null;
+      // Remember where this track got to; finishing it pays once.
+      this.save(this.mission.track, this.mission.complete ? 0 : this.mission.index);
+      if (this.mission.complete) this.g.retention?.awardPractice?.(this.mission.track);
       if (this.mission.complete || this.mission.failed) {
         this.g.protocolUI.focus.open();
       }
@@ -337,7 +512,7 @@ export class ProtocolPractice {
       ? "Practice complete"
       : m.failed
         ? "Drill paused · try again"
-        : `${m.index + 1}/${PRACTICE_STEPS.length} · ${m.step.title}`;
+        : `${m.track === "infiltrator" ? "Infiltrator" : "Operator"} ${m.index + 1}/${m.steps.length} · ${m.step.title}`;
     // Coaching text changes per drill, rather than forcing layout every frame.
     if (this.title === title) return;
     this.title = title;
@@ -351,6 +526,11 @@ export class ProtocolPractice {
       board: "Follow arrow · hold Board",
       oxygen: "Follow arrow · E / action to test",
       pilot: "Take helm · stabilize · restore autopilot",
+      fake: "Walk to the panel ahead · hold E",
+      eliminate: "X / Eliminate the training operator",
+      vent: "B · Tactics · pick a hatch exit",
+      sabotage: "B · Tactics · Cut power",
+      plant: "Walk to the socket ahead · hold E · type the code",
     };
     this.coach.querySelector("small").textContent =
       (cue[m.step?.id] || "Ready to deploy") + " · Tap for help";
@@ -358,10 +538,10 @@ export class ProtocolPractice {
     this.details.querySelector(".mf-practice-hint").textContent =
       m.failureReason ||
       m.step?.hint ||
-      "All eight exercises completed. Deploy when you are ready.";
+      `All ${m.steps.length} drills completed. Deploy when you are ready.`;
     this.details.querySelector(".mf-practice-explanation").textContent =
       m.step?.detail ||
-      "Live matches restore the full medical manifest, patient timers and smart AI. Practice never awards match XP or changes an online room.";
+      "Live matches restore the full medical manifest, patient timers and smart AI. Finishing a track once earns 75 XP; practice never changes an online room.";
     this.details.querySelector(".mf-practice-retry").textContent = m.complete
       ? "Replay guided practice"
       : "Restart this drill";
@@ -370,6 +550,7 @@ export class ProtocolPractice {
     this.reset();
     this.style.remove();
     this.startButton.remove();
+    this.chooser.remove();
     this.coach.remove();
     this.details.remove();
   }

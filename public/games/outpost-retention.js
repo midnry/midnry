@@ -385,6 +385,16 @@ export class Retention {
       weekly: row(weeklyChallenge(week), ch.week === week ? ch.weekly : {}),
     };
   }
+  /** Finishing a practice track pays 75 XP, once per track. */
+  awardPractice(track) {
+    const id = `practice-${track}`;
+    if (!["operator", "infiltrator"].includes(track) || this.profile.milestones.includes(id)) return 0;
+    this.profile.milestones.push(id);
+    this.profile.xp += 75;
+    write("midnry-outpost-profile", this.profile);
+    this.menu();
+    return 75;
+  }
   outfitUnlocked(id) {
     return outfitUnlocked(this.profile, id);
   }

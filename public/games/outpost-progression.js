@@ -122,7 +122,15 @@ export function profileOf(data = {}) {
       : [],
     milestones: Array.isArray(data?.milestones)
       ? data.milestones.filter((v) =>
-          ["first-three", "explorer", "supply-detail", "flight-ready", "lifeline"].includes(v),
+          [
+            "first-three",
+            "explorer",
+            "supply-detail",
+            "flight-ready",
+            "lifeline",
+            "practice-operator",
+            "practice-infiltrator",
+          ].includes(v),
         )
       : [],
     career: Object.fromEntries(

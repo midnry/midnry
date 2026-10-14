@@ -116,3 +116,31 @@ test("training departure stays locked until reporting and voting are finished", 
   assert.equal(board.arena.mapId, "medevac");
   assert.equal(board.step.id, "oxygen");
 });
+test("the infiltrator track teaches cover, elimination, hatches, sabotage and charges on real validators", () => {
+  const m = new PracticeMission(0, "infiltrator");
+  assert.equal(m.arena.privateFor(m.player).role, "infiltrator");
+  tick(m, 1);
+  assert.equal(m.step.id, "fake", "time alone cannot complete a drill");
+  // Fake a cover assignment at the station the drill pointed to.
+  const self = m.arena.privateFor(m.player),
+    task = self.tasks.find((t) => !t.done),
+    station = m.arena.protocol.stations.find((s) => s.id === task.stationId);
+  m.place(m.near(station, 0.8));
+  tick(m, 4.7, { interact: true });
+  assert.equal(m.step.id, "eliminate");
+  action(m, "eliminate", m.target);
+  assert.equal(m.step.id, "vent");
+  const from = m.arena.protocol.vents.find((v) => v.id === m.ventFrom);
+  action(m, "vent", from.links[0]);
+  assert.equal(m.step.id, "sabotage");
+  action(m, "sabotage", "power");
+  assert.equal(m.step.id, "plant");
+  const site = m.arena.protocol.sites[0];
+  m.place(site);
+  tick(m, 8.1, { interact: true });
+  const code = m.arena.privateFor(m.player).channel?.code;
+  assert.match(code, /^\d{3}$/);
+  action(m, "wire", undefined, code);
+  assert.equal(m.complete, true);
+  assert.equal(m.arena.state, "playing", "practice never ends the round by itself");
+});
