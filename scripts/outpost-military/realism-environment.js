@@ -92,11 +92,19 @@ export function decorateRealisticEnvironment(r, id, n) {
   );
   const seal = own(r.material({ color: "#515752", roughness: 0.98 }));
 
-  function add(geometry, material, position, scale, quaternion, shadows = true) {
-    const batchKey = `${geometry.uuid}:${material.uuid}:${shadows}`;
+  function add(
+    geometry,
+    material,
+    position,
+    scale,
+    quaternion,
+    shadows = true,
+    persistent = false,
+  ) {
+    const batchKey = `${geometry.uuid}:${material.uuid}:${shadows}:${persistent}`;
     let batch = batches.get(batchKey);
     if (!batch) {
-      batch = { geometry, material, matrices: [], shadows };
+      batch = { geometry, material, matrices: [], shadows, persistent };
       batches.set(batchKey, batch);
     }
     batch.matrices.push(
@@ -548,8 +556,8 @@ export function decorateRealisticEnvironment(r, id, n) {
       for (const offset of [1.35, room.h - 1.35]) {
         const x = (room.x + room.w / 2) * SCALE,
           z = (room.y + offset) * SCALE;
-        add(box, steel, [x, 3.35, z], [1.24, 0.075, 0.18]);
-        add(box, lamp, [x, 3.305, z], [1.08, 0.025, 0.105], undefined, false);
+        add(box, steel, [x, 3.35, z], [1.24, 0.075, 0.32]);
+        add(box, lamp, [x, 3.305, z], [1.08, 0.025, 0.26], undefined, false, true);
         const fixture = { x, y: 3.13, z };
         r.protocolFixtures.push(fixture);
         extraFixtures.push(fixture);
@@ -562,8 +570,8 @@ export function decorateRealisticEnvironment(r, id, n) {
         for (let col = 0; col < columns; col++) {
           const x = (room.x + (room.w * (col + 0.5)) / columns) * SCALE;
           const z = (room.y + (room.h * (row + 0.5)) / rows) * SCALE;
-          add(box, steel, [x, height - 0.022, z], [1.2, 0.055, 0.17]);
-          add(box, lamp, [x, height - 0.055, z], [1.06, 0.023, 0.105], undefined, false);
+          add(box, steel, [x, height - 0.022, z], [1.2, 0.055, 0.32]);
+          add(box, lamp, [x, height - 0.055, z], [1.06, 0.023, 0.26], undefined, false, true);
           const fixture = { x, y: height - 0.18, z };
           r.protocolFixtures.push(fixture);
           extraFixtures.push(fixture);
@@ -577,6 +585,13 @@ export function decorateRealisticEnvironment(r, id, n) {
     mesh.name = "Instanced architectural detail";
     mesh.castShadow = batch.shadows;
     mesh.receiveShadow = true;
+    // A floor-grid visibility test cannot decide whether an overhead light is
+    // visible. Keep emitting faces in the draw list; geometry depth still hides
+    // them behind walls, and protocol power state alone controls their emission.
+    if (batch.persistent) {
+      mesh.userData.noRoomCull = true;
+      mesh.frustumCulled = false;
+    }
     batch.matrices.forEach((matrix, index) => mesh.setMatrixAt(index, matrix));
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();

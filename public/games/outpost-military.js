@@ -16081,14 +16081,15 @@ function uf(e, t, n) {
 		color: "#515752",
 		roughness: .98
 	}));
-	function D(e, t, n, r, i, a = !0) {
-		let o = `${e.uuid}:${t.uuid}:${a}`, s = f.get(o);
-		s || (s = {
+	function D(e, t, n, r, i, a = !0, o = !1) {
+		let s = `${e.uuid}:${t.uuid}:${a}:${o}`, c = f.get(s);
+		c || (c = {
 			geometry: e,
 			material: t,
 			matrices: [],
-			shadows: a
-		}, f.set(o, s)), s.matrices.push(new G().compose(new U(...n), i || new H(), new U(...r)));
+			shadows: a,
+			persistent: o
+		}, f.set(s, c)), c.matrices.push(new G().compose(new U(...n), i || new H(), new U(...r)));
 	}
 	function O(e, t, n) {
 		let [r, i] = cf[n];
@@ -16570,7 +16571,7 @@ function uf(e, t, n) {
 			], [
 				1.24,
 				.075,
-				.18
+				.32
 			]), D(p, t, [
 				i,
 				3.305,
@@ -16578,8 +16579,8 @@ function uf(e, t, n) {
 			], [
 				1.08,
 				.025,
-				.105
-			], void 0, !1);
+				.26
+			], void 0, !1, !0);
 			let o = {
 				x: i,
 				y: 3.13,
@@ -16598,7 +16599,7 @@ function uf(e, t, n) {
 				], [
 					1.2,
 					.055,
-					.17
+					.32
 				]), D(p, t, [
 					s,
 					h - .055,
@@ -16606,8 +16607,8 @@ function uf(e, t, n) {
 				], [
 					1.06,
 					.023,
-					.105
-				], void 0, !1);
+					.26
+				], void 0, !1, !0);
 				let u = {
 					x: s,
 					y: h - .18,
@@ -16620,7 +16621,7 @@ function uf(e, t, n) {
 	for (let e of f.values()) {
 		if (!e.matrices.length) continue;
 		let t = new Gr(e.geometry, e.material, e.matrices.length);
-		t.name = "Instanced architectural detail", t.castShadow = e.shadows, t.receiveShadow = !0, e.matrices.forEach((e, n) => t.setMatrixAt(n, e)), t.instanceMatrix.needsUpdate = !0, t.computeBoundingSphere(), a.add(t);
+		t.name = "Instanced architectural detail", t.castShadow = e.shadows, t.receiveShadow = !0, e.persistent && (t.userData.noRoomCull = !0, t.frustumCulled = !1), e.matrices.forEach((e, n) => t.setMatrixAt(n, e)), t.instanceMatrix.needsUpdate = !0, t.computeBoundingSphere(), a.add(t);
 	}
 	let re = [...e.worldTextures].filter((e) => !o.has(e)), ie = !1, ae = {
 		group: a,
@@ -19401,14 +19402,14 @@ function Tp(e, t = 6) {
 	let n = /* @__PURE__ */ new Map(), r = e.matrixWorld.clone().invert();
 	e.traverse((e) => {
 		if (!e.isMesh || e.isSkinnedMesh || e.isInstancedMesh || e.userData.noBatch || !e.visible || Array.isArray(e.material) || e.material.transparent || Object.keys(e.geometry.morphAttributes).length || e.matrixWorld.determinant() < 0) return;
-		let r = new U().setFromMatrixPosition(e.matrixWorld), i = `${!!e.geometry.index}:` + Object.entries(e.geometry.attributes).sort(([e], [t]) => e.localeCompare(t)).map(([e, t]) => `${e}/${t.itemSize}/${t.normalized}/${t.array.constructor.name}`).join(","), a = `${e.material.uuid}:${Math.floor(r.x / (t * 3))}:${Math.floor(r.z / (t * 3))}:${e.castShadow}:${e.receiveShadow}:${i}`;
+		let r = new U().setFromMatrixPosition(e.matrixWorld), i = `${!!e.geometry.index}:` + Object.entries(e.geometry.attributes).sort(([e], [t]) => e.localeCompare(t)).map(([e, t]) => `${e}/${t.itemSize}/${t.normalized}/${t.array.constructor.name}`).join(","), a = `${e.material.uuid}:${Math.floor(r.x / (t * 3))}:${Math.floor(r.z / (t * 3))}:${e.castShadow}:${e.receiveShadow}:${!!e.userData.noRoomCull}:${e.frustumCulled}:${i}`;
 		n.has(a) || n.set(a, []), n.get(a).push(e);
 	});
 	for (let t of n.values()) {
 		if (t.length < 2) continue;
 		if (t.every((e) => e.geometry === t[0].geometry)) {
 			let n = new Gr(t[0].geometry, t[0].material, t.length);
-			n.castShadow = t[0].castShadow, n.receiveShadow = t[0].receiveShadow, t.forEach((e, t) => {
+			n.castShadow = t[0].castShadow, n.receiveShadow = t[0].receiveShadow, n.userData.noRoomCull = !!t[0].userData.noRoomCull, n.frustumCulled = t[0].frustumCulled, t.forEach((e, t) => {
 				n.setMatrixAt(t, new G().multiplyMatrices(r, e.matrixWorld)), e.parent.remove(e);
 			}), n.computeBoundingBox(), n.computeBoundingSphere(), e.add(n);
 			continue;
@@ -19418,7 +19419,7 @@ function Tp(e, t = 6) {
 		if (!i) continue;
 		i.computeBoundingBox(), i.computeBoundingSphere();
 		let a = new qn(i, t[0].material);
-		a.castShadow = t[0].castShadow, a.receiveShadow = t[0].receiveShadow, a.userData.ownedGeometry = !0;
+		a.castShadow = t[0].castShadow, a.receiveShadow = t[0].receiveShadow, a.userData.noRoomCull = !!t[0].userData.noRoomCull, a.frustumCulled = t[0].frustumCulled, a.userData.ownedGeometry = !0;
 		for (let e of t) e.parent.remove(e);
 		e.add(a);
 	}
@@ -20127,7 +20128,7 @@ var Dp = class {
 				], [
 					1.45,
 					.1,
-					.23
+					.32
 				]);
 				let s = this.box(t, o, [
 					i,
@@ -20136,9 +20137,9 @@ var Dp = class {
 				], [
 					1.22,
 					.045,
-					.15
+					.26
 				]);
-				s.castShadow = !1, this.protocolFixtures.push({
+				s.castShadow = !1, s.userData.noRoomCull = !0, s.frustumCulled = !1, this.protocolFixtures.push({
 					x: i,
 					y: 3.08,
 					z: a

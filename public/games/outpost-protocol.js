@@ -14,6 +14,7 @@ import {
   AIRCRAFT_TASKS,
 } from "./outpost-protocol-map.js";
 import { beginCombat, advanceCombat, combatDamage, canFight } from "./outpost-protocol-combat.js";
+import { rememberObservation, chooseSuspect, strongestEvidence, nextStatement } from './outpost-protocol-ai.js';
 
 export const PROTOCOL_RULES = Object.freeze({
   seats: 8,
@@ -265,6 +266,10 @@ export class ProtocolArena extends Arena {
         discoveredBodies: [],
         bodyMemory: {},
         observations: [],
+        caseEvidence: [],
+        activities: [],
+        contacts: [],
+        botDialogue: null,
         botGoal: null,
         botNextThink: 0,
         botRestUntil: 8 + this.random() * 14,
@@ -675,18 +680,21 @@ export class ProtocolArena extends Arena {
   // Persist evidence at the moment it is seen. A bot's vote never consults a
   // hidden role, and an action through a wall does not become witness evidence.
   observe(kind, actor, subject = null) {
+    if(kind==='task') {
+      const own=this.privateFor(actor);own.activities||=[];
+      own.activities.push({kind,room:this.roomAt(actor)?.name||'the corridor',at:this.time});
+      if(own.activities.length>12)own.activities.shift();
+    }
     for (const witness of this.entities) {
       if (witness === actor || witness === subject || !this.sees(witness, actor)) continue;
       if (subject && !this.sees(witness, subject)) continue;
-      const observations = this.privateFor(witness).observations;
-      observations.push({
+      rememberObservation(this.privateFor(witness), {
         kind,
         actorId: actor.id,
         subjectId: subject?.id ?? null,
         at: this.time,
         room: this.roomAt(actor)?.name ?? "the corridor",
       });
-      if (observations.length > 24) observations.shift();
     }
   }
 
@@ -792,6 +800,9 @@ export class ProtocolArena extends Arena {
       player.channel = null;
       player.botGoal = null;
       player.botNextChat = this.time + 1 + this.random() * 8;
+      player.botDialogue={opened:false,sent:0,replied:[]};
+      const proof=strongestEvidence(this.botMeetingContext(e));
+      if(proof?.kind==='eliminate')player.botNextChat=this.time+.5+this.random()*1.3;
       player.botVoteAt = p.meeting.discussionUntil + 1 + this.random() * 7;
     }
     for (const b of p.bodies) b.carriedBy = null;
@@ -958,10 +969,15 @@ export class ProtocolArena extends Arena {
         this.startMeeting(entity, `${body.name}'s patrol was found`, body);
     } else if (action.op === "meeting") {
       if (
+        this.protocol.phase === 'roam' &&
         player.emergenciesLeft > 0 &&
-        this.protocol.emergencyReadyAt <= this.time &&
-        this.near(entity, this.protocol.emergency, PROTOCOL_RULES.consoleRange)
+        this.protocol.emergencyReadyAt <= this.time
       ) {
+        // A working radio calls the patrol from anywhere. The wired console
+        // remains a physical fallback when communications are jammed.
+        if(this.protocol.sabotage.commsUntil>this.time&&!this.near(entity,this.protocol.emergency,PROTOCOL_RULES.consoleRange)) {
+          this.emit(entity.id,'Radio jammed. Restore communications or use the emergency console.');return;
+        }
         if (
           this.protocol.mission.phase === "transport" &&
           !this.protocol.mission.vehicle.autopilot &&
@@ -1432,71 +1448,41 @@ export class ProtocolArena extends Arena {
   }
 
   suspicion(entity) {
-    const scores = new Map();
-    const player = this.privateFor(entity);
-    for (const evidence of player.observations) {
-      if (this.time - evidence.at > 150 || evidence.actorId === entity.id) continue;
-      const candidate = this.entities.find((e) => e.id === evidence.actorId);
-      if (!this.active(candidate)) continue;
-      // Infiltrators legitimately know their own partner, exactly as exposed
-      // in self.allies. Operator voters never consult any hidden team here.
-      if (player.role === INFILTRATORS && candidate.team === 1) continue;
-      const weight =
-        {
-          eliminate: 5,
-          plant: 3,
-          vent: 3,
-          drag: 4,
-          "flight-sabotage": 5,
-          "cargo-sabotage": 4,
-          task: -0.7,
-        }[evidence.kind] ?? 0;
-      scores.set(candidate.id, (scores.get(candidate.id) ?? 0) + weight);
-    }
-    const top = [...scores].sort((a, b) => b[1] - a[1])[0];
-    return top?.[1] >= 2 ? top[0] : "skip";
+    return chooseSuspect(this.botMeetingContext(entity));
   }
-
+  botMeetingContext(entity) {
+    const player = this.privateFor(entity);
+    const reported=this.protocol.bodies.filter(b=>b.reported).find(b=>this.protocol.meeting?.reason.includes(b.name));
+    return {
+      self: entity, player, time: this.time, room: this.roomAt(entity)?.name,
+      // Only infiltrators know their own partner. No opponent roles enter the
+      // reasoning module, even on the authoritative server.
+      allies: player.role === INFILTRATORS
+        ? this.entities.filter(e => e.id !== entity.id && e.team === 1).map(e => e.id) : [],
+      entities: this.entities.map(e => ({id:e.id,name:e.name,hp:e.hp,departed:e.departed})),
+      reportedBody:reported?{name:reported.name,room:this.roomAt(reported)?.name}:null,
+      meeting: this.protocol.meeting,
+    };
+  }
   botMeeting(entity) {
     if (!this.active(entity)) return;
-    const player = this.privateFor(entity),
-      meeting = this.protocol.meeting;
-    if (this.protocol.phase === "discussion" && this.time >= player.botNextChat) {
-      player.botNextChat = 1e9;
-      const evidence = [...player.observations]
-        .reverse()
-        .find(
-          (o) =>
-            o.kind !== "task" &&
-            this.time - o.at < 150 &&
-            !(
-              player.role === INFILTRATORS &&
-              this.entities.find((e) => e.id === o.actorId)?.team === 1
-            ),
-        );
-      const actor = evidence && this.entities.find((e) => e.id === evidence.actorId);
-      const descriptions = {
-        eliminate: "attack a patrol",
-        plant: "work on a concealed socket",
-        vent: "use a maintenance hatch",
-        drag: "move a fallen patrol",
-        "flight-sabotage": "disable the autopilot circuit",
-        "cargo-sabotage": "damage the medical cargo restraints",
-      };
-      const task = player.tasks.filter((task) => task.done).at(-1);
-      const text = actor
-        ? `I saw ${actor.name} ${descriptions[evidence.kind]} in ${evidence.room}.`
-        : task
-          ? `I finished ${task.name}. I did not witness an attack.`
-          : "I have no clear witness evidence. Check the patrol's alibis.";
-      this.botAction(entity, "chat", undefined, text);
+    const player=this.privateFor(entity), meeting=this.protocol.meeting;
+    player.botDialogue ||= {opened:false,sent:0,replied:[]};
+    if(this.protocol.phase === "discussion" && this.time >= player.botNextChat && this.time >= player.chatReadyAt) {
+      const statement=nextStatement(this.botMeetingContext(entity));
+      if(statement) {
+        const before=meeting.messages.at(-1)?.id;
+        this.botAction(entity,"chat",undefined,statement.text);
+        if(meeting.messages.at(-1)?.id!==before&&meeting.messages.at(-1)?.sender===entity.id) {
+          player.botDialogue.opened=true;
+          player.botDialogue.sent++;
+          if(statement.replyTo!=null)player.botDialogue.replied.push(statement.replyTo);
+        }
+      }
+      player.botNextChat=this.time+(statement?1.8+this.random()*1.2:.6);
     }
-    if (
-      this.protocol.phase === "vote" &&
-      this.time >= player.botVoteAt &&
-      !Object.hasOwn(meeting.votes, entity.id)
-    )
-      this.botAction(entity, "vote", this.suspicion(entity));
+    if(this.protocol.phase === "vote" && this.time >= player.botVoteAt && !Object.hasOwn(meeting.votes,entity.id))
+      this.botAction(entity,"vote",this.suspicion(entity));
   }
 
   botNavigate(entity, goal, dt, stop = 0.8) {
@@ -1539,6 +1525,15 @@ export class ProtocolArena extends Arena {
       return;
     }
     this.discover(entity);
+    if(this.time >= (player.nextObservationAt||0)) {
+      player.nextObservationAt=this.time+1.2;
+      player.contacts||=[];
+      for(const other of this.entities)if(other!==entity&&this.sees(entity,other)) {
+        player.contacts=player.contacts.filter(c=>c.id!==other.id);
+        player.contacts.push({id:other.id,at:this.time,room:this.roomAt(other)?.name||'the corridor'});
+      }
+      player.contacts=player.contacts.filter(c=>this.time-c.at<120).slice(-12);
+    }
     if (player.channel?.challenge) {
       const game = player.channel.challenge, step = game.steps[game.index];
       if (step && this.time >= game.nextAt) this.botAction(entity, "task-step", game.id, step.answer);
@@ -2019,6 +2014,7 @@ export function protocolView(data, selfId) {
     stations: clone(p.stations),
     vents: isInfiltrator ? clone(p.vents) : [],
     emergency: clone(p.emergency),
+    emergencyReadyAt: p.emergencyReadyAt,
     meeting: p.meeting
       ? {
           id: p.meeting.id,

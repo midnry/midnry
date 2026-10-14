@@ -202,6 +202,7 @@ export default defineConfig(({ command, isPreview }) => ({
                   "outpost-protocol-focus.js",
                   "outpost-navigation.js",
                   "outpost-practice.js",
+                  "outpost-protocol-ai.js",
                   "outpost-realtime.js",
                   "outpost-spatial-audio.js",
                   "outpost-voice.js",

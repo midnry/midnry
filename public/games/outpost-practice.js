@@ -197,7 +197,10 @@ export class PracticeMission {
       pack: !!self.cargo,
       load: m.manifest.find((i) => i.id === "trauma").loaded === 1,
       defuse: !p.bombs.some((b) => b.id === "training-charge") && self.contributions.defuses > 0,
-      report: !!p.meeting && p.meeting.caller === this.selfId,
+      report:
+        !!p.meeting &&
+        p.meeting.caller === this.selfId &&
+        p.bodies.some((b) => b.id === "training-body" && b.reported),
       vote:
         p.phase === "roam" && !!p.meeting?.result && Object.hasOwn(p.meeting.votes, this.selfId),
       board: m.phase === "transport",

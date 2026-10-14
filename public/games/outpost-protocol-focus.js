@@ -57,6 +57,10 @@ export class ProtocolFocus {
     this.info.innerHTML =
       '<div class="mf-protocol-dialoghead"><h2>Mission info</h2><button class="mf-protocol-infoclose">Done</button></div><p class="mf-protocol-infonote"></p><h3>Next objective</h3><p class="mf-protocol-infoobjective"></p>';
     this.info.append(ui.hud);
+    this.radio=document.createElement('section');this.radio.className='mf-protocol-radio-controls';
+    this.radio.innerHTML='<h3>Emergency radio</h3><button class="mf-protocol-callradio">Call emergency meeting</button><p class="mf-protocol-radiohint"></p>';
+    this.info.append(this.radio);
+    g.on(this.radio.querySelector('button'),'click',()=>ui.emergency());
     this.mapDetails = document.createElement("details");
     this.mapDetails.innerHTML =
       '<summary>Map & location</summary><canvas class="mf-protocol-infomap" width="280" height="280" aria-label="Mission map with your location" role="img"></canvas><p class="mf-protocol-infomapkey">The light marker is your location. Other players’ locations are hidden.</p>';
@@ -184,6 +188,20 @@ export class ProtocolFocus {
     }
     this.button.hidden = !gameplay;
     const mission = view?.protocol?.mission;
+    const p=view?.protocol,self=p?.self;
+    this.radio.hidden=!self||!this.ui.alive();
+    if(self){
+      const wait=Math.ceil(Math.max(0,(p.emergencyReadyAt||0)-view.time));
+      const unsafe=mission?.phase==='transport'&&!mission.vehicle.autopilot&&!mission.vehicle.arrived;
+      const jammed=p.sabotage.commsUntil>view.time&&!this.ui.nearby?.emergency;
+      this.radio.querySelector('button').disabled=self.emergenciesLeft<=0||wait>0||p.phase!=='roam'||unsafe;
+      this.radio.querySelector('button').textContent=jammed?'Locate the wired emergency console':'Call emergency meeting';
+      this.radio.querySelector('p').textContent=self.emergenciesLeft<=0?'Your emergency call has been used. You can still report nearby bodies.'
+        :wait>0?`Radio assembly available in ${wait}s. Body reports remain available.`
+          :unsafe?'Recover flight control before calling an assembly.'
+            :jammed?'Communications are jammed. Follow the arrow to the wired console, or repair the radio.'
+              :'C calls over radio from anywhere. You have one emergency call; nearby body reports use F or Report body.';
+    }
     if (!gameplay || !mission) {
       this.urgent.hidden = true;
       this.close();
@@ -210,7 +228,6 @@ export class ProtocolFocus {
     this.button.disabled =
       this.ui.piloting && !mission.vehicle.autopilot && !mission.vehicle.arrived;
     if (this.button.disabled && this.info.open) this.info.close();
-    const p = view.protocol;
     const warnings = [];
     if (p.phase === "combat" && p.combat) {
       const target = view.entities.find((e) => e.id === p.combat.targetId);

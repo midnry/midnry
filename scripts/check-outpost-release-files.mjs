@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync, existsSync, statSync, readdirSync } from "node:fs";
 import { dirname, resolve, relative } from "node:path";
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 
 const checked = new Set();
 function visit(path) {
@@ -14,6 +15,20 @@ function visit(path) {
   if (!/\.(?:js|mjs|html)$/.test(path)) return;
   const source = readFileSync(path, "utf8");
   assert.doesNotMatch(source, /^<{7}|^={7}|^>{7}/m, `Unresolved merge: ${path}`);
+  // Public game modules bypass the app's TypeScript build. Parse them, and
+  // embedded HTML scripts, so a duplicate declaration cannot ship a broken loader.
+  if (/\.(?:js|mjs)$/.test(path))
+    execFileSync(process.execPath, ["--check", path], { stdio: "pipe" });
+  else
+    for (const [, attributes, script] of source.matchAll(
+      /<script\b([^>]*)>([\s\S]*?)<\/script>/gi,
+    )) {
+      if (!script.trim() || /\bsrc\s*=|application\/(?:ld\+)?json/i.test(attributes)) continue;
+      execFileSync(process.execPath, ["--check", "--input-type=module"], {
+        input: script,
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+    }
   for (const [, dependency] of source.matchAll(/(?:from\s*|import\s*\(\s*)["'`]([^"'`]+)["'`]/g)) {
     if (!dependency.startsWith(".")) continue;
     visit(resolve(dirname(path), dependency.split("?")[0]));
@@ -22,31 +37,57 @@ function visit(path) {
 visit("public/games/outpost-zero.html");
 visit("public/games/outpost-military.js");
 visit("public/games/outpost-voice-worklet.js");
-for (const path of ["public/games/military/models/soldier.glb", "public/games/military/sky.hdr", "public/games/military/lifeline-mission.png"])
+for (const path of [
+  "public/games/military/models/soldier.glb",
+  "public/games/military/sky.hdr",
+  "public/games/military/lifeline-mission.png",
+])
   visit(path);
 visit("public/games/military/models/operator-v1.glb");
 visit("public/games/military/models/head-source.glb");
 visit("public/games/military/HEAD-SCAN-LICENSE.txt");
-const operatorSources=JSON.parse(readFileSync("scripts/assets/outpost-operator/sources.json","utf8"));
-for(const file of operatorSources.assets){
-  const path=resolve("scripts/assets/outpost-operator",file.file);
-  assert.ok(existsSync(path),`Missing operator build source: ${file.file}`);
-  const bytes=readFileSync(path);assert.equal(bytes.length,file.bytes);
-  assert.equal(createHash("sha256").update(bytes).digest("hex"),file.sha256,`Invalid operator build source: ${file.file}`);
+const operatorSources = JSON.parse(
+  readFileSync("scripts/assets/outpost-operator/sources.json", "utf8"),
+);
+for (const file of operatorSources.assets) {
+  const path = resolve("scripts/assets/outpost-operator", file.file);
+  assert.ok(existsSync(path), `Missing operator build source: ${file.file}`);
+  const bytes = readFileSync(path);
+  assert.equal(bytes.length, file.bytes);
+  assert.equal(
+    createHash("sha256").update(bytes).digest("hex"),
+    file.sha256,
+    `Invalid operator build source: ${file.file}`,
+  );
 }
 const { ASSET_FILES } = await import("../public/games/outpost-asset-manifest.js");
-for(const file of ASSET_FILES){
-  const path=resolve("public"+file.url);visit(path);const bytes=readFileSync(path);
-  assert.equal(bytes.length,file.bytes,`Incorrect cache asset length: ${file.url}`);
-  assert.equal(createHash("sha256").update(bytes).digest("hex"),file.sha256,`Incorrect cache asset checksum: ${file.url}`);
+for (const file of ASSET_FILES) {
+  const path = resolve("public" + file.url);
+  visit(path);
+  const bytes = readFileSync(path);
+  assert.equal(bytes.length, file.bytes, `Incorrect cache asset length: ${file.url}`);
+  assert.equal(
+    createHash("sha256").update(bytes).digest("hex"),
+    file.sha256,
+    `Incorrect cache asset checksum: ${file.url}`,
+  );
 }
 for (const asset of JSON.parse(readFileSync("public/games/military/realism-assets.json", "utf8"))) {
   visit(asset.path);
   const bytes = readFileSync(asset.path);
   assert.equal(bytes.length, asset.bytes, `Incorrect asset length: ${asset.path}`);
-  assert.equal(createHash("md5").update(bytes).digest("hex"), asset.md5, `Incorrect asset: ${asset.path}`);
+  assert.equal(
+    createHash("md5").update(bytes).digest("hex"),
+    asset.md5,
+    `Incorrect asset: ${asset.path}`,
+  );
 }
-for (const directory of ["public/games/loading", "public/games/arsenal", "public/games/outfits", "public/games/military/textures"])
+for (const directory of [
+  "public/games/loading",
+  "public/games/arsenal",
+  "public/games/outfits",
+  "public/games/military/textures",
+])
   for (const file of readdirSync(directory)) visit(resolve(directory, file));
 // Checking source files alone cannot detect a stale preview/deployment output.
 // Supply the hosting build's public directory to verify the actual artefacts.
@@ -63,4 +104,13 @@ if (builtPublic) {
     assert.equal(checksum(built), checksum(source), `Stale built release file: ${file}`);
   }
 }
-console.log(JSON.stringify({ releaseFiles: "passed", checked: checked.size, operatorSources:operatorSources.assets.length, builtFiles: builtPublic ? "matched source" : "not requested", photographicTextures: 18, mergeMarkers: "absent" }));
+console.log(
+  JSON.stringify({
+    releaseFiles: "passed",
+    checked: checked.size,
+    operatorSources: operatorSources.assets.length,
+    builtFiles: builtPublic ? "matched source" : "not requested",
+    photographicTextures: 18,
+    mergeMarkers: "absent",
+  }),
+);

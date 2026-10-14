@@ -1,11 +1,12 @@
 /** Recipient-safe objective selection and floor-grid routing. This module reads
  * the same private view as Info; it never reads raw roles, bot plans or sites. */
 const finite=p=>Number.isFinite(p?.x)&&Number.isFinite(p?.y);
-export function navigationGoals(view,selfId){
+export function navigationGoals(view,selfId,wantMeeting=false){
  const p=view?.protocol,self=p?.self,actor=view?.entities?.find(e=>e.id===selfId),m=p?.mission;
  if(!self||!actor||actor.hp<=0||actor.departed||view.state==='ended'||p.phase!=='roam')return [];
  const operator=self.role==='operator',goals=[],put=(point,id,label,priority)=>{if(finite(point))goals.push({id,label,priority,x:point.x,y:point.y,room:point.room});};
  const v=m?.vehicle,stations=p.stations||[];
+ if(wantMeeting&&self.emergenciesLeft>0)put(p.emergency,'meeting-console','Use wired emergency console',4);
  if(operator){
   if(m?.phase==='transport'&&!v.arrived&&!v.autopilot&&!v.pilotId)put(stations.find(s=>s.kind==='helm'),'recover-flight','Take flight control',0);
   for(const bomb of p.bombs||[])put(bomb,'defuse:'+bomb.id,'Disable located charge',2);
@@ -116,7 +117,8 @@ export class ObjectiveNavigation {
   const g=this.g,ui=this.ui,actor=view?.entities?.find(e=>e.id===g.selfId);
   const available=ui.visibleGameplay()&&actor?.hp>0&&!g.deathSequence&&view.protocol?.phase==='roam'&&!ui.piloting;
   if(!available){this.line.hidden=true;ui.context.classList.remove('mf-navactive');this.route=null;return;}
-  const goals=navigationGoals(view,g.selfId),key=view.roundId+':'+view.mapId+':'+Math.floor(actor.x)+':'+Math.floor(actor.y)+':'+goals.map(t=>t.id+':'+t.priority).join(',');
+  if(!(view.protocol.sabotage.commsUntil>view.time)||view.protocol.self.emergenciesLeft<=0)this.requestMeeting=false;
+  const goals=navigationGoals(view,g.selfId,this.requestMeeting),key=view.roundId+':'+view.mapId+':'+Math.floor(actor.x)+':'+Math.floor(actor.y)+':'+goals.map(t=>t.id+':'+t.priority).join(',');
   const now=performance.now();
   if(key!==this.key||now>=this.nextUpdate){
    this.key=key;this.nextUpdate=now+750;

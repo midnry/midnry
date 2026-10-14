@@ -954,9 +954,14 @@ export class MilitaryRenderer {
       for (let k = 1.2; k < axisLength; k += spacing) {
         const x = (room.x + (room.w <= 2 ? room.w / 2 : k)) * SCALE,
           z = (room.y + (room.w <= 2 ? k : room.h / 2)) * SCALE;
-        this.box(root, steel, [x, 3.36, z], [1.45, 0.1, 0.23]);
-        const bulb = this.box(root, lamp, [x, 3.29, z], [1.22, 0.045, 0.15]);
+        this.box(root, steel, [x, 3.36, z], [1.45, 0.1, 0.32]);
+        const bulb = this.box(root, lamp, [x, 3.29, z], [1.22, 0.045, 0.26]);
         bulb.castShadow = false;
+        // Elevated emitters can be visible above low collision-grid cover.
+        // Floor-grid culling and subpixel strips made them blink while walking.
+        // Electrical state alone changes their emission; depth still occludes walls.
+        bulb.userData.noRoomCull = true;
+        bulb.frustumCulled = false;
         this.protocolFixtures.push({ x, y: 3.08, z });
       }
       if (room.name && !(map.id === "medevac" && room.id === "cockpit")) {
