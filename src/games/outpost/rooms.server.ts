@@ -34,6 +34,8 @@ export type Member = {
 };
 export type Room = {
   difficulty?: Difficulty;
+  /** Announce a removed player's role after Last Stand (host setting, default on). */
+  reveal?: boolean;
   mode: "protocol" | "signal" | "duo";
   mapId: string;
   phase: "lobby" | "playing" | "ended";
@@ -115,6 +117,7 @@ export function publicRoom(code: string, room: Room, selfId: string) {
     code,
     serverAt: room.updatedAt,
     difficulty: room.difficulty || "normal",
+    reveal: room.reveal !== false,
     mode: room.mode,
     // The aircraft is reached by the authoritative mission transition, never
     // selected from a lobby. Keep the room envelope in sync with that map.
@@ -365,6 +368,10 @@ export function applyRoomAction(
         throw new OutpostError("Invalid bot difficulty.");
       room.difficulty = difficultyOf(body.difficulty);
     }
+    if (body.reveal !== undefined) {
+      if (typeof body.reveal !== "boolean") throw new OutpostError("Invalid reveal setting.");
+      room.reveal = body.reveal;
+    }
   }
   if (body.op === "loadout") {
     if (room.phase !== "lobby") throw new OutpostError("Choose your loadout before starting.", 409);
@@ -417,6 +424,7 @@ export function applyRoomAction(
         mode: room.mode,
         mapId: room.mapId || "outpost",
         difficulty: room.difficulty || "normal",
+        revealRoles: room.reveal !== false,
         countdown: 2,
         humans: room.members.map(({ id, team, name, weapon, outfit }) => ({
           id,
@@ -441,6 +449,7 @@ export function applyRoomAction(
         mode: room.mode,
         mapId: room.mapId || "outpost",
         difficulty: room.difficulty || "normal",
+        revealRoles: room.reveal !== false,
         humans: room.members.map(({ id, team, name, weapon, outfit }) => ({
           id,
           team,

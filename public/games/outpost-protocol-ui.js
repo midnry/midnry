@@ -47,7 +47,7 @@ const GUIDE = [
   ],
   [
     "Witnesses and radio meetings",
-    "Report a nearby fallen operator with F or Report body. Press C or use Info → Emergency radio to call from anywhere with working communications. If jammed, use the wired emergency console or restore communications. Each player gets one emergency call. Meetings allow fifteen seconds of discussion and fifteen seconds to vote. Patient vitals and flight safety keep advancing during meetings; new meetings are blocked while autopilot is disengaged during flight. More than half the living patrol must vote for one suspect. The accused fights every other survivor after a five-second preparation. Ties and Skip return to the rescue. A 90-second limit prevents hiding indefinitely; expiry forfeits the accused. Combat eliminations are permanent. Allegiances stay secret until the mission ends, and eliminated players can only observe.",
+    "Report a nearby fallen operator with F or Report body. Press C or use Info → Emergency radio to call from anywhere with working communications. If jammed, use the wired emergency console or restore communications. Each player gets one emergency call. Meetings allow fifteen seconds of discussion and fifteen seconds to vote. Patient vitals and the flight pause during meetings and Last Stand; new meetings are blocked while autopilot is disengaged during flight. More than half the living patrol must vote for one suspect. The accused fights every other survivor after a five-second preparation. Ties and Skip return to the rescue. A 90-second limit prevents hiding indefinitely; expiry forfeits the accused. Combat eliminations are permanent. Unless the host turns it off, the patrol learns whether a removed player was an infiltrator. Operators win the moment every infiltrator is stopped; infiltrators win once they equal the remaining crew.",
   ],
   [
     "Controls",
@@ -85,6 +85,12 @@ export class ProtocolUI {
     this.combatStats.hidden = true;
     this.combatStats.setAttribute("role", "status");
     g.shell.append(this.combatStats);
+    // After Last Stand: who was removed and, if the host allows, what they were.
+    this.verdict = element("div", "mf-protocol-verdict");
+    this.verdict.hidden = true;
+    this.verdict.setAttribute("role", "status");
+    this.verdict.setAttribute("aria-live", "assertive");
+    g.shell.append(this.verdict);
     this.combatMarker = element("div", "mf-protocol-combattarget");
     this.combatMarker.hidden = true;
     this.combatMarker.setAttribute("aria-hidden", "true");
@@ -103,6 +109,11 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-combattarget { position:absolute;z-index:4;transform:translate(-50%,-100%);padding:4px 8px;border:1px solid #dc9b83;border-radius:8px;background:#472f26df;color:#ffe7d6;font:700 11px system-ui;max-width:170px;pointer-events:none; }
       midnry-fps .mf-protocol-combat .mf-fire { width:64px;height:64px;right:calc(18px + var(--mf-safe-right));bottom:calc(18px + var(--mf-safe-bottom));font-size:12px; }
       midnry-fps .mf-protocol-combat .mf-reload { width:44px;height:44px;right:calc(28px + var(--mf-safe-right));bottom:calc(94px + var(--mf-safe-bottom)); }
+      midnry-fps .mf-protocol-verdict { position:absolute;z-index:7;left:50%;top:28%;transform:translateX(-50%);width:min(520px,calc(100% - 32px));padding:16px 20px;text-align:center;border:2px solid #b9c7a9;border-radius:16px;background:#14211dee;color:#f1f5ea;font:800 18px/1.35 system-ui;pointer-events:none;box-shadow:0 18px 50px #000a;animation:mf-verdict-in .35s ease-out; }
+      midnry-fps .mf-protocol-verdict.mf-verdict-caught { border-color:#ef8d6b;background:#3d1f17ef;color:#ffe9dd; }
+      midnry-fps .mf-protocol-verdict.mf-verdict-innocent { border-color:#9fb6d6;background:#17223aef;color:#e4edff; }
+      @keyframes mf-verdict-in { from { opacity:0;transform:translate(-50%,10px) scale(.96); } to { opacity:1;transform:translate(-50%,0) scale(1); } }
+      @media (prefers-reduced-motion: reduce) { midnry-fps .mf-protocol-verdict { animation:none; } }
       midnry-fps .mf-protocol-combatstats { position:absolute;z-index:6;right:calc(14px + var(--mf-safe-right));bottom:calc(148px + var(--mf-safe-bottom));padding:8px 12px;max-width:230px;background:#16231fe6;border:1px solid #bfc5ab66;border-radius:12px;color:#f1f3e7;font:700 12px system-ui;pointer-events:none; }
       @media(pointer:fine) and (min-width:701px) { midnry-fps .mf-protocol-combat :is(.mf-fire,.mf-reload) { display:none !important; } midnry-fps .mf-protocol-combatstats { bottom:20px; } }
       midnry-fps .mf-protocol .mf-modes { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -169,11 +180,13 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-votes { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0; }
       midnry-fps .mf-protocol-votes button { text-align:left;font-size:13px;overflow-wrap:anywhere; }
       midnry-fps .mf-protocol-votes button[aria-pressed="true"] { border-color:#d4e7b7;background:#507143; }
-      midnry-fps .mf-protocol-menu { padding:14px;margin:12px 0;border:1px solid #87988655;border-radius:16px;background:#102019; }
+      midnry-fps .mf-protocol-menu { display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px;margin:12px 0;border:1px solid #87988655;border-radius:16px;background:#102019; }
+      midnry-fps .mf-protocol-menu > :is(label, p) { grid-column:1 / -1; }
       midnry-fps .mf-protocol-menu label { display:grid;gap:7px;font-size:13px;color:#ecf4e8; }
       midnry-fps .mf-protocol-menu select { width:100%;background:#25392a;color:#ecf4e8; }
-      midnry-fps .mf-protocol-menu p { margin:8px 0;font-size:12px;line-height:1.5;color:#bdcbbb; }
-      midnry-fps .mf-protocol-menu button { width:100%;margin-top:8px;border:1px solid #8f9d7a;background:#2c3d28;color:#eef5e6; }
+      midnry-fps .mf-protocol-menu p { margin:0;font-size:12px;line-height:1.5;color:#bdcbbb; }
+      midnry-fps .mf-protocol-menu p:empty { display:none; }
+      midnry-fps .mf-protocol-menu button { width:100%;margin:0;border:1px solid #8f9d7a;background:#2c3d28;color:#eef5e6; }
       midnry-fps .mf-protocol-results { margin:16px 0;padding:16px;border:1px solid #9baa8066;border-radius:16px;background:#183023;color:#edf5e9; }
       midnry-fps .mf-protocol-results h2 { margin:0 0 8px;font-size:23px; }
       midnry-fps .mf-protocol-results p { color:#d0decc;font-size:13px;line-height:1.6; }
@@ -260,7 +273,7 @@ export class ProtocolUI {
     g.shell.append(this.tactics);
     this.menu = element("section", "mf-protocol-menu");
     this.menu.hidden = true;
-    this.menu.innerHTML = `<label>Offline role preference<select aria-label="Offline secret role preference"><option value="operator">Operator · learn the base</option><option value="infiltrator">Infiltrator · covert objectives</option><option value="random">Surprise me · random role</option></select></label><p>Offline preference starts a fresh round. Online roles are secret and assigned by the server; your choice here cannot change them.</p><button>Blackout Protocol manual</button>`;
+    this.menu.innerHTML = `<label>Offline role preference<select aria-label="Offline secret role preference"><option value="operator">Operator · learn the base</option><option value="infiltrator">Infiltrator · covert objectives</option><option value="random">Surprise me · random role</option></select></label><p>Offline preference starts a fresh round. Online roles are secret and assigned by the server; your choice here cannot change them.</p><button>How to play</button>`;
     g.$(".mf-start").before(this.menu);
     this.results = element("section", "mf-protocol-results");
     this.results.hidden = true;
@@ -1064,6 +1077,15 @@ export class ProtocolUI {
     );
     this.combatStats.hidden = true;
     this.combatMarker.hidden = true;
+    const lastStand = gameplay ? this.safeView()?.protocol : null,
+      verdict = lastStand?.phase !== "combat" ? lastStand?.combat : null,
+      showVerdict = Boolean(verdict?.result && verdict.resultUntil > (g.arena?.time ?? 0));
+    this.verdict.hidden = !showVerdict;
+    if (showVerdict) {
+      setText(this.verdict, verdict.result);
+      this.verdict.classList.toggle("mf-verdict-caught", verdict.revealed?.infiltrator === true);
+      this.verdict.classList.toggle("mf-verdict-innocent", verdict.revealed?.infiltrator === false);
+    }
     this.hud.hidden = !gameplay;
     this.actionBar.hidden = !gameplay;
     this.context.hidden = !gameplay;
@@ -1638,7 +1660,7 @@ export class ProtocolUI {
     const caller = view.entities.find((item) => item.id === meeting.caller);
     setText(
       this.meeting.querySelector(".mf-protocol-meetingreason"),
-      `${caller?.name || "An operator"} called this meeting: ${meeting.reason || "radio assembly"}. Share observations and positions. Allegiances remain secret during and after Last Stand.`,
+      `${caller?.name || "An operator"} called this meeting: ${meeting.reason || "radio assembly"}. Share observations and positions. The clock is paused while you talk.`,
     );
     setText(
       this.meeting.querySelector(".mf-protocol-meetinghint"),
@@ -1771,8 +1793,8 @@ export class ProtocolUI {
     setText(
       this.menu.querySelector("p"),
       g.online || g.ui?.playChoice === "online"
-        ? "Online roles are secret and assigned by the server. Smart bots fill unused seats."
-        : "Smart operators gather, repair and pilot; infiltrators plan sabotage and avoid witnesses. Changing your role starts a fresh offline mission.",
+        ? "Roles are secret and dealt by the server. Bots fill empty seats."
+        : "",
     );
     if (!active) {
       this.hud.hidden =
@@ -1829,7 +1851,7 @@ export class ProtocolUI {
     if (g.state === "fresh")
       setText(
         copy,
-        "Blackout Protocol · Lifeline Run. Gather medical equipment at Breakwater, load the medevac and transport aid to wounded soldiers. Two hidden infiltrators can sabotage the rescue. Keep the aircraft safe and deliver aid before the patients die.",
+        "Load the medevac and fly aid to wounded soldiers before they die. Two of your crew are secret infiltrators. Find them.",
       );
     setText(
       g.$(".mf-kitnote"),

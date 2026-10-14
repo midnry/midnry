@@ -98,11 +98,23 @@ export function resolveCombat(arena) {
     Arena.prototype.damage.call(arena, target, target.hp);
     recordLoss(arena, target);
   }
+  const reveal = arena.protocol.revealRoles !== false && target && !arena.active(target);
+  const wasInfiltrator = target && arena.privateFor(target)?.role === "infiltrator";
+  if (reveal) {
+    arena.protocol.revealed ??= {};
+    arena.protocol.revealed[target.id] = wasInfiltrator ? "infiltrator" : "operator";
+  }
+  const verdict = reveal
+    ? wasInfiltrator
+      ? ` ${target.name} WAS an infiltrator.`
+      : ` ${target.name} was NOT an infiltrator.`
+    : " Allegiance remains classified.";
+  c.revealed = reveal ? { id: target.id, infiltrator: wasInfiltrator } : null;
   c.result = expired
-    ? `${target.name}'s Last Stand timed out. The patrol resumes the rescue.`
+    ? `${target.name}'s Last Stand timed out.${verdict}`
     : arena.active(target)
       ? `${target.name} survived the Last Stand. The rescue continues.`
-      : `The patrol defeated ${target?.name || "the accused"}. Allegiance remains classified.`;
+      : `The patrol defeated ${target?.name || "the accused"}.${verdict}`;
   c.resultUntil = arena.time + 6;
   for (const e of arena.entities) {
     e.ammo = 0;

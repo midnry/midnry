@@ -19,7 +19,6 @@ import { rememberObservation, chooseSuspect, strongestEvidence, nextStatement } 
 export const PROTOCOL_RULES = Object.freeze({
   seats: 8,
   infiltrators: 2,
-  tasksPerOperator: 3,
   taskDuration: 4.5,
   plantDuration: 8,
   wireWindow: 20,
@@ -27,7 +26,6 @@ export const PROTOCOL_RULES = Object.freeze({
   repairDuration: 5,
   chargesRequired: 3,
   fuseDuration: 75,
-  matchDuration: 600,
   interactRange: 1.4,
   discoveryRange: 2.2,
   reportRange: 1.7,
@@ -196,9 +194,11 @@ export class ProtocolArena extends Arena {
       version: 1,
       authoritative: true,
       phase: "roam",
-      roundEndsAt: PROTOCOL_RULES.matchDuration,
+      // Roles are announced when the assembly removes someone (host setting).
+      revealRoles: options.revealRoles !== false,
+      revealed: {},
       taskDone: 0,
-      taskTotal: (8 - 2) * PROTOCOL_RULES.tasksPerOperator,
+      taskTotal: 0,
       armedCount: 0,
       detonateAt: null,
       sabotage: { powerUntil: 0, commsUntil: 0 },
@@ -436,10 +436,18 @@ export class ProtocolArena extends Arena {
     p.taskDone = p.mission.manifest.reduce((sum, item) => sum + item.loaded, 0);
     p.taskTotal = p.mission.manifest.reduce((sum, item) => sum + item.required, 0);
     p.armedCount = p.bombs.length;
-    if (!this.entities.some((e) => e.team === 0 && this.active(e)))
+    const living = (team) => this.entities.filter((e) => e.team === team && this.active(e)).length;
+    if (!living(0))
       return this.finish(
         1,
         "The last rescue operator was lost. The wounded patrol never received aid.",
+      );
+    if (!living(1))
+      return this.finish(0, "Every infiltrator has been stopped. The rescue is safe.");
+    if (living(1) >= living(0))
+      return this.finish(
+        1,
+        "The infiltrators now match the remaining crew. Nobody is left to stop them.",
       );
     if (!p.mission.patients.some((patient) => patient.hp > 0 || patient.rescued))
       return this.finish(1, "All wounded soldiers died before the medical supplies arrived.");
@@ -584,6 +592,8 @@ export class ProtocolArena extends Arena {
 
   updateMedical(dt, inputs) {
     if (this.presentationOnly) return;
+    // The clock stops for assemblies and Last Stand: talking is never punished.
+    if (["discussion", "vote", "combat"].includes(this.protocol.phase)) return;
     const mission = this.protocol.mission,
       vehicle = mission.vehicle;
     for (const patient of mission.patients)
@@ -1697,7 +1707,6 @@ export class ProtocolArena extends Arena {
 
   freezeDeadlines(dt) {
     const p = this.protocol;
-    p.roundEndsAt += dt;
     if (p.detonateAt !== null) p.detonateAt += dt;
     if (p.emergencyReadyAt > this.time - dt) p.emergencyReadyAt += dt;
     for (const key of ["powerUntil", "commsUntil"])
@@ -2002,7 +2011,8 @@ export function protocolView(data, selfId) {
     : null;
   view.protocol = {
     phase: p.phase,
-    roundEndsAt: p.roundEndsAt,
+    revealRoles: p.revealRoles !== false,
+    revealed: p.revealRoles !== false ? clone(p.revealed ?? {}) : {},
     taskDone: p.taskDone,
     taskTotal: p.taskTotal,
     armedCount: p.bombs.length,
@@ -2038,6 +2048,7 @@ export function protocolView(data, selfId) {
           endsAt: p.combat.endsAt,
           result: p.combat.result,
           resultUntil: p.combat.resultUntil,
+          revealed: p.combat.revealed ? clone(p.combat.revealed) : null,
         }
       : null,
     self: player

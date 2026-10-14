@@ -76,7 +76,6 @@ export class PracticeMission {
     // Quiet rehearsal participants cannot complete the player's exercises.
     // Normal offline smart AI and all online room rules remain unchanged.
     for (const e of a.entities) e.bot = false;
-    p.roundEndsAt = 1e9;
     for (const patient of m.patients) patient.decay = 0;
     for (const item of m.manifest) item.required = item.id === "trauma" ? 1 : 0;
     this.stock = m.supplyStock.find((s) => s.id === "trauma-barracks");
@@ -224,7 +223,7 @@ export class ProtocolPractice {
     this.active = false;
     this.startButton = document.createElement("button");
     this.startButton.className = "mf-practice-start";
-    this.startButton.textContent = "Guided practice · offline";
+    this.startButton.textContent = "Practice";
     g.protocolUI.menu.append(this.startButton);
     this.style = document.createElement("style");
     this.style.textContent = `

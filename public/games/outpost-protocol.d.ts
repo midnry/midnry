@@ -129,7 +129,10 @@ export type ProtocolMeeting = {
 export type PublicProtocolState = {
   [key: string]: unknown;
   phase: ProtocolPhase;
-  roundEndsAt: number;
+  /** Whether the assembly announces a removed player's role (host setting). */
+  revealRoles?: boolean;
+  /** Roles announced so far this round, by player id. */
+  revealed?: Record<string, ProtocolRole>;
   taskDone: number;
   taskTotal: number;
   armedCount: number;
@@ -168,6 +171,7 @@ export type PublicProtocolState = {
     endsAt: number;
     result: string | null;
     resultUntil: number | null;
+    revealed?: { id: string; infiltrator: boolean } | null;
   } | null;
   log: { id: number; text: string }[];
   self: ProtocolSelf | null;
@@ -201,6 +205,8 @@ export type ProtocolViewState = ArenaState & { protocol: PublicProtocolState };
 export type ProtocolOptions = {
   /** New rounds opt in; saved rooms without this flag retain their old tasks. */
   interactiveTasks?: boolean;
+  /** Announce a removed player's role after Last Stand (default true). */
+  revealRoles?: boolean;
   mode?: string;
   difficulty?: Difficulty;
   countdown?: number;
@@ -215,7 +221,6 @@ export const PROTOCOL_RULES: Readonly<
   Record<
     | "seats"
     | "infiltrators"
-    | "tasksPerOperator"
     | "taskDuration"
     | "plantDuration"
     | "wireWindow"
@@ -223,7 +228,6 @@ export const PROTOCOL_RULES: Readonly<
     | "repairDuration"
     | "chargesRequired"
     | "fuseDuration"
-    | "matchDuration"
     | "interactRange"
     | "discoveryRange"
     | "reportRange"

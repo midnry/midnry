@@ -12,7 +12,9 @@ export class MenuUI {
     modes.setAttribute("aria-label", "Play Blackout Protocol");
     modes.innerHTML = '<button class="mf-offlinechoice" data-play="offline" aria-pressed="true">Offline<small>Smart AI operators & infiltrators</small></button><button class="mf-onlinechoice" data-play="online" aria-pressed="false">Online<small>Friends + smart bots</small></button>';
     g.$(".mf-boot").hidden = true;
-    g.$(".mf-guide").textContent = "Mission guide";
+    // The old field guide covers retired combat modes; "How to play" in the
+    // menu opens the Blackout Protocol manual instead.
+    g.$(".mf-guide").hidden = true;
     g.$(".mf-graphics").textContent = "Settings";
     g.$(".mf-lockeropen").hidden = true;
     const level = g.$(".mf-level");
@@ -42,7 +44,7 @@ export class MenuUI {
     help.innerHTML = "<summary>Controls & shortcuts</summary>";
     const instructions = g.$(".mf-help");
     instructions.innerHTML =
-      "<b>Touch:</b> left stick to move; drag the right side to aim. SPRINT toggles sprinting; SLIDE slides while moving forward. FIRE shoots, R reloads, and the ability button uses your charged super.<br><b>Keyboard:</b> WASD to move, mouse to aim, click or Space to fire. R reloads, Q uses your super, Hold Shift to sprint; press C or Ctrl while sprinting forward to slide. Esc or P opens the menu.";
+      "<b>Touch:</b> left stick to move; drag the right side to aim; the action button interacts.<br><b>Keyboard:</b> WASD to move, mouse to aim, hold E to interact. F reports, C calls a meeting. Esc or P opens the menu.";
     help.append(instructions);
     panel.append(help);
     const network = g.$(".mf-network");

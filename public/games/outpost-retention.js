@@ -125,7 +125,7 @@ export class Retention {
     );
     g.$(".mf-network").insertAdjacentHTML(
       "beforebegin",
-      `<details class="mf-retention"><summary>PLAYER EXPERIENCE / <span class="mf-level"></span></summary><label>Bot difficulty<select class="mf-difficulty" aria-label="Bot difficulty"><option value="easy">Easy · relaxed reactions</option><option value="normal" selected>Normal · standard combat</option><option value="hard">Hard · faster, more alert</option></select></label><p>Health and weapon damage stay the same. Online, the host chooses before starting.</p><label>Sound volume<input class="mf-volume" aria-label="Sound volume" type="range" min="0" max="100" value="35"></label><label><input class="mf-mute" type="checkbox"> Mute sound</label><button class="mf-lockeropen">RANGER LOCKER →</button></details>`,
+      `<details class="mf-retention"><summary>PLAYER EXPERIENCE / <span class="mf-level"></span></summary><label>Bot difficulty<select class="mf-difficulty" aria-label="Bot difficulty"><option value="easy">Easy · relaxed reactions</option><option value="normal" selected>Normal · standard combat</option><option value="hard">Hard · faster, more alert</option></select></label><p>Health and weapon damage stay the same. Online, the host chooses before starting.</p><label><input class="mf-reveal" type="checkbox" checked> Reveal roles when someone is voted out</label><label>Sound volume<input class="mf-volume" aria-label="Sound volume" type="range" min="0" max="100" value="35"></label><label><input class="mf-mute" type="checkbox"> Mute sound</label><button class="mf-lockeropen">RANGER LOCKER →</button></details>`,
     );
     g.shell.insertAdjacentHTML(
       "beforeend",
@@ -149,6 +149,20 @@ export class Retention {
         g.difficulty = e.target.value;
         g.reset();
       }
+    });
+    try {
+      g.revealRoles = localStorage.getItem("midnry-outpost-reveal") !== "off";
+    } catch {
+      g.revealRoles = true;
+    }
+    g.$(".mf-reveal").checked = g.revealRoles;
+    g.on(g.$(".mf-reveal"), "change", (e) => {
+      if (g.online) return g.onlineAction("settings", { reveal: e.target.checked });
+      g.revealRoles = e.target.checked;
+      try {
+        localStorage.setItem("midnry-outpost-reveal", g.revealRoles ? "on" : "off");
+      } catch {}
+      g.reset();
     });
     g.on(g.$(".mf-again"), "click", () => this.again());
     g.on(g.$(".mf-lockeropen"), "click", () => this.locker());

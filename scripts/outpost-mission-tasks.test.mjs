@@ -200,11 +200,8 @@ test("bots solve their own check through the same action validator", () => {
 });
 test("smart operator bots finish the entire interactive medical mission", () => {
   const a = new ProtocolArena({ humans: [], interactiveTasks: true, random: () => 0.4 });
-  for (const e of a.entities)
-    if (e.team === 1) {
-      e.hp = 0;
-      e.departed = true;
-    }
+  // Infiltrators stay aboard but idle: stopping them would end the round early.
+  for (const e of a.entities) if (e.team === 1) e.bot = false;
   tick(a, 440);
   assert.equal(a.winner, 0);
   assert.equal(a.protocol.mission.phase, "delivered");

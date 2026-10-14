@@ -181,18 +181,38 @@ test("Last Stand gates firearms until preparation ends, respects walls, blocks f
   a.damage(mate, 200, shooter);
   assert.equal(mate.hp, hp);
 });
-test("an accused survivor can defeat the patrol; surviving operators still owe the medical mission", () => {
-  const a = fresh(),
-    target = a.entities[0];
-  beginCombat(a, target);
-  tick(a, LAST_STAND.preparation + 0.1);
-  for (const e of a.entities) if (e !== target) a.damage(e, 100, target);
-  tick(a, 0.1);
-  assert.equal(a.protocol.phase, "roam");
-  assert.equal(target.hp, 100);
-  assert.equal(a.winner, null);
-  assert.equal(a.entities.filter((e) => e.hp > 0).length, 1);
-  assert.equal(a.protocol.mission.phase, "base");
+test("an accused survivor who defeats the whole patrol decides the round for their side", () => {
+  for (const pick of [(a) => a.entities.find((e) => e.team === 0), (a) => a.entities.find((e) => e.team === 1)]) {
+    const a = fresh(),
+      target = pick(a);
+    beginCombat(a, target);
+    tick(a, LAST_STAND.preparation + 0.1);
+    for (const e of a.entities) if (e !== target) a.damage(e, 100, target);
+    tick(a, 0.1);
+    assert.equal(target.hp, 100);
+    assert.equal(a.state, "ended");
+    assert.equal(a.winner, target.team);
+  }
+});
+test("Last Stand announces the removed player's role unless the host hides it", () => {
+  for (const reveal of [true, false]) {
+    const a = new ProtocolArena({ humans: [], random: () => 0.4, revealRoles: reveal });
+    const target = a.entities.find((e) => e.team === 1);
+    beginCombat(a, target);
+    tick(a, LAST_STAND.preparation + LAST_STAND.duration + 0.1);
+    tick(a, 0.1);
+    assert.equal(a.state, "playing");
+    const view = protocolView(a.snapshot(), a.entities.find((e) => e.team === 0).id).protocol;
+    if (reveal) {
+      assert.match(a.protocol.combat.result, /WAS an infiltrator/);
+      assert.equal(view.revealed[target.id], "infiltrator");
+      assert.deepEqual(view.combat.revealed, { id: target.id, infiltrator: true });
+    } else {
+      assert.match(a.protocol.combat.result, /classified/);
+      assert.deepEqual(view.revealed, {});
+      assert.equal(view.combat.revealed, null);
+    }
+  }
 });
 test("combat bots use public combat sides and resolve through actual gunfire", () => {
   const a = fresh(),

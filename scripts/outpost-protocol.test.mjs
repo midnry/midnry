@@ -351,7 +351,6 @@ test("radio assemblies freeze movement, plants, sabotage timers and the detonati
     y: e.y,
     fuse: arena.protocol.detonateAt - arena.time,
     power: arena.protocol.sabotage.powerUntil - arena.time,
-    round: arena.protocol.roundEndsAt - arena.time,
   };
   tick(arena, 10, { [e.id]: { forward: 1, interact: true, fire: true } });
   assert.equal(arena.protocol.phase, "discussion");
@@ -359,7 +358,6 @@ test("radio assemblies freeze movement, plants, sabotage timers and the detonati
   assert.equal(e.y, old.y);
   assert.ok(Math.abs(arena.protocol.detonateAt - arena.time - old.fuse) < 1e-6);
   assert.ok(Math.abs(arena.protocol.sabotage.powerUntil - arena.time - old.power) < 1e-6);
-  assert.ok(Math.abs(arena.protocol.roundEndsAt - arena.time - old.round) < 1e-6);
   assert.ok(Object.values(arena.protocol.players).every((p) => p.channel === null));
 });
 
@@ -575,7 +573,7 @@ test("remembered bodies do not reveal a hidden carrier or track unseen dragging"
   assert.notEqual(remembered.x, body.x);
 });
 
-test("crew loss follows medical conditions; assignments, detainment and reinforcement deadline cannot auto-win", () => {
+test("crew loss follows medical conditions; stopping every infiltrator wins; assignments and time cannot auto-win", () => {
   const eliminated = fresh();
   for (const e of eliminated.entities.filter((x) => x.team === 0)) e.hp = 0;
   eliminated.checkResult();
@@ -598,9 +596,17 @@ test("crew loss follows medical conditions; assignments, detainment and reinforc
   const detained = fresh();
   for (const e of detained.entities.filter((x) => x.team === 1)) e.hp = 0;
   detained.checkResult();
-  assert.equal(detained.winner, null);
+  assert.equal(detained.winner, 0);
+  assert.match(detained.protocol.resultReason, /every infiltrator/i);
+  const parity = fresh();
+  for (const e of parity.entities.filter((x) => x.team === 0).slice(0, 4)) e.hp = 0;
+  parity.checkResult();
+  assert.equal(parity.winner, 1);
+  assert.match(parity.protocol.resultReason, /match the remaining crew/i);
   const expired = fresh();
   for (const patient of expired.protocol.mission.patients) patient.decay = 0;
+  // Nobody acts: there is no round timer to hand either side a win.
+  for (const e of expired.entities) e.bot = false;
   tick(expired, 600.1);
   assert.equal(expired.winner, null);
 });
@@ -824,7 +830,7 @@ test("departure abandons base bombs and resets body/visibility state without cha
   assert.equal(arena.protocol.sites.length, 0);
 });
 
-test("patient vitals decay during discussion and vote; autopilot route time keeps progressing", () => {
+test("patient vitals and the flight pause during discussion and vote", () => {
   const arena = transport(),
     e = operator(arena),
     mission = arena.protocol.mission;
@@ -834,8 +840,8 @@ test("patient vitals decay during discussion and vote; autopilot route time keep
     progress = mission.vehicle.progress;
   tick(arena, 20);
   assert.equal(arena.protocol.phase, "vote");
-  assert.ok(Math.abs(mission.patients[0].hp - (hp - 20 * 0.22)) < 1e-6);
-  assert.ok(Math.abs(mission.vehicle.progress - progress - 20) < 1e-6);
+  assert.equal(mission.patients[0].hp, hp);
+  assert.equal(mission.vehicle.progress, progress);
 });
 
 test("all patients dead or all operators lost defeats the medical mission", () => {
@@ -846,7 +852,8 @@ test("all patients dead or all operators lost defeats the medical mission", () =
   const crew = fresh();
   for (const e of crew.entities.filter((e) => e.team === 0)) crew.detach(e.id);
   assert.equal(crew.winner, 1);
-  assert.match(crew.protocol.resultReason, /last rescue operator/i);
+  // Losing operators reaches parity with the infiltrators before the last one goes.
+  assert.match(crew.protocol.resultReason, /last rescue operator|match the remaining crew/i);
 });
 
 test("autopilot sabotage requires a nearby infiltrator and a stationary six-second hold", () => {
@@ -1029,11 +1036,8 @@ test("medical recipient snapshots expose mission progress while stripping privat
 test("operator bots legally gather/load/depart and deliver without legacy instant victory", () => {
   const arena = new ProtocolArena({ humans: [], random: () => 0.4 });
   // A secured crew-only patrol still has to complete the actual medical run.
-  for (const e of arena.entities)
-    if (e.team === 1) {
-      e.hp = 0;
-      e.departed = true;
-    }
+  // Infiltrators stay aboard but idle: stopping them would end the round early.
+  for (const e of arena.entities) if (e.team === 1) e.bot = false;
   tick(arena, 440);
   assert.equal(arena.winner, 0);
   assert.equal(arena.protocol.mission.phase, "delivered");
