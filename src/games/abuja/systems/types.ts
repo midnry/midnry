@@ -167,6 +167,10 @@ export type Effect = {
   story?: { event: string; days?: number };
   /** File a story in the Abuja Daily. */
   news?: { tag: NewsTag; headline: string; body: string; icon?: string; you?: boolean };
+  /** Strengthen (or, negative, weaken) your EFCC case file. */
+  efccCase?: number;
+  /** A big story moment, shown full-screen with the milestone celebrations. */
+  celebrate?: import("./milestones").Celebration;
 };
 
 export type MapRect = { x: number; y: number; w: number; h: number; label?: string; color?: string; gapFrom?: number; gapTo?: number; kind?: "water" };

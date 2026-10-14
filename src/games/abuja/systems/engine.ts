@@ -987,7 +987,7 @@ function weeklyBills(s: GameState) {
   const living = 3000 + 1500;
   addStat(s, "money", -(rent + living));
   // The Senator's envelope, every week you're still his liaison.
-  if (s.flags.cap_liaison && !s.flags.cap_quit_senator && !s.flags.cap_truth && !s.flags.cap_bolaji) {
+  if (s.flags.cap_liaison && !s.flags.cap_quit_senator && !s.flags.cap_truth && !s.flags.cap_bolaji && !s.flags.cap2_turned) {
     withoutBankCheck(() => addStat(s, "money", 250000));
     toast(s, "An aide drops off the Senator's envelope: ₦250,000, cash.");
   }

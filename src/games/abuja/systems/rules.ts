@@ -1,6 +1,6 @@
 import { NPCS, POSTING_STATES } from "./data";
 import { drink, feed, offense, wash } from "./life";
-import { answerEfcc, bankCredit, frozenAmount, withoutBankCheck } from "./bank";
+import { answerEfcc, bankCredit, easeCase, frozenAmount, openCase, withoutBankCheck } from "./bank";
 import { bizWorth } from "./business";
 import { equity, shock } from "./market";
 import { learn } from "./cooking/cook";
@@ -263,6 +263,11 @@ export function apply(state: GameState, effects: Effect[] | undefined, toasts: s
     if (effect.wash) wash(state);
     if (effect.offense) toasts.push(offense(state, effect.offense));
     if (effect.efcc) toasts.push(...answerEfcc(state, effect.efcc));
+    if (effect.efccCase) (effect.efccCase > 0 ? openCase(state, effect.efccCase) : easeCase(state, -effect.efccCase));
+    if (effect.celebrate && !state.flags[`ms_${effect.celebrate.id}`]) {
+      state.flags[`ms_${effect.celebrate.id}`] = true;
+      state.celebrations = [...(state.celebrations ?? []), { ...effect.celebrate, text: fill(state, effect.celebrate.text) }].slice(-4);
+    }
     if (effect.recipe && learn(state, effect.recipe)) toasts.push(`📖 New recipe: ${recipe(effect.recipe)?.name}. Find it in your kitchen.`);
     if (effect.log) addLog(state, effect.log);
     if (effect.toast) toasts.push(fill(state, effect.toast));

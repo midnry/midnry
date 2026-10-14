@@ -7,7 +7,11 @@ import { getSql } from "@/lib/db";
 
 const ENDINGS = new Set(["freedom", "grass", "jail", "ninefive", "broke", "japa", "cut"]);
 const PER_DAY = 30;
-const MAX_WORTH = 1_000_000_000_000;
+// Reaching ₦25m ends a life ("Financial Freedom"), so even with a lucky last
+// trade or an inheritance no real life finishes anywhere near these limits.
+// Anything beyond them was edited, and is turned away.
+const MAX_WORTH = 100_000_000;
+const MIN_WORTH = -50_000_000;
 
 export type FameRow = { name: string; ending: string; netWorth: number; age: number; generation: number; background: string };
 export type LifeInput = { key: string; name: string; ending: string; netWorth: number; age: number; generation: number; background: string };
@@ -21,11 +25,17 @@ export const submitLife = createServerFn({ method: "POST" })
     const key = clean(String(input?.key ?? ""), 120);
     const ending = String(input?.ending ?? "");
     if (!name || !key || !ENDINGS.has(ending)) throw new Error("That life can't be shared.");
+    const worth = Number(input?.netWorth);
+    const age = Number(input?.age);
+    if (!Number.isFinite(worth) || worth > MAX_WORTH || worth < MIN_WORTH) throw new Error("That life can't be shared.");
+    if (!Number.isFinite(age) || age < 5 || age > 120) throw new Error("That life can't be shared.");
+    // The rich endings only happen to grown-ups.
+    if ((ending === "freedom" || ending === "grass" || ending === "japa") && age < 18) throw new Error("That life can't be shared.");
     return {
       key,
       name,
       ending,
-      netWorth: int(input.netWorth, -MAX_WORTH, MAX_WORTH),
+      netWorth: int(input.netWorth, MIN_WORTH, MAX_WORTH),
       age: int(input.age, 0, 120),
       generation: int(input.generation, 1, 50),
       background: input.background === "lapo" ? "lapo" : "average",

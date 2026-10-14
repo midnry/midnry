@@ -90,6 +90,14 @@ export function openCase(s: GameState, evidence: number) {
   l.efcc = { day: l.efcc?.day ?? s.day, evidence: Math.min(150, (l.efcc?.evidence ?? 0) + evidence) };
 }
 
+/** Weaken an EFCC case (cooperating, say); closed when nothing is left. */
+export function easeCase(s: GameState, by: number) {
+  const l = life(s);
+  if (!l.efcc) return;
+  l.efcc.evidence = Math.max(0, l.efcc.evidence - by);
+  if (l.efcc.evidence <= 0) l.efcc = null;
+}
+
 export function caseStrength(s: GameState): number {
   return lifeOf(s).efcc?.evidence ?? 0;
 }
