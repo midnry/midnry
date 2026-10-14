@@ -34,82 +34,372 @@
         touch-action: none;
       }
       .mf-loading {
-        position: fixed; inset: 0; z-index: 100; overflow: hidden;
-        display: flex; flex-direction: column; justify-content: space-between;
-        background: #17201e; color: #eef1e9; font: 16px system-ui, sans-serif;
-        padding: max(30px, env(safe-area-inset-top)) max(36px, env(safe-area-inset-right)) max(26px, env(safe-area-inset-bottom)) max(36px, env(safe-area-inset-left));
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        background: #17201e;
+        color: #eef1e9;
+        font:
+          16px system-ui,
+          sans-serif;
+        padding: max(30px, env(safe-area-inset-top)) max(36px, env(safe-area-inset-right))
+          max(26px, env(safe-area-inset-bottom)) max(36px, env(safe-area-inset-left));
         box-sizing: border-box;
       }
-      .mf-loading[hidden] { display: none; }
-      .mf-loadimage { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .7s ease; }
-      .mf-loadimage.is-active { opacity: 1; }
-      .mf-loading::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, #0a100dcc, #0a100d08 30%, #0a100d66 52%, #0a100df5 82%); }
-      .mf-loadheader, .mf-loadbody, .mf-loadfooter { position: relative; z-index: 1; }
-      .mf-loadheader { display: flex; justify-content: space-between; align-items: start; gap: 20px; }
-      .mf-loadbrand { font-weight: 900; font-size: 24px; letter-spacing: .18em; }
-      .mf-loadheader small { display: block; margin-top: 6px; font-size: 10px; color: #d0dbd0; letter-spacing: .22em; }
-      .mf-loadtitle { text-align: right; font-size: 12px; font-weight: 750; letter-spacing: .15em; line-height: 1.7; }
-      .mf-loadbody { margin-top: auto; padding-top: 32px; max-width: 900px; }
-      .mf-loadcategory { color: #c2d9bb; font-size: 11px; font-weight: 700; letter-spacing: .22em; }
-      .mf-loadbody h1 { font-size: clamp(36px, 6vw, 72px); letter-spacing: -.05em; line-height: 1; margin: 12px 0; }
-      .mf-loaddescription { margin: 0; color: #d4ddd3; font-size: 14px; line-height: 1.6; max-width: 480px; }
-      .mf-loadcontrols { display: flex; align-items: center; gap: 12px; margin-top: 22px; }
-      .mf-loadcontrols button { min-width: 44px; height: 44px; border: 1px solid #c7d8c54d; background: #101a15a8; color: #eef1e9; font: inherit; cursor: pointer; border-radius: 50%; }
-      .mf-loadcontrols button:hover { background: #3c5146; }
-      .mf-loadcontrols button:focus-visible { outline: 2px solid #dcf4ce; outline-offset: 4px; }
-      .mf-loadcount { font-size: 11px; color: #c8d7c7; letter-spacing: .15em; font-variant-numeric: tabular-nums; }
-      .mf-loadpause { margin-left: auto; }
-      .mf-loadfooter { margin-top: 24px; border-top: 1px solid #d3e4d02e; padding-top: 18px; }
-      .mf-loadtip { display: flex; align-items: baseline; gap: 18px; max-width: 780px; min-height: 48px; }
-      .mf-loadtip b { flex-shrink: 0; font-size: 10px; letter-spacing: .18em; color: #c2d9bb; }
-      .mf-loadtip p { margin: 0; font-size: 14px; line-height: 1.6; color: #e2e9df; }
-      .mf-loadprogress { display: flex; align-items: center; gap: 16px; }
-      .mf-loading progress { appearance: none; display: block; width: 100%; height: 4px; border: 0; background: #4c5b4c; accent-color: #c2d9bb; }
-      .mf-loading progress::-webkit-progress-bar { background: #4c5b4c; }
-      .mf-loading progress::-webkit-progress-value { background: #c2d9bb; transition: width .2s; }
-      .mf-loading progress::-moz-progress-bar { background: #c2d9bb; }
-      .mf-loadpercent { min-width: 3ch; font-size: 11px; font-variant-numeric: tabular-nums; }
-      .mf-loadstatus { font-size: 11px; color: #b6c3b7; margin: 12px 0 0; }
-      .mf-loading a { color: #eef1e9; display: inline-block; margin-top: 14px; }
-      .mf-loading a[hidden] { display: none; }
+      .mf-loading[hidden] {
+        display: none;
+      }
+      .mf-loadimage {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0;
+        transition: opacity 0.7s ease;
+      }
+      .mf-loadimage.is-active {
+        opacity: 1;
+      }
+      .mf-loading::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(180deg, #0a100dcc, #0a100d08 30%, #0a100d66 52%, #0a100df5 82%);
+      }
+      .mf-loadheader,
+      .mf-loadbody,
+      .mf-loadfooter {
+        position: relative;
+        z-index: 1;
+      }
+      .mf-loadheader {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 20px;
+      }
+      .mf-loadbrand {
+        font-weight: 900;
+        font-size: 24px;
+        letter-spacing: 0.18em;
+      }
+      .mf-loadheader small {
+        display: block;
+        margin-top: 6px;
+        font-size: 10px;
+        color: #d0dbd0;
+        letter-spacing: 0.22em;
+      }
+      .mf-loadtitle {
+        text-align: right;
+        font-size: 12px;
+        font-weight: 750;
+        letter-spacing: 0.15em;
+        line-height: 1.7;
+      }
+      .mf-loadbody {
+        margin-top: auto;
+        padding-top: 32px;
+        max-width: 900px;
+      }
+      .mf-loadcategory {
+        color: #c2d9bb;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.22em;
+      }
+      .mf-loadbody h1 {
+        font-size: clamp(36px, 6vw, 72px);
+        letter-spacing: -0.05em;
+        line-height: 1;
+        margin: 12px 0;
+      }
+      .mf-loaddescription {
+        margin: 0;
+        color: #d4ddd3;
+        font-size: 14px;
+        line-height: 1.6;
+        max-width: 480px;
+      }
+      .mf-loadcontrols {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 22px;
+      }
+      .mf-loadcontrols button {
+        min-width: 44px;
+        height: 44px;
+        border: 1px solid #c7d8c54d;
+        background: #101a15a8;
+        color: #eef1e9;
+        font: inherit;
+        cursor: pointer;
+        border-radius: 50%;
+      }
+      .mf-loadcontrols button:hover {
+        background: #3c5146;
+      }
+      .mf-loadcontrols button:focus-visible {
+        outline: 2px solid #dcf4ce;
+        outline-offset: 4px;
+      }
+      .mf-loadcount {
+        font-size: 11px;
+        color: #c8d7c7;
+        letter-spacing: 0.15em;
+        font-variant-numeric: tabular-nums;
+      }
+      .mf-loadpause {
+        margin-left: auto;
+      }
+      .mf-loadfooter {
+        margin-top: 24px;
+        border-top: 1px solid #d3e4d02e;
+        padding-top: 18px;
+      }
+      .mf-loadtip {
+        display: flex;
+        align-items: baseline;
+        gap: 18px;
+        max-width: 780px;
+        min-height: 48px;
+      }
+      .mf-loadtip b {
+        flex-shrink: 0;
+        font-size: 10px;
+        letter-spacing: 0.18em;
+        color: #c2d9bb;
+      }
+      .mf-loadtip p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #e2e9df;
+      }
+      .mf-loadprogress {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .mf-loading progress {
+        appearance: none;
+        display: block;
+        width: 100%;
+        height: 4px;
+        border: 0;
+        background: #4c5b4c;
+        accent-color: #c2d9bb;
+      }
+      .mf-loading progress::-webkit-progress-bar {
+        background: #4c5b4c;
+      }
+      .mf-loading progress::-webkit-progress-value {
+        background: #c2d9bb;
+        transition: width 0.2s;
+      }
+      .mf-loading progress::-moz-progress-bar {
+        background: #c2d9bb;
+      }
+      .mf-loadpercent {
+        min-width: 3ch;
+        font-size: 11px;
+        font-variant-numeric: tabular-nums;
+      }
+      .mf-loadstatus {
+        font-size: 11px;
+        color: #b6c3b7;
+        margin: 12px 0 0;
+      }
+      .mf-loading a {
+        color: #eef1e9;
+        display: inline-block;
+        margin-top: 14px;
+      }
+      .mf-loading a[hidden] {
+        display: none;
+      }
       @media (max-width: 600px) {
-        .mf-loading { padding: max(22px, env(safe-area-inset-top)) 22px max(22px, env(safe-area-inset-bottom)); }
-        .mf-loadbrand { font-size: 20px; }
-        .mf-loadtitle { font-size: 10px; }
-        .mf-loadimage { object-position: 52% center; }
-        .mf-loadtip { gap: 10px; min-height: 76px; }
-        .mf-loadtip p { font-size: 13px; }
-        .mf-loadbody h1 { font-size: 44px; }
+        .mf-loading {
+          padding: max(22px, env(safe-area-inset-top)) 22px max(22px, env(safe-area-inset-bottom));
+        }
+        .mf-loadbrand {
+          font-size: 20px;
+        }
+        .mf-loadtitle {
+          font-size: 10px;
+        }
+        .mf-loadimage {
+          object-position: 52% center;
+        }
+        .mf-loadtip {
+          gap: 10px;
+          min-height: 76px;
+        }
+        .mf-loadtip p {
+          font-size: 13px;
+        }
+        .mf-loadbody h1 {
+          font-size: 44px;
+        }
       }
       @media (max-height: 540px) and (min-width: 601px) {
-        .mf-loading { padding: 18px 30px; }
-        .mf-loadbody h1 { font-size: 36px; margin: 8px 0; }
-        .mf-loadcontrols { margin-top: 12px; }
-        .mf-loadfooter { margin-top: 12px; padding-top: 12px; }
-        .mf-loadtip { min-height: 36px; }
+        .mf-loading {
+          padding: 18px 30px;
+        }
+        .mf-loadbody h1 {
+          font-size: 36px;
+          margin: 8px 0;
+        }
+        .mf-loadcontrols {
+          margin-top: 12px;
+        }
+        .mf-loadfooter {
+          margin-top: 12px;
+          padding-top: 12px;
+        }
+        .mf-loadtip {
+          min-height: 36px;
+        }
       }
-      @media (prefers-reduced-motion: reduce) { .mf-loadimage, .mf-loading progress::-webkit-progress-value { transition: none; } }
-      midnry-fps .mf-kit .mf-outfitlabel { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 96px; gap: 14px; align-items: center; }
-      midnry-fps .mf-outfitlabel span { min-width: 0; }
-      midnry-fps .mf-outfitlabel select { display: block; width: 100%; margin-top: 8px; }
-      midnry-fps .mf-outfitpreview { display: block; width: 96px; height: 112px; object-fit: cover; border-radius: 8px; background: #25312d; }
-      midnry-fps .mf-outfitgrid { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: 14px; }
-      midnry-fps .mf-locker .mf-outfitcard { padding: 0 0 12px; border: 2px solid #58685d; border-radius: 10px; overflow: hidden; background: #1e2924; text-align: left; color: #edf2e9; font: 14px/1.4 system-ui; margin: 0; min-width: 0; }
-      midnry-fps .mf-locker .mf-outfitcard[aria-pressed="true"] { border-color: #c4e8b5; box-shadow: 0 0 0 2px #c4e8b533; }
-      midnry-fps .mf-locker .mf-outfitcard:disabled { opacity: .7; }
-      midnry-fps .mf-locker .mf-outfitcard img { width: 100%; height: 200px; object-fit: contain; display: block; background: #334039; }
-      midnry-fps .mf-locker .mf-outfitcard strong, midnry-fps .mf-locker .mf-outfitcard small { display: block; margin: 8px 12px 0; }
-      midnry-fps .mf-locker .mf-outfitcard small { font-size: 11px; font-weight: 400; line-height: 1.5; color: #c8d4c8; overflow-wrap: normal; }
-      midnry-fps .mf-arsenalgrid { grid-template-columns: repeat(auto-fit,minmax(min(320px,100%),1fr)); }
-      midnry-fps .mf-inspectweapon { display: block; width: 100%; border: 0; padding: 0; background: #334039; color: #e4eddf; text-align: left; border-radius: 8px; overflow: hidden; }
-      midnry-fps .mf-inspectweapon img { display: block; width: 100%; height: auto; aspect-ratio: 8/5; object-fit: contain; }
-      midnry-fps .mf-inspectweapon span { display: block; padding: 8px 12px; font-size: 12px; }
-      midnry-fps .mf-weaponinspect { width: min(1000px,94vw); max-height: 92dvh; overflow: auto; border: 1px solid #71856e; border-radius: 14px; padding: 20px; background: #17221c; color: #edf2e9; }
-      midnry-fps .mf-weaponinspect img { width: 100%; height: auto; display: block; }
-      midnry-fps .mf-weaponinspect button { min-height: 44px; float: right; padding: 8px 18px; color: #17221c; background: #c6d9ba; border: 1px solid #819579; border-radius: 8px; }
-      midnry-fps .mf-weaponinspect::backdrop { background: #08110de8; }
-      midnry-fps .mf-rendernotice { padding: 12px; border: 1px solid #b3c3ae; }
-      midnry-fps .mf-shell > :not(canvas) { z-index: 2; }
+      @media (prefers-reduced-motion: reduce) {
+        .mf-loadimage,
+        .mf-loading progress::-webkit-progress-value {
+          transition: none;
+        }
+      }
+      midnry-fps .mf-kit .mf-outfitlabel {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: 1fr 96px;
+        gap: 14px;
+        align-items: center;
+      }
+      midnry-fps .mf-outfitlabel span {
+        min-width: 0;
+      }
+      midnry-fps .mf-outfitlabel select {
+        display: block;
+        width: 100%;
+        margin-top: 8px;
+      }
+      midnry-fps .mf-outfitpreview {
+        display: block;
+        width: 96px;
+        height: 112px;
+        object-fit: cover;
+        border-radius: 8px;
+        background: #25312d;
+      }
+      midnry-fps .mf-outfitgrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 14px;
+      }
+      midnry-fps .mf-locker .mf-outfitcard {
+        padding: 0 0 12px;
+        border: 2px solid #58685d;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #1e2924;
+        text-align: left;
+        color: #edf2e9;
+        font: 14px/1.4 system-ui;
+        margin: 0;
+        min-width: 0;
+      }
+      midnry-fps .mf-locker .mf-outfitcard[aria-pressed="true"] {
+        border-color: #c4e8b5;
+        box-shadow: 0 0 0 2px #c4e8b533;
+      }
+      midnry-fps .mf-locker .mf-outfitcard:disabled {
+        opacity: 0.7;
+      }
+      midnry-fps .mf-locker .mf-outfitcard img {
+        width: 100%;
+        height: 200px;
+        object-fit: contain;
+        display: block;
+        background: #334039;
+      }
+      midnry-fps .mf-locker .mf-outfitcard strong,
+      midnry-fps .mf-locker .mf-outfitcard small {
+        display: block;
+        margin: 8px 12px 0;
+      }
+      midnry-fps .mf-locker .mf-outfitcard small {
+        font-size: 11px;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #c8d4c8;
+        overflow-wrap: normal;
+      }
+      midnry-fps .mf-arsenalgrid {
+        grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+      }
+      midnry-fps .mf-inspectweapon {
+        display: block;
+        width: 100%;
+        border: 0;
+        padding: 0;
+        background: #334039;
+        color: #e4eddf;
+        text-align: left;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      midnry-fps .mf-inspectweapon img {
+        display: block;
+        width: 100%;
+        height: auto;
+        aspect-ratio: 8/5;
+        object-fit: contain;
+      }
+      midnry-fps .mf-inspectweapon span {
+        display: block;
+        padding: 8px 12px;
+        font-size: 12px;
+      }
+      midnry-fps .mf-weaponinspect {
+        width: min(1000px, 94vw);
+        max-height: 92dvh;
+        overflow: auto;
+        border: 1px solid #71856e;
+        border-radius: 14px;
+        padding: 20px;
+        background: #17221c;
+        color: #edf2e9;
+      }
+      midnry-fps .mf-weaponinspect img {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      midnry-fps .mf-weaponinspect button {
+        min-height: 44px;
+        float: right;
+        padding: 8px 18px;
+        color: #17221c;
+        background: #c6d9ba;
+        border: 1px solid #819579;
+        border-radius: 8px;
+      }
+      midnry-fps .mf-weaponinspect::backdrop {
+        background: #08110de8;
+      }
+      midnry-fps .mf-rendernotice {
+        padding: 12px;
+        border: 1px solid #b3c3ae;
+      }
+      midnry-fps .mf-shell > :not(canvas) {
+        z-index: 2;
+      }
       /* Preview palette stays scoped; existing accessible hit areas and dialogs persist. */
       midnry-fps .mf-military {
         color: #e4e8e3;
@@ -125,7 +415,9 @@
         padding: 24px;
         background: #101815;
       }
-      midnry-fps .mf-render-status[hidden] { display: none; }
+      midnry-fps .mf-render-status[hidden] {
+        display: none;
+      }
       midnry-fps .mf-render-status > div {
         width: min(100%, 440px);
         padding: 28px;
@@ -133,9 +425,19 @@
         border-radius: 22px;
         background: #1a2520;
       }
-      midnry-fps .mf-render-status h2 { margin: 12px 0; font-size: 24px; }
-      midnry-fps .mf-render-status p { color: #bdc9c1; line-height: 1.6; }
-      midnry-fps .mf-render-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+      midnry-fps .mf-render-status h2 {
+        margin: 12px 0;
+        font-size: 24px;
+      }
+      midnry-fps .mf-render-status p {
+        color: #bdc9c1;
+        line-height: 1.6;
+      }
+      midnry-fps .mf-render-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
       midnry-fps .mf-render-actions button {
         min-height: 48px;
         padding: 12px 18px;
@@ -143,7 +445,11 @@
         border-radius: 12px;
         background: #2c4034;
       }
-      midnry-fps .mf-compat-list { list-style: none; margin: 20px 0; padding: 0; }
+      midnry-fps .mf-compat-list {
+        list-style: none;
+        margin: 20px 0;
+        padding: 0;
+      }
       midnry-fps .mf-compat-list li {
         padding: 10px 0;
         border-top: 1px solid #65706a55;
@@ -151,11 +457,27 @@
         grid-template-columns: 58px 1fr;
         column-gap: 10px;
       }
-      midnry-fps .mf-compat-list small { display: block; color: #becac3; line-height: 1.5; margin-top: 4px; }
-      midnry-fps .mf-compat-state { font-size: 11px; font-weight: 700; color: #bbc7bf; padding-top: 3px; }
-      midnry-fps [data-compat-state="passed"] .mf-compat-state { color: #a8ddbd; }
-      midnry-fps [data-compat-state="warning"] .mf-compat-state { color: #ffcc70; }
-      midnry-fps [data-compat-state="failed"] .mf-compat-state { color: #ffaaa1; }
+      midnry-fps .mf-compat-list small {
+        display: block;
+        color: #becac3;
+        line-height: 1.5;
+        margin-top: 4px;
+      }
+      midnry-fps .mf-compat-state {
+        font-size: 11px;
+        font-weight: 700;
+        color: #bbc7bf;
+        padding-top: 3px;
+      }
+      midnry-fps [data-compat-state="passed"] .mf-compat-state {
+        color: #a8ddbd;
+      }
+      midnry-fps [data-compat-state="warning"] .mf-compat-state {
+        color: #ffcc70;
+      }
+      midnry-fps [data-compat-state="failed"] .mf-compat-state {
+        color: #ffaaa1;
+      }
       midnry-fps .mf-compat-report {
         color: #e4e8e3;
         background: #17201e;
@@ -166,9 +488,16 @@
         overflow-y: auto;
         padding: 24px;
       }
-      midnry-fps .mf-compat-report::backdrop { background: #030705b8; }
-      midnry-fps .mf-compat-report button { min-height: 44px; }
-      midnry-fps .mf-render-status > div { max-height: 100%; overflow-y: auto; }
+      midnry-fps .mf-compat-report::backdrop {
+        background: #030705b8;
+      }
+      midnry-fps .mf-compat-report button {
+        min-height: 44px;
+      }
+      midnry-fps .mf-render-status > div {
+        max-height: 100%;
+        overflow-y: auto;
+      }
       midnry-fps .mf-military .mf-panel,
       midnry-fps .mf-military .mf-dialog,
       midnry-fps .mf-military .mf-book {
@@ -477,30 +806,66 @@
         height: 48px;
         background: #e8e0ccab;
       }
-      midnry-fps .mf-sprint, midnry-fps .mf-slide {
-        position: absolute; bottom: calc(225px + var(--mf-safe-bottom)); width: 82px; min-height: 48px;
-        border: 2px solid #b3c3ae; background: #17201edb; color: #fff4dc;
-        pointer-events: auto; touch-action: none; font-weight: 800;
+      midnry-fps .mf-sprint,
+      midnry-fps .mf-slide {
+        position: absolute;
+        bottom: calc(225px + var(--mf-safe-bottom));
+        width: 82px;
+        min-height: 48px;
+        border: 2px solid #b3c3ae;
+        background: #17201edb;
+        color: #fff4dc;
+        pointer-events: auto;
+        touch-action: none;
+        font-weight: 800;
       }
-      midnry-fps .mf-sprint { left: calc(24px + var(--mf-safe-left)); }
-      midnry-fps .mf-sprint[aria-pressed="true"] { background: #b3c3ae; color: #101419; }
-      midnry-fps .mf-slide { right: calc(25px + var(--mf-safe-right)); }
+      midnry-fps .mf-sprint {
+        left: calc(24px + var(--mf-safe-left));
+      }
+      midnry-fps .mf-sprint[aria-pressed="true"] {
+        background: #b3c3ae;
+        color: #101419;
+      }
+      midnry-fps .mf-slide {
+        right: calc(25px + var(--mf-safe-right));
+      }
       midnry-fps .mf-movement {
-        position: absolute; bottom: calc(108px + var(--mf-safe-bottom)); left: 50%; transform: translateX(-50%);
-        padding: 8px 12px; color: #b3c3ae; background: #101419b0;
-        pointer-events: none; font-weight: 800; letter-spacing: .1em;
+        position: absolute;
+        bottom: calc(108px + var(--mf-safe-bottom));
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 8px 12px;
+        color: #b3c3ae;
+        background: #101419b0;
+        pointer-events: none;
+        font-weight: 800;
+        letter-spacing: 0.1em;
       }
       @media (max-width: 700px) {
-        midnry-fps .mf-movement { bottom: calc(286px + var(--mf-safe-bottom)); }
+        midnry-fps .mf-movement {
+          bottom: calc(286px + var(--mf-safe-bottom));
+        }
       }
       @media (max-height: 500px) and (min-width: 600px) {
-        midnry-fps .mf-slide { right: calc(185px + var(--mf-safe-right)); bottom: calc(118px + var(--mf-safe-bottom)); }
+        midnry-fps .mf-slide {
+          right: calc(185px + var(--mf-safe-right));
+          bottom: calc(118px + var(--mf-safe-bottom));
+        }
       }
-      midnry-fps .mf-dying :is(.mf-touch, .mf-super, .mf-cross, .mf-movement) { visibility: hidden; }
+      midnry-fps .mf-dying :is(.mf-touch, .mf-super, .mf-cross, .mf-movement) {
+        visibility: hidden;
+      }
       midnry-fps .mf-death {
-        position: absolute; inset: 0; display: grid; place-items: center;
-        pointer-events: none; color: #e4e8e3; background: transparent;
-        font-weight: 900; font-size: clamp(24px, 5vw, 52px); letter-spacing: .16em;
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        pointer-events: none;
+        color: #e4e8e3;
+        background: transparent;
+        font-weight: 900;
+        font-size: clamp(24px, 5vw, 52px);
+        letter-spacing: 0.16em;
       }
       midnry-fps [hidden] {
         display: none !important;
@@ -1210,13 +1575,51 @@
         height: 20px;
         accent-color: #71ebd5;
       }
-      midnry-fps .mf-looklabel { display: grid; gap: 4px; margin: 12px 0; }
-      midnry-fps .mf-lookrow { display: flex; align-items: center; gap: 12px; }
-      midnry-fps .mf-lookrow input[type="range"] { flex: 1; min-width: 0; width: 100%; accent-color: #96b88a; }
-      midnry-fps .mf-lookrow input[type="number"] { width: 84px; min-height: 44px; background: #17221c; color: #edf2e9; border: 1px solid #71856e; border-radius: 5px; padding: 6px; font: inherit; }
-      midnry-fps .mf-lookreset { min-height: 44px; padding: 8px 14px; background: #c6d9ba; color: #17221c; border: 1px solid #819579; border-radius: 5px; }
-      midnry-fps .mf-aimsettings output { color: #c6d9ba; float: right; font-variant-numeric: tabular-nums; }
-      midnry-fps .mf-aimsettings > label:not(.mf-looklabel) { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      midnry-fps .mf-looklabel {
+        display: grid;
+        gap: 4px;
+        margin: 12px 0;
+      }
+      midnry-fps .mf-lookrow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      midnry-fps .mf-lookrow input[type="range"] {
+        flex: 1;
+        min-width: 0;
+        width: 100%;
+        accent-color: #96b88a;
+      }
+      midnry-fps .mf-lookrow input[type="number"] {
+        width: 84px;
+        min-height: 44px;
+        background: #17221c;
+        color: #edf2e9;
+        border: 1px solid #71856e;
+        border-radius: 5px;
+        padding: 6px;
+        font: inherit;
+      }
+      midnry-fps .mf-lookreset {
+        min-height: 44px;
+        padding: 8px 14px;
+        background: #c6d9ba;
+        color: #17221c;
+        border: 1px solid #819579;
+        border-radius: 5px;
+      }
+      midnry-fps .mf-aimsettings output {
+        color: #c6d9ba;
+        float: right;
+        font-variant-numeric: tabular-nums;
+      }
+      midnry-fps .mf-aimsettings > label:not(.mf-looklabel) {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
       midnry-fps .mf-settingsnotice {
         color: #ffd16b;
       }
@@ -1673,19 +2076,40 @@
   <!-- For inline integration copy the style, element and script. Set a height on the host. -->
   <body style="margin: 0; background: #101419">
     <div class="mf-loading" role="region" aria-label="Loading Outpost Zero">
-      <img class="mf-loadimage is-active" src="./loading/outpost.webp" alt="Dust Outpost arena" fetchpriority="high" decoding="async">
-      <img class="mf-loadimage" alt="" decoding="async">
-      <header class="mf-loadheader"><div class="mf-loadbrand">MIDNRY<small>FIELD OPERATIONS</small></div><div class="mf-loadtitle">OUTPOST ZERO<br>PREPARE TO DEPLOY</div></header>
+      <img
+        class="mf-loadimage is-active"
+        src="./loading/outpost.webp"
+        alt="Dust Outpost arena"
+        fetchpriority="high"
+        decoding="async"
+      />
+      <img class="mf-loadimage" alt="" decoding="async" />
+      <header class="mf-loadheader">
+        <div class="mf-loadbrand">MIDNRY<small>FIELD OPERATIONS</small></div>
+        <div class="mf-loadtitle">OUTPOST ZERO<br />PREPARE TO DEPLOY</div>
+      </header>
       <div class="mf-loadbody">
-        <div class="mf-loadcategory">ARENA / 01</div><h1 class="mf-slidetitle">Dust Outpost</h1>
+        <div class="mf-loadcategory">ARENA / 01</div>
+        <h1 class="mf-slidetitle">Dust Outpost</h1>
         <p class="mf-loaddescription">Sandstone cover. Open sightlines. Make every move count.</p>
         <div class="mf-loadcontrols" role="group" aria-label="Loading slideshow controls">
-          <button class="mf-loadprev" aria-label="Previous loading slide">←</button><span class="mf-loadcount">01 / 06</span><button class="mf-loadnext" aria-label="Next loading slide">→</button><button class="mf-loadpause" aria-label="Pause loading slideshow" aria-pressed="false">Ⅱ</button>
+          <button class="mf-loadprev" aria-label="Previous loading slide">←</button
+          ><span class="mf-loadcount">01 / 06</span
+          ><button class="mf-loadnext" aria-label="Next loading slide">→</button
+          ><button class="mf-loadpause" aria-label="Pause loading slideshow" aria-pressed="false">
+            Ⅱ
+          </button>
         </div>
       </div>
       <footer class="mf-loadfooter">
-        <div class="mf-loadtip"><b>FIELD TIP</b><p>Hold Shift to sprint. Press C or Ctrl while sprinting forward to slide into cover.</p></div>
-        <div class="mf-loadprogress"><progress aria-label="Game loading progress" max="100" value="0"></progress><span class="mf-loadpercent" aria-hidden="true">0%</span></div>
+        <div class="mf-loadtip">
+          <b>FIELD TIP</b>
+          <p>Hold Shift to sprint. Press C or Ctrl while sprinting forward to slide into cover.</p>
+        </div>
+        <div class="mf-loadprogress">
+          <progress aria-label="Game loading progress" max="100" value="0"></progress
+          ><span class="mf-loadpercent" aria-hidden="true">0%</span>
+        </div>
         <p class="mf-loadstatus" role="status" aria-live="polite">Preparing field operations…</p>
         <a href="" class="mf-loadretry" hidden>Retry loading</a>
       </footer>
@@ -1695,33 +2119,79 @@
       (() => {
         const screen = document.querySelector(".mf-loading");
         const slides = [
-          ["outpost", "ARENA / 01", "Dust Outpost", "Sandstone cover. Open sightlines. Make every move count.", "Hold Shift to sprint. Press C or Ctrl while sprinting forward to slide into cover."],
-          ["carbine", "LOADOUT / 01", "VX–7 Carbine", "Your automatic all-rounder. Built for the middle distance.", "Reload with R before pushing a new lane. On mobile, tap the reload button."],
-          ["operator", "CHARACTER / FIELD OPS", "Field Operators", "Boots on the ground. Keep your squad in the fight.", "In Duo, you can spectate your surviving teammate after you go down."],
-          ["skyport", "ARENA / 02", "Skyport", "Aircraft shells, hangars and room to flank.", "Keep moving in Last Signal: the safe zone shrinks as the match goes on."],
-          ["rocket", "LOADOUT / 02", "Flare Launcher", "Heavy firepower. Choose your moment.", "Dealing damage charges your ability. When it is ready, press Q or tap SUPER."],
-          ["freight", "ARENA / 03", "Freight Rush", "Container lanes. Tight angles. Watch the next corner.", "On mobile, move with the left stick and drag the right side of the screen to aim."],
+          [
+            "outpost",
+            "ARENA / 01",
+            "Dust Outpost",
+            "Sandstone cover. Open sightlines. Make every move count.",
+            "Hold Shift to sprint. Press C or Ctrl while sprinting forward to slide into cover.",
+          ],
+          [
+            "carbine",
+            "LOADOUT / 01",
+            "VX–7 Carbine",
+            "Your automatic all-rounder. Built for the middle distance.",
+            "Reload with R before pushing a new lane. On mobile, tap the reload button.",
+          ],
+          [
+            "operator",
+            "CHARACTER / FIELD OPS",
+            "Field Operators",
+            "Boots on the ground. Keep your squad in the fight.",
+            "In Duo, you can spectate your surviving teammate after you go down.",
+          ],
+          [
+            "skyport",
+            "ARENA / 02",
+            "Skyport",
+            "Aircraft shells, hangars and room to flank.",
+            "Keep moving in Last Signal: the safe zone shrinks as the match goes on.",
+          ],
+          [
+            "rocket",
+            "LOADOUT / 02",
+            "Flare Launcher",
+            "Heavy firepower. Choose your moment.",
+            "Dealing damage charges your ability. When it is ready, press Q or tap SUPER.",
+          ],
+          [
+            "freight",
+            "ARENA / 03",
+            "Freight Rush",
+            "Container lanes. Tight angles. Watch the next corner.",
+            "On mobile, move with the left stick and drag the right side of the screen to aim.",
+          ],
         ];
         const images = [...screen.querySelectorAll(".mf-loadimage")];
         const motion = matchMedia("(prefers-reduced-motion: reduce)");
-        let index = 0, active = 0, stopped = false, paused = motion.matches, timer, request = 0;
+        let index = 0,
+          active = 0,
+          stopped = false,
+          paused = motion.matches,
+          timer,
+          request = 0;
         const pauseButton = screen.querySelector(".mf-loadpause");
         const schedule = () => {
           clearInterval(timer);
-          if (!paused && !stopped) timer = setInterval(() => { if (!document.hidden) show(index + 1); }, 4500);
+          if (!paused && !stopped)
+            timer = setInterval(() => {
+              if (!document.hidden) show(index + 1);
+            }, 4500);
         };
         const show = (next) => {
           if (stopped) return;
           index = (next + slides.length) % slides.length;
           const [asset, category, title, description, tip] = slides[index];
           const updateCaption = () => {
-          screen.querySelector(".mf-loadcategory").textContent = category;
-          screen.querySelector(".mf-slidetitle").textContent = title;
-          screen.querySelector(".mf-loaddescription").textContent = description;
-          screen.querySelector(".mf-loadtip p").textContent = tip;
-          screen.querySelector(".mf-loadcount").textContent = `${String(index + 1).padStart(2, "0")} / 06`;
+            screen.querySelector(".mf-loadcategory").textContent = category;
+            screen.querySelector(".mf-slidetitle").textContent = title;
+            screen.querySelector(".mf-loaddescription").textContent = description;
+            screen.querySelector(".mf-loadtip p").textContent = tip;
+            screen.querySelector(".mf-loadcount").textContent =
+              `${String(index + 1).padStart(2, "0")} / 06`;
           };
-          const image = images[1 - active], token = ++request;
+          const image = images[1 - active],
+            token = ++request;
           image.onload = () => {
             if (stopped || token !== request) return;
             updateCaption();
@@ -1731,53 +2201,105 @@
             image.classList.add("is-active");
             active = 1 - active;
           };
-          image.onerror = () => { /* Keep the last successful still if a showcase image fails. */ };
+          image.onerror = () => {
+            /* Keep the last successful still if a showcase image fails. */
+          };
           image.src = `./loading/${asset}.webp`;
         };
         const syncPause = () => {
           pauseButton.setAttribute("aria-pressed", String(paused));
-          pauseButton.setAttribute("aria-label", paused ? "Resume loading slideshow" : "Pause loading slideshow");
+          pauseButton.setAttribute(
+            "aria-label",
+            paused ? "Resume loading slideshow" : "Pause loading slideshow",
+          );
           pauseButton.textContent = paused ? "▷" : "Ⅱ";
           schedule();
         };
-        screen.querySelector(".mf-loadprev").onclick = () => { show(index - 1); schedule(); };
-        screen.querySelector(".mf-loadnext").onclick = () => { show(index + 1); schedule(); };
-        pauseButton.onclick = () => { paused = !paused; syncPause(); };
-        const motionChanged = () => { paused = motion.matches; syncPause(); };
+        screen.querySelector(".mf-loadprev").onclick = () => {
+          show(index - 1);
+          schedule();
+        };
+        screen.querySelector(".mf-loadnext").onclick = () => {
+          show(index + 1);
+          schedule();
+        };
+        pauseButton.onclick = () => {
+          paused = !paused;
+          syncPause();
+        };
+        const motionChanged = () => {
+          paused = motion.matches;
+          syncPause();
+        };
         motion.addEventListener("change", motionChanged);
         syncPause();
-        window.outpostLoading = { stop() { stopped = true; ++request; clearInterval(timer); images.forEach(i => { i.onload = null; i.onerror = null; }); motion.removeEventListener("change", motionChanged); } };
+        window.outpostLoading = {
+          stop() {
+            stopped = true;
+            ++request;
+            clearInterval(timer);
+            images.forEach((i) => {
+              i.onload = null;
+              i.onerror = null;
+            });
+            motion.removeEventListener("change", motionChanged);
+          },
+        };
         // Optional showcase images must never turn a successful game load into an error.
-        window.addEventListener("error", (event) => {
-          if (screen.hidden || (!(event instanceof ErrorEvent) && event.target?.tagName !== "SCRIPT")) return;
-          screen.querySelector(".mf-loadstatus").textContent = "Loading failed. Please retry.";
-          screen.querySelector(".mf-loadretry").hidden = false;
-        }, true);
+        window.addEventListener(
+          "error",
+          (event) => {
+            if (
+              screen.hidden ||
+              (!(event instanceof ErrorEvent) && event.target?.tagName !== "SCRIPT")
+            )
+              return;
+            screen.querySelector(".mf-loadstatus").textContent = "Loading failed. Please retry.";
+            screen.querySelector(".mf-loadretry").hidden = false;
+          },
+          true,
+        );
       })();
     </script>
     <midnry-fps style="height: 100dvh" aria-label="Outpost Zero first-person shooter">
-      <div class="mf-shell mf-military"><div class="mf-render-status"><div>
-        <div class="mf-eyebrow">OUTPOST ZERO / DEVICE CHECK</div>
-        <h2 data-initial-title>Checking compatibility</h2>
-        <p data-initial-message>Preparing browser and 3D graphics checks…</p>
-        <noscript><p>JavaScript is disabled. Enable it and reload to run this game.</p></noscript>
-        <div class="mf-render-actions"><button data-initial-retry hidden onclick="location.reload()">Retry loading</button><a href="/" target="_top">Back to Midnry</a></div>
-      </div></div></div>
+      <div class="mf-shell mf-military">
+        <div class="mf-render-status">
+          <div>
+            <div class="mf-eyebrow">OUTPOST ZERO / DEVICE CHECK</div>
+            <h2 data-initial-title>Checking compatibility</h2>
+            <p data-initial-message>Preparing browser and 3D graphics checks…</p>
+            <noscript
+              ><p>JavaScript is disabled. Enable it and reload to run this game.</p></noscript
+            >
+            <div class="mf-render-actions">
+              <button data-initial-retry hidden onclick="location.reload()">Retry loading</button
+              ><a href="/" target="_top">Back to Midnry</a>
+            </div>
+          </div>
+        </div>
+      </div>
     </midnry-fps>
     <script nomodule>
-      document.querySelector('midnry-fps').setAttribute('data-module-unsupported', 'true');
-      document.querySelector('[data-initial-title]').textContent = 'Browser update needed';
-      document.querySelector('[data-initial-message]').textContent = 'This browser does not support the game’s JavaScript modules. Use an updated browser.';
+      document.querySelector("midnry-fps").setAttribute("data-module-unsupported", "true");
+      document.querySelector("[data-initial-title]").textContent = "Browser update needed";
+      document.querySelector("[data-initial-message]").textContent =
+        "This browser does not support the game’s JavaScript modules. Use an updated browser.";
     </script>
     <script>
       // A failed module download must leave an actionable screen, even before
       // the custom element or the full compatibility checker can initialize.
       setTimeout(function () {
-        var root = document.querySelector('midnry-fps');
-        if (root && !root.engine && !root.hasAttribute('data-module-unsupported') && root.querySelector('[data-initial-message]')) {
-          root.querySelector('[data-initial-title]').textContent = 'Game files unavailable';
-          root.querySelector('[data-initial-message]').textContent = 'The game could not start its compatibility check. Check your connection and retry loading.';
-          root.querySelector('[data-initial-retry]').hidden = false;
+        var root = document.querySelector("midnry-fps");
+        if (
+          root &&
+          !root.engine &&
+          !root.hasAttribute("data-module-unsupported") &&
+          root.querySelector("[data-initial-message]")
+        ) {
+          root.querySelector("[data-initial-title]").textContent = "Game files unavailable";
+          root.querySelector("[data-initial-message]").textContent =
+            "The game could not start its compatibility check. Check your connection and retry loading.";
+          root.querySelector("[data-initial-retry]").hidden = false;
         }
       }, 15000);
     </script>
@@ -1792,10 +2314,23 @@
       import { ConnectionUI } from "./outpost-connection.js";
       import { AssetCacheUI } from "./outpost-asset-cache.js";
       import { ObjectiveNavigation } from "./outpost-navigation.js";
+      import { RoomTransport } from "./outpost-realtime.js";
+      import { ProximityVoice } from "./outpost-voice.js";
       import { Academy, FrameBudget, PRESETS } from "./outpost-academy.js";
-      import { newCompatibilityReport, updateCheck, checkBrowser, checkScene } from "./outpost-compatibility.js";
+      import {
+        newCompatibilityReport,
+        updateCheck,
+        checkBrowser,
+        checkScene,
+      } from "./outpost-compatibility.js";
       import { Retention } from "./outpost-retention.js";
-      import { LookSettings, lookDelta, viewGeometry, PITCH_LIMIT, requestAimLock } from "./outpost-look.js";
+      import {
+        LookSettings,
+        lookDelta,
+        viewGeometry,
+        PITCH_LIMIT,
+        requestAimLock,
+      } from "./outpost-look.js";
       import { MenuUI } from "./outpost-ui.js";
       (() => {
         "use strict";
@@ -1854,13 +2389,18 @@
             this.lookPitch = 0;
             this.aimSettings = new LookSettings(this);
             this.weapon = "carbine";
-            try { this.outfit = outfitOf(localStorage.getItem("midnry-outpost-outfit")).id; }
-            catch { this.outfit = "ranger"; }
-            for(const outfit of Object.values(OUTFITS)) {
-              const option=document.createElement("option");option.value=outfit.id;option.textContent=outfit.name;
+            try {
+              this.outfit = outfitOf(localStorage.getItem("midnry-outpost-outfit")).id;
+            } catch {
+              this.outfit = "ranger";
+            }
+            for (const outfit of Object.values(OUTFITS)) {
+              const option = document.createElement("option");
+              option.value = outfit.id;
+              option.textContent = outfit.name;
               this.$(".mf-outfitselect").append(option);
             }
-            this.on(this.$(".mf-outfitselect"), "change", e => this.chooseOutfit(e.target.value));
+            this.on(this.$(".mf-outfitselect"), "change", (e) => this.chooseOutfit(e.target.value));
             this.difficulty = "normal";
             for (const map of Object.values(MAPS)) {
               const option = document.createElement("option");
@@ -1882,7 +2422,8 @@
               }
             });
             this.on(this.$(".mf-weaponselect"), "change", (e) => {
-              if (this.online) this.onlineAction("loadout", { weapon: e.target.value, outfit: this.outfit });
+              if (this.online)
+                this.onlineAction("loadout", { weapon: e.target.value, outfit: this.outfit });
               else {
                 this.weapon = e.target.value;
                 this.reset();
@@ -1901,6 +2442,8 @@
             this.spectator = new SpectatorUI(this);
             this.connection = new ConnectionUI(this);
             this.navigation = new ObjectiveNavigation(this, this.protocolUI);
+            this.transport = new RoomTransport(this);
+            this.voice = new ProximityVoice(this);
             this.assetCache = new AssetCacheUI(this);
             this.protocolUI.refreshMenu();
             this.initMilitaryStatus();
@@ -1909,9 +2452,10 @@
             this.militaryReady = this.retryMilitary();
             // Keep the compatibility screen working on browsers missing this
             // required API; the check will block deployment with an explanation.
-            this.resizeObserver = typeof ResizeObserver === "function"
-              ? new ResizeObserver(() => this.resize())
-              : { observe() {}, disconnect() {} };
+            this.resizeObserver =
+              typeof ResizeObserver === "function"
+                ? new ResizeObserver(() => this.resize())
+                : { observe() {}, disconnect() {} };
             this.resizeObserver.observe(this.shell);
             this.resize();
             this.loop = this.loop.bind(this);
@@ -1926,7 +2470,10 @@
             status.setAttribute("aria-label", "Cinematic graphics loading and recovery");
             status.innerHTML = `<div><div class="mf-eyebrow">OUTPOST ZERO / DEVICE CHECK</div><h2 class="mf-render-title">Checking compatibility</h2><p class="mf-render-message" role="status" aria-live="polite">Checking the browser, graphics device and game files.</p><ul class="mf-compat-list"></ul><div class="mf-render-actions"><button class="mf-render-retry" hidden>Retry graphics</button><button class="mf-render-exit">Exit game</button></div></div>`;
             this.shell.append(status);
-            this.shell.insertAdjacentHTML("beforeend", `<dialog class="mf-compat-report" aria-label="Device compatibility check"><h2>Device compatibility</h2><div class="mf-compat-body"></div><div class="mf-render-actions"><button class="mf-compat-recommend" hidden>Use recommended graphics</button><button class="mf-compat-close">Done</button></div></dialog>`);
+            this.shell.insertAdjacentHTML(
+              "beforeend",
+              `<dialog class="mf-compat-report" aria-label="Device compatibility check"><h2>Device compatibility</h2><div class="mf-compat-body"></div><div class="mf-render-actions"><button class="mf-compat-recommend" hidden>Use recommended graphics</button><button class="mf-compat-close">Done</button></div></dialog>`,
+            );
             const details = document.createElement("button");
             details.className = "mf-compat-open";
             details.textContent = "Device check";
@@ -1938,12 +2485,18 @@
             });
             this.on(this.$(".mf-compat-close"), "click", () => this.$(".mf-compat-report").close());
             this.on(this.$(".mf-compat-report"), "keydown", (event) => event.stopPropagation());
-            this.on(this.$(".mf-compat-report"), "close", () => details.focus({ preventScroll: true }));
+            this.on(this.$(".mf-compat-report"), "close", () =>
+              details.focus({ preventScroll: true }),
+            );
             this.on(this.$(".mf-compat-recommend"), "click", () => {
               const preset = this.compatibilityReport.recommendedPreset;
               if (!PRESETS[preset]) return;
               this.$(".mf-compat-report").close();
-              this.ui.confirmGraphics({ preset, options: { ...PRESETS[preset] } }, this.$(".mf-graphicsettings"), "[data-preset]");
+              this.ui.confirmGraphics(
+                { preset, options: { ...PRESETS[preset] } },
+                this.$(".mf-graphicsettings"),
+                "[data-preset]",
+              );
             });
             this.on(this.$(".mf-render-retry"), "click", () => {
               this.militaryReady = this.retryMilitary();
@@ -1951,10 +2504,14 @@
             this.on(this.$(".mf-render-exit"), "click", () => this.ui.exitGame());
             this.on(status, "keydown", (event) => {
               if (event.key !== "Tab") return;
-              const buttons = [...status.querySelectorAll("button")].filter((button) => !button.hidden);
+              const buttons = [...status.querySelectorAll("button")].filter(
+                (button) => !button.hidden,
+              );
               const index = buttons.indexOf(document.activeElement);
               event.preventDefault();
-              buttons[(index + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length].focus();
+              buttons[
+                (index + (event.shiftKey ? -1 : 1) + buttons.length) % buttons.length
+              ].focus();
             });
             this.refreshCompatibility();
           }
@@ -1968,12 +2525,17 @@
               row.dataset.compatState = check.status;
               const state = document.createElement("span");
               state.className = "mf-compat-state";
-              state.textContent = ({ passed: "PASS", warning: "NOTE", failed: "FAIL" })[check.status] || (report.status === "checking" ? "WAIT" : "SKIP");
+              state.textContent =
+                { passed: "PASS", warning: "NOTE", failed: "FAIL" }[check.status] ||
+                (report.status === "checking" ? "WAIT" : "SKIP");
               const content = document.createElement("div");
               const title = document.createElement("strong");
               title.textContent = check.label;
               const detail = document.createElement("small");
-              detail.textContent = check.status === "checking" && report.status !== "checking" ? "Not tested because an earlier check failed." : check.detail;
+              detail.textContent =
+                check.status === "checking" && report.status !== "checking"
+                  ? "Not tested because an earlier check failed."
+                  : check.detail;
               content.append(title, detail);
               row.append(state, content);
               list.append(row);
@@ -1988,12 +2550,20 @@
             const summary = document.createElement("p");
             summary.textContent = report.summary;
             const privacy = document.createElement("p");
-            privacy.textContent = "These checks run on this device when the game opens. No hardware report is sent to a server. A short scene sample recommends graphics quality; it does not guarantee a sustained frame rate.";
+            privacy.textContent =
+              "These checks run on this device when the game opens. No hardware report is sent to a server. A short scene sample recommends graphics quality; it does not guarantee a sustained frame rate.";
             body.replaceChildren(summary, this.compatibilityList(), privacy);
-            this.$(".mf-compat-open").textContent = report.status === "ready"
-              ? "Device check · Ready"
-              : report.status === "limited" ? report.recommendedPreset === this.academy.preset ? "Device check · Limited performance" : "Device check · Lower graphics recommended" : "Device check";
-            this.$(".mf-compat-recommend").hidden = !["ready", "limited"].includes(report.status) || report.recommendedPreset === this.academy.preset;
+            this.$(".mf-compat-open").textContent =
+              report.status === "ready"
+                ? "Device check · Ready"
+                : report.status === "limited"
+                  ? report.recommendedPreset === this.academy.preset
+                    ? "Device check · Limited performance"
+                    : "Device check · Lower graphics recommended"
+                  : "Device check";
+            this.$(".mf-compat-recommend").hidden =
+              !["ready", "limited"].includes(report.status) ||
+              report.recommendedPreset === this.academy.preset;
             this.$(".mf-compat-report").dataset.status = report.status;
           }
           showMilitaryStatus(failed, reason) {
@@ -2008,10 +2578,16 @@
               : reason === "context-lost"
                 ? "The graphics connection was interrupted. Retry to restore the 3D scene. Your online match continues while this screen is open."
                 : "The 3D scene could not load. Retry, or check that your browser supports WebGL with hardware acceleration enabled.";
-            if (failed && this.compatibilityReport.status === "unsupported" && reason !== "context-lost")
+            if (
+              failed &&
+              this.compatibilityReport.status === "unsupported" &&
+              reason !== "context-lost"
+            )
               this.$(".mf-render-message").textContent = this.compatibilityReport.summary;
             this.$(".mf-render-retry").hidden = !failed;
-            this.$(".mf-tag").textContent = failed ? "TACTICAL 3D / UNAVAILABLE" : "TACTICAL 3D / LOADING";
+            this.$(".mf-tag").textContent = failed
+              ? "TACTICAL 3D / UNAVAILABLE"
+              : "TACTICAL 3D / LOADING";
             this.$(".mf-start").disabled = true;
             if (!failed) this.$(".mf-render-exit").focus({ preventScroll: true });
             this.refreshCompatibility();
@@ -2022,13 +2598,24 @@
             this.militaryLoadError = reason;
             this.militaryError = reason;
             if (reason === "context-lost") {
-              updateCheck(this.compatibilityReport, "graphics", "failed", "The graphics connection was interrupted. Retry runs the device check again.");
+              updateCheck(
+                this.compatibilityReport,
+                "graphics",
+                "failed",
+                "The graphics connection was interrupted. Retry runs the device check again.",
+              );
               this.compatibilityReport.status = "load-error";
               this.compatibilityReport.summary = "The graphics connection needs to be restored.";
             } else if (this.compatibilityReport.status === "checking") {
-              updateCheck(this.compatibilityReport, "assets", "failed", "Game files could not finish loading. Check your connection and retry.");
+              updateCheck(
+                this.compatibilityReport,
+                "assets",
+                "failed",
+                "Game files could not finish loading. Check your connection and retry.",
+              );
               this.compatibilityReport.status = "load-error";
-              this.compatibilityReport.summary = "The browser passed its checks, but the game files could not load.";
+              this.compatibilityReport.summary =
+                "The browser passed its checks, but the game files could not load.";
             }
             // Native dialogs occupy the top layer; close them so recovery is
             // visible and keyboard users can reach its actions.
@@ -2057,7 +2644,10 @@
             this.shell.inert = false;
             this.loadingScreen.hidden = false;
             this.showMilitaryStatus(false);
-            this.loadingTimer = setTimeout(() => this.handleMilitaryFailure("loading-timeout"), 90000);
+            this.loadingTimer = setTimeout(
+              () => this.handleMilitaryFailure("loading-timeout"),
+              90000,
+            );
             try {
               // Paint the loading screen before probing or compiling shaders.
               await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -2066,20 +2656,35 @@
                 this.handleMilitaryFailure("compatibility");
                 return;
               }
-              updateCheck(this.compatibilityReport, "assets", "checking", "Loading the detailed environment and character files…");
-              updateCheck(this.compatibilityReport, "performance", "checking", "The loaded scene will be tested at your selected graphics quality.");
+              updateCheck(
+                this.compatibilityReport,
+                "assets",
+                "checking",
+                "Loading the detailed environment and character files…",
+              );
+              updateCheck(
+                this.compatibilityReport,
+                "performance",
+                "checking",
+                "The loaded scene will be tested at your selected graphics quality.",
+              );
               this.refreshCompatibility();
               const { MilitaryRenderer } = await import(
-                `./outpost-military.js?v=protocol-wayfinding-20261013&retry=${attempt - 1}`
+                `./outpost-military.js?v=protocol-realtime-20261014&retry=${attempt - 1}`
               );
               if (this.abort.signal.aborted) return;
-              const renderer = new MilitaryRenderer(this, (done,total) => {
-                if (this.abort.signal.aborted || !this.loading) return;
-                const percent = Math.round(done / total * 90);
-                this.loadingScreen.querySelector("progress").value = percent;
-                this.loadingScreen.querySelector(".mf-loadpercent").textContent = `${percent}%`;
-                this.loadingScreen.querySelector(".mf-loadstatus").textContent = `Loading game files ${done} / ${total}…`;
-              }, { safeMode: safeMode || this.compatibilityReport.lowPowerRequired });
+              const renderer = new MilitaryRenderer(
+                this,
+                (done, total) => {
+                  if (this.abort.signal.aborted || !this.loading) return;
+                  const percent = Math.round((done / total) * 90);
+                  this.loadingScreen.querySelector("progress").value = percent;
+                  this.loadingScreen.querySelector(".mf-loadpercent").textContent = `${percent}%`;
+                  this.loadingScreen.querySelector(".mf-loadstatus").textContent =
+                    `Loading game files ${done} / ${total}…`;
+                },
+                { safeMode: safeMode || this.compatibilityReport.lowPowerRequired },
+              );
               this.military = renderer;
               await renderer.ready;
               if (this.abort.signal.aborted) {
@@ -2090,9 +2695,21 @@
               // Missing models or photographic materials must not quietly
               // substitute simplified geometry or flat-colored surfaces.
               if (renderer.assetErrors.length) throw new Error("assets-unavailable");
-              updateCheck(this.compatibilityReport, "assets", "passed", "Detailed materials, character models and lighting loaded.");
+              updateCheck(
+                this.compatibilityReport,
+                "assets",
+                "passed",
+                "Detailed materials, character models and lighting loaded.",
+              );
               this.refreshCompatibility();
-              if (!await checkScene(this.compatibilityReport, renderer, this.academy.preset, this.abort.signal)) {
+              if (
+                !(await checkScene(
+                  this.compatibilityReport,
+                  renderer,
+                  this.academy.preset,
+                  this.abort.signal,
+                ))
+              ) {
                 if (this.abort.signal.aborted) return;
                 throw new Error("scene-check-failed");
               }
@@ -2299,14 +2916,27 @@
             return this.lookPitch || 0;
           }
           controls() {
-            if (this.player.hp <= 0 || this.player.departed) return {
-              forward: 0, strafe: 0, aim: this.player.a, pitch: this.player.pitch || 0,
-              sprint: false, slide: false, fire: false, reload: false, super: false,
-              interact: false, vehicleInput: { pitch: 0, steer: 0 },
-            };
+            if (this.player.hp <= 0 || this.player.departed)
+              return {
+                forward: 0,
+                strafe: 0,
+                aim: this.player.a,
+                pitch: this.player.pitch || 0,
+                sprint: false,
+                slide: false,
+                fire: false,
+                reload: false,
+                super: false,
+                interact: false,
+                vehicleInput: { pitch: 0, steer: 0 },
+              };
             const protocol = this.mode === "protocol",
               fighting = protocol && this.arena.protocol?.phase === "combat",
-              frozen = protocol && (fighting ? this.time < this.arena.protocol.combat.startsAt : this.arena.protocol?.phase !== "roam"),
+              frozen =
+                protocol &&
+                (fighting
+                  ? this.time < this.arena.protocol.combat.startsAt
+                  : this.arena.protocol?.phase !== "roam"),
               dialogOpen = this.protocolUI?.hasDialogOpen();
             const controls = {
               forward:
@@ -2326,7 +2956,8 @@
               controls.super = false;
               if (!fighting || frozen || dialogOpen) controls.fire = controls.reload = false;
               controls.sprint = false;
-              if (frozen || this.protocolUI?.piloting || this.protocolUI?.hasDialogOpen()) controls.forward = controls.strafe = 0;
+              if (frozen || this.protocolUI?.piloting || this.protocolUI?.hasDialogOpen())
+                controls.forward = controls.strafe = 0;
               Object.assign(controls, this.protocolUI?.controls() || {});
               if (controls.protocolAction?.op === "helm") {
                 this.player.a = controls.aim = TRANSPORT_MAP.helm.a;
@@ -2352,7 +2983,8 @@
             this.shell.classList.add("mf-dying");
             this.deathProgress = 0;
             const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches,
-              event = (this.protocolCache = null, this.protocolView()?.protocol?.self?.deathScene),
+              event =
+                ((this.protocolCache = null), this.protocolView()?.protocol?.self?.deathScene),
               timing = deathTiming(event, reduced);
             this.deathSequence = {
               at: now,
@@ -2368,7 +3000,7 @@
             this.deathUI.update();
             this.running = false;
             this.hadLock = false;
-            if(document.pointerLockElement === this.canvas)document.exitPointerLock();
+            if (document.pointerLockElement === this.canvas) document.exitPointerLock();
             this.$(".mf-toast").textContent = "";
             this.keys.clear();
             this.firing = false;
@@ -2389,8 +3021,13 @@
           }
           updateDeath(now) {
             if (this.player.hp > 0 && !this.deathSequence) this.deathSeen = false;
-            if (this.player.hp <= 0 && !this.deathSeen && this.state !== "fresh" &&
-                this.state !== "ended") this.beginDeath(now);
+            if (
+              this.player.hp <= 0 &&
+              !this.deathSeen &&
+              this.state !== "fresh" &&
+              this.state !== "ended"
+            )
+              this.beginDeath(now);
             if (!this.deathSequence) return;
             const frame = deathFrame(this.deathSequence, now);
             this.deathStage = frame.stage;
@@ -2399,7 +3036,8 @@
             this.deathProgress = frame.fall;
             this.deathUI.update();
             if (!frame.done) return;
-            const resume = this.deathSequence.resume, result = this.pendingResult;
+            const resume = this.deathSequence.resume,
+              result = this.pendingResult;
             this.shell.classList.remove("mf-dying");
             this.deathSequence = null;
             this.deathStage = null;
@@ -2422,15 +3060,18 @@
           }
           chooseOutfit(id) {
             if (this.mode === "protocol") return;
-            if (!Object.hasOwn(OUTFITS,id)) return;
-            if(this.online) {
-              if(this.online.phase !== "lobby") return;
-              this.onlineAction("loadout", {weapon:this.weapon,outfit:id});
+            if (!Object.hasOwn(OUTFITS, id)) return;
+            if (this.online) {
+              if (this.online.phase !== "lobby") return;
+              this.onlineAction("loadout", { weapon: this.weapon, outfit: id });
             } else {
-              this.outfit=id;this.player.outfit=id;
-              try {localStorage.setItem("midnry-outpost-outfit",id);}catch{}
-              this.characters?.clearCache();this.updateKit();
-
+              this.outfit = id;
+              this.player.outfit = id;
+              try {
+                localStorage.setItem("midnry-outpost-outfit", id);
+              } catch {}
+              this.characters?.clearCache();
+              this.updateKit();
             }
           }
           updateKit() {
@@ -2446,14 +3087,15 @@
             }
             this.$(".mf-mapselect").value = map.id;
             this.$(".mf-weaponselect").value = w.id;
-            const uniform=outfitOf(this.outfit);
-            this.$(".mf-outfitselect").disabled = this.mode === "protocol" || !!this.online && this.online.phase !== "lobby";
+            const uniform = outfitOf(this.outfit);
+            this.$(".mf-outfitselect").disabled =
+              this.mode === "protocol" || (!!this.online && this.online.phase !== "lobby");
             this.$(".mf-outfitselect").closest("label").hidden = this.mode === "protocol";
-            this.$(".mf-outfitselect").value=uniform.id;
-            this.$(".mf-outfitpreview").src=`/games/outfits/${uniform.id}.webp?v=skins-20261011`;
-            this.$(".mf-outfitpreview").alt=uniform.name;
+            this.$(".mf-outfitselect").value = uniform.id;
+            this.$(".mf-outfitpreview").src = `/games/outfits/${uniform.id}.webp?v=skins-20261011`;
+            this.$(".mf-outfitpreview").alt = uniform.name;
             const lockerKey = `${uniform.id}:${this.online?.phase || "offline"}`;
-            if(this.$(".mf-locker")?.open && this.lockerKey !== lockerKey) {
+            if (this.$(".mf-locker")?.open && this.lockerKey !== lockerKey) {
               this.lockerKey = lockerKey;
               this.retention?.lockerContents();
             }
@@ -2614,7 +3256,7 @@
             if (!response.ok) throw Error(data.error || "Could not reach the room.");
             return data;
           }
-          async connectOnline(op) {
+          async connectOnline(op, saved = null) {
             if (this.connecting || this.online) return;
             this.retention?.audio.unlock();
             if (this.academy?.active) this.academy.finish();
@@ -2638,6 +3280,9 @@
                     mapId: this.mapId,
                     weapon: this.weapon,
                     outfit: this.outfit,
+                    ...(op === "resume" && saved
+                      ? { code: saved.code, id: saved.id, token: saved.token }
+                      : {}),
                   },
                   controller.signal,
                 );
@@ -2645,12 +3290,13 @@
                 clearTimeout(timer);
               }
               if (this.abort.signal.aborted) return;
-              this.online = { ...data, seq: 0, errors: 0 };
+              this.online = { ...data, seq: Math.max(data.ack ?? -1, saved?.seq ?? 0), errors: 0 };
               this.selfId = data.id;
               this.pendingShot = 0;
               this.pendingReload = false;
               this.netQueue = Promise.resolve();
               this.applyRoom(data);
+              this.transport.connect(this.online);
               this.scheduleRoomPoll(100);
             } catch (error) {
               if (!this.abort.signal.aborted)
@@ -2663,9 +3309,12 @@
             }
           }
           applyRoom(data) {
-            if (data.mode !== "protocol") throw Error("This room uses a retired mode. Create a Blackout Protocol room.");
+            if (data.mode !== "protocol")
+              throw Error("This room uses a retired mode. Create a Blackout Protocol room.");
             const net = this.online;
             if (!net) return;
+            if (Number.isFinite(data.serverAt) && data.serverAt < (net.serverAt || 0)) return;
+            net.lastSnapshotAt = performance.now();
             // A guest may miss the ended snapshot if the host rematches immediately.
             const starting =
               data.phase === "playing" &&
@@ -2690,20 +3339,36 @@
               this.$(".mf-teamselect").value = String(self.team);
               this.weapon = self.weapon || "carbine";
               this.outfit = outfitOf(self.outfit).id;
-              try {localStorage.setItem("midnry-outpost-outfit",this.outfit);}catch{}
+              if (this.savedRoomOutfit !== this.outfit) {
+                this.savedRoomOutfit = this.outfit;
+                try {
+                  localStorage.setItem("midnry-outpost-outfit", this.outfit);
+                } catch {}
+              }
             }
-            this.updateKit();
+            const roomKitKey = [data.mode, data.mapId, data.phase, this.weapon, this.outfit].join(
+              ":",
+            );
+            if (roomKitKey !== this.roomKitKey) {
+              this.roomKitKey = roomKitKey;
+              this.updateKit();
+            }
             this.$(".mf-mapselect").disabled = data.phase !== "lobby" || data.host !== this.selfId;
             this.$(".mf-weaponselect").disabled =
               this.mode === "protocol" || data.phase !== "lobby";
             if (this.mode === "protocol") this.$(".mf-mapselect").disabled = true;
-            this.$(".mf-outfitselect").disabled = this.mode === "protocol" || data.phase !== "lobby";
+            this.$(".mf-outfitselect").disabled =
+              this.mode === "protocol" || data.phase !== "lobby";
             const roster = this.$(".mf-roster");
-            roster.replaceChildren();
-            for (const m of data.members) {
-              const li = document.createElement("li");
-              li.textContent = `${m.name}${m.id === this.selfId ? " (you)" : ""}${m.id === data.host ? " · host" : ""}${this.mode === "duo" ? " · Pair " + (m.team + 1) : ""}${m.connected ? "" : " · reconnecting"}`;
-              roster.append(li);
+            const rosterKey = JSON.stringify(data.members);
+            if (rosterKey !== this.rosterKey) {
+              this.rosterKey = rosterKey;
+              roster.replaceChildren();
+              for (const m of data.members) {
+                const li = document.createElement("li");
+                li.textContent = `${m.name}${m.id === this.selfId ? " (you)" : ""}${m.id === data.host ? " · host" : ""}${this.mode === "duo" ? " · Pair " + (m.team + 1) : ""}${m.connected ? "" : " · reconnecting"}`;
+                roster.append(li);
+              }
             }
             this.$(".mf-netstatus").textContent =
               data.phase === "lobby"
@@ -2722,15 +3387,27 @@
                   : "Keep the last signal. Collect Charge Cores and stay inside the safe zone. Online play continues with this menu open.";
             if (data.arena) {
               const next = restoreArena(data.arena);
+              const predicting = this.transport?.net === net;
+              if (predicting)
+                this.transport.prediction.reconcile(
+                  next,
+                  previous.entities.find((e) => e.id === this.selfId),
+                  data.motionAck ?? data.ack ?? -1,
+                );
               if (!starting)
                 for (const e of next.entities) {
                   const old = previous.entities.find((v) => v.id === e.id);
                   if (old && old.hp > 0 && e.hp > 0 && Math.hypot(e.x - old.x, e.y - old.y) < 3) {
+                    if (e.id === this.selfId && predicting) {
+                      e.a = old.a;
+                      continue;
+                    }
+                    e.na = e.a;
                     e.nx = e.x;
                     e.ny = e.y;
                     e.x = old.x;
                     e.y = old.y;
-                    if (e.id === this.selfId) e.a = old.a;
+                    e.a = old.a;
                   }
                 }
               this.arena = next;
@@ -2775,7 +3452,14 @@
                   mode: this.mode,
                   difficulty: this.difficulty,
                   mapId: this.mapId,
-                  humans: [{ id: this.selfId, team: self?.team ?? 0, weapon: this.weapon, outfit: this.outfit }],
+                  humans: [
+                    {
+                      id: this.selfId,
+                      team: self?.team ?? 0,
+                      weapon: this.weapon,
+                      outfit: this.outfit,
+                    },
+                  ],
                 });
               this.state = "fresh";
               this.running = false;
@@ -2793,6 +3477,10 @@
           onlineAction(op, extra = {}) {
             const net = this.online;
             if (!net) return Promise.resolve();
+            if (this.transport?.ready)
+              return this.transport.action(op, extra).catch((error) => {
+                if (this.online === net) this.$(".mf-netstatus").textContent = error.message;
+              });
             this.netQueue = this.netQueue
               .catch(() => {})
               .then(async () => {
@@ -2812,6 +3500,7 @@
                   return data;
                 } catch (error) {
                   if (this.online === net) {
+                    if (this.transport?.ready) return;
                     net.errors++;
                     this.$(".mf-netstatus").textContent =
                       error.name === "AbortError" ? "Connection slow — retrying…" : error.message;
@@ -2826,7 +3515,7 @@
             clearTimeout(this.roomTimer);
             this.roomTimer = setTimeout(async () => {
               const net = this.online;
-              if (!net) return;
+              if (!net || this.transport?.ready) return;
               const began = performance.now(),
                 shot = this.pendingShot || 0,
                 reload = this.pendingReload,
@@ -2865,7 +3554,10 @@
             this.connectionAbort?.abort();
             this.roomRequestAbort?.abort();
             const net = this.online;
+            this.transport?.stop(true);
+            this.voice?.leave();
             this.online = null;
+            this.transport?.refreshResume();
             if (net)
               void fetch("/api/games/outpost", {
                 method: "POST",
@@ -3057,10 +3749,20 @@
               document.pointerLockElement === this.canvas
             )
               return;
-            requestAimLock(this.canvas, this.aimSettings.values.raw, () => this.message("ARROW KEYS TO AIM", 3));
+            requestAimLock(this.canvas, this.aimSettings.values.raw, () =>
+              this.message("ARROW KEYS TO AIM", 3),
+            );
           }
-          get viewPitch() { return Math.tan(this.lookPitch || 0) * (this.projection || 1); }
-          set viewPitch(value) { this.lookPitch = clamp(Math.atan(value / (this.projection || 1)), -PITCH_LIMIT, PITCH_LIMIT); }
+          get viewPitch() {
+            return Math.tan(this.lookPitch || 0) * (this.projection || 1);
+          }
+          set viewPitch(value) {
+            this.lookPitch = clamp(
+              Math.atan(value / (this.projection || 1)),
+              -PITCH_LIMIT,
+              PITCH_LIMIT,
+            );
+          }
           applyLook(dx, dy, touch = false) {
             if (!Number.isFinite(dx) || !Number.isFinite(dy) || this.player.hp <= 0) return;
             const delta = lookDelta(dx, dy, this.aimSettings.values, touch);
@@ -3115,7 +3817,9 @@
               net = this.online;
             button.disabled =
               !this.militaryLoaded ||
-              (!!net && (net.phase === "lobby" || net.phase === "ended") && net.host !== this.selfId);
+              (!!net &&
+                (net.phase === "lobby" || net.phase === "ended") &&
+                net.host !== this.selfId);
             button.textContent = net
               ? net.phase === "lobby"
                 ? net.host === this.selfId
@@ -3162,7 +3866,6 @@
               top: ((landscape ? pause.top : pause.bottom + 12) - r.top) * ratio,
               size: Math.min(r.width <= 600 || landscape ? 96 : 128, r.width * 0.22) * ratio,
             };
-
           }
           wall(...args) {
             const result = this.arena.wall(...args);
@@ -3199,7 +3902,11 @@
             this.toastUntil = this.time + duration;
           }
           reload() {
-            if (this.mode === "protocol" && (this.arena.protocol?.phase !== "combat" || this.protocolUI?.hasDialogOpen())) return;
+            if (
+              this.mode === "protocol" &&
+              (this.arena.protocol?.phase !== "combat" || this.protocolUI?.hasDialogOpen())
+            )
+              return;
             if (!this.running || this.player.hp <= 0 || this.player.departed) return;
             if (this.online) {
               this.pendingReload = true;
@@ -3209,7 +3916,11 @@
             this.flushEvents();
           }
           shoot() {
-            if (this.mode === "protocol" && (this.arena.protocol?.phase !== "combat" || this.protocolUI?.hasDialogOpen())) return;
+            if (
+              this.mode === "protocol" &&
+              (this.arena.protocol?.phase !== "combat" || this.protocolUI?.hasDialogOpen())
+            )
+              return;
             if (!this.running || this.player.hp <= 0) return;
             if (this.online) {
               this.pendingShot = (this.pendingShot || 0) + 1;
@@ -3291,18 +4002,20 @@
           update(dt) {
             const turn =
               (Number(this.keys.has("arrowright")) - Number(this.keys.has("arrowleft"))) * dt * 2;
-            if (this.running && this.player.hp > 0 && !this.player.departed)
-              this.player.a += turn;
+            if (this.running && this.player.hp > 0 && !this.player.departed) this.player.a += turn;
             if (this.mode === "protocol" && !this.online && this.protocolUI?.brief.open) {
               this.updateHUD(false);
               return;
             }
             if (this.online) {
+              this.transport?.prediction.step(this.controls(), dt);
               for (const e of this.combatants())
-                if (Number.isFinite(e.nx)) {
+                if (e.id !== this.selfId && Number.isFinite(e.nx)) {
                   const t = 1 - Math.exp(-dt * 18);
                   e.x += (e.nx - e.x) * t;
                   e.y += (e.ny - e.y) * t;
+                  if (Number.isFinite(e.na))
+                    e.a += Math.atan2(Math.sin(e.na - e.a), Math.cos(e.na - e.a)) * t;
                 }
               // Match time follows server snapshots. Menus never pause the room.
               this.updateHUD(false);
@@ -3319,7 +4032,10 @@
             this.pendingReload = false;
             this.pendingSuper = false;
             this.pendingSlide = false;
-            this.step += Math.hypot(this.controls().forward, this.controls().strafe) * dt * (this.player.sprinting ? 14 : 9);
+            this.step +=
+              Math.hypot(this.controls().forward, this.controls().strafe) *
+              dt *
+              (this.player.sprinting ? 14 : 9);
             this.flushEvents();
             this.academy?.update();
             this.checkResult();
@@ -3410,7 +4126,8 @@
             this.retention.observe();
             const c = this.ctx,
               now = performance.now(),
-              hurt = this.deathStage === "takedown" ? 0 : Math.max(0, (this.damageUntil - now) / 520);
+              hurt =
+                this.deathStage === "takedown" ? 0 : Math.max(0, (this.damageUntil - now) / 520);
             c.clearRect(0, 0, this.w, this.h);
             c.save();
             const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -3442,7 +4159,8 @@
             }
             const movement = this.$(".mf-movement");
             const sliding = this.player.hp > 0 && this.player.slideUntil > this.time;
-            movement.hidden = !this.running || this.player.hp <= 0 || (!sliding && !this.player.sprinting);
+            movement.hidden =
+              !this.running || this.player.hp <= 0 || (!sliding && !this.player.sprinting);
             movement.textContent = sliding ? "SLIDING" : "SPRINTING";
             const critical = this.player.hp > 0 && this.player.hp / this.player.maxHp < 0.3;
             if (hurt > 0 || critical) {
@@ -3510,6 +4228,7 @@
                 now,
                 this.running || !!this.online,
                 this.academy.options.adaptive,
+                this.military?.metrics?.gpuMs,
               )
             )
               this.resize();
@@ -3517,11 +4236,13 @@
               this.lastPerformanceLabel = now;
               const label = this.$(".mf-perfstatus");
               if (label)
-                label.textContent = `120 FPS target · ${this.budget.fps || "—"} FPS measured · ${this.budget.work.toFixed(1)} ms work · 30 FPS animation`;
+                label.textContent = `120 FPS target · ${this.budget.fps || "—"} FPS measured · ${this.budget.work.toFixed(1)} ms CPU${this.budget.gpu === null || this.budget.gpu === undefined ? "" : ` · ${this.budget.gpu.toFixed(1)} ms GPU`} · 30 FPS animation${this.military?.metrics ? ` · ${this.military.metrics.drawCalls} draws · ${this.military.metrics.triangles.toLocaleString()} triangles · ${this.military.metrics.visible} visible / ${this.military.metrics.culled} hidden soldiers` : ""}`;
             }
             this.frame = requestAnimationFrame(this.loop);
           }
           destroy() {
+            this.voice?.dispose();
+            this.transport?.dispose();
             this.navigation?.dispose();
             this.assetCache?.dispose();
             this.connection?.dispose();

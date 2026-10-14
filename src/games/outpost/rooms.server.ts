@@ -17,9 +17,9 @@ import {
   type ProtocolArenaState,
 } from "../../../public/games/outpost-protocol.js";
 
-// HTTPS polling deliberately works on both Render and serverless deployments.
-// Rooms live in the existing database, not a process-local host tab or socket.
-type Member = {
+// Durable rooms support HTTP fallback and a single authoritative live runner.
+// Private state stays in the database/runner; every response is recipient-filtered.
+export type Member = {
   id: string;
   hash: string;
   name: string;
@@ -29,9 +29,10 @@ type Member = {
   lastSeen: number;
   inputAt: number;
   seq: number;
+  motionSeq?: number;
   input: Input;
 };
-type Room = {
+export type Room = {
   difficulty?: Difficulty;
   mode: "protocol" | "signal" | "duo";
   mapId: string;
@@ -42,7 +43,7 @@ type Room = {
   updatedAt: number;
   nextName: number;
 };
-type Row = { version: number | string; state: Room };
+export type Row = { version: number | string; state: Room };
 export class OutpostError extends Error {
   constructor(
     message: string,
@@ -50,6 +51,26 @@ export class OutpostError extends Error {
   ) {
     super(message);
   }
+}
+/** Versioned checkpoints reject a second writer instead of overwriting a room. */
+export async function loadRoomRecord(code: string): Promise<Row> {
+  if (!CODE.test(code)) throw new OutpostError("Enter a six-character room code.");
+  const sql = await getSql();
+  const rows =
+    await sql<Row>`select version,state from outpost_room where code=${code} and expires_at>now()`;
+  if (!rows.length) throw new OutpostError("Room not found or expired. Create another room.", 404);
+  return rows[0];
+}
+export async function saveRoomRecord(
+  code: string,
+  room: Room,
+  version: number,
+): Promise<number | null> {
+  const sql = await getSql();
+  const updated = await sql<{
+    version: number;
+  }>`update outpost_room set state=${JSON.stringify(room)}::jsonb,version=version+1,expires_at=now()+interval '20 minutes' where code=${code} and version=${version} returning version`;
+  return updated.length ? Number(updated[0].version) : null;
 }
 function outfitId(value: unknown): string {
   if (value === undefined) return "ranger";
@@ -62,10 +83,22 @@ const roomCode = () =>
   Array.from(randomBytes(6), (n) => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[n % 32]).join("");
 const CODE = /^[A-Z2-9]{6}$/;
 const TOKEN = /^[a-f0-9]{48}$/;
+const ROOM_ACTIONS = new Set([
+  "join",
+  "poll",
+  "resume",
+  "team",
+  "start",
+  "restart",
+  "leave",
+  "settings",
+  "loadout",
+  "rematch",
+]);
 const rateState = globalThis as typeof globalThis & {
   __outpostCreateRate?: Map<string, { count: number; until: number }>;
 };
-function authorize(room: Room, id: unknown, token: unknown) {
+export function authorize(room: Room, id: unknown, token: unknown) {
   if (typeof id !== "string" || typeof token !== "string" || !TOKEN.test(token))
     throw new OutpostError("Room session is invalid. Join again.", 401);
   const member = room.members.find((m) => m.id === id);
@@ -80,6 +113,7 @@ export function publicRoom(code: string, room: Room, selfId: string) {
   const arena = room.arena ? protocolView(room.arena, selfId) : null;
   return {
     code,
+    serverAt: room.updatedAt,
     difficulty: room.difficulty || "normal",
     mode: room.mode,
     // The aircraft is reached by the authoritative mission transition, never
@@ -99,6 +133,8 @@ export function publicRoom(code: string, room: Room, selfId: string) {
       outfit: protocol ? "ranger" : outfit || "ranger",
       connected: Date.now() - lastSeen < 20000,
     })),
+    ack: room.members.find((m) => m.id === selfId)?.seq ?? -1,
+    motionAck: room.members.find((m) => m.id === selfId)?.motionSeq ?? -1,
     arena: arena ? { ...arena, entities: arena.entities.map((e) => ({ ...e, path: [] })) } : null,
   };
 }
@@ -202,7 +238,7 @@ export function inputOf(value: unknown): Input {
   }
   return input;
 }
-function advance(room: Room, now: number) {
+export function advanceRoom(room: Room, now: number) {
   if (room.phase !== "playing" || !room.arena) {
     room.updatedAt = now;
     return;
@@ -223,8 +259,212 @@ function advance(room: Room, now: number) {
   }
   room.updatedAt = now;
   room.arena = arena.snapshot();
+  for (const member of room.members) member.motionSeq = member.seq;
   if (arena.state === "ended") room.phase = "ended";
 }
+/** One transactional action core shared by HTTP and the WebSocket runner. */
+export function applyRoomAction(
+  room: Room,
+  body: Record<string, unknown>,
+  now: number,
+  joinedId = randomBytes(8).toString("hex"),
+  joinedToken = randomBytes(24).toString("hex"),
+) {
+  if (typeof body.op !== "string" || !ROOM_ACTIONS.has(body.op))
+    throw new OutpostError("Unknown room action.");
+  let member: Member;
+  if (body.op === "join") {
+    if (room.phase !== "lobby")
+      throw new OutpostError("This match has started. Join the next round or create a room.", 409);
+    room.members = room.members.filter((m) => now - m.lastSeen < 20000);
+    if (room.members.length >= 8) throw new OutpostError("Room is full.", 409);
+    const team =
+      room.mode === "protocol"
+        ? 0
+        : room.mode === "duo"
+          ? ([0, 1, 2, 3].find((t) => room.members.filter((m) => m.team === t).length < 2) ?? 0)
+          : room.members.length;
+    const weapon =
+      room.mode === "protocol" ? "carbine" : body.weapon === undefined ? "carbine" : body.weapon;
+    if (typeof weapon !== "string" || !Object.hasOwn(WEAPONS, weapon))
+      throw new OutpostError("Choose a valid loadout.");
+    member = {
+      weapon,
+      outfit: "ranger",
+      id: joinedId,
+      hash: sha(joinedToken),
+      name: "Ranger " + room.nextName++,
+      team,
+      lastSeen: now,
+      inputAt: now,
+      seq: -1,
+      input: {},
+    };
+    room.members.push(member);
+  } else member = authorize(room, body.id, body.token);
+  const oldHost = room.members.find((m) => m.id === room.host);
+  if (!oldHost || now - oldHost.lastSeen > 20000)
+    room.host = room.members.find((m) => now - m.lastSeen < 20000)?.id ?? member.id;
+  advanceRoom(room, now);
+  member.lastSeen = now;
+  if (body.op === "poll") {
+    const seq =
+      typeof body.seq === "number" && Number.isSafeInteger(body.seq) && body.seq >= 0
+        ? body.seq
+        : -1;
+    if (seq > member.seq) {
+      member.seq = seq;
+      member.input = inputOf(body.input);
+      if (room.mode === "protocol") {
+        // Only the server's voted combat phase unlocks weapon intentions.
+        // A client-sent phase/target/damage never changes this decision.
+        const fighting = (room.arena as ProtocolArenaState | null)?.protocol?.phase === "combat";
+        if (!fighting) member.input.fire = member.input.reload = false;
+        member.input.super = false;
+      }
+      member.inputAt = now;
+      if (room.phase === "playing" && room.arena) {
+        const arena = restoreArena(room.arena),
+          self = arena.entities.find((e) => e.id === member.id);
+        // The packet can request a shot, never supply a target, damage or position.
+        if (self && (member.input.fire || member.input.super || member.input.reload)) {
+          self.a = member.input.aim ?? self.a;
+          self.pitch = member.input.pitch ?? 0;
+          if (member.input.super) arena.super(self);
+          member.input.super = false;
+          if (member.input.fire) arena.shoot(self);
+          if (member.input.reload) arena.reload(self);
+        }
+        room.arena = arena.snapshot();
+        if (arena.state === "ended") room.phase = "ended";
+      }
+    }
+  }
+  if (body.op === "settings") {
+    if (room.host !== member.id)
+      throw new OutpostError("Only the host can choose match settings.", 403);
+    if (room.phase !== "lobby")
+      throw new OutpostError("Choose match settings before starting.", 409);
+    if (body.mode !== undefined) {
+      room.mode = playableModeOf(body.mode);
+    }
+    if (room.mode === "protocol") {
+      room.mapId = lobbyMapOf(room.mode, body.mapId);
+      for (const m of room.members) {
+        m.team = 0;
+        m.weapon = "carbine";
+      }
+    } else if (body.mapId !== undefined) {
+      room.mapId = lobbyMapOf(room.mode, body.mapId);
+    }
+    if (body.difficulty !== undefined) {
+      if (typeof body.difficulty !== "string" || !Object.hasOwn(DIFFICULTIES, body.difficulty))
+        throw new OutpostError("Invalid bot difficulty.");
+      room.difficulty = difficultyOf(body.difficulty);
+    }
+  }
+  if (body.op === "loadout") {
+    if (room.phase !== "lobby") throw new OutpostError("Choose your loadout before starting.", 409);
+    if (
+      room.mode !== "protocol" &&
+      (typeof body.weapon !== "string" || !Object.hasOwn(WEAPONS, body.weapon))
+    )
+      throw new OutpostError("Invalid loadout.");
+    const outfit =
+      room.mode === "protocol"
+        ? "ranger"
+        : body.outfit === undefined
+          ? member.outfit || "ranger"
+          : outfitId(body.outfit);
+    member.weapon = room.mode === "protocol" ? "carbine" : (body.weapon as string);
+    member.outfit = outfit;
+  }
+  if (body.op === "team") {
+    if (room.phase !== "lobby" || room.mode !== "duo")
+      throw new OutpostError("Teams can be changed in a Pair Ops lobby only.", 409);
+    if (
+      typeof body.team !== "number" ||
+      !Number.isInteger(body.team) ||
+      body.team < 0 ||
+      body.team > 3
+    )
+      throw new OutpostError("Invalid team.");
+    if (room.members.filter((m) => m.id !== member.id && m.team === body.team).length >= 2)
+      throw new OutpostError("That pair is full.", 409);
+    member.team = body.team;
+  }
+  if (body.op === "start" || body.op === "restart" || body.op === "rematch") {
+    if (room.host !== member.id)
+      throw new OutpostError("Only the room host can start a match.", 403);
+    if (room.mode === "protocol") {
+      room.mapId = "breakwater";
+      for (const m of room.members) {
+        m.team = 0;
+        m.weapon = "carbine";
+      }
+    } else {
+      room.mapId = lobbyMapOf(room.mode, room.mapId);
+    }
+    if (body.op === "rematch") {
+      if (room.phase !== "ended")
+        throw new OutpostError("Finish this match before starting another.", 409);
+      room.members = room.members.filter((m) => now - m.lastSeen < 20000);
+      room.arena = createArena({
+        mode: room.mode,
+        mapId: room.mapId || "outpost",
+        difficulty: room.difficulty || "normal",
+        countdown: 2,
+        humans: room.members.map(({ id, team, name, weapon, outfit }) => ({
+          id,
+          team,
+          name,
+          weapon: weapon || "carbine",
+          outfit: outfit || "ranger",
+        })),
+      }).snapshot();
+      room.phase = "playing";
+    } else if (body.op === "restart") {
+      if (room.phase !== "ended")
+        throw new OutpostError("Finish this match before starting another.", 409);
+      room.members = room.members.filter((m) => now - m.lastSeen < 20000);
+      room.phase = "lobby";
+      room.arena = null;
+    } else {
+      if (room.phase !== "lobby") throw new OutpostError("Match already started.", 409);
+      room.members = room.members.filter((m) => now - m.lastSeen < 20000);
+      room.arena = createArena({
+        mode: room.mode,
+        mapId: room.mapId || "outpost",
+        difficulty: room.difficulty || "normal",
+        humans: room.members.map(({ id, team, name, weapon, outfit }) => ({
+          id,
+          team,
+          name,
+          weapon: weapon || "carbine",
+          outfit: outfit || "ranger",
+        })),
+      }).snapshot();
+      room.phase = "playing";
+    }
+    for (const m of room.members) {
+      m.input = {};
+      m.inputAt = now;
+    }
+    room.updatedAt = now;
+  }
+  if (body.op === "leave") {
+    if (room.arena) {
+      const arena = restoreArena(room.arena);
+      arena.detach(member.id);
+      room.arena = arena.snapshot();
+      if (arena.state === "ended") room.phase = "ended";
+    }
+    room.members = room.members.filter((m) => m !== member);
+    if (room.host === member.id) room.host = room.members[0]?.id ?? "";
+  }
+  return { id: member.id, ...(body.op === "join" ? { token: joinedToken } : {}) };
+}
+
 export async function roomAction(body: Record<string, unknown>, clientKey: string) {
   const sql = await getSql(),
     now = Date.now();
@@ -294,6 +534,7 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
   const ops = [
     "join",
     "poll",
+    "resume",
     "team",
     "start",
     "restart",
@@ -304,6 +545,15 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
   ];
   if (typeof body.op !== "string" || !ops.includes(body.op))
     throw new OutpostError("Unknown room action.");
+  const live = (
+    globalThis as typeof globalThis & {
+      __outpostLiveActions?: Map<
+        string,
+        (body: Record<string, unknown>, key: string) => Promise<unknown>
+      >;
+    }
+  ).__outpostLiveActions?.get(code);
+  if (live) return live(body, clientKey);
   // Capability IDs are minted once per join, outside the compare-and-swap retry.
   const joinedId = randomBytes(8).toString("hex"),
     joinedToken = randomBytes(24).toString("hex");
@@ -319,207 +569,21 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
         "This room uses a retired mode. Create a Blackout Protocol room.",
         409,
       );
-    const now = Math.max(Date.now(), room.updatedAt);
-    let member: Member;
-    if (body.op === "join") {
-      if (room.phase !== "lobby")
-        throw new OutpostError(
-          "This match has started. Join the next round or create a room.",
-          409,
-        );
-      room.members = room.members.filter((m) => now - m.lastSeen < 20000);
-      if (room.members.length >= 8) throw new OutpostError("Room is full.", 409);
-      const team =
-        room.mode === "protocol"
-          ? 0
-          : room.mode === "duo"
-            ? ([0, 1, 2, 3].find((t) => room.members.filter((m) => m.team === t).length < 2) ?? 0)
-            : room.members.length;
-      const weapon =
-        room.mode === "protocol" ? "carbine" : body.weapon === undefined ? "carbine" : body.weapon;
-      if (typeof weapon !== "string" || !Object.hasOwn(WEAPONS, weapon))
-        throw new OutpostError("Choose a valid loadout.");
-      member = {
-        weapon,
-        outfit: "ranger",
-        id: joinedId,
-        hash: sha(joinedToken),
-        name: "Ranger " + room.nextName++,
-        team,
-        lastSeen: now,
-        inputAt: now,
-        seq: -1,
-        input: {},
-      };
-      room.members.push(member);
-    } else member = authorize(room, body.id, body.token);
-    const oldHost = room.members.find((m) => m.id === room.host);
-    if (!oldHost || now - oldHost.lastSeen > 20000)
-      room.host = room.members.find((m) => now - m.lastSeen < 20000)?.id ?? member.id;
-    advance(room, now);
-    member.lastSeen = now;
-    if (body.op === "poll") {
-      const seq =
-        typeof body.seq === "number" && Number.isSafeInteger(body.seq) && body.seq >= 0
-          ? body.seq
-          : -1;
-      if (seq > member.seq) {
-        member.seq = seq;
-        member.input = inputOf(body.input);
-        if (room.mode === "protocol") {
-          // Only the server's voted combat phase unlocks weapon intentions.
-          // A client-sent phase/target/damage never changes this decision.
-          const fighting = (room.arena as ProtocolArenaState | null)?.protocol?.phase === "combat";
-          if (!fighting) member.input.fire = member.input.reload = false;
-          member.input.super = false;
-        }
-        member.inputAt = now;
-        if (room.phase === "playing" && room.arena) {
-          const arena = restoreArena(room.arena),
-            self = arena.entities.find((e) => e.id === member.id);
-          // The packet can request a shot, never supply a target, damage or position.
-          if (self && (member.input.fire || member.input.super || member.input.reload)) {
-            self.a = member.input.aim ?? self.a;
-            self.pitch = member.input.pitch ?? 0;
-            if (member.input.super) arena.super(self);
-            member.input.super = false;
-            if (member.input.fire) arena.shoot(self);
-            if (member.input.reload) arena.reload(self);
-          }
-          room.arena = arena.snapshot();
-          if (arena.state === "ended") room.phase = "ended";
-        }
-      }
-    }
-    if (body.op === "settings") {
-      if (room.host !== member.id)
-        throw new OutpostError("Only the host can choose match settings.", 403);
-      if (room.phase !== "lobby")
-        throw new OutpostError("Choose match settings before starting.", 409);
-      if (body.mode !== undefined) {
-        room.mode = playableModeOf(body.mode);
-      }
-      if (room.mode === "protocol") {
-        room.mapId = lobbyMapOf(room.mode, body.mapId);
-        for (const m of room.members) {
-          m.team = 0;
-          m.weapon = "carbine";
-        }
-      } else if (body.mapId !== undefined) {
-        room.mapId = lobbyMapOf(room.mode, body.mapId);
-      }
-      if (body.difficulty !== undefined) {
-        if (typeof body.difficulty !== "string" || !Object.hasOwn(DIFFICULTIES, body.difficulty))
-          throw new OutpostError("Invalid bot difficulty.");
-        room.difficulty = difficultyOf(body.difficulty);
-      }
-    }
-    if (body.op === "loadout") {
-      if (room.phase !== "lobby")
-        throw new OutpostError("Choose your loadout before starting.", 409);
-      if (
-        room.mode !== "protocol" &&
-        (typeof body.weapon !== "string" || !Object.hasOwn(WEAPONS, body.weapon))
-      )
-        throw new OutpostError("Invalid loadout.");
-      const outfit =
-        room.mode === "protocol"
-          ? "ranger"
-          : body.outfit === undefined
-            ? member.outfit || "ranger"
-            : outfitId(body.outfit);
-      member.weapon = room.mode === "protocol" ? "carbine" : (body.weapon as string);
-      member.outfit = outfit;
-    }
-    if (body.op === "team") {
-      if (room.phase !== "lobby" || room.mode !== "duo")
-        throw new OutpostError("Teams can be changed in a Pair Ops lobby only.", 409);
-      if (
-        typeof body.team !== "number" ||
-        !Number.isInteger(body.team) ||
-        body.team < 0 ||
-        body.team > 3
-      )
-        throw new OutpostError("Invalid team.");
-      if (room.members.filter((m) => m.id !== member.id && m.team === body.team).length >= 2)
-        throw new OutpostError("That pair is full.", 409);
-      member.team = body.team;
-    }
-    if (body.op === "start" || body.op === "restart" || body.op === "rematch") {
-      if (room.host !== member.id)
-        throw new OutpostError("Only the room host can start a match.", 403);
-      if (room.mode === "protocol") {
-        room.mapId = "breakwater";
-        for (const m of room.members) {
-          m.team = 0;
-          m.weapon = "carbine";
-        }
-      } else {
-        room.mapId = lobbyMapOf(room.mode, room.mapId);
-      }
-      if (body.op === "rematch") {
-        if (room.phase !== "ended")
-          throw new OutpostError("Finish this match before starting another.", 409);
-        room.members = room.members.filter((m) => now - m.lastSeen < 20000);
-        room.arena = createArena({
-          mode: room.mode,
-          mapId: room.mapId || "outpost",
-          difficulty: room.difficulty || "normal",
-          countdown: 2,
-          humans: room.members.map(({ id, team, name, weapon, outfit }) => ({
-            id,
-            team,
-            name,
-            weapon: weapon || "carbine",
-            outfit: outfit || "ranger",
-          })),
-        }).snapshot();
-        room.phase = "playing";
-      } else if (body.op === "restart") {
-        if (room.phase !== "ended")
-          throw new OutpostError("Finish this match before starting another.", 409);
-        room.members = room.members.filter((m) => now - m.lastSeen < 20000);
-        room.phase = "lobby";
-        room.arena = null;
-      } else {
-        if (room.phase !== "lobby") throw new OutpostError("Match already started.", 409);
-        room.members = room.members.filter((m) => now - m.lastSeen < 20000);
-        room.arena = createArena({
-          mode: room.mode,
-          mapId: room.mapId || "outpost",
-          difficulty: room.difficulty || "normal",
-          humans: room.members.map(({ id, team, name, weapon, outfit }) => ({
-            id,
-            team,
-            name,
-            weapon: weapon || "carbine",
-            outfit: outfit || "ranger",
-          })),
-        }).snapshot();
-        room.phase = "playing";
-      }
-      for (const m of room.members) {
-        m.input = {};
-        m.inputAt = now;
-      }
-      room.updatedAt = now;
-    }
-    if (body.op === "leave") {
-      if (room.arena) {
-        const arena = restoreArena(room.arena);
-        arena.detach(member.id);
-        room.arena = arena.snapshot();
-        if (arena.state === "ended") room.phase = "ended";
-      }
-      room.members = room.members.filter((m) => m !== member);
-      if (room.host === member.id) room.host = room.members[0]?.id ?? "";
-    }
+    const result = applyRoomAction(
+      room,
+      body,
+      Math.max(Date.now(), room.updatedAt),
+      joinedId,
+      joinedToken,
+    );
     const updated =
       await sql`update outpost_room set state=${JSON.stringify(room)}::jsonb,version=version+1,expires_at=now()+interval '20 minutes' where code=${code} and version=${version} returning version`;
     if (updated.length)
       return {
-        ...publicRoom(code, room, member.id),
-        ...(body.op === "join" ? { id: joinedId, token: joinedToken } : {}),
+        ...publicRoom(code, room, result.id),
+        ...(["join", "resume"].includes(body.op as string)
+          ? { id: result.id, token: body.op === "join" ? result.token : (body.token as string) }
+          : {}),
       };
   }
   throw new OutpostError("Room is busy. Retrying…", 503);

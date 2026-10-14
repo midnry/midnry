@@ -111,6 +111,7 @@ export function prepareCharacterAsset(r, gltf) {
   const anisotropy = Math.min(8, r.renderer?.capabilities?.getMaxAnisotropy?.() || 1);
   gltf.scene.traverse((object) => {
     if (!object.isMesh) return;
+    if(object.userData.operatorLOD===1)object.visible=false;
     object.castShadow = true;
     object.receiveShadow = true;
     for (const material of Array.isArray(object.material) ? object.material : [object.material]) {

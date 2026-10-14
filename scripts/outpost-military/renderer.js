@@ -35,6 +35,7 @@ import { skinPattern } from "../../public/games/outpost-skins.js";
 import { VictimTakedown } from "./takedowns.js";
 import { ASSET_CACHE } from "../../public/games/outpost-asset-manifest.js";
 import { isAppleTouchDevice, graphicsProfile, renderSize } from "./compatibility.js";
+import { RenderTelemetry, actorInView } from "./telemetry.js";
 const SCALE = 3,
   ASSET = "/games/military/",
   TAU = Math.PI * 2;
@@ -89,6 +90,7 @@ export class MilitaryRenderer {
     this.lastPreset = "";
     this.assetErrors = [];
     this.motion = matchMedia("(prefers-reduced-motion: reduce)");
+    this.mobileDevice = matchMedia("(pointer: coarse)").matches;
     // A high-performance, multisampled context is not available on every phone.
     // Retry on a fresh canvas so rejected attributes don't lock the next attempt.
     const appleTouch = isAppleTouchDevice(navigator);
@@ -2257,6 +2259,8 @@ export class MilitaryRenderer {
     const current = new Set();
     const camera = this.g.camera();
     const sample = Math.floor(t * 30) / 30;
+    const horizontalFov=2*Math.atan(Math.tan(this.camera.fov*Math.PI/360)*this.camera.aspect);
+    this.actorStats={visible:0,culled:0,distant:0};
     for (const e of this.g.arena.entities) {
       current.add(e.id);
       if (e.id === camera.id) {
@@ -2297,6 +2301,13 @@ export class MilitaryRenderer {
         Math.hypot(e.x - camera.x, e.y - camera.y) > 2.6
       )
         a.root.visible = false;
+      a.root.visible = a.root.visible && actorInView(this.g.arena,camera,e,horizontalFov);
+      const distance=Math.hypot(e.x-camera.x,e.y-camera.y),far=distance>(this.mobileDevice?3.8:6);
+      // Small hysteresis avoids switching meshes repeatedly at the boundary.
+      if(a.farDetail===undefined||Math.abs(distance-(this.mobileDevice?3.8:6))>.4)a.farDetail=far;
+      a.detailMeshes ||= (()=>{const meshes=[];a.model.traverse(o=>{if(o.isSkinnedMesh&&o.userData.operatorLOD!==undefined)meshes.push(o);});return meshes;})();
+      for(const mesh of a.detailMeshes)mesh.visible=mesh.userData.operatorLOD===(a.farDetail?1:0);
+      if(a.root.visible){this.actorStats.visible++;if(a.farDetail)this.actorStats.distant++;}else this.actorStats.culled++;
       a.root.position.set(
         e.x * SCALE,
         Math.sin(Math.min(1, Math.max(0, ((e.jumpUntil || 0) - this.g.time) / 0.5)) * Math.PI) *
@@ -2316,7 +2327,7 @@ export class MilitaryRenderer {
       // Gear bindings are local to the skeleton. Root interpolation remains
       // full rate; expensive bone/gear transforms run only on a new 30Hz pose.
       if (poseChanged) this.updateSkinParts(a);
-      if (a.equipment) {
+      if (a.equipment && a.root.visible) {
         if (poseChanged && updateWeaponGrip(a,Math.max(0,Math.min(1,(e.reloadUntil-this.g.time)/1.4)))) {
           // The palm binding and support IK follow the captured animation.
         } else if (a.weaponAnchor && poseChanged) {
@@ -3143,6 +3154,7 @@ export class MilitaryRenderer {
       this.lastShadowAt = now;
     }
     this.renderer.info.reset();
+    (this.telemetry ||= new RenderTelemetry(this.renderer)).begin();
     if (!this.composer || g.academy.preset === "performance") {
       this.renderer.autoClear = true;
       this.renderer.render(this.scene, this.camera);
@@ -3151,6 +3163,8 @@ export class MilitaryRenderer {
       this.renderer.render(this.weaponScene, this.weaponCamera);
       this.renderer.autoClear = true;
     } else this.composer.render();
+    this.telemetry.end();
+    this.metrics={gpuMs:this.telemetry.gpuMs,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,...this.actorStats};
     this.takedown.restoreActors();
     this.lastTime = t;
     return true;
@@ -3166,6 +3180,7 @@ export class MilitaryRenderer {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
+    this.telemetry?.dispose();
     this.identification?.dispose();
     this.takedown?.dispose();
     disposeRiggedHands(this.rig);

@@ -124,6 +124,9 @@ export class Arena {
   entities: Entity[];
   events: { id: string; text: string }[];
   snapshot(): ArenaState;
+  canMove(x: number, y: number, r?: number): boolean;
+  move(e: Entity, dx: number, dy: number): void;
+  visible(a: Pick<Entity, "x" | "y">, b: Pick<Entity, "x" | "y">): boolean;
   advance(dt: number, inputs?: Record<string, Input>): void;
   shoot(e: Entity): void;
   reload(e: Entity): void;
