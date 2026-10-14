@@ -240,6 +240,7 @@ export class ProtocolFocus {
     c.beginPath();
     c.arc(this.g.player.x * s, this.g.player.y * s, 4, 0, Math.PI * 2);
     c.fill();
+    this.g.navigation?.drawMap(c, s);
   }
   dispose() {
     this.close();

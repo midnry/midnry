@@ -63,7 +63,7 @@ try {
     await page.locator(".mf-settings .mf-connection summary").click();
     assert.match(await page.locator(".mf-settings .mf-connectionadvice").innerText(), /available/);
     await page.screenshot({ path: `/workspace/screenshots/outpost-connection-${name}.png` });
-    if (!mobile) {
+    if (!mobile && !process.argv.includes('--no-cache')) {
       await page.locator(".mf-assetcache summary").click();
       await page.locator(".mf-saveassets").click();
       await page.waitForFunction(
@@ -111,6 +111,7 @@ try {
       Object.assign(g.player, { x: 3.5, y: 5.5, a: 0 });
       Object.assign(g.arena.entities[1], { x: 4.5, y: 5.5, a: Math.PI });
       g.protocolCache = null;
+      g.military.frameProtocolArena = null;
       g.protocolUI.update(true);
       g.render();
       const before = JSON.stringify(g.arena.snapshot());
@@ -243,7 +244,7 @@ try {
       return {
         action: actor.action,
         tPoseAction: !!actor.actions.TPose,
-        idleWeight: actor.actions.Idle.getEffectiveWeight(),
+        deathWeight: actor.actions.Death.getEffectiveWeight(),
         magazineY: g.military.rig.userData.carbine.userData.carbineParts.magazine.position.y,
         skinBones: actor.model.getObjectByProperty("isSkinnedMesh", true)?.skeleton.bones.length,
         aliveSelf: g.player.hp > 0,
@@ -252,7 +253,7 @@ try {
     });
     assert.equal(pose.action, "Dead");
     assert.equal(pose.tPoseAction, false);
-    assert.ok(pose.idleWeight > 0.99);
+    assert.ok(pose.deathWeight > 0.99);
     assert.ok(pose.magazineY < -0.09);
     assert.ok(pose.skinBones > 20);
     assert.equal(pose.aliveSelf, true);

@@ -4,8 +4,9 @@ import { readFileSync } from "node:fs";
 import { TAKEDOWNS, deathTiming, deathFrame } from "../public/games/outpost-death.js";
 import { ProtocolArena, protocolView, restoreArena } from "../public/games/outpost-protocol.js";
 import { connectionAdvice, testConnection } from "../public/games/outpost-connection.js";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { Vector3 } from "three";
+import { AnimationMixer, Box3, Group, Vector3 } from "three";
+import { readMotionAsset } from "./outpost-military/motion-build.mjs";
+import { bindWeaponGrip, updateWeaponGrip } from "./outpost-military/realism-grips.js";
 
 test("five server-chosen takedowns are delivered only to their victim", () => {
   for (let i = 0; i < 5; i++) {
@@ -102,58 +103,84 @@ test("bounded HTTP speed probe reads real bytes; save-data skips the download", 
     false,
   );
 });
-test("new operator has real material groups, normalized skin weights, and retained animation", () => {
+test("rigged operator retains sculpt UVs, embedded surface maps and captured motion", () => {
   const bytes = readFileSync("public/games/military/models/operator-v1.glb");
   const json = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)));
   assert.ok(bytes.length < 8 * 1024 * 1024, "browser-sized model");
   const names = json.materials.map((m) => m.name);
-  for (const name of [
-    "Uniform fabric",
-    "Scanned skin",
-    "Equipment metal",
-    "Lens glass",
-    "Boot rubber",
-  ])
+  for (const name of ["Uniform fabric", "Operator head 1", "Operator head 2"])
     assert.ok(names.includes(name));
-  assert.equal(json.images?.length || 0, 0, "no painted Vanguard atlas");
-  assert.ok(json.animations.some((a) => a.name === "Idle"));
-  assert.ok(json.animations.some((a) => a.name === "Walk"));
+  assert.equal(json.images.length, 4, "original colour and normal maps remain embedded");
+  for(const material of json.materials){
+    assert.ok(material.pbrMetallicRoughness.baseColorTexture);
+    assert.ok(material.normalTexture);
+    assert.equal(material.pbrMetallicRoughness.metallicFactor, 0);
+    assert.ok(material.pbrMetallicRoughness.roughnessFactor >= .75);
+  }
+  for(const name of ["Idle","Walk","Run","BackWalk","Crouch","Reload","Hit","Death","Struggle","Stealth","Grapple","Stab"])
+    assert.ok(json.animations.some(a=>a.name===name), name);
+  assert.ok(!json.animations.some(a=>a.name==='TPose'));
   for (const mesh of json.meshes)
     for (const p of mesh.primitives) {
       assert.ok(p.attributes.JOINTS_0 != null);
       assert.ok(p.attributes.WEIGHTS_0 != null);
+      assert.ok(p.attributes.TEXCOORD_0 != null);
     }
 });
 
-test("uniform sleeve surfaces have outward normals for physically correct lighting", async () => {
-  const bytes = readFileSync("public/games/military/models/operator-v1.glb");
-  const gltf = await new GLTFLoader().parseAsync(
-    bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), "",
-  );
-  gltf.scene.updateMatrixWorld(true);
-  let arm, elbow;
-  const cloth = [];
-  gltf.scene.traverse((object) => {
-    if (object.isBone && object.name.endsWith("LeftArm")) arm = object;
-    if (object.isBone && object.name.endsWith("LeftForeArm")) elbow = object;
-    if (object.isSkinnedMesh && object.material.name === "Uniform fabric") cloth.push(object);
+test("motion preserves bone lengths and skin weights; crouch and death are posed, not bind/T poses", async () => {
+  const {gltf}=await readMotionAsset("public/games/military/models/operator-v1.glb");
+  let vertices=0;
+  gltf.scene.traverse(o=>{
+    if(!o.isSkinnedMesh)return;
+    const weights=o.geometry.attributes.skinWeight,indices=o.geometry.attributes.skinIndex;
+    for(let i=0;i<weights.count;i++){
+      let sum=0;for(let j=0;j<4;j++){sum+=weights.getComponent(i,j);assert.ok(indices.getComponent(i,j)<o.skeleton.bones.length);}
+      assert.ok(Math.abs(sum-1)<.001);vertices++;
+    }
   });
-  const a = arm.getWorldPosition(new Vector3()), b = elbow.getWorldPosition(new Vector3());
-  const axis = b.clone().sub(a), lengthSquared = axis.lengthSq();
-  let samples = 0, outward = 0;
-  for (const mesh of cloth) {
-    const positions = mesh.geometry.attributes.position, normals = mesh.geometry.attributes.normal;
-    for (let i = 0; i < positions.count; i++) {
-      const position = new Vector3().fromBufferAttribute(positions, i);
-      const t = position.clone().sub(a).dot(axis) / lengthSquared;
-      if (t < .3 || t > .7) continue;
-      const radial = position.clone().sub(a.clone().addScaledVector(axis, t));
-      if (radial.length() > .10 || radial.length() < .04) continue;
-      const normal = new Vector3().fromBufferAttribute(normals, i);
-      samples++;
-      if (normal.dot(radial.normalize()) > .5) outward++;
+  assert.ok(vertices>10000);
+  const mixer=new AnimationMixer(gltf.scene),heights={};
+  let hips;gltf.scene.traverse(o=>{if(o.isBone&&o.name.endsWith('Hips'))hips=o;});
+  const lengths=new Map();gltf.scene.traverse(o=>{if(o.isBone)lengths.set(o.name,o.position.length());});
+  for(const clip of gltf.animations){
+    for(const track of clip.tracks){
+      assert.ok([...track.values].every(Number.isFinite));
+    }
+    mixer.stopAllAction();const action=mixer.clipAction(clip).reset().play();
+    let origin;
+    for(const phase of [0,.5,1]){
+      action.time=clip.duration*phase;mixer.update(0);gltf.scene.updateMatrixWorld(true);
+      const hip=hips.getWorldPosition(new Vector3());origin ||=hip.clone();
+      assert.ok(Math.abs(hip.x-origin.x)<.001&&Math.abs(hip.z-origin.z)<.001,"simulation owns horizontal root movement");
+      gltf.scene.traverse(o=>{
+        if(o.isBone&&!o.name.endsWith('Hips'))assert.ok(Math.abs(o.position.length()-lengths.get(o.name))<.0001);
+        if(o.isSkinnedMesh){o.skeleton.update();o.computeBoundingBox();}
+      });
+      const size=new Box3().setFromObject(gltf.scene).getSize(new Vector3());
+      assert.ok(size.x<3&&size.y<2.2&&size.z<3,clip.name+" has bounded anatomy");
+      if((clip.name==='Death'&&phase===1)||(clip.name!=='Death'&&phase===0))heights[clip.name]=size.y;
     }
   }
-  assert.ok(samples > 50, "sample the actual sleeve mesh");
-  assert.ok(outward / samples > .95, "lighting normals must face out of the sleeve");
+  assert.ok(heights.Idle>1.6&&heights.Idle<1.9);
+  assert.ok(heights.Crouch<heights.Idle*.8);
+  assert.ok(heights.Death<.6,"final corpse lies on the floor");
+});
+
+test("captured rifle grip remains in the firing palm across crouch and reload poses",async()=>{
+  const {gltf}=await readMotionAsset("public/games/military/models/operator-v1.glb");
+  gltf.scene.userData.riggedOperator=true;
+  const joints=new Map();gltf.scene.traverse(o=>{if(o.isBone)joints.set(o.name.replace(/^mixamorig\d*[:_]?/i,''),o);});
+  const actor={root:new Group(),model:gltf.scene,equipment:new Group(),weaponAnchor:joints.get('RightHand')};
+  actor.root.add(actor.model,actor.equipment);const mixer=new AnimationMixer(actor.model);
+  mixer.clipAction(gltf.animations.find(c=>c.name==='Idle')).play();mixer.update(0);actor.root.updateMatrixWorld(true);
+  bindWeaponGrip(actor);assert.ok(actor.grip,"numbered finger joints must bind the palm");
+  for(const name of ['Idle','Crouch','Reload']){
+    mixer.stopAllAction();const action=mixer.clipAction(gltf.animations.find(c=>c.name===name)).play();action.time=action.getClip().duration*.45;mixer.update(0);
+    assert.equal(updateWeaponGrip(actor,name==='Reload'?.6:0),true);
+    actor.root.updateMatrixWorld(true);
+    const palm=joints.get('RightHand').getWorldPosition(new Vector3()).lerp(joints.get('RightHandMiddle1').getWorldPosition(new Vector3()),.5);
+    const grip=actor.equipment.localToWorld(new Vector3(0,-.109,-.001));
+    assert.ok(grip.distanceTo(palm)<.001,name+' weapon stays in the firing palm');
+  }
 });

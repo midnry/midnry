@@ -26,6 +26,13 @@ for (const path of ["public/games/military/models/soldier.glb", "public/games/mi
 visit("public/games/military/models/operator-v1.glb");
 visit("public/games/military/models/head-source.glb");
 visit("public/games/military/HEAD-SCAN-LICENSE.txt");
+const operatorSources=JSON.parse(readFileSync("scripts/assets/outpost-operator/sources.json","utf8"));
+for(const file of operatorSources.assets){
+  const path=resolve("scripts/assets/outpost-operator",file.file);
+  assert.ok(existsSync(path),`Missing operator build source: ${file.file}`);
+  const bytes=readFileSync(path);assert.equal(bytes.length,file.bytes);
+  assert.equal(createHash("sha256").update(bytes).digest("hex"),file.sha256,`Invalid operator build source: ${file.file}`);
+}
 const { ASSET_FILES } = await import("../public/games/outpost-asset-manifest.js");
 for(const file of ASSET_FILES){
   const path=resolve("public"+file.url);visit(path);const bytes=readFileSync(path);
@@ -55,4 +62,4 @@ if (builtPublic) {
     assert.equal(checksum(built), checksum(source), `Stale built release file: ${file}`);
   }
 }
-console.log(JSON.stringify({ releaseFiles: "passed", checked: checked.size, builtFiles: builtPublic ? "matched source" : "not requested", photographicTextures: 18, mergeMarkers: "absent" }));
+console.log(JSON.stringify({ releaseFiles: "passed", checked: checked.size, operatorSources:operatorSources.assets.length, builtFiles: builtPublic ? "matched source" : "not requested", photographicTextures: 18, mergeMarkers: "absent" }));

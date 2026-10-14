@@ -11,12 +11,21 @@ const smooth = THREE.MathUtils.lerp;
 function materialKind(material) {
   const name = (material.name || "").toLowerCase();
   if (/visor|lens|glass/.test(name)) return "visor";
-  if (/skin|face/.test(name)) return "skin";
+  if (/skin|face|head/.test(name)) return "skin";
   if (/steel|chrome|metal/.test(name)) return "metal";
   return "uniform";
 }
 
 function configureMaterial(material, kind, r) {
+  if (material.userData.riggedOperator) {
+    material.userData.realismCharacterKind = kind;
+    material.metalness = 0;
+    material.roughness = kind === "skin" ? .76 : .93;
+    material.normalScale?.set(.55,.55);
+    material.envMapIntensity = .35;
+    material.needsUpdate = true;
+    return;
+  }
   if (material.userData.operatorMaterial) {
     material.userData.realismCharacterKind = kind;
     const fabric = r?.realismSurfaces?.fabric;
@@ -96,6 +105,7 @@ function configureMaterial(material, kind, r) {
 
 /** Prepare shared source resources once; every role uses the same uniform. */
 export function prepareCharacterAsset(r, gltf) {
+  gltf.scene.traverse(o=>{if(o.userData.riggedOperator)gltf.scene.userData.riggedOperator=true;});
   const materials = new Set();
   const textures = new Set();
   const anisotropy = Math.min(8, r.renderer?.capabilities?.getMaxAnisotropy?.() || 1);
@@ -106,7 +116,7 @@ export function prepareCharacterAsset(r, gltf) {
     for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
       if (!material || materials.has(material)) continue;
       materials.add(material);
-      configureMaterial(material, materialKind(material), r);
+      configureMaterial(material, material.userData.realismCharacterKind || materialKind(material), r);
       r.materials.add(material);
       for (const key of ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap"]) {
         const texture = material[key];
@@ -126,7 +136,7 @@ export function prepareCharacterAsset(r, gltf) {
 function bone(model, suffix) {
   let found = null;
   model.traverse((object) => {
-    if (object.isBone && object.name.replace(/[^a-z]/gi, "").endsWith(suffix)) found = object;
+    if (object.isBone && object.name.replace(/[^a-z0-9]/gi, "").endsWith(suffix)) found = object;
   });
   return found;
 }
@@ -366,6 +376,7 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
   const state = characterState.get(actor.model);
   if (!state || !actor.mixer) return false;
   if (e.hp <= 0) return updateDeathPose(r, actor, state);
+  if(state.capturedDeath){actor.actions.Death.stop();state.capturedDeath=false;state.deadSample=null;actor.deathAnimated=false;actor.action="";actor.actions.Idle.reset().setEffectiveWeight(1).play();}
   state.deathPose = null;
   const dx = e.x - state.previousX,
     dy = e.y - state.previousY;
@@ -386,7 +397,8 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
   const reduced = r.motion?.matches;
   const moving = !reduced && state.speed > 0.15 && e.hp > 0 && !(e.slideUntil > r.g.time);
   const backward = state.signedDistance < -state.distance * 0.35;
-  const next = moving ? (state.speed > 2.5 && !backward ? "Run" : "Walk") : "Idle";
+  const capturedCrouch = (e.crouching || e.slideUntil > r.g.time) && actor.actions.Crouch;
+  const next = capturedCrouch ? "Crouch" : moving ? (backward && actor.actions.BackWalk ? "BackWalk" : state.speed > 2.5 && !backward ? "Run" : "Walk") : "Idle";
   if (next !== actor.action) {
     actor.actions[actor.action]?.fadeOut(0.15);
     actor.actions[next]?.reset().fadeIn(0.15).play();
@@ -397,16 +409,28 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
     const duration = action.getClip().duration;
     const loopDistance = r.characterProfile?.[next] || (next === "Run" ? 2.25 : 1.45);
     action.setEffectiveTimeScale(
-      moving ? (backward ? -1 : 1) * clamp((speed * duration) / loopDistance, 0.25, 3) : 1,
+      moving && !capturedCrouch ? (backward && next !== "BackWalk" ? -1 : 1) * clamp((speed * duration) / loopDistance, 0.25, 3) : 1,
     );
   }
   state.distance = 0;
   state.signedDistance = 0;
+  const reloading = e.reloadUntil > r.g.time;
+  if (actor.actions.Reload) {
+    const layer=actor.actions.Reload;
+    state.reloadWeight=smooth(state.reloadWeight||0,reloading?1:0,1-Math.exp(-dt*20));
+    layer.enabled=true;layer.setEffectiveWeight(state.reloadWeight).setEffectiveTimeScale(0).play();
+    if(reloading)layer.time=clamp(1-(e.reloadUntil-r.g.time)/1.4,0,1)*layer.getClip().duration;
+  }
+  if(actor.actions.Hit){
+    const layer=actor.actions.Hit,elapsed=r.g.time-(e.hit??-100);
+    layer.enabled=true;layer.setEffectiveTimeScale(0).setEffectiveWeight(elapsed>=0&&elapsed<.35?Math.sin(elapsed/.35*Math.PI)*.45:0).play();
+    layer.time=clamp(elapsed/.35,0,1)*layer.getClip().duration;
+  }
   actor.mixer.update(dt);
   const sliding = e.slideUntil > r.g.time,
     crouching = sliding || e.crouching;
-  actor.model.position.y = state.baseY - (sliding ? 0.45 : crouching ? 0.28 : 0);
-  if (crouching) {
+  actor.model.position.y = state.baseY - (capturedCrouch ? 0 : sliding ? 0.45 : crouching ? 0.28 : 0);
+  if (crouching && !capturedCrouch) {
     if (state.hip) state.hip.rotation.x += 0.22;
     if (state.leftKnee) state.leftKnee.rotation.x -= 0.7;
     if (state.rightKnee) state.rightKnee.rotation.x -= 0.65;
@@ -419,9 +443,8 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
     state.spine.rotation.x += aim * 0.22;
     state.spine.rotation.z += hit * 0.06;
   }
-  const firing = r.g.time - e.shotAt < 0.32,
-    reloading = e.reloadUntil > r.g.time;
-  if (firing || reloading) {
+  const firing = r.g.time - e.shotAt < 0.16;
+  if ((firing || reloading) && !actor.actions.Reload) {
     if (state.rightArm) state.rightArm.rotation.z -= 0.3;
     if (state.leftArm) state.leftArm.rotation.z += 0.28;
     if (state.rightElbow) state.rightElbow.rotation.x += 0.35;
@@ -434,7 +457,7 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
     Math.abs(Math.atan2(Math.sin(yaw - state.previousYaw), Math.cos(yaw - state.previousYaw))) >
       0.2;
   state.previousYaw = yaw;
-  if (!reduced && r.g.academy.preset !== "performance")
+  if (!reduced)
     for (const leg of state.legs)
       plantFoot(
         actor.model,
@@ -450,12 +473,23 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
 }
 
 /** A real dead pose is independent of mission time, which pauses offline.
- * Force a fully weighted idle pose before bending joints: faded-out clips must
- * never leave a corpse in the skeleton's bind/T pose. No IK runs on corpses.
+ * Play a fully weighted captured fall, or bend a fully weighted idle fallback:
+ * faded-out clips must never leave a corpse in its bind/T pose. No corpse IK.
  */
 function updateDeathPose(r, actor, state) {
   const now = performance.now() / 1000,
     sample = Math.floor(now * 30);
+  if(actor.actions.Death){
+    if(!state.capturedDeath){
+      actor.mixer.stopAllAction();state.capturedDeath=true;
+      actor.actions.Death.reset().setEffectiveWeight(1).setEffectiveTimeScale(0).play();
+      actor.action="Dead";actor.deathAnimated=true;for(const leg of state.legs)leg.planted=false;
+    }
+    if(state.deadSample===sample)return false;state.deadSample=sample;
+    const progress=r.motion?.matches?1:clamp((now-(actor.deadAt??now))/.85,0,1);
+    actor.actions.Death.time=progress*actor.actions.Death.getClip().duration;
+    actor.mixer.update(0);actor.model.position.y=state.baseY;actor.model.updateMatrixWorld(true);return true;
+  }
   if (!state.deathPose) {
     actor.model.position.y = state.baseY;
     actor.mixer.stopAllAction();

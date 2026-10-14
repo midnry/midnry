@@ -1132,6 +1132,7 @@ export class ProtocolUI {
     this.updateMeeting(view);
     this.updateCombat(view);
     this.focus?.update(view, gameplay);
+    g.navigation?.update(view);
     if (protocol.phase === "roam" && this.briefRound !== view.roundId && !this.arming.open) {
       this.briefRound = view.roundId;
       this.showBrief();
