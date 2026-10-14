@@ -973,7 +973,7 @@ export class ProtocolArena extends Arena {
         player.channel = null;
         return;
       }
-      taskStep(channel.challenge, value, this.time);
+      taskStep(channel.challenge, value, this.time, () => this.random());
       return;
     }
     if (action.op === "helm") {
@@ -1332,6 +1332,9 @@ export class ProtocolArena extends Arena {
       entity.departed ||
       (channel && channel.damageSeq !== entity.damageSeq)
     ) {
+      // Someone else emptied the cabinet mid-check: say so instead of just closing.
+      if (channel?.challenge && channel.kind === "collect" && !context && !moving)
+        this.emit(entity.id, "Someone took the last item from this cabinet. Try another one.");
       player.channel = null;
       return;
     }
@@ -1981,7 +1984,7 @@ export function protocolView(data, selfId) {
         target: player.channel.target,
         progress: player.channel.progress,
         duration: player.channel.duration,
-        ...(player.channel.challenge ? {challenge:taskGameView(player.channel.challenge)} : {}),
+        ...(player.channel.challenge ? {challenge:taskGameView(player.channel.challenge, data.time)} : {}),
         ...(player.channel.kind === "wire"
           ? { code: player.channel.code, deadline: player.channel.deadline }
           : {}),

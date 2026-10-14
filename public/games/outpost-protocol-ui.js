@@ -28,19 +28,19 @@ const element = (tag, className, text) => {
 const GUIDE = [
   [
     "Lifeline Run / two phases",
-    "The wounded need you. First gather 13 medical and recovery items at Breakwater Forward Base: four Trauma kits, two Surgical packs, three IV fluids and four Recovery supplements. Carry one item at a time and load it at the hangar's medevac pad. When the manifest is complete, hold at the pad to depart. All living participants board the Lifeline Medevac together.",
+    "Win one of two ways: deliver medical aid to the wounded before they all die, or find the infiltrators and vote every one of them out. First gather the medical items at Breakwater Forward Base (usually 13: trauma kits, surgical packs, IV fluids and recovery supplements). Cabinets are restocked differently every round, so follow the arrow and the manifest in Info. Carry one item at a time to the hangar loading pad, then board the medevac, fly to the casualty station and deliver. Every match also has a modifier and a twist, shown in your orders.",
   ],
   [
     "Operators: deliver aid before patients die",
-    "At a stocked fixture, tap Check equipment or press E to inspect the packing checklist. Stay at the station while its 4.5-second equipment cycle finishes; loading still takes a three-second hold. Watch the remote patient vitals while your team gathers supplies. The 120-second flight leads to the casualty site. Once you arrive, repair damaged cargo if needed and complete the casualty delivery checklist at the cargo station to deliver aid. Saving at least one surviving patient wins; saving more patients gives a better rescue outcome. Completing old assignments, waiting or detaining infiltrators does not finish this mission.",
+    "At a stocked cabinet, press E or tap Check equipment. Each check is a quick skill test: stop a sweeping needle in the green band, type a batch code that flashes for a moment, or repeat a wire sequence. A miss costs a second and deals a new one. Stay put until the cycle finishes. Watch the remote vitals in Info; patients only fade while the base is working, not during meetings.",
   ],
   [
     "Recover a sabotaged aircraft",
-    "Complete three routine aircraft duties: test medical oxygen, secure trauma packs, and confirm landing coordinates. Use the Info panel to track them. Check the oxygen gauge, match the landing beacon, and secure the cargo restraints in the equipment panels. They are required before aid delivery; cargo sabotage unsecures trauma packs. Autopilot only fails through sabotage or abandoned unsafe manual flight. If autopilot is disabled, an operator must reach the cockpit and take the helm. W raises flight level; S lowers it. A steers left; D steers right. On touch, hold the flight-direction buttons. Keep flight level between 50% and 85% and course offset within ±18% for three seconds. Then press Restore autopilot. Recovery requires actual steering and a seated pilot; autopilot never fixes itself. Extreme attitude or an expired 18-second recovery timer causes a crash. Release the helm only after restoring autopilot.",
+    "Aboard, complete the aircraft duties in Info: open the oxygen valve and set the gauge, secure the trauma packs, and type back the landing beacon code. If autopilot fails (sabotage or the Turbulence twist), take the cockpit helm: W/S sets altitude, A/D steers. Hold both gauges in their safe bands for three seconds, restore autopilot, then release the helm.",
   ],
   [
     "Infiltrators: stop the rescue",
-    "Two covert infiltrators wear the same uniforms as operators. Your partner is listed in your own orders. Blend in, pretend to collect supplies, interrupt the base's systems and exploit isolated corridors. On the aircraft, hold at avionics for six seconds to disable autopilot, or hold at cargo to damage the medical shipment. Operators can repair cargo in six seconds. You win if no living operators remain, all patients die, or the aircraft crashes.",
+    "One or two infiltrators wear the same uniforms as everyone else; your partner is named in your orders. You win if you eliminate operators until your side matches theirs, if three base charges detonate, or if the patients die. Blend in: fake checks at wall panels, cut the power or jam communications, and use maintenance hatches. Careful: a real pickup visibly removes a case from its cabinet. Sharp operators notice when someone 'works' and nothing changes.",
   ],
   [
     "Base charges and concealed routes",
