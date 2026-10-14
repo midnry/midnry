@@ -1813,7 +1813,10 @@ export class MilitaryRenderer {
       // players tell each other apart and reveal nothing about roles.
       {
         model.traverse((o) => {
-          if (o.isMesh) {
+          // Parts of one actor can share a material: patch each material once,
+          // or the fabric shader declares its varyings twice and fails.
+          if (o.isMesh && !o.material.userData.outfitFabric) {
+            o.material.userData.outfitFabric = true;
             const uniform = outfitOf(e.outfit),
               texture = this.skinTexture(uniform);
             o.material.color.set("#ffffff");

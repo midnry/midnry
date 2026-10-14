@@ -22,6 +22,66 @@ export const OUTFIT_ORDER = [
 export const outfitLevel = (id) => Math.max(1, OUTFIT_ORDER.indexOf(id) + 1);
 export const outfitUnlocked = (profile, id) =>
   OUTFIT_ORDER.includes(id) && 1 + Math.floor((profile?.xp || 0) / 150) >= outfitLevel(id);
+/**
+ * Daily and weekly challenges. Each counts progress from a finished round
+ * (`gain` returns how much this round adds); progress resets each day or
+ * week, and nothing is lost for days you don't play.
+ */
+const won = (r, role) => (r.won && (!role || r.role === role) ? 1 : 0);
+const done = (r, key) => Math.floor(r.contributions?.[key] || 0);
+export const DAILY_CHALLENGES = [
+  { id: "rounds-3", text: "Finish 3 rounds", goal: 3, gain: () => 1 },
+  { id: "win-op", text: "Win a round as an operator", goal: 1, gain: (r) => won(r, "operator") },
+  { id: "win-inf", text: "Win a round as an infiltrator", goal: 1, gain: (r) => won(r, "infiltrator") },
+  { id: "supplies-8", text: "Load 8 medical supplies", goal: 8, gain: (r) => done(r, "supplies") },
+  { id: "checks-3", text: "Complete 3 aircraft checks", goal: 3, gain: (r) => done(r, "checks") },
+  { id: "repair-2", text: "Repair or defuse 2 times", goal: 2, gain: (r) => done(r, "repairs") + done(r, "defuses") },
+  { id: "rescue-6", text: "Rescue 6 patients", goal: 6, gain: (r) => Math.floor(r.rescued || 0) },
+  { id: "pilot-15", text: "Fly the medevac by hand for 15 seconds", goal: 15, gain: (r) => done(r, "pilotSeconds") },
+  { id: "sabotage-2", text: "Sabotage the base twice as an infiltrator", goal: 2, gain: (r) => done(r, "sabotage") },
+  { id: "detective", text: "Vote for an infiltrator", goal: 1, gain: (r) => Math.min(1, Math.floor(r.correctVotes || 0)) },
+];
+export const WEEKLY_CHALLENGES = [
+  { id: "w-wins-6", text: "Win 6 rounds", goal: 6, gain: (r) => won(r) },
+  { id: "w-supplies-40", text: "Load 40 medical supplies", goal: 40, gain: (r) => done(r, "supplies") },
+  { id: "w-rescue-20", text: "Rescue 20 patients", goal: 20, gain: (r) => Math.floor(r.rescued || 0) },
+  { id: "w-inf-3", text: "Win 3 rounds as an infiltrator", goal: 3, gain: (r) => won(r, "infiltrator") },
+  { id: "w-detective-4", text: "Vote for an infiltrator 4 times", goal: 4, gain: (r) => Math.floor(r.correctVotes || 0) },
+];
+export const DAILY_XP = 60,
+  WEEKLY_XP = 250;
+const hash = (text) => [...text].reduce((h, c) => (Math.imul(h, 31) + c.charCodeAt(0)) >>> 0, 7);
+/** The same three challenges for everyone on a given day. */
+export function dailyChallenges(day) {
+  const pool = [...DAILY_CHALLENGES];
+  const picks = [];
+  let h = hash(day);
+  while (picks.length < 3) {
+    h = (Math.imul(h, 1664525) + 1013904223) >>> 0;
+    picks.push(pool.splice(h % pool.length, 1)[0]);
+  }
+  return picks;
+}
+export const weeklyChallenge = (week) => WEEKLY_CHALLENGES[hash(week) % WEEKLY_CHALLENGES.length];
+/** Local calendar keys: "2026-10-14" and its ISO week "2026-W42". */
+export function calendarKeys(date = new Date()) {
+  const pad = (n) => String(n).padStart(2, "0");
+  const day = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  const t = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const weekday = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - weekday);
+  const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((t - yearStart) / 86400000 + 1) / 7);
+  return { day, week: `${t.getUTCFullYear()}-W${pad(week)}` };
+}
+const progressOf = (value) =>
+  value && typeof value === "object"
+    ? Object.fromEntries(
+        Object.entries(value)
+          .filter(([k, v]) => typeof k === "string" && k.length < 24 && Number.isFinite(v))
+          .map(([k, v]) => [k, Math.max(0, Math.min(1000000, Math.floor(v)))]),
+      )
+    : {};
 const bounded = (value, max) =>
   Number.isFinite(value) ? Math.max(0, Math.min(max, Math.floor(value))) : 0;
 export function profileOf(data = {}) {
@@ -42,6 +102,21 @@ export function profileOf(data = {}) {
           11,
         )
       : [],
+    challenges: {
+      day: typeof data?.challenges?.day === "string" ? data.challenges.day.slice(0, 10) : "",
+      daily: progressOf(data?.challenges?.daily),
+      week: typeof data?.challenges?.week === "string" ? data.challenges.week.slice(0, 8) : "",
+      weekly: progressOf(data?.challenges?.weekly),
+    },
+    record: Object.fromEntries(
+      ["operator", "infiltrator"].map((role) => [
+        role,
+        {
+          played: bounded(data?.record?.[role]?.played, 1000000),
+          won: bounded(data?.record?.[role]?.won, 1000000),
+        },
+      ]),
+    ),
     roles: Array.isArray(data?.roles)
       ? [...new Set(data.roles.filter((v) => v === "operator" || v === "infiltrator"))]
       : [],
@@ -104,6 +179,28 @@ export function awardMatch(data, result) {
       profile.career[key] = Math.min(1000000, profile.career[key] + Math.floor(c[key]));
     if (["operator", "infiltrator"].includes(result.role) && !profile.roles.includes(result.role))
       profile.roles.push(result.role);
+    if (["operator", "infiltrator"].includes(result.role)) {
+      profile.record[result.role].played++;
+      if (result.won) profile.record[result.role].won++;
+    }
+    // Daily and weekly challenges (progress resets with the calendar).
+    const { day, week } = result.day && result.week ? result : calendarKeys();
+    const ch = profile.challenges;
+    if (ch.day !== day) Object.assign(ch, { day, daily: {} });
+    if (ch.week !== week) Object.assign(ch, { week, weekly: {} });
+    for (const [list, store, reward, label] of [
+      [dailyChallenges(day), ch.daily, DAILY_XP, "Daily"],
+      [[weeklyChallenge(week)], ch.weekly, WEEKLY_XP, "Weekly"],
+    ])
+      for (const c of list) {
+        const before = store[c.id] || 0;
+        if (before >= c.goal) continue;
+        store[c.id] = Math.min(c.goal, before + Math.max(0, Math.floor(c.gain(result) || 0)));
+        if (store[c.id] >= c.goal) {
+          xp += reward;
+          bonuses.push(`${label}: ${c.text} (+${reward} XP)`);
+        }
+      }
     if (work) bonuses.push("Mission contribution");
     if (teamRescue) bonuses.push("Team rescue");
   }

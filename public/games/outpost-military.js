@@ -21306,7 +21306,8 @@ var Dp = class {
 			});
 			let o = new Je().setFromObject(r), s = 1.82 / (o.max.y - o.min.y);
 			r.scale.multiplyScalar(s), r.position.y -= o.min.y * s, Sf(this, r, e), r.traverse((t) => {
-				if (t.isMesh) {
+				if (t.isMesh && !t.material.userData.outfitFabric) {
+					t.material.userData.outfitFabric = !0;
 					let n = pp(e.outfit), r = this.skinTexture(n);
 					t.material.color.set("#ffffff"), t.material.map ||= r, t.geometry.computeBoundingBox();
 					let i = t.geometry.boundingBox, a = t.material.onBeforeCompile;

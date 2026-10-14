@@ -1,5 +1,17 @@
 import { MODIFIERS, modifierChoice } from "./outpost-variety.js";
-import { FINISHES, profileOf, awardMatch, levelOf, outfitUnlocked, outfitLevel } from "./outpost-progression.js";
+import {
+  FINISHES,
+  profileOf,
+  awardMatch,
+  levelOf,
+  outfitUnlocked,
+  outfitLevel,
+  calendarKeys,
+  dailyChallenges,
+  weeklyChallenge,
+  DAILY_XP,
+  WEEKLY_XP,
+} from "./outpost-progression.js";
 import { weaponOf, OUTFITS } from "./outpost-sim.js";
 import { spatialSound } from "./outpost-spatial-audio.js";
 const read = (key) => {
@@ -229,12 +241,18 @@ export class Retention {
   }
   menu() {
     const g = this.g;
-    if (!g.$(".mf-difficulty")) return;
-    g.$(".mf-difficulty").value = g.difficulty || "normal";
-    g.$(".mf-difficulty").disabled = Boolean(
-      g.online && (g.online.host !== g.selfId || g.online.phase !== "lobby"),
-    );
-    g.$(".mf-level").textContent = `LEVEL ${levelOf(this.profile)} · ${this.profile.xp} XP`;
+    // The difficulty picker is optional (the protocol menu removes it); the
+    // level label and challenge count must refresh either way.
+    const difficulty = g.$(".mf-difficulty");
+    if (difficulty) {
+      difficulty.value = g.difficulty || "normal";
+      difficulty.disabled = Boolean(
+        g.online && (g.online.host !== g.selfId || g.online.phase !== "lobby"),
+      );
+    }
+    if (!g.$(".mf-level")) return;
+    const today = this.challengeStatus();
+    g.$(".mf-level").textContent = `LEVEL ${levelOf(this.profile)} · ${this.profile.xp} XP · Daily ${today.daily.filter((c) => c.done).length}/3`;
     if (this.summary) {
       const waiting = g.online && (g.online.phase !== "ended" || g.online.host !== g.selfId);
       g.$(".mf-again").disabled = Boolean(waiting);
@@ -274,6 +292,7 @@ export class Retention {
       summary.role = missionView.self.role;
       summary.contributions = missionView.self.contributions;
       summary.rescued = missionView.mission?.patients.filter(p => p.rescued).length || 0;
+      summary.correctVotes = missionView.self.correctVotes || 0;
     }
     const earned = awardMatch(this.profile, summary);
     this.profile = earned.profile;
@@ -342,8 +361,29 @@ export class Retention {
         )
         .join(
           "",
-        )}</div><h3>Optional challenges</h3><p>Play both sides (operator and infiltrator): ${p.roles.length}/2 · ${p.milestones.includes("explorer") ? "Reward earned" : "50 bonus XP"}</p><p>Complete three rounds: ${Math.min(3, p.matches)}/3 · ${p.milestones.includes("first-three") ? "Reward earned" : "50 bonus XP"}</p><p>Load 13 medical supplies: ${Math.min(13,p.career.supplies)}/13 · ${p.milestones.includes("supply-detail") ? "Reward earned" : "50 bonus XP"}</p><p>Complete three aircraft checks: ${Math.min(3,p.career.checks)}/3 · ${p.milestones.includes("flight-ready") ? "Reward earned" : "50 bonus XP"}</p><p>Deliver aid to four patients: ${Math.min(4,p.career.patients)}/4 · ${p.milestones.includes("lifeline") ? "Reward earned" : "50 bonus XP"}</p><p>XP rewards completed missions, supplies loaded, equipment checks, repairs, defuses, safe piloting and rescues. Infiltrators earn mission credit for validated sabotage, charges and cover checks. Repeated collection without loading and idle time do not earn contribution XP. Losses under 15 seconds do not earn XP. All rewards change appearance only. There are no streak penalties or purchases.</p><p>Progress is saved on this browser and device. Clearing browser data removes it; it does not sync between devices.</p>`;
+        )}</div><h3>Today's challenges · +${DAILY_XP} XP each</h3>${this.challengeStatus()
+          .daily.map(
+            (c) =>
+              `<p>${c.done ? "✅" : "◻️"} ${c.text} · ${c.progress}/${c.goal}</p><progress max="${c.goal}" value="${c.progress}" aria-label="${c.text}"></progress>`,
+          )
+          .join("")}<h3>This week · +${WEEKLY_XP} XP</h3>${(() => {
+          const w = this.challengeStatus().weekly;
+          return `<p>${w.done ? "✅" : "◻️"} ${w.text} · ${w.progress}/${w.goal}</p><progress max="${w.goal}" value="${w.progress}" aria-label="${w.text}"></progress>`;
+        })()}<h3>Your record</h3><p>Operator: ${p.record.operator.won} wins in ${p.record.operator.played} rounds · Infiltrator: ${p.record.infiltrator.won} wins in ${p.record.infiltrator.played} rounds</p><h3>Milestones</h3><p>Play both sides (operator and infiltrator): ${p.roles.length}/2 · ${p.milestones.includes("explorer") ? "Reward earned" : "50 bonus XP"}</p><p>Complete three rounds: ${Math.min(3, p.matches)}/3 · ${p.milestones.includes("first-three") ? "Reward earned" : "50 bonus XP"}</p><p>Load 13 medical supplies: ${Math.min(13,p.career.supplies)}/13 · ${p.milestones.includes("supply-detail") ? "Reward earned" : "50 bonus XP"}</p><p>Complete three aircraft checks: ${Math.min(3,p.career.checks)}/3 · ${p.milestones.includes("flight-ready") ? "Reward earned" : "50 bonus XP"}</p><p>Deliver aid to four patients: ${Math.min(4,p.career.patients)}/4 · ${p.milestones.includes("lifeline") ? "Reward earned" : "50 bonus XP"}</p><p>XP rewards completed missions, supplies loaded, equipment checks, repairs, defuses, safe piloting and rescues. Infiltrators earn mission credit for validated sabotage, charges and cover checks. Repeated collection without loading and idle time do not earn contribution XP. Losses under 15 seconds do not earn XP. All rewards change appearance only. There are no streak penalties or purchases.</p><p>Progress is saved on this browser and device. Clearing browser data removes it; it does not sync between devices.</p>`;
     if (focused) this.g.$(`[data-outfit="${focused}"]`)?.focus({ preventScroll: true });
+  }
+  /** Today's and this week's challenges with progress. */
+  challengeStatus() {
+    const { day, week } = calendarKeys(),
+      ch = this.profile.challenges || {};
+    const row = (c, store) => {
+      const progress = Math.min(c.goal, store?.[c.id] || 0);
+      return { ...c, progress, done: progress >= c.goal };
+    };
+    return {
+      daily: dailyChallenges(day).map((c) => row(c, ch.day === day ? ch.daily : {})),
+      weekly: row(weeklyChallenge(week), ch.week === week ? ch.weekly : {}),
+    };
   }
   outfitUnlocked(id) {
     return outfitUnlocked(this.profile, id);

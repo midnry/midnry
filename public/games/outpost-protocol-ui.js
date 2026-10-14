@@ -110,6 +110,15 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-combattarget { position:absolute;z-index:4;transform:translate(-50%,-100%);padding:4px 8px;border:1px solid #dc9b83;border-radius:8px;background:#472f26df;color:#ffe7d6;font:700 11px system-ui;max-width:170px;pointer-events:none; }
       midnry-fps .mf-protocol-combat .mf-fire { width:64px;height:64px;right:calc(18px + var(--mf-safe-right));bottom:calc(18px + var(--mf-safe-bottom));font-size:12px; }
       midnry-fps .mf-protocol-combat .mf-reload { width:44px;height:44px;right:calc(28px + var(--mf-safe-right));bottom:calc(94px + var(--mf-safe-bottom)); }
+      midnry-fps .mf-protocol-awards { display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:12px 0; }
+      midnry-fps .mf-protocol-award { display:grid;gap:2px;padding:10px 12px;border:2px solid #9fb09a66;border-radius:12px;background:#15221ce6;color:#eef4ea;font-size:13px; }
+      midnry-fps .mf-protocol-award small { color:#b9c7b6;font-size:11px; }
+      midnry-fps .mf-protocol-awardicon { font-size:20px; }
+      midnry-fps .mf-protocol-timeline { margin:10px 0;font-size:13px; }
+      midnry-fps .mf-protocol-timeline ol { margin:8px 0 0;padding-left:0;list-style:none;max-height:220px;overflow:auto;display:grid;gap:4px; }
+      midnry-fps .mf-protocol-timeline time { display:inline-block;min-width:44px;color:#9fb09a;font-variant-numeric:tabular-nums; }
+      midnry-fps .mf-protocol-timeline li[data-kind="kill"] { color:#ffb4a3; }
+      midnry-fps .mf-protocol-timeline li[data-kind="sabotage"] { color:#ffd58a; }
       midnry-fps .mf-protocol-briefmatch { list-style:none;margin:12px 0;padding:0;display:grid;gap:8px; }
       midnry-fps .mf-protocol-briefmatch li { padding:9px 12px;border:1px solid #c9b77a66;border-radius:12px;background:#2a2a1aa8;color:#f3eedc;font-size:13px;line-height:1.4; }
       midnry-fps .mf-protocol-briefmatch b { display:block;color:#ffd77a;font-size:12px;letter-spacing:.06em;text-transform:uppercase; }
@@ -1921,9 +1930,14 @@ export class ProtocolUI {
     this.held = false;
     for (const dialog of [this.meeting, this.arming, this.brief]) if (dialog.open) dialog.close();
     this.results.replaceChildren();
-    const operatorsWon = view.winner === 0;
+    const operatorsWon = view.winner === 0,
+      delivered = protocol.mission?.patients.some((patient) => patient.rescued);
     this.results.append(
-      element("h2", "", operatorsWon ? "Lifesaving aid delivered" : "Lifeline Run lost"),
+      element(
+        "h2",
+        "",
+        operatorsWon ? (delivered ? "Lifesaving aid delivered" : "Infiltrators stopped") : "Lifeline Run lost",
+      ),
     );
     this.results.append(
       element(
@@ -1954,6 +1968,37 @@ export class ProtocolUI {
           ),
         );
     if (list.children.length) this.results.append(list);
+    // Standout players this round.
+    if (protocol.awards?.length) {
+      const awards = element("div", "mf-protocol-awards");
+      awards.setAttribute("aria-label", "Round awards");
+      for (const award of protocol.awards) {
+        const card = element("div", "mf-protocol-award");
+        if (award.color) card.style.borderColor = award.color;
+        card.append(
+          element("span", "mf-protocol-awardicon", award.icon),
+          element("b", "", award.title),
+          element("span", "", `${award.name}${award.playerId === g.selfId ? " (you)" : ""}`),
+          element("small", "", award.detail),
+        );
+        awards.append(card);
+      }
+      this.results.append(awards);
+    }
+    // What really happened, secrets included.
+    if (protocol.timeline?.length) {
+      const details = element("details", "mf-protocol-timeline"),
+        items = element("ol");
+      details.append(element("summary", "", `Match timeline · ${protocol.timeline.length} moments`));
+      for (const entry of protocol.timeline) {
+        const item = element("li");
+        item.dataset.kind = entry.kind || "event";
+        item.append(element("time", "", countdown(entry.t)), document.createTextNode(` ${entry.text}`));
+        items.append(item);
+      }
+      details.append(items);
+      this.results.append(details);
+    }
     setText(
       this.live,
       operatorsWon ? "Round over. Lifesaving aid delivered." : "Round over. Lifeline Run lost.",

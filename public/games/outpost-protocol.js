@@ -222,6 +222,8 @@ export class ProtocolArena extends Arena {
       revealRoles: options.revealRoles !== false,
       revealed: {},
       match: { ...this.matchRoll },
+      // Everything that happened, secrets included: shown only after the round.
+      timeline: [],
       killCooldown: this.matchRoll.modifier === "lone-wolf" ? 15 : PROTOCOL_RULES.killCooldown,
       taskDone: 0,
       taskTotal: 0,
@@ -437,6 +439,16 @@ export class ProtocolArena extends Arena {
   addLog(text) {
     this.protocol.log.push({ id: this.protocol.nextId++, text });
     if (this.protocol.log.length > 12) this.protocol.log.shift();
+    this.record(text);
+  }
+
+  /** A timeline entry for the end-of-round debrief (never shown mid-round). */
+  record(text, kind = "event", who = null) {
+    const p = this.protocol;
+    if (!p) return;
+    p.timeline ??= [];
+    p.timeline.push({ t: Math.round(this.time), text, kind, who });
+    if (p.timeline.length > 80) p.timeline.splice(1, 1);
   }
 
   privateFor(entity) {
@@ -479,12 +491,48 @@ export class ProtocolArena extends Arena {
     this.winner = winner;
     this.protocol.phase = "result";
     this.protocol.resultReason = reason;
+    this.protocol.awards = this.awards();
     for (const e of this.entities) {
       const p = this.privateFor(e);
       p.channel = null;
       e.placement = e.team === winner ? 1 : 2;
     }
     this.addLog(reason);
+  }
+
+  /** End-of-round awards: one standout per category, if anyone earned it. */
+  awards() {
+    const rows = this.entities.map((e) => {
+      const p = this.privateFor(e),
+        c = p.contributions || {};
+      return { e, p, c };
+    });
+    const best = (list, score, min = 1) => {
+      let top = null;
+      for (const row of list) if (score(row) >= min && (!top || score(row) > score(top))) top = row;
+      return top;
+    };
+    const ops = rows.filter((r) => r.p.role === OPERATORS),
+      infs = rows.filter((r) => r.p.role === INFILTRATORS);
+    const picks = [
+      ["detective", "🔎", "Sharpest detective", best(ops, (r) => r.p.correctVotes || 0), (r) => `${r.p.correctVotes} vote${r.p.correctVotes === 1 ? "" : "s"} against infiltrators`],
+      ["liar", "🎭", "Best liar", best(infs, (r) => 10 + (r.e.kills || 0) * 3 + (r.c.sabotage || 0) + (r.c.charges || 0) - (r.p.votesReceived || 0) * 4, 10), (r) => `${r.e.kills || 0} elimination${r.e.kills === 1 ? "" : "s"}, ${r.p.votesReceived || 0} vote${r.p.votesReceived === 1 ? "" : "s"} against`],
+      ["quartermaster", "📦", "Quartermaster", best(ops, (r) => r.c.supplies || 0, 2), (r) => `${r.c.supplies} supplies loaded`],
+      ["lifesaver", "❤️", "Lifesaver", best(ops, (r) => r.c.patients || 0), (r) => `${r.c.patients} patient${r.c.patients === 1 ? "" : "s"} treated`],
+      ["pilot", "🛩️", "Ace pilot", best(ops, (r) => r.c.pilotSeconds || 0, 3), (r) => `${Math.round(r.c.pilotSeconds)}s at the helm`],
+      ["fixer", "🔧", "Fixer", best(ops, (r) => (r.c.repairs || 0) + (r.c.defuses || 0)), (r) => `${(r.c.repairs || 0) + (r.c.defuses || 0)} repairs and defuses`],
+    ];
+    return picks
+      .filter(([, , , row]) => row)
+      .map(([id, icon, title, row, detail]) => ({
+        id,
+        icon,
+        title,
+        playerId: row.e.id,
+        name: row.e.name,
+        color: row.e.color ?? null,
+        detail: detail(row),
+      }));
   }
 
   checkResult() {
@@ -836,6 +884,11 @@ export class ProtocolArena extends Arena {
       carriedBy: null,
       killerId: entity.id,
     });
+    this.record(
+      `${entity.name} eliminated ${target.name}${this.roomAt(target)?.name ? ` in ${this.roomAt(target).name}` : ""}.`,
+      "kill",
+      entity.id,
+    );
     this.emit(entity.id, "Patrol eliminated. Keep your cover intact.");
     this.emit(
       target.id,
@@ -887,6 +940,15 @@ export class ProtocolArena extends Arena {
   resolveMeeting() {
     const meeting = this.protocol.meeting;
     const tally = new Map();
+    // Who voted for whom, for the debrief awards.
+    for (const [voterId, target] of Object.entries(meeting.votes)) {
+      const voter = this.protocol.players[voterId],
+        accused = this.protocol.players[target];
+      if (!voter || !accused) continue;
+      accused.votesReceived = (accused.votesReceived || 0) + 1;
+      if (accused.role === INFILTRATORS && voter.role === OPERATORS)
+        voter.correctVotes = (voter.correctVotes || 0) + 1;
+    }
     for (const [voterId, target] of Object.entries(meeting.votes)) {
       if (
         !meeting.participants.includes(voterId) ||
@@ -1076,6 +1138,11 @@ export class ProtocolArena extends Arena {
       if (this.protocol.sabotage[key] > this.time) return;
       this.protocol.sabotage[key] = this.time + PROTOCOL_RULES.sabotageDuration;
       recordContribution(player, "sabotage", `${targetId}:${this.time}`);
+      this.record(
+        `${entity.name} ${targetId === "power" ? "cut the power" : "jammed the radio"}.`,
+        "sabotage",
+        entity.id,
+      );
       player.sabotageReadyAt = this.time + PROTOCOL_RULES.sabotageCooldown;
       player.channel = null;
       this.addLog(
@@ -1138,6 +1205,7 @@ export class ProtocolArena extends Arena {
       });
       this.protocol.armedCount = this.protocol.bombs.length;
       recordContribution(player, "charges", site.id);
+      this.record(`${entity.name} armed a charge in ${this.roomAt(site)?.name || "the base"}.`, "sabotage", entity.id);
       player.channel = null;
       this.observe("plant", entity);
       if (this.protocol.bombs.length === 3) {
@@ -2154,6 +2222,10 @@ export function protocolView(data, selfId) {
       Object.entries(p.players).map(([id, value]) => [id, value.role]),
     );
     view.protocol.resultReason = p.resultReason;
+    view.protocol.awards = clone(p.awards ?? []);
+    // Only after the round: whether your votes landed on infiltrators.
+    if (view.protocol.self) view.protocol.self.correctVotes = player?.correctVotes || 0;
+    view.protocol.timeline = clone(p.timeline ?? []);
   }
   return view;
 }
