@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 const base = process.argv[2] || "http://127.0.0.1:8080";
+const samples = Math.max(4,Math.min(120,Number(process.env.OUTPOST_PROFILE_FRAMES)||12));
 mkdirSync("/workspace/screenshots", { recursive: true });
 const browser = await chromium.launch({
   executablePath: "/usr/bin/chromium",
@@ -31,7 +32,7 @@ try {
       { timeout: 120000 },
     );
     console.log(mobile ? "Touch renderer loaded" : "Desktop renderer loaded");
-    const result = await page.evaluate(async () => {
+    const result = await page.evaluate(async (samples) => {
       const g = document.querySelector("midnry-fps").engine,
         r = g.military;
       cancelAnimationFrame(g.frame);
@@ -51,7 +52,7 @@ try {
         work = [],
         intervals = [];
       let last;
-      for (let i = 0; i < 12; i++) {
+      for (let i = 0; i < samples; i++) {
         const now = await new Promise(requestAnimationFrame);
         if (last) intervals.push(now - last);
         last = now;
@@ -77,9 +78,10 @@ try {
         animationFPS: 30,
         assetErrors: r.assetErrors,
       };
-    });
+    }, samples);
     assert.equal(result.pure, true);
     assert.equal(result.mobile, mobile);
+    assert.ok(result.metrics.worldCulled > 0);
     assert.ok(result.metrics.culled > 0);
     assert.ok(result.metrics.visible >= 2);
     assert.ok(result.metrics.drawCalls > 0 && result.metrics.triangles > 0);
@@ -88,7 +90,7 @@ try {
     assert.deepEqual(result.assetErrors, []);
     assert.deepEqual(errors, []);
     await page.screenshot({
-      path: `/workspace/screenshots/outpost-realtime-render-${mobile ? "mobile" : "desktop"}.png`,
+      path: `/workspace/screenshots/outpost-mission-render-${mobile ? "mobile" : "desktop"}.png`,
     });
     // Native controls still reach the simulation; no extra performance HUD.
     await page.evaluate(() => {

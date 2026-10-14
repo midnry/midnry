@@ -36,6 +36,8 @@ import { VictimTakedown } from "./takedowns.js";
 import { ASSET_CACHE } from "../../public/games/outpost-asset-manifest.js";
 import { isAppleTouchDevice, graphicsProfile, renderSize } from "./compatibility.js";
 import { RenderTelemetry, actorInView } from "./telemetry.js";
+import { batchStaticByMaterial } from "./static-batches.js";
+import { WorldVisibility } from "./world-visibility.js";
 const SCALE = 3,
   ASSET = "/games/military/",
   TAU = Math.PI * 2;
@@ -184,6 +186,17 @@ export class MilitaryRenderer {
     this.protocolTorch.visible = true;
     this.torchDirection = new THREE.Vector3();
     this.renderer.shadowMap.autoUpdate = false;
+    // Three's shadow pass tests the viewing camera's layers. Include culled
+    // static casters only for that pass, then restore the main/reflection view.
+    // Render lists already contain layer-0 geometry, so hidden rooms stay out
+    // of the color pass while their roofs still cast correct daylight shadows.
+    const renderShadows = this.renderer.shadowMap.render.bind(this.renderer.shadowMap);
+    this.renderer.shadowMap.render = (lights, scene, camera) => {
+      const mask = camera.layers.mask;
+      camera.layers.enable(1);
+      try { return renderShadows(lights, scene, camera); }
+      finally { camera.layers.mask = mask; }
+    };
     this.scene.add(this.protocolTorch, this.protocolTorch.target);
     this.weaponScene = new THREE.Scene();
     this.weaponCamera = new THREE.PerspectiveCamera(52, 1, 0.01, 10);
@@ -455,6 +468,7 @@ export class MilitaryRenderer {
     return t;
   }
   clearWorld() {
+    this.worldVisibility?.reset();
     this.reflection?.dispose();
     for (const patient of this.arrivalPatients.values()) {
       patient.mixer?.stopAllAction();
@@ -673,6 +687,15 @@ export class MilitaryRenderer {
           )
             tiles.push([x, y]);
       if (!tiles.length) continue;
+      // Spatial batches can be culled behind opaque rooms instead of submitting
+      // every wall in the base whenever one instance enters the camera frustum.
+      const chunks = new Map();
+      for (const tile of tiles) {
+        const key = ["breakwater", "medevac"].includes(g.arena.mapId) ? `${Math.floor(tile[0]/6)},${Math.floor(tile[1]/6)}` : "all";
+        if (!chunks.has(key)) chunks.set(key, []);
+        chunks.get(key).push(tile);
+      }
+      for (const tiles of chunks.values()) {
       const mesh = new THREE.InstancedMesh(
         this.wallGeometry,
         this.wallMaterials[type],
@@ -692,7 +715,9 @@ export class MilitaryRenderer {
       mesh.instanceMatrix.needsUpdate = true;
       this.world.add(mesh);
       this.wallMeshes.push(mesh);
+      }
     }
+    if (this.worldVisibility) this.worldVisibility.dirty = true;
     this.wallFittings();
     if (!this.buildingWorld) decorateRealisticEnvironment(this, g.arena.mapId, g.level.length);
   }
@@ -855,28 +880,8 @@ export class MilitaryRenderer {
     return root;
   }
   batchProtocolStatic(root) {
-    // Instance repeated fixtures, trims and panel parts after positioning them.
-    // Dynamic screens, charges and bodies are deliberately excluded.
-    root.updateMatrixWorld(true);
-    const groups = new Map();
-    root.traverse((object) => {
-      if (!object.isMesh || object.isInstancedMesh || object.userData.noBatch) return;
-      const key = object.geometry.uuid + ":" + object.material.uuid;
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(object);
-    });
-    const inverse = root.matrixWorld.clone().invert();
-    for (const meshes of groups.values()) {
-      if (meshes.length < 2) continue;
-      const batch = new THREE.InstancedMesh(meshes[0].geometry, meshes[0].material, meshes.length);
-      batch.castShadow = meshes.some((mesh) => mesh.castShadow);
-      batch.receiveShadow = meshes.some((mesh) => mesh.receiveShadow);
-      meshes.forEach((mesh, i) => {
-        batch.setMatrixAt(i, new THREE.Matrix4().multiplyMatrices(inverse, mesh.matrixWorld));
-        mesh.parent.remove(mesh);
-      });
-      root.add(batch);
-    }
+    batchStaticByMaterial(root);
+    if (this.worldVisibility) this.worldVisibility.dirty = true;
   }
   buildProtocolBase(map) {
     const root = new THREE.Group();
@@ -970,10 +975,17 @@ export class MilitaryRenderer {
         sign.userData.noBatch = true;
       }
     }
+    const roofChunks = new Map();
+    for (const tile of roofTiles) {
+      const [x,y] = tile.split(",").map(Number), key = `${Math.floor(x/6)},${Math.floor(y/6)}`;
+      if (!roofChunks.has(key)) roofChunks.set(key, []);
+      roofChunks.get(key).push(tile);
+    }
+    for (const roofTiles of roofChunks.values()) {
     const roof = new THREE.InstancedMesh(
       this.geo("protocol-roof", () => new THREE.BoxGeometry(1, 1, 1)),
       ceiling,
-      roofTiles.size,
+      roofTiles.length,
     );
     const dummy = new THREE.Object3D();
     let tileIndex = 0;
@@ -988,6 +1000,7 @@ export class MilitaryRenderer {
     }
     roof.castShadow = roof.receiveShadow = true;
     root.add(roof);
+    }
     for (const station of map.stations || []) {
       // The flight deck has its own low instrument console; a second generic
       // wall terminal would overlap it and obscure the pilot's windshield.
@@ -3069,6 +3082,7 @@ export class MilitaryRenderer {
     this.updateActors(t);
     const takedown = (this.takedown ||= new VictimTakedown(this)).update(g);
     this.camera.updateMatrixWorld(true);
+    (this.worldVisibility ||= new WorldVisibility(this)).update(p, takedown ? 1 : pitch, now);
     (this.identification ||= new PlayerIdentification(this)).update(protocolView,p,takedown);
     // Mark only the publicly accused participant, within ordinary sight and
     // wall occlusion. This identifies combat's one opposing uniform without
@@ -3164,7 +3178,7 @@ export class MilitaryRenderer {
       this.renderer.autoClear = true;
     } else this.composer.render();
     this.telemetry.end();
-    this.metrics={gpuMs:this.telemetry.gpuMs,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,...this.actorStats};
+    this.metrics={gpuMs:this.telemetry.gpuMs,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,...this.actorStats,...this.worldStats};
     this.takedown.restoreActors();
     this.lastTime = t;
     return true;

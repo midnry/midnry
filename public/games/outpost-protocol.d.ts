@@ -31,11 +31,25 @@ export type ProtocolChannel = {
   target: string;
   progress: number;
   duration: number;
+  challenge?: {
+    id: string;
+    title: string;
+    index: number;
+    total: number;
+    deadline: number;
+    nextAt: number;
+    feedback: string;
+    prompt: string;
+    options: { id: string; label: string }[];
+    range: { min: number; max: number; target: number; tolerance: number } | null;
+    complete: boolean;
+  };
   code?: string;
   deadline?: number;
 };
 export type ProtocolSelf = {
   role: ProtocolRole;
+  contributions?: Record<string, number>;
   deathScene?: { id: string; kind: string; at: number } | null;
   tasks: ProtocolTask[];
   channel: ProtocolChannel | null;
@@ -52,6 +66,7 @@ export type MedicalMission = {
   version: 1;
   phase: "base" | "transport" | "delivered";
   title: string;
+  interactiveTasks?: boolean;
   flightTasks: {
     id: string;
     name: string;
@@ -183,6 +198,8 @@ export type ProtocolState = PublicProtocolState & {
 export type ProtocolArenaState = ArenaState & { protocol: ProtocolState };
 export type ProtocolViewState = ArenaState & { protocol: PublicProtocolState };
 export type ProtocolOptions = {
+  /** New rounds opt in; saved rooms without this flag retain their old tasks. */
+  interactiveTasks?: boolean;
   mode?: string;
   difficulty?: Difficulty;
   countdown?: number;

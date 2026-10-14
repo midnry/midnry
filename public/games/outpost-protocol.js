@@ -4,6 +4,8 @@
  * channels, roles, witnesses, charges, cooldowns and victories live here.
  */
 import { Arena, clamp } from "./outpost-sim.js";
+import { INTERACTIVE_TASKS, createTaskGame, taskStep, taskGameView } from "./outpost-task-games.js";
+import { contributionsOf, recordContribution } from "./outpost-mission-progress.js";
 import { recordVictimTakedown } from "./outpost-death.js";
 import {
   PROTOCOL_MAP,
@@ -51,6 +53,9 @@ export const PROTOCOL_RULES = Object.freeze({
 const OPERATORS = "operator",
   INFILTRATORS = "infiltrator";
 const ACTIONS = new Set([
+  "task-begin",
+  "task-step",
+  "task-cancel",
   "report",
   "meeting",
   "eliminate",
@@ -184,6 +189,7 @@ export class ProtocolArena extends Arena {
       if (options.rolePreference === INFILTRATORS) seats.unshift(first);
       else seats.push(first);
     }
+    this.interactiveTasks = options.interactiveTasks === true;
     const infiltrators = new Set(seats.slice(0, PROTOCOL_RULES.infiltrators));
     this.protocol = {
       version: 1,
@@ -248,6 +254,8 @@ export class ProtocolArena extends Arena {
         actionSeq: -1,
         lastActionSeq: -1,
         channel: null,
+        contributions: contributionsOf(),
+        contributionEvents: [],
         killReadyAt: 12,
         sabotageReadyAt: 15,
         ventReadyAt: 0,
@@ -314,6 +322,7 @@ export class ProtocolArena extends Arena {
       version: 1,
       phase: "base",
       title: "Lifeline Run",
+      interactiveTasks: this.interactiveTasks === true,
       flightTasks: AIRCRAFT_TASKS.map((task) => ({ ...task, done: false })),
       manifest: MEDICAL_SUPPLIES.map((item) => ({
         id: item.id,
@@ -546,7 +555,7 @@ export class ProtocolArena extends Arena {
     return vehicle.altitude >= 0.5 && vehicle.altitude <= 0.85 && Math.abs(vehicle.heading) <= 0.18;
   }
 
-  unsafeFlight() {
+  unsafeFlight(sabotaged = false) {
     const mission = this.protocol.mission,
       v = mission.vehicle;
     if (mission.phase !== "transport" || v.arrived) return;
@@ -557,6 +566,7 @@ export class ProtocolArena extends Arena {
     v.heading = Math.max(v.heading, 0.48);
     v.stability = Math.min(v.stability, 35);
     v.disabledAt = this.time;
+    if (sabotaged) v.recoveryIncident = `flight-${this.protocol.nextId++}`;
     v.recoveryDeadline = this.time + PROTOCOL_RULES.recoveryDuration;
   }
 
@@ -621,8 +631,10 @@ export class ProtocolArena extends Arena {
         vehicle.stability = Math.max(0, vehicle.stability - 8 * dt);
         vehicle.recoveryDeadline ??= this.time + PROTOCOL_RULES.recoveryDuration;
       }
-      if (vehicle.underControl && validPilot)
+      if (vehicle.underControl && validPilot) {
+        recordContribution(this.privateFor(pilot), "pilotSeconds", null, dt);
         vehicle.progress = Math.min(vehicle.duration, vehicle.progress + dt);
+      }
       if (
         vehicle.altitude <= 0.08 ||
         vehicle.altitude >= 0.98 ||
@@ -875,6 +887,26 @@ export class ProtocolArena extends Arena {
       return;
     }
     if (this.protocol.phase !== "roam") return;
+    if (action.op === "task-begin") {
+      const context = this.context(entity);
+      if (this.protocol.mission.interactiveTasks && context?.target === targetId && INTERACTIVE_TASKS.has(context.kind) && !player.channel)
+        this.beginTask(entity, context);
+      return;
+    }
+    if (action.op === "task-cancel") {
+      if (player.channel?.challenge?.id === targetId) player.channel = null;
+      return;
+    }
+    if (action.op === "task-step") {
+      const channel = player.channel, context = this.context(entity);
+      if (!channel?.challenge || channel.challenge.id !== targetId) return;
+      if (!context || context.kind !== channel.kind || context.target !== channel.target || entity.departed || channel.damageSeq !== entity.damageSeq || distance(entity,channel.origin) > .06 || channel.challenge.deadline < this.time) {
+        player.channel = null;
+        return;
+      }
+      taskStep(channel.challenge, value, this.time);
+      return;
+    }
     if (action.op === "helm") {
       const v = this.protocol.mission.vehicle;
       if (
@@ -907,6 +939,8 @@ export class ProtocolArena extends Arena {
         !this.near(entity, TRANSPORT_MAP.helm, PROTOCOL_RULES.interactRange)
       )
         return;
+      if (v.recoveryIncident) recordContribution(player, "recoveries", v.recoveryIncident);
+      v.recoveryIncident = null;
       v.autopilot = true;
       v.recoveryDeadline = null;
       v.disabledAt = null;
@@ -950,6 +984,7 @@ export class ProtocolArena extends Arena {
       const key = `${targetId}Until`;
       if (this.protocol.sabotage[key] > this.time) return;
       this.protocol.sabotage[key] = this.time + PROTOCOL_RULES.sabotageDuration;
+      recordContribution(player, "sabotage", `${targetId}:${this.time}`);
       player.sabotageReadyAt = this.time + PROTOCOL_RULES.sabotageCooldown;
       player.channel = null;
       this.addLog(
@@ -1011,6 +1046,7 @@ export class ProtocolArena extends Arena {
         armedAt: this.time,
       });
       this.protocol.armedCount = this.protocol.bombs.length;
+      recordContribution(player, "charges", site.id);
       player.channel = null;
       this.observe("plant", entity);
       if (this.protocol.bombs.length === 3) {
@@ -1195,6 +1231,12 @@ export class ProtocolArena extends Arena {
     return null;
   }
 
+  beginTask(entity, context) {
+    const player = this.privateFor(entity);
+    player.channel = { ...context, progress:0, origin:{x:entity.x,y:entity.y}, damageSeq:entity.damageSeq,
+      challenge:createTaskGame(context, this.protocol.mission, `check-${this.protocol.nextId++}`, this.time, () => this.random()) };
+  }
+
   channel(entity, held, moving, dt) {
     const player = this.privateFor(entity);
     let channel = player.channel;
@@ -1210,7 +1252,7 @@ export class ProtocolArena extends Arena {
     }
     const context = this.context(entity);
     if (
-      !held ||
+      (!held && !channel?.challenge) ||
       moving ||
       !context ||
       entity.departed ||
@@ -1218,6 +1260,14 @@ export class ProtocolArena extends Arena {
     ) {
       player.channel = null;
       return;
+    }
+    if (channel?.challenge && (channel.kind !== context.kind || channel.target !== context.target || channel.challenge.deadline < this.time)) {
+      player.channel = null;
+      return;
+    }
+    if (!channel && this.protocol.mission.interactiveTasks && INTERACTIVE_TASKS.has(context.kind)) {
+      this.beginTask(entity,context);
+      channel = player.channel;
     }
     if (!channel || channel.kind !== context.kind || channel.target !== context.target)
       player.channel = channel = {
@@ -1231,7 +1281,7 @@ export class ProtocolArena extends Arena {
       return;
     }
     channel.progress = Math.min(channel.duration, channel.progress + dt);
-    if (channel.progress < channel.duration) return;
+    if (channel.progress < channel.duration || (channel.challenge && channel.challenge.index < channel.challenge.steps.length)) return;
     if (channel.kind === "plant") {
       channel.kind = "wire";
       channel.code = String(100 + Math.floor(this.random() * 900));
@@ -1248,10 +1298,11 @@ export class ProtocolArena extends Arena {
           this.neededSupply(stock.supplyId, entity.id) > 0
         ) {
           stock.stock--;
-          player.cargo = { supplyId: stock.supplyId, name: stock.name, sourceId: stock.id };
+          player.cargo = { id:`supply-${this.protocol.nextId++}`, supplyId: stock.supplyId, name: stock.name, sourceId: stock.id };
           this.emit(entity.id, "Medical supply secured. Carry it to the medevac loading pad.");
         } else if (player.role === INFILTRATORS) {
           player.cargo = { supplyId: stock.supplyId, name: stock.name, fake: true };
+          recordContribution(player, "cover", `collect:${stock.id}`);
           this.emit(entity.id, "Collection cover maintained. The medical manifest is unchanged.");
         }
         this.observe("task", entity);
@@ -1267,6 +1318,7 @@ export class ProtocolArena extends Arena {
         item.loaded < item.required
       ) {
         item.loaded++;
+        recordContribution(player, "supplies", cargo.id || `${cargo.supplyId}:${item.loaded}`);
         player.cargo = null;
         this.addLog("A medical supply was secured in the medevac cargo hold.");
       } else if (player.role === INFILTRATORS) player.cargo = null;
@@ -1277,17 +1329,21 @@ export class ProtocolArena extends Arena {
       const task = this.protocol.mission.flightTasks.find((task) => task.id === channel.target);
       if (task && !task.done && player.role === OPERATORS) {
         task.done = true;
+        recordContribution(player, "checks", `${task.id}:${this.time}`);
         this.observe("task", entity);
         this.addLog(`Aircraft duty completed: ${task.name}.`);
-      } else if (player.role === INFILTRATORS)
+      } else if (player.role === INFILTRATORS) {
+        recordContribution(player, "cover", `flight:${task?.id}`);
         this.emit(entity.id, "Flight-duty cover maintained. Shared preparation is unchanged.");
+      }
     } else if (channel.kind === "disable-autopilot") {
       if (
         player.role === INFILTRATORS &&
         player.sabotageReadyAt <= this.time &&
         this.protocol.mission.vehicle.autopilot
       ) {
-        this.unsafeFlight();
+        this.unsafeFlight(true);
+        recordContribution(player, "sabotage", `autopilot:${this.time}`);
         player.sabotageReadyAt = this.time + PROTOCOL_RULES.sabotageCooldown;
         this.observe("flight-sabotage", entity);
         this.addLog(
@@ -1300,6 +1356,7 @@ export class ProtocolArena extends Arena {
           60,
           this.protocol.mission.vehicle.cargoDamage + 20,
         );
+        recordContribution(player, "sabotage", `cargo:${this.time}`);
         const trauma = this.protocol.mission.flightTasks.find((task) => task.id === "trauma");
         if (trauma) trauma.done = false;
         player.sabotageReadyAt = this.time + PROTOCOL_RULES.sabotageCooldown;
@@ -1307,6 +1364,7 @@ export class ProtocolArena extends Arena {
         this.addLog("Medical cargo damaged. Repair the cargo restraint system before delivery.");
       }
     } else if (channel.kind === "repair-cargo") {
+      if (this.protocol.mission.vehicle.cargoDamage > 0) recordContribution(player, "repairs", `cargo:${this.time}`);
       this.protocol.mission.vehicle.cargoDamage = 0;
       this.addLog("Medical cargo repaired. Supplies are ready for delivery.");
     } else if (channel.kind === "deliver") {
@@ -1326,6 +1384,7 @@ export class ProtocolArena extends Arena {
             rescued++;
           }
         if (rescued) {
+          recordContribution(player, "patients", "delivery", rescued);
           mission.phase = "delivered";
           mission.deliveredAt = this.time;
           this.finish(
@@ -1340,12 +1399,14 @@ export class ProtocolArena extends Arena {
       this.protocol.armedCount = this.protocol.bombs.length;
       this.protocol.detonateAt = null;
       if (bomb) {
+        recordContribution(player, "defuses", bomb.id);
         this.addLog("A patrol disabled a concealed charge. The linked countdown is stopped.");
         this.emit(entity.id, "Charge disabled. The linked countdown is stopped.");
       }
     } else if (channel.kind === "repair") {
       const station = this.protocol.stations.find((s) => s.id === channel.target);
       const kind = /power|generator/.test(station?.kind) ? "power" : "comms";
+      if (this.protocol.sabotage[`${kind}Until`] > this.time) recordContribution(player, "repairs", `${kind}:${this.protocol.sabotage[`${kind}Until`]}`);
       this.protocol.sabotage[`${kind}Until`] = 0;
       this.addLog(`A patrol restored ${kind === "power" ? "base power" : "the radio link"}.`);
       this.emit(entity.id, "System restored. Continue your patrol.");
@@ -1478,6 +1539,12 @@ export class ProtocolArena extends Arena {
       return;
     }
     this.discover(entity);
+    if (player.channel?.challenge) {
+      const game = player.channel.challenge, step = game.steps[game.index];
+      if (step && this.time >= game.nextAt) this.botAction(entity, "task-step", game.id, step.answer);
+      this.channel(entity, false, false, dt);
+      return;
+    }
     if (this.active(entity)) {
       const body = this.protocol.bodies
         .filter((body) => !body.reported && this.near(entity, body, this.sightRange()))
@@ -1862,6 +1929,7 @@ export function protocolView(data, selfId) {
         target: player.channel.target,
         progress: player.channel.progress,
         duration: player.channel.duration,
+        ...(player.channel.challenge ? {challenge:taskGameView(player.channel.challenge)} : {}),
         ...(player.channel.kind === "wire"
           ? { code: player.channel.code, deadline: player.channel.deadline }
           : {}),
@@ -1873,6 +1941,7 @@ export function protocolView(data, selfId) {
         version: mission.version,
         phase: mission.phase,
         title: mission.title,
+        interactiveTasks: mission.interactiveTasks === true,
         flightTasks: (mission.flightTasks || []).map((task) => ({
           id: task.id,
           name: task.name,
@@ -1982,6 +2051,7 @@ export function protocolView(data, selfId) {
             ? { id: player.deathScene.id, kind: player.deathScene.kind, at: player.deathScene.at }
             : null,
           tasks: clone(player.tasks),
+          contributions: contributionsOf(player.contributions),
           channel,
           cargo: player.cargo ? { supplyId: player.cargo.supplyId, name: player.cargo.name } : null,
           ...(isInfiltrator

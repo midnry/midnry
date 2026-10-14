@@ -8,6 +8,14 @@ const sessions = [],
   sockets = [],
   pages = [],
   errors = [];
+async function nativeClick(page, selector) {
+  const element = page.locator(selector);
+  await element.evaluate(e => e.scrollIntoView({block:"center",behavior:"instant"}));
+  await page.waitForFunction(() => !document.pointerLockElement);
+  const rect = await element.boundingBox();
+  assert.ok(rect, `Missing native click target: ${selector}`);
+  await page.mouse.click(rect.x+rect.width/2, rect.y+rect.height/2);
+}
 async function post(body) {
   const r = await fetch(base + "/api/games/outpost", {
     method: "POST",
@@ -137,8 +145,8 @@ try {
       await p.keyboard.press("i");
       await p.waitForFunction(() => !document.pointerLockElement);
     } else await p.getByRole("button", { name: "Open mission information", exact: true }).click();
-    await p.locator(".mf-voice summary").click();
-    await p.locator(".mf-voicejoin").click();
+    await nativeClick(p,".mf-voice summary");
+    await nativeClick(p,".mf-voicejoin");
     console.log("Browser seat resumed; listening without capture");
     assert.equal(await p.evaluate(() => window.captureRequests), 0, "joining only listens");
   }
@@ -148,7 +156,7 @@ try {
     navigator.mediaDevices.getUserMedia = () =>
       Promise.reject(new DOMException("denied", "NotAllowedError"));
   });
-  await pages[1].locator(".mf-voicemic").click();
+  await nativeClick(pages[1],".mf-voicemic");
   await pages[1].waitForFunction(() =>
     document.querySelector(".mf-voicestatus").textContent.includes("not granted"),
   );
@@ -158,7 +166,7 @@ try {
   );
   await pages[1].evaluate(() => (navigator.mediaDevices.getUserMedia = window.originalCapture));
   for (const p of pages) {
-    await p.locator(".mf-voicemic").click();
+    await nativeClick(p,".mf-voicemic");
     await p.waitForFunction(() => !!document.querySelector("midnry-fps").engine.voice.stream);
     assert.equal(
       await p.evaluate(

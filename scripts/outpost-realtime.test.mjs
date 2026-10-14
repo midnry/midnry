@@ -26,8 +26,9 @@ test.after(async () => {
 });
 const token = "a".repeat(48),
   hash = createHash("sha256").update(token).digest("hex");
-function fixture() {
+function fixture(interactiveTasks = false) {
   const a = new ProtocolArena({
+    interactiveTasks,
     humans: Array.from({ length: 8 }, (_, i) => ({ id: "p" + i, name: "Patrol " + i })),
     rolePreference: "operator",
     random: () => 0.4,
@@ -75,6 +76,34 @@ function fixture() {
   };
   return { runner, peer, store, a };
 }
+test("online equipment choices complete on the fixed tick and remain recipient-private", () => {
+  const {runner:r,peer}=fixture(true);
+  try {
+    const s=r.attach(peer(),"p0",token),t=r.attach(peer(),"p1",token),e=r.game.entities[0],stock=r.game.protocol.mission.supplyStock[0];
+    Object.assign(e,{x:stock.x,y:stock.y});
+    let sequence=0;
+    const input=(op,target,value) => {
+      r.input(s,{seq:sequence,input:{protocolAction:{seq:sequence++,op,target,value},contributions:{supplies:13}}});
+      r.room.members[0].inputAt=r.last+50;
+      r.advance(r.last+50);
+    };
+    input("task-begin",stock.id);
+    const game=r.game.privateFor(e).channel.challenge;
+    assert.equal(r.response("p0").arena.protocol.self.channel.challenge.id,game.id);
+    assert.equal(JSON.stringify(r.response("p1")).includes(game.id),false);
+    r.input(t,{seq:1,input:{protocolAction:{seq:1,op:"task-step",target:game.id,value:game.steps[0].answer}}});
+    r.advance(r.last+50);assert.equal(game.index,0);
+    for(const step of game.steps){
+      while(r.game.time<game.nextAt+.05)r.advance(r.last+50);
+      input("task-step",game.id,step.answer);
+    }
+    while(r.game.privateFor(e).channel)r.advance(r.last+50);
+    assert.ok(r.response("p0").arena.protocol.self.cargo);
+    assert.equal(r.response("p0").arena.protocol.self.contributions.supplies,0);
+    assert.equal(r.response("p1").arena.protocol.self.cargo,null);
+    assert.equal(r.response("p0").arena.protocol.players,undefined);
+  } finally {r.stop();}
+});
 test("one fixed tick advances all players once; acceptance does not acknowledge unapplied movement", () => {
   const { runner: r, peer } = fixture(),
     s = r.attach(peer(), "p0", token),

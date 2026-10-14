@@ -2316,6 +2316,7 @@
       import { ObjectiveNavigation } from "./outpost-navigation.js";
       import { RoomTransport } from "./outpost-realtime.js";
       import { ProximityVoice } from "./outpost-voice.js";
+      import { FrameDiagnostics } from "./outpost-frame-diagnostics.js";
       import { Academy, FrameBudget, PRESETS } from "./outpost-academy.js";
       import {
         newCompatibilityReport,
@@ -2670,7 +2671,7 @@
               );
               this.refreshCompatibility();
               const { MilitaryRenderer } = await import(
-                `./outpost-military.js?v=protocol-realtime-20261014&retry=${attempt - 1}`
+                `./outpost-military.js?v=protocol-mission-20261014&retry=${attempt - 1}`
               );
               if (this.abort.signal.aborted) return;
               const renderer = new MilitaryRenderer(
@@ -2786,6 +2787,7 @@
               this.weapon = "carbine";
             } else if (MAPS[this.mapId]?.protocolOnly) this.mapId = "outpost";
             this.arena = createArena({
+              interactiveTasks: true,
               rolePreference: this.rolePreference,
               mode: this.mode,
               mapId: this.mapId,
@@ -3449,6 +3451,7 @@
                 (this.mode !== "protocol" && this.player.team !== (self?.team ?? 0))
               )
                 this.arena = createArena({
+              interactiveTasks: true,
                   mode: this.mode,
                   difficulty: this.difficulty,
                   mapId: this.mapId,
@@ -4218,15 +4221,18 @@
             const quietProtocol =
               this.mode === "protocol" &&
               (!this.$(".mf-modal").hidden || this.protocolUI?.hasDialogOpen());
-            if (!quietProtocol || now - (this.lastSceneRenderAt || 0) >= 100) {
+            const quietInterval = this.protocolUI?.taskPanel?.dialog.open ? 1000 / 30 : 100;
+            if (!quietProtocol || now - (this.lastSceneRenderAt || 0) >= quietInterval) {
               this.render();
               this.lastSceneRenderAt = now;
             }
+            const activeScene = (this.running || !!this.online) && !quietProtocol && !document.hidden;
+            (this.frameDiagnostics ||= new FrameDiagnostics()).sample(now,performance.now()-start,this.military?.metrics?.gpuMs,activeScene);
             if (
               this.budget.sample(
                 performance.now() - start,
                 now,
-                this.running || !!this.online,
+                activeScene,
                 this.academy.options.adaptive,
                 this.military?.metrics?.gpuMs,
               )
@@ -4235,8 +4241,12 @@
             if (now - (this.lastPerformanceLabel || 0) > 500) {
               this.lastPerformanceLabel = now;
               const label = this.$(".mf-perfstatus");
-              if (label)
-                label.textContent = `120 FPS target · ${this.budget.fps || "—"} FPS measured · ${this.budget.work.toFixed(1)} ms CPU${this.budget.gpu === null || this.budget.gpu === undefined ? "" : ` · ${this.budget.gpu.toFixed(1)} ms GPU`} · 30 FPS animation${this.military?.metrics ? ` · ${this.military.metrics.drawCalls} draws · ${this.military.metrics.triangles.toLocaleString()} triangles · ${this.military.metrics.visible} visible / ${this.military.metrics.culled} hidden soldiers` : ""}`;
+              if (label) {
+                const measured = this.frameDiagnostics.report;
+                label.textContent = measured
+                  ? `120 FPS target · Last gameplay: ${measured.fps} FPS · 95% of frames within ${measured.p95.toFixed(1)} ms · ${measured.cpu.toFixed(1)} ms CPU${measured.gpu === null ? "" : ` · ${measured.gpu.toFixed(1)} ms GPU`} · 30 FPS animation`
+                  : "120 FPS target · Play briefly to measure this device · 30 FPS animation";
+              }
             }
             this.frame = requestAnimationFrame(this.loop);
           }
