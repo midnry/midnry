@@ -19,7 +19,7 @@ function bad(effects: Effect[] | undefined): number {
     if (e.stat === "stress" && (e.add ?? 0) > 3) score += 1;
     if (e.npc && (e.rel ?? 0) < 0) score += 1;
     if (e.flag && BAD_FLAGS.test(e.flag) && e.set !== false) score += 2;
-    if (e.offense || e.efcc) score += 2;
+    if (e.offense || e.efcc || (e.efccCase ?? 0) > 0) score += 2;
   }
   return score;
 }

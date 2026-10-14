@@ -3117,5 +3117,992 @@
         ]
       }
     ]
+  },
+  {
+    "id": "cap2_police",
+    "weight": 0,
+    "title": "The Capital · Act Two",
+    "text": "Two policemen are waiting at your door at 7am. \"You are invited to Force CID for questioning. A serving Senator says you cyberstalked him under the Cybercrimes Act.\" One of them is already holding your arm. \"Invited\" is doing a lot of work in that sentence.",
+    "choices": [
+      {
+        "text": "Go, with a lawyer (₦150,000)",
+        "if": {
+          "stat": "money",
+          "gte": 150000
+        },
+        "lockedText": "Needs ₦150,000",
+        "effects": [
+          {
+            "stat": "money",
+            "add": -150000
+          },
+          {
+            "stat": "stress",
+            "add": 3
+          },
+          {
+            "stat": "reputation",
+            "add": 2
+          },
+          {
+            "npc": "halima",
+            "rel": 4
+          },
+          {
+            "story": {
+              "event": "cap2_road",
+              "days": 2
+            }
+          }
+        ],
+        "result": "Barrister Okon talks for nine minutes. The officer makes one phone call, goes pale, and lets you go with an apology nobody writes down."
+      },
+      {
+        "text": "Call Halima on the way",
+        "effects": [
+          {
+            "npc": "halima",
+            "rel": 6,
+            "remember": {
+              "what": "You called them when the police came for you",
+              "tone": "story",
+              "weight": 2,
+              "say": "\"They came for you because of my story. I won't forget that.\""
+            }
+          },
+          {
+            "stat": "reputation",
+            "add": 4
+          },
+          {
+            "stat": "heat",
+            "add": 5
+          },
+          {
+            "chance": 0.35,
+            "then": [
+              {
+                "stat": "health",
+                "add": -8
+              },
+              {
+                "stat": "stress",
+                "add": 10
+              },
+              {
+                "toast": "They keep you in a cell overnight before the hashtag forces them to let you go."
+              }
+            ],
+            "else": [
+              {
+                "toast": "By the time you reach the station, #FreeTheGuzapeSource is trending. They let you go in an hour."
+              }
+            ]
+          },
+          {
+            "news": {
+              "tag": "Politics",
+              "headline": "Police detain source of Guzape Hills story",
+              "body": "A young Abuja resident linked to the Guzape Hills investigation was questioned under the Cybercrimes Act on Monday. Press freedom groups called it 'intimidation'.",
+              "icon": "🚨",
+              "you": true
+            }
+          },
+          {
+            "story": {
+              "event": "cap2_road",
+              "days": 2
+            }
+          }
+        ]
+      },
+      {
+        "text": "Refuse to go",
+        "effects": [
+          {
+            "stat": "stress",
+            "add": 4
+          },
+          {
+            "chance": 0.5,
+            "then": [
+              {
+                "stat": "heat",
+                "add": 15
+              },
+              {
+                "stat": "money",
+                "add": -50000
+              },
+              {
+                "stat": "stress",
+                "add": 8
+              },
+              {
+                "toast": "They come back at night with a van. ₦50,000 'bail' before they let you sleep in your own bed."
+              }
+            ],
+            "else": [
+              {
+                "toast": "They argue with your landlord for an hour, then leave. They'll be back. Or they won't. That's the point."
+              }
+            ]
+          },
+          {
+            "story": {
+              "event": "cap2_road",
+              "days": 2
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cap2_road",
+    "weight": 0,
+    "title": "Halima Bello",
+    "text": "\"I heard. I'm sorry. And I'm angry, which is better. They're scared, which means there's more. Ever heard of the Kubwa–Bwari road? ₦4.2 billion paid, not one kilometre built. Same Senator. Meet me at Jabi Lake Mall?\"",
+    "choices": [
+      {
+        "text": "\"I'm coming\"",
+        "effects": [
+          {
+            "flag": "cap2_meet",
+            "set": true
+          },
+          {
+            "npc": "halima",
+            "rel": 3
+          }
+        ],
+        "result": "\"Same place. The suya man has started saving me a seat.\""
+      },
+      {
+        "text": "\"I need to lie low for a bit\"",
+        "effects": [
+          {
+            "stat": "stress",
+            "add": -4
+          },
+          {
+            "story": {
+              "event": "cap2_road_again",
+              "days": 4
+            }
+          }
+        ],
+        "result": "\"Fair. I'll call again. I always do.\""
+      }
+    ]
+  },
+  {
+    "id": "cap2_road_again",
+    "weight": 0,
+    "title": "Halima Bello",
+    "text": "\"Rested? Good. Someone found the Kubwa road's payment vouchers. Real ones. I need you.\"",
+    "choices": [
+      {
+        "text": "\"Okay. Jabi, this afternoon\"",
+        "effects": [
+          {
+            "flag": "cap2_meet",
+            "set": true
+          },
+          {
+            "npc": "halima",
+            "rel": 2
+          }
+        ]
+      },
+      {
+        "text": "\"I'm out of this for good\"",
+        "effects": [
+          {
+            "npc": "halima",
+            "rel": -10,
+            "remember": {
+              "what": "You walked away from the Kubwa road story",
+              "tone": "hurt",
+              "weight": 2
+            }
+          },
+          {
+            "flag": "cap2_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act Two: The Kubwa Road."
+          }
+        ],
+        "result": "\"I understand. I don't like it, but I understand.\" Somewhere in Kubwa, the potholes get deeper. — End of Act Two."
+      }
+    ]
+  },
+  {
+    "id": "cap2_tip",
+    "weight": 0,
+    "title": "The Capital · Act Two",
+    "text": "An unknown number: \"It's Halima Bello, from Abuja Daily. Before you hang up: the same Senator behind Guzape Hills was paid ₦4.2 billion for the Kubwa–Bwari road. There is no road. I need someone the Senator's people don't know. Jabi Lake Mall?\"",
+    "choices": [
+      {
+        "text": "\"Okay, I'll come\"",
+        "effects": [
+          {
+            "flag": "cap2_meet",
+            "set": true
+          },
+          {
+            "npc": "halima",
+            "rel": 4
+          }
+        ],
+        "result": "\"Afternoons, by the suya man. I'll be the one with three phones.\""
+      },
+      {
+        "text": "\"Find someone else\"",
+        "effects": [
+          {
+            "npc": "halima",
+            "rel": -3
+          },
+          {
+            "flag": "cap2_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act Two: The Kubwa Road."
+          }
+        ],
+        "result": "She does. You read her story months later, with someone else's name in the thank-yous. — End of Act Two."
+      }
+    ]
+  },
+  {
+    "id": "cap2_bolaji",
+    "weight": 0,
+    "title": "Bolaji",
+    "text": "Bolaji, at 1am: \"Can't sleep. Dad's guys were in the study shouting about a road in Kubwa. 4.2 billion. I googled it. There's no road there, just a sign. Am I crazy? You know that journalist, right? Halima?\"",
+    "choices": [
+      {
+        "text": "\"You're not crazy. I'll talk to her\"",
+        "effects": [
+          {
+            "flag": "cap2_meet",
+            "set": true
+          },
+          {
+            "npc": "bolaji",
+            "rel": 5,
+            "remember": {
+              "what": "You took them seriously about their father",
+              "tone": "warm",
+              "weight": 2,
+              "say": "\"You never treat me like I'm stupid. Do you know how rare that is?\""
+            }
+          },
+          {
+            "npc": "halima",
+            "rel": 2
+          }
+        ],
+        "result": "\"Don't tell her I said anything. Please.\" You promise. Halima is at Jabi Lake Mall in the afternoons."
+      },
+      {
+        "text": "\"Leave it, Bolaji. It's your dad\"",
+        "effects": [
+          {
+            "npc": "bolaji",
+            "rel": -4
+          },
+          {
+            "flag": "cap2_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act Two: The Kubwa Road."
+          }
+        ],
+        "result": "\"Yeah. Yeah, you're right.\" He goes offline. The road in Kubwa stays a sign. — End of Act Two."
+      }
+    ]
+  },
+  {
+    "id": "cap2_offer",
+    "weight": 0,
+    "title": "A visitor",
+    "text": "A white Prado blocks your street. Alhaji Sani Mustapha, the Senator's fixer, doesn't get out. He winds down the window. \"Five million naira. Today. You forget about Kubwa, the engineer forgets about Kubwa, everybody is happy.\" He smiles. \"The alternative is that people stop being happy.\"",
+    "choices": [
+      {
+        "text": "Take the ₦5,000,000",
+        "effects": [
+          {
+            "flag": "cap2_sold",
+            "set": true
+          },
+          {
+            "stat": "money",
+            "add": 5000000,
+            "cash": true
+          },
+          {
+            "stat": "reputation",
+            "add": -6
+          },
+          {
+            "stat": "stress",
+            "add": 5
+          },
+          {
+            "npc": "halima",
+            "rel": -30,
+            "remember": {
+              "what": "You took the Senator's money over the Kubwa road",
+              "tone": "hurt",
+              "weight": 3,
+              "say": "\"Five million. That's what it cost. I hope you count it every night.\""
+            }
+          },
+          {
+            "npc": "okolo",
+            "rel": -20
+          },
+          {
+            "npc": "danjuma",
+            "rel": 20
+          },
+          {
+            "news": {
+              "tag": "Business",
+              "headline": "Kubwa–Bwari road 'on schedule', says contractor",
+              "body": "Crestline Works Ltd says the delayed Kubwa–Bwari road will be completed 'very soon'. The contractor blamed the rainy season, the dry season and 'saboteurs'.",
+              "icon": "🚧"
+            }
+          },
+          {
+            "flag": "cap2_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act Two: The Kubwa Road."
+          }
+        ],
+        "result": "The bag is heavier than you expected. Halima's calls stop after the third one. — End of Act Two."
+      },
+      {
+        "text": "Record him and send it to Halima",
+        "effects": [
+          {
+            "flag": "cap2_tape",
+            "set": true
+          },
+          {
+            "stat": "heat",
+            "add": 8
+          },
+          {
+            "stat": "stress",
+            "add": 4
+          },
+          {
+            "npc": "halima",
+            "rel": 6
+          },
+          {
+            "chance": 0.3,
+            "then": [
+              {
+                "stat": "money",
+                "add": -80000
+              },
+              {
+                "stat": "stress",
+                "add": 8
+              },
+              {
+                "toast": "Somebody smashes your car window that night. Nothing is taken. That's the message."
+              }
+            ]
+          },
+          {
+            "story": {
+              "event": "cap2_story",
+              "days": 3
+            }
+          }
+        ],
+        "result": "\"Enjoy your principles,\" he says, and the window goes up. Your phone was recording the whole time."
+      },
+      {
+        "text": "\"No, thank you, Alhaji\"",
+        "effects": [
+          {
+            "stat": "heat",
+            "add": 4
+          },
+          {
+            "stat": "stress",
+            "add": 5
+          },
+          {
+            "stat": "reputation",
+            "add": 2
+          },
+          {
+            "story": {
+              "event": "cap2_story",
+              "days": 3
+            }
+          }
+        ],
+        "result": "He laughs like you've told a joke he's heard before. The Prado drives off slowly."
+      }
+    ]
+  },
+  {
+    "id": "cap2_story",
+    "weight": 0,
+    "title": "Abuja Daily",
+    "text": "Halima, at midnight: \"It's ready. Vouchers, the engineer's statement, satellite photos of a road that doesn't exist. One question before we publish: do you want your name on it?\"",
+    "choices": [
+      {
+        "text": "Publish with the bribe recording, under your name",
+        "if": {
+          "flag": "cap2_tape"
+        },
+        "lockedText": "You didn't record the fixer's offer",
+        "effects": [
+          {
+            "flag": "cap2_exposed",
+            "set": true
+          },
+          {
+            "stat": "reputation",
+            "add": 20
+          },
+          {
+            "stat": "network",
+            "add": 6
+          },
+          {
+            "stat": "heat",
+            "add": 12
+          },
+          {
+            "stat": "stress",
+            "add": 4
+          },
+          {
+            "npc": "halima",
+            "rel": 20,
+            "remember": {
+              "what": "You put your name on the Kubwa road story",
+              "tone": "warm",
+              "weight": 3,
+              "say": "\"Two front pages. They're going to teach our stories in journalism school.\""
+            }
+          },
+          {
+            "npc": "okolo",
+            "rel": 15
+          },
+          {
+            "npc": "danjuma",
+            "rel": -50,
+            "remember": {
+              "what": "Your recording put them in front of the EFCC",
+              "tone": "hurt",
+              "weight": 3,
+              "say": "\"You've made a powerful enemy. Enjoy the applause while it lasts.\""
+            }
+          },
+          {
+            "npc": "bolaji",
+            "rel": -5,
+            "remember": {
+              "what": "Your story sent their father to the EFCC",
+              "tone": "story",
+              "weight": 2,
+              "say": "\"Dad's lawyers live in our house now. I'm not angry. I'm just… tired.\""
+            }
+          },
+          {
+            "news": {
+              "tag": "Politics",
+              "headline": "Kubwa road: ₦4.2bn paid, zero kilometres built, and a ₦5m bribe on tape",
+              "body": "An Abuja Daily investigation by Halima Bello and {name} shows Crestline Works Ltd was paid in full for a road that was never built. A recording captures the Senator's associate offering ₦5 million to kill the story. The EFCC has invited Senator Danjuma-Adeyemi for questioning.",
+              "icon": "🗞️",
+              "you": true
+            }
+          },
+          {
+            "celebrate": {
+              "id": "cap2_front",
+              "icon": "🗞️",
+              "title": "Front page",
+              "text": "The Kubwa road story leads every paper in Abuja. The EFCC has invited the Senator. Your name is on the byline.",
+              "tone": "gold"
+            }
+          },
+          {
+            "flag": "cap2_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act Two: The Kubwa Road."
+          }
+        ],
+        "result": "By morning the recording has two million plays. By noon, the EFCC has sent the Senator an invitation of his own. — End of Act Two."
+      },
+      {
+        "text": "Put your name on it",
+        "effects": [
+          {
+            "flag": "cap2_exposed",
+            "set": true
+          },
+          {
+            "stat": "reputation",
+            "add": 14
+          },
+          {
+            "stat": "network",
+            "add": 4
+          },
+          {
+            "stat": "heat",
+            "add": 10
+          },
+          {
+            "npc": "halima",
+            "rel": 15,
+            "remember": {
+              "what": "You put your name on the Kubwa road story",
+              "tone": "warm",
+              "weight": 3,
+              "say": "\"Two front pages. They're going to teach our stories in journalism school.\""
+            }
+          },
+          {
+            "npc": "okolo",
+            "rel": 10
+          },
+          {
+            "npc": "danjuma",
+            "rel": -35,
+            "remember": {
+              "what": "You exposed the Kubwa road",
+              "tone": "hurt",
+              "weight": 3
+            }
+          },
+          {
+            "news": {
+              "tag": "Politics",
+              "headline": "Kubwa road: ₦4.2bn paid, zero kilometres built",
+              "body": "An Abuja Daily investigation by Halima Bello and {name} shows Crestline Works Ltd, linked to Senator Danjuma-Adeyemi, was paid in full for the Kubwa–Bwari road. Residents say only the signboard was ever delivered.",
+              "icon": "🗞️",
+              "you": true
+            }
+          },
+          {
+            "celebrate": {
+              "id": "cap2_front",
+              "icon": "🗞️",
+              "title": "Front page",
+              "text": "The Kubwa road story leads every paper in Abuja, with your name on the byline.",
+              "tone": "gold"
+            }
+          },
+          {
+            "flag": "cap2_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act Two: The Kubwa Road."
+          }
+        ],
+        "result": "Kubwa residents plant banana trees in the potholes and tag you in the photos. — End of Act Two."
+      },
+      {
+        "text": "Stay anonymous",
+        "effects": [
+          {
+            "flag": "cap2_exposed",
+            "set": true
+          },
+          {
+            "stat": "reputation",
+            "add": 5
+          },
+          {
+            "stat": "stress",
+            "add": -3
+          },
+          {
+            "npc": "halima",
+            "rel": 8
+          },
+          {
+            "npc": "okolo",
+            "rel": 5
+          },
+          {
+            "news": {
+              "tag": "Politics",
+              "headline": "Kubwa road: ₦4.2bn paid, zero kilometres built",
+              "body": "An Abuja Daily investigation shows Crestline Works Ltd, linked to Senator Danjuma-Adeyemi, was paid in full for the Kubwa–Bwari road. 'A source close to the project' provided the vouchers.",
+              "icon": "🗞️"
+            }
+          },
+          {
+            "celebrate": {
+              "id": "cap2_source",
+              "icon": "🕶️",
+              "title": "A source close to the project",
+              "text": "The Kubwa road story is everywhere, and nobody knows it was you. Halima does. That's enough.",
+              "tone": "gold"
+            }
+          },
+          {
+            "flag": "cap2_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act Two: The Kubwa Road."
+          }
+        ],
+        "result": "You read the story on a danfo, next to a man shouting at his phone about it. — End of Act Two."
+      }
+    ]
+  },
+  {
+    "id": "cap2_call",
+    "weight": 0,
+    "title": "The Capital · Act Two",
+    "text": "A private number: \"This is Alhaji Sani Mustapha. I handle things for the Senator. He remembers his friends, and he has a bigger job for one of them. A road in Kubwa. Come to the Federal Ministry of Contracts. Wear a tie.\"",
+    "choices": [
+      {
+        "text": "\"I'll be there\"",
+        "effects": [
+          {
+            "flag": "cap2_fixer",
+            "set": true
+          },
+          {
+            "npc": "danjuma",
+            "rel": 3
+          }
+        ],
+        "result": "He's at the Federal Ministry of Contracts in the Central Business District. You find a tie."
+      },
+      {
+        "text": "\"I've done enough for the Senator\"",
+        "effects": [
+          {
+            "npc": "danjuma",
+            "rel": -15,
+            "remember": {
+              "what": "You turned down their bigger job",
+              "tone": "hurt",
+              "weight": 2,
+              "say": "\"Loyalty is a seed, young person. You've stopped watering yours.\""
+            }
+          },
+          {
+            "flag": "cap2_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act Two: The Kubwa Road."
+          }
+        ],
+        "result": "\"Hm.\" The line goes dead. The weekly envelopes still come. For now. — End of Act Two."
+      }
+    ]
+  },
+  {
+    "id": "cap2_favour",
+    "weight": 0,
+    "title": "A favour",
+    "text": "Mustapha again: \"Party primaries are on Saturday. Some delegates in Asokoro need… encouragement. There's a bag in the boot of a car outside your house. Take it to Hon. Dauda at the Asokoro Owambe Hall. Don't open it.\" You open it. Dollars. Bricks of them.",
+    "choices": [
+      {
+        "text": "Deliver the bag",
+        "effects": [
+          {
+            "flag": "cap2_bag",
+            "set": true
+          },
+          {
+            "stat": "stress",
+            "add": 4
+          }
+        ],
+        "result": "Hon. Dauda is waiting at the Asokoro Owambe Hall. The bag sits in your lap like a sleeping dog."
+      },
+      {
+        "text": "\"I'm sick, Alhaji. Malaria\"",
+        "effects": [
+          {
+            "npc": "danjuma",
+            "rel": -10
+          },
+          {
+            "chance": 0.4,
+            "then": [
+              {
+                "stat": "heat",
+                "add": 6
+              },
+              {
+                "toast": "\"Malaria,\" Mustapha repeats. He doesn't believe you, and he wants you to know it."
+              }
+            ]
+          },
+          {
+            "story": {
+              "event": "cap2_turn",
+              "days": 2
+            }
+          }
+        ],
+        "result": "Somebody else drives the bag to Asokoro. You hear the Senator won his primary by a landslide anyway."
+      }
+    ]
+  },
+  {
+    "id": "cap2_turn",
+    "weight": 0,
+    "title": "Halima Bello",
+    "text": "\"I know you won't want to hear from me. The EFCC has opened a file on Crestline Works Ltd. Your name is on the incorporation papers as a director. When this falls, the Senator won't fall. You will. Unless you talk first. I can get you to an investigator who'll listen. Your choice, today.\"",
+    "choices": [
+      {
+        "text": "Hand over the copies you kept",
+        "if": {
+          "flag": "cap2_copies"
+        },
+        "lockedText": "You didn't keep copies of anything",
+        "effects": [
+          {
+            "flag": "cap2_turned",
+            "set": true
+          },
+          {
+            "efccCase": -60
+          },
+          {
+            "stat": "reputation",
+            "add": 12
+          },
+          {
+            "stat": "heat",
+            "add": 10
+          },
+          {
+            "stat": "stress",
+            "add": 6
+          },
+          {
+            "stat": "money",
+            "add": 3000000,
+            "cash": true
+          },
+          {
+            "npc": "halima",
+            "rel": 25,
+            "remember": {
+              "what": "You turned whistleblower on the Kubwa road",
+              "tone": "warm",
+              "weight": 3,
+              "say": "\"Took you long enough. But you came. That's what counts.\""
+            }
+          },
+          {
+            "npc": "danjuma",
+            "rel": -60,
+            "remember": {
+              "what": "You gave the EFCC everything on Crestline Works",
+              "tone": "hurt",
+              "weight": 3,
+              "say": "\"Judas also kept receipts.\""
+            }
+          },
+          {
+            "news": {
+              "tag": "Politics",
+              "headline": "Whistleblower brings down Kubwa road contract",
+              "body": "Documents handed to the EFCC by a former director of Crestline Works Ltd show ₦4.2 billion moved through shell accounts linked to Senator Danjuma-Adeyemi. Under the federal whistleblower policy, the source is entitled to a share of recovered funds.",
+              "icon": "🗞️",
+              "you": true
+            }
+          },
+          {
+            "celebrate": {
+              "id": "cap2_whistle",
+              "icon": "📁",
+              "title": "Whistleblower",
+              "text": "You handed the EFCC the Crestline papers. They recovered the money, and the whistleblower programme paid you ₦3m of it. Clean money, for once.",
+              "tone": "gold"
+            }
+          },
+          {
+            "flag": "cap2_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act Two: The Kubwa Road."
+          }
+        ],
+        "result": "The investigator reads for two hours without looking up. Six weeks later, a whistleblower reward lands in your account. — End of Act Two."
+      },
+      {
+        "text": "Tell the EFCC what you know",
+        "effects": [
+          {
+            "flag": "cap2_turned",
+            "set": true
+          },
+          {
+            "efccCase": -30
+          },
+          {
+            "stat": "reputation",
+            "add": 6
+          },
+          {
+            "stat": "heat",
+            "add": 8
+          },
+          {
+            "stat": "stress",
+            "add": 8
+          },
+          {
+            "npc": "halima",
+            "rel": 15
+          },
+          {
+            "npc": "danjuma",
+            "rel": -40,
+            "remember": {
+              "what": "You talked to the EFCC about Crestline Works",
+              "tone": "hurt",
+              "weight": 3,
+              "say": "\"I made you. Remember that, when you can't sleep.\""
+            }
+          },
+          {
+            "chance": 0.4,
+            "then": [
+              {
+                "efccCase": 25
+              },
+              {
+                "toast": "Without documents, the investigator thinks you're protecting yourself. Your file stays open."
+              }
+            ],
+            "else": [
+              {
+                "toast": "Your statement matches the bank records. The investigator writes \"cooperative\" on your file."
+              }
+            ]
+          },
+          {
+            "news": {
+              "tag": "Politics",
+              "headline": "EFCC probes Crestline Works over Kubwa road",
+              "body": "The EFCC has frozen accounts linked to the ₦4.2 billion Kubwa–Bwari road contract. A former director is said to be cooperating.",
+              "icon": "🏛️"
+            }
+          },
+          {
+            "flag": "cap2_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act Two: The Kubwa Road."
+          }
+        ],
+        "result": "Four hours in a grey room. You tell it all. Halima waits in the car park with two bottles of Malta. — End of Act Two."
+      },
+      {
+        "text": "Stay loyal to the Senator",
+        "effects": [
+          {
+            "flag": "cap2_loyal",
+            "set": true
+          },
+          {
+            "stat": "money",
+            "add": 3000000,
+            "cash": true
+          },
+          {
+            "stat": "reputation",
+            "add": -4
+          },
+          {
+            "npc": "halima",
+            "rel": -20
+          },
+          {
+            "npc": "danjuma",
+            "rel": 20,
+            "remember": {
+              "what": "You stayed loyal when the EFCC came",
+              "tone": "story",
+              "weight": 3,
+              "say": "\"Loyalty! In this city, it is rarer than water in Kubwa.\""
+            }
+          },
+          {
+            "chance": 0.45,
+            "then": [
+              {
+                "efccCase": 50
+              },
+              {
+                "stat": "heat",
+                "add": 15
+              },
+              {
+                "toast": "Two weeks later, a bank teller in Wuse gets talkative. The EFCC adds your name to the Crestline file."
+              }
+            ],
+            "else": [
+              {
+                "toast": "The file goes quiet. The Senator's lawyers are very good. For now."
+              }
+            ]
+          },
+          {
+            "news": {
+              "tag": "Politics",
+              "headline": "Senator Danjuma-Adeyemi wins party primary",
+              "body": "Senator Danjuma-Adeyemi won his party's primary by a landslide on Saturday. Delegates described the process as 'very encouraging'.",
+              "icon": "🗳️"
+            }
+          },
+          {
+            "celebrate": {
+              "id": "cap2_inner",
+              "icon": "🥂",
+              "title": "The inner circle",
+              "text": "The Senator won his primary, and he says your name in rooms you've never been in. ₦3m 'for your loyalty'. Keep one eye on the EFCC.",
+              "tone": "gold"
+            }
+          },
+          {
+            "flag": "cap2_done",
+            "set": true
+          },
+          {
+            "log": "The Capital, Act Two: The Kubwa Road."
+          }
+        ],
+        "result": "\"You've made the right choice,\" says Mustapha. Your phone buzzes with a ₦3,000,000 alert. — End of Act Two."
+      }
+    ]
   }
 ]

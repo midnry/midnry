@@ -16,5 +16,8 @@
   {"id": "nepo_aminu", "name": "Aminu Waziri", "role": "Nepo friend", "class": "nepo", "color": "#7c3aed", "bio": "Grandson of a (fictional) retired Supreme Court justice. Quotes case law at parties."},
   {"id": "nepo_chioma", "name": "Chioma Eze-Hart", "role": "Nepo friend", "class": "nepo", "color": "#db2777", "bio": "Daughter of a (fictional) retired bank chairman. Knows every HR head in the CBD by first name."},
   {"id": "nepo_ibrahim", "name": "Ibrahim Danladi", "role": "Nepo friend", "class": "nepo", "color": "#16a34a", "bio": "Nephew of a (fictional) Customs Comptroller. Everybody owes him a favour, including people who don't know it yet."},
-  {"id": "nepo_funmi", "name": "Funmi Ojo", "role": "Nepo friend", "class": "nepo", "color": "#f59e0b", "bio": "Daughter of a (fictional) fintech founder. Builds apps for fun and hires friends who can keep up."}
+  {"id": "nepo_funmi", "name": "Funmi Ojo", "role": "Nepo friend", "class": "nepo", "color": "#f59e0b", "bio": "Daughter of a (fictional) fintech founder. Builds apps for fun and hires friends who can keep up."},
+  {"id": "okolo", "name": "Engr. Ifeanyi Okolo", "role": "Former site engineer, Crestline Works", "class": "ordinary", "color": "#f97316", "bio": "Built roads for twenty years until one turned out to be imaginary. Now sells cement in Kubwa and checks over his shoulder."},
+  {"id": "mustapha", "name": "Alhaji Sani Mustapha", "role": "The Senator's fixer", "class": "nepo", "color": "#7c2d12", "bio": "Has no office, no title and no official job. Every contract in the CBD passes through his white Prado anyway."},
+  {"id": "dauda", "name": "Hon. Dauda", "role": "Party chieftain", "class": "nepo", "color": "#065f46", "bio": "(Fictional) party chieftain who knows every delegate's name, wife's name and price."}
 ]
