@@ -1,3 +1,4 @@
+import { modifierChoice } from "../../../public/games/outpost-variety.js";
 import { randomBytes, createHash, timingSafeEqual } from "node:crypto";
 import { getSql } from "@/lib/db";
 import {
@@ -36,6 +37,8 @@ export type Room = {
   difficulty?: Difficulty;
   /** Announce a removed player's role after Last Stand (host setting, default on). */
   reveal?: boolean;
+  /** A locked match modifier id, or "random" (host setting). */
+  modifier?: string;
   mode: "protocol" | "signal" | "duo";
   mapId: string;
   phase: "lobby" | "playing" | "ended";
@@ -118,6 +121,7 @@ export function publicRoom(code: string, room: Room, selfId: string) {
     serverAt: room.updatedAt,
     difficulty: room.difficulty || "normal",
     reveal: room.reveal !== false,
+    modifier: modifierChoice(room.modifier),
     mode: room.mode,
     // The aircraft is reached by the authoritative mission transition, never
     // selected from a lobby. Keep the room envelope in sync with that map.
@@ -372,6 +376,11 @@ export function applyRoomAction(
       if (typeof body.reveal !== "boolean") throw new OutpostError("Invalid reveal setting.");
       room.reveal = body.reveal;
     }
+    if (body.modifier !== undefined) {
+      if (typeof body.modifier !== "string" || modifierChoice(body.modifier) !== body.modifier)
+        throw new OutpostError("Invalid match modifier.");
+      room.modifier = body.modifier;
+    }
   }
   if (body.op === "loadout") {
     if (room.phase !== "lobby") throw new OutpostError("Choose your loadout before starting.", 409);
@@ -425,6 +434,8 @@ export function applyRoomAction(
         mapId: room.mapId || "outpost",
         difficulty: room.difficulty || "normal",
         revealRoles: room.reveal !== false,
+        variety: true,
+        modifier: modifierChoice(room.modifier),
         countdown: 2,
         humans: room.members.map(({ id, team, name, weapon, outfit }) => ({
           id,
@@ -450,6 +461,8 @@ export function applyRoomAction(
         mapId: room.mapId || "outpost",
         difficulty: room.difficulty || "normal",
         revealRoles: room.reveal !== false,
+        variety: true,
+        modifier: modifierChoice(room.modifier),
         humans: room.members.map(({ id, team, name, weapon, outfit }) => ({
           id,
           team,

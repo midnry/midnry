@@ -1,3 +1,4 @@
+import { MODIFIERS, modifierChoice } from "./outpost-variety.js";
 import { FINISHES, profileOf, awardMatch, levelOf } from "./outpost-progression.js";
 import { weaponOf, OUTFITS } from "./outpost-sim.js";
 import { spatialSound } from "./outpost-spatial-audio.js";
@@ -125,7 +126,7 @@ export class Retention {
     );
     g.$(".mf-network").insertAdjacentHTML(
       "beforebegin",
-      `<details class="mf-retention"><summary>PLAYER EXPERIENCE / <span class="mf-level"></span></summary><label>Bot difficulty<select class="mf-difficulty" aria-label="Bot difficulty"><option value="easy">Easy · relaxed reactions</option><option value="normal" selected>Normal · standard combat</option><option value="hard">Hard · faster, more alert</option></select></label><p>Health and weapon damage stay the same. Online, the host chooses before starting.</p><label><input class="mf-reveal" type="checkbox" checked> Reveal roles when someone is voted out</label><label>Sound volume<input class="mf-volume" aria-label="Sound volume" type="range" min="0" max="100" value="35"></label><label><input class="mf-mute" type="checkbox"> Mute sound</label><button class="mf-lockeropen">RANGER LOCKER →</button></details>`,
+      `<details class="mf-retention"><summary>PLAYER EXPERIENCE / <span class="mf-level"></span></summary><label>Bot difficulty<select class="mf-difficulty" aria-label="Bot difficulty"><option value="easy">Easy · relaxed reactions</option><option value="normal" selected>Normal · standard combat</option><option value="hard">Hard · faster, more alert</option></select></label><p>Health and weapon damage stay the same. Online, the host chooses before starting.</p><label><input class="mf-reveal" type="checkbox" checked> Reveal roles when someone is voted out</label><label>Match modifier<select class="mf-modifier" aria-label="Match modifier"><option value="random">Random each match</option>${MODIFIERS.map((m) => `<option value="${m.id}">${m.icon} ${m.name}</option>`).join("")}</select></label><label>Sound volume<input class="mf-volume" aria-label="Sound volume" type="range" min="0" max="100" value="35"></label><label><input class="mf-mute" type="checkbox"> Mute sound</label><button class="mf-lockeropen">RANGER LOCKER →</button></details>`,
     );
     g.shell.insertAdjacentHTML(
       "beforeend",
@@ -161,6 +162,21 @@ export class Retention {
       g.revealRoles = e.target.checked;
       try {
         localStorage.setItem("midnry-outpost-reveal", g.revealRoles ? "on" : "off");
+      } catch {}
+      g.reset();
+    });
+    try {
+      g.modifier = modifierChoice(localStorage.getItem("midnry-outpost-modifier") || "random");
+    } catch {
+      g.modifier = "random";
+    }
+    g.$(".mf-modifier").value = g.modifier;
+    g.on(g.$(".mf-modifier"), "change", (e) => {
+      const value = modifierChoice(e.target.value);
+      if (g.online) return g.onlineAction("settings", { modifier: value });
+      g.modifier = value;
+      try {
+        localStorage.setItem("midnry-outpost-modifier", value);
       } catch {}
       g.reset();
     });

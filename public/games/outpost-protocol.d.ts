@@ -133,6 +133,8 @@ export type PublicProtocolState = {
   revealRoles?: boolean;
   /** Roles announced so far this round, by player id. */
   revealed?: Record<string, ProtocolRole>;
+  /** This match's modifier and twist ids (null in practice). */
+  match?: { modifier: string | null; twist: string | null };
   taskDone: number;
   taskTotal: number;
   armedCount: number;
@@ -207,6 +209,10 @@ export type ProtocolOptions = {
   interactiveTasks?: boolean;
   /** Announce a removed player's role after Last Stand (default true). */
   revealRoles?: boolean;
+  /** Deal a new base layout, a modifier and a twist (real matches only). */
+  variety?: boolean;
+  /** A locked modifier id, or "random". */
+  modifier?: string;
   mode?: string;
   difficulty?: Difficulty;
   countdown?: number;

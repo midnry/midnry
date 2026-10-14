@@ -18388,7 +18388,7 @@ var rp = {
 		{
 			id: "trauma-armory",
 			supplyId: "trauma",
-			name: "Armory trauma-kit locker",
+			name: "Armory locker",
 			stock: 2,
 			x: 12.5,
 			y: 3.5,
@@ -18406,7 +18406,7 @@ var rp = {
 		{
 			id: "surgical-command",
 			supplyId: "surgical",
-			name: "Operations surgical pack",
+			name: "Operations cabinet",
 			stock: 1,
 			x: 4.5,
 			y: 3.5,
@@ -18415,7 +18415,7 @@ var rp = {
 		{
 			id: "surgical-depot",
 			supplyId: "surgical",
-			name: "Sealed surgical cargo",
+			name: "Depot cargo cabinet",
 			stock: 1,
 			x: 20.5,
 			y: 23.5,
@@ -18424,7 +18424,7 @@ var rp = {
 		{
 			id: "fluids-mess",
 			supplyId: "fluids",
-			name: "Mess-hall cold-chain cabinet",
+			name: "Mess-hall cold cabinet",
 			stock: 1,
 			x: 5.5,
 			y: 15.5,
@@ -18433,7 +18433,7 @@ var rp = {
 		{
 			id: "fluids-maintenance",
 			supplyId: "fluids",
-			name: "Sterile-fluid reserve",
+			name: "Maintenance reserve",
 			stock: 2,
 			x: 15.5,
 			y: 23.5,
@@ -18442,7 +18442,7 @@ var rp = {
 		{
 			id: "nutrition-armory",
 			supplyId: "nutrition",
-			name: "Recovery supplement stores",
+			name: "Armory stores",
 			stock: 2,
 			x: 15.5,
 			y: 8.5,
@@ -18451,11 +18451,47 @@ var rp = {
 		{
 			id: "nutrition-generator",
 			supplyId: "nutrition",
-			name: "Recovery supplement cache",
+			name: "Generator-room cache",
 			stock: 2,
 			x: 7.5,
 			y: 23.5,
 			room: "generators"
+		},
+		{
+			id: "cabinet-comms",
+			supplyId: "trauma",
+			name: "Radio-room cabinet",
+			stock: 0,
+			x: 22.5,
+			y: 3.5,
+			room: "communications"
+		},
+		{
+			id: "cabinet-sensors",
+			supplyId: "fluids",
+			name: "Sensor-bay cabinet",
+			stock: 0,
+			x: 7.5,
+			y: 8.5,
+			room: "command"
+		},
+		{
+			id: "cabinet-tunnel",
+			supplyId: "nutrition",
+			name: "Tunnel cabinet",
+			stock: 0,
+			x: 12.5,
+			y: 19.5,
+			room: "maintenance"
+		},
+		{
+			id: "cabinet-hangar",
+			supplyId: "surgical",
+			name: "Hangar fuel-bay cabinet",
+			stock: 0,
+			x: 20.5,
+			y: 14.5,
+			room: "hangar"
 		}
 	],
 	loading: {

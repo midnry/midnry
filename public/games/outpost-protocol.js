@@ -7,6 +7,7 @@ import { Arena, clamp } from "./outpost-sim.js";
 import { INTERACTIVE_TASKS, createTaskGame, taskStep, taskGameView } from "./outpost-task-games.js";
 import { contributionsOf, recordContribution } from "./outpost-mission-progress.js";
 import { recordVictimTakedown } from "./outpost-death.js";
+import { rollMatch, modifierChoice, dealSupplies, liveSites, shuffled } from "./outpost-variety.js";
 import {
   PROTOCOL_MAP,
   TRANSPORT_MAP,
@@ -189,7 +190,15 @@ export class ProtocolArena extends Arena {
       else seats.push(first);
     }
     this.interactiveTasks = options.interactiveTasks === true;
-    const infiltrators = new Set(seats.slice(0, PROTOCOL_RULES.infiltrators));
+    // Variety (new base layout, a modifier and a twist) is for real matches;
+    // practice and tests keep the classic fixed round.
+    this.varietyRandom = options.variety === true ? random : null;
+    this.matchRoll = this.varietyRandom
+      ? rollMatch(random, modifierChoice(options.modifier))
+      : { modifier: null, twist: null };
+    const infiltrators = new Set(
+      seats.slice(0, this.matchRoll.modifier === "lone-wolf" ? 1 : PROTOCOL_RULES.infiltrators),
+    );
     this.protocol = {
       version: 1,
       authoritative: true,
@@ -197,14 +206,18 @@ export class ProtocolArena extends Arena {
       // Roles are announced when the assembly removes someone (host setting).
       revealRoles: options.revealRoles !== false,
       revealed: {},
+      match: { ...this.matchRoll },
+      killCooldown: this.matchRoll.modifier === "lone-wolf" ? 15 : PROTOCOL_RULES.killCooldown,
       taskDone: 0,
       taskTotal: 0,
       armedCount: 0,
       detonateAt: null,
-      sabotage: { powerUntil: 0, commsUntil: 0 },
+      sabotage: { powerUntil: this.matchRoll.modifier === "blackout" ? 45 : 0, commsUntil: 0 },
       bodies: [],
       bombs: [],
-      sites: clone(PROTOCOL_MAP.sites),
+      sites: clone(
+        this.varietyRandom ? liveSites(this.varietyRandom, PROTOCOL_MAP.sites) : PROTOCOL_MAP.sites,
+      ),
       stations: clone(PROTOCOL_MAP.stations),
       vents: clone(PROTOCOL_MAP.vents),
       emergency: clone(PROTOCOL_MAP.emergency),
@@ -214,13 +227,16 @@ export class ProtocolArena extends Arena {
       self: null,
       players: Object.create(null),
       nextId: 1,
-      emergencyReadyAt: 0,
+      emergencyReadyAt: this.matchRoll.modifier === "radio-silence" ? 60 : 0,
       rngState: Math.floor(clamp(finite(random(), 0.5), 0, 0.999999999) * 0xffffffff) >>> 0 || 1,
       mission: this.newMedicalMission(),
     };
+    const spawnOrder = this.varietyRandom
+      ? shuffled(PROTOCOL_MAP.spawns, this.varietyRandom)
+      : PROTOCOL_MAP.spawns;
     for (let i = 0; i < this.entities.length; i++) {
       const e = this.entities[i];
-      const [x, y] = PROTOCOL_MAP.spawns[i % PROTOCOL_MAP.spawns.length];
+      const [x, y] = spawnOrder[i % spawnOrder.length];
       Object.assign(e, {
         x,
         y,
@@ -323,26 +339,50 @@ export class ProtocolArena extends Arena {
   }
 
   newMedicalMission() {
+    const roll = this.matchRoll ?? {},
+      random = this.varietyRandom;
+    const manifest = MEDICAL_SUPPLIES.map((item) => ({
+      id: item.id,
+      name: item.name,
+      required: item.required,
+      loaded: 0,
+    }));
+    let priority = null;
+    if (random && roll.twist === "priority") {
+      const item = manifest[Math.min(manifest.length - 1, Math.floor(random() * manifest.length))];
+      item.required += 1;
+      priority = item.id;
+    }
+    const kind = Object.fromEntries(manifest.map((item) => [item.id, item.name]));
+    const supplyStock = random
+      ? dealSupplies(random, PROTOCOL_MAP.supplies, manifest, roll.modifier === "short-supplies" ? 0 : 2)
+      : clone(PROTOCOL_MAP.supplies).map((stock) =>
+          stock.stock > 0 ? { ...stock, name: `${kind[stock.supplyId]} · ${stock.name}` } : stock,
+        );
+    const fade = roll.modifier === "rush" ? 1.25 : 1;
+    const critical =
+      random && roll.modifier === "critical" ? Math.min(3, Math.floor(random() * 4)) : -1;
+    const duration = Math.round(
+      120 * (roll.modifier === "rush" ? 0.85 : 1) * (roll.twist === "headwind" ? 1.25 : 1),
+    );
     return {
       version: 1,
       phase: "base",
       title: "Lifeline Run",
       interactiveTasks: this.interactiveTasks === true,
+      twist: roll.twist ?? null,
+      priority,
       flightTasks: AIRCRAFT_TASKS.map((task) => ({ ...task, done: false })),
-      manifest: MEDICAL_SUPPLIES.map((item) => ({
-        id: item.id,
-        name: item.name,
-        required: item.required,
-        loaded: 0,
-      })),
-      supplyStock: clone(PROTOCOL_MAP.supplies),
+      manifest,
+      supplyStock,
       loading: clone(PROTOCOL_MAP.loading),
       patients: [70, 82, 94, 100].map((hp, i) => ({
         id: `patient-${i + 1}`,
         name: ["Corporal Mercer", "Sergeant Imani", "Specialist Vega", "Private Solis"][i],
         hp,
         maxHp: 100,
-        decay: [0.22, 0.2, 0.18, 0.17][i],
+        decay: [0.22, 0.2, 0.18, 0.17][i] * fade * (i === critical ? 2 : 1),
+        critical: i === critical,
         rescued: false,
       })),
       vehicle: {
@@ -350,7 +390,7 @@ export class ProtocolArena extends Arena {
         autopilot: true,
         pilotId: null,
         progress: 0,
-        duration: 120,
+        duration,
         altitude: 0.65,
         heading: 0,
         stability: 100,
@@ -616,6 +656,14 @@ export class ProtocolArena extends Arena {
       vehicle.stability = 100;
       vehicle.recoveryDeadline = null;
       vehicle.progress = Math.min(vehicle.duration, vehicle.progress + dt);
+      if (mission.twist === "turbulence" && !vehicle.turbulence && vehicle.progress >= vehicle.duration / 2) {
+        vehicle.turbulence = true;
+        this.unsafeFlight();
+        // A storm is no saboteur: the crew get longer to reach the helm.
+        vehicle.recoveryDeadline = this.time + 30;
+        this.addLog("Turbulence! The storm knocked out autopilot. Someone take the helm.");
+        for (const e of this.entities) if (this.active(e)) this.emit(e.id, "Turbulence! Autopilot is down. Take the helm.");
+      }
     } else {
       const validPilot =
         pilot && vehicle.pilotId === pilot.id && this.active(pilot) && pilot.team === 0;
@@ -759,7 +807,7 @@ export class ProtocolArena extends Arena {
     recordVictimTakedown(this, target, entity);
     this.privateFor(target).channel = null;
     player.channel = null;
-    player.killReadyAt = this.time + PROTOCOL_RULES.killCooldown;
+    player.killReadyAt = this.time + (this.protocol.killCooldown ?? PROTOCOL_RULES.killCooldown);
     entity.kills++;
     this.protocol.bodies.push({
       id: `body-${this.protocol.nextId++}`,
@@ -1946,6 +1994,8 @@ export function protocolView(data, selfId) {
         phase: mission.phase,
         title: mission.title,
         interactiveTasks: mission.interactiveTasks === true,
+        twist: mission.twist ?? null,
+        priority: mission.priority ?? null,
         flightTasks: (mission.flightTasks || []).map((task) => ({
           id: task.id,
           name: task.name,
@@ -1984,6 +2034,7 @@ export function protocolView(data, selfId) {
           hp: patient.hp,
           maxHp: patient.maxHp,
           decay: patient.decay,
+          critical: patient.critical === true,
           rescued: patient.rescued,
         })),
         vehicle: Object.fromEntries(
@@ -2012,6 +2063,7 @@ export function protocolView(data, selfId) {
   view.protocol = {
     phase: p.phase,
     revealRoles: p.revealRoles !== false,
+    match: clone(p.match ?? { modifier: null, twist: null }),
     revealed: p.revealRoles !== false ? clone(p.revealed ?? {}) : {},
     taskDone: p.taskDone,
     taskTotal: p.taskTotal,

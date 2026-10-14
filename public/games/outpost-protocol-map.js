@@ -138,15 +138,22 @@ export const MEDICAL_SUPPLIES = [
 // Reuse existing, wall-mounted storage locations. Their original terminal IDs
 // and positions stay intact; medical stock is independently identified so
 // picking up one item cannot silently complete a different station task.
+// The fixed layout below is the classic round (practice and tests). Matches
+// with variety re-deal every cabinet each round, including the four extra
+// cabinets that start empty here (see outpost-variety.js).
 const medicalStock = [
-  { id: "trauma-armory", supplyId: "trauma", name: "Armory trauma-kit locker", stock: 2, x: 12.5, y: 3.5, room: "armory" },
+  { id: "trauma-armory", supplyId: "trauma", name: "Armory locker", stock: 2, x: 12.5, y: 3.5, room: "armory" },
   { id: "trauma-barracks", supplyId: "trauma", name: "Barracks medic locker", stock: 2, x: 3.5, y: 13.5, room: "barracks" },
-  { id: "surgical-command", supplyId: "surgical", name: "Operations surgical pack", stock: 1, x: 4.5, y: 3.5, room: "command" },
-  { id: "surgical-depot", supplyId: "surgical", name: "Sealed surgical cargo", stock: 1, x: 20.5, y: 23.5, room: "ammo" },
-  { id: "fluids-mess", supplyId: "fluids", name: "Mess-hall cold-chain cabinet", stock: 1, x: 5.5, y: 15.5, room: "barracks" },
-  { id: "fluids-maintenance", supplyId: "fluids", name: "Sterile-fluid reserve", stock: 2, x: 15.5, y: 23.5, room: "maintenance" },
-  { id: "nutrition-armory", supplyId: "nutrition", name: "Recovery supplement stores", stock: 2, x: 15.5, y: 8.5, room: "armory" },
-  { id: "nutrition-generator", supplyId: "nutrition", name: "Recovery supplement cache", stock: 2, x: 7.5, y: 23.5, room: "generators" },
+  { id: "surgical-command", supplyId: "surgical", name: "Operations cabinet", stock: 1, x: 4.5, y: 3.5, room: "command" },
+  { id: "surgical-depot", supplyId: "surgical", name: "Depot cargo cabinet", stock: 1, x: 20.5, y: 23.5, room: "ammo" },
+  { id: "fluids-mess", supplyId: "fluids", name: "Mess-hall cold cabinet", stock: 1, x: 5.5, y: 15.5, room: "barracks" },
+  { id: "fluids-maintenance", supplyId: "fluids", name: "Maintenance reserve", stock: 2, x: 15.5, y: 23.5, room: "maintenance" },
+  { id: "nutrition-armory", supplyId: "nutrition", name: "Armory stores", stock: 2, x: 15.5, y: 8.5, room: "armory" },
+  { id: "nutrition-generator", supplyId: "nutrition", name: "Generator-room cache", stock: 2, x: 7.5, y: 23.5, room: "generators" },
+  { id: "cabinet-comms", supplyId: "trauma", name: "Radio-room cabinet", stock: 0, x: 22.5, y: 3.5, room: "communications" },
+  { id: "cabinet-sensors", supplyId: "fluids", name: "Sensor-bay cabinet", stock: 0, x: 7.5, y: 8.5, room: "command" },
+  { id: "cabinet-tunnel", supplyId: "nutrition", name: "Tunnel cabinet", stock: 0, x: 12.5, y: 19.5, room: "maintenance" },
+  { id: "cabinet-hangar", supplyId: "surgical", name: "Hangar fuel-bay cabinet", stock: 0, x: 20.5, y: 14.5, room: "hangar" },
 ];
 
 export const PROTOCOL_MAP = {

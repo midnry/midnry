@@ -2316,6 +2316,13 @@
         if (customElements.get("midnry-fps")) return;
         const TAU = Math.PI * 2;
 
+        const storedSetting = (key) => {
+          try {
+            return localStorage.getItem(key);
+          } catch {
+            return null;
+          }
+        };
         class MidnryFPS extends HTMLElement {
           connectedCallback() {
             if (this.engine) return;
@@ -2773,7 +2780,10 @@
               weapon: this.weapon,
               outfit: this.outfit,
               difficulty: this.difficulty,
-              revealRoles: this.revealRoles !== false,
+              // Saved settings apply from the very first round of a visit.
+              revealRoles: this.revealRoles ?? storedSetting("midnry-outpost-reveal") !== "off",
+              variety: true,
+              modifier: this.modifier || storedSetting("midnry-outpost-modifier") || "random",
             });
             this.damageSeen = 0;
             this.damageTotalSeen = 0;
@@ -3308,6 +3318,12 @@
             this.mode = data.mode;
             this.difficulty = data.difficulty || "normal";
             this.revealRoles = data.reveal !== false;
+            this.modifier = data.modifier || "random";
+            const modifierSelect = this.$(".mf-modifier");
+            if (modifierSelect) {
+              modifierSelect.value = this.modifier;
+              modifierSelect.disabled = data.host !== this.selfId || data.phase !== "lobby";
+            }
             const revealBox = this.$(".mf-reveal");
             if (revealBox) {
               revealBox.checked = this.revealRoles;

@@ -46,6 +46,10 @@ source = source
   .replace(
     "../../../public/games/outpost-protocol.js",
     pathToFileURL(resolve("public/games/outpost-protocol.js")).href,
+  )
+  .replace(
+    "../../../public/games/outpost-variety.js",
+    pathToFileURL(resolve("public/games/outpost-variety.js")).href,
   );
 const modulePath = join(temporary, "rooms.mjs");
 await writeFile(modulePath, source);
@@ -112,6 +116,8 @@ test("authenticated online votes unlock Last Stand weapons only for opposing pub
   }
   Object.assign(e, { x: a.protocol.emergency.x, y: a.protocol.emergency.y });
   a.entities.find((e) => e.id === members[7].id).hp = 0;
+  // Rooms deal a random modifier; Radio silence would delay this meeting.
+  a.protocol.emergencyReadyAt = 0;
   a.action(e, { seq: 0, op: "meeting" });
   a.protocol.phase = "vote";
   a.time = a.protocol.meeting.discussionUntil;
@@ -190,4 +196,31 @@ test("authenticated online votes unlock Last Stand weapons only for opposing pub
 test.after(async () => {
   delete globalThis.__outpostEquipmentTestSql;
   await rm(temporary, { recursive: true, force: true });
+});
+test("hosts lock a match modifier and the role reveal; guests and bad values are refused", async () => {
+  const host = await create();
+  const guest = await roomAction({ op: "join", code: host.code }, "settings-guest");
+  await assert.rejects(
+    roomAction({ op: "settings", ...session(guest), modifier: "rush" }, "settings-guest"),
+    /Only the host/,
+  );
+  await assert.rejects(
+    roomAction({ op: "settings", ...session(host), modifier: "chaos" }, "host"),
+    /Invalid match modifier/,
+  );
+  await assert.rejects(
+    roomAction({ op: "settings", ...session(host), reveal: "yes" }, "host"),
+    /Invalid reveal/,
+  );
+  const set = await roomAction(
+    { op: "settings", ...session(host), modifier: "rush", reveal: false },
+    "host",
+  );
+  assert.equal(set.modifier, "rush");
+  assert.equal(set.reveal, false);
+  const started = await roomAction({ op: "start", ...session(host) }, "host");
+  assert.equal(started.arena.protocol.match.modifier, "rush");
+  assert.ok(started.arena.protocol.match.twist);
+  assert.equal(started.arena.protocol.revealRoles, false);
+  assert.ok(started.arena.protocol.mission.patients[0].decay > 0.22);
 });

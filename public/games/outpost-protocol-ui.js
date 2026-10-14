@@ -3,6 +3,7 @@
  * All objectives, votes, cooldowns and arming checks belong to the shared
  * simulation. This module reads ONLY the recipient-safe view and sends inputs.
  */
+import { modifierOf, twistOf } from "./outpost-variety.js";
 import { MissionTaskPanel } from "./outpost-task-ui.js";
 import { INTERACTIVE_TASKS } from "./outpost-task-games.js";
 import { ProtocolFocus } from "./outpost-protocol-focus.js";
@@ -109,6 +110,10 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-combattarget { position:absolute;z-index:4;transform:translate(-50%,-100%);padding:4px 8px;border:1px solid #dc9b83;border-radius:8px;background:#472f26df;color:#ffe7d6;font:700 11px system-ui;max-width:170px;pointer-events:none; }
       midnry-fps .mf-protocol-combat .mf-fire { width:64px;height:64px;right:calc(18px + var(--mf-safe-right));bottom:calc(18px + var(--mf-safe-bottom));font-size:12px; }
       midnry-fps .mf-protocol-combat .mf-reload { width:44px;height:44px;right:calc(28px + var(--mf-safe-right));bottom:calc(94px + var(--mf-safe-bottom)); }
+      midnry-fps .mf-protocol-briefmatch { list-style:none;margin:12px 0;padding:0;display:grid;gap:8px; }
+      midnry-fps .mf-protocol-briefmatch li { padding:9px 12px;border:1px solid #c9b77a66;border-radius:12px;background:#2a2a1aa8;color:#f3eedc;font-size:13px;line-height:1.4; }
+      midnry-fps .mf-protocol-briefmatch b { display:block;color:#ffd77a;font-size:12px;letter-spacing:.06em;text-transform:uppercase; }
+      midnry-fps .mf-protocol-matchline { display:block;margin-top:3px;color:#ffd77a;font-size:11px;font-weight:700; }
       midnry-fps .mf-protocol-verdict { position:absolute;z-index:7;left:50%;top:28%;transform:translateX(-50%);width:min(520px,calc(100% - 32px));padding:16px 20px;text-align:center;border:2px solid #b9c7a9;border-radius:16px;background:#14211dee;color:#f1f5ea;font:800 18px/1.35 system-ui;pointer-events:none;box-shadow:0 18px 50px #000a;animation:mf-verdict-in .35s ease-out; }
       midnry-fps .mf-protocol-verdict.mf-verdict-caught { border-color:#ef8d6b;background:#3d1f17ef;color:#ffe9dd; }
       midnry-fps .mf-protocol-verdict.mf-verdict-innocent { border-color:#9fb6d6;background:#17223aef;color:#e4edff; }
@@ -280,7 +285,7 @@ export class ProtocolUI {
     this.results.setAttribute("aria-label", "Blackout Protocol round result");
     g.$(".mf-start").before(this.results);
     this.brief = this.dialog("mf-protocol-brief", "Your secret role");
-    this.brief.innerHTML = `<div class="mf-protocol-kicker">Blackout Protocol / Classified</div><h2>Your orders</h2><div class="mf-protocol-briefrole"></div><p class="mf-protocol-briefcopy"></p><p class="mf-protocol-brieffoot"></p><button class="mf-protocol-begin">Understood · enter the base</button>`;
+    this.brief.innerHTML = `<div class="mf-protocol-kicker">Blackout Protocol / Classified</div><h2>Your orders</h2><div class="mf-protocol-briefrole"></div><p class="mf-protocol-briefcopy"></p><p class="mf-protocol-brieffoot"></p><ul class="mf-protocol-briefmatch" aria-label="This match"></ul><button class="mf-protocol-begin">Understood · enter the base</button>`;
     this.guide = this.dialog("mf-protocol-guide", "Blackout Protocol manual");
     const head = element("div", "mf-protocol-dialoghead");
     head.append(element("h2", "", "Blackout Protocol"), element("button", "", "Done"));
@@ -742,16 +747,25 @@ export class ProtocolUI {
     setText(
       this.brief.querySelector(".mf-protocol-briefcopy"),
       infiltrator
-        ? "Stop Lifeline Run. Blend in while operators gather and load medical supplies. Once aboard, hold at avionics to disable autopilot or damage the cargo. Exploit isolated corridors without exposing your role."
-        : "Save the wounded soldiers. Gather the 13 medical and recovery items, carry one at a time and load them at the hangar pad. Depart aboard Lifeline Medevac, protect the flight and deliver aid before the patients die.",
+        ? "Stop the rescue without getting caught. Eliminate operators until your side matches theirs, plant three charges, or sabotage the flight. Blend in: fake tasks and move with the crowd."
+        : `Save the wounded soldiers. Carry ${this.view?.protocol?.mission?.manifest?.reduce((n, i) => n + i.required, 0) ?? 13} medical items to the hangar pad one at a time, fly the medevac and deliver aid. Or find the infiltrators: vote them all out and you win.`,
     );
     const partners = (self.allies || []).map((ally) => ally.name || "Covert partner").join(", ");
     setText(
       this.brief.querySelector(".mf-protocol-brieffoot"),
       infiltrator
         ? `${partners ? `Your covert partner: ${partners}. ` : ""}Tactics opens sabotage and maintenance hatches. A close-range elimination creates a body; it does not complete your mission.`
-        : "If autopilot is sabotaged, take the cockpit helm, trim flight level and course into their safe bands for three seconds, then restore autopilot. At arrival, repair any damaged cargo and deliver aid. Winning Last Stand does not replace the rescue mission.",
+        : "Cabinets are restocked differently every round: follow the arrow. If autopilot fails, take the helm and hold both gauges in the safe band.",
     );
+    const match = (this.view || this.safeView())?.protocol?.match;
+    const list = this.brief.querySelector(".mf-protocol-briefmatch");
+    list.replaceChildren();
+    for (const option of [modifierOf(match?.modifier), twistOf(match?.twist)].filter(Boolean)) {
+      const item = element("li");
+      item.append(element("b", "", `${option.icon} ${option.name}`), document.createTextNode(option.text));
+      list.append(item);
+    }
+    list.hidden = !list.children.length;
     this.releaseMouse();
     if (!this.brief.open) this.brief.showModal();
     this.brief.querySelector("button").focus({ preventScroll: true });
@@ -1291,6 +1305,19 @@ export class ProtocolUI {
           ? "Arrival reached · deliver aid at the cargo station"
           : `${Math.round(clamp(vehicle.progress / vehicle.duration, 0, 1) * 100)}% of route · ${countdown(vehicle.duration - vehicle.progress)} remaining · ${vehicle.autopilot ? "autopilot" : "manual control"}`,
     );
+    if (!this.matchLine) {
+      this.matchLine = element("span", "mf-protocol-matchline");
+      this.missionStatus.append(this.matchLine);
+    }
+    const match = view.protocol.match,
+      modifier = modifierOf(match?.modifier),
+      twist = twistOf(match?.twist);
+    this.matchLine.hidden = !modifier && !twist;
+    setText(
+      this.matchLine,
+      [modifier, twist].filter(Boolean).map((o) => `${o.icon} ${o.name}`).join(" · "),
+    );
+    this.matchLine.title = [modifier, twist].filter(Boolean).map((o) => `${o.name}: ${o.text}`).join("\n");
     this.cargoStatus.hidden = mission.phase !== "base";
     setText(
       this.cargoStatus,
@@ -1327,6 +1354,7 @@ export class ProtocolUI {
       const row = [...list.children].find((child) => child.dataset.patient === patient.id);
       if (!row) continue;
       row.dataset.critical = String(patient.hp > 0 && patient.hp <= 25);
+      setText(row.querySelector("span"), patient.critical ? `🩸 ${patient.name}` : patient.name);
       setText(
         row.querySelector("b"),
         patient.rescued ? "Rescued" : patient.hp <= 0 ? "Lost" : `${Math.ceil(patient.hp)}%`,

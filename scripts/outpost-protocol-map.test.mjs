@@ -96,7 +96,8 @@ test("Medical stores contain the complete public manifest without duplicate stoc
   const categories = new Set(MEDICAL_SUPPLIES.map((item) => item.id));
   for (const fixture of map.supplies) {
     assert.ok(categories.has(fixture.supplyId), `${fixture.id} references unknown medical cargo`);
-    assert.ok(Number.isInteger(fixture.stock) && fixture.stock > 0);
+    // The classic layout leaves the extra variety cabinets empty.
+    assert.ok(Number.isInteger(fixture.stock) && fixture.stock >= 0 && fixture.stock <= 2);
     const room = roomById.get(fixture.room);
     assert.ok(room && fixture.x >= room.x && fixture.x < room.x + room.w);
     assert.ok(fixture.y >= room.y && fixture.y < room.y + room.h);
