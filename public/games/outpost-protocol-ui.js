@@ -1718,11 +1718,11 @@ export class ProtocolUI {
       if (!meeting.messages?.length)
         radio.append(element("p", "", "Radio channel open. Describe what you actually witnessed."));
       for (const message of meeting.messages || []) {
-        const line = element("p");
-        line.append(
-          element("b", "", `${message.name || "Operator"}: `),
-          document.createTextNode(message.text || ""),
-        );
+        const line = element("p"),
+          who = element("b", "", `${message.name || "Operator"}: `),
+          sender = view.entities.find((entity) => entity.id === message.sender);
+        if (sender?.color) who.style.color = sender.color;
+        line.append(who, document.createTextNode(message.text || ""));
         radio.append(line);
       }
       if (nearEnd) radio.scrollTop = radio.scrollHeight;
@@ -1739,6 +1739,11 @@ export class ProtocolUI {
           "",
           `${candidate.name || "Operator"}${candidate.id === this.g.selfId ? " (you)" : ""}`,
         );
+        if (candidate.color) {
+          button.style.borderLeft = `6px solid ${candidate.color}`;
+          button.title = candidate.colorName || "";
+          if (candidate.colorName) button.setAttribute("aria-label", `${candidate.name}, ${candidate.colorName}`);
+        }
         button.dataset.vote = candidate.id;
         button.disabled = !votePhase || !alive || Boolean(selectedVote);
         button.setAttribute("aria-pressed", String(candidate.id === selectedVote));

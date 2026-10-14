@@ -16,7 +16,9 @@ export class MenuUI {
     // menu opens the Blackout Protocol manual instead.
     g.$(".mf-guide").hidden = true;
     g.$(".mf-graphics").textContent = "Settings";
-    g.$(".mf-lockeropen").hidden = true;
+    // The locker holds outfits and progress; it opens from the menu.
+    g.$(".mf-lockeropen").textContent = "Locker";
+    g.$(".mf-learn .mf-graphics").before(g.$(".mf-lockeropen"));
     const level = g.$(".mf-level");
     level.classList.add("mf-progresslabel");
     panel.append(level);

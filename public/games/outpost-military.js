@@ -17715,7 +17715,7 @@ function qf(e, t, n) {
 //#region scripts/outpost-military/realism-identification.js
 var Jf = class {
 	constructor(e) {
-		this.r = e, this.labels = /* @__PURE__ */ new Map(), this.point = new U(), this.root = document.createElement("div"), this.root.className = "mf-playernames", this.style = document.createElement("style"), this.style.textContent = "\n   midnry-fps .mf-playernames{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}\n   midnry-fps .mf-playername{position:absolute;transform:translate(-50%,-100%);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:3px 7px;border-radius:7px;color:#f3f7f1;background:#111b21bd;border:1px solid #b7c6c233;font:600 12px/1.2 system-ui;text-shadow:0 1px 2px #000}\n   midnry-fps .mf-playername[hidden]{display:none}\n   midnry-fps .mf-playername-accused{border-color:#b79478;background:#35291fed}\n   @media(max-width:700px){midnry-fps .mf-playername{max-width:100px;font-size:11px;padding:3px 6px}}\n  ", e.g.shell.append(this.style, this.root);
+		this.r = e, this.labels = /* @__PURE__ */ new Map(), this.point = new U(), this.root = document.createElement("div"), this.root.className = "mf-playernames", this.style = document.createElement("style"), this.style.textContent = "\n   midnry-fps .mf-playernames{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}\n   midnry-fps .mf-playername{position:absolute;transform:translate(-50%,-100%);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:3px 7px;border-radius:7px;color:#f3f7f1;background:#111b21bd;border:1px solid #b7c6c233;font:600 12px/1.2 system-ui;text-shadow:0 1px 2px #000}\n   midnry-fps .mf-playername[hidden]{display:none}\n   midnry-fps .mf-playername{border:2px solid var(--mf-player,#b7c6c255)}\n   midnry-fps .mf-playername::before{content:\"\";display:inline-block;width:9px;height:9px;margin-right:5px;border-radius:50%;background:var(--mf-player,#b7c6c2);vertical-align:0}\n   midnry-fps .mf-playername-accused{border-color:#b79478;background:#35291fed}\n   @media(max-width:700px){midnry-fps .mf-playername{max-width:100px;font-size:11px;padding:3px 6px}}\n  ", e.g.shell.append(this.style, this.root);
 	}
 	update(e, t, n) {
 		let r = this.r, i = r.g, a = i.protocolUI, o = !!e && a?.visibleGameplay() && i.navigation?.names.checked !== !1 && !n && !i.deathSequence && ["roam", "combat"].includes(e.protocol?.phase) && !a.hasDialogOpen();
@@ -17732,7 +17732,7 @@ var Jf = class {
 			}), o.nameHead ? o.nameHead.getWorldPosition(this.point) : this.point.set(n.x * 3, 1.64, n.y * 3), this.point.y += .32, this.point.project(r.camera), l = this.point.z >= -1 && this.point.z <= 1 && Math.abs(this.point.x) < .96 && Math.abs(this.point.y) < .94, l)) {
 				a.style.left = (this.point.x * .5 + .5) * 100 + "%", a.style.top = (-this.point.y * .5 + .5) * 100 + "%";
 				let t = String(n.name || "Operator").slice(0, 32);
-				a.textContent !== t && (a.textContent = t), a.classList.toggle("mf-playername-accused", e.protocol?.phase === "combat" && e.protocol.combat?.targetId === n.id);
+				a.textContent !== t && (a.textContent = t), n.color && a.dataset.color !== n.color && (a.dataset.color = n.color, a.style.setProperty("--mf-player", n.color)), a.classList.toggle("mf-playername-accused", e.protocol?.phase === "combat" && e.protocol.combat?.targetId === n.id);
 			}
 			a.hidden = !l;
 		}
@@ -21305,7 +21305,7 @@ var Dp = class {
 				e.isSkinnedMesh && (e.skeleton.update(), e.computeBoundingBox());
 			});
 			let o = new Je().setFromObject(r), s = 1.82 / (o.max.y - o.min.y);
-			r.scale.multiplyScalar(s), r.position.y -= o.min.y * s, Sf(this, r, e), this.g.mode !== "protocol" && r.traverse((t) => {
+			r.scale.multiplyScalar(s), r.position.y -= o.min.y * s, Sf(this, r, e), r.traverse((t) => {
 				if (t.isMesh) {
 					let n = pp(e.outfit), r = this.skinTexture(n);
 					t.material.color.set("#ffffff"), t.material.map ||= r, t.geometry.computeBoundingBox();
@@ -21373,7 +21373,7 @@ var Dp = class {
 			lastSample: null,
 			deadAt: null
 		};
-		return this.g.mode !== "protocol" && this.dressActor(s, e), this.equipActor(s, e), s.ownedMaterials = [...this.materials].filter((e) => !t.has(e)), this.actors.set(e.id, s), s;
+		return this.dressActor(s, e), this.equipActor(s, e), s.ownedMaterials = [...this.materials].filter((e) => !t.has(e)), this.actors.set(e.id, s), s;
 	}
 	mergeStatic(e) {
 		e.updateMatrixWorld(!0);
@@ -21975,7 +21975,7 @@ var Dp = class {
 				continue;
 			}
 			let o = this.actors.get(a.id);
-			o && (o.outfit !== pp(a.outfit).id || o.weapon !== a.weapon) && (this.disposeActor(o), this.actors.delete(a.id), o = null), o ||= this.makeActor(a), o.patch.color.set(this.g.mode === "protocol" ? "#97a79b" : a.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465");
+			o && (o.outfit !== pp(a.outfit).id || o.weapon !== a.weapon) && (this.disposeActor(o), this.actors.delete(a.id), o = null), o ||= this.makeActor(a), o.patch.color.set(this.g.mode === "protocol" ? a.color || "#97a79b" : a.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465");
 			let s = a.hp > 0, c = a.cloakedUntil > this.g.time && a.team !== this.g.player.team, l = performance.now() / 1e3;
 			s ? o.deadAt = null : o.deadAt === null && (o.deadAt = l);
 			let u = s ? 0 : Math.min(1, (l - o.deadAt) / .85);

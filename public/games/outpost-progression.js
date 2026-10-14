@@ -6,6 +6,22 @@ export const FINISHES = [
   { id: "glacier", name: "Glacier Ink", xp: 600, color: "#72bbd0" },
   { id: "nightfall", name: "Nightfall", xp: 1200, color: "#a78bce" },
 ];
+/** Outfits unlock one per level, in this order; Field Ranger is always yours. */
+export const OUTFIT_ORDER = [
+  "ranger",
+  "medic",
+  "desert",
+  "urban",
+  "alpine",
+  "engineer",
+  "recon",
+  "sentinel",
+  "hazard",
+  "shadow",
+];
+export const outfitLevel = (id) => Math.max(1, OUTFIT_ORDER.indexOf(id) + 1);
+export const outfitUnlocked = (profile, id) =>
+  OUTFIT_ORDER.includes(id) && 1 + Math.floor((profile?.xp || 0) / 150) >= outfitLevel(id);
 const bounded = (value, max) =>
   Number.isFinite(value) ? Math.max(0, Math.min(max, Math.floor(value))) : 0;
 export function profileOf(data = {}) {
@@ -25,6 +41,9 @@ export function profileOf(data = {}) {
           0,
           11,
         )
+      : [],
+    roles: Array.isArray(data?.roles)
+      ? [...new Set(data.roles.filter((v) => v === "operator" || v === "infiltrator"))]
       : [],
     milestones: Array.isArray(data?.milestones)
       ? data.milestones.filter((v) =>
@@ -83,12 +102,14 @@ export function awardMatch(data, result) {
     xp = 40 + (result.won ? 40 : 0) + Math.min(225, work) + teamRescue;
     for (const key of Object.keys(profile.career))
       profile.career[key] = Math.min(1000000, profile.career[key] + Math.floor(c[key]));
+    if (["operator", "infiltrator"].includes(result.role) && !profile.roles.includes(result.role))
+      profile.roles.push(result.role);
     if (work) bonuses.push("Mission contribution");
     if (teamRescue) bonuses.push("Team rescue");
   }
   for (const [id, complete, name] of [
     ["first-three", profile.matches >= 3, "Three rounds completed"],
-    ["explorer", !mission && profile.weapons.length >= 3, "Three loadouts explored"],
+    ["explorer", mission && profile.roles.length >= 2, "Played both sides"],
     ["supply-detail", mission && profile.career.supplies >= 13, "Medical supply detail"],
     ["flight-ready", mission && profile.career.checks >= 3, "Flight ready"],
     ["lifeline", mission && profile.career.patients >= 4, "Lifeline rescuer"],

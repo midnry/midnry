@@ -79,7 +79,9 @@ test("Blackout rooms keep matching kits, private roles, bot-filled seats and aut
     { op: "join", code: host.code, weapon: "rocket", outfit: "hazard" },
     "guest",
   );
-  assert.ok(guest.members.every((m) => m.weapon === "carbine" && m.outfit === "ranger"));
+  // Weapons stay matched; outfits are cosmetic and kept.
+  assert.ok(guest.members.every((m) => m.weapon === "carbine"));
+  assert.equal(guest.members.find((m) => m.id === guest.id).outfit, "hazard");
   assert.ok(guest.members.every((m) => !("team" in m)));
   await assert.rejects(
     roomAction({ op: "poll", ...session(guest), id: host.id }, "guest"),
@@ -196,6 +198,23 @@ test("authenticated online votes unlock Last Stand weapons only for opposing pub
 test.after(async () => {
   delete globalThis.__outpostEquipmentTestSql;
   await rm(temporary, { recursive: true, force: true });
+});
+test("players choose display names; names are cleaned, unique and reach the match", async () => {
+  const host = await roomAction({ op: "create", mode: "protocol", name: "Ada" }, "names-host");
+  const twin = await roomAction({ op: "join", code: host.code, name: "  ada " }, "names-twin");
+  const odd = await roomAction({ op: "join", code: host.code, name: "<b>Kemi</b>!!" }, "names-odd");
+  const blank = await roomAction({ op: "join", code: host.code, name: "\u0000" }, "names-blank");
+  const names = blank.members.map((m) => m.name);
+  assert.deepEqual(names.slice(0, 2), ["Ada", "ada 2"]);
+  assert.equal(names[2], "bKemib");
+  assert.match(names[3], /^Ranger \d+$/);
+  await roomAction({ op: "loadout", ...session(odd), name: "Kemi", outfit: "medic" }, "names-odd");
+  const started = await roomAction({ op: "start", ...session(host) }, "names-host");
+  const kemi = started.arena.entities.find((e) => e.id === odd.id);
+  assert.equal(kemi.name, "Kemi");
+  assert.equal(kemi.outfit, "medic");
+  assert.match(kemi.color, /^#[0-9a-f]{6}$/);
+  assert.equal(new Set(started.arena.entities.map((e) => e.color)).size, 8);
 });
 test("hosts lock a match modifier and the role reveal; guests and bad values are refused", async () => {
   const host = await create();

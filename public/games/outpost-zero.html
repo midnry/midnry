@@ -2782,6 +2782,14 @@
               difficulty: this.difficulty,
               // Saved settings apply from the very first round of a visit.
               revealRoles: this.revealRoles ?? storedSetting("midnry-outpost-reveal") !== "off",
+              humans: [
+                {
+                  id: "player",
+                  team: 0,
+                  name: this.playerName || storedSetting("midnry-outpost-name") || "You",
+                  outfit: this.retention?.outfitUnlocked(this.outfit) === false ? "ranger" : this.outfit,
+                },
+              ],
               variety: true,
               modifier: this.modifier || storedSetting("midnry-outpost-modifier") || "random",
             });
@@ -3051,8 +3059,9 @@
             this.shell.focus({ preventScroll: true });
           }
           chooseOutfit(id) {
-            if (this.mode === "protocol") return;
             if (!Object.hasOwn(OUTFITS, id)) return;
+            // Outfits unlock by level (device-local progression).
+            if (this.retention && !this.retention.outfitUnlocked(id)) return;
             if (this.online) {
               if (this.online.phase !== "lobby") return;
               this.onlineAction("loadout", { weapon: this.weapon, outfit: id });
@@ -3273,6 +3282,7 @@
                     mapId: this.mapId,
                     weapon: this.weapon,
                     outfit: this.outfit,
+                    name: this.playerName || storedSetting("midnry-outpost-name") || undefined,
                     ...(op === "resume" && saved
                       ? { code: saved.code, id: saved.id, token: saved.token }
                       : {}),

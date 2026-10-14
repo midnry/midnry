@@ -50,6 +50,18 @@ export const PROTOCOL_RULES = Object.freeze({
   stabilizationDuration: 3,
 });
 
+/** One colour per seat: the name tag colour everyone uses to talk about a player. */
+export const PLAYER_COLORS = Object.freeze([
+  { name: "Red", hex: "#e5534b" },
+  { name: "Blue", hex: "#4f8ff0" },
+  { name: "Green", hex: "#4cbf6b" },
+  { name: "Yellow", hex: "#f2c84b" },
+  { name: "Orange", hex: "#f08a3c" },
+  { name: "Purple", hex: "#a774e8" },
+  { name: "Cyan", hex: "#43c6d1" },
+  { name: "Pink", hex: "#ee6fb0" },
+]);
+
 const OPERATORS = "operator",
   INFILTRATORS = "infiltrator";
 const ACTIONS = new Set([
@@ -96,6 +108,9 @@ const shuffle = (items, random) => {
 const ENTITY_FIELDS = [
   "id",
   "name",
+  "color",
+  "colorName",
+  "outfit",
   "bot",
   "x",
   "y",
@@ -244,6 +259,8 @@ export class ProtocolArena extends Arena {
         hp: 100,
         maxHp: 100,
         team: infiltrators.has(e.id) ? 1 : 0,
+        color: PLAYER_COLORS[i % PLAYER_COLORS.length].hex,
+        colorName: PLAYER_COLORS[i % PLAYER_COLORS.length].name,
         name:
           humans[i]?.name ?? ["Hale", "Voss", "Reed", "Sato", "Quinn", "Rook", "Mara", "Ash"][i],
         weapon: "carbine",

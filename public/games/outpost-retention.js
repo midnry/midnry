@@ -1,5 +1,5 @@
 import { MODIFIERS, modifierChoice } from "./outpost-variety.js";
-import { FINISHES, profileOf, awardMatch, levelOf } from "./outpost-progression.js";
+import { FINISHES, profileOf, awardMatch, levelOf, outfitUnlocked, outfitLevel } from "./outpost-progression.js";
 import { weaponOf, OUTFITS } from "./outpost-sim.js";
 import { spatialSound } from "./outpost-spatial-audio.js";
 const read = (key) => {
@@ -126,7 +126,7 @@ export class Retention {
     );
     g.$(".mf-network").insertAdjacentHTML(
       "beforebegin",
-      `<details class="mf-retention"><summary>PLAYER EXPERIENCE / <span class="mf-level"></span></summary><label>Bot difficulty<select class="mf-difficulty" aria-label="Bot difficulty"><option value="easy">Easy · relaxed reactions</option><option value="normal" selected>Normal · standard combat</option><option value="hard">Hard · faster, more alert</option></select></label><p>Health and weapon damage stay the same. Online, the host chooses before starting.</p><label><input class="mf-reveal" type="checkbox" checked> Reveal roles when someone is voted out</label><label>Match modifier<select class="mf-modifier" aria-label="Match modifier"><option value="random">Random each match</option>${MODIFIERS.map((m) => `<option value="${m.id}">${m.icon} ${m.name}</option>`).join("")}</select></label><label>Sound volume<input class="mf-volume" aria-label="Sound volume" type="range" min="0" max="100" value="35"></label><label><input class="mf-mute" type="checkbox"> Mute sound</label><button class="mf-lockeropen">RANGER LOCKER →</button></details>`,
+      `<details class="mf-retention"><summary>PLAYER EXPERIENCE / <span class="mf-level"></span></summary><label>Bot difficulty<select class="mf-difficulty" aria-label="Bot difficulty"><option value="easy">Easy · relaxed reactions</option><option value="normal" selected>Normal · standard combat</option><option value="hard">Hard · faster, more alert</option></select></label><p>Health and weapon damage stay the same. Online, the host chooses before starting.</p><label>Your name<input class="mf-playername" maxlength="16" autocomplete="nickname" spellcheck="false" placeholder="Shown above your head"></label><label><input class="mf-reveal" type="checkbox" checked> Reveal roles when someone is voted out</label><label>Match modifier<select class="mf-modifier" aria-label="Match modifier"><option value="random">Random each match</option>${MODIFIERS.map((m) => `<option value="${m.id}">${m.icon} ${m.name}</option>`).join("")}</select></label><label>Sound volume<input class="mf-volume" aria-label="Sound volume" type="range" min="0" max="100" value="35"></label><label><input class="mf-mute" type="checkbox"> Mute sound</label><button class="mf-lockeropen">RANGER LOCKER →</button></details>`,
     );
     g.shell.insertAdjacentHTML(
       "beforeend",
@@ -164,6 +164,23 @@ export class Retention {
         localStorage.setItem("midnry-outpost-reveal", g.revealRoles ? "on" : "off");
       } catch {}
       g.reset();
+    });
+    try {
+      g.playerName = localStorage.getItem("midnry-outpost-name") || "";
+    } catch {
+      g.playerName = "";
+    }
+    g.$(".mf-playername").value = g.playerName;
+    g.on(g.$(".mf-playername"), "keydown", (e) => e.stopPropagation());
+    g.on(g.$(".mf-playername"), "change", (e) => {
+      const name = e.target.value.replace(/[^\p{L}\p{N} ._'-]/gu, "").replace(/\s+/g, " ").trim().slice(0, 16);
+      e.target.value = name;
+      g.playerName = name;
+      try {
+        localStorage.setItem("midnry-outpost-name", name);
+      } catch {}
+      // Online, the lobby shows the new name; offline it applies next round.
+      if (g.online?.phase === "lobby") g.onlineAction("loadout", { weapon: g.weapon, outfit: g.outfit, name });
     });
     try {
       g.modifier = modifierChoice(localStorage.getItem("midnry-outpost-modifier") || "random");
@@ -316,17 +333,20 @@ export class Retention {
     const p = this.profile,
       next = FINISHES.find((f) => f.xp > p.xp);
     this.g.$(".mf-lockerbody").innerHTML =
-      `<h2>Level ${levelOf(p)} / ${p.xp} XP</h2><p>${p.matches} completed rounds · ${p.wins} victories</p><progress max="150" value="${p.xp % 150}" aria-label="Progress to next level"></progress><p>${150 - (p.xp % 150)} XP to the next level. ${next ? `${Math.max(0, next.xp - p.xp)} XP to ${next.name}.` : "All weapon finishes unlocked."}</p><label>Weapon finish<select class="mf-finish" aria-label="Weapon finish">${FINISHES.map((f) => `<option value="${f.id}" ${f.id === p.skin ? "selected" : ""} ${f.xp > p.xp ? "disabled" : ""}>${f.name}${f.xp > p.xp ? ` · ${f.xp} XP` : ""}</option>`).join("")}</select></label><div class="mf-finishpreview" style="--finish:${this.finishColor() || "#4a6873"}">${FINISHES.find((f) => f.id === p.skin).name}</div><h3>Uniforms / ${Object.keys(OUTFITS).length}</h3><p>All outfits are available now. AI combatants wear the same uniforms. Outfits change appearance only.${this.g.online && this.g.online.phase !== "lobby" ? " Choose your outfit in the next lobby." : " Choose yours here or in the deployment menu."}</p><div class="mf-outfitgrid">${Object.values(
+      `<h2>Level ${levelOf(p)} / ${p.xp} XP</h2><p>${p.matches} completed rounds · ${p.wins} victories</p><progress max="150" value="${p.xp % 150}" aria-label="Progress to next level"></progress><p>${150 - (p.xp % 150)} XP to the next level. ${next ? `${Math.max(0, next.xp - p.xp)} XP to ${next.name}.` : "All weapon finishes unlocked."}</p><label>Weapon finish<select class="mf-finish" aria-label="Weapon finish">${FINISHES.map((f) => `<option value="${f.id}" ${f.id === p.skin ? "selected" : ""} ${f.xp > p.xp ? "disabled" : ""}>${f.name}${f.xp > p.xp ? ` · ${f.xp} XP` : ""}</option>`).join("")}</select></label><div class="mf-finishpreview" style="--finish:${this.finishColor() || "#4a6873"}">${FINISHES.find((f) => f.id === p.skin).name}</div><h3>Outfits / ${Object.values(OUTFITS).filter((o) => outfitUnlocked(p, o.id)).length} of ${Object.keys(OUTFITS).length} unlocked</h3><p>A new outfit unlocks every level. Everyone sees what you wear; it never hints at your role.${this.g.online && this.g.online.phase !== "lobby" ? " Choose your outfit in the next lobby." : ""}</p><div class="mf-outfitgrid">${Object.values(
         OUTFITS,
       )
         .map(
           (o) =>
-            `<button class="mf-outfitcard" data-outfit="${o.id}" aria-label="Wear ${o.name}" aria-pressed="${this.g.outfit === o.id}" ${this.g.online && this.g.online.phase !== "lobby" ? "disabled" : ""}><img src="/games/outfits/${o.id}.webp?v=skins-20261011" alt="${o.name} outfit" loading="lazy" width="240" height="320"><strong>${o.name}</strong><small>${o.description}</small></button>`,
+            `<button class="mf-outfitcard" data-outfit="${o.id}" aria-label="${outfitUnlocked(p, o.id) ? `Wear ${o.name}` : `${o.name}, unlocks at level ${outfitLevel(o.id)}`}" aria-pressed="${this.g.outfit === o.id}" ${(this.g.online && this.g.online.phase !== "lobby") || !outfitUnlocked(p, o.id) ? "disabled" : ""}><img src="/games/outfits/${o.id}.webp?v=skins-20261011" alt="${o.name} outfit" loading="lazy" width="240" height="320"${outfitUnlocked(p, o.id) ? "" : ' style="filter:grayscale(1) brightness(.45)"'}><strong>${o.name}</strong><small>${outfitUnlocked(p, o.id) ? o.description : `🔒 Unlocks at level ${outfitLevel(o.id)}`}</small></button>`,
         )
         .join(
           "",
-        )}</div><h3>Optional challenges</h3><p>Complete three rounds: ${Math.min(3, p.matches)}/3 · ${p.milestones.includes("first-three") ? "Reward earned" : "50 bonus XP"}</p><p>Load 13 medical supplies: ${Math.min(13,p.career.supplies)}/13 · ${p.milestones.includes("supply-detail") ? "Reward earned" : "50 bonus XP"}</p><p>Complete three aircraft checks: ${Math.min(3,p.career.checks)}/3 · ${p.milestones.includes("flight-ready") ? "Reward earned" : "50 bonus XP"}</p><p>Deliver aid to four patients: ${Math.min(4,p.career.patients)}/4 · ${p.milestones.includes("lifeline") ? "Reward earned" : "50 bonus XP"}</p><p>XP rewards completed missions, supplies loaded, equipment checks, repairs, defuses, safe piloting and rescues. Infiltrators earn mission credit for validated sabotage, charges and cover checks. Repeated collection without loading and idle time do not earn contribution XP. Losses under 15 seconds do not earn XP. All rewards change appearance only. There are no streak penalties or purchases.</p><p>Progress is saved on this browser and device. Clearing browser data removes it; it does not sync between devices.</p>`;
+        )}</div><h3>Optional challenges</h3><p>Play both sides (operator and infiltrator): ${p.roles.length}/2 · ${p.milestones.includes("explorer") ? "Reward earned" : "50 bonus XP"}</p><p>Complete three rounds: ${Math.min(3, p.matches)}/3 · ${p.milestones.includes("first-three") ? "Reward earned" : "50 bonus XP"}</p><p>Load 13 medical supplies: ${Math.min(13,p.career.supplies)}/13 · ${p.milestones.includes("supply-detail") ? "Reward earned" : "50 bonus XP"}</p><p>Complete three aircraft checks: ${Math.min(3,p.career.checks)}/3 · ${p.milestones.includes("flight-ready") ? "Reward earned" : "50 bonus XP"}</p><p>Deliver aid to four patients: ${Math.min(4,p.career.patients)}/4 · ${p.milestones.includes("lifeline") ? "Reward earned" : "50 bonus XP"}</p><p>XP rewards completed missions, supplies loaded, equipment checks, repairs, defuses, safe piloting and rescues. Infiltrators earn mission credit for validated sabotage, charges and cover checks. Repeated collection without loading and idle time do not earn contribution XP. Losses under 15 seconds do not earn XP. All rewards change appearance only. There are no streak penalties or purchases.</p><p>Progress is saved on this browser and device. Clearing browser data removes it; it does not sync between devices.</p>`;
     if (focused) this.g.$(`[data-outfit="${focused}"]`)?.focus({ preventScroll: true });
+  }
+  outfitUnlocked(id) {
+    return outfitUnlocked(this.profile, id);
   }
   locker() {
     if (this.g.running) this.g.pause();

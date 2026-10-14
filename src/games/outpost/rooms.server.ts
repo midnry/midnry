@@ -83,6 +83,26 @@ function outfitId(value: unknown): string {
     throw new OutpostError("Choose a valid outfit.");
   return value;
 }
+/**
+ * A player-chosen display name: letters, digits, spaces and . _ - ' only,
+ * 2–16 characters, unique in the room. Anything else falls back.
+ */
+export function displayName(value: unknown, fallback: string, taken: string[] = []): string {
+  if (typeof value !== "string") return fallback;
+  const clean = value
+    .normalize("NFKC")
+    .replace(/[^\p{L}\p{N} ._'-]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 16)
+    .trim();
+  if (clean.length < 2) return fallback;
+  let name = clean,
+    n = 2;
+  const used = new Set(taken.map((t) => t.toLowerCase()));
+  while (used.has(name.toLowerCase())) name = `${clean.slice(0, 13)} ${n++}`;
+  return name;
+}
 const sha = (value: string) => createHash("sha256").update(value).digest("hex");
 const roomCode = () =>
   Array.from(randomBytes(6), (n) => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[n % 32]).join("");
@@ -137,7 +157,7 @@ export function publicRoom(code: string, room: Room, selfId: string) {
       name,
       ...(protocol ? {} : { team }),
       weapon: protocol ? "carbine" : weapon || "carbine",
-      outfit: protocol ? "ranger" : outfit || "ranger",
+      outfit: outfit || "ranger",
       connected: Date.now() - lastSeen < 20000,
     })),
     ack: room.members.find((m) => m.id === selfId)?.seq ?? -1,
@@ -298,12 +318,17 @@ export function applyRoomAction(
       room.mode === "protocol" ? "carbine" : body.weapon === undefined ? "carbine" : body.weapon;
     if (typeof weapon !== "string" || !Object.hasOwn(WEAPONS, weapon))
       throw new OutpostError("Choose a valid loadout.");
+    const fallback = "Ranger " + room.nextName++;
     member = {
       weapon,
-      outfit: "ranger",
+      outfit: outfitId(body.outfit),
       id: joinedId,
       hash: sha(joinedToken),
-      name: "Ranger " + room.nextName++,
+      name: displayName(
+        body.name,
+        fallback,
+        room.members.map((m) => m.name),
+      ),
       team,
       lastSeen: now,
       inputAt: now,
@@ -389,14 +414,16 @@ export function applyRoomAction(
       (typeof body.weapon !== "string" || !Object.hasOwn(WEAPONS, body.weapon))
     )
       throw new OutpostError("Invalid loadout.");
-    const outfit =
-      room.mode === "protocol"
-        ? "ranger"
-        : body.outfit === undefined
-          ? member.outfit || "ranger"
-          : outfitId(body.outfit);
+    // Outfits are cosmetic in every mode; names can change in the lobby.
+    const outfit = body.outfit === undefined ? member.outfit || "ranger" : outfitId(body.outfit);
     member.weapon = room.mode === "protocol" ? "carbine" : (body.weapon as string);
     member.outfit = outfit;
+    if (body.name !== undefined)
+      member.name = displayName(
+        body.name,
+        member.name,
+        room.members.filter((m) => m.id !== member.id).map((m) => m.name),
+      );
   }
   if (body.op === "team") {
     if (room.phase !== "lobby" || room.mode !== "duo")
@@ -525,9 +552,9 @@ export async function roomAction(body: Record<string, unknown>, clientKey: strin
     const member: Member = {
       id,
       hash: sha(token),
-      name: "Ranger 1",
+      name: displayName(body.name, "Ranger 1"),
       weapon,
-      outfit: "ranger",
+      outfit: outfitId(body.outfit),
       team: 0,
       lastSeen: now,
       inputAt: now,
