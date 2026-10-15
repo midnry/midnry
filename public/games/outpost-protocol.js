@@ -48,6 +48,12 @@ export const PROTOCOL_RULES = Object.freeze({
   cargoRepairDuration: 6,
   recoveryDuration: 18,
   stabilizationDuration: 3,
+  // Remote support for eliminated players: a short skill check that steadies
+  // a patient (operators) or recharges a living partner's attack (infiltrators).
+  ghostCooldown: 25,
+  ghostLimit: 5,
+  ghostHeal: 4,
+  ghostRecharge: 5,
 });
 
 /** One colour per seat: the name tag colour everyone uses to talk about a player.
@@ -84,6 +90,7 @@ const ACTIONS = new Set([
   "autopilot",
   "disable-autopilot",
   "cargo-sabotage",
+  "ghost-begin",
 ]);
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -1002,7 +1009,10 @@ export class ProtocolArena extends Arena {
     player.lastActionSeq = action.seq;
     const targetId = normalize(action.target, 80);
     const value = normalize(action.value, 180);
-    if (!this.active(entity)) return;
+    if (!this.active(entity)) {
+      this.ghostAction(entity, action.op, targetId, value);
+      return;
+    }
     const meeting = this.protocol.meeting;
     if (action.op === "chat") {
       if (
@@ -1234,6 +1244,73 @@ export class ProtocolArena extends Arena {
       player.channel = null;
       this.observe("drag", entity, body);
     }
+  }
+
+  /** Who an eliminated player's remote support would help, if anyone. */
+  ghostHelp(entity) {
+    const player = this.privateFor(entity);
+    if (player.role === INFILTRATORS)
+      return this.entities.some((e) => e !== entity && e.team === 1 && this.active(e)) ? "partner" : null;
+    return this.protocol.mission.patients.some((p) => p.hp > 0 && !p.rescued) ? "patients" : null;
+  }
+
+  ghostAction(entity, op, targetId, value) {
+    const player = this.privateFor(entity);
+    if (entity.departed || this.state === "ended" || this.protocol.phase !== "roam") return;
+    let channel = player.channel?.kind === "ghost" ? player.channel : null;
+    if (channel && channel.challenge.deadline < this.time) channel = player.channel = null;
+    if (op === "ghost-begin") {
+      if (
+        channel ||
+        (player.ghostDone || 0) >= PROTOCOL_RULES.ghostLimit ||
+        (player.ghostReadyAt || 0) > this.time ||
+        !this.ghostHelp(entity)
+      )
+        return;
+      player.channel = {
+        kind: "ghost",
+        target: "remote",
+        progress: 0,
+        duration: 1,
+        challenge: createTaskGame(
+          { kind: "ghost" },
+          this.protocol.mission,
+          `ghost-${this.protocol.nextId++}`,
+          this.time,
+          () => this.random(),
+        ),
+      };
+      return;
+    }
+    if (!channel || channel.challenge.id !== targetId) return;
+    if (op === "task-cancel" || channel.challenge.deadline < this.time) {
+      player.channel = null;
+      return;
+    }
+    if (op !== "task-step") return;
+    taskStep(channel.challenge, value, this.time, () => this.random());
+    const game = channel.challenge;
+    channel.progress = game.index / game.steps.length;
+    if (game.index < game.steps.length) return;
+    player.channel = null;
+    player.ghostDone = (player.ghostDone || 0) + 1;
+    player.ghostReadyAt = this.time + PROTOCOL_RULES.ghostCooldown;
+    if (player.role === INFILTRATORS) {
+      const partner = this.entities.find((e) => e !== entity && e.team === 1 && this.active(e));
+      if (!partner) return;
+      const ally = this.privateFor(partner);
+      ally.killReadyAt = Math.max(this.time, ally.killReadyAt - PROTOCOL_RULES.ghostRecharge);
+      recordContribution(player, "remote", player.ghostDone);
+      this.emit(entity.id, `Relay jammed. ${partner.name}'s next attack recharges ${PROTOCOL_RULES.ghostRecharge}s sooner.`);
+      return;
+    }
+    const patient = this.protocol.mission.patients
+      .filter((p) => p.hp > 0 && !p.rescued)
+      .sort((a, b) => a.hp - b.hp)[0];
+    if (!patient) return;
+    patient.hp = Math.min(patient.maxHp, patient.hp + PROTOCOL_RULES.ghostHeal);
+    recordContribution(player, "remote", player.ghostDone);
+    this.emit(entity.id, `You talked the medics through it. ${patient.name} +${PROTOCOL_RULES.ghostHeal} vitals.`);
   }
 
   availableSite(site, excludingId = null) {
@@ -2299,6 +2376,23 @@ export function protocolView(data, selfId) {
           sabotageReadyAt: player.sabotageReadyAt,
           ventReadyAt: player.ventReadyAt,
           emergenciesLeft: player.emergenciesLeft,
+          ...(!isLiving && !selfEntity?.departed
+            ? {
+                ghost: {
+                  readyAt: player.ghostReadyAt || 0,
+                  done: player.ghostDone || 0,
+                  limit: PROTOCOL_RULES.ghostLimit,
+                  help:
+                    player.role === INFILTRATORS
+                      ? data.entities.some((e) => e.id !== selfId && e.team === 1 && e.hp > 0 && !e.departed)
+                        ? "partner"
+                        : null
+                      : mission?.patients.some((pt) => pt.hp > 0 && !pt.rescued)
+                        ? "patients"
+                        : null,
+                },
+              }
+            : {}),
         }
       : null,
   };

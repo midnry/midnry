@@ -173,6 +173,7 @@ export function publicRoom(code: string, room: Room, selfId: string) {
   };
 }
 const PROTOCOL_OPS = new Set([
+  "ghost-begin",
   "task-begin",
   "task-step",
   "task-cancel",

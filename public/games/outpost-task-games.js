@@ -84,6 +84,18 @@ export function createTaskGame(context, mission, id, now, random = Math.random) 
       : patients.map((patient) => choice(`Hand the aid to ${patient.name}.`, [patient.name, "Return shipment"]));
     if (!steps.length)
       steps = [choice("Confirm the delivery manifest.", ["Confirm manifest", "Discard supplies"])];
+  } else if (context.kind === "ghost") {
+    title = "Remote support";
+    // Two quick skill checks of different kinds, never the same twice.
+    const kinds = ["needle", "code", "sequence"];
+    const first = kinds[Math.floor(random() * 3) % 3];
+    const second = kinds.filter((k) => k !== first)[Math.floor(random() * 2) % 2];
+    const make = {
+      needle: () => needle("Hold the radio on the medics' channel: stop the needle in the green band.", random),
+      code: () => memoryCode("Relay the field code. It shows for a moment, then type it from memory.", random),
+      sequence: () => sequence("Patch the relay: press the lights in the order they flash.", random),
+    };
+    steps = [make[first](), make[second]()];
   } else if (context.kind === "repair") {
     title = "System recovery";
     steps = [sequence("Reconnect the wires in the order they light up.", random)];

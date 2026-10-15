@@ -45,6 +45,8 @@ export class SpectatorUI {
       midnry-fps .mf-spectator-label { min-width:0;text-align:center;line-height:1.25; }
       midnry-fps .mf-spectator-label small { display:block;font-size:10px;color:#c0cbd5; }
       midnry-fps .mf-spectator-label b { display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px; }
+      midnry-fps .mf-spectator .mf-spectator-support { grid-column:1/-1;font-size:14px;font-weight:700;background:#1d4a35;border-color:#6fcf97aa; }
+      midnry-fps .mf-spectator .mf-spectator-support[hidden] { display:none; }
       midnry-fps .mf-spectator-hint { grid-column:1/-1;text-align:center;color:#c0cbd5;font-size:10px;padding-bottom:2px; }
       midnry-fps .mf-protocol-spectating :is(.mf-touch,.mf-cross,.mf-protocol-actions,.mf-protocol-context,.mf-protocol-flight,.mf-protocol-flightpad,.mf-protocol-combatstats) { display:none !important; }
       @media(pointer:coarse),(max-width:700px) { midnry-fps .mf-spectator-hint { display:none; } }
@@ -54,14 +56,16 @@ export class SpectatorUI {
     this.bar.hidden = true;
     this.bar.setAttribute("role", "group");
     this.bar.setAttribute("aria-label", "Spectator viewpoints");
-    this.bar.innerHTML = '<button class="mf-spectator-prev" aria-label="Watch previous surviving player" title="Previous player (Left arrow)">‹</button><div class="mf-spectator-label" role="status" aria-live="polite" aria-atomic="true"><small>WATCHING · READ ONLY</small><b></b></div><button class="mf-spectator-next" aria-label="Watch next surviving player" title="Next player (Right arrow)">›</button><span class="mf-spectator-hint">← / → or [ / ] · switch viewpoint</span>';
+    this.bar.innerHTML = '<button class="mf-spectator-prev" aria-label="Watch previous surviving player" title="Previous player (Left arrow)">‹</button><div class="mf-spectator-label" role="status" aria-live="polite" aria-atomic="true"><small>WATCHING</small><b></b></div><button class="mf-spectator-next" aria-label="Watch next surviving player" title="Next player (Right arrow)">›</button><button class="mf-spectator-support" hidden></button><span class="mf-spectator-hint">← / → or [ / ] · switch viewpoint</span>';
     this.label = this.bar.querySelector("b");
     this.previous = this.bar.querySelector(".mf-spectator-prev");
     this.next = this.bar.querySelector(".mf-spectator-next");
+    this.support = this.bar.querySelector(".mf-spectator-support");
+    g.on(this.support, "click", () => g.protocolUI?.enqueue("ghost-begin"));
     g.shell.append(this.style, this.bar);
     g.on(this.previous, "click", () => this.cycle(-1));
     g.on(this.next, "click", () => this.cycle(1));
-    for (const button of [this.previous, this.next])
+    for (const button of [this.previous, this.next, this.support])
       g.on(button, "keydown", (event) => {
         // Keep native button activation when focused; the game's Space/fire
         // shortcut must not consume a keyboard user's spectator button press.
@@ -97,6 +101,27 @@ export class SpectatorUI {
       : "No surviving players";
     if (this.label.textContent !== text) this.label.textContent = text;
     this.previous.disabled = this.next.disabled = survivors.length < 2;
+    this.updateSupport();
+  }
+  /** Remote support: eliminated players still help their side. */
+  updateSupport() {
+    const view = this.g.protocolUI?.safeView?.();
+    const ghost = view?.protocol?.self?.ghost;
+    const roam = view?.protocol?.phase === "roam";
+    this.support.hidden = !ghost || !ghost.help;
+    if (this.support.hidden) return;
+    const wait = Math.ceil((ghost.readyAt || 0) - (view.time || 0));
+    const used = ghost.done >= ghost.limit;
+    const what = ghost.help === "partner" ? "recharge your partner" : "steady the wounded";
+    const text = used
+      ? "Remote support used up"
+      : !roam
+        ? "Remote support after the assembly"
+        : wait > 0
+          ? `Remote support in ${wait}s`
+          : `🎧 Remote support · ${what} (${ghost.limit - ghost.done} left)`;
+    if (this.support.textContent !== text) this.support.textContent = text;
+    this.support.disabled = used || !roam || wait > 0;
   }
   reset() {
     this.selection.reset();

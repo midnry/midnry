@@ -11,6 +11,7 @@ export const CONTRIBUTION_CAPS = Object.freeze({
   sabotage: 8,
   charges: 3,
   cover: 6,
+  remote: 5,
 });
 export function contributionsOf(data) {
   return Object.fromEntries(

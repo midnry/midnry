@@ -5,6 +5,7 @@
  */
 import { modifierOf, twistOf } from "./outpost-variety.js";
 import { shareSummary, shareResult, whatsappUrl } from "./outpost-share.js";
+const GHOST_OPS = new Set(["ghost-begin", "task-step", "task-cancel"]);
 import { MissionTaskPanel } from "./outpost-task-ui.js";
 import { INTERACTIVE_TASKS } from "./outpost-task-games.js";
 import { ProtocolFocus } from "./outpost-protocol-focus.js";
@@ -53,7 +54,7 @@ const GUIDE = [
   ],
   [
     "Controls",
-    "On foot: WASD / left joystick moves; mouse / right-side drag or arrow keys aims. Hold E / the contextual action button to collect, load, depart, repair, sabotage or deliver. F reports, C calls a meeting, X eliminates as an infiltrator, and B opens tactics. At the helm, WASD controls the aircraft and walking is disabled; use the Release helm button to leave the seat. Escape or P opens the menu. Weapons unlock only during Last Stand: click / Space or the touch Fire button shoots; R reloads. After elimination, watch surviving players through their first-person viewpoints. Use Left / Right arrows, [ / ], or the Previous / Next touch buttons to switch. Observation never allows tasks, voting or radio messages. Radio discussion uses text.",
+    "On foot: WASD / left joystick moves; mouse / right-side drag or arrow keys aims. Hold E / the contextual action button to collect, load, depart, repair, sabotage or deliver. F reports, C calls a meeting, X eliminates as an infiltrator, and B opens tactics. At the helm, WASD controls the aircraft and walking is disabled; use the Release helm button to leave the seat. Escape or P opens the menu. Weapons unlock only during Last Stand: click / Space or the touch Fire button shoots; R reloads. After elimination, watch surviving players through their first-person viewpoints. Use Left / Right arrows, [ / ], or the Previous / Next touch buttons to switch. Fallen players cannot vote or use the radio, but Remote support (on the spectator bar) runs a quick skill check every 25 seconds, up to five times: operators steady the weakest patient, and a caught infiltrator recharges their partner's next attack. Radio discussion uses text.",
   ],
 ];
 
@@ -655,7 +656,8 @@ export class ProtocolUI {
 
   enqueue(op, target, value) {
     if (!this.visibleGameplay() || !this.view?.protocol?.self || this.actions.length >= 12) return;
-    if (!this.alive()) return;
+    // Eliminated players may only run remote support checks.
+    if (!this.alive() && !GHOST_OPS.has(op)) return;
     if (
       this.actions.some(
         (action) => action.op === op && action.target === target && action.value === value,
@@ -685,7 +687,7 @@ export class ProtocolUI {
       !this.arming.open &&
       this.canInteract() &&
       (this.held || this.g.keys.has("e"));
-    if (!this.alive()) this.actions = [];
+    if (!this.alive()) this.actions = this.actions.filter((action) => GHOST_OPS.has(action.op));
     return {
       interact: Boolean(interact),
       ...(this.piloting ? { vehicleInput: this.vehicleControls() } : {}),
@@ -1201,8 +1203,8 @@ export class ProtocolUI {
     if (!alive)
       notices.push(
         infiltrator
-          ? "You are observing. Switch viewpoints with ← / → or the spectator buttons. No actions or radio messages."
-          : "Observing only. Switch viewpoints with ← / → or the spectator buttons. Living operators cannot hear you; mission actions and voting are disabled.",
+          ? "You are observing. Use Remote support to recharge your partner's attack. Switch viewpoints with ← / →."
+          : "Observing. Use Remote support to keep the wounded alive. Living operators cannot hear you; voting is disabled. Switch viewpoints with ← / →.",
       );
     const alert = this.hud.querySelector(".mf-protocol-alert");
     alert.hidden = !notices.length;

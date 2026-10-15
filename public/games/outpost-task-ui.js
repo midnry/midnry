@@ -200,7 +200,7 @@ midnry-fps .mf-mission-task .mf-task-wires button:disabled {opacity:.55;}
       !gameplay ||
       !game ||
       view.protocol.phase !== "roam" ||
-      !this.ui.alive() ||
+      (!this.ui.alive() && view.protocol.self.channel?.kind !== "ghost") ||
       game.id === this.cancelled ||
       this.ui.brief.open ||
       this.ui.guide.open ||
@@ -255,8 +255,9 @@ midnry-fps .mf-mission-task .mf-task-wires button:disabled {opacity:.55;}
       view.protocol.self.channel.progress / view.protocol.self.channel.duration,
     );
     const vehicle = view.protocol.mission?.vehicle;
-    this.dialog.querySelector(".mf-task-safety").textContent =
-      vehicle &&
+    this.dialog.querySelector(".mf-task-safety").textContent = !this.ui.alive()
+      ? "Remote support from the radio room. A meeting interrupts this check."
+      : vehicle &&
       !vehicle.autopilot &&
       !vehicle.underControl &&
       !vehicle.arrived &&
