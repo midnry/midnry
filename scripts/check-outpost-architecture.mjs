@@ -157,13 +157,32 @@ try {
         weaponEdge,actors:scene.actors.map(a=>{
           const wrist=a.grip.support.getWorldPosition(g.military.torchDirection.clone());
           const palm=a.grip.supportKnuckle.getWorldPosition(g.military.torchDirection.clone()).lerp(wrist,.5);
-          return{ready:a.actions.Idle.getEffectiveWeight(),grip:!!a.grip,palmGap:palm.distanceTo(a.supportTarget)};
+          return{ready:a.actions.Idle.getEffectiveWeight(),grip:!!a.grip,palmGap:palm.distanceTo(a.supportTarget),
+            goggles:a.model.getObjectByName('Soldier_head_1')?.userData.gogglesPosition};
         }),text:g.protocolUI.preparation.textContent};
     });
     assert.equal(preparing.active,true);assert.equal(preparing.moved,true,'rifles rise from low ready');assert.equal(preparing.ammo,opening.ammo);
     assert.ok(preparing.actors.every(a=>a.ready===1&&a.grip&&a.palmGap<.02),'both supporting palms stay on the rifle');
+    assert.ok(preparing.actors.every(a=>a.goggles==='eyes'),'both operators use the fitted eyewear asset');
     assert.ok(preparing.weaponEdge<1,`both preparation weapons must fit the screen: ${preparing.weaponEdge}`);
     await page.screenshot({path:`/workspace/screenshots/outpost-battle-${label}-${device}-prepare.png`});
+    await page.evaluate(()=>{
+      const g=document.querySelector('midnry-fps').engine,r=g.military,c=r.battlePreparation,a=c.actors[0];
+      window.savedCanvasSize=[r.renderer.domElement.width/r.renderer.getPixelRatio(),r.renderer.domElement.height/r.renderer.getPixelRatio()];
+      c.actors[1].root.visible=false;a.equipment.visible=false;g.protocolUI.preparation.hidden=true;
+      const head=a.model.getObjectByName('Soldier_head_1');head.computeBoundingBox();
+      const focus=head.boundingBox.getCenter(r.torchDirection.clone()).applyMatrix4(head.matrixWorld);
+      c.camera.aspect=innerWidth/innerHeight;
+      c.camera.position.set(focus.x,focus.y+.03,focus.z-(innerWidth<600?.95:.65));
+      c.camera.lookAt(focus);c.camera.updateMatrixWorld(true);c.camera.updateProjectionMatrix();
+      r.renderer.setSize(innerWidth,innerHeight,false);r.renderer.render(c.scene,c.camera);
+    });
+    await page.screenshot({path:`/workspace/screenshots/outpost-goggles-${label}-${device}-closeup.png`});
+    await page.evaluate(()=>{
+      const g=document.querySelector('midnry-fps').engine,r=g.military,c=r.battlePreparation;
+      c.actors[1].root.visible=true;c.actors[0].equipment.visible=true;g.protocolUI.preparation.hidden=false;
+      r.renderer.setSize(...window.savedCanvasSize,false);
+    });
     const ready=await page.evaluate(()=>{
       const g=document.querySelector('midnry-fps').engine;
       for(let i=0;i<62;i++)g.update(.05);

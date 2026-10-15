@@ -7,6 +7,7 @@ import { connectionAdvice, testConnection } from "../public/games/outpost-connec
 import { AnimationMixer, Box3, Group, Vector3 } from "three";
 import { readMotionAsset } from "./outpost-military/motion-build.mjs";
 import { bindWeaponGrip, updateWeaponGrip, placeSupportPalm } from "./outpost-military/realism-grips.js";
+import { fitOperatorGoggles } from "./outpost-military/operator-goggles.mjs";
 
 test("five server-chosen takedowns are delivered only to their victim", () => {
   for (let i = 0; i < 5; i++) {
@@ -126,6 +127,35 @@ test("rigged operator retains sculpt UVs, embedded surface maps and captured mot
       assert.ok(p.attributes.WEIGHTS_0 != null);
       assert.ok(p.attributes.TEXCOORD_0 != null);
     }
+});
+
+test("goggles cover the eye line in both LODs without altering UVs, skinning or other equipment",async()=>{
+  const {gltf}=await readMotionAsset("scripts/assets/outpost-operator/swat-source.glb");
+  const helmet=gltf.scene.getObjectByName('Soldier_head_1'),geometry=helmet.geometry;
+  const originals=new Map();gltf.scene.traverse(o=>{if(o.isMesh)originals.set(o,o.geometry.attributes.position.array.slice());});
+  const attributes=new Map(['uv','skinIndex','skinWeight'].map(key=>[key,geometry.attributes[key].array.slice()]));
+  const index=geometry.index.array.slice(),before=originals.get(helmet);
+  fitOperatorGoggles(gltf.scene);
+  assert.equal(helmet.userData.gogglesPosition,'eyes');
+  assert.deepEqual(geometry.index.array,index,'no additional triangles or draw calls');
+  for(const [key,values]of attributes)assert.deepEqual(geometry.attributes[key].array,values,key+' preserved');
+  for(const [mesh,values]of originals)if(mesh!==helmet)assert.deepEqual(mesh.geometry.attributes.position.array,values);
+  const p=geometry.attributes.position;
+  let lowered=0;const lens=new Box3();
+  for(let i=0;i<p.count;i++){
+    if(before[i*3+1]-p.getY(i)>.03)lowered++;
+    if(before[i*3+1]-p.getY(i)>.03&&before[i*3+2]>.06&&Math.abs(before[i*3])<.06)
+      lens.expandByPoint(new Vector3().fromBufferAttribute(p,i));
+  }
+  assert.ok(lowered>250,'frame moves off the forehead');
+  assert.ok(lens.min.y<1.65&&lens.max.y>1.65,'lens spans the eye line');
+  assert.ok(lens.min.y>1.60&&lens.max.y<1.70,'frame stays above the mouth and below the helmet crown');
+  assert.ok(lens.min.z>.075&&lens.max.z<.14,'lens seats just in front of the face');
+  const once=p.array.slice();fitOperatorGoggles(gltf.scene);assert.deepEqual(p.array,once,'fitting is idempotent');
+  const built=await readMotionAsset('public/games/military/models/operator-v1.glb');
+  const lods=[];built.gltf.scene.traverse(o=>{if(o.isMesh&&o.userData.gogglesPosition==='eyes')lods.push(o);});
+  assert.deepEqual(lods.map(o=>o.userData.operatorLOD).sort(),[0,1]);
+  for(const mesh of lods)assert.deepEqual(mesh.geometry.attributes.position.array,p.array,'both LODs use the fitted skinned geometry');
 });
 
 test("motion preserves bone lengths and skin weights; crouch and death are posed, not bind/T poses", async () => {

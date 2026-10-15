@@ -5,12 +5,14 @@ import * as THREE from 'three';
 import {GLTFExporter} from 'three/addons/exporters/GLTFExporter.js';
 import {MeshoptSimplifier} from 'meshoptimizer/simplifier';
 import {readMotionAsset,retargetMotion,restoreImages} from './outpost-military/motion-build.mjs';
+import {fitOperatorGoggles} from './outpost-military/operator-goggles.mjs';
 globalThis.FileReader=class{async readAsArrayBuffer(blob){this.result=await blob.arrayBuffer();this.onloadend?.();}};
 const root='scripts/assets/outpost-operator/';
 const sources=JSON.parse(readFileSync(root+'sources.json'));
 for(const asset of sources.assets){const bytes=readFileSync(root+asset.file);if(createHash('sha256').update(bytes).digest('hex')!==asset.sha256)throw new Error('Invalid operator source: '+asset.file);}
 const {gltf,raw}=await readMotionAsset(root+'swat-source.glb');
 const model=gltf.scene;
+fitOperatorGoggles(model);
 model.rotation.y=Math.PI;
 model.userData.originalOperator=true;model.userData.riggedOperator=true;
 const originals=new Map();let materialIndex=0;
