@@ -1920,6 +1920,8 @@ export class MilitaryRenderer {
       deadAt: null,
     };
     if (this.g.mode !== "protocol") this.dressActor(actor, e);
+    else this.dyeUniform(model, e.color);
+    actor.dye = e.color || null;
     this.equipActor(actor, e);
     actor.ownedMaterials = [...this.materials].filter((m) => !before.has(m));
     this.actors.set(e.id, actor);
@@ -1957,6 +1959,41 @@ export class MilitaryRenderer {
       mesh.userData.ownedGeometry = true;
       group.add(mesh);
     }
+  }
+  /**
+   * Blackout Protocol keeps one uniform for everyone, dyed in each seat's
+   * colour: only the blue cloth is recoloured (its weave and shading kept);
+   * vests, straps, boots and skin keep their own colours. Colours never
+   * reveal a role, they only make "I saw Red" possible.
+   */
+  dyeUniform(model, color) {
+    if (!color) return;
+    const tint = new THREE.Color(color).lerp(new THREE.Color("#808080"), 0.1);
+    model.traverse((o) => {
+      if (!o.isMesh) return;
+      for (const material of [].concat(o.material)) {
+        if (!/uniform|fabric/i.test(material.name) || material.userData.playerDye) continue;
+        material.userData.playerDye = { value: tint };
+        const previous = material.onBeforeCompile;
+        material.onBeforeCompile = (shader, renderer) => {
+          previous?.call(material, shader, renderer);
+          shader.uniforms.playerDye = material.userData.playerDye;
+          shader.fragmentShader =
+            "uniform vec3 playerDye;\n" +
+            shader.fragmentShader.replace(
+              "#include <map_fragment>",
+              `#include <map_fragment>
+              vec3 clothBase = diffuseColor.rgb;
+              float clothLight = dot(clothBase, vec3(.2126, .7152, .0722));
+              // The base cloth is a muted blue-grey: a small blue lead is enough.
+              float clothBlue = smoothstep(.004, .045, clothBase.b - max(clothBase.r, clothBase.g));
+              diffuseColor.rgb = mix(clothBase, playerDye * clamp(clothLight * 2.9, .06, 1.15), clothBlue);`,
+            );
+        };
+        material.customProgramCacheKey = () => "outpost-player-dye-v2";
+        material.needsUpdate = true;
+      }
+    });
   }
   disposeActor(a) {
     this.dynamic.remove(a.root);
@@ -2293,7 +2330,12 @@ export class MilitaryRenderer {
         continue;
       }
       let a = this.actors.get(e.id);
-      if (a && (a.outfit !== outfitOf(e.outfit).id || a.weapon !== e.weapon)) {
+      if (
+        a &&
+        (a.outfit !== outfitOf(e.outfit).id ||
+          a.weapon !== e.weapon ||
+          (this.g.mode === "protocol" && a.dye !== (e.color || null)))
+      ) {
         this.disposeActor(a);
         this.actors.delete(e.id);
         a = null;

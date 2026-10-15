@@ -21469,7 +21469,7 @@ var Ap = 3, jp = .065, Mp = 40, Np = class {
 			lastSample: null,
 			deadAt: null
 		};
-		return this.g.mode !== "protocol" && this.dressActor(s, e), this.equipActor(s, e), s.ownedMaterials = [...this.materials].filter((e) => !t.has(e)), this.actors.set(e.id, s), s;
+		return this.g.mode === "protocol" ? this.dyeUniform(r, e.color) : this.dressActor(s, e), s.dye = e.color || null, this.equipActor(s, e), s.ownedMaterials = [...this.materials].filter((e) => !t.has(e)), this.actors.set(e.id, s), s;
 	}
 	mergeStatic(e) {
 		e.updateMatrixWorld(!0);
@@ -21487,6 +21487,20 @@ var Ap = 3, jp = .065, Mp = 40, Np = class {
 			let i = new qn(n, t);
 			i.castShadow = !0, i.receiveShadow = !0, i.userData.ownedGeometry = !0, e.add(i);
 		}
+	}
+	dyeUniform(e, t) {
+		if (!t) return;
+		let n = new K(t).lerp(new K("#808080"), .1);
+		e.traverse((e) => {
+			if (e.isMesh) for (let t of [].concat(e.material)) {
+				if (!/uniform|fabric/i.test(t.name) || t.userData.playerDye) continue;
+				t.userData.playerDye = { value: n };
+				let e = t.onBeforeCompile;
+				t.onBeforeCompile = (n, r) => {
+					e?.call(t, n, r), n.uniforms.playerDye = t.userData.playerDye, n.fragmentShader = "uniform vec3 playerDye;\n" + n.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n              vec3 clothBase = diffuseColor.rgb;\n              float clothLight = dot(clothBase, vec3(.2126, .7152, .0722));\n              // The base cloth is a muted blue-grey: a small blue lead is enough.\n              float clothBlue = smoothstep(.004, .045, clothBase.b - max(clothBase.r, clothBase.g));\n              diffuseColor.rgb = mix(clothBase, playerDye * clamp(clothLight * 2.9, .06, 1.15), clothBlue);");
+				}, t.customProgramCacheKey = () => "outpost-player-dye-v2", t.needsUpdate = !0;
+			}
+		});
 	}
 	disposeActor(e) {
 		this.dynamic.remove(e.root), e.mixer?.stopAllAction(), e.root.traverse((e) => {
@@ -22071,7 +22085,7 @@ var Ap = 3, jp = .065, Mp = 40, Np = class {
 				continue;
 			}
 			let o = this.actors.get(a.id);
-			o && (o.outfit !== pp(a.outfit).id || o.weapon !== a.weapon) && (this.disposeActor(o), this.actors.delete(a.id), o = null), o ||= this.makeActor(a), o.patch.color.set(this.g.mode === "protocol" ? "#97a79b" : a.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465");
+			o && (o.outfit !== pp(a.outfit).id || o.weapon !== a.weapon || this.g.mode === "protocol" && o.dye !== (a.color || null)) && (this.disposeActor(o), this.actors.delete(a.id), o = null), o ||= this.makeActor(a), o.patch.color.set(this.g.mode === "protocol" ? "#97a79b" : a.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465");
 			let s = a.hp > 0, c = a.cloakedUntil > this.g.time && a.team !== this.g.player.team, l = performance.now() / 1e3;
 			s ? o.deadAt = null : o.deadAt === null && (o.deadAt = l);
 			let u = s ? 0 : Math.min(1, (l - o.deadAt) / .85);
