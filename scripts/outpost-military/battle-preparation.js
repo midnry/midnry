@@ -5,11 +5,20 @@
 import * as THREE from "three";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
 import { finishActor } from "./realism-characters.js";
-import { updateWeaponGrip } from "./realism-grips.js";
+import { updateWeaponGrip, placeSupportPalm } from "./realism-grips.js";
 import { animateCarbine } from "./realism-carbine.js";
 import { battlePreparation } from "../../public/games/outpost-battle-presentation.js";
 
 const smooth = x => { x = THREE.MathUtils.clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+function turnInActorSpace(actor, joint, axis, angle) {
+  if (!joint || !angle) return;
+  actor.root.updateMatrixWorld(true);
+  const worldAxis = axis.clone().applyQuaternion(actor.root.getWorldQuaternion(new THREE.Quaternion()));
+  const rotation = joint.getWorldQuaternion(new THREE.Quaternion())
+    .premultiply(new THREE.Quaternion().setFromAxisAngle(worldAxis, angle));
+  joint.quaternion.copy(joint.parent.getWorldQuaternion(new THREE.Quaternion()).invert()).multiply(rotation);
+  actor.root.updateMatrixWorld(true);
+}
 export class BattlePreparation {
   constructor(r) {
     this.r = r;
@@ -43,6 +52,14 @@ export class BattlePreparation {
     r.equipActor(actor, { ...entity, weapon: "carbine" });
     // This camera faces +Z, so positive world X is the left side of the screen.
     root.position.x = side ? -.62 : .62; root.rotation.y = side ? .18 : -.18;
+    root.updateMatrixWorld(true);
+    actor.supportGrip = actor.equipment.getWorldQuaternion(new THREE.Quaternion()).invert()
+      .multiply(actor.grip.support.getWorldQuaternion(new THREE.Quaternion()));
+    actor.readyBones = {};
+    model.traverse(b => {
+      for (const name of ["RightArm", "RightForeArm", "Head"])
+        if (b.isBone && b.name.endsWith(name)) actor.readyBones[name] = b;
+    });
     actor.materials = [...r.materials].filter(m => !before.has(m));
     return actor;
   }
@@ -67,8 +84,7 @@ export class BattlePreparation {
     this.scene.environment = r.scene.environment; this.scene.environmentIntensity = .3;
     const aspect = r.camera.aspect;
     this.camera.aspect = aspect;
-    // Reserve horizontal room for the rifle and outstretched reload hand on
-    // portrait screens, rather than cropping the left soldier's equipment.
+    // Reserve horizontal room for the raised rifles on portrait screens.
     this.camera.position.set(.25, 1.24, -Math.max(4.3, 1.6 / (Math.tan(Math.PI / 8) * aspect)));
     this.camera.lookAt(.25, 1.07, 0); this.camera.updateProjectionMatrix();
     // Interpolate presentation between online snapshots just like locomotion.
@@ -79,17 +95,25 @@ export class BattlePreparation {
     if (sample === this.lastSample) return true;
     this.lastSample = sample;
     this.actors.forEach((actor, i) => {
-      const elapsed = visualElapsed - i * .15, progress = THREE.MathUtils.clamp(elapsed / 3.8, 0, 1);
-      const weight = r.motion.matches ? 0 : smooth((elapsed - .15) / .4) * (1 - smooth((elapsed - 3.65) / .65));
-      for (const [name, amount] of [["Idle", 1 - weight], ["Reload", weight]]) {
-        const action = actor.actions[name]; if (!action) continue;
-        action.play().setEffectiveWeight(amount).setEffectiveTimeScale(0);
-        action.time = name === "Reload" ? progress * action.getClip().duration : 0;
-      }
+      const elapsed = Math.max(0, visualElapsed - i * .15);
+      // The captured aiming grip supplies coherent wrist and finger poses.
+      // Lower/check/raise the rifle through the shoulder; avoid combining a
+      // generic reload's hands with an unrelated magazine trajectory.
+      const action = actor.actions.Idle;
+      action.play().setEffectiveWeight(1).setEffectiveTimeScale(0);
+      action.time = r.motion.matches ? 0 : elapsed % action.getClip().duration;
       actor.mixer.update(0); actor.model.position.y = actor.baseY; actor.root.updateMatrixWorld(true);
-      const reload = weight > .01 ? (1 - progress) * weight : 0;
-      updateWeaponGrip(actor, reload);
-      animateCarbine(actor.equipment.userData.carbine, reload, 0);
+      const raise = smooth((elapsed - .35) / 3.55);
+      const check = r.motion.matches ? 0 : Math.sin(Math.PI * smooth(elapsed / 3.9));
+      turnInActorSpace(actor, actor.readyBones.RightArm, new THREE.Vector3(1, 0, 0), r.motion.matches ? 0 : -.32 * (1 - raise));
+      turnInActorSpace(actor, actor.readyBones.RightForeArm, new THREE.Vector3(0, 0, 1), check * .055);
+      turnInActorSpace(actor, actor.readyBones.Head, new THREE.Vector3(1, 0, 0), -check * .1);
+      updateWeaponGrip(actor, 0, false);
+      animateCarbine(actor.equipment.userData.carbine, 0, 0);
+      const target = actor.equipment.localToWorld(new THREE.Vector3(-.035, -.056, -.312));
+      const orientation = actor.equipment.getWorldQuaternion(new THREE.Quaternion()).multiply(actor.supportGrip);
+      placeSupportPalm(actor, target, orientation);
+      actor.supportTarget = target;
     });
     return true;
   }

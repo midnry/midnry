@@ -6,7 +6,7 @@ import { ProtocolArena, protocolView, restoreArena } from "../public/games/outpo
 import { connectionAdvice, testConnection } from "../public/games/outpost-connection.js";
 import { AnimationMixer, Box3, Group, Vector3 } from "three";
 import { readMotionAsset } from "./outpost-military/motion-build.mjs";
-import { bindWeaponGrip, updateWeaponGrip } from "./outpost-military/realism-grips.js";
+import { bindWeaponGrip, updateWeaponGrip, placeSupportPalm } from "./outpost-military/realism-grips.js";
 
 test("five server-chosen takedowns are delivered only to their victim", () => {
   for (let i = 0; i < 5; i++) {
@@ -182,5 +182,31 @@ test("captured rifle grip remains in the firing palm across crouch and reload po
     const palm=joints.get('RightHand').getWorldPosition(new Vector3()).lerp(joints.get('RightHandMiddle1').getWorldPosition(new Vector3()),.5);
     const grip=actor.equipment.localToWorld(new Vector3(0,-.109,-.001));
     assert.ok(grip.distanceTo(palm)<.001,name+' weapon stays in the firing palm');
+  }
+});
+
+test("preparation palm IK preserves wrist orientation and bone lengths in the scaled soldier rig",async()=>{
+  const {gltf}=await readMotionAsset("public/games/military/models/operator-v1.glb");
+  gltf.scene.userData.riggedOperator=true;
+  const bones=new Map();gltf.scene.traverse(o=>{if(o.isBone)bones.set(o.name.replace(/^mixamorig\d*[:_]?/i,''),o);});
+  const actor={root:new Group(),model:gltf.scene,equipment:new Group(),weaponAnchor:bones.get('RightHand')};
+  actor.root.add(actor.model,actor.equipment);actor.root.rotation.y=.7;actor.root.position.set(4,.2,-2);
+  const mixer=new AnimationMixer(actor.model),idle=gltf.animations.find(c=>c.name==='Idle');
+  mixer.clipAction(idle).play();mixer.update(0);bindWeaponGrip(actor);
+  const g=actor.grip,knuckle=bones.get('LeftHandMiddle1');
+  const lengths=[g.arm.position.length(),g.elbow.position.length(),g.support.position.length()];
+  for(const name of ['Idle','Reload'])for(const phase of [0,.2,.4,.6,.8,.99]){
+    mixer.stopAllAction();const action=mixer.clipAction(gltf.animations.find(c=>c.name===name)).play();
+    action.time=action.getClip().duration*phase;mixer.update(0);actor.root.updateMatrixWorld(true);
+    const wrist=g.support.getWorldPosition(new Vector3()),shoulder=g.arm.getWorldPosition(new Vector3());
+    const orientation=g.support.getWorldQuaternion(actor.equipment.quaternion.clone()).normalize();
+    const target=knuckle.getWorldPosition(new Vector3()).lerp(wrist,.5)
+      .add(shoulder.sub(wrist).normalize().multiplyScalar(.012));
+    assert.equal(placeSupportPalm(actor,target,orientation),true);
+    const actual=knuckle.getWorldPosition(new Vector3()).lerp(g.support.getWorldPosition(new Vector3()),.5);
+    assert.ok(actual.distanceTo(target)<.002,`${name} ${phase}: palm contact stays within 2 mm`);
+    const angle=g.support.getWorldQuaternion(actor.equipment.quaternion.clone()).normalize().angleTo(orientation);
+    assert.ok(angle<.0001,`wrist orientation survives elbow correction: ${angle}`);
+    assert.deepEqual([g.arm.position.length(),g.elbow.position.length(),g.support.position.length()],lengths);
   }
 });

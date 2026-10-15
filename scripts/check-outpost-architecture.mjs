@@ -133,7 +133,7 @@ try {
       const target=g.arena.entities.find(e=>e.team===0&&e.hp>0);target.name='Accused operator';beginCombat(g.arena,target);
       g.protocolCache=null;g.military.frameProtocolArena=null;g.protocolUI.update(true);g.render();
       const cinematic=g.military.battlePreparation,actor=cinematic.actors[0];
-      window.openingHand=actor.grip.hand.quaternion.toArray();
+      window.openingWeapon=actor.equipment.getWorldQuaternion(g.military.camera.quaternion.clone()).toArray();
       return {active:cinematic.active,visible:!g.protocolUI.preparation.hidden,count:cinematic.actors.length,
         label:g.protocolUI.preparation.textContent,ammo:g.player.ammo,at:g.time,camera:g.military.camera.position.toArray()};
     });
@@ -142,7 +142,7 @@ try {
     const preparing=await page.evaluate(()=>{
       const g=document.querySelector('midnry-fps').engine;for(let i=0;i<40;i++)g.update(.05);
       g.protocolCache=null;g.military.frameProtocolArena=null;g.protocolUI.update(true);g.render();
-      const scene=g.military.battlePreparation,hand=scene.actors[0].grip.hand.quaternion.toArray();
+      const scene=g.military.battlePreparation,weapon=scene.actors[0].equipment.getWorldQuaternion(g.military.camera.quaternion.clone()).toArray();
       scene.scene.updateMatrixWorld(true);scene.camera.updateMatrixWorld(true);
       let weaponEdge=0;
       for(const actor of scene.actors)actor.equipment.traverse(o=>{
@@ -153,11 +153,15 @@ try {
           weaponEdge=Math.max(weaponEdge,Math.abs(p.x));
         }
       });
-      return {active:scene.active,moved:hand.some((v,i)=>Math.abs(v-window.openingHand[i])>.01),ammo:g.player.ammo,
-        weaponEdge,actors:scene.actors.map(a=>({reload:a.actions.Reload.getEffectiveWeight(),grip:!!a.grip})),text:g.protocolUI.preparation.textContent};
+      return {active:scene.active,moved:weapon.some((v,i)=>Math.abs(v-window.openingWeapon[i])>.01),ammo:g.player.ammo,
+        weaponEdge,actors:scene.actors.map(a=>{
+          const wrist=a.grip.support.getWorldPosition(g.military.torchDirection.clone());
+          const palm=a.grip.supportKnuckle.getWorldPosition(g.military.torchDirection.clone()).lerp(wrist,.5);
+          return{ready:a.actions.Idle.getEffectiveWeight(),grip:!!a.grip,palmGap:palm.distanceTo(a.supportTarget)};
+        }),text:g.protocolUI.preparation.textContent};
     });
-    assert.equal(preparing.active,true);assert.equal(preparing.moved,true);assert.equal(preparing.ammo,opening.ammo);
-    assert.ok(preparing.actors.every(a=>a.reload>0&&a.grip));
+    assert.equal(preparing.active,true);assert.equal(preparing.moved,true,'rifles rise from low ready');assert.equal(preparing.ammo,opening.ammo);
+    assert.ok(preparing.actors.every(a=>a.ready===1&&a.grip&&a.palmGap<.02),'both supporting palms stay on the rifle');
     assert.ok(preparing.weaponEdge<1,`both preparation weapons must fit the screen: ${preparing.weaponEdge}`);
     await page.screenshot({path:`/workspace/screenshots/outpost-battle-${label}-${device}-prepare.png`});
     const ready=await page.evaluate(()=>{
