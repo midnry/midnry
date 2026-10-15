@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "three";
 import { initNaturalLighting, updateNaturalLighting } from "./outpost-military/realism-lighting.js";
+import { PROTOCOL_MAP } from "../public/games/outpost-protocol-map.js";
 
 function fixture(twoLights = false) {
   const scene = new THREE.Scene(),
@@ -75,4 +76,39 @@ test("60Hz and 120Hz transitions match; blackout still fades to emergency illumi
   assert.ok(Math.abs(a.scene.environmentIntensity - 0.065) < 0.001);
   assert.ok(Math.abs(a.hemisphere.intensity - 0.09) < 0.001);
   assert.ok(a.protocolLights.every((l) => l.intensity < 0.01));
+});
+
+test("a power cut never dims outdoor daylight, sky, or first-person equipment", () => {
+  for (const shadows of [true, false]) {
+    const r = fixture();
+    r.g.academy.options.shadows = shadows;
+    const outside = { x: 3, y: 1 };
+    updateNaturalLighting(r, view, outside);
+    const values = () => [r.sun.intensity, r.hemisphere.intensity, r.scene.environmentIntensity,
+      r.scene.backgroundIntensity, r.renderer.toneMappingExposure, r.weaponScene.environmentIntensity,
+      r.naturalLighting.weaponKey.intensity, r.naturalLighting.weaponSky.intensity];
+    const daylight = values();
+    const dark = { protocol: { sabotage: { powerUntil: 40 } } };
+    for (let i = 0; i < 120; i++) updateNaturalLighting(r, dark, outside);
+    assert.deepEqual(values(), daylight);
+    updateNaturalLighting(r, dark, { x: 1, y: 1 });
+    assert.equal(r.scene.backgroundIntensity, daylight[3]);
+    if (shadows) assert.equal(r.sun.intensity, daylight[0]);
+    else assert.ok(r.sun.intensity < daylight[0], "cheap shelter fallback blocks unshadowed indoor sun");
+    r.naturalLighting.initialized = false;
+    updateNaturalLighting(r, view, { x: 1, y: 1 });
+    const exposure = r.renderer.toneMappingExposure;
+    for (let i = 0; i < 120; i++) updateNaturalLighting(r, dark, { x: 1, y: 1 });
+    assert.equal(r.renderer.toneMappingExposure, exposure, "window sky keeps its exposure");
+  }
+});
+
+test("covered base door thresholds retain indoor lighting and fixture probes", () => {
+  const r = fixture();
+  r.protocolMetadata = () => PROTOCOL_MAP;
+  updateNaturalLighting(r, view, { x: 7.9, y: 6.5 });
+  updateNaturalLighting(r, view, { x: 8.5, y: 6.5 });
+  assert.equal(r.naturalLighting.inside, true);
+  assert.equal(r.naturalLighting.roomId, "command");
+  assert.equal(r.scene.environmentIntensity, 0.2);
 });

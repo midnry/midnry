@@ -38,6 +38,9 @@ try {
   for (const view of [
     { id: "command", x: 3.5, y: 5.5, a: 0 },
     { id: "doorway", x: 8.5, y: 6.5, a: 0 },
+    { id: "doorway-up-left", x: 8.15, y: 6.5, a: -.35, pitch: .6 },
+    { id: "doorway-up-right", x: 8.85, y: 6.5, a: .35, pitch: .6 },
+    { id: "courtyard-grazing", x: 12.15, y: 14.5, a: -Math.PI / 2, pitch: .3 },
     { id: "flight-window", transport: true, x: 8.5, y: 2.5, a: -Math.PI / 2 },
   ]) {
     await page.evaluate((view) => {
@@ -50,6 +53,7 @@ try {
         g.arena.departMission(g.player);
       }
       Object.assign(g.player, { x: view.x, y: view.y, a: view.a });
+      g.lookPitch = view.pitch || 0;
       g.protocolCache = null;
       r.frameProtocolArena = null;
       g.protocolUI.update(true);

@@ -38,6 +38,7 @@ import { isAppleTouchDevice, graphicsProfile, renderSize } from "./compatibility
 import { RenderTelemetry, actorInView } from "./telemetry.js";
 import { batchStaticByMaterial } from "./static-batches.js";
 import { WorldVisibility } from "./world-visibility.js";
+import { roofLayout } from "./architecture.js";
 import { GroundTrail } from "./ground-trail.js";
 const SCALE = 3,
   ASSET = "/games/military/",
@@ -698,13 +699,20 @@ export class MilitaryRenderer {
       }
       for (const tiles of chunks.values()) {
       const mesh = new THREE.InstancedMesh(
-        this.wallGeometry,
+        // Continuous interior shells need square joins. Rounded individual
+        // tiles leave beveled cracks at the ceiling and adjoining wall bays.
+        ["breakwater", "medevac"].includes(g.arena.mapId)
+          ? this.geo("protocol-solid-wall", () => new THREE.BoxGeometry(1, 1, 1))
+          : this.wallGeometry,
         this.wallMaterials[type],
         tiles.length,
       );
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.userData.tiles = tiles;
+      // A floor-level occlusion ray cannot safely hide the structural shell
+      // when looking up or crossing a threshold. Normal frustum culling stays.
+      mesh.userData.noRoomCull = true;
       tiles.forEach(([x, y], i) => {
         const height = ["breakwater", "medevac"].includes(g.arena.mapId) ? 3.5 : 3;
         dummy.position.set((x + 0.5) * SCALE, height / 2, (y + 0.5) * SCALE);
@@ -917,7 +925,7 @@ export class MilitaryRenderer {
     });
     ceiling.userData.world = true;
     const rooms = [...(map.rooms || []), ...(map.corridors || [])];
-    const roofTiles = new Set();
+    const roofTiles = roofLayout(map).cells.keys();
     for (const room of rooms) {
       if (room.roofed === false) continue;
       const roomFloor = surfaceMaterial(this, map.id === "medevac" ? "fabric" : "concrete", {
@@ -937,8 +945,6 @@ export class MilitaryRenderer {
       );
       floor.rotation.x = -Math.PI / 2;
       floor.castShadow = false;
-      for (let y = room.y; y < room.y + room.h; y++)
-        for (let x = room.x; x < room.x + room.w; x++) roofTiles.add(`${x},${y}`);
       // A ceiling and an overhead conduit make the interior read as a room,
       // instead of sky appearing above every corridor.
       this.cylinder(
@@ -1005,6 +1011,8 @@ export class MilitaryRenderer {
       roof.setMatrixAt(tileIndex++, dummy.matrix);
     }
     roof.castShadow = roof.receiveShadow = true;
+    roof.userData.noRoomCull = true;
+    roof.name = "Continuous interior roof";
     root.add(roof);
     }
     for (const station of map.stations || []) {
@@ -1707,9 +1715,9 @@ export class MilitaryRenderer {
     if (!this.profile.reflections) return;
     if(id === "medevac") return; // Dry aircraft flooring is not a water mirror.
     const wetPixels=new Uint8Array(n*n*4);
-    const rooms=id==="breakwater"?this.g.protocolMap?.rooms||[]:[];
+    const roofs=roofLayout(id==="breakwater"?this.g.protocolMap:null).cells;
     for(let y=0;y<n;y++)for(let x=0;x<n;x++){
-      const roof=rooms.some(room=>room.roofed!==false&&x>=room.x&&x<room.x+room.w&&y>=room.y&&y<room.y+room.h);
+      const roof=roofs.has(`${x},${y}`);
       const value=!this.g.level[y]?.[x]&&!roof?255:0,offset=(y*n+x)*4;
       wetPixels[offset]=wetPixels[offset+1]=wetPixels[offset+2]=value;wetPixels[offset+3]=255;
     }
@@ -3191,19 +3199,17 @@ export class MilitaryRenderer {
       g.time > g.zone.delay &&
       (Math.abs(p.x - g.zone.cx) > g.zone.half || Math.abs(p.y - g.zone.cy) > g.zone.half);
     this.scene.fog.color.set(
-      this.protocolPowerOut
-        ? "#101d22"
-        : outside
-          ? "#827276"
-          : (PROFILES[g.arena.mapId] || PROFILES.outpost).fog,
+      outside
+        ? "#827276"
+        : (PROFILES[g.arena.mapId] || PROFILES.outpost).fog,
     );
-    this.scene.fog.density = this.protocolPowerOut
-      ? 0.045
-      : outside
-        ? 0.065
-        : g.arena.mapId === "medevac" && !protocolView?.protocol?.mission?.vehicle?.arrived
-          ? 0.002
-          : 0.009;
+    // Electrical sabotage cannot change the weather or fill open air with
+    // black fog. Interior darkness comes from unpowered fixtures and shelter.
+    this.scene.fog.density = outside
+      ? 0.065
+      : g.arena.mapId === "medevac" && !protocolView?.protocol?.mission?.vehicle?.arrived
+        ? 0.002
+        : 0.009;
     // A 30Hz shadow refresh matches visible skeletal animation. Reusing the
     // shadow texture between samples avoids a second full geometry pass at
     // 120Hz; camera and player movement continue on every animation frame.
