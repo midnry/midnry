@@ -40,6 +40,7 @@ import { batchStaticByMaterial } from "./static-batches.js";
 import { WorldVisibility } from "./world-visibility.js";
 import { roofLayout } from "./architecture.js";
 import { GroundTrail } from "./ground-trail.js";
+import { BattlePreparation } from "./battle-preparation.js";
 const SCALE = 3,
   ASSET = "/games/military/",
   TAU = Math.PI * 2;
@@ -3222,7 +3223,14 @@ export class MilitaryRenderer {
     }
     this.renderer.info.reset();
     (this.telemetry ||= new RenderTelemetry(this.renderer)).begin();
-    if (!this.composer || g.academy.preset === "performance") {
+    const preparing = protocolView?.protocol?.phase === "combat" && protocolView.time < protocolView.protocol.combat?.startsAt;
+    const introduction = preparing && (this.battlePreparation ||= new BattlePreparation(this)).update(protocolView);
+    if (!preparing && this.battlePreparation) this.battlePreparation.active = false;
+    if (introduction) {
+      this.identification.root.hidden = true;
+      this.renderer.autoClear = true;
+      this.renderer.render(this.battlePreparation.scene, this.battlePreparation.camera);
+    } else if (!this.composer || g.academy.preset === "performance") {
       this.renderer.autoClear = true;
       this.renderer.render(this.scene, this.camera);
       this.renderer.autoClear = false;
@@ -3252,6 +3260,7 @@ export class MilitaryRenderer {
     this.groundTrail?.dispose();
     this.identification?.dispose();
     this.takedown?.dispose();
+    this.battlePreparation?.dispose();
     disposeRiggedHands(this.rig);
     for (const a of this.actors.values()) {
       a.mixer?.stopAllAction();

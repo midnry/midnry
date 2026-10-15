@@ -21,7 +21,7 @@ const rooms = [
   { id: "armory", name: "Armory", x: 12, y: 3, w: 4, h: 6, roofed: true },
   { id: "communications", name: "Communications / Radar", x: 20, y: 3, w: 5, h: 6, roofed: true },
   { id: "barracks", name: "Barracks / Mess Hall", x: 3, y: 13, w: 5, h: 3, roofed: true },
-  { id: "courtyard", name: "Supply Courtyard", x: 12, y: 13, w: 4, h: 3, roofed: false },
+  { id: "courtyard", name: "Covered Supply Atrium", x: 12, y: 13, w: 4, h: 3, roofed: true },
   { id: "hangar", name: "Vehicle Hangar", x: 20, y: 13, w: 5, h: 7, roofed: true },
   { id: "generators", name: "Generators / Power", x: 3, y: 19, w: 5, h: 6, roofed: true },
   { id: "maintenance", name: "Maintenance Tunnels", x: 12, y: 19, w: 4, h: 6, roofed: true },

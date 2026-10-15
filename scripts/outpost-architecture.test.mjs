@@ -5,7 +5,7 @@ import { roofLayout, roofRoomAt } from "./outpost-military/architecture.js";
 import { WorldVisibility } from "./outpost-military/world-visibility.js";
 import * as THREE from "three";
 
-test("interior roofs cover door gaps without roofing the courtyard or outdoor perimeter", () => {
+test("interior roofs cover door gaps and the supply atrium; the exterior perimeter stays outdoors", () => {
   const before = JSON.stringify(PROTOCOL_MAP);
   for (const map of [PROTOCOL_MAP, TRANSPORT_MAP]) {
     const { cells } = roofLayout(map);
@@ -16,7 +16,8 @@ test("interior roofs cover door gaps without roofing the courtyard or outdoor pe
   }
   for (const [x, y] of [[8, 6], [8, 7], [5, 9], [11, 5], [19, 5], [4, 12], [22, 12], [13, 18]])
     assert.ok(roofRoomAt(PROTOCOL_MAP, x + 0.5, y + 0.5), `door: ${x},${y}`);
-  assert.equal(roofRoomAt(PROTOCOL_MAP, 14.5, 14.5), null);
+  assert.equal(roofRoomAt(PROTOCOL_MAP, 14.5, 14.5)?.id, "courtyard");
+  assert.equal(roofRoomAt(PROTOCOL_MAP, 14.5, 26.5), null);
   assert.equal(roofRoomAt(PROTOCOL_MAP, 1.5, 21.5), null);
   assert.equal(JSON.stringify(PROTOCOL_MAP), before);
   assert.equal(roofLayout(PROTOCOL_MAP), roofLayout(PROTOCOL_MAP), "coverage is cached");
