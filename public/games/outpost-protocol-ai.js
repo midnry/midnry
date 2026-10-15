@@ -97,14 +97,40 @@ export function suspectScores(ctx) {
     const firstHand =
       /\bI saw\b/i.test(message.text) &&
       /\b(attack|attacked|kill|killed|disable|damage)\b/i.test(message.text);
-    const weight = firstHand ? 2 : 0.4;
+    // "I saw X near the body" is a first-hand sighting, not an attack.
+    const sighting = /\bI saw\b/i.test(message.text) && /\bnear the body\b/i.test(message.text);
+    const weight = firstHand ? 2 : sighting ? 1.1 : 0.4;
     for (const id of accusationTargets(message.text, ctx.entities)) {
       const key = message.sender + ":" + id;
       claims.set(key, { id, weight: Math.max(weight, claims.get(key)?.weight || 0) });
     }
   }
   for (const claim of claims.values()) add(claim.id, claim.weight);
+  // Votes already cast are public; each one lends a little momentum.
+  for (const [voter, target] of Object.entries(ctx.meeting?.votes || {}))
+    if (voter !== ctx.self.id && target !== "skip") add(target, 0.5);
+  // Who this bot itself last saw where. Someone spotted in the room where the
+  // body lay is suspicious; someone with this bot elsewhere has an alibi.
+  const body = ctx.reportedBody;
+  if (body?.room)
+    for (const c of ctx.player.contacts || []) {
+      if (ctx.time - c.at > 45) continue;
+      if (c.room === body.room) add(c.id, 1.5);
+      else if (ctx.time - c.at < 12 && c.room === ctx.room) add(c.id, -0.8);
+    }
   return scores;
+}
+/** How many infiltrators can still be hiding, from public information only:
+ * the match's starting count minus the ones the assembly exposed. */
+export function hiddenInfiltrators(ctx) {
+  const exposed = Object.values(ctx.revealed || {}).filter((r) => r === "infiltrator").length;
+  return Math.max(0, (ctx.infiltratorCount ?? 2) - exposed);
+}
+/** True when one more lost operator could hand the infiltrators the base. */
+export function crewInDanger(ctx) {
+  const alive = ctx.entities.filter(living).length,
+    hidden = hiddenInfiltrators(ctx);
+  return hidden > 0 && alive - hidden * 2 <= 1;
 }
 export function chooseSuspect(ctx) {
   // Firsthand fatal evidence wins over rumours, repeated accusations and alibis.
@@ -112,8 +138,22 @@ export function chooseSuspect(ctx) {
     (e) => e.kind === "eliminate" && eligible(ctx, e.actorId),
   );
   if (killer) return killer.actorId;
-  const best = [...suspectScores(ctx)].sort((a, b) => b[1] - a[1])[0];
-  return best?.[1] >= 2.4 ? best[0] : "skip";
+  const ranked = [...suspectScores(ctx)].sort((a, b) => b[1] - a[1]);
+  const votes = Object.entries(ctx.meeting?.votes || {}).filter(([voter]) => voter !== ctx.self.id);
+  if (ctx.player.role === "infiltrator") {
+    // Infiltrators pile onto the crew's favourite target to reach a majority.
+    const tally = new Map();
+    for (const [, target] of votes)
+      if (target !== "skip" && eligible(ctx, target)) tally.set(target, (tally.get(target) || 0) + 1);
+    const crowd = [...tally].sort((a, b) => b[1] - a[1])[0];
+    if (crowd) return crowd[0];
+    return ranked[0]?.[1] >= 1.5 ? ranked[0][0] : "skip";
+  }
+  const best = ranked[0];
+  if (best?.[1] >= 2.4) return best[0];
+  // When skipping could lose the match, the crew must act on its best lead.
+  if (crewInDanger(ctx) && best?.[1] >= 1) return best[0];
+  return "skip";
 }
 function witnessStatement(ctx, evidence) {
   const actor = ctx.entities.find((e) => e.id === evidence.actorId),
@@ -128,6 +168,18 @@ function witnessStatement(ctx, evidence) {
     "cargo-sabotage": "damage the medical cargo",
   }[evidence.kind];
   return `I saw ${actor.name} ${action} in ${evidence.room}. ${Math.floor(Math.max(0, ctx.time - evidence.at))} seconds ago.`;
+}
+/** Someone this bot saw in the body's room shortly before the report. */
+export function nearBody(ctx) {
+  const room = ctx.reportedBody?.room;
+  if (!room) return null;
+  const seen = [...(ctx.player.contacts || [])]
+    .reverse()
+    .find((c) => c.room === room && ctx.time - c.at < 45 && eligible(ctx, c.id));
+  const who = seen && ctx.entities.find((e) => e.id === seen.id);
+  return who
+    ? `I saw ${who.name} near the body, suspicious: in ${room} ${Math.max(1, Math.round(ctx.time - seen.at))} seconds before the report.`
+    : null;
 }
 export function strongestEvidence(ctx) {
   return evidenceFor(ctx.player)
@@ -192,6 +244,8 @@ export function nextStatement(ctx) {
               : `I was checking ${cover}. I did not see an attack. We need locations before voting.`,
       };
     }
+    const sighting = nearBody(ctx);
+    if (sighting) return { text: sighting };
     return {
       text: ctx.player.activities?.length
         ? `I was checking supplies in ${cover}. I did not witness an attack.`

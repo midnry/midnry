@@ -1607,6 +1607,9 @@ export class ProtocolArena extends Arena {
       entities: this.entities.map(e => ({id:e.id,name:e.name,hp:e.hp,departed:e.departed})),
       reportedBody:reported?{name:reported.name,room:this.roomAt(reported)?.name}:null,
       meeting: this.protocol.meeting,
+      // Public knowledge only: the announced starting count and exposed roles.
+      infiltratorCount: this.protocol.match?.modifier === "lone-wolf" ? 1 : PROTOCOL_RULES.infiltrators,
+      revealed: this.protocol.revealRoles !== false ? this.protocol.revealed : {},
     };
   }
   botMeeting(entity) {
@@ -1628,6 +1631,73 @@ export class ProtocolArena extends Arena {
     }
     if(this.protocol.phase === "vote" && this.time >= player.botVoteAt && !Object.hasOwn(meeting.votes,entity.id))
       this.botAction(entity,"vote",this.suspicion(entity));
+  }
+
+  /** Operator bots favour cabinets near another operator: a pair is harder
+   * to attack unseen than a lone patrol. */
+  buddyCost(entity, point) {
+    const company = this.entities.some(
+      (e) => e !== entity && this.active(e) && distance(e, point) < 4,
+    );
+    return distance(entity, point) - (company ? 4 : 0);
+  }
+
+  /** One more operator lost and the infiltrators match the crew. */
+  finishingKill() {
+    const living = (team) => this.entities.filter((e) => e.team === team && this.active(e)).length;
+    return living(0) - 1 <= living(1);
+  }
+
+  /** Would anyone on the crew (other than the victim) see this attack? */
+  witnessed(attacker, victim) {
+    return this.entities.some(
+      (w) =>
+        w !== victim &&
+        w !== attacker &&
+        w.team === 0 &&
+        this.active(w) &&
+        this.near(w, attacker, Math.min(6, this.sightRange())),
+    );
+  }
+
+  /** An infiltrator bot with a ready attack stalks an operator it saw recently,
+   * preferring one walking alone. Only its own sightings are used. */
+  botPrey(entity) {
+    const player = this.privateFor(entity);
+    if (player.killReadyAt > this.time || this.protocol.mission.phase !== "base") return null;
+    const finishing = this.finishingKill();
+    const prey = (player.contacts || [])
+      .filter((c) => this.time - c.at < 20)
+      .map((c) => this.entities.find((e) => e.id === c.id))
+      .filter((e) => e && e.team === 0 && this.active(e) && distance(entity, e) < 9)
+      .filter(
+        (e) =>
+          finishing ||
+          !this.entities.some(
+            (w) => w !== e && w.team === 0 && this.active(w) && distance(w, e) < 4,
+          ),
+      )
+      .sort((a, b) => distance(entity, a) - distance(entity, b))[0];
+    return prey ? { id: prey.id, x: prey.x, y: prey.y } : null;
+  }
+
+  /** Charges hide under the base's access covers, which every player can see.
+   * Once security announces a charge, operator bots sweep covers they have not
+   * checked recently: all of them during a countdown, about a third otherwise. */
+  botSearchCover(entity) {
+    const p = this.protocol,
+      player = this.privateFor(entity);
+    if (p.mission.phase !== "base" || !p.bombs.length) return null;
+    const seat = this.entities.indexOf(entity);
+    if (p.detonateAt === null && seat % 3 !== 0) return null;
+    player.checkedCovers ??= {};
+    for (const cover of PROTOCOL_MAP.sites)
+      if (this.near(entity, cover, 2)) player.checkedCovers[cover.id] = this.time;
+    return (
+      PROTOCOL_MAP.sites
+        .filter((cover) => this.time - (player.checkedCovers[cover.id] ?? -1e9) > 60)
+        .sort((a, b) => distance(entity, a) - distance(entity, b))[0] ?? null
+    );
   }
 
   botNavigate(entity, goal, dt, stop = 0.8) {
@@ -1702,18 +1772,16 @@ export class ProtocolArena extends Arena {
       }
     }
     if (player.role === INFILTRATORS && this.active(entity)) {
+      // A partner never reports, so only the crew count as witnesses. A kill
+      // that brings the infiltrators level with the crew ends the match, so
+      // witnesses no longer matter.
+      const finishing = this.finishingKill();
       const target = this.entities.find(
         (e) =>
           e.team === 0 &&
           this.active(e) &&
           this.near(entity, e, 1.15) &&
-          !this.entities.some(
-            (witness) =>
-              witness !== e &&
-              witness !== entity &&
-              this.active(witness) &&
-              this.near(witness, entity, Math.min(4, this.sightRange())),
-          ),
+          (finishing || !this.witnessed(entity, e)),
       );
       if (target && this.time >= player.killReadyAt) this.botAction(entity, "eliminate", target.id);
       if (mission.phase === "base" && this.time >= player.sabotageReadyAt && this.time > 25) {
@@ -1731,6 +1799,7 @@ export class ProtocolArena extends Arena {
     if (
       player.role === INFILTRATORS &&
       this.time < player.botRestUntil &&
+      !this.finishingKill() &&
       this.protocol.detonateAt === null &&
       !player.channel
     )
@@ -1757,13 +1826,24 @@ export class ProtocolArena extends Arena {
           this.protocol.bombs
             .filter((bomb) => player.discoveredBombs.includes(bomb.id))
             .sort((a, b) => distance(entity, a) - distance(entity, b))[0] ?? goal;
+        const countdown = this.protocol.detonateAt !== null;
+        if (countdown) goal ??= this.botSearchCover(entity);
+        // Supplies already in hand go aboard before anything but a countdown.
+        if (!goal && mission.phase === "base" && player.cargo) goal = mission.loading;
+        // Only the two nearest operators answer a sabotage; the rest keep working.
         goal ??= this.protocol.stations.find(
           (station) =>
-            (/power|generator/.test(station.kind) &&
+            ((/power|generator/.test(station.kind) &&
               this.protocol.sabotage.powerUntil > this.time) ||
-            (/comms|radio|radar/.test(station.kind) &&
-              this.protocol.sabotage.commsUntil > this.time),
+              (/comms|radio|radar/.test(station.kind) &&
+                this.protocol.sabotage.commsUntil > this.time)) &&
+            this.entities
+              .filter((e) => e.team === 0 && this.active(e))
+              .sort((a, b) => distance(a, station) - distance(b, station))
+              .slice(0, 2)
+              .includes(entity),
         );
+        goal ??= this.botSearchCover(entity);
         if (!goal && mission.phase === "base") {
           if (player.cargo || this.manifestComplete()) goal = mission.loading;
           else
@@ -1771,9 +1851,10 @@ export class ProtocolArena extends Arena {
               .filter(
                 (stock) => stock.stock > 0 && this.neededSupply(stock.supplyId, entity.id) > 0,
               )
-              .sort((a, b) => distance(entity, a) - distance(entity, b))[0];
+              .sort((a, b) => this.buddyCost(entity, a) - this.buddyCost(entity, b))[0];
         }
       }
+      if (!goal && player.role === INFILTRATORS) goal = this.botPrey(entity);
       if (!goal && player.role === INFILTRATORS) {
         if (mission.phase === "transport" && player.sabotageReadyAt <= this.time)
           goal =
