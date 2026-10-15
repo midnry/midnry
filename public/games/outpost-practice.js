@@ -8,7 +8,7 @@ export const PRACTICE_STEPS = Object.freeze([
   {
     id: "pack",
     title: "Pack a medical kit",
-    hint: "Follow the ground trail to the medic locker. Press E or the action button, then complete the three packaging checks.",
+    hint: "Follow the ground trail to the medic locker. Press E or the action button, then pass the quick skill check.",
     detail:
       "Move with WASD or the left joystick; aim with the mouse or a right-side drag. This rehearsal needs one trauma kit. In a live mission the crew gathers all 13 items. Wrong answers can be corrected.",
   },
@@ -50,7 +50,7 @@ export const PRACTICE_STEPS = Object.freeze([
   {
     id: "oxygen",
     title: "Test aircraft oxygen",
-    hint: "Follow the ground trail to the oxygen panel. Secure the connection and adjust its test gauge.",
+    hint: "Follow the ground trail to the oxygen panel. Stop the valve needle in the green band, then set the test gauge.",
     detail:
       "Flight has routine work as well as sabotage. The training crew handles restraints and landing checks while you test oxygen. Flight progress waits during this drill.",
   },
