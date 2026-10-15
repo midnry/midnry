@@ -4,6 +4,7 @@
  * simulation. This module reads ONLY the recipient-safe view and sends inputs.
  */
 import { modifierOf, twistOf } from "./outpost-variety.js";
+import { shareSummary, shareResult, whatsappUrl } from "./outpost-share.js";
 import { MissionTaskPanel } from "./outpost-task-ui.js";
 import { INTERACTIVE_TASKS } from "./outpost-task-games.js";
 import { ProtocolFocus } from "./outpost-protocol-focus.js";
@@ -204,6 +205,13 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-results { margin:16px 0;padding:16px;border:1px solid #9baa8066;border-radius:16px;background:#183023;color:#edf5e9; }
       midnry-fps .mf-protocol-results h2 { margin:0 0 8px;font-size:23px; }
       midnry-fps .mf-protocol-results p { color:#d0decc;font-size:13px;line-height:1.6; }
+      midnry-fps .mf-protocol-share { margin:12px 0;padding:12px;border:1px solid #7fd3ff55;border-radius:12px;background:#10242c; }
+      midnry-fps .mf-protocol-share p { margin:0 0 10px;color:#eef6f2;font-weight:600; }
+      midnry-fps .mf-protocol-sharerow { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+      midnry-fps .mf-protocol-sharerow > * { min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:10px;font:700 14px system-ui;text-decoration:none;cursor:pointer; }
+      midnry-fps .mf-protocol-sharebtn { border:0;background:#7fd3ff;color:#06202b; }
+      midnry-fps .mf-protocol-sharewa { border:1px solid #5ccf7f;background:#163d26;color:#c9f5d6 !important; }
+      midnry-fps .mf-protocol-sharestatus { display:block;margin-top:8px;color:#b9d6cb; }
       midnry-fps .mf-protocol-results ul { margin:8px 0;padding-left:18px;font-size:12px;line-height:1.7; }
       midnry-fps .mf-protocol .mf-panel:has(.mf-protocol-results:not([hidden])) .mf-copy { display:none; }
       @media(pointer:coarse) { midnry-fps .mf-protocol-actions { bottom:18px;right:14px;display:grid;grid-template-columns:repeat(2,minmax(62px,1fr));max-width:calc(100% - 144px);gap:6px; } midnry-fps .mf-protocol-actions button { min-height:52px;padding:7px 9px; } midnry-fps .mf-protocol-actions .mf-protocol-hold { min-width:0;grid-column:1 / -1; } midnry-fps .mf-protocol-context { bottom:187px;width:min(330px,calc(100% - 28px)); } midnry-fps .mf-protocol-tactics { bottom:185px;right:14px; } }
@@ -1989,6 +1997,31 @@ export class ProtocolUI {
         awards.append(card);
       }
       this.results.append(awards);
+    }
+    // Share how it went, with a link that brings friends to the game.
+    if (!g.practice?.active && !g.academy?.active) {
+      const card = shareSummary(view, g.selfId);
+      const box = element("div", "mf-protocol-share"),
+        status = element("small", "mf-protocol-sharestatus", "");
+      const share = element("button", "mf-protocol-sharebtn", "Share result"),
+        chat = element("a", "mf-protocol-sharewa", "WhatsApp");
+      share.type = "button";
+      chat.href = whatsappUrl(card);
+      chat.target = "_blank";
+      chat.rel = "noopener";
+      status.setAttribute("aria-live", "polite");
+      g.on(share, "click", async () => {
+        share.disabled = true;
+        try {
+          status.textContent = await shareResult(card);
+        } finally {
+          share.disabled = false;
+        }
+      });
+      const row = element("div", "mf-protocol-sharerow");
+      row.append(share, chat);
+      box.append(element("p", "", card.headline), row, status);
+      this.results.append(box);
     }
     // What really happened, secrets included.
     if (protocol.timeline?.length) {
