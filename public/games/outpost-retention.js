@@ -252,12 +252,29 @@ export class Retention {
     const today = this.challengeStatus();
     g.$(".mf-level").textContent = `LEVEL ${levelOf(this.profile)} · ${this.profile.xp} XP · Daily ${today.daily.filter((c) => c.done).length}/3`;
     if (this.summary) {
-      const waiting = g.online && (g.online.phase !== "ended" || g.online.host !== g.selfId);
-      g.$(".mf-again").disabled = Boolean(waiting);
-      g.$(".mf-again").textContent = waiting ? "WAITING FOR HOST" : "PLAY AGAIN →";
-      g.$(".mf-againnote").textContent = g.online
-        ? "Same room, teams and loadouts. The host starts the rematch; use the deployment button to return to the lobby."
-        : "Same mode, arena, loadout and difficulty. A two-second countdown starts the next round.";
+      const again = g.$(".mf-again"),
+        note = g.$(".mf-againnote");
+      if (g.online) {
+        // Everyone can ask for a rematch and sees who is ready; the host's
+        // tap starts it.
+        const here = (g.online.members || []).filter((m) => m.connected !== false);
+        const ready = here.filter((m) => m.ready).length;
+        const mine = here.find((m) => m.id === g.selfId)?.ready === true;
+        const ended = g.online.phase === "ended";
+        again.disabled = !ended || mine;
+        again.textContent = !ended ? "STARTING…" : mine ? `READY ✓ · ${ready}/${here.length}` : "REMATCH →";
+        note.textContent = !ended
+          ? "The next round is starting."
+          : g.online.host === g.selfId
+            ? `Same room and players. ${ready ? `${ready} of ${here.length} ready. ` : ""}Your tap starts the rematch for everyone.`
+            : mine
+              ? "You're in. The rematch starts when the host taps it."
+              : `Same room and players. Tap to tell the host you're in${ready ? ` (${ready}/${here.length} ready)` : ""}.`;
+      } else {
+        again.disabled = false;
+        again.textContent = "PLAY AGAIN →";
+        note.textContent = "Same mode, arena, loadout and difficulty. A two-second countdown starts the next round.";
+      }
     }
   }
   finish(won) {
@@ -338,7 +355,7 @@ export class Retention {
     const g = this.g;
     this.audio.unlock();
     if (g.online) {
-      if (g.online.host === g.selfId && g.online.phase === "ended") g.onlineAction("rematch");
+      if (g.online.phase === "ended") g.onlineAction("ready");
       return;
     }
     g.reset();

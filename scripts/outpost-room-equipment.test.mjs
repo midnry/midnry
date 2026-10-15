@@ -269,3 +269,22 @@ test("hosts lock a match modifier and the role reveal; guests and bad values are
   assert.equal(started.arena.protocol.revealRoles, false);
   assert.ok(started.arena.protocol.mission.patients[0].decay > 0.22);
 });
+test("anyone can ask for a rematch; everyone sees who is ready and the host's tap starts it", async () => {
+  const host = await create();
+  const a = await roomAction({ op: "join", code: host.code }, "rm-a");
+  const b = await roomAction({ op: "join", code: host.code }, "rm-b");
+  await assert.rejects(roomAction({ op: "ready", ...session(a) }, "rm-a"), /Finish this match/);
+  await roomAction({ op: "start", ...session(host) }, "host");
+  const saved = rooms.get(host.code);
+  saved.state.phase = "ended";
+  saved.state.arena.state = "ended";
+  const first = saved.state.arena.roundId;
+  const one = await roomAction({ op: "ready", ...session(a) }, "rm-a");
+  assert.equal(one.phase, "ended");
+  assert.deepEqual(one.members.map((m) => m.ready), [false, true, false]);
+  assert.equal((await roomAction({ op: "ready", ...session(b) }, "rm-b")).phase, "ended");
+  const next = await roomAction({ op: "ready", ...session(host) }, "host");
+  assert.equal(next.phase, "playing");
+  assert.notEqual(next.arena.roundId, first);
+  assert.ok(next.members.every((m) => m.ready === false));
+});

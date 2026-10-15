@@ -28,6 +28,8 @@ export type Member = {
   weapon: string;
   outfit?: string;
   lastSeen: number;
+  /** Tapped Rematch on the results screen. */
+  ready?: boolean;
   inputAt: number;
   seq: number;
   motionSeq?: number;
@@ -121,6 +123,7 @@ const ROOM_ACTIONS = new Set([
   "settings",
   "loadout",
   "rematch",
+  "ready",
 ]);
 const rateState = globalThis as typeof globalThis & {
   __outpostCreateRate?: Map<string, { count: number; until: number }>;
@@ -155,9 +158,10 @@ export function publicRoom(code: string, room: Room, selfId: string) {
       : room.mapId || "outpost",
     phase: room.phase,
     host: room.host,
-    members: room.members.map(({ id, name, team, weapon, outfit, lastSeen }) => ({
+    members: room.members.map(({ id, name, team, weapon, outfit, lastSeen, ready }) => ({
       id,
       name,
+      ready: ready === true,
       ...(protocol ? {} : { team }),
       weapon: protocol ? "carbine" : weapon || "carbine",
       outfit: protocol ? "ranger" : outfit || "ranger",
@@ -452,9 +456,19 @@ export function applyRoomAction(
       throw new OutpostError("That pair is full.", 409);
     member.team = body.team;
   }
+  // Anyone can ask for a rematch from the results screen; everyone sees who
+  // is ready, and the host's tap starts it for the whole room.
+  if (body.op === "ready") {
+    if (room.phase !== "ended")
+      throw new OutpostError("Finish this match before starting another.", 409);
+    member.ready = true;
+    room.updatedAt = now;
+    if (room.host === member.id) body = { ...body, op: "rematch" };
+  }
   if (body.op === "start" || body.op === "restart" || body.op === "rematch") {
     if (room.host !== member.id)
       throw new OutpostError("Only the room host can start a match.", 403);
+    for (const m of room.members) m.ready = false;
     if (room.mode === "protocol") {
       room.mapId = "breakwater";
       for (const m of room.members) {
@@ -637,6 +651,7 @@ export async function roomAction(
     "settings",
     "loadout",
     "rematch",
+    "ready",
   ];
   if (typeof body.op !== "string" || !ops.includes(body.op))
     throw new OutpostError("Unknown room action.");
