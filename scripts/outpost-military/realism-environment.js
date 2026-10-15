@@ -100,11 +100,12 @@ export function decorateRealisticEnvironment(r, id, n) {
     quaternion,
     shadows = true,
     persistent = false,
+    structural = false,
   ) {
-    const batchKey = `${geometry.uuid}:${material.uuid}:${shadows}:${persistent}`;
+    const batchKey = `${geometry.uuid}:${material.uuid}:${shadows}:${persistent}:${structural}`;
     let batch = batches.get(batchKey);
     if (!batch) {
-      batch = { geometry, material, matrices: [], shadows, persistent };
+      batch = { geometry, material, matrices: [], shadows, persistent, structural };
       batches.set(batchKey, batch);
     }
     batch.matrices.push(
@@ -128,11 +129,11 @@ export function decorateRealisticEnvironment(r, id, n) {
     };
   }
   // Local z=0 is the original collision face; negative z is inside the wall.
-  function atFace(f, material, u, v, depth, w, h, thickness, shadows = true) {
+  function atFace(f, material, u, v, depth, w, h, thickness, shadows = true, structural = false) {
     const p = new THREE.Vector3(u, v, depth).applyQuaternion(f.quaternion);
     p.x += f.position[0];
     p.z += f.position[2];
-    add(box, material, [p.x, p.y, p.z], [w, h, thickness], f.quaternion, shadows);
+    add(box, material, [p.x, p.y, p.z], [w, h, thickness], f.quaternion, shadows, false, structural);
   }
   function paneAtFace(f, material, u, v, depth, w, h) {
     const p = new THREE.Vector3(u, v, depth).applyQuaternion(f.quaternion);
@@ -187,7 +188,7 @@ export function decorateRealisticEnvironment(r, id, n) {
     const depth = industrial ? 0.065 : 0.14;
     // Full-depth, opaque tile back. This guarantees the original simulation's
     // sightline remains blocked even at a steep angle through a window bay.
-    atFace(f, body, 0, height / 2, -(SCALE + depth) / 2, SCALE, height, SCALE - depth);
+    atFace(f, body, 0, height / 2, -(SCALE + depth) / 2, SCALE, height, SCALE - depth, true, true);
     if (industrial) {
       const corrugation = r.geo("realism-environment:corrugated-sheet", () => {
         const geometry = new THREE.PlaneGeometry(1, 1, 120, 1);
@@ -269,19 +270,19 @@ export function decorateRealisticEnvironment(r, id, n) {
       for (const index of exposed) {
         const f = face(x, y, index);
         const trim = id === "medevac" ? steel : id === "outpost" ? stone : render;
-        // Thin plinths and expansion seals are coplanar with the original wall;
-        // the millimetre offset avoids depth fighting without creating cover.
-        atFace(f, trim, 0, 0.13, -0.012, SCALE, 0.24, 0.025, false);
-        if (id !== "freight") atFace(f, trim, 0, height - 0.065, -0.013, SCALE, 0.12, 0.028, false);
+        // Mount trim 8 mm clear of the wall face. Sub-millimetre/coplanar
+        // surfaces fight for depth at grazing angles while the camera moves.
+        atFace(f, trim, 0, 0.13, -0.0045, SCALE, 0.24, 0.025, false);
+        if (id !== "freight") atFace(f, trim, 0, height - 0.065, -0.006, SCALE, 0.12, 0.028, false);
         if (id === "outpost") {
-          atFace(f, seal, 0, 1.05, -0.003, SCALE, 0.012, 0.007, false);
-          atFace(f, seal, 0, 2.08, -0.003, SCALE, 0.012, 0.007, false);
+          atFace(f, seal, 0, 1.05, 0.0045, SCALE, 0.012, 0.007, false);
+          atFace(f, seal, 0, 2.08, 0.0045, SCALE, 0.012, 0.007, false);
         }
         if (id === "medevac") {
           // Hull seams are narrow rubber expansion joints rather than bright
           // outlines. Reinforcement follows actual aircraft wall bays.
-          atFace(f, seal, 0, 2.62, -0.005, SCALE, 0.018, 0.012, false);
-          for (const u of [-1.46, 1.46]) atFace(f, steel, u, 1.75, -0.02, 0.055, 3.36, 0.04);
+          atFace(f, seal, 0, 2.62, 0.002, SCALE, 0.018, 0.012, false);
+          for (const u of [-1.46, 1.46]) atFace(f, steel, u, 1.75, -0.012, 0.055, 3.36, 0.04);
         }
         const adjacentRoom =
           id === "breakwater" &&
@@ -301,8 +302,8 @@ export function decorateRealisticEnvironment(r, id, n) {
           for (const u of [-0.62, -0.48]) pipeAtFace(f, darkSteel, u, 2.14, -0.014, 0.026, 2.26);
           pipeAtFace(f, steel, -0.55, 2.91, -0.014, 0.022, 1.4, true);
           if ((x + y) % 4 === 0) {
-            atFace(f, darkSteel, -0.54, 2.35, -0.026, 0.19, 0.24, 0.05);
-            atFace(f, seal, -0.54, 2.35, 0.001, 0.155, 0.205, 0.003);
+            atFace(f, darkSteel, -0.54, 2.35, -0.01, 0.19, 0.24, 0.05);
+            atFace(f, seal, -0.54, 2.35, 0.022, 0.155, 0.205, 0.003);
           }
         }
       }
@@ -585,6 +586,7 @@ export function decorateRealisticEnvironment(r, id, n) {
     mesh.name = "Instanced architectural detail";
     mesh.castShadow = batch.shadows;
     mesh.receiveShadow = true;
+    if (batch.structural) mesh.userData.noRoomCull = true;
     // A floor-grid visibility test cannot decide whether an overhead light is
     // visible. Keep emitting faces in the draw list; geometry depth still hides
     // them behind walls, and protocol power state alone controls their emission.
