@@ -15,9 +15,9 @@ midnry-fps .mf-task-flash {display:flex;justify-content:center;gap:8px;min-heigh
 midnry-fps .mf-task-flash.mf-task-hidden {color:#8fa197;}
 midnry-fps .mf-task-chip {width:40px;height:40px;border-radius:10px;border:2px solid #0006;}
 midnry-fps .mf-task-keys {display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-midnry-fps .mf-task-keys button {min-height:48px;font:700 20px system-ui;border-radius:10px;}
+midnry-fps .mf-task-keys button {min-height:48px;font:700 20px var(--mf-body);border-radius:10px;}
 midnry-fps .mf-task-wires {display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-midnry-fps .mf-task-wires button {min-height:56px;border-radius:12px;border:2px solid #0006;font:800 14px system-ui;color:#0b0f0c;}
+midnry-fps .mf-task-wires button {min-height:56px;border-radius:12px;border:2px solid #0006;font:800 14px var(--mf-body);color:#0b0f0c;}
 midnry-fps .mf-mission-task [data-wire="r"] {background:#e2604f !important;}
 midnry-fps .mf-mission-task [data-wire="g"] {background:#5fbf7a !important;}
 midnry-fps .mf-mission-task [data-wire="b"] {background:#5d9ee8 !important;}

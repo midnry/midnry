@@ -113,8 +113,8 @@ export class ObjectiveNavigation {
    midnry-fps .mf-navline{display:flex;align-items:center;gap:9px;min-height:24px}
    midnry-fps .mf-navline[hidden]{display:none}
    midnry-fps .mf-navline[data-urgent="true"] .mf-navlabel{color:#ffe1ac}
-   midnry-fps .mf-navlabel{min-width:0;flex:1;font:600 12px/1.3 system-ui;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal}
-   midnry-fps .mf-navdistance{flex:0 0 auto;font:500 11px system-ui;color:#c1d0c5;font-variant-numeric:tabular-nums}
+   midnry-fps .mf-navlabel{min-width:0;flex:1;font:600 12px/1.3 var(--mf-body);overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal}
+   midnry-fps .mf-navdistance{flex:0 0 auto;font:500 12px var(--mf-body);color:#c1d0c5;font-variant-numeric:tabular-nums}
    midnry-fps .mf-navactive>b{display:none}
    midnry-fps .mf-navdetails{margin:12px 0}midnry-fps .mf-navdetails select{display:block;width:100%;min-height:44px;margin:10px 0;background:#17251f;color:#eef4ee;border:1px solid #84968b;border-radius:10px;padding:9px}
    midnry-fps .mf-navdetails p{font-size:12px;color:#bccbbb}

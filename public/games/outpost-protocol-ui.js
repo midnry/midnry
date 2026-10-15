@@ -109,12 +109,12 @@ export class ProtocolUI {
       midnry-fps .mf-protocol :is(.mf-super,.mf-ammo,.mf-bottom,.mf-fire,.mf-reload,.mf-match,.mf-objective) { display:none !important; }
       midnry-fps .mf-protocol-combat :is(.mf-fire,.mf-reload) { display:flex !important;align-items:center;justify-content:center; }
       midnry-fps .mf-protocol-combat :is(.mf-protocol-actions,.mf-protocol-context,.mf-protocol-flight,.mf-protocol-flightpad) { display:none !important; }
-      midnry-fps .mf-protocol-combattarget { position:absolute;z-index:4;transform:translate(-50%,-100%);padding:4px 8px;border:1px solid #dc9b83;border-radius:8px;background:#472f26df;color:#ffe7d6;font:700 11px system-ui;max-width:170px;pointer-events:none; }
+      midnry-fps .mf-protocol-combattarget { position:absolute;z-index:4;transform:translate(-50%,-100%);padding:4px 8px;border:1px solid #dc9b83;border-radius:8px;background:#472f26df;color:#ffe7d6;font:700 12px var(--mf-body);max-width:170px;pointer-events:none; }
       midnry-fps .mf-protocol-combat .mf-fire { width:64px;height:64px;right:calc(18px + var(--mf-safe-right));bottom:calc(18px + var(--mf-safe-bottom));font-size:12px; }
       midnry-fps .mf-protocol-combat .mf-reload { width:44px;height:44px;right:calc(28px + var(--mf-safe-right));bottom:calc(94px + var(--mf-safe-bottom)); }
       midnry-fps .mf-protocol-awards { display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:12px 0; }
       midnry-fps .mf-protocol-award { display:grid;gap:2px;padding:10px 12px;border:2px solid #9fb09a66;border-radius:12px;background:#15221ce6;color:#eef4ea;font-size:13px; }
-      midnry-fps .mf-protocol-award small { color:#b9c7b6;font-size:11px; }
+      midnry-fps .mf-protocol-award small { color:#b9c7b6;font-size:12px; }
       midnry-fps .mf-protocol-awardicon { font-size:20px; }
       midnry-fps .mf-protocol-timeline { margin:10px 0;font-size:13px; }
       midnry-fps .mf-protocol-timeline ol { margin:8px 0 0;padding-left:0;list-style:none;max-height:220px;overflow:auto;display:grid;gap:4px; }
@@ -124,13 +124,13 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-briefmatch { list-style:none;margin:12px 0;padding:0;display:grid;gap:8px; }
       midnry-fps .mf-protocol-briefmatch li { padding:9px 12px;border:1px solid #c9b77a66;border-radius:12px;background:#2a2a1aa8;color:#f3eedc;font-size:13px;line-height:1.4; }
       midnry-fps .mf-protocol-briefmatch b { display:block;color:#ffd77a;font-size:12px;letter-spacing:.06em;text-transform:uppercase; }
-      midnry-fps .mf-protocol-matchline { display:block;margin-top:3px;color:#ffd77a;font-size:11px;font-weight:700; }
-      midnry-fps .mf-protocol-verdict { position:absolute;z-index:7;left:50%;top:28%;transform:translateX(-50%);width:min(520px,calc(100% - 32px));padding:16px 20px;text-align:center;border:2px solid #b9c7a9;border-radius:16px;background:#14211dee;color:#f1f5ea;font:800 18px/1.35 system-ui;pointer-events:none;box-shadow:0 18px 50px #000a;animation:mf-verdict-in .35s ease-out; }
+      midnry-fps .mf-protocol-matchline { display:block;margin-top:3px;color:#ffd77a;font-size:12px;font-weight:700; }
+      midnry-fps .mf-protocol-verdict { position:absolute;z-index:7;left:50%;top:28%;transform:translateX(-50%);width:min(520px,calc(100% - 32px));padding:16px 20px;text-align:center;border:2px solid #b9c7a9;border-radius:16px;background:#14211dee;color:#f1f5ea;font:800 18px/1.35 var(--mf-body);pointer-events:none;box-shadow:0 18px 50px #000a;animation:mf-verdict-in .35s ease-out; }
       midnry-fps .mf-protocol-verdict.mf-verdict-caught { border-color:#ef8d6b;background:#3d1f17ef;color:#ffe9dd; }
       midnry-fps .mf-protocol-verdict.mf-verdict-innocent { border-color:#9fb6d6;background:#17223aef;color:#e4edff; }
       @keyframes mf-verdict-in { from { opacity:0;transform:translate(-50%,10px) scale(.96); } to { opacity:1;transform:translate(-50%,0) scale(1); } }
       @media (prefers-reduced-motion: reduce) { midnry-fps .mf-protocol-verdict { animation:none; } }
-      midnry-fps .mf-protocol-combatstats { position:absolute;z-index:6;right:calc(14px + var(--mf-safe-right));bottom:calc(148px + var(--mf-safe-bottom));padding:8px 12px;max-width:230px;background:#16231fe6;border:1px solid #bfc5ab66;border-radius:12px;color:#f1f3e7;font:700 12px system-ui;pointer-events:none; }
+      midnry-fps .mf-protocol-combatstats { position:absolute;z-index:6;right:calc(14px + var(--mf-safe-right));bottom:calc(148px + var(--mf-safe-bottom));padding:8px 12px;max-width:230px;background:#16231fe6;border:1px solid #bfc5ab66;border-radius:12px;color:#f1f3e7;font:700 12px var(--mf-body);pointer-events:none; }
       @media(pointer:fine) and (min-width:701px) { midnry-fps .mf-protocol-combat :is(.mf-fire,.mf-reload) { display:none !important; } midnry-fps .mf-protocol-combatstats { bottom:20px; } }
       midnry-fps .mf-protocol .mf-modes { grid-template-columns:repeat(2,minmax(0,1fr)); }
       midnry-fps .mf-protocol [hidden], midnry-fps .mf-protocol-dialog [hidden], midnry-fps .mf-protocol-menu[hidden], midnry-fps .mf-protocol-results[hidden] { display:none !important; }
@@ -139,14 +139,14 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-role, midnry-fps .mf-protocol-tasks, midnry-fps .mf-protocol-context, midnry-fps .mf-protocol-tactics { border:1px solid #a8b7ac55;border-radius:16px;background:#14221fec;box-shadow:0 7px 22px #0005; }
       midnry-fps .mf-protocol-role { width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 13px;min-height:48px;color:#f4f7f2;text-align:left; }
       midnry-fps .mf-protocol-role b { display:block;font-size:14px;letter-spacing:.02em; }
-      midnry-fps .mf-protocol-role small { display:block;font-size:11px;font-weight:500;color:#ccd8cf; }
+      midnry-fps .mf-protocol-role small { display:block;font-size:12px;font-weight:500;color:#ccd8cf; }
       midnry-fps .mf-protocol-clock { font-variant-numeric:tabular-nums;font-size:14px; }
       midnry-fps .mf-protocol-alert { margin:8px 0;padding:9px 12px;border-radius:12px;background:#332523f2;border:1px solid #d79875;color:#ffe1c9;font-size:12px;line-height:1.5; }
       midnry-fps .mf-protocol-tasks { margin-top:8px;overflow:hidden; }
       midnry-fps .mf-protocol-tasks summary { min-height:44px;padding:12px 13px;cursor:pointer;font-size:13px; }
       midnry-fps .mf-protocol-tasklist { padding:0 8px 8px;display:grid;gap:4px; }
       midnry-fps .mf-protocol-task { width:100%;min-height:44px;padding:7px 8px;text-align:left;border-radius:9px;background:#ffffff08;color:#eef4ef;border:1px solid transparent; }
-      midnry-fps .mf-protocol-task small { display:block;color:#b2c4b8;font-size:11px;line-height:1.5; }
+      midnry-fps .mf-protocol-task small { display:block;color:#b2c4b8;font-size:12px;line-height:1.5; }
       midnry-fps .mf-protocol-task[aria-pressed="true"] { border-color:#96d7b2;background:#b4f8c819; }
       midnry-fps .mf-protocol-task:disabled { opacity:.6;text-decoration:line-through; }
       midnry-fps .mf-protocol-context { position:absolute;z-index:4;bottom:108px;left:50%;transform:translateX(-50%);width:min(390px,calc(100% - 48px));padding:12px 15px;color:#f0f6ef;pointer-events:none;text-align:center; }
@@ -156,7 +156,7 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-progress i { display:block;height:100%;width:0;background:#c5e6ae; }
       midnry-fps .mf-protocol-actions { position:absolute;z-index:5;bottom:23px;right:24px;display:flex;gap:8px;max-width:calc(100% - 48px); }
       midnry-fps .mf-protocol-actions button { min-width:68px;min-height:54px;padding:8px 12px;border-radius:14px;border:1px solid #9cb5a077;background:#172720ef;color:#f2f6ef;touch-action:none;font-size:12px;line-height:1.25; }
-      midnry-fps .mf-protocol-actions button small { display:block;margin-top:3px;font-size:10px;color:#bccbbe; }
+      midnry-fps .mf-protocol-actions button small { display:block;margin-top:3px;font-size:12px;color:#bccbbe; }
       midnry-fps .mf-protocol-actions .mf-protocol-hold { min-width:128px;background:#d1e1b6;color:#152219;border-color:#e5f4d2;font-weight:700; }
       midnry-fps .mf-protocol-actions .mf-protocol-hold small { color:#304732; }
       midnry-fps .mf-protocol-actions .mf-protocol-eliminate { border-color:#d39c87;background:#442d25;color:#ffe3d3; }
@@ -209,24 +209,24 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-share { margin:12px 0;padding:12px;border:1px solid #7fd3ff55;border-radius:12px;background:#10242c; }
       midnry-fps .mf-protocol-share p { margin:0 0 10px;color:#eef6f2;font-weight:600; }
       midnry-fps .mf-protocol-sharerow { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
-      midnry-fps .mf-protocol-sharerow > * { min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:10px;font:700 14px system-ui;text-decoration:none;cursor:pointer; }
+      midnry-fps .mf-protocol-sharerow > * { min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:10px;font:700 14px var(--mf-body);text-decoration:none;cursor:pointer; }
       midnry-fps .mf-protocol-sharebtn { border:0;background:#7fd3ff;color:#06202b; }
       midnry-fps .mf-protocol-sharewa { border:1px solid #5ccf7f;background:#163d26;color:#c9f5d6 !important; }
       midnry-fps .mf-protocol-sharestatus { display:block;margin-top:8px;color:#b9d6cb; }
       midnry-fps .mf-protocol-results ul { margin:8px 0;padding-left:18px;font-size:12px;line-height:1.7; }
       midnry-fps .mf-protocol .mf-panel:has(.mf-protocol-results:not([hidden])) .mf-copy { display:none; }
       @media(pointer:coarse) { midnry-fps .mf-protocol-actions { bottom:18px;right:14px;display:grid;grid-template-columns:repeat(2,minmax(62px,1fr));max-width:calc(100% - 144px);gap:6px; } midnry-fps .mf-protocol-actions button { min-height:52px;padding:7px 9px; } midnry-fps .mf-protocol-actions .mf-protocol-hold { min-width:0;grid-column:1 / -1; } midnry-fps .mf-protocol-context { bottom:187px;width:min(330px,calc(100% - 28px)); } midnry-fps .mf-protocol-tactics { bottom:185px;right:14px; } }
-      @media(max-width:600px) { midnry-fps .mf-protocol-hud { top:72px;left:12px;width:min(255px,calc(100% - 132px)); } midnry-fps .mf-protocol-role { padding:8px 10px;gap:5px; } midnry-fps .mf-protocol-role b { font-size:12px; } midnry-fps .mf-protocol-role small { font-size:10px; } midnry-fps .mf-protocol-clock { font-size:12px; } midnry-fps .mf-protocol-alert { font-size:11px;padding:7px 9px; } midnry-fps .mf-protocol-dialog { padding:17px;border-radius:20px; } midnry-fps .mf-protocol-dialog h2 { font-size:23px; } midnry-fps .mf-protocol-radio { max-height:140px; } }
+      @media(max-width:600px) { midnry-fps .mf-protocol-hud { top:72px;left:12px;width:min(255px,calc(100% - 132px)); } midnry-fps .mf-protocol-role { padding:8px 10px;gap:5px; } midnry-fps .mf-protocol-role b { font-size:12px; } midnry-fps .mf-protocol-role small { font-size:12px; } midnry-fps .mf-protocol-clock { font-size:12px; } midnry-fps .mf-protocol-alert { font-size:12px;padding:7px 9px; } midnry-fps .mf-protocol-dialog { padding:17px;border-radius:20px; } midnry-fps .mf-protocol-dialog h2 { font-size:23px; } midnry-fps .mf-protocol-radio { max-height:140px; } }
       @media(max-height:570px) { midnry-fps .mf-protocol-hud { top:64px; } midnry-fps .mf-protocol-context { bottom:90px;width:310px;left:52%; } midnry-fps .mf-protocol-tactics { bottom:84px; } midnry-fps .mf-protocol-actions { display:flex;bottom:12px; } midnry-fps .mf-protocol-actions .mf-protocol-hold { min-width:112px; } }
       @media(prefers-reduced-motion:reduce) { midnry-fps .mf-protocol-actions button:active:not(:disabled),midnry-fps .mf-protocol-hold[aria-pressed="true"] { transform:none; } }
       midnry-fps .mf-protocol-missionstatus { margin-top:8px;padding:10px 12px;background:#14221fec;border:1px solid #a8b7ac44;border-radius:14px;font-size:12px;line-height:1.5; }
       midnry-fps .mf-protocol-missionstatus b { display:block;color:#e3edce; }
-      midnry-fps .mf-protocol-missionstatus small { display:block;color:#c2d2c7;font-size:11px; }
+      midnry-fps .mf-protocol-missionstatus small { display:block;color:#c2d2c7;font-size:12px; }
       midnry-fps .mf-protocol-cargo { margin:7px 0 0;padding:7px 10px;background:#1c3529e8;border-radius:10px;font-size:12px; }
       midnry-fps .mf-protocol-patients { margin-top:7px;background:#14221fec;border:1px solid #a8b7ac44;border-radius:14px; }
       midnry-fps .mf-protocol-patients summary { min-height:44px;padding:12px;font-size:12px;cursor:pointer; }
       midnry-fps .mf-protocol-patientlist { padding:0 12px 10px;display:grid;gap:7px; }
-      midnry-fps .mf-protocol-patient { font-size:11px;display:grid;grid-template-columns:1fr auto;gap:3px 8px; }
+      midnry-fps .mf-protocol-patient { font-size:12px;display:grid;grid-template-columns:1fr auto;gap:3px 8px; }
       midnry-fps .mf-protocol-patient meter { width:100%;grid-column:1 / -1;height:8px;accent-color:#9fcca4; }
       midnry-fps .mf-protocol-patient[data-critical="true"] { color:#ffbd9c; }
       midnry-fps .mf-protocol-piloting .mf-stick,midnry-fps .mf-protocol-piloting .mf-protocol-tasks { display:none !important; }
@@ -235,17 +235,17 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-flight meter { width:100%;height:12px;accent-color:#b6daa4; }
       midnry-fps .mf-protocol-flight .mf-protocol-recovery { color:#ffbf9d;font-weight:700; }
       midnry-fps .mf-protocol-flightpad { position:absolute;z-index:5;left:14px;bottom:18px;display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:6px; }
-      midnry-fps .mf-protocol-flightpad button { min-width:44px;min-height:44px;padding:4px;border:1px solid #b1cda177;background:#163025ed;border-radius:11px;color:#edf5e2;touch-action:none;font:700 18px system-ui; }
+      midnry-fps .mf-protocol-flightpad button { min-width:44px;min-height:44px;padding:4px;border:1px solid #b1cda177;background:#163025ed;border-radius:11px;color:#edf5e2;touch-action:none;font:700 18px var(--mf-body); }
       midnry-fps .mf-protocol-flightpad button[aria-pressed="true"] { background:#b9d5a1;color:#122219; }
       midnry-fps .mf-protocol-flightpad button:nth-child(1) { grid-column:2;grid-row:1; }
       midnry-fps .mf-protocol-flightpad button:nth-child(2) { grid-column:1;grid-row:2; }
       midnry-fps .mf-protocol-flightpad button:nth-child(3) { grid-column:3;grid-row:2; }
       midnry-fps .mf-protocol-flightpad button:nth-child(4) { grid-column:2;grid-row:3; }
-      midnry-fps .mf-protocol-flightpad small { grid-column:2;grid-row:2;align-self:center;text-align:center;color:#d9e9cb;font-size:10px; }
+      midnry-fps .mf-protocol-flightpad small { grid-column:2;grid-row:2;align-self:center;text-align:center;color:#d9e9cb;font-size:12px; }
       @media(pointer:coarse) { midnry-fps .mf-protocol-flight { bottom:184px; } }
       @media(pointer:coarse) { midnry-fps .mf-protocol-piloting .mf-protocol-actions { max-width:calc(100% - 190px); } }
       @media(pointer:fine) { midnry-fps .mf-protocol-flightpad { display:none; } }
-      @media(max-height:570px) { midnry-fps .mf-protocol-flight { bottom:85px;left:54%;width:300px;font-size:11px;padding:9px 12px; } midnry-fps .mf-protocol-piloting .mf-protocol-patients { display:none; } midnry-fps .mf-protocol-hud { width:250px; } midnry-fps .mf-protocol-alert { max-height:56px;overflow:auto; } }
+      @media(max-height:570px) { midnry-fps .mf-protocol-flight { bottom:85px;left:54%;width:300px;font-size:12px;padding:9px 12px; } midnry-fps .mf-protocol-piloting .mf-protocol-patients { display:none; } midnry-fps .mf-protocol-hud { width:250px; } midnry-fps .mf-protocol-alert { max-height:56px;overflow:auto; } }
     `;
     g.shell.append(this.style);
     this.hud = element("aside", "mf-protocol-hud");
@@ -1945,6 +1945,9 @@ export class ProtocolUI {
     this.held = false;
     for (const dialog of [this.meeting, this.arming, this.brief]) if (dialog.open) dialog.close();
     this.results.replaceChildren();
+    // One debrief: the round's story sits inside the results card, above Rematch.
+    const card = g.$(".mf-results"), again = g.$(".mf-again");
+    if (card && again && this.results.parentElement !== card) again.before(this.results);
     const operatorsWon = view.winner === 0,
       delivered = protocol.mission?.patients.some((patient) => patient.rescued);
     this.results.append(

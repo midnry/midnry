@@ -339,13 +339,13 @@ export class ProtocolPractice {
     g.protocolUI.menu.append(this.startButton);
     this.style = document.createElement("style");
     this.style.textContent = `
-      midnry-fps .mf-practice-coach{position:absolute;z-index:5;top:calc(70px + var(--mf-safe-top));left:14px;width:min(400px,calc(100% - 28px));min-height:44px;padding:8px 12px;text-align:left;border:1px solid #c6d5b2;border-radius:12px;background:#14221fec;color:#edf5e6;font:600 12px/1.35 system-ui}
-      midnry-fps .mf-practice-coach small{display:block;font:400 11px/1.4 system-ui;color:#c5d3c0;margin-top:3px}
+      midnry-fps .mf-practice-coach{position:absolute;z-index:5;top:calc(70px + var(--mf-safe-top));left:14px;width:min(400px,calc(100% - 28px));min-height:44px;padding:8px 12px;text-align:left;border:1px solid #c6d5b2;border-radius:12px;background:#14221fec;color:#edf5e6;font:600 12px/1.35 var(--mf-body)}
+      midnry-fps .mf-practice-coach small{display:block;font:400 12px/1.4 var(--mf-body);color:#c5d3c0;margin-top:3px}
       midnry-fps .mf-practice-details button{width:100%;min-height:44px;margin:5px 0}
-      midnry-fps .mf-practice-chooser{width:min(420px,calc(100% - 28px));padding:20px;border-radius:18px;border:1px solid #8a9a8c66;background:#13201b;color:#eef4ea;font:14px/1.45 system-ui}
+      midnry-fps .mf-practice-chooser{width:min(420px,calc(100% - 28px));padding:20px;border-radius:18px;border:1px solid #8a9a8c66;background:#13201b;color:#eef4ea;font:14px/1.45 var(--mf-body)}
       midnry-fps .mf-practice-chooser::backdrop{background:rgba(5,12,9,.55)}
       midnry-fps .mf-practice-chooser h2{margin:0 0 6px;font-size:20px}
-      midnry-fps .mf-practice-chooser button{display:block;width:100%;min-height:52px;margin:8px 0 0;text-align:left;padding:10px 14px;border-radius:12px;border:1px solid #8f9d7a;background:#2c3d28;color:#eef5e6;font:600 14px/1.35 system-ui}
+      midnry-fps .mf-practice-chooser button{display:block;width:100%;min-height:52px;margin:8px 0 0;text-align:left;padding:10px 14px;border-radius:12px;border:1px solid #8f9d7a;background:#2c3d28;color:#eef5e6;font:600 14px/1.35 var(--mf-body)}
       midnry-fps .mf-practice-chooser button small{display:block;font-weight:400;color:#c5d3c0}
       midnry-fps .mf-practice-chooser .mf-practice-cancel{text-align:center;background:#24302b}
       midnry-fps .mf-practice-details[hidden],midnry-fps .mf-practice-coach[hidden],midnry-fps .mf-practice-start[hidden]{display:none!important}

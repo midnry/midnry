@@ -205,6 +205,7 @@ export default defineConfig(({ command, isPreview }) => ({
                   "outpost-protocol-ai.js",
                   "outpost-variety.js",
                   "outpost-share.js",
+                  "outpost-theme.js",
                   "outpost-realtime.js",
                   "outpost-spatial-audio.js",
                   "outpost-voice.js",

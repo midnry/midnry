@@ -132,7 +132,7 @@ export class Retention {
     this.reset();
     g.$(".mf-modes").insertAdjacentHTML(
       "beforebegin",
-      `<section class="mf-results" hidden aria-label="Match results"><h2>ROUND DEBRIEF</h2><div class="mf-resultstats"></div><p class="mf-earned" role="status"></p><button class="mf-again">PLAY AGAIN →</button><p class="mf-againnote"></p></section>`,
+      `<section class="mf-results" hidden aria-label="Match results"><h2>ROUND DEBRIEF</h2><div class="mf-resultstats"></div><p class="mf-earned" role="status"></p><button class="mf-again">PLAY AGAIN →</button><p class="mf-againnote"></p><button class="mf-tomenu">Main menu</button></section>`,
     );
     g.$(".mf-network").insertAdjacentHTML(
       "beforebegin",
@@ -208,6 +208,12 @@ export class Retention {
       g.reset();
     });
     g.on(g.$(".mf-again"), "click", () => this.again());
+    // Leave the debrief for the full menu (mode, settings, lobby, exit).
+    g.on(g.$(".mf-tomenu"), "click", () => {
+      g.$(".mf-panel").classList.remove("mf-debrief");
+      g.$(".mf-panel").scrollTop = 0;
+      g.$(".mf-start")?.focus({ preventScroll: true });
+    });
     g.on(g.$(".mf-lockeropen"), "click", () => this.locker());
     g.on(g.$(".mf-lockerclose"), "click", () => g.$(".mf-locker").close());
     g.on(g.$(".mf-locker"), "keydown", (e) => e.stopPropagation());
@@ -236,6 +242,7 @@ export class Retention {
     this.countBeat = 0;
     this.summary = null;
     if (this.g.$(".mf-results")) this.g.$(".mf-results").hidden = true;
+    this.g.$(".mf-panel")?.classList.remove("mf-debrief");
   }
   menu() {
     const g = this.g;
@@ -272,7 +279,7 @@ export class Retention {
               : `Same room and players. Tap to tell the host you're in${ready ? ` (${ready}/${here.length} ready)` : ""}.`;
       } else {
         again.disabled = false;
-        again.textContent = "PLAY AGAIN →";
+        again.textContent = "REMATCH →";
         note.textContent = "Same mode, arena, loadout and difficulty. A two-second countdown starts the next round.";
       }
     }
@@ -314,7 +321,10 @@ export class Retention {
     write("midnry-outpost-profile", this.profile);
     this.summary = summary;
     g.$(".mf-results").hidden = false;
-    g.$(".mf-results h2").textContent = won ? "VICTORY / ROUND DEBRIEF" : "ROUND DEBRIEF";
+    g.$(".mf-results").classList.toggle("mf-lost", !won);
+    g.$(".mf-results > h2").textContent = won ? "Victory" : "Defeat";
+    // The round's debrief replaces the menu until the player asks for it.
+    g.$(".mf-panel").classList.add("mf-debrief");
     const c = summary.contributions || {};
     const stats = summary.mode === "protocol" ? summary.role === "infiltrator" ? [
       ["Sabotages",c.sabotage || 0], ["Charges armed",c.charges || 0], ["Cover checks",c.cover || 0],

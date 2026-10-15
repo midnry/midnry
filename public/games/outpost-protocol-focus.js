@@ -9,7 +9,7 @@ export class ProtocolFocus {
       midnry-fps { -webkit-user-select:none;user-select:none;-webkit-touch-callout:none; }
       midnry-fps :is(input,textarea,[contenteditable="true"]) { -webkit-user-select:text;user-select:text;-webkit-touch-callout:default; }
       midnry-fps .mf-protocol-focus :is(.mf-kit,.mf-kitnotes,.mf-progresslabel,.mf-boot,.mf-difficulty,.mf-sprint,.mf-slide,.mf-movement) { display:none !important; }
-      midnry-fps .mf-protocol-infoopen { position:absolute;z-index:7;top:calc(14px + var(--mf-safe-top));left:calc(14px + var(--mf-safe-left));min-height:44px;padding:10px 14px;border:1px solid #a5bba966;border-radius:14px;color:#f2f7ef;background:#12231dd9;font:700 13px system-ui;touch-action:manipulation; }
+      midnry-fps .mf-protocol-infoopen { position:absolute;z-index:7;top:calc(14px + var(--mf-safe-top));left:calc(14px + var(--mf-safe-left));min-height:44px;padding:10px 14px;border:1px solid #a5bba966;border-radius:14px;color:#f2f7ef;background:#12231dd9;font:700 13px var(--mf-body);touch-action:manipulation; }
       midnry-fps .mf-protocol-infoopen:focus-visible { outline:3px solid #d6edae;outline-offset:3px; }
       midnry-fps .mf-protocol-info { width:min(560px,calc(100% - 28px));max-height:calc(100% - 28px); }
       midnry-fps .mf-protocol-info .mf-protocol-hud { position:static;width:auto;color:#eef4ed; }
@@ -26,11 +26,11 @@ export class ProtocolFocus {
       midnry-fps .mf-protocol-focus .mf-protocol-actions { right:calc(14px + var(--mf-safe-right));bottom:calc(18px + var(--mf-safe-bottom));display:flex;flex-direction:column;max-width:min(180px,calc(100% - 170px));gap:6px; }
       midnry-fps .mf-protocol-focus .mf-protocol-actions button { min-width:0;min-height:48px;padding:9px 12px;font-size:13px; }
       midnry-fps .mf-protocol-focus .mf-protocol-actions small { display:none; }
-      midnry-fps .mf-protocol-focus .mf-protocol-flight { top:calc(70px + var(--mf-safe-top));bottom:auto;left:calc(14px + var(--mf-safe-left));transform:none;width:min(235px,calc(100% - 145px));padding:9px 11px;font-size:11px; }
+      midnry-fps .mf-protocol-focus .mf-protocol-flight { top:calc(70px + var(--mf-safe-top));bottom:auto;left:calc(14px + var(--mf-safe-left));transform:none;width:min(235px,calc(100% - 145px));padding:9px 11px;font-size:12px; }
       midnry-fps .mf-protocol-focus .mf-protocol-flight b { font-size:12px; }
       midnry-fps .mf-protocol-focus .mf-protocol-flight meter { height:7px; }
-      midnry-fps .mf-protocol-focus .mf-protocol-flight .mf-protocol-stabilize { font-size:10px; }
-      midnry-fps .mf-protocol-urgent { position:absolute;z-index:6;top:calc(70px + var(--mf-safe-top));left:50%;transform:translateX(-50%);max-width:calc(100% - 32px);padding:7px 12px;border:1px solid #dba67780;border-radius:10px;background:#38231feb;color:#ffe4cf;font:700 12px/1.3 system-ui;text-align:center;pointer-events:none; }
+      midnry-fps .mf-protocol-focus .mf-protocol-flight .mf-protocol-stabilize { font-size:12px; }
+      midnry-fps .mf-protocol-urgent { position:absolute;z-index:6;top:calc(70px + var(--mf-safe-top));left:50%;transform:translateX(-50%);max-width:calc(100% - 32px);padding:7px 12px;border:1px solid #dba67780;border-radius:10px;background:#38231feb;color:#ffe4cf;font:700 12px/1.3 var(--mf-body);text-align:center;pointer-events:none; }
       midnry-fps .mf-protocol-piloting .mf-protocol-urgent { left:auto;right:14px;transform:none;width:125px; }
       @media(pointer:coarse),(max-width:700px) {
         midnry-fps .mf-protocol-focus .mf-brand,midnry-fps .mf-protocol-focus .mf-tag { display:none !important; }
@@ -229,8 +229,11 @@ export class ProtocolFocus {
       this.ui.piloting && !mission.vehicle.autopilot && !mission.vehicle.arrived;
     if (this.button.disabled && this.info.open) this.info.close();
     const warnings = [];
+    // How loud the banner is: danger can end the match, warn needs attention.
+    let level = "warn";
     if (p.phase === "combat" && p.combat) {
       const target = view.entities.find((e) => e.id === p.combat.targetId);
+      level = "danger";
       warnings.push(
         view.time < p.combat.startsAt
           ? `Last Stand · starts in ${Math.ceil(p.combat.startsAt - view.time)}s`
@@ -240,20 +243,23 @@ export class ProtocolFocus {
       !mission.vehicle.autopilot &&
       mission.phase === "transport" &&
       !mission.vehicle.arrived
-    )
+    ) {
+      level = mission.vehicle.underControl ? "info" : "danger";
       warnings.push(
         mission.vehicle.underControl
           ? "Manual flight"
           : `Autopilot off · ${Math.max(0, Math.ceil((mission.vehicle.recoveryDeadline || view.time) - view.time))}s to recover`,
       );
-    else if (p.detonateAt != null)
-      warnings.push(`Base detonation · ${Math.max(0, Math.ceil(p.detonateAt - view.time))}s`);
-    else if (mission.patients.some((patient) => patient.hp > 0 && patient.hp <= 25))
-      warnings.push("Patients critical · deliver aid");
-    else if (p.sabotage.powerUntil > view.time) warnings.push("Power down");
-    else if (p.sabotage.commsUntil > view.time) warnings.push("Comms jammed");
+    } else if (p.detonateAt != null) {
+      level = "danger";
+      warnings.push(`💣 Base detonation · ${Math.max(0, Math.ceil(p.detonateAt - view.time))}s`);
+    } else if (mission.patients.some((patient) => patient.hp > 0 && patient.hp <= 25))
+      warnings.push("🩸 Patients critical · deliver aid");
+    else if (p.sabotage.powerUntil > view.time) warnings.push("🔦 Power down · fix the generators");
+    else if (p.sabotage.commsUntil > view.time) warnings.push("📡 Comms jammed · restore the radio");
     const warning = warnings.join(" · ");
     this.urgent.hidden = !warning;
+    if (this.urgent.dataset.level !== level) this.urgent.dataset.level = level;
     if (this.urgent.textContent !== warning) this.urgent.textContent = warning;
     if (this.info.open) {
       this.info.querySelector(".mf-protocol-infoobjective").textContent =

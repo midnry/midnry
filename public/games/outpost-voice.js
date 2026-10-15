@@ -14,7 +14,7 @@ export class ProximityVoice {
     this.style = document.createElement("style");
     this.style.textContent = `
    midnry-fps .mf-voice{margin:12px 0}midnry-fps .mf-voice button{min-height:44px;margin:8px 8px 8px 0;padding:9px 14px;border-radius:12px;background:#21372b;color:#edf5eb;border:1px solid #9bac9266}
-   midnry-fps .mf-talk{position:absolute;z-index:7;right:calc(16px + var(--mf-safe-right));top:calc(66px + var(--mf-safe-top));width:44px;height:44px;min-height:44px;border-radius:50%;border:1px solid #a8b99c;background:#12231de8;color:#eaf4e6;font:700 10px system-ui;touch-action:none}
+   midnry-fps .mf-talk{position:absolute;z-index:7;right:calc(16px + var(--mf-safe-right));top:calc(66px + var(--mf-safe-top));width:44px;height:44px;min-height:44px;border-radius:50%;border:1px solid #a8b99c;background:#12231de8;color:#eaf4e6;font:700 12px var(--mf-body);touch-action:none}
    midnry-fps .mf-talk[hidden]{display:none}midnry-fps .mf-talk[aria-pressed="true"]{background:#35553b;box-shadow:0 0 0 3px #b0d28d77}
    midnry-fps .mf-voice p{font-size:12px;color:#c3ceb8;line-height:1.5}midnry-fps .mf-voice input{width:100%;min-height:44px}
   `;

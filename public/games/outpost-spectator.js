@@ -37,17 +37,17 @@ export class SpectatorUI {
     this.selection = new SpectatorSelection();
     this.style = document.createElement("style");
     this.style.textContent = `
-      midnry-fps .mf-spectator { position:absolute;z-index:8;left:50%;transform:translateX(-50%);bottom:calc(14px + var(--mf-safe-bottom));width:min(320px,calc(100% - 32px - var(--mf-safe-left) - var(--mf-safe-right)));display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;padding:5px;border:1px solid #778a9b88;border-radius:14px;background:#0d1721ee;color:#eef3f6;font-family:system-ui; }
+      midnry-fps .mf-spectator { position:absolute;z-index:8;left:50%;transform:translateX(-50%);bottom:calc(14px + var(--mf-safe-bottom));width:min(320px,calc(100% - 32px - var(--mf-safe-left) - var(--mf-safe-right)));display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;padding:5px;border:1px solid #778a9b88;border-radius:14px;background:#0d1721ee;color:#eef3f6;font-family:var(--mf-body); }
       midnry-fps .mf-spectator[hidden] { display:none !important; }
       midnry-fps .mf-spectator button { min-width:44px;min-height:44px;border:1px solid #73899c66;border-radius:10px;background:#253543;color:#fff;font-size:22px;touch-action:manipulation; }
       midnry-fps .mf-spectator button:disabled { opacity:.4; }
       midnry-fps .mf-spectator button:focus-visible { outline:3px solid #b9d8f0;outline-offset:2px; }
       midnry-fps .mf-spectator-label { min-width:0;text-align:center;line-height:1.25; }
-      midnry-fps .mf-spectator-label small { display:block;font-size:10px;color:#c0cbd5; }
+      midnry-fps .mf-spectator-label small { display:block;font-size:12px;color:#c0cbd5; }
       midnry-fps .mf-spectator-label b { display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px; }
       midnry-fps .mf-spectator .mf-spectator-support { grid-column:1/-1;font-size:14px;font-weight:700;background:#1d4a35;border-color:#6fcf97aa; }
       midnry-fps .mf-spectator .mf-spectator-support[hidden] { display:none; }
-      midnry-fps .mf-spectator-hint { grid-column:1/-1;text-align:center;color:#c0cbd5;font-size:10px;padding-bottom:2px; }
+      midnry-fps .mf-spectator-hint { grid-column:1/-1;text-align:center;color:#c0cbd5;font-size:12px;padding-bottom:2px; }
       midnry-fps .mf-protocol-spectating :is(.mf-touch,.mf-cross,.mf-protocol-actions,.mf-protocol-context,.mf-protocol-flight,.mf-protocol-flightpad,.mf-protocol-combatstats) { display:none !important; }
       @media(pointer:coarse),(max-width:700px) { midnry-fps .mf-spectator-hint { display:none; } }
     `;
