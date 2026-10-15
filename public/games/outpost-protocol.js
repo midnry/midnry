@@ -50,16 +50,18 @@ export const PROTOCOL_RULES = Object.freeze({
   stabilizationDuration: 3,
 });
 
-/** One colour per seat: the name tag colour everyone uses to talk about a player. */
+/** One colour per seat: the name tag colour everyone uses to talk about a player.
+ * Each colour also has its own shape, so players who cannot tell colours apart
+ * can still say "I saw the triangle". */
 export const PLAYER_COLORS = Object.freeze([
-  { name: "Red", hex: "#e5534b" },
-  { name: "Blue", hex: "#4f8ff0" },
-  { name: "Green", hex: "#4cbf6b" },
-  { name: "Yellow", hex: "#f2c84b" },
-  { name: "Orange", hex: "#f08a3c" },
-  { name: "Purple", hex: "#a774e8" },
-  { name: "Cyan", hex: "#43c6d1" },
-  { name: "Pink", hex: "#ee6fb0" },
+  { name: "Red", hex: "#e5534b", mark: "●" },
+  { name: "Blue", hex: "#4f8ff0", mark: "▲" },
+  { name: "Green", hex: "#4cbf6b", mark: "■" },
+  { name: "Yellow", hex: "#f2c84b", mark: "◆" },
+  { name: "Orange", hex: "#f08a3c", mark: "★" },
+  { name: "Purple", hex: "#a774e8", mark: "✚" },
+  { name: "Cyan", hex: "#43c6d1", mark: "▼" },
+  { name: "Pink", hex: "#ee6fb0", mark: "♥" },
 ]);
 
 const OPERATORS = "operator",
@@ -110,6 +112,7 @@ const ENTITY_FIELDS = [
   "name",
   "color",
   "colorName",
+  "mark",
   "bot",
   "x",
   "y",
@@ -262,6 +265,7 @@ export class ProtocolArena extends Arena {
         team: infiltrators.has(e.id) ? 1 : 0,
         color: PLAYER_COLORS[i % PLAYER_COLORS.length].hex,
         colorName: PLAYER_COLORS[i % PLAYER_COLORS.length].name,
+        mark: PLAYER_COLORS[i % PLAYER_COLORS.length].mark,
         name:
           humans[i]?.name ?? ["Hale", "Voss", "Reed", "Sato", "Quinn", "Rook", "Mara", "Ash"][i],
         weapon: "carbine",
@@ -530,6 +534,7 @@ export class ProtocolArena extends Arena {
         playerId: row.e.id,
         name: row.e.name,
         color: row.e.color ?? null,
+        mark: row.e.mark ?? null,
         detail: detail(row),
       }));
   }

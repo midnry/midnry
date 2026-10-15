@@ -1728,8 +1728,8 @@ export class ProtocolUI {
         radio.append(element("p", "", "Radio channel open. Describe what you actually witnessed."));
       for (const message of meeting.messages || []) {
         const line = element("p"),
-          who = element("b", "", `${message.name || "Operator"}: `),
-          sender = view.entities.find((entity) => entity.id === message.sender);
+          sender = view.entities.find((entity) => entity.id === message.sender),
+          who = element("b", "", `${sender?.mark ? sender.mark + " " : ""}${message.name || "Operator"}: `);
         if (sender?.color) who.style.color = sender.color;
         line.append(who, document.createTextNode(message.text || ""));
         radio.append(line);
@@ -1746,8 +1746,13 @@ export class ProtocolUI {
         const button = element(
           "button",
           "",
-          `${candidate.name || "Operator"}${candidate.id === this.g.selfId ? " (you)" : ""}`,
+          `${candidate.name || "Operator"}${candidate.colorName ? " · " + candidate.colorName : ""}${candidate.id === this.g.selfId ? " (you)" : ""}`,
         );
+        if (candidate.mark) {
+          const mark = element("span", "mf-protocol-mark", candidate.mark + " ");
+          if (candidate.color) mark.style.color = candidate.color;
+          button.prepend(mark);
+        }
         if (candidate.color) {
           button.style.borderLeft = `6px solid ${candidate.color}`;
           button.title = candidate.colorName || "";
@@ -1964,7 +1969,7 @@ export class ProtocolUI {
           element(
             "li",
             "",
-            `${entity.name || "Operator"}${entity.id === g.selfId ? " (you)" : ""} · ${roles[entity.id] === "infiltrator" ? "Infiltrator" : "Operator"}`,
+            `${entity.mark ? entity.mark + " " : ""}${entity.name || "Operator"}${entity.id === g.selfId ? " (you)" : ""} · ${roles[entity.id] === "infiltrator" ? "Infiltrator" : "Operator"}`,
           ),
         );
     if (list.children.length) this.results.append(list);
@@ -1978,7 +1983,7 @@ export class ProtocolUI {
         card.append(
           element("span", "mf-protocol-awardicon", award.icon),
           element("b", "", award.title),
-          element("span", "", `${award.name}${award.playerId === g.selfId ? " (you)" : ""}`),
+          element("span", "", `${award.mark ? award.mark + " " : ""}${award.name}${award.playerId === g.selfId ? " (you)" : ""}`),
           element("small", "", award.detail),
         );
         awards.append(card);
