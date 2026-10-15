@@ -21400,7 +21400,7 @@ var Ap = 3, jp = .065, Mp = 40, Np = class {
 				e.isSkinnedMesh && (e.skeleton.update(), e.computeBoundingBox());
 			});
 			let o = new Je().setFromObject(r), s = 1.82 / (o.max.y - o.min.y);
-			r.scale.multiplyScalar(s), r.position.y -= o.min.y * s, Sf(this, r, e), r.traverse((t) => {
+			r.scale.multiplyScalar(s), r.position.y -= o.min.y * s, Sf(this, r, e), this.g.mode !== "protocol" && r.traverse((t) => {
 				if (t.isMesh && !t.material.userData.outfitFabric) {
 					t.material.userData.outfitFabric = !0;
 					let n = pp(e.outfit), r = this.skinTexture(n);
@@ -21469,7 +21469,7 @@ var Ap = 3, jp = .065, Mp = 40, Np = class {
 			lastSample: null,
 			deadAt: null
 		};
-		return this.dressActor(s, e), this.equipActor(s, e), s.ownedMaterials = [...this.materials].filter((e) => !t.has(e)), this.actors.set(e.id, s), s;
+		return this.g.mode !== "protocol" && this.dressActor(s, e), this.equipActor(s, e), s.ownedMaterials = [...this.materials].filter((e) => !t.has(e)), this.actors.set(e.id, s), s;
 	}
 	mergeStatic(e) {
 		e.updateMatrixWorld(!0);
@@ -22071,7 +22071,7 @@ var Ap = 3, jp = .065, Mp = 40, Np = class {
 				continue;
 			}
 			let o = this.actors.get(a.id);
-			o && (o.outfit !== pp(a.outfit).id || o.weapon !== a.weapon) && (this.disposeActor(o), this.actors.delete(a.id), o = null), o ||= this.makeActor(a), o.patch.color.set(this.g.mode === "protocol" ? a.color || "#97a79b" : a.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465");
+			o && (o.outfit !== pp(a.outfit).id || o.weapon !== a.weapon) && (this.disposeActor(o), this.actors.delete(a.id), o = null), o ||= this.makeActor(a), o.patch.color.set(this.g.mode === "protocol" ? "#97a79b" : a.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465");
 			let s = a.hp > 0, c = a.cloakedUntil > this.g.time && a.team !== this.g.player.team, l = performance.now() / 1e3;
 			s ? o.deadAt = null : o.deadAt === null && (o.deadAt = l);
 			let u = s ? 0 : Math.min(1, (l - o.deadAt) / .85);

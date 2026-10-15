@@ -85,9 +85,7 @@ test("Blackout rooms keep matching kits, private roles, bot-filled seats and aut
     { op: "join", code: host.code, weapon: "rocket", outfit: "hazard" },
     "guest",
   );
-  // Weapons stay matched; outfits are cosmetic and kept.
-  assert.ok(guest.members.every((m) => m.weapon === "carbine"));
-  assert.equal(guest.members.find((m) => m.id === guest.id).outfit, "hazard");
+  assert.ok(guest.members.every((m) => m.weapon === "carbine" && m.outfit === "ranger"));
   assert.ok(guest.members.every((m) => !("team" in m)));
   await assert.rejects(
     roomAction({ op: "poll", ...session(guest), id: host.id }, "guest"),
@@ -218,7 +216,8 @@ test("players choose display names; names are cleaned, unique and reach the matc
   const started = await roomAction({ op: "start", ...session(host) }, "names-host");
   const kemi = started.arena.entities.find((e) => e.id === odd.id);
   assert.equal(kemi.name, "Kemi");
-  assert.equal(kemi.outfit, "medic");
+  // Matching uniforms: a chosen outfit is not applied in Blackout Protocol.
+  assert.equal(kemi.outfit, undefined);
   assert.match(kemi.color, /^#[0-9a-f]{6}$/);
   assert.equal(new Set(started.arena.entities.map((e) => e.color)).size, 8);
 });

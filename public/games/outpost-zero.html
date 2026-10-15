@@ -2816,7 +2816,7 @@
                   id: "player",
                   team: 0,
                   name: this.playerName || storedSetting("midnry-outpost-name") || "You",
-                  outfit: this.retention?.outfitUnlocked(this.outfit) === false ? "ranger" : this.outfit,
+                  outfit: this.outfit,
                 },
               ],
               variety: true,
@@ -3088,9 +3088,8 @@
             this.shell.focus({ preventScroll: true });
           }
           chooseOutfit(id) {
+            if (this.mode === "protocol") return;
             if (!Object.hasOwn(OUTFITS, id)) return;
-            // Outfits unlock by level (device-local progression).
-            if (this.retention && !this.retention.outfitUnlocked(id)) return;
             if (this.online) {
               if (this.online.phase !== "lobby") return;
               this.onlineAction("loadout", { weapon: this.weapon, outfit: id });

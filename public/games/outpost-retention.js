@@ -4,8 +4,6 @@ import {
   profileOf,
   awardMatch,
   levelOf,
-  outfitUnlocked,
-  outfitLevel,
   calendarKeys,
   dailyChallenges,
   weeklyChallenge,
@@ -352,16 +350,7 @@ export class Retention {
     const p = this.profile,
       next = FINISHES.find((f) => f.xp > p.xp);
     this.g.$(".mf-lockerbody").innerHTML =
-      `<h2>Level ${levelOf(p)} / ${p.xp} XP</h2><p>${p.matches} completed rounds · ${p.wins} victories</p><progress max="150" value="${p.xp % 150}" aria-label="Progress to next level"></progress><p>${150 - (p.xp % 150)} XP to the next level. ${next ? `${Math.max(0, next.xp - p.xp)} XP to ${next.name}.` : "All weapon finishes unlocked."}</p><label>Weapon finish<select class="mf-finish" aria-label="Weapon finish">${FINISHES.map((f) => `<option value="${f.id}" ${f.id === p.skin ? "selected" : ""} ${f.xp > p.xp ? "disabled" : ""}>${f.name}${f.xp > p.xp ? ` · ${f.xp} XP` : ""}</option>`).join("")}</select></label><div class="mf-finishpreview" style="--finish:${this.finishColor() || "#4a6873"}">${FINISHES.find((f) => f.id === p.skin).name}</div><h3>Outfits / ${Object.values(OUTFITS).filter((o) => outfitUnlocked(p, o.id)).length} of ${Object.keys(OUTFITS).length} unlocked</h3><p>A new outfit unlocks every level. Everyone sees what you wear; it never hints at your role.${this.g.online && this.g.online.phase !== "lobby" ? " Choose your outfit in the next lobby." : ""}</p><div class="mf-outfitgrid">${Object.values(
-        OUTFITS,
-      )
-        .map(
-          (o) =>
-            `<button class="mf-outfitcard" data-outfit="${o.id}" aria-label="${outfitUnlocked(p, o.id) ? `Wear ${o.name}` : `${o.name}, unlocks at level ${outfitLevel(o.id)}`}" aria-pressed="${this.g.outfit === o.id}" ${(this.g.online && this.g.online.phase !== "lobby") || !outfitUnlocked(p, o.id) ? "disabled" : ""}><img src="/games/outfits/${o.id}.webp?v=skins-20261011" alt="${o.name} outfit" loading="lazy" width="240" height="320"${outfitUnlocked(p, o.id) ? "" : ' style="filter:grayscale(1) brightness(.45)"'}><strong>${o.name}</strong><small>${outfitUnlocked(p, o.id) ? o.description : `🔒 Unlocks at level ${outfitLevel(o.id)}`}</small></button>`,
-        )
-        .join(
-          "",
-        )}</div><h3>Today's challenges · +${DAILY_XP} XP each</h3>${this.challengeStatus()
+      `<h2>Level ${levelOf(p)} / ${p.xp} XP</h2><p>${p.matches} completed rounds · ${p.wins} victories</p><progress max="150" value="${p.xp % 150}" aria-label="Progress to next level"></progress><p>${150 - (p.xp % 150)} XP to the next level. ${next ? `${Math.max(0, next.xp - p.xp)} XP to ${next.name}.` : "All weapon finishes unlocked."}</p><label>Weapon finish<select class="mf-finish" aria-label="Weapon finish">${FINISHES.map((f) => `<option value="${f.id}" ${f.id === p.skin ? "selected" : ""} ${f.xp > p.xp ? "disabled" : ""}>${f.name}${f.xp > p.xp ? ` · ${f.xp} XP` : ""}</option>`).join("")}</select></label><div class="mf-finishpreview" style="--finish:${this.finishColor() || "#4a6873"}">${FINISHES.find((f) => f.id === p.skin).name}</div><h3>Today's challenges · +${DAILY_XP} XP each</h3>${this.challengeStatus()
           .daily.map(
             (c) =>
               `<p>${c.done ? "✅" : "◻️"} ${c.text} · ${c.progress}/${c.goal}</p><progress max="${c.goal}" value="${c.progress}" aria-label="${c.text}"></progress>`,
@@ -394,9 +383,6 @@ export class Retention {
     write("midnry-outpost-profile", this.profile);
     this.menu();
     return 75;
-  }
-  outfitUnlocked(id) {
-    return outfitUnlocked(this.profile, id);
   }
   locker() {
     if (this.g.running) this.g.pause();

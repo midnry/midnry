@@ -160,7 +160,7 @@ export function publicRoom(code: string, room: Room, selfId: string) {
       name,
       ...(protocol ? {} : { team }),
       weapon: protocol ? "carbine" : weapon || "carbine",
-      outfit: outfit || "ranger",
+      outfit: protocol ? "ranger" : outfit || "ranger",
       connected: Date.now() - lastSeen < 20000,
     })),
     ack: room.members.find((m) => m.id === selfId)?.seq ?? -1,
@@ -324,7 +324,8 @@ export function applyRoomAction(
     const fallback = "Ranger " + room.nextName++;
     member = {
       weapon,
-      outfit: outfitId(body.outfit),
+      // Blackout Protocol uses matching uniforms for everyone.
+      outfit: room.mode === "protocol" ? "ranger" : outfitId(body.outfit),
       id: joinedId,
       hash: sha(joinedToken),
       name: displayName(
@@ -421,8 +422,13 @@ export function applyRoomAction(
       (typeof body.weapon !== "string" || !Object.hasOwn(WEAPONS, body.weapon))
     )
       throw new OutpostError("Invalid loadout.");
-    // Outfits are cosmetic in every mode; names can change in the lobby.
-    const outfit = body.outfit === undefined ? member.outfit || "ranger" : outfitId(body.outfit);
+    // Matching uniforms in Blackout Protocol; names can change in the lobby.
+    const outfit =
+      room.mode === "protocol"
+        ? "ranger"
+        : body.outfit === undefined
+          ? member.outfit || "ranger"
+          : outfitId(body.outfit);
     member.weapon = room.mode === "protocol" ? "carbine" : (body.weapon as string);
     member.outfit = outfit;
     if (body.name !== undefined)
@@ -588,7 +594,7 @@ export async function roomAction(
       hash: sha(token),
       name: displayName(body.name, "Ranger 1"),
       weapon,
-      outfit: outfitId(body.outfit),
+      outfit: mode === "protocol" ? "ranger" : outfitId(body.outfit),
       team: 0,
       lastSeen: now,
       inputAt: now,

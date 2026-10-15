@@ -6,22 +6,6 @@ export const FINISHES = [
   { id: "glacier", name: "Glacier Ink", xp: 600, color: "#72bbd0" },
   { id: "nightfall", name: "Nightfall", xp: 1200, color: "#a78bce" },
 ];
-/** Outfits unlock one per level, in this order; Field Ranger is always yours. */
-export const OUTFIT_ORDER = [
-  "ranger",
-  "medic",
-  "desert",
-  "urban",
-  "alpine",
-  "engineer",
-  "recon",
-  "sentinel",
-  "hazard",
-  "shadow",
-];
-export const outfitLevel = (id) => Math.max(1, OUTFIT_ORDER.indexOf(id) + 1);
-export const outfitUnlocked = (profile, id) =>
-  OUTFIT_ORDER.includes(id) && 1 + Math.floor((profile?.xp || 0) / 150) >= outfitLevel(id);
 /**
  * Daily and weekly challenges. Each counts progress from a finished round
  * (`gain` returns how much this round adds); progress resets each day or

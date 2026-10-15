@@ -1810,9 +1810,7 @@ export class MilitaryRenderer {
       model.scale.multiplyScalar(factor);
       model.position.y -= bounds.min.y * factor;
       finishActor(this, model, e);
-      // Outfits are cosmetic in every mode: in Blackout Protocol they help
-      // players tell each other apart and reveal nothing about roles.
-      {
+      if (this.g.mode !== "protocol") {
         model.traverse((o) => {
           // Parts of one actor can share a material: patch each material once,
           // or the fabric shader declares its varyings twice and fails.
@@ -1921,7 +1919,7 @@ export class MilitaryRenderer {
       lastSample: null,
       deadAt: null,
     };
-    this.dressActor(actor, e);
+    if (this.g.mode !== "protocol") this.dressActor(actor, e);
     this.equipActor(actor, e);
     actor.ownedMaterials = [...this.materials].filter((m) => !before.has(m));
     this.actors.set(e.id, actor);
@@ -2303,7 +2301,7 @@ export class MilitaryRenderer {
       if (!a) a = this.makeActor(e);
       a.patch.color.set(
         this.g.mode === "protocol"
-          ? e.color || "#97a79b"
+          ? "#97a79b"
           : e.team === this.g.player.team && this.g.mode === "duo"
             ? "#a2c8b1"
             : "#9b7465",

@@ -1,13 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Arena, DIFFICULTIES } from "../public/games/outpost-sim.js";
-import {
-  awardMatch,
-  profileOf,
-  outfitUnlocked,
-  OUTFIT_ORDER,
-} from "../public/games/outpost-progression.js";
-import { OUTFITS } from "../public/games/outpost-content.js";
+import { awardMatch, profileOf } from "../public/games/outpost-progression.js";
 const result = {
   id: "round-one",
   won: false,
@@ -43,7 +37,7 @@ test("cosmetic challenges award once and locked finishes cannot be selected", ()
   assert.equal(profileOf({ ...p, skin: "copper" }).skin, "copper");
   assert.equal(profileOf(null).xp, 0);
 });
-test("playing both sides earns explorer; outfits unlock one per level", () => {
+test("playing both sides earns explorer", () => {
   const mission = { mode: "protocol", won: true, seconds: 300, contributions: {} };
   let p = awardMatch({}, { ...mission, id: "op", role: "operator" }).profile;
   assert.ok(!p.milestones.includes("explorer"));
@@ -52,14 +46,6 @@ test("playing both sides earns explorer; outfits unlock one per level", () => {
   p = awardMatch(p, { ...mission, id: "inf", role: "infiltrator" }).profile;
   assert.ok(p.milestones.includes("explorer"));
   assert.deepEqual(profileOf(p).roles.sort(), ["infiltrator", "operator"]);
-  assert.ok(outfitUnlocked({ xp: 0 }, "ranger"));
-  assert.ok(!outfitUnlocked({ xp: 0 }, "medic"));
-  assert.ok(outfitUnlocked({ xp: 150 }, "medic"));
-  assert.ok(!outfitUnlocked({ xp: 1349 }, "shadow"));
-  assert.ok(outfitUnlocked({ xp: 1350 }, "shadow"));
-  assert.ok(!outfitUnlocked({ xp: 99999 }, "not-an-outfit"));
-  assert.equal(OUTFIT_ORDER.length, new Set(OUTFIT_ORDER).size);
-  assert.deepEqual([...OUTFIT_ORDER].sort(), Object.keys(OUTFITS).sort());
 });
 test("actual combat damage excludes crates, overkill and teammates", () => {
   const a = new Arena({ mode: "duo" }),

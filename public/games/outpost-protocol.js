@@ -110,7 +110,6 @@ const ENTITY_FIELDS = [
   "name",
   "color",
   "colorName",
-  "outfit",
   "bot",
   "x",
   "y",
