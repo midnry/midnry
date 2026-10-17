@@ -11,7 +11,7 @@ The bundled maps use the 1K diffuse, OpenGL normal, and roughness photographs:
 - Corrugated wall panels: https://polyhaven.com/a/corrugated_iron_03
 - Weapon metal: https://polyhaven.com/a/metal_plate
 - Gloves: https://polyhaven.com/a/fabric_leather_01
-- HDR sky / image-based lighting: https://polyhaven.com/a/kloofendal_48d_partly_cloudy
+- HDR sky / image-based lighting (late-afternoon, golden haze): https://polyhaven.com/a/evening_road_01_puresky
 
 ## Character and animation
 

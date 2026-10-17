@@ -136,7 +136,9 @@ export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
   const inside = !!room,
     powerOut = r.g.mode === "protocol" && Number(protocol?.sabotage?.powerUntil) > r.g.time,
     lighting = !!options.lighting,
-    arrived = !!protocol?.mission?.vehicle?.arrived;
+    arrived = !!protocol?.mission?.vehicle?.arrived,
+    // Night shift: moonlight outside, warm fixtures and lamp posts do the work.
+    night = !!r.night?.active;
   state.inside = inside;
   state.roomId = room?.id || null;
   state.powerOut = powerOut;
@@ -159,18 +161,21 @@ export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
     r.bakedRoomProbes.set(probeKey, probe);
   }
   for (let i = 0; i < 9; i++) r.roomBounce.sh.coefficients[i].lerp(probe.coefficients[i], blend);
-  adapt(r.roomBounce, "intensity", powerOut ? 0.06 : 1);
+  adapt(r.roomBounce, "intensity", powerOut ? 0.06 : night ? (inside ? 0.85 : 0.2) : 1);
+  r.sun.color.set(night ? "#9fb6e2" : "#ffeccf");
+  r.hemisphere.color.set(night ? "#2e4468" : "#cad9e1");
+  r.hemisphere.groundColor.set(night ? "#1d1914" : "#746c5c");
   r.rim.visible = false;
   r.rim.intensity = 0;
   // The sun remains outside a roofed room. Roofs and walls occlude it rather
   // than replacing it with arbitrary ambient illumination from every side.
-  adapt(r.sun, "intensity", powerOut ? 0.16 : lighting ? 3.1 : 2.05);
+  adapt(r.sun, "intensity", powerOut ? 0.16 : night ? 0.32 : lighting ? 3.1 : 2.05);
   // Emergency bounce illumination leaves walls/doorways readable outside the
   // torch hotspot; fixtures still go dark and limited sight still applies.
-  adapt(r.hemisphere, "intensity", powerOut ? 0.09 : inside ? 0.18 : lighting ? 0.32 : 0.46);
-  adapt(r.scene, "environmentIntensity", powerOut ? 0.065 : inside ? 0.2 : 0.48);
-  adapt(r.scene, "backgroundIntensity", powerOut ? 0.13 : 0.58);
-  adapt(r.renderer, "toneMappingExposure", powerOut ? 0.92 : inside ? 0.96 : 0.91);
+  adapt(r.hemisphere, "intensity", powerOut ? 0.09 : night ? (inside ? 0.08 : 0.12) : inside ? 0.18 : lighting ? 0.32 : 0.46);
+  adapt(r.scene, "environmentIntensity", powerOut ? 0.065 : night ? 0.07 : inside ? 0.2 : 0.48);
+  adapt(r.scene, "backgroundIntensity", powerOut ? 0.13 : night ? 1 : 0.58);
+  adapt(r.renderer, "toneMappingExposure", powerOut ? 0.92 : night ? 1.08 : inside ? 0.96 : 0.91);
 
   const shadowSize = Math.min(
       r.profile?.maxShadowSize || 2048,
@@ -213,7 +218,14 @@ export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
 
   state.fixtureIndices.fill(-1);
   state.fixtureDistances.fill(Infinity);
-  const fixtures = r.protocolFixtures;
+  // At night, lamp posts outside join the pool of real lights near the player.
+  const lamps = night && r.night?.root.visible ? r.night.lamps : null;
+  if (state.fixtureSource !== r.protocolFixtures || state.fixtureLamps !== lamps) {
+    state.fixtureSource = r.protocolFixtures;
+    state.fixtureLamps = lamps;
+    state.fixtures = lamps?.length ? r.protocolFixtures.concat(lamps) : r.protocolFixtures;
+  }
+  const fixtures = state.fixtures;
   if (!powerOut)
     for (let i = 0; i < fixtures.length; i++) {
       const fixture = fixtures[i];
@@ -226,7 +238,7 @@ export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
         fixture.z < (room.y + room.h) * SCALE;
       // Arrival fixtures are real lights in the receiving clinic visible through
       // the cargo window. Other rooms never leak their light through a wall.
-      if (!sameRoom && !(arrived && fixture.arrivalOnly)) continue;
+      if (!sameRoom && !(arrived && fixture.arrivalOnly) && !(fixture.outdoor && !room)) continue;
       const dx = fixture.x - x,
         dz = fixture.z - z,
         distance = dx * dx + dz * dz + (sameRoom ? 0 : 80);
@@ -271,17 +283,23 @@ export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
     }
     const fixture = fixtures[state.activeFixtures[i]];
     light.visible = true;
-    adapt(light, "intensity", fixture && state.activeFixtures[i] === desired && !powerOut ? (lighting ? 22 : 18) : 0);
-    light.color.set("#e2ebdf");
-    light.distance = 13;
+    adapt(
+      light,
+      "intensity",
+      fixture && state.activeFixtures[i] === desired && !powerOut
+        ? fixture.outdoor ? 34 : night ? (lighting ? 26 : 21) : lighting ? 22 : 18
+        : 0,
+    );
+    light.color.set(fixture?.outdoor ? "#ffbf7a" : night ? "#ffd6a6" : "#e2ebdf");
+    light.distance = fixture?.outdoor ? 16 : 13;
     if (fixture) light.position.set(fixture.x, fixture.y, fixture.z);
   }
 
-  adapt(r.weaponScene, "environmentIntensity", powerOut ? 0.065 : inside ? 0.22 : 0.48);
+  adapt(r.weaponScene, "environmentIntensity", powerOut ? 0.065 : night ? 0.08 : inside ? 0.22 : 0.48);
   if (state.weaponSky) {
     state.weaponSky.color.copy(r.hemisphere.color);
     state.weaponSky.groundColor.copy(r.hemisphere.groundColor);
-    adapt(state.weaponSky, "intensity", powerOut ? 0.12 : inside ? 0.28 : 0.58);
+    adapt(state.weaponSky, "intensity", powerOut ? 0.12 : night ? 0.14 : inside ? 0.28 : 0.58);
   }
   if (state.weaponKey) {
     const fixture = fixtures[state.fixtureIndices[0]];
@@ -292,7 +310,7 @@ export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
     state.localDirection.transformDirection(r.camera.matrixWorldInverse);
     state.weaponKey.position.lerp(state.localDirection.multiplyScalar(5), blend);
     state.weaponKey.color.lerp(fixture && inside ? r.protocolLights[0].color : r.sun.color, blend);
-    adapt(state.weaponKey, "intensity", powerOut ? 0.35 : inside ? 1.1 : lighting ? 2.65 : 2.05);
+    adapt(state.weaponKey, "intensity", powerOut ? 0.35 : inside ? 1.1 : night ? 0.45 : lighting ? 2.65 : 2.05);
   }
   state.initialized = true;
 }

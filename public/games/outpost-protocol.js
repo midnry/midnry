@@ -7,7 +7,7 @@ import { Arena, clamp } from "./outpost-sim.js";
 import { INTERACTIVE_TASKS, createTaskGame, taskStep, taskGameView } from "./outpost-task-games.js";
 import { contributionsOf, recordContribution } from "./outpost-mission-progress.js";
 import { recordVictimTakedown } from "./outpost-death.js";
-import { rollMatch, modifierChoice, dealSupplies, liveSites, shuffled } from "./outpost-variety.js";
+import { rollMatch, modifierChoice, dealSupplies, liveSites, shuffled, sightRange } from "./outpost-variety.js";
 import {
   PROTOCOL_MAP,
   TRANSPORT_MAP,
@@ -471,7 +471,7 @@ export class ProtocolArena extends Arena {
     return b && distance(a, b) <= radius && this.visible(a, b);
   }
   sightRange() {
-    return this.protocol.sabotage.powerUntil > this.time ? 2.6 : 7;
+    return sightRange(this.protocol, this.time);
   }
   sees(a, b) {
     return this.active(a) && this.near(a, b, this.sightRange());
@@ -2183,7 +2183,7 @@ export function protocolView(data, selfId) {
     observer.crates = [];
     return observer.visible(selfEntity, point);
   };
-  const sight = p.sabotage.powerUntil > data.time ? 2.6 : 7;
+  const sight = sightRange(p, data.time);
   const bombs = p.bombs
     .filter(
       (bomb) => isInfiltrator || player?.discoveredBombs.includes(bomb.id) || rayVisible(bomb, 2.2),

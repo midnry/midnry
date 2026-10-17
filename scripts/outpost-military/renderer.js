@@ -11,6 +11,7 @@ import { SSAOPass } from "three/addons/postprocessing/SSAOPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
 import { FXAAShader } from "three/addons/shaders/FXAAShader.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { Reflector } from "three/addons/objects/Reflector.js";
 import { loadRealismSurfaces, surfaceMaterial } from "./realism-surfaces.js";
 import { initNaturalLighting, updateNaturalLighting } from "./realism-lighting.js";
@@ -34,11 +35,13 @@ import { outfitOf, weaponOf } from "../../public/games/outpost-content.js";
 import { skinPattern } from "../../public/games/outpost-skins.js";
 import { VictimTakedown } from "./takedowns.js";
 import { ASSET_CACHE } from "../../public/games/outpost-asset-manifest.js";
+import { sightRange } from "../../public/games/outpost-variety.js";
 import { isAppleTouchDevice, graphicsProfile, renderSize } from "./compatibility.js";
 import { RenderTelemetry, actorInView } from "./telemetry.js";
 import { batchStaticByMaterial } from "./static-batches.js";
 import { WorldVisibility } from "./world-visibility.js";
 import { GroundTrail } from "./ground-trail.js";
+import { NightDressing } from "./realism-night.js";
 const SCALE = 3,
   ASSET = "/games/military/",
   TAU = Math.PI * 2;
@@ -232,12 +235,38 @@ export class MilitaryRenderer {
       hands.clear = false;
       hands.clearDepth = true;
       this.composer.addPass(hands);
+      // Glow from the sun, lamps and signs spills softly into the image.
+      this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.3, 0.55, 1.1);
+      this.composer.addPass(this.bloom);
       this.fxaa = new ShaderPass(FXAAShader);
       this.composer.addPass(this.fxaa);
+      // Film look: warm highlights, cool shadows, a little saturation, a soft
+      // vignette and fine grain. Runs on linear light before tone mapping.
       this.grade = new ShaderPass({
-        uniforms: { tDiffuse: { value: null } },
+        uniforms: {
+          tDiffuse: { value: null },
+          highlight: { value: new THREE.Vector3(1.05, 1.0, 0.9) },
+          shadow: { value: new THREE.Vector3(0.94, 0.99, 1.06) },
+          saturation: { value: 1.08 },
+          vignette: { value: 0.22 },
+          grain: { value: 0.025 },
+          time: { value: 0 },
+        },
         vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
-        fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ gl_FragColor=texture2D(tDiffuse,vUv); }`,
+        fragmentShader: `uniform sampler2D tDiffuse; uniform vec3 highlight; uniform vec3 shadow; uniform float saturation; uniform float vignette; uniform float grain; uniform float time; varying vec2 vUv;
+          float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)) + time) * 43758.5453); }
+          void main(){
+            vec4 source = texture2D(tDiffuse, vUv);
+            vec3 c = source.rgb;
+            float l = dot(c, vec3(.2126,.7152,.0722));
+            float lift = smoothstep(0.0, 0.6, l);
+            c *= mix(shadow, highlight, lift);
+            c = mix(vec3(l), c, saturation);
+            vec2 d = vUv - .5;
+            c *= 1.0 - vignette * smoothstep(.25, .85, dot(d, d) * 2.2);
+            c += (hash(vUv * 731.0) - .5) * grain * (0.15 + sqrt(max(l, 0.0)));
+            gl_FragColor = vec4(max(c, 0.0), source.a);
+          }`,
       });
       this.composer.addPass(this.grade);
       this.composer.addPass(new OutputPass());
@@ -379,6 +408,7 @@ export class MilitaryRenderer {
           hdr.mapping = THREE.EquirectangularReflectionMapping;
           this.textures.add(hdr);
           this.scene.background = hdr;
+          this.daySky = hdr;
           this.scene.environment = hdr;
           this.weaponScene.environment = hdr;
           this.scene.backgroundBlurriness = 0.015;
@@ -432,8 +462,9 @@ export class MilitaryRenderer {
           target.samples = samples;
         }
       }
-      // No screen-space color filter; exposure/tone mapping remain in OutputPass.
-      this.grade.enabled = false;
+      // Grading is a cheap full-screen pass; bloom is skipped on Performance.
+      this.grade.enabled = true;
+      this.bloom.enabled = preset !== "performance";
     }
     if (this.reflection) {
       this.reflection.visible = this.profile.reflections && preset !== "performance";
@@ -3067,6 +3098,40 @@ export class MilitaryRenderer {
     for (const body of this.protocolBodies.values())
       if (body.victimId === camera.id) body.root.visible = false;
   }
+  /** Day reads like late-afternoon sun; night swaps in a starry sky and
+   * stronger glow so lamps and signs bloom. */
+  updateCinematic(night, time) {
+    if (this.daySky) {
+      const sky = night ? this.night.sky : this.daySky;
+      if (this.scene.background !== sky) {
+        this.scene.background = sky;
+        this.scene.backgroundBlurriness = night ? 0 : 0.015;
+      }
+    }
+    if (!this.grade) return;
+    const u = this.grade.uniforms;
+    u.time.value = time % 100;
+    if (night) {
+      u.highlight.value.set(1.1, 0.98, 0.84);
+      u.shadow.value.set(0.84, 0.95, 1.16);
+      u.saturation.value = 1.12;
+      u.vignette.value = 0.38;
+      u.grain.value = 0.035;
+      this.bloom.strength = 0.7;
+      this.bloom.threshold = 0.85;
+      this.bloom.radius = 0.6;
+    } else {
+      // Late-afternoon sun: golden highlights, slightly cool shade.
+      u.highlight.value.set(1.12, 1.01, 0.82);
+      u.shadow.value.set(0.93, 0.98, 1.08);
+      u.saturation.value = 1.06;
+      u.vignette.value = 0.26;
+      u.grain.value = 0.022;
+      this.bloom.strength = 0.42;
+      this.bloom.threshold = 0.92;
+      this.bloom.radius = 0.6;
+    }
+  }
   render() {
     if (this.disposed || this.contextUnavailable) return false;
     this.configure();
@@ -3119,6 +3184,8 @@ export class MilitaryRenderer {
     this.camera.rotation.set(pitch - fall * 0.25, -p.a - Math.PI / 2, fall * 0.5, "YXZ");
     this.updateProtocol(protocolView, p);
     this.updateMedicalMission(protocolView?.protocol?.mission, t);
+    const night = (this.night ||= new NightDressing(this)).update(protocolView, g.arena.mapId, t);
+    this.updateCinematic(night, t);
     updateNaturalLighting(this, protocolView, p, dt);
     if (g.arena.mapId === "medevac" && !this.motion.matches) {
       const heading = Number(protocolView?.protocol?.mission?.vehicle?.heading) || 0;
@@ -3142,7 +3209,7 @@ export class MilitaryRenderer {
         !takedown && !!accused &&
         accused.id !== p.id &&
         accused.hp > 0 &&
-        Math.hypot(accused.x - p.x, accused.y - p.y) <= (this.protocolPowerOut ? 2.6 : 7) &&
+        Math.hypot(accused.x - p.x, accused.y - p.y) <= sightRange(protocolView.protocol, protocolView.time) &&
         g.arena.visible(p, accused);
       if (show) {
         const point = (this.markerPoint ||= new THREE.Vector3())
@@ -3193,13 +3260,19 @@ export class MilitaryRenderer {
     this.scene.fog.color.set(
       this.protocolPowerOut
         ? "#101d22"
-        : outside
+        : this.night?.active
+          ? "#121d2e"
+          : outside
           ? "#827276"
-          : (PROFILES[g.arena.mapId] || PROFILES.outpost).fog,
+          : g.mode === "protocol" && g.arena.mapId === "breakwater"
+            ? "#cdbb9c"
+            : (PROFILES[g.arena.mapId] || PROFILES.outpost).fog,
     );
     this.scene.fog.density = this.protocolPowerOut
       ? 0.045
-      : outside
+      : this.night?.active
+        ? this.naturalLighting?.inside ? 0.01 : 0.026
+        : outside
         ? 0.065
         : g.arena.mapId === "medevac" && !protocolView?.protocol?.mission?.vehicle?.arrived
           ? 0.002
@@ -3244,6 +3317,8 @@ export class MilitaryRenderer {
     this.disposed = true;
     this.telemetry?.dispose();
     this.groundTrail?.dispose();
+    this.night?.dispose();
+    this.bloom?.dispose();
     this.identification?.dispose();
     this.takedown?.dispose();
     disposeRiggedHands(this.rig);

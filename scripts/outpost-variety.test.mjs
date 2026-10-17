@@ -150,3 +150,11 @@ test("practice and tests keep the classic fixed round", () => {
   assert.equal(a.protocol.sites.length, PROTOCOL_MAP.sites.length);
   assert.equal(a.protocol.mission.vehicle.duration, 120);
 });
+
+test("Night shift trims sight to 5 tiles; a blackout still cuts it to 2.6", async () => {
+  const { sightRange } = await import("../public/games/outpost-variety.js");
+  const night = { match: { modifier: "night-shift" }, sabotage: { powerUntil: 0 } };
+  assert.equal(sightRange(night, 10), 5);
+  assert.equal(sightRange({ ...night, sabotage: { powerUntil: 20 } }, 10), 2.6);
+  assert.equal(sightRange({ match: { modifier: "rush" }, sabotage: { powerUntil: 0 } }, 10), 7);
+});

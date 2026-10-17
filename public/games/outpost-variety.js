@@ -12,7 +12,15 @@ export const MODIFIERS = Object.freeze([
   { id: "lone-wolf", icon: "🐺", name: "Lone wolf", text: "Only one infiltrator, but their eliminations recharge much faster." },
   { id: "short-supplies", icon: "📦", name: "Short supplies", text: "No spare stock: every medical item on the base is needed." },
   { id: "rush", icon: "⏱️", name: "Rush order", text: "Patients fade 25% faster, but the flight is shorter." },
+  { id: "night-shift", icon: "🌙", name: "Night shift", text: "The rescue runs after dark. Lamps and signs light the base, and you see less far in the shadows." },
 ]);
+
+/** How far a player can see: a blackout cuts it hard, night trims it. Shared by
+ * the simulation (witnesses, bots) and the renderer (name tags). */
+export function sightRange(protocol, time) {
+  if (Number(protocol?.sabotage?.powerUntil) > time) return 2.6;
+  return protocol?.match?.modifier === "night-shift" ? 5 : 7;
+}
 
 /** One per match, drawn separately from the modifier. */
 export const TWISTS = Object.freeze([

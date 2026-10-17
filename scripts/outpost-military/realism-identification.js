@@ -1,5 +1,6 @@
 /** Small neutral call-sign labels for visible living participants only. */
 import * as THREE from 'three';
+import { sightRange } from '../../public/games/outpost-variety.js';
 export class PlayerIdentification {
  constructor(r){
   this.r=r;this.labels=new Map();this.point=new THREE.Vector3();
@@ -23,7 +24,7 @@ export class PlayerIdentification {
    if(e.id===camera.id||e.hp<=0||e.departed)continue;current.add(e.id);
    let node=this.labels.get(e.id);if(!node){node=document.createElement('span');node.className='mf-playername';node.hidden=true;this.root.append(node);this.labels.set(e.id,node);}
    const actor=r.actors.get(e.id),distance=Math.hypot(e.x-camera.x,e.y-camera.y);
-   let visible=actor?.root.visible&&distance<=(r.protocolPowerOut?2.6:7)&&g.arena.visible(camera,e);
+   let visible=actor?.root.visible&&distance<=sightRange(view.protocol,view.time)&&g.arena.visible(camera,e);
    if(visible){
     if(!actor.nameHead){actor.model.traverse(b=>{if(b.isBone&&b.name.replace(/[^a-z]/gi,'').endsWith('Head'))actor.nameHead=b;});}
     if(actor.nameHead)actor.nameHead.getWorldPosition(this.point);else this.point.set(e.x*3,1.64,e.y*3);
