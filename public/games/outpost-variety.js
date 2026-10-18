@@ -19,7 +19,9 @@ export const MODIFIERS = Object.freeze([
  * the simulation (witnesses, bots) and the renderer (name tags). */
 export function sightRange(protocol, time) {
   if (Number(protocol?.sabotage?.powerUntil) > time) return 2.6;
-  return protocol?.match?.modifier === "night-shift" ? 5 : 7;
+  const base = protocol?.match?.modifier === "night-shift" ? 5 : 7;
+  // A sandstorm cuts visibility for everyone while it lasts.
+  return Number(protocol?.sandstormUntil) > time ? Math.min(base, 4) : base;
 }
 
 /** One per match, drawn separately from the modifier. */

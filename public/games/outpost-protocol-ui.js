@@ -5,6 +5,7 @@
  */
 import { modifierOf, twistOf } from "./outpost-variety.js";
 import { SPECIALTIES } from "./outpost-specialties.js";
+import { EVENT_KINDS } from "./outpost-events.js";
 import { shareSummary, shareResult, whatsappUrl } from "./outpost-share.js";
 const GHOST_OPS = new Set(["ghost-begin", "task-step", "task-cancel"]);
 import { MissionTaskPanel } from "./outpost-task-ui.js";
@@ -53,6 +54,10 @@ const GUIDE = [
   [
     "Witnesses and radio meetings",
     "Report a nearby fallen operator with F or Report body. Press C or use Info → Emergency radio to call from anywhere with working communications. If jammed, use the wired emergency console or restore communications. Each player gets one emergency call. Meetings allow fifteen seconds of discussion and fifteen seconds to vote. Patient vitals and the flight pause during meetings and Last Stand; new meetings are blocked while autopilot is disengaged during flight. More than half the living patrol must vote for one suspect. The accused fights every other survivor after a five-second preparation. Ties and Skip return to the rescue. A 90-second limit prevents hiding indefinitely; expiry forfeits the accused. Combat eliminations are permanent. Unless the host turns it off, the patrol learns whether a removed player was an infiltrator. Operators win the moment every infiltrator is stopped; infiltrators win once they equal the remaining crew.",
+  ],
+  [
+    "Emergencies",
+    "With the Variety rules on, the base throws up to three emergencies at you during the gathering phase. A fire must be put out (hold E at it for four seconds) or medical stores burn and every patient loses health. A new casualty at the south gate needs stabilising. A supply delivery in the atrium boosts every patient when unpacked. A sandstorm cuts everyone's visibility for forty seconds, which is a gift to infiltrators. The alert banner shows how long you have.",
   ],
   [
     "Specialties",
@@ -987,6 +992,7 @@ export class ProtocolUI {
                 )),
           )
         : null;
+    const event = this.closest((protocol.events || []).filter((ev) => ev.x != null && EVENT_KINDS[ev.kind]?.hold), 1.4);
     const avionics = transporting ? this.closest([TRANSPORT_MAP.avionics], 1.4) : null;
     const cargo = transporting ? this.closest([TRANSPORT_MAP.cargo], 1.4) : null;
     const helm =
@@ -1012,7 +1018,15 @@ export class ProtocolUI {
       y: point.y,
     });
     if (alive && !carriedBody) {
-      if (bomb)
+      if (event)
+        context = at(
+          "event",
+          event.id,
+          `${EVENT_KINDS[event.kind].icon} ${EVENT_KINDS[event.kind].verb}`,
+          `Hold for ${EVENT_KINDS[event.kind].hold} seconds. ${Math.max(0, Math.ceil(event.until - view.time))}s left.`,
+          event,
+        );
+      else if (bomb)
         context = at(
           "defuse",
           bomb.id,
@@ -1560,6 +1574,7 @@ export class ProtocolUI {
           plant: "Concealing base charge",
           repair: "Restoring base systems",
           defuse: "Disabling charge",
+          event: "Handling the emergency",
           collect: "Collecting medical supplies",
           load: "Loading the medevac",
           depart: "Boarding Lifeline Medevac",
@@ -1650,6 +1665,7 @@ export class ProtocolUI {
         ? {
             plant: "Hold to plant",
             defuse: "Hold to disable",
+            event: "Hold to handle",
             repair: "Hold to restore",
             collect: "Hold to collect",
             load: "Hold to load",

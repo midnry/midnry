@@ -256,6 +256,12 @@ export class ProtocolFocus {
     } else if (p.detonateAt != null) {
       level = "danger";
       warnings.push(`💣 Base detonation · ${Math.max(0, Math.ceil(p.detonateAt - view.time))}s`);
+    } else if ((p.events || []).length) {
+      const ev = p.events[0];
+      const icon = { fire: "🔥", casualty: "🚑", drop: "📦", sandstorm: "🌪️" }[ev.kind] || "⚠️";
+      const label = { fire: `Fire in ${ev.room}`, casualty: "New casualty at the south gate", drop: "Delivery in the atrium", sandstorm: "Sandstorm · low visibility" }[ev.kind];
+      level = ev.kind === "drop" || ev.kind === "sandstorm" ? "warn" : "danger";
+      warnings.push(`${icon} ${label} · ${Math.max(0, Math.ceil(ev.until - view.time))}s`);
     } else if (mission.patients.some((patient) => patient.hp > 0 && patient.hp <= 25))
       warnings.push("🩸 Patients critical · deliver aid");
     else if (p.sabotage.powerUntil > view.time) warnings.push("🔦 Power down · fix the generators");

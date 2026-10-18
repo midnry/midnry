@@ -207,6 +207,7 @@ export default defineConfig(({ command, isPreview }) => ({
                   "outpost-share.js",
                   "outpost-theme.js",
                   "outpost-specialties.js",
+                  "outpost-events.js",
                   "outpost-realtime.js",
                   "outpost-spatial-audio.js",
                   "outpost-voice.js",

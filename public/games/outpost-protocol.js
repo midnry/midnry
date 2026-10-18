@@ -9,6 +9,7 @@ import { contributionsOf, recordContribution } from "./outpost-mission-progress.
 import { recordVictimTakedown } from "./outpost-death.js";
 import { rollMatch, modifierChoice, dealSupplies, liveSites, shuffled, sightRange } from "./outpost-variety.js";
 import { SPECIALTIES, dealSpecialties } from "./outpost-specialties.js";
+import { EVENT_KINDS, nextEvent } from "./outpost-events.js";
 import {
   PROTOCOL_MAP,
   TRANSPORT_MAP,
@@ -257,6 +258,11 @@ export class ProtocolArena extends Arena {
       nextChatterAt: 20,
       // Paint smudges left on sabotaged panels: { stationKind: { colors, at } }.
       smudges: {},
+      // Mid-match events (fire, casualty, delivery, sandstorm) in the base.
+      events: [],
+      // Real matches only; practice and tests keep the classic round.
+      nextEventAt: options.variety === true && options.events !== false ? 80 + random() * 30 : Infinity,
+      sandstormUntil: 0,
       self: null,
       players: Object.create(null),
       nextId: 1,
@@ -1429,6 +1435,8 @@ export class ProtocolArena extends Arena {
       list
         .filter((point) => this.near(entity, point, PROTOCOL_RULES.interactRange))
         .sort((a, b) => distance(entity, a) - distance(entity, b))[0];
+    const event = nearest((this.protocol.events || []).filter((ev) => ev.active && EVENT_KINDS[ev.kind].hold));
+    if (event) return { kind: "event", target: event.id, duration: EVENT_KINDS[event.kind].hold };
     if (player.role === OPERATORS && this.active(entity)) {
       const bomb = nearest(this.protocol.bombs);
       if (bomb) return { kind: "defuse", target: bomb.id, duration: PROTOCOL_RULES.defuseDuration };
@@ -1618,6 +1626,11 @@ export class ProtocolArena extends Arena {
       channel.code = String(100 + Math.floor(this.random() * 900));
       channel.deadline = this.time + PROTOCOL_RULES.wireWindow;
       this.observe("plant", entity);
+      return;
+    }
+    if (channel.kind === "event") {
+      player.channel = null;
+      this.resolveEvent(entity, channel.target);
       return;
     }
     if (channel.kind === "collect") {
@@ -1810,6 +1823,97 @@ export class ProtocolArena extends Arena {
       (e) => e !== entity && this.active(e) && distance(e, point) < 4,
     );
     return distance(entity, point) - (company ? 4 : 0);
+  }
+
+  /** Start, expire and announce mid-match events (base phase only). */
+  updateEvents() {
+    const p = this.protocol,
+      mission = p.mission;
+    p.events ??= [];
+    for (const ev of p.events) {
+      if (!ev.active) continue;
+      if (ev.kind === "casualty") {
+        const patient = mission.patients.find((pt) => pt.id === ev.patientId);
+        if (!patient || patient.hp <= 0) {
+          ev.active = false;
+          ev.outcome = "lost";
+          this.addLog(`${patient?.name || "The new casualty"} did not make it.`);
+        }
+        continue;
+      }
+      if (ev.until > this.time) continue;
+      ev.active = false;
+      ev.outcome = "expired";
+      if (ev.kind === "fire") {
+        for (const patient of mission.patients) if (!patient.rescued && patient.hp > 0) patient.hp = Math.max(1, patient.hp - 8);
+        this.addLog(`The fire in ${ev.room} burned through medical stores. Every patient lost ground.`);
+      } else if (ev.kind === "drop") this.addLog("The supply delivery was left unopened.");
+      else if (ev.kind === "sandstorm") this.addLog("The sandstorm has passed.");
+    }
+    if (mission.phase !== "base" || this.time < (p.nextEventAt ?? Infinity) || (p.eventCount || 0) >= 3) return;
+    p.nextEventAt = this.time + 75 + this.random() * 35;
+    p.eventCount = (p.eventCount || 0) + 1;
+    const { kind, spot } = nextEvent(() => this.random(), p.events.at(-1)?.kind);
+    const info = EVENT_KINDS[kind];
+    const ev = {
+      id: `event-${p.nextId++}`,
+      kind,
+      active: true,
+      startedAt: this.time,
+      until: this.time + info.duration,
+      x: spot?.x ?? null,
+      y: spot?.y ?? null,
+      room: spot?.room ?? null,
+    };
+    if (kind === "casualty") {
+      const patient = {
+        id: `patient-casualty-${p.nextId++}`,
+        name: ["Lance Corporal Obi", "Private Hart", "Medic Adeyemi"][(p.eventCount - 1) % 3],
+        hp: 55,
+        maxHp: 100,
+        decay: 0.55,
+        critical: true,
+        rescued: false,
+      };
+      mission.patients.push(patient);
+      ev.patientId = patient.id;
+    }
+    if (kind === "sandstorm") p.sandstormUntil = ev.until;
+    p.events.push(ev);
+    const lines = {
+      fire: `Fire in ${ev.room}! Put it out within ${info.duration} seconds or we lose medical stores.`,
+      casualty: `A new casualty has arrived at the south gate. Stabilise them before they fade.`,
+      drop: `A supply delivery is waiting in the atrium. Unpack it to give the patients a boost.`,
+      sandstorm: `Sandstorm! Visibility is down for ${info.duration} seconds. Stay with someone.`,
+    };
+    this.addLog(lines[kind]);
+    const caller = this.entities.find((e) => e.bot && this.active(e) && e.team === 0) ?? this.entities.find((e) => this.active(e));
+    this.radio(caller, `${info.icon} ${lines[kind]}`);
+    for (const e of this.entities) if (this.active(e) && !e.bot) this.emit(e.id, `${info.icon} ${info.name}! ${info.verb || "Stay alert."}`);
+  }
+
+  resolveEvent(entity, id) {
+    const p = this.protocol,
+      ev = (p.events || []).find((item) => item.id === id && item.active);
+    if (!ev) return;
+    ev.active = false;
+    ev.outcome = "handled";
+    ev.by = entity.id;
+    recordContribution(this.privateFor(entity), "repairs", ev.id);
+    this.observe("task", entity);
+    if (ev.kind === "fire") this.addLog(`${entity.name} put out the fire in ${ev.room}.`);
+    else if (ev.kind === "casualty") {
+      const patient = p.mission.patients.find((pt) => pt.id === ev.patientId);
+      if (patient) {
+        patient.hp = Math.min(patient.maxHp, patient.hp + 20);
+        patient.decay = 0.15;
+        patient.critical = false;
+      }
+      this.addLog(`${entity.name} stabilised ${patient?.name || "the new casualty"}.`);
+    } else if (ev.kind === "drop") {
+      for (const patient of p.mission.patients) if (!patient.rescued && patient.hp > 0) patient.hp = Math.min(patient.maxHp, patient.hp + 10);
+      this.addLog(`${entity.name} unpacked the delivery. Every patient gained ground.`);
+    }
   }
 
   /** Active specialty: medic exam, security cameras, forger's fake clue. */
@@ -2173,6 +2277,17 @@ export class ProtocolArena extends Arena {
               .includes(entity),
         );
         goal ??= this.botSearchCover(entity);
+        // The two nearest operators answer a fire, casualty or delivery.
+        goal ??= (this.protocol.events || []).find(
+          (ev) =>
+            ev.active &&
+            ev.x != null &&
+            this.entities
+              .filter((e) => e.team === 0 && this.active(e))
+              .sort((a, b) => distance(a, ev) - distance(b, ev))
+              .slice(0, 2)
+              .includes(entity),
+        );
         if (!goal && mission.phase === "base") {
           if (player.cargo || this.manifestComplete()) goal = mission.loading;
           else
@@ -2256,6 +2371,9 @@ export class ProtocolArena extends Arena {
     if (p.emergencyReadyAt > this.time - dt) p.emergencyReadyAt += dt;
     for (const key of ["powerUntil", "commsUntil"])
       if (p.sabotage[key] > this.time - dt) p.sabotage[key] += dt;
+    if (p.nextEventAt > this.time - dt) p.nextEventAt += dt;
+    if (p.sandstormUntil > this.time - dt) p.sandstormUntil += dt;
+    for (const ev of p.events || []) if (ev.active && ev.until > this.time - dt) ev.until += dt;
     for (const player of Object.values(p.players))
       for (const key of ["killReadyAt", "sabotageReadyAt", "ventReadyAt"])
         if (player[key] > this.time - dt) player[key] += dt;
@@ -2346,6 +2464,7 @@ export class ProtocolArena extends Arena {
     }
     this.botChatter();
     this.updateClues();
+    this.updateEvents();
     for (const body of this.protocol.bodies)
       if (body.carriedBy) {
         const carrier = this.entities.find((e) => e.id === body.carriedBy);
@@ -2592,6 +2711,8 @@ export function protocolView(data, selfId) {
       : null,
     log: clone(p.log),
     chatter: clone(p.chatter ?? []),
+    events: (p.events ?? []).filter((ev) => ev.active).map(({ id, kind, x, y, room, until }) => ({ id, kind, x, y, room, until })),
+    sandstormUntil: p.sandstormUntil ?? 0,
     mission: publicMission,
     combat: p.combat
       ? {

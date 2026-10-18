@@ -43,6 +43,7 @@ import { WorldVisibility } from "./world-visibility.js";
 import { roofLayout } from "./architecture.js";
 import { GroundTrail } from "./ground-trail.js";
 import { NightDressing } from "./realism-night.js";
+import { EventDressing } from "./realism-events.js";
 import { preparePropKit, buildFurniture } from "./realism-props.js";
 import { BattlePreparation } from "./battle-preparation.js";
 const SCALE = 3,
@@ -3289,6 +3290,7 @@ export class MilitaryRenderer {
     this.updateMedicalMission(protocolView?.protocol?.mission, t);
     const night = (this.night ||= new NightDressing(this)).update(protocolView, g.arena.mapId, t);
     this.updateCinematic(night, t);
+    if (g.mode === "protocol") (this.events ||= new EventDressing(this)).update(protocolView, t);
     updateNaturalLighting(this, protocolView, p, dt);
     if (g.arena.mapId === "medevac" && !this.motion.matches) {
       const heading = Number(protocolView?.protocol?.mission?.vehicle?.heading) || 0;
@@ -3360,8 +3362,11 @@ export class MilitaryRenderer {
       !["training", "protocol"].includes(g.mode) &&
       g.time > g.zone.delay &&
       (Math.abs(p.x - g.zone.cx) > g.zone.half || Math.abs(p.y - g.zone.cy) > g.zone.half);
+    const sandstorm = g.mode === "protocol" && (protocolView?.protocol?.events || []).some((ev) => ev.kind === "sandstorm");
     this.scene.fog.color.set(
-      this.night?.active
+      sandstorm
+        ? this.night?.active ? "#4a3f30" : "#b39a72"
+        : this.night?.active
         ? "#121d2e"
         : outside
           ? "#827276"
@@ -3371,13 +3376,17 @@ export class MilitaryRenderer {
     );
     // Electrical sabotage cannot change the weather or fill open air with
     // black fog. Interior darkness comes from unpowered fixtures and shelter.
-    this.scene.fog.density = this.night?.active
+    this.scene.fog.density = sandstorm
+      ? this.naturalLighting?.inside ? 0.05 : 0.09
+      : this.night?.active
       ? this.naturalLighting?.inside ? 0.01 : 0.026
       : outside
         ? 0.065
         : g.arena.mapId === "medevac" && !protocolView?.protocol?.mission?.vehicle?.arrived
           ? 0.002
           : 0.009;
+    // Blowing sand hides the sky too; the day sky returns next frame.
+    if (sandstorm) this.scene.background = (this.sandSky ||= new THREE.Color()).copy(this.scene.fog.color);
     // A 30Hz shadow refresh matches visible skeletal animation. Reusing the
     // shadow texture between samples avoids a second full geometry pass at
     // 120Hz; camera and player movement continue on every animation frame.
@@ -3426,6 +3435,7 @@ export class MilitaryRenderer {
     this.telemetry?.dispose();
     this.groundTrail?.dispose();
     this.night?.dispose();
+    this.events?.dispose();
     this.bloom?.dispose();
     this.identification?.dispose();
     this.takedown?.dispose();
