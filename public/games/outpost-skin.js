@@ -64,7 +64,8 @@ midnry-fps .mf-protocol-begin { width: 100%; min-height: 54px !important; font-s
 /* Meeting: chat, quick replies and vote cards. */
 midnry-fps .mf-protocol-meeting { width: min(760px, calc(100vw - 32px)) !important; }
 midnry-fps .mf-protocol-meeting :is(.mf-protocol-messages, .mf-protocol-chat, ol, ul) { border-radius: 3px !important; }
-midnry-fps .mf-protocol-quicktalk button { min-height: 40px !important; font-size: 14px !important; }
+midnry-fps .mf-protocol-quicktalk button { min-height: 44px !important; font-size: 14px !important; }
+midnry-fps .mf-shell:has(.mf-modal:not([hidden])) .mf-protocol-infoopen { display: none !important; }
 midnry-fps .mf-protocol-meeting [data-vote], midnry-fps .mf-protocol-meeting .mf-protocol-votes button { justify-content: flex-start; text-align: left; text-transform: none !important; font: 600 16px var(--mf-display) !important; letter-spacing: 0.02em !important; }
 midnry-fps .mf-protocol-meeting [aria-pressed="true"] { border-color: var(--mf-accent) !important; box-shadow: inset 4px 0 0 var(--mf-accent) !important; }
 

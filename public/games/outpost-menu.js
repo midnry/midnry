@@ -59,7 +59,7 @@ midnry-fps .mf-modal.mf-home .mf-modes button[aria-pressed="true"] :is(small, .m
 midnry-fps .mf-modal.mf-home .mf-protocol-menu { display: block !important; padding: 0 !important; margin: 0 !important; border: 0 !important; background: none !important; }
 midnry-fps .mf-modal.mf-home .mf-protocol-menu > :is(.mf-protocol-shiftpick, .mf-protocol-dailynote, button) { display: none !important; }
 midnry-fps .mf-modal.mf-home .mf-protocol-menu label { display: grid; gap: 6px; font: 600 13px var(--mf-display); letter-spacing: 0.14em; text-transform: uppercase; color: #aeb9b2; }
-midnry-fps .mf-modal.mf-home .mf-protocol-menu select { min-height: 42px; border-radius: 3px; border: 1px solid #ffffff24; background: #0c1210e6; color: #eef2ee; font: 400 15px var(--mf-body); }
+midnry-fps .mf-modal.mf-home .mf-protocol-menu select { min-height: 44px; border-radius: 3px; border: 1px solid #ffffff24; background: #0c1210e6; color: #eef2ee; font: 400 15px var(--mf-body); }
 midnry-fps .mf-modal.mf-home .mf-start { min-height: 58px !important; margin: 4px 0 0 !important; border-radius: 3px !important; border: 0 !important; background: var(--mf-accent) !important; color: var(--mf-accent-ink) !important; font: 800 24px var(--mf-display) !important; letter-spacing: 0.04em !important; box-shadow: 0 10px 30px #ffc8572e !important; }
 midnry-fps .mf-modal.mf-home .mf-start:hover { filter: brightness(1.06); }
 midnry-fps .mf-homeactions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

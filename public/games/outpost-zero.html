@@ -2107,8 +2107,8 @@
     <div class="mf-loading" role="region" aria-label="Loading Outpost Zero">
       <img
         class="mf-loadimage is-active"
-        src="./loading/blackout-base.webp"
-        alt="Breakwater operating base in Blackout Protocol"
+        src="./loading/lz-keyart.webp"
+        alt="Operators and the medevac at Breakwater base at sunset"
         fetchpriority="high"
         decoding="async"
       />
@@ -2148,24 +2148,24 @@
       (() => {
         const screen = document.querySelector(".mf-loading");
         const slides = [
-          ["blackout-base", "MISSION BRIEFING / BASE", "Blackout Protocol",
-            "Gather medical supplies at Breakwater. The wounded patrol is counting on Lifeline Run.",
-            "Guided practice teaches packing, loading, defusing, reporting, voting and aircraft recovery."],
-          ["blackout-patrol", "OPERATORS / TRUST", "Watch the patrol",
+          ["lz-keyart", "MISSION BRIEFING / BASE", "Lifeline Run",
+            "Gather medical supplies at Breakwater, load the medevac and fly aid to the wounded patrol.",
+            "Start with Practice to learn collecting, loading, defusing, reporting, voting and flying."],
+          ["lz-patrol", "OPERATORS / TRUST", "Watch the patrol",
             "Operators and infiltrators wear the same uniforms. Evidence matters more than appearances.",
-            "Approach a fallen patrol and press F or Report body. Witnesses remember attacks and can name who they saw."],
-          ["blackout-aircraft", "PHASE TWO / MEDEVAC", "Lifeline Medevac",
-            "Check oxygen, secure medical cargo and confirm landing coordinates while protecting the flight.",
-            "If autopilot is sabotaged, take the helm. Keep altitude and course in their safe bands for three seconds before restoring autopilot."],
-          ["blackout-base", "THREATS / SABOTAGE", "Protect the rescue",
-            "Repair power and communications, disable located charges and protect the medical shipment.",
-            "The amber trail on the ground leads to urgent repairs. Concealed charges only get a route after your operator locates them."],
-          ["blackout-patrol", "RADIO / ASSEMBLY", "Report, discuss, decide",
-            "Share eyewitness accounts and challenge alibis. A majority sends the accused into Last Stand.",
-            "Press C or open Info → Emergency radio to call a meeting. If radio is jammed, use the wired console. You have one emergency call; body reports remain available."],
-          ["blackout-aircraft", "ONLINE / OFFLINE", "Every patrol matters",
-            "Play with friends online, or with smart bots that remember witnesses, question stories and defend themselves.",
-            "After elimination, use Previous / Next or Left / Right to follow surviving players. Observers cannot complete tasks, speak or vote."],
+            "Report a fallen patrol with F. Footprints, paint smudges and the security log go on your case board."],
+          ["lz-fire", "EMERGENCIES", "The base fights back",
+            "Fires, new casualties, supply drops and sandstorms arrive mid-match. Handle them before the timer runs out.",
+            "Each quarter of the supplies loaded locks the base down for 25 seconds. Keep the cargo moving."],
+          ["lz-hangar", "PHASE TWO / MEDEVAC", "Lifeline Medevac",
+            "Once all nine supplies are aboard, take off. Nobody can be eliminated in the air, but sabotage still can.",
+            "If autopilot fails, take the helm. Hold altitude and course in their safe bands, then restore autopilot."],
+          ["lz-night", "NIGHT SHIFT", "After dark",
+            "The same base under lamps and neon. You see less far, and so does everyone else.",
+            "Stay with someone. A lone operator in the dark is exactly what an infiltrator is waiting for."],
+          ["lz-medevac", "DAILY CASE / ONLINE", "Every patrol matters",
+            "Play the Daily case to compare scores with friends, or play online with friends and smart bots.",
+            "After elimination, follow survivors and use Remote support to help the wounded from afar."],
         ];
         const images = [...screen.querySelectorAll(".mf-loadimage")];
         const motion = matchMedia("(prefers-reduced-motion: reduce)");
@@ -2319,6 +2319,7 @@
       import { OutpostMenu } from "./outpost-menu.js";
       import { OutpostHud } from "./outpost-hud.js";
       import { OutpostSkin } from "./outpost-skin.js";
+      import { SceneTransition } from "./outpost-transition.js";
       import { deathTiming, deathFrame } from "./outpost-death.js";
       import { VictimDeathUI } from "./outpost-death-ui.js";
       import { ConnectionUI } from "./outpost-connection.js";
@@ -2469,6 +2470,7 @@
             this.homeMenu = new OutpostMenu(this);
             this.hudStyle = new OutpostHud(this);
             this.skin = new OutpostSkin(this);
+            this.sceneTransition = new SceneTransition(this);
             this.protocolUI.refreshMenu();
             this.initMilitaryStatus();
             // Every entry point uses the same cinematic renderer. Query strings
@@ -4341,6 +4343,7 @@
             this.homeMenu?.dispose();
             this.hudStyle?.dispose();
             this.skin?.dispose();
+            this.sceneTransition?.dispose();
             this.protocolUI?.dispose();
             clearTimeout(this.loadingTimer);
             window.outpostLoading?.stop();

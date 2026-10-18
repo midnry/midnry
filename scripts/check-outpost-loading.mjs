@@ -119,7 +119,7 @@ try {
     await held;
     await route.continue();
   });
-  await page.route("**/loading/blackout-patrol.webp", (route) => route.abort());
+  await page.route("**/loading/lz-patrol.webp", (route) => route.abort());
   await page.goto(base + "/games/outpost-zero.html");
   await page.waitForFunction(
     () => document.querySelector(".mf-loadimage.is-active").naturalWidth > 0,
