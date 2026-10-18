@@ -2320,6 +2320,7 @@
       import { OutpostHud } from "./outpost-hud.js";
       import { OutpostSkin } from "./outpost-skin.js";
       import { SceneTransition } from "./outpost-transition.js";
+      import { OutpostGamepad } from "./outpost-gamepad.js";
       import { deathTiming, deathFrame } from "./outpost-death.js";
       import { VictimDeathUI } from "./outpost-death-ui.js";
       import { ConnectionUI } from "./outpost-connection.js";
@@ -2471,6 +2472,7 @@
             this.hudStyle = new OutpostHud(this);
             this.skin = new OutpostSkin(this);
             this.sceneTransition = new SceneTransition(this);
+            this.gamepad = new OutpostGamepad(this);
             this.protocolUI.refreshMenu();
             this.initMilitaryStatus();
             // Every entry point uses the same cinematic renderer. Query strings
@@ -4344,6 +4346,7 @@
             this.hudStyle?.dispose();
             this.skin?.dispose();
             this.sceneTransition?.dispose();
+            this.gamepad?.dispose();
             this.protocolUI?.dispose();
             clearTimeout(this.loadingTimer);
             window.outpostLoading?.stop();

@@ -66,6 +66,10 @@ const GUIDE = [
     "Report a nearby fallen operator with F or Report body. Press C or use Info → Emergency radio to call from anywhere with working communications. If jammed, use the wired emergency console or restore communications. Each player gets one emergency call. Meetings allow fifteen seconds of discussion and fifteen seconds to vote. Patient vitals and the flight pause during meetings and Last Stand; new meetings are blocked while autopilot is disengaged during flight. More than half the living patrol must vote for one suspect. The accused fights every other survivor after a five-second preparation. Ties and Skip return to the rescue. A 90-second limit prevents hiding indefinitely; expiry forfeits the accused. Combat eliminations are permanent. Unless the host turns it off, the patrol learns whether a removed player was an infiltrator. Operators win the moment every infiltrator is stopped; infiltrators win once they equal the remaining crew.",
   ],
   [
+    "Controllers",
+    "Xbox, PlayStation, Switch Pro and other standard controllers work. Left stick moves (or flies at the helm), right stick looks. A interacts (hold at cabinets), B reports a body, X uses your specialty, Y calls the emergency radio, RB eliminates as an infiltrator, LB opens Tactics, RT fires in a Last Stand, LT or clicking the left stick sprints. View opens Info and Start opens the menu. In menus, the D-pad or left stick moves between buttons, A selects and B goes back; LB and RB switch Settings sections.",
+  ],
+  [
     "Quick shift and the daily case",
     "In the menu, pick a shift. Full shift is the classic eight-player match. Quick shift is five players and one infiltrator, about four minutes. The daily case is a Quick shift that is the same for everyone each day: same base, same crew, same infiltrator, and you are always an operator. Win fast and vote out the infiltrator yourself for a score out of 1000, then share it and see who beats you.",
   ],
