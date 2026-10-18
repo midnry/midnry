@@ -4,6 +4,7 @@
  * simulation. This module reads ONLY the recipient-safe view and sends inputs.
  */
 import { modifierOf, twistOf } from "./outpost-variety.js";
+import { SPECIALTIES } from "./outpost-specialties.js";
 import { shareSummary, shareResult, whatsappUrl } from "./outpost-share.js";
 const GHOST_OPS = new Set(["ghost-begin", "task-step", "task-cancel"]);
 import { MissionTaskPanel } from "./outpost-task-ui.js";
@@ -52,6 +53,10 @@ const GUIDE = [
   [
     "Witnesses and radio meetings",
     "Report a nearby fallen operator with F or Report body. Press C or use Info → Emergency radio to call from anywhere with working communications. If jammed, use the wired emergency console or restore communications. Each player gets one emergency call. Meetings allow fifteen seconds of discussion and fifteen seconds to vote. Patient vitals and the flight pause during meetings and Last Stand; new meetings are blocked while autopilot is disengaged during flight. More than half the living patrol must vote for one suspect. The accused fights every other survivor after a five-second preparation. Ties and Skip return to the rescue. A 90-second limit prevents hiding indefinitely; expiry forfeits the accused. Combat eliminations are permanent. Unless the host turns it off, the patrol learns whether a removed player was an infiltrator. Operators win the moment every infiltrator is stopped; infiltrators win once they equal the remaining crew.",
+  ],
+  [
+    "Specialties",
+    "Everyone gets a specialty each match. Operators: Medic (stand by a body and press Ability or Q to learn roughly when they died), Engineer (when power or radio is sabotaged, you learn which room it was done from) or Security (check cameras twice per match to see who is in the room of the latest attack). Infiltrators: Forger (once per match, plant a fake smudge on everyone's case board that points at two operators) or Ghost (leave no footprints). Your specialty is in your orders.",
   ],
   [
     "Clues and the case board",
@@ -189,6 +194,7 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-actions button small { display:block;margin-top:3px;font-size:12px;color:#bccbbe; }
       midnry-fps .mf-protocol-actions .mf-protocol-hold { min-width:128px;background:#d1e1b6;color:#152219;border-color:#e5f4d2;font-weight:700; }
       midnry-fps .mf-protocol-actions .mf-protocol-hold small { color:#304732; }
+      midnry-fps .mf-protocol-actions .mf-protocol-ability { border-color:#7fd3ff;background:#173440;color:#e2f6ff; }
       midnry-fps .mf-protocol-actions .mf-protocol-eliminate { border-color:#d39c87;background:#442d25;color:#ffe3d3; }
       midnry-fps .mf-protocol-actions .mf-protocol-report { border-color:#eed0a0;background:#edd7ad;color:#241d14;font-weight:750; }
       midnry-fps .mf-protocol-actions button:disabled { opacity:.5;cursor:default; }
@@ -316,7 +322,7 @@ export class ProtocolUI {
     this.actionBar.setAttribute("role", "group");
     this.actionBar.setAttribute("aria-label", "Blackout Protocol actions");
     this.actionBar.hidden = true;
-    this.actionBar.innerHTML = `<button class="mf-protocol-hold" aria-pressed="false">Hold to interact<small>E · stay still</small></button><button class="mf-protocol-report" hidden>Report<small>F · nearby body</small></button><button class="mf-protocol-emergency" hidden>Emergency<small>C · Command</small></button><button class="mf-protocol-eliminate" hidden>Eliminate<small>X · close range</small></button><button class="mf-protocol-openactions" hidden aria-expanded="false">Tactics<small>B · sabotage / hatches</small></button>`;
+    this.actionBar.innerHTML = `<button class="mf-protocol-hold" aria-pressed="false">Hold to interact<small>E · stay still</small></button><button class="mf-protocol-report" hidden>Report<small>F · nearby body</small></button><button class="mf-protocol-emergency" hidden>Emergency<small>C · Command</small></button><button class="mf-protocol-eliminate" hidden>Eliminate<small>X · close range</small></button><button class="mf-protocol-ability" hidden>Ability<small>Q · specialty</small></button><button class="mf-protocol-openactions" hidden aria-expanded="false">Tactics<small>B · sabotage / hatches</small></button>`;
     g.shell.append(this.actionBar);
     this.actionBar.insertAdjacentHTML(
       "beforeend",
@@ -550,12 +556,16 @@ export class ProtocolUI {
       if (key === "f") this.report();
       if (key === "c") this.emergency();
       if (key === "x") this.eliminate();
+      if (key === "q" && !this.actionBar.querySelector(".mf-protocol-ability").hidden && !this.actionBar.querySelector(".mf-protocol-ability").disabled) this.enqueue("ability");
       if (key === "b") this.toggleTactics();
       if (key === "v") this.toggleTactics(true);
     });
     g.on(this.actionBar.querySelector(".mf-protocol-report"), "click", () => this.report());
     g.on(this.actionBar.querySelector(".mf-protocol-emergency"), "click", () => this.emergency());
     g.on(this.actionBar.querySelector(".mf-protocol-eliminate"), "click", () => this.eliminate());
+    g.on(this.actionBar.querySelector(".mf-protocol-ability"), "click", (event) => {
+      if (!event.currentTarget.disabled) this.enqueue("ability");
+    });
     g.on(this.g.$(".mf-protocol-openactions"), "click", () => this.toggleTactics());
     g.on(this.tactics, "click", (event) => {
       const sabotage = event.target.closest("[data-sabotage]");
@@ -888,7 +898,8 @@ export class ProtocolUI {
     const match = (this.view || this.safeView())?.protocol?.match;
     const list = this.brief.querySelector(".mf-protocol-briefmatch");
     list.replaceChildren();
-    for (const option of [modifierOf(match?.modifier), twistOf(match?.twist)].filter(Boolean)) {
+    const spec = SPECIALTIES[self.specialty?.id];
+    for (const option of [spec ? { ...spec, name: `Your specialty: ${spec.name}` } : null, modifierOf(match?.modifier), twistOf(match?.twist)].filter(Boolean)) {
       const item = element("li");
       item.append(element("b", "", `${option.icon} ${option.name}`), document.createTextNode(option.text));
       list.append(item);
@@ -1656,6 +1667,12 @@ export class ProtocolUI {
     this.holdButton.hidden = this.piloting || !context;
   }
 
+  /** Any body close enough to examine (reported or not). */
+  nearbyBodyAny(view) {
+    const me = this.g.player;
+    return (view.protocol.bodies || []).some((b) => Math.hypot(b.x - me.x, b.y - me.y) < 2);
+  }
+
   updateActions(view) {
     const { protocol, time } = view,
       self = protocol.self,
@@ -1697,6 +1714,22 @@ export class ProtocolUI {
     this.actionBar.querySelector(".mf-protocol-emergency").hidden =
       !alive || !roam || !this.nearby.emergency;
     this.actionBar.querySelector('.mf-protocol-emergency').disabled=self.emergenciesLeft<=0||protocol.emergencyReadyAt>time;
+    // Specialty button: medic near a body, security and forger any time.
+    const ability = this.actionBar.querySelector(".mf-protocol-ability"),
+      spec = SPECIALTIES[self.specialty?.id],
+      active = spec && ["medic", "security", "forger"].includes(spec.id),
+      needsBody = spec?.id === "medic";
+    ability.hidden = !alive || !roam || !active || (needsBody && !this.nearby.body && !this.nearbyBodyAny(view)) || self.specialty.uses <= 0;
+    ability.disabled = time < (self.specialty?.readyAt || 0) || this.actions.some((action) => action.op === "ability");
+    if (spec) {
+      setText(ability.firstChild, `${spec.icon} ${spec.id === "medic" ? "Examine body" : spec.id === "security" ? "Check cameras" : "Forge clue"}`);
+      setText(
+        ability.querySelector("small"),
+        time < (self.specialty.readyAt || 0)
+          ? `Ready in ${Math.ceil(self.specialty.readyAt - time)}s`
+          : spec.id === "medic" ? "Q · time of death" : `Q · ${self.specialty.uses} left`,
+      );
+    }
     const kill = this.actionBar.querySelector(".mf-protocol-eliminate");
     kill.hidden = !alive || !roam || !infiltrator || !this.nearby.target;
     kill.disabled =

@@ -124,6 +124,10 @@ export function suspectScores(ctx) {
   for (const clue of ctx.player.clues || []) {
     if (clue.kind === "log") for (const id of clue.ids || []) add(id, 0.8);
     if (clue.kind === "smudge") for (const c of clue.colors || []) add(byColor(c), 0.6);
+    if (clue.kind === "camera") for (const id of clue.ids || []) add(id, 0.6);
+    if (clue.kind === "note" && clue.room)
+      for (const c of ctx.player.contacts || [])
+        if (c.room === clue.room && Math.abs(c.at - clue.at) < 25) add(c.id, 0.7);
     if (clue.kind === "footprints")
       for (const c of ctx.player.contacts || [])
         if (c.room === clue.room && Math.abs(c.at - clue.at) < 30) add(c.id, 0.5);

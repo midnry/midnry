@@ -8,6 +8,7 @@ import { INTERACTIVE_TASKS, createTaskGame, taskStep, taskGameView } from "./out
 import { contributionsOf, recordContribution } from "./outpost-mission-progress.js";
 import { recordVictimTakedown } from "./outpost-death.js";
 import { rollMatch, modifierChoice, dealSupplies, liveSites, shuffled, sightRange } from "./outpost-variety.js";
+import { SPECIALTIES, dealSpecialties } from "./outpost-specialties.js";
 import {
   PROTOCOL_MAP,
   TRANSPORT_MAP,
@@ -91,6 +92,7 @@ const ACTIONS = new Set([
   "disable-autopilot",
   "cargo-sabotage",
   "ghost-begin",
+  "ability",
 ]);
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -331,6 +333,16 @@ export class ProtocolArena extends Arena {
         cargo: null,
         vehicleInput: { pitch: 0, steer: 0 },
       };
+    }
+    // One specialty per player, dealt from the seeded random.
+    const dealt = dealSpecialties(this.entities, () => this.random());
+    for (const e of this.entities) {
+      const spec = SPECIALTIES[dealt[e.id]];
+      Object.assign(this.protocol.players[e.id], {
+        specialty: spec.id,
+        abilityUses: Number.isFinite(spec.uses) ? spec.uses : 99,
+        abilityReadyAt: 0,
+      });
     }
     this.protocol.taskTotal = MEDICAL_SUPPLIES.reduce((sum, item) => sum + item.required, 0);
     this.addLog(
@@ -912,11 +924,13 @@ export class ProtocolArena extends Arena {
       reported: false,
       carriedBy: null,
       killerId: entity.id,
+      diedAt: this.time,
       // Clues: the attacker's footprints for a few seconds, and who the
       // security log saw in the room around the attack.
       room: killRoom?.name ?? "the corridor",
       trail: [{ x: target.x, y: target.y }],
-      trailUntil: this.time + 8,
+      // A Ghost leaves no footprints.
+      trailUntil: player.specialty === "ghost" ? this.time : this.time + 8,
       trailRoom: null,
       roomLog: [entity.id],
       logUntil: this.time + 10,
@@ -1101,6 +1115,10 @@ export class ProtocolArena extends Arena {
       return;
     }
     if (this.protocol.phase !== "roam") return;
+    if (action.op === "ability") {
+      this.useAbility(entity);
+      return;
+    }
     if (action.op === "task-begin") {
       const context = this.context(entity);
       if (this.protocol.mission.interactiveTasks && context?.target === targetId && INTERACTIVE_TASKS.has(context.kind) && !player.channel)
@@ -1211,6 +1229,15 @@ export class ProtocolArena extends Arena {
         const colors = [entity.colorName, decoy].filter(Boolean);
         this.protocol.smudges ??= {};
         this.protocol.smudges[targetId] = { colors: this.random() < 0.5 ? colors : colors.reverse(), at: Math.round(this.time) };
+        const from = this.roomAt(entity)?.name ?? "the corridor";
+        for (const e of this.entities)
+          if (this.privateFor(e).specialty === "engineer")
+            this.addClue(e, {
+              key: `engineer:${targetId}:${Math.round(this.time)}`,
+              kind: "note",
+              text: `Engineer alert: the ${targetId === "power" ? "power" : "radio"} was cut from ${from}.`,
+              room: from,
+            });
       }
       this.record(
         `${entity.name} ${targetId === "power" ? "cut the power" : "jammed the radio"}.`,
@@ -1785,6 +1812,60 @@ export class ProtocolArena extends Arena {
     return distance(entity, point) - (company ? 4 : 0);
   }
 
+  /** Active specialty: medic exam, security cameras, forger's fake clue. */
+  useAbility(entity) {
+    const player = this.privateFor(entity),
+      spec = SPECIALTIES[player.specialty];
+    if (!spec || !this.active(entity) || player.abilityUses <= 0 || player.abilityReadyAt > this.time) return false;
+    const p = this.protocol;
+    if (spec.id === "medic") {
+      const body = p.bodies
+        .filter((b) => this.near(entity, b, PROTOCOL_RULES.reportRange + 0.3))
+        .sort((a, b) => distance(entity, a) - distance(entity, b))[0];
+      if (!body) {
+        this.emit(entity.id, "Stand next to a body to examine it.");
+        return false;
+      }
+      const ago = Math.max(5, Math.round((this.time - (body.diedAt ?? this.time)) / 5) * 5);
+      this.addClue(entity, {
+        key: `exam:${body.id}`,
+        kind: "note",
+        text: `Medic exam: ${body.name} died about ${ago} seconds before ${Math.round(this.time)}s (around ${Math.max(0, Math.round(this.time - ago))}s).`,
+      });
+    } else if (spec.id === "security") {
+      const incident = [...p.bodies].sort((a, b) => (b.diedAt ?? 0) - (a.diedAt ?? 0))[0];
+      const map = this.mapId === TRANSPORT_MAP.id ? TRANSPORT_MAP : PROTOCOL_MAP;
+      const room =
+        map.rooms.find((r) => r.name === incident?.room) ??
+        map.rooms[Math.floor(this.random() * map.rooms.length)];
+      const seen = this.entities.filter((e) => this.active(e) && this.roomAt(e) === room);
+      this.addClue(entity, {
+        key: `camera:${Math.round(this.time)}`,
+        kind: "camera",
+        text: `Camera, ${room.name}: ${seen.length ? seen.map((e) => e.name).join(", ") : "nobody"} on screen at ${Math.round(this.time)}s.`,
+        ids: seen.map((e) => e.id),
+      });
+    } else if (spec.id === "forger") {
+      const crew = shuffle(
+        this.entities.filter((e) => e.team === 0 && this.active(e) && e.colorName),
+        () => this.random(),
+      ).slice(0, 2);
+      if (crew.length < 2) return false;
+      const fake = { colors: crew.map((e) => e.colorName), at: Math.round(this.time) };
+      for (const e of this.entities)
+        this.addClue(e, {
+          key: `smudge:forged:${fake.at}`,
+          kind: "smudge",
+          text: `Smudge on the radio panel: ${fake.colors.join(" or ")}.`,
+          colors: fake.colors,
+        });
+      this.record(`${entity.name} forged a smudge pointing at ${crew.map((e) => e.name).join(" and ")}.`, "sabotage", entity.id);
+    } else return false;
+    player.abilityUses--;
+    player.abilityReadyAt = this.time + (spec.cooldown || 0);
+    return true;
+  }
+
   /** Add evidence to a player's case board once. */
   addClue(entity, clue) {
     const player = this.privateFor(entity);
@@ -2004,8 +2085,11 @@ export class ProtocolArena extends Arena {
         !(mission.phase === "transport" && !vehicle.autopilot && !vehicle.arrived)
       ) {
         player.channel = null;
-        if (this.near(entity, body, PROTOCOL_RULES.reportRange))
+        if (this.near(entity, body, PROTOCOL_RULES.reportRange)) {
+          // A medic examines the body before calling it in.
+          if (player.specialty === "medic") this.useAbility(entity);
           this.botAction(entity, "report", body.id);
+        }
         else this.botNavigate(entity, body, dt, 1.4);
         return;
       }
@@ -2045,6 +2129,12 @@ export class ProtocolArena extends Arena {
       return;
     if (this.time >= player.botNextThink || !player.botGoal) {
       player.botNextThink = this.time + 1.2;
+      // Specialties: security checks cameras after an attack; a forger
+      // plants a fake clue once the round is under way.
+      if (player.abilityUses > 0 && player.abilityReadyAt <= this.time) {
+        if (player.specialty === "security" && this.protocol.bodies.length && this.random() < 0.15) this.useAbility(entity);
+        if (player.specialty === "forger" && this.time > 60 && this.random() < 0.03) this.useAbility(entity);
+      }
       let goal = null;
       if (player.role === OPERATORS && this.active(entity)) {
         if (mission.phase === "transport") {
@@ -2542,6 +2632,9 @@ export function protocolView(data, selfId) {
               }
             : {}),
           clues: clone(player.clues ?? []).map(({ key, kind, text, at }) => ({ key, kind, text, at })),
+          specialty: player.specialty
+            ? { id: player.specialty, uses: player.abilityUses ?? 0, readyAt: player.abilityReadyAt ?? 0 }
+            : null,
           actionSeq: player.actionSeq,
           lastActionSeq: player.actionSeq,
           killReadyAt: player.killReadyAt,

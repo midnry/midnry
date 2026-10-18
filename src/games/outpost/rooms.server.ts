@@ -174,6 +174,7 @@ export function publicRoom(code: string, room: Room, selfId: string) {
 }
 const PROTOCOL_OPS = new Set([
   "ghost-begin",
+  "ability",
   "task-begin",
   "task-step",
   "task-cancel",
