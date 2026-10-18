@@ -533,12 +533,32 @@ export class MilitaryRenderer {
   }
   tileTexture(source, repeats) {
     if (!source) return null;
+    // Reused across rebuilds; see cloneForWorld in realism-surfaces.js.
+    const key = `${source.uuid}:${repeats}:${repeats}`;
+    this.tiledTextures ||= new Map();
+    if (this.tiledTextures.has(key)) return this.tiledTextures.get(key);
     const t = source.clone();
     t.repeat.set(repeats, repeats);
     t.needsUpdate = true;
+    t.userData.sharedSource = true;
+    this.tiledTextures.set(key, t);
     this.textures.add(t);
     this.worldTextures.add(t);
     return t;
+  }
+  /** Keep the current world's materials (not their meshes) after the next
+   * clear. three.js frees a compiled shader when its last material goes;
+   * holding one material per shader keeps it compiled for the next visit,
+   * so the take-off rehearsal at load time pays the compile cost once. */
+  keepWorldPrograms() {
+    this.keptMaterials ||= new Set();
+    this.world.traverse((o) => {
+      for (const material of [].concat(o.material || [])) {
+        if (!material?.userData.world || this.keptMaterials.has(material)) continue;
+        this.materials.delete(material);
+        this.keptMaterials.add(material);
+      }
+    });
   }
   clearWorld() {
     this.worldVisibility?.reset();
@@ -560,6 +580,10 @@ export class MilitaryRenderer {
         this.materials.delete(material);
       }
     for (const texture of this.worldTextures) {
+      // Clones of the shared photographs keep their GPU upload, so switching
+      // between base and medevac never re-uploads the same images. They are
+      // released with the renderer (this.textures) instead.
+      if (texture.userData.sharedSource) continue;
       texture.dispose();
       this.textures.delete(texture);
     }
@@ -3253,18 +3277,40 @@ export class MilitaryRenderer {
       this.bloom.radius = 0.45;
     }
   }
+  /** Rebuild the world when the arena moved to another map. */
+  ensureWorld() {
+    const g = this.g;
+    if (this.mapKey === g.arena.mapId && this.loadedMap === !!this.soldier) return false;
+    this.loadedMap = !!this.soldier;
+    this.clearProtocolDynamic();
+    for (const a of this.actors.values()) this.disposeActor(a);
+    this.actors.clear();
+    this.buildWorld();
+    return true;
+  }
+  /** Build the next map and compile its shaders without blocking the page,
+   * so a scene switch waits behind its loading screen instead of freezing
+   * on the first draw. Resolves once the first frame can draw at once. */
+  async prepareWorld() {
+    if (this.disposed || this.contextUnavailable) return;
+    this.configure();
+    this.ensureWorld();
+    this.rebuildWalls();
+    if (!this.renderer.compileAsync) return;
+    // Hidden overlays (the objective trail) are compiled too.
+    const trail = (this.groundTrail ||= new GroundTrail(this)).root,
+      shown = trail.visible;
+    trail.visible = true;
+    const compiling = this.renderer.compileAsync(this.scene, this.camera);
+    trail.visible = shown;
+    await compiling;
+  }
   render() {
     if (this.disposed || this.contextUnavailable) return false;
     this.configure();
     const g = this.g,
       t = g.animationTime;
-    if (this.mapKey !== g.arena.mapId || this.loadedMap !== !!this.soldier) {
-      this.loadedMap = !!this.soldier;
-      this.clearProtocolDynamic();
-      for (const a of this.actors.values()) this.disposeActor(a);
-      this.actors.clear();
-      this.buildWorld();
-    }
+    this.ensureWorld();
     this.rebuildWalls();
     // Mission presentation needs 30Hz, whereas camera/actor root movement
     // stays full rate. Avoid rebuilding the deeply redacted recipient view
@@ -3449,6 +3495,7 @@ export class MilitaryRenderer {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
+    for (const material of this.keptMaterials || []) material.dispose();
     this.telemetry?.dispose();
     this.groundTrail?.dispose();
     this.night?.dispose();

@@ -64,6 +64,16 @@ export class SceneTransition {
       return undefined;
     }
     if (map) this.lastMap = map;
+    const pending = this.pending;
+    if (pending && !pending.ready && g.military?.prepareWorld) {
+      // Build the new scene and compile its shaders in the background; the
+      // loading screen keeps animating instead of the page freezing.
+      pending.preparing ||= g.military
+        .prepareWorld()
+        .catch(() => {})
+        .then(() => (pending.ready = true));
+      return undefined;
+    }
     const result = this.original(...args);
     if (this.pending && ++this.pending.frames >= 3 && performance.now() - this.pending.at > 900) this.hide();
     return result;

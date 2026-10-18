@@ -74,9 +74,16 @@ export async function loadRealismSurfaces(r) {
 }
 
 function cloneForWorld(r, source, u, v) {
+  // One tiled copy per photograph and repeat, reused across rebuilds: cloning
+  // marks the shared image as changed and would upload it to the GPU again.
+  const key = `${source.uuid}:${u}:${v}`;
+  r.tiledTextures ||= new Map();
+  if (r.tiledTextures.has(key)) return r.tiledTextures.get(key);
   const texture = source.clone();
   texture.repeat.set(u, v);
   texture.needsUpdate = true;
+  texture.userData.sharedSource = true;
+  r.tiledTextures.set(key, texture);
   r.textures.add(texture);
   r.worldTextures.add(texture);
   return texture;

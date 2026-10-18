@@ -16048,8 +16048,10 @@ async function rf(t) {
 	return t.realismSurfaces = r, r;
 }
 function af(e, t, n, r) {
-	let i = t.clone();
-	return i.repeat.set(n, r), i.needsUpdate = !0, e.textures.add(i), e.worldTextures.add(i), i;
+	let i = `${t.uuid}:${n}:${r}`;
+	if (e.tiledTextures ||= /* @__PURE__ */ new Map(), e.tiledTextures.has(i)) return e.tiledTextures.get(i);
+	let a = t.clone();
+	return a.repeat.set(n, r), a.needsUpdate = !0, a.userData.sharedSource = !0, e.tiledTextures.set(i, a), e.textures.add(a), e.worldTextures.add(a), a;
 }
 function of(e, t, n = {}) {
 	let r = tf[t], i = e.realismSurfaces?.[t];
@@ -20828,8 +20830,15 @@ var mm = class {
 	}
 	tileTexture(e, t) {
 		if (!e) return null;
-		let n = e.clone();
-		return n.repeat.set(t, t), n.needsUpdate = !0, this.textures.add(n), this.worldTextures.add(n), n;
+		let n = `${e.uuid}:${t}:${t}`;
+		if (this.tiledTextures ||= /* @__PURE__ */ new Map(), this.tiledTextures.has(n)) return this.tiledTextures.get(n);
+		let r = e.clone();
+		return r.repeat.set(t, t), r.needsUpdate = !0, r.userData.sharedSource = !0, this.tiledTextures.set(n, r), this.textures.add(r), this.worldTextures.add(r), r;
+	}
+	keepWorldPrograms() {
+		this.keptMaterials ||= /* @__PURE__ */ new Set(), this.world.traverse((e) => {
+			for (let t of [].concat(e.material || [])) t?.userData.world && !this.keptMaterials.has(t) && (this.materials.delete(t), this.keptMaterials.add(t));
+		});
 	}
 	clearWorld() {
 		this.worldVisibility?.reset(), this.reflection?.dispose();
@@ -20840,7 +20849,7 @@ var mm = class {
 			e.isInstancedMesh && e.dispose(), e.userData.ownedGeometry && e.geometry.dispose();
 		});
 		for (let e of this.materials) e.userData.world && (e.dispose(), this.materials.delete(e));
-		for (let e of this.worldTextures) e.dispose(), this.textures.delete(e);
+		for (let e of this.worldTextures) e.userData.sharedSource || (e.dispose(), this.textures.delete(e));
 		this.worldTextures.clear(), this.world.clear(), this.realismDecor = null, this.wallMeshes = null, this.fittings = [], this.fittingMaterial = null, this.reflection = null, this.protocolFixtures = [], this.protocolScreens.clear(), this.protocolLightMaterials = [], this.protocolPowerOut = !1, this.medicalStocks.clear(), this.transportCargo = [], this.transportTerrain = null, this.transportInstrument = null, this.transportInstrumentKey = "", this.transportAlarm = null, this.medevacRotor = null, this.arrivalClinic = null;
 		for (let e of this.protocolLights) e.intensity = 0, e.visible = !1;
 		this.protocolTorch.intensity = 0, this.protocolTorch.visible = !1;
@@ -23919,16 +23928,25 @@ var mm = class {
 		let n = this.grade.uniforms;
 		n.time.value = t % 100, e ? (n.highlight.value.set(1.1, .98, .84), n.shadow.value.set(.84, .95, 1.16), n.saturation.value = 1.12, n.vignette.value = .38, n.grain.value = .035, this.bloom.strength = .45, this.bloom.threshold = 1, this.bloom.radius = .5) : (n.highlight.value.set(1.12, 1.01, .82), n.shadow.value.set(.93, .98, 1.08), n.saturation.value = 1.06, n.vignette.value = .26, n.grain.value = .022, this.bloom.strength = .24, this.bloom.threshold = 1.1, this.bloom.radius = .45);
 	}
+	ensureWorld() {
+		let e = this.g;
+		if (this.mapKey === e.arena.mapId && this.loadedMap === !!this.soldier) return !1;
+		this.loadedMap = !!this.soldier, this.clearProtocolDynamic();
+		for (let e of this.actors.values()) this.disposeActor(e);
+		return this.actors.clear(), this.buildWorld(), !0;
+	}
+	async prepareWorld() {
+		if (this.disposed || this.contextUnavailable || (this.configure(), this.ensureWorld(), this.rebuildWalls(), !this.renderer.compileAsync)) return;
+		let e = (this.groundTrail ||= new Up(this)).root, t = e.visible;
+		e.visible = !0;
+		let n = this.renderer.compileAsync(this.scene, this.camera);
+		e.visible = t, await n;
+	}
 	render() {
 		if (this.disposed || this.contextUnavailable) return !1;
 		this.configure();
 		let e = this.g, t = e.animationTime;
-		if (this.mapKey !== e.arena.mapId || this.loadedMap !== !!this.soldier) {
-			this.loadedMap = !!this.soldier, this.clearProtocolDynamic();
-			for (let e of this.actors.values()) this.disposeActor(e);
-			this.actors.clear(), this.buildWorld();
-		}
-		this.rebuildWalls();
+		this.ensureWorld(), this.rebuildWalls();
 		let n = e.arena.protocol, r = e.mode === "protocol" ? `${n.phase}:${n.sabotage.powerUntil}:${n.mission?.phase}:${n.mission?.vehicle?.autopilot}:${n.mission?.vehicle?.arrived}` : "none";
 		(this.frameProtocolArena !== e.arena || this.frameProtocolKey !== r || Math.abs(e.time - (this.frameProtocolTime ?? -1)) >= 1 / 30) && (this.frameProtocolArena = e.arena, this.frameProtocolKey = r, this.frameProtocolTime = e.time, this.frameProtocolView = e.mode === "protocol" ? e.protocolView?.() : null);
 		let i = e.camera(), a = e.cameraPitch, o = this.frameProtocolView, s = e.arena.mapId === "medevac" && o?.protocol?.mission?.vehicle?.pilotId === i.id, c = performance.now(), l = Math.min(.1, (c - (this.lastRenderAt || c)) / 1e3), u = i.slideUntil > e.time ? .7 : i.crouching ? 1.17 : 1.65;
@@ -23981,7 +23999,9 @@ var mm = class {
 	}
 	dispose() {
 		if (!this.disposed) {
-			this.disposed = !0, this.telemetry?.dispose(), this.groundTrail?.dispose(), this.night?.dispose(), this.events?.dispose(), this.bloom?.dispose(), this.identification?.dispose(), this.takedown?.dispose(), this.battlePreparation?.dispose(), Zf(this.rig);
+			this.disposed = !0;
+			for (let e of this.keptMaterials || []) e.dispose();
+			this.telemetry?.dispose(), this.groundTrail?.dispose(), this.night?.dispose(), this.events?.dispose(), this.bloom?.dispose(), this.identification?.dispose(), this.takedown?.dispose(), this.battlePreparation?.dispose(), Zf(this.rig);
 			for (let e of this.actors.values()) e.mixer?.stopAllAction(), e.model.traverse((e) => {
 				e.isSkinnedMesh && e.skeleton.dispose();
 			});
