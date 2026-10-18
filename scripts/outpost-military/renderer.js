@@ -546,20 +546,6 @@ export class MilitaryRenderer {
     this.worldTextures.add(t);
     return t;
   }
-  /** Keep the current world's materials (not their meshes) after the next
-   * clear. three.js frees a compiled shader when its last material goes;
-   * holding one material per shader keeps it compiled for the next visit,
-   * so the take-off rehearsal at load time pays the compile cost once. */
-  keepWorldPrograms() {
-    this.keptMaterials ||= new Set();
-    this.world.traverse((o) => {
-      for (const material of [].concat(o.material || [])) {
-        if (!material?.userData.world || this.keptMaterials.has(material)) continue;
-        this.materials.delete(material);
-        this.keptMaterials.add(material);
-      }
-    });
-  }
   clearWorld() {
     this.worldVisibility?.reset();
     this.reflection?.dispose();
@@ -3495,7 +3481,6 @@ export class MilitaryRenderer {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
-    for (const material of this.keptMaterials || []) material.dispose();
     this.telemetry?.dispose();
     this.groundTrail?.dispose();
     this.night?.dispose();

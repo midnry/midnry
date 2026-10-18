@@ -2751,7 +2751,6 @@
               }
               this.refreshCompatibility();
               this.militaryLoaded = true;
-              await this.warmFlight();
               this.finishLoading();
               this.militaryLoadError = null;
               this.militaryError = null;
@@ -2774,43 +2773,6 @@
               }
             } finally {
               this.militaryLoading = false;
-            }
-          }
-          /** Rehearse the take-off behind the loading screen: build and draw the
-           * medevac scene once so its shaders are compiled and cached, then
-           * return to the base. Take-off later reuses them instead of freezing. */
-          async warmFlight() {
-            if (this.mode !== "protocol" || this.online || !this.military) return;
-            const status = this.loadingScreen?.querySelector(".mf-loadstatus");
-            if (status) status.textContent = "Preparing the medevac…";
-            await new Promise((resolve) => requestAnimationFrame(() => resolve()));
-            const arena = this.arena,
-              mapId = this.mapId,
-              draw = () => (this.sceneTransition?.original || this.render.bind(this))();
-            try {
-              const rehearsal = createArena({ mode: "protocol", humans: [{ id: this.selfId, team: 0 }] });
-              const mission = rehearsal.protocol.mission,
-                pilot = rehearsal.entities.find((e) => e.team === 0);
-              for (const item of mission.manifest) item.loaded = item.required;
-              Object.assign(pilot, { x: mission.loading.x, y: mission.loading.y });
-              rehearsal.departMission(pilot);
-              this.arena = rehearsal;
-              this.mapId = rehearsal.mapId;
-              this.protocolCache = null;
-              if (this.military) this.military.frameProtocolArena = null;
-              await this.military?.prepareWorld?.();
-              draw();
-              this.military?.keepWorldPrograms?.();
-            } catch (error) {
-              console.warn("Flight warm-up skipped", error);
-            } finally {
-              this.arena = arena;
-              this.mapId = mapId;
-              this.protocolCache = null;
-              if (this.military) this.military.frameProtocolArena = null;
-              try {
-                draw();
-              } catch {}
             }
           }
           finishLoading() {

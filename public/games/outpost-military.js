@@ -20835,11 +20835,6 @@ var mm = class {
 		let r = e.clone();
 		return r.repeat.set(t, t), r.needsUpdate = !0, r.userData.sharedSource = !0, this.tiledTextures.set(n, r), this.textures.add(r), this.worldTextures.add(r), r;
 	}
-	keepWorldPrograms() {
-		this.keptMaterials ||= /* @__PURE__ */ new Set(), this.world.traverse((e) => {
-			for (let t of [].concat(e.material || [])) t?.userData.world && !this.keptMaterials.has(t) && (this.materials.delete(t), this.keptMaterials.add(t));
-		});
-	}
 	clearWorld() {
 		this.worldVisibility?.reset(), this.reflection?.dispose();
 		for (let e of this.arrivalPatients.values()) e.mixer?.stopAllAction(), e.model.traverse((e) => {
@@ -23999,9 +23994,7 @@ var mm = class {
 	}
 	dispose() {
 		if (!this.disposed) {
-			this.disposed = !0;
-			for (let e of this.keptMaterials || []) e.dispose();
-			this.telemetry?.dispose(), this.groundTrail?.dispose(), this.night?.dispose(), this.events?.dispose(), this.bloom?.dispose(), this.identification?.dispose(), this.takedown?.dispose(), this.battlePreparation?.dispose(), Zf(this.rig);
+			this.disposed = !0, this.telemetry?.dispose(), this.groundTrail?.dispose(), this.night?.dispose(), this.events?.dispose(), this.bloom?.dispose(), this.identification?.dispose(), this.takedown?.dispose(), this.battlePreparation?.dispose(), Zf(this.rig);
 			for (let e of this.actors.values()) e.mixer?.stopAllAction(), e.model.traverse((e) => {
 				e.isSkinnedMesh && e.skeleton.dispose();
 			});
