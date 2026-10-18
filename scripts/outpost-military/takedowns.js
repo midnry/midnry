@@ -127,6 +127,20 @@ export class VictimTakedown {
     const point=joint(human.model,name).getWorldPosition(new THREE.Vector3());
     this.root.worldToLocal(point);point.add(new THREE.Vector3(...offset));return point.toArray();
   }
+  dye(human, color) {
+    if (!color || !this.r.dyeUniform) return;
+    const tint = new THREE.Color(color).lerp(new THREE.Color("#808080"), 0.1);
+    let patched = false;
+    human.model.traverse((o) => {
+      if (!o.isMesh) return;
+      for (const material of [].concat(o.material))
+        if (material.userData.playerDye) {
+          material.userData.playerDye.value.copy(tint);
+          patched = true;
+        }
+    });
+    if (!patched) this.r.dyeUniform(human.model, color);
+  }
   /** Two-bone hand reach in scene space, preserving a bent elbow. */
   reach(human, side, point) {
     const arm = joint(human.model, side + "Arm"),
@@ -185,6 +199,12 @@ export class VictimTakedown {
     // Presentation coordinates never move the body or attacker on the server.
     this.root.position.set((Math.floor(origin.x) + 0.5) * 3, 0, (Math.floor(origin.y) + 0.5) * 3);
     this.root.rotation.y = -origin.a - Math.PI / 2;
+    // Both soldiers wear their own seat colours in the victim's replay.
+    if (this.dyedFor !== sequence) {
+      this.dyedFor = sequence;
+      this.dye(this.victim, sequence.victimColor);
+      this.dye(this.attacker, sequence.attackerColor);
+    }
     if (this.sample !== sample || this.kind !== sequence.kind) {
       this.sample = sample;
       this.kind = sequence.kind;

@@ -3170,9 +3170,9 @@ export class MilitaryRenderer {
       u.saturation.value = 1.12;
       u.vignette.value = 0.38;
       u.grain.value = 0.035;
-      this.bloom.strength = 0.7;
-      this.bloom.threshold = 0.85;
-      this.bloom.radius = 0.6;
+      this.bloom.strength = 0.45;
+      this.bloom.threshold = 1.0;
+      this.bloom.radius = 0.5;
     } else {
       // Late-afternoon sun: golden highlights, slightly cool shade.
       u.highlight.value.set(1.12, 1.01, 0.82);
@@ -3180,9 +3180,9 @@ export class MilitaryRenderer {
       u.saturation.value = 1.06;
       u.vignette.value = 0.26;
       u.grain.value = 0.022;
-      this.bloom.strength = 0.42;
-      this.bloom.threshold = 0.92;
-      this.bloom.radius = 0.6;
+      this.bloom.strength = 0.24;
+      this.bloom.threshold = 1.1;
+      this.bloom.radius = 0.45;
     }
   }
   render() {

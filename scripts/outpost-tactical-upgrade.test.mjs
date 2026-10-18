@@ -26,7 +26,7 @@ test("five server-chosen takedowns are delivered only to their victim", () => {
     const state = a.snapshot();
     const view = protocolView(state, victim.id);
     assert.equal(view.protocol.self.deathScene.kind, TAKEDOWNS[i].id);
-    assert.deepEqual(Object.keys(view.protocol.self.deathScene).sort(), ["at", "id", "kind"]);
+    assert.deepEqual(Object.keys(view.protocol.self.deathScene).sort(), ["at", "attackerColor", "id", "kind", "victimColor"]);
     for (const other of a.entities.filter((e) => e !== victim)) {
       const publicView = protocolView(state, other.id);
       assert.equal(publicView.protocol.self.deathScene, null);

@@ -124,7 +124,7 @@ export class NightDressing {
     this.lamps = [];
     if (mapId !== "breakwater") return;
     const pole = this.material(() => new THREE.MeshStandardMaterial({ color: "#2b2f31", roughness: 0.6, metalness: 0.7 }));
-    const bulb = this.material(() => new THREE.MeshBasicMaterial({ color: new THREE.Color("#ffd9a3").multiplyScalar(6) }));
+    const bulb = this.material(() => new THREE.MeshBasicMaterial({ color: new THREE.Color("#ffd9a3").multiplyScalar(3.5) }));
     const pool = this.material(
       () =>
         new THREE.MeshBasicMaterial({
@@ -182,7 +182,7 @@ export class NightDressing {
         () =>
           new THREE.MeshBasicMaterial({
             map: texture,
-            color: new THREE.Color("#ffffff").multiplyScalar(3.2),
+            color: new THREE.Color("#ffffff").multiplyScalar(2.4),
             transparent: true,
             depthWrite: false,
           }),
@@ -205,7 +205,7 @@ export class NightDressing {
     this.root.visible = night && mapId === "breakwater";
     if (this.flicker && night) {
       const buzz = Math.sin(time * 37) > 0.93 || (time % 7.3 < 0.18 && Math.sin(time * 90) > 0);
-      this.flicker.color.setScalar(buzz ? 0.6 : 3.2);
+      this.flicker.color.setScalar(buzz ? 0.6 : 2.4);
     }
     return night;
   }

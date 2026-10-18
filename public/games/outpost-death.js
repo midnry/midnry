@@ -15,8 +15,12 @@ export function recordVictimTakedown(arena, victim, source) {
     id: `${arena.roundId}:${victim.id}:${victim.damageSeq || 0}`,
     kind: TAKEDOWNS[Math.min(4, Math.floor(arena.random() * 5))].id,
     at: arena.time,
+    // The victim's own replay shows both uniforms in their seat colours, as
+    // in Among Us. Only the colour is sent: no killer ID, name, role,
+    // position or private camera. Dead players cannot speak in the match.
+    attackerColor: typeof source.color === "string" ? source.color : null,
+    victimColor: typeof victim.color === "string" ? victim.color : null,
   };
-  // No killer ID, name, role, position or private camera is transmitted.
 }
 
 export function deathTiming(event, reducedMotion = false) {

@@ -2363,7 +2363,13 @@ export function protocolView(data, selfId) {
             ? { sequence: player.lastElimination.sequence, at: player.lastElimination.at, name: player.lastElimination.name }
             : null,
           deathScene: !isLiving && player.deathScene
-            ? { id: player.deathScene.id, kind: player.deathScene.kind, at: player.deathScene.at }
+            ? {
+                id: player.deathScene.id,
+                kind: player.deathScene.kind,
+                at: player.deathScene.at,
+                attackerColor: player.deathScene.attackerColor ?? null,
+                victimColor: player.deathScene.victimColor ?? null,
+              }
             : null,
           tasks: clone(player.tasks),
           contributions: contributionsOf(player.contributions),

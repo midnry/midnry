@@ -3031,6 +3031,8 @@
               takedownDuration: timing.takedown,
               fallDuration: timing.fall,
               kind: timing.kind,
+              attackerColor: event?.attackerColor || null,
+              victimColor: event?.victimColor || this.player.color || null,
               origin: { ...this.player },
               resume: this.running,
             };

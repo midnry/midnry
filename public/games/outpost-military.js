@@ -19456,6 +19456,13 @@ var Dp = class {
 		let r = Ep(e.model, t).getWorldPosition(new W());
 		return this.root.worldToLocal(r), r.add(new W(...n)), r.toArray();
 	}
+	dye(e, t) {
+		if (!t || !this.r.dyeUniform) return;
+		let n = new q(t).lerp(new q("#808080"), .1), r = !1;
+		e.model.traverse((e) => {
+			if (e.isMesh) for (let t of [].concat(e.material)) t.userData.playerDye && (t.userData.playerDye.value.copy(n), r = !0);
+		}), r || this.r.dyeUniform(e.model, t);
+	}
 	reach(e, t, n) {
 		let r = Ep(e.model, t + "Arm"), i = Ep(e.model, t + "ForeArm"), a = Ep(e.model, t + "Hand");
 		if (!r || !i || !a) return;
@@ -19477,7 +19484,7 @@ var Dp = class {
 		if (this.root.visible = t, this.restoreActors(), !t || !this.r.soldier) return !1;
 		this.victim || this.build();
 		let n = e.deathSequence, r = this.r.motion.matches ? .52 : e.takedownProgress || 0, i = Math.floor(r * n.takedownDuration * .03), a = n.origin;
-		if (this.root.position.set((Math.floor(a.x) + .5) * 3, 0, (Math.floor(a.y) + .5) * 3), this.root.rotation.y = -a.a - Math.PI / 2, this.sample !== i || this.kind !== n.kind) {
+		if (this.root.position.set((Math.floor(a.x) + .5) * 3, 0, (Math.floor(a.y) + .5) * 3), this.root.rotation.y = -a.a - Math.PI / 2, this.dyedFor !== n && (this.dyedFor = n, this.dye(this.victim, n.victimColor), this.dye(this.attacker, n.attackerColor)), this.sample !== i || this.kind !== n.kind) {
 			this.sample = i, this.kind = n.kind;
 			let e = this.victim, t = this.attacker;
 			this.resetHuman(e), this.resetHuman(t);
@@ -19965,7 +19972,7 @@ var Yp = class {
 			color: "#2b2f31",
 			roughness: .6,
 			metalness: .7
-		})), n = this.material(() => new hn({ color: new q("#ffd9a3").multiplyScalar(6) })), r = this.material(() => new hn({
+		})), n = this.material(() => new hn({ color: new q("#ffd9a3").multiplyScalar(3.5) })), r = this.material(() => new hn({
 			map: this.pool,
 			color: new q("#ffb46a").multiplyScalar(.55),
 			transparent: !0,
@@ -20009,7 +20016,7 @@ var Yp = class {
 			this.textures.push(s);
 			let l = this.material(() => new hn({
 				map: s,
-				color: new q("#ffffff").multiplyScalar(3.2),
+				color: new q("#ffffff").multiplyScalar(2.4),
 				transparent: !0,
 				depthWrite: !1
 			})), u = new Kn(new Ua(i, i / 4), l);
@@ -20020,7 +20027,7 @@ var Yp = class {
 		let r = Up(e);
 		if (r && this.mapId !== t && this.build(t), this.active = r, this.root.visible = r && t === "breakwater", this.flicker && r) {
 			let e = Math.sin(n * 37) > .93 || n % 7.3 < .18 && Math.sin(n * 90) > 0;
-			this.flicker.color.setScalar(e ? .6 : 3.2);
+			this.flicker.color.setScalar(e ? .6 : 2.4);
 		}
 		return r;
 	}
@@ -23544,7 +23551,7 @@ var am = class {
 		}
 		if (!this.grade) return;
 		let n = this.grade.uniforms;
-		n.time.value = t % 100, e ? (n.highlight.value.set(1.1, .98, .84), n.shadow.value.set(.84, .95, 1.16), n.saturation.value = 1.12, n.vignette.value = .38, n.grain.value = .035, this.bloom.strength = .7, this.bloom.threshold = .85, this.bloom.radius = .6) : (n.highlight.value.set(1.12, 1.01, .82), n.shadow.value.set(.93, .98, 1.08), n.saturation.value = 1.06, n.vignette.value = .26, n.grain.value = .022, this.bloom.strength = .42, this.bloom.threshold = .92, this.bloom.radius = .6);
+		n.time.value = t % 100, e ? (n.highlight.value.set(1.1, .98, .84), n.shadow.value.set(.84, .95, 1.16), n.saturation.value = 1.12, n.vignette.value = .38, n.grain.value = .035, this.bloom.strength = .45, this.bloom.threshold = 1, this.bloom.radius = .5) : (n.highlight.value.set(1.12, 1.01, .82), n.shadow.value.set(.93, .98, 1.08), n.saturation.value = 1.06, n.vignette.value = .26, n.grain.value = .022, this.bloom.strength = .24, this.bloom.threshold = 1.1, this.bloom.radius = .45);
 	}
 	render() {
 		if (this.disposed || this.contextUnavailable) return !1;
