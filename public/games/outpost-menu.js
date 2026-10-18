@@ -14,6 +14,7 @@ const MODES = [
   { id: "quick", title: "Quick shift", sub: "5 players · 4 min", art: "card-quick.webp" },
   { id: "night", title: "Night shift", sub: "After dark", art: "card-night.webp" },
   { id: "daily", title: "Daily case", sub: "Same for everyone", art: "card-daily.webp" },
+  { id: "signal", title: "Last Signal", sub: "Solo · 8 fighters", art: "card-signal.webp" },
 ];
 
 const CSS = `
@@ -50,6 +51,9 @@ midnry-fps .mf-modal.mf-home .mf-panel h1 { margin: 0 !important; font: 800 64px
 midnry-fps .mf-modal.mf-home .mf-panel h1 em { color: var(--mf-accent) !important; }
 midnry-fps .mf-logosub { margin: 4px 0 10px; font: 600 14px var(--mf-display); letter-spacing: 0.34em; text-transform: uppercase; color: #d9e0da; }
 midnry-fps .mf-logosub span { color: var(--mf-accent); }
+midnry-fps .mf-modal.mf-home[data-mode="signal"] label:has(.mf-protocol-preference) { display: none !important; }
+/* Last Signal on touch: lift the health box clear of the movement stick. */
+@media (pointer: coarse) { midnry-fps .mf-shell:not(.mf-protocol) .mf-bottom .mf-stat:first-child { transform: translateY(-128px); } }
 midnry-fps .mf-modal.mf-home .mf-modes { display: grid !important; grid-template-columns: 1fr !important; gap: 8px !important; margin: 0 !important; }
 midnry-fps .mf-modal.mf-home .mf-modes button { position: relative; display: grid !important; grid-template-columns: 34px 1fr 18px; align-items: center; column-gap: 10px; min-height: 56px; padding: 8px 14px !important; text-align: left !important; border-radius: 3px !important; border: 1px solid #ffffff24 !important; background: #0c1210d9 !important; color: #eef2ee !important; font: 700 19px/1.05 var(--mf-display) !important; letter-spacing: 0.04em !important; text-transform: uppercase; box-shadow: none !important; }
 midnry-fps .mf-modal.mf-home .mf-modes button small { grid-column: 2; font: 400 13px var(--mf-body) !important; letter-spacing: 0 !important; text-transform: none !important; color: #b9c4bd !important; }
@@ -100,7 +104,7 @@ midnry-fps .mf-casecard strong span { font-size: 18px; color: #cfd8d2; font-weig
 midnry-fps .mf-casecard .mf-ico { width: 18px; height: 18px; }
 
 /* Bottom mode cards */
-midnry-fps .mf-playlists { position: absolute; left: 424px; right: 32px; bottom: 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; z-index: 1; }
+midnry-fps .mf-playlists { position: absolute; left: 424px; right: 32px; bottom: 24px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; z-index: 1; }
 midnry-fps .mf-playlists button { all: unset; cursor: pointer; position: relative; height: 138px; border: 1px solid #ffffff24; border-radius: 4px; overflow: hidden; background: #0b100e center / cover no-repeat; box-shadow: 0 10px 28px #0008; }
 midnry-fps .mf-playlists button::before { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, #050706f2 8%, #05070600 72%); }
 midnry-fps .mf-playlists button > span { position: absolute; left: 14px; right: 34px; bottom: 12px; }
@@ -210,6 +214,15 @@ export class OutpostMenu {
     g.shell.append(this.style);
     this.build();
     this.tabSettings();
+    // Return to the mode played last time.
+    let saved = null;
+    try {
+      saved = localStorage.getItem("midnry-outpost-mode");
+    } catch {}
+    if (saved === "signal" && !g.online && g.state !== "playing") {
+      g.mode = "signal";
+      g.reset();
+    }
     this.observer = new MutationObserver(() => this.schedule());
     this.observer.observe(this.modal, { attributes: true, attributeFilter: ["hidden"] });
     this.observer.observe(this.panel, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "aria-pressed", "disabled"] });
@@ -370,6 +383,7 @@ export class OutpostMenu {
   current() {
     const g = this.g,
       shift = shiftChoice(g.shift);
+    if (g.mode === "signal") return "signal";
     if (shift !== "full") return shift;
     return modifierChoice(g.modifier) === "night-shift" ? "night" : "lifeline";
   }
@@ -377,6 +391,17 @@ export class OutpostMenu {
   pick(mode) {
     const g = this.g;
     if (g.online || g.state === "playing" || mode === this.current()) return;
+    // Last Signal is its own game; every other card is a Lifeline Run shift.
+    g.mode = mode === "signal" ? "signal" : "protocol";
+    try {
+      localStorage.setItem("midnry-outpost-mode", g.mode);
+    } catch {}
+    if (mode === "signal") {
+      g.reset();
+      g.protocolUI?.refreshMenu();
+      this.refresh();
+      return;
+    }
     const shift = mode === "quick" || mode === "daily" ? mode : "full";
     let modifier = modifierChoice(g.modifier);
     if (mode === "night") modifier = "night-shift";
@@ -407,8 +432,13 @@ export class OutpostMenu {
     const g = this.g;
     if (!this.top) return;
     const debrief = this.panel.classList.contains("mf-debrief");
-    const home = !this.modal.hidden && !debrief && g.mode === "protocol";
+    const home = !this.modal.hidden && !debrief && (g.mode === "protocol" || g.mode === "signal");
     this.modal.classList.toggle("mf-home", home);
+    const signal = g.mode === "signal";
+    if (this.modal.dataset.mode !== g.mode) {
+      this.modal.dataset.mode = g.mode;
+      this.logoSub.innerHTML = signal ? "Last <span>Signal</span> · Solo showdown" : "Blackout <span>Protocol</span> · Lifeline Run";
+    }
     if (!this.modal.hidden) g.shell.classList.remove("mf-hudon");
     if (!home) return;
     const profile = g.retention?.profile;

@@ -2791,7 +2791,8 @@
           // Last Signal uses the same arena, with a clear center for the final zone.
           reset() {
             this.practice?.reset();
-            this.mode = "protocol";
+            // Two offline modes: Lifeline Run (protocol) and Last Signal.
+            this.mode = this.mode === "signal" && !this.online ? "signal" : "protocol";
             this.spectator?.reset();
             this.shell.classList.remove("mf-dying");
             this.deathSequence = null;
@@ -2821,7 +2822,11 @@
             if (this.mode === "protocol") {
               this.mapId = "breakwater";
               this.weapon = "carbine";
-            } else if (MAPS[this.mapId]?.protocolOnly) this.mapId = "outpost";
+            } else {
+              // Last Signal rotates through the open arenas.
+              const arenas = ["outpost", "skyport", "estate"].filter((id) => MAPS[id]);
+              this.mapId = arenas[Math.floor(Math.random() * arenas.length)] || "outpost";
+            }
             // Offline shift length; the daily case is a seeded Quick shift
             // where everyone is an operator hunting the same infiltrator.
             this.shift = shiftChoice(this.shift || storedSetting("midnry-outpost-shift"));

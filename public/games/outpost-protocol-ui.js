@@ -109,6 +109,10 @@ const GUIDE = [
     "Xbox, PlayStation, Switch Pro and other standard controllers work. Left stick moves (or flies at the helm), right stick looks. A interacts (hold at cabinets), B reports a body, X uses your specialty, Y calls the emergency radio, RB eliminates as an infiltrator, LB opens Tactics, RT fires in a Last Stand, LT or clicking the left stick sprints. View opens Info and Start opens the menu. In menus, the D-pad or left stick moves between buttons, A selects and B goes back; LB and RB switch Settings sections.",
   ],
   [
+    "Last Signal: the solo showdown",
+    "Pick the Last Signal card on the home screen for a different game: no secret roles, just eight fighters and one survivor. Shoot to win (click or Space fires, R reloads, Shift sprints). Break supply crates for Charge Cores: each one adds 25 maximum health and 8 weapon damage. After 12 seconds the Red Haze starts closing in from the edges and hurts anyone caught outside the safe area, so keep moving toward the centre. Your Overdrive meter fills as you deal damage; press Q when it is full. The arena changes between Dust Outpost, Skyport and Wreck Estate.",
+  ],
+  [
     "Quick shift and the daily case",
     "In the menu, pick a shift. Full shift is the classic eight-player match. Quick shift is five players and one infiltrator, about four minutes. The daily case is a Quick shift that is the same for everyone each day: same base, same crew, same infiltrator, and you are always an operator. Win fast and vote out the infiltrator yourself for a score out of 1000. Your best score each day goes on a shared leaderboard under your locker name, with no account needed.",
   ],
