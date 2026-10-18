@@ -17925,43 +17925,36 @@ function tp(e, t, n) {
 Object.freeze([
 	{
 		id: "blackout",
-		icon: "🔦",
 		name: "Blackout start",
 		text: "The base starts in darkness. Repair the generators, or wait 45 seconds for the backup."
 	},
 	{
 		id: "radio-silence",
-		icon: "📵",
 		name: "Radio silence",
 		text: "No emergency meetings for the first minute. Reported bodies still call one."
 	},
 	{
 		id: "critical",
-		icon: "🩸",
 		name: "Critical patient",
 		text: "One wounded soldier is fading twice as fast."
 	},
 	{
 		id: "lone-wolf",
-		icon: "🐺",
 		name: "Lone wolf",
 		text: "Only one infiltrator, but their eliminations recharge much faster."
 	},
 	{
 		id: "short-supplies",
-		icon: "📦",
 		name: "Short supplies",
 		text: "No spare stock: every medical item on the base is needed."
 	},
 	{
 		id: "rush",
-		icon: "⏱️",
 		name: "Rush order",
 		text: "Patients fade 25% faster, but the flight is shorter."
 	},
 	{
 		id: "night-shift",
-		icon: "🌙",
 		name: "Night shift",
 		text: "The rescue runs after dark. Lamps and signs light the base, and you see less far in the shadows."
 	}
@@ -17974,19 +17967,16 @@ function np(e, t) {
 Object.freeze([
 	{
 		id: "turbulence",
-		icon: "🌪️",
 		name: "Turbulence",
 		text: "Halfway through the flight, a storm knocks out autopilot. Someone must take the helm."
 	},
 	{
 		id: "priority",
-		icon: "🧰",
 		name: "Priority cargo",
 		text: "Field medics need one extra item of a single kind."
 	},
 	{
 		id: "headwind",
-		icon: "🌬️",
 		name: "Headwind",
 		text: "A strong headwind makes the flight 25% longer."
 	}

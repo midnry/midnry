@@ -1,10 +1,10 @@
 /** Mid-match events for the base phase: something urgent every minute and a
  * half or so, up to three per round. Positions are base floor tiles. */
 export const EVENT_KINDS = Object.freeze({
-  fire: { icon: "🔥", name: "Fire", hold: 4, duration: 45, verb: "Put out the fire" },
-  casualty: { icon: "🚑", name: "New casualty", hold: 3, duration: 50, verb: "Stabilise the casualty" },
-  drop: { icon: "📦", name: "Supply delivery", hold: 3, duration: 50, verb: "Unpack the delivery" },
-  sandstorm: { icon: "🌪️", name: "Sandstorm", hold: 0, duration: 40, verb: "" },
+  fire: { name: "Fire", hold: 4, duration: 45, verb: "Put out the fire" },
+  casualty: { name: "New casualty", hold: 3, duration: 50, verb: "Stabilise the casualty" },
+  drop: { name: "Supply delivery", hold: 3, duration: 50, verb: "Unpack the delivery" },
+  sandstorm: { name: "Sandstorm", hold: 0, duration: 40, verb: "" },
 });
 
 export const EVENT_SPOTS = Object.freeze({

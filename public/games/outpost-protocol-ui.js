@@ -734,7 +734,7 @@ export class ProtocolUI {
     this.chatter.replaceChildren();
     for (const c of lines) {
       const sender = view.entities.find((e) => e.id === c.sender);
-      const who = element("b", "", `📻 ${sender?.mark ? sender.mark + " " : ""}${c.name}: `);
+      const who = element("b", "", `${sender?.mark ? sender.mark + " " : ""}${c.name}: `);
       if (sender?.color) who.style.color = sender.color;
       const line = element("p");
       line.append(who, document.createTextNode(c.text));
@@ -929,13 +929,13 @@ export class ProtocolUI {
     const spec = SPECIALTIES[self.specialty?.id];
     const shiftLine =
       match?.shift === "daily"
-        ? { icon: "📅", name: `Daily case · ${dailyKey()}`, text: "Same case for everyone today. Find the one infiltrator quickly." }
+        ? { name: `Daily case · ${dailyKey()}`, text: "Same case for everyone today. Find the one infiltrator quickly." }
         : match?.shift === "quick"
-          ? { icon: "⏱️", name: "Quick shift", text: "Five players, one infiltrator, a shorter flight." }
+          ? { name: "Quick shift", text: "Five players, one infiltrator, a shorter flight." }
           : null;
     for (const option of [shiftLine, spec ? { ...spec, name: `Your specialty: ${spec.name}` } : null, modifierOf(match?.modifier), twistOf(match?.twist)].filter(Boolean)) {
       const item = element("li");
-      item.append(element("b", "", `${option.icon} ${option.name}`), document.createTextNode(option.text));
+      item.append(element("b", "", option.name), document.createTextNode(option.text));
       list.append(item);
     }
     list.hidden = !list.children.length;
@@ -1051,7 +1051,7 @@ export class ProtocolUI {
         context = at(
           "event",
           event.id,
-          `${EVENT_KINDS[event.kind].icon} ${EVENT_KINDS[event.kind].verb}`,
+          EVENT_KINDS[event.kind].verb,
           `Hold for ${EVENT_KINDS[event.kind].hold} seconds. ${Math.max(0, Math.ceil(event.until - view.time))}s left.`,
           event,
         );
@@ -1500,7 +1500,7 @@ export class ProtocolUI {
     this.matchLine.hidden = !modifier && !twist;
     setText(
       this.matchLine,
-      [modifier, twist].filter(Boolean).map((o) => `${o.icon} ${o.name}`).join(" · "),
+      [modifier, twist].filter(Boolean).map((o) => o.name).join(" · "),
     );
     this.matchLine.title = [modifier, twist].filter(Boolean).map((o) => `${o.name}: ${o.text}`).join("\n");
     this.cargoStatus.hidden = mission.phase !== "base";
@@ -1539,7 +1539,7 @@ export class ProtocolUI {
       const row = [...list.children].find((child) => child.dataset.patient === patient.id);
       if (!row) continue;
       row.dataset.critical = String(patient.hp > 0 && patient.hp <= 25);
-      setText(row.querySelector("span"), patient.critical ? `🩸 ${patient.name}` : patient.name);
+      setText(row.querySelector("span"), patient.critical ? `${patient.name} · critical` : patient.name);
       setText(
         row.querySelector("b"),
         patient.rescued ? "Rescued" : patient.hp <= 0 ? "Lost" : `${Math.ceil(patient.hp)}%`,
@@ -1768,7 +1768,7 @@ export class ProtocolUI {
     ability.hidden = !alive || !roam || !active || (needsBody && !this.nearby.body && !this.nearbyBodyAny(view)) || self.specialty.uses <= 0;
     ability.disabled = time < (self.specialty?.readyAt || 0) || this.actions.some((action) => action.op === "ability");
     if (spec) {
-      setText(ability.firstChild, `${spec.icon} ${spec.id === "medic" ? "Examine body" : spec.id === "security" ? "Check cameras" : "Forge clue"}`);
+      setText(ability.firstChild, spec.id === "medic" ? "Examine body" : spec.id === "security" ? "Check cameras" : "Forge clue");
       setText(
         ability.querySelector("small"),
         time < (self.specialty.readyAt || 0)
@@ -2280,7 +2280,6 @@ export class ProtocolUI {
         const card = element("div", "mf-protocol-award");
         if (award.color) card.style.borderColor = award.color;
         card.append(
-          element("span", "mf-protocol-awardicon", award.icon),
           element("b", "", award.title),
           element("span", "", `${award.mark ? award.mark + " " : ""}${award.name}${award.playerId === g.selfId ? " (you)" : ""}`),
           element("small", "", award.detail),
@@ -2293,7 +2292,7 @@ export class ProtocolUI {
     if (!g.practice?.active && !g.academy?.active) {
       const card = shareSummary(view, g.selfId);
       if (daily) {
-        const lead = `📅 Daily case ${daily.key}: ${daily.score}/1000${daily.won ? ` in ${formatTime(daily.seconds)}` : ""}. Beat my score!`;
+        const lead = `Daily case ${daily.key}: ${daily.score}/1000${daily.won ? ` in ${formatTime(daily.seconds)}` : ""}. Beat my score!`;
         card.headline = `${lead} ${card.headline}`;
         card.text = `${lead} ${card.text}`;
       }

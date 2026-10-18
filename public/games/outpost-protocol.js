@@ -570,12 +570,12 @@ export class ProtocolArena extends Arena {
     const ops = rows.filter((r) => r.p.role === OPERATORS),
       infs = rows.filter((r) => r.p.role === INFILTRATORS);
     const picks = [
-      ["detective", "🔎", "Sharpest detective", best(ops, (r) => r.p.correctVotes || 0), (r) => `${r.p.correctVotes} vote${r.p.correctVotes === 1 ? "" : "s"} against infiltrators`],
-      ["liar", "🎭", "Best liar", best(infs, (r) => 10 + (r.e.kills || 0) * 3 + (r.c.sabotage || 0) + (r.c.charges || 0) - (r.p.votesReceived || 0) * 4, 10), (r) => `${r.e.kills || 0} elimination${r.e.kills === 1 ? "" : "s"}, ${r.p.votesReceived || 0} vote${r.p.votesReceived === 1 ? "" : "s"} against`],
-      ["quartermaster", "📦", "Quartermaster", best(ops, (r) => r.c.supplies || 0, 2), (r) => `${r.c.supplies} supplies loaded`],
-      ["lifesaver", "❤️", "Lifesaver", best(ops, (r) => r.c.patients || 0), (r) => `${r.c.patients} patient${r.c.patients === 1 ? "" : "s"} treated`],
-      ["pilot", "🛩️", "Ace pilot", best(ops, (r) => r.c.pilotSeconds || 0, 3), (r) => `${Math.round(r.c.pilotSeconds)}s at the helm`],
-      ["fixer", "🔧", "Fixer", best(ops, (r) => (r.c.repairs || 0) + (r.c.defuses || 0)), (r) => `${(r.c.repairs || 0) + (r.c.defuses || 0)} repairs and defuses`],
+      ["detective", "", "Sharpest detective", best(ops, (r) => r.p.correctVotes || 0), (r) => `${r.p.correctVotes} vote${r.p.correctVotes === 1 ? "" : "s"} against infiltrators`],
+      ["liar", "", "Best liar", best(infs, (r) => 10 + (r.e.kills || 0) * 3 + (r.c.sabotage || 0) + (r.c.charges || 0) - (r.p.votesReceived || 0) * 4, 10), (r) => `${r.e.kills || 0} elimination${r.e.kills === 1 ? "" : "s"}, ${r.p.votesReceived || 0} vote${r.p.votesReceived === 1 ? "" : "s"} against`],
+      ["quartermaster", "", "Quartermaster", best(ops, (r) => r.c.supplies || 0, 2), (r) => `${r.c.supplies} supplies loaded`],
+      ["lifesaver", "", "Lifesaver", best(ops, (r) => r.c.patients || 0), (r) => `${r.c.patients} patient${r.c.patients === 1 ? "" : "s"} treated`],
+      ["pilot", "", "Ace pilot", best(ops, (r) => r.c.pilotSeconds || 0, 3), (r) => `${Math.round(r.c.pilotSeconds)}s at the helm`],
+      ["fixer", "", "Fixer", best(ops, (r) => (r.c.repairs || 0) + (r.c.defuses || 0)), (r) => `${(r.c.repairs || 0) + (r.c.defuses || 0)} repairs and defuses`],
     ];
     return picks
       .filter(([, , , row]) => row)
@@ -664,7 +664,7 @@ export class ProtocolArena extends Arena {
         player.killReadyAt = Math.max(player.killReadyAt, p.lockdownUntil);
         player.sabotageReadyAt = Math.max(player.sabotageReadyAt, p.lockdownUntil);
       }
-    const text = `🔒 ${quarter * 25}% loaded. Base lockdown: ${PROTOCOL_RULES.lockdown} seconds of security sweeps.`;
+    const text = `${quarter * 25}% loaded. Base lockdown: ${PROTOCOL_RULES.lockdown} seconds of security sweeps.`;
     this.addLog(text);
     this.radio(this.entities.find((e) => e.bot && this.active(e) && e.team === 0) ?? null, text);
     for (const e of this.entities) if (this.active(e) && !e.bot) this.emit(e.id, text);
@@ -1933,8 +1933,8 @@ export class ProtocolArena extends Arena {
     };
     this.addLog(lines[kind]);
     const caller = this.entities.find((e) => e.bot && this.active(e) && e.team === 0) ?? this.entities.find((e) => this.active(e));
-    this.radio(caller, `${info.icon} ${lines[kind]}`);
-    for (const e of this.entities) if (this.active(e) && !e.bot) this.emit(e.id, `${info.icon} ${info.name}! ${info.verb || "Stay alert."}`);
+    this.radio(caller, lines[kind]);
+    for (const e of this.entities) if (this.active(e) && !e.bot) this.emit(e.id, `${info.name}! ${info.verb || "Stay alert."}`);
   }
 
   resolveEvent(entity, id) {

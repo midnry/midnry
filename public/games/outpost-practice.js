@@ -421,7 +421,7 @@ export class ProtocolPractice {
         finished = done.includes(`practice-${track}`);
       const button = this.chooser.querySelector(`[data-track="${track}"]`);
       button.innerHTML = "";
-      button.append(`${label} · ${steps.length} drills${at ? ` · resume at ${at + 1}` : finished ? " · ✅ done" : " · +75 XP"}`);
+      button.append(`${label} · ${steps.length} drills${at ? ` · resume at ${at + 1}` : finished ? " · ✓ done" : " · +75 XP"}`);
       const small = document.createElement("small");
       small.textContent = blurb;
       button.append(small);

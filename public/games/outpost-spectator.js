@@ -119,7 +119,7 @@ export class SpectatorUI {
         ? "Remote support after the assembly"
         : wait > 0
           ? `Remote support in ${wait}s`
-          : `🎧 Remote support · ${what} (${ghost.limit - ghost.done} left)`;
+          : `Remote support · ${what} (${ghost.limit - ghost.done} left)`;
     if (this.support.textContent !== text) this.support.textContent = text;
     this.support.disabled = used || !roam || wait > 0;
   }

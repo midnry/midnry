@@ -255,20 +255,19 @@ export class ProtocolFocus {
       );
     } else if (p.detonateAt != null) {
       level = "danger";
-      warnings.push(`💣 Base detonation · ${Math.max(0, Math.ceil(p.detonateAt - view.time))}s`);
+      warnings.push(`Base detonation · ${Math.max(0, Math.ceil(p.detonateAt - view.time))}s`);
     } else if ((p.events || []).length) {
       const ev = p.events[0];
-      const icon = { fire: "🔥", casualty: "🚑", drop: "📦", sandstorm: "🌪️" }[ev.kind] || "⚠️";
       const label = { fire: `Fire in ${ev.room}`, casualty: "New casualty at the south gate", drop: "Delivery in the atrium", sandstorm: "Sandstorm · low visibility" }[ev.kind];
       level = ev.kind === "drop" || ev.kind === "sandstorm" ? "warn" : "danger";
-      warnings.push(`${icon} ${label} · ${Math.max(0, Math.ceil(ev.until - view.time))}s`);
+      warnings.push(`${label} · ${Math.max(0, Math.ceil(ev.until - view.time))}s`);
     } else if ((p.lockdownUntil || 0) > view.time && mission.phase === "base") {
       level = "info";
-      warnings.push(`🔒 Base lockdown · ${Math.ceil(p.lockdownUntil - view.time)}s`);
+      warnings.push(`Base lockdown · ${Math.ceil(p.lockdownUntil - view.time)}s`);
     } else if (mission.patients.some((patient) => patient.hp > 0 && patient.hp <= 25))
-      warnings.push("🩸 Patients critical · deliver aid");
-    else if (p.sabotage.powerUntil > view.time) warnings.push("🔦 Power down · fix the generators");
-    else if (p.sabotage.commsUntil > view.time) warnings.push("📡 Comms jammed · restore the radio");
+      warnings.push("Patients critical · deliver aid");
+    else if (p.sabotage.powerUntil > view.time) warnings.push("Power down · fix the generators");
+    else if (p.sabotage.commsUntil > view.time) warnings.push("Comms jammed · restore the radio");
     const warning = warnings.join(" · ");
     this.urgent.hidden = !warning;
     if (this.urgent.dataset.level !== level) this.urgent.dataset.level = level;
@@ -307,7 +306,6 @@ export class ProtocolFocus {
   }
 }
 
-const CLUE_ICON = { log: "📋", footprints: "👣", smudge: "🖐️", camera: "🎥", note: "📝" };
 /** The player's private evidence, newest first. */
 export function renderCaseBoard(list, view) {
   if (!list) return;
@@ -324,7 +322,7 @@ export function renderCaseBoard(list, view) {
   }
   for (const clue of [...clues].reverse()) {
     const li = document.createElement("li");
-    li.textContent = `${CLUE_ICON[clue.kind] || "🔎"} ${clue.text}`;
+    li.textContent = clue.text;
     const when = document.createElement("small");
     when.textContent = `Found at ${Math.floor(clue.at / 60)}:${String(clue.at % 60).padStart(2, "0")}`;
     li.append(when);

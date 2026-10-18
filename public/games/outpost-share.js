@@ -7,12 +7,12 @@ export const GAME_URL = "https://www.midnry.com/games/outpost-zero";
 /** A one-line brag in plain words, from the player's side of the round. */
 export function headline({ won, role, correctVotes = 0, kills = 0, award = null }) {
   if (role === "infiltrator") {
-    if (won) return kills ? `I fooled everyone as the infiltrator and took down ${kills}. 🎭` : "I fooled everyone as the infiltrator. 🎭";
-    return "They caught me as the infiltrator. Next time. 🕵️";
+    if (won) return kills ? `I fooled everyone as the infiltrator and took down ${kills}.` : "I fooled everyone as the infiltrator.";
+    return "They caught me as the infiltrator. Next time.";
   }
-  if (won && correctVotes) return `I caught the infiltrator${correctVotes > 1 ? ` with ${correctVotes} votes` : ""}! 🔎`;
-  if (won) return award ? `We saved the rescue, and I was ${award}. 🚁` : "We saved the rescue. 🚁";
-  return "The infiltrators got us this time. Can you do better? 🚨";
+  if (won && correctVotes) return `I caught the infiltrator${correctVotes > 1 ? ` with ${correctVotes} votes` : ""}!`;
+  if (won) return award ? `We saved the rescue, and I was ${award}.` : "We saved the rescue.";
+  return "The infiltrators got us this time. Can you do better?";
 }
 
 /** Everything the card needs, from the player's own results view. */
@@ -112,7 +112,7 @@ export function drawCard(s) {
   if (s.award) {
     g.fillStyle = "#ffd36a";
     g.font = "700 44px system-ui, sans-serif";
-    g.fillText(`${s.award.icon} ${s.award.title}`, 80, y);
+    g.fillText(s.award.title, 80, y);
     g.fillStyle = "#d9e3dd";
     g.font = "500 32px system-ui, sans-serif";
     g.fillText(s.award.detail, 80, y + 50);
