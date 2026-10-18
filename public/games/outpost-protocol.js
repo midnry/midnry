@@ -885,6 +885,9 @@ export class ProtocolArena extends Arena {
     player.channel = null;
     player.killReadyAt = this.time + (this.protocol.killCooldown ?? PROTOCOL_RULES.killCooldown);
     entity.kills++;
+    // Authoritative, recipient-private acknowledgement. A queued/rejected
+    // attack never creates it, and replaying an action cannot create it twice.
+    player.lastElimination = { sequence: entity.kills, at: this.time, name: target.name };
     this.protocol.bodies.push({
       id: `body-${this.protocol.nextId++}`,
       victimId: target.id,
@@ -2356,6 +2359,9 @@ export function protocolView(data, selfId) {
     self: player
       ? {
           role: player.role,
+          lastElimination: isInfiltrator && player.lastElimination
+            ? { sequence: player.lastElimination.sequence, at: player.lastElimination.at, name: player.lastElimination.name }
+            : null,
           deathScene: !isLiving && player.deathScene
             ? { id: player.deathScene.id, kind: player.deathScene.kind, at: player.deathScene.at }
             : null,

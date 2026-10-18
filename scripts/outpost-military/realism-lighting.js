@@ -1,5 +1,6 @@
 /** Natural source lighting shared by the world and first-person equipment. */
 import * as THREE from "three";
+import { roofRoomAt } from "./architecture.js";
 
 const SCALE = 3;
 
@@ -120,8 +121,9 @@ export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
     for (const room of metadata?.corridors || []) state.rooms.push(room);
     for (const room of decorRooms || []) state.rooms.push(room);
   }
-  let room = null;
+  let room = roofRoomAt(metadata, camera.x, camera.y);
   for (const candidate of state.rooms) {
+    if (room) break;
     if (
       candidate.roofed !== false &&
       camera.x >= candidate.x &&
@@ -169,13 +171,25 @@ export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
   r.rim.intensity = 0;
   // The sun remains outside a roofed room. Roofs and walls occlude it rather
   // than replacing it with arbitrary ambient illumination from every side.
-  adapt(r.sun, "intensity", powerOut ? 0.16 : night ? 0.32 : lighting ? 3.1 : 2.05);
+  // Real roofs cast the shadow on capable devices. With shadows disabled,
+  // approximate their shelter locally; never dim the outdoor sun/sky because
+  // someone cut the electricity. This adds no mobile shadow passes. At night
+  // the sun becomes moonlight.
+  adapt(
+    r.sun,
+    "intensity",
+    night
+      ? inside && !options.shadows ? 0.12 : 0.32
+      : inside && !options.shadows ? (powerOut ? 0.16 : 0.42) : lighting ? 3.1 : 2.05,
+  );
   // Emergency bounce illumination leaves walls/doorways readable outside the
   // torch hotspot; fixtures still go dark and limited sight still applies.
-  adapt(r.hemisphere, "intensity", powerOut ? 0.09 : night ? (inside ? 0.08 : 0.12) : inside ? 0.18 : lighting ? 0.32 : 0.46);
-  adapt(r.scene, "environmentIntensity", powerOut ? 0.065 : night ? 0.07 : inside ? 0.2 : 0.48);
-  adapt(r.scene, "backgroundIntensity", powerOut ? 0.13 : night ? 1 : 0.58);
-  adapt(r.renderer, "toneMappingExposure", powerOut ? 0.92 : night ? 1.08 : inside ? 0.96 : 0.91);
+  adapt(r.hemisphere, "intensity", inside ? (powerOut ? 0.09 : night ? 0.08 : 0.18) : night ? 0.12 : lighting ? 0.32 : 0.46);
+  adapt(r.scene, "environmentIntensity", inside ? (powerOut ? 0.065 : night ? 0.07 : 0.2) : night ? 0.07 : 0.48);
+  r.scene.backgroundIntensity = night ? 1 : 0.58;
+  // Keep exposure independent of electrical state, including sky seen through
+  // a window. Only walking between shelter and open air changes adaptation.
+  adapt(r.renderer, "toneMappingExposure", night ? 1.08 : inside ? 0.96 : 0.91);
 
   const shadowSize = Math.min(
       r.profile?.maxShadowSize || 2048,
@@ -295,11 +309,11 @@ export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
     if (fixture) light.position.set(fixture.x, fixture.y, fixture.z);
   }
 
-  adapt(r.weaponScene, "environmentIntensity", powerOut ? 0.065 : night ? 0.08 : inside ? 0.22 : 0.48);
+  adapt(r.weaponScene, "environmentIntensity", inside ? (powerOut ? 0.065 : night ? 0.08 : 0.22) : night ? 0.08 : 0.48);
   if (state.weaponSky) {
     state.weaponSky.color.copy(r.hemisphere.color);
     state.weaponSky.groundColor.copy(r.hemisphere.groundColor);
-    adapt(state.weaponSky, "intensity", powerOut ? 0.12 : night ? 0.14 : inside ? 0.28 : 0.58);
+    adapt(state.weaponSky, "intensity", inside ? (powerOut ? 0.12 : night ? 0.14 : 0.28) : night ? 0.14 : 0.58);
   }
   if (state.weaponKey) {
     const fixture = fixtures[state.fixtureIndices[0]];
@@ -310,7 +324,7 @@ export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
     state.localDirection.transformDirection(r.camera.matrixWorldInverse);
     state.weaponKey.position.lerp(state.localDirection.multiplyScalar(5), blend);
     state.weaponKey.color.lerp(fixture && inside ? r.protocolLights[0].color : r.sun.color, blend);
-    adapt(state.weaponKey, "intensity", powerOut ? 0.35 : inside ? 1.1 : night ? 0.45 : lighting ? 2.65 : 2.05);
+    adapt(state.weaponKey, "intensity", inside ? (powerOut ? 0.35 : 1.1) : night ? 0.45 : lighting ? 2.65 : 2.05);
   }
   state.initialized = true;
 }

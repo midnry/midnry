@@ -10,7 +10,6 @@ export const isNightShift = (view) => view?.protocol?.match?.modifier === "night
 /** Lamp posts on the base's open-air ground: [tile x, tile y, head direction x, z].
  * Poles stand against a wall so nobody walks through them. */
 const LAMPS = [
-  [12.12, 13.12, 1, 1], [15.88, 15.88, -1, -1], // Supply courtyard corners.
   [3.5, 26.88, 0, -1], [9.5, 26.88, 0, -1], [17.5, 26.88, 0, -1], [24.5, 26.88, 0, -1], // Perimeter road.
   [1.12, 22.5, 1, 0], [26.88, 22.5, -1, 0], // Gate approaches.
 ];

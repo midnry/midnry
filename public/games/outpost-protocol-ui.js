@@ -9,6 +9,7 @@ const GHOST_OPS = new Set(["ghost-begin", "task-step", "task-cancel"]);
 import { MissionTaskPanel } from "./outpost-task-ui.js";
 import { INTERACTIVE_TASKS } from "./outpost-task-games.js";
 import { ProtocolFocus } from "./outpost-protocol-focus.js";
+import { battlePreparation, eliminationConfirmation } from "./outpost-battle-presentation.js";
 import { protocolView } from "./outpost-protocol.js";
 import { PROTOCOL_MAP, TRANSPORT_MAP } from "./outpost-protocol-map.js";
 
@@ -98,6 +99,17 @@ export class ProtocolUI {
     this.combatMarker.hidden = true;
     this.combatMarker.setAttribute("aria-hidden", "true");
     g.shell.append(this.combatMarker);
+    this.killConfirmation = element("div", "mf-protocol-killconfirmation");
+    this.killConfirmation.hidden = true;
+    this.killConfirmation.setAttribute("role", "status");
+    this.killConfirmation.setAttribute("aria-live", "polite");
+    this.killConfirmation.innerHTML = '<b>✓ Elimination confirmed</b><small></small>';
+    this.preparation = element("section", "mf-protocol-preparation");
+    this.preparation.hidden = true;
+    this.preparation.setAttribute("role", "status");
+    this.preparation.setAttribute("aria-live", "polite");
+    this.preparation.innerHTML = '<div class="mf-preparation-heading"><small>LAST STAND</small><h2>Prepare for battle</h2><p>Check your equipment. Weapons are locked.</p></div><div class="mf-preparation-sides"><div><small>ACCUSED</small><b class="mf-preparation-accused"></b></div><div><small class="mf-preparation-count"></small><b class="mf-preparation-patrol"></b></div></div><div class="mf-preparation-countdown"></div>';
+    g.shell.append(this.killConfirmation, this.preparation);
     this.refreshMenu();
   }
 
@@ -130,6 +142,20 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-verdict.mf-verdict-innocent { border-color:#9fb6d6;background:#17223aef;color:#e4edff; }
       @keyframes mf-verdict-in { from { opacity:0;transform:translate(-50%,10px) scale(.96); } to { opacity:1;transform:translate(-50%,0) scale(1); } }
       @media (prefers-reduced-motion: reduce) { midnry-fps .mf-protocol-verdict { animation:none; } }
+      midnry-fps .mf-protocol-killconfirmation { position:absolute;z-index:12;top:calc(112px + var(--mf-safe-top,0px));left:50%;transform:translateX(-50%);width:min(300px,calc(100% - 32px));padding:10px 16px;border:1px solid #adbf9a;border-radius:12px;background:#15271fec;color:#f1f6e9;text-align:center;pointer-events:none;font:700 14px/1.4 var(--mf-body);overflow-wrap:anywhere; }
+      midnry-fps .mf-protocol-killconfirmation small { display:block;font-size:12px;font-weight:400;color:#c4d4c6; }
+      midnry-fps .mf-protocol-preparation { position:absolute;z-index:8;inset:0;pointer-events:none;color:#eff3ee;text-align:center;font-family:var(--mf-body);background:linear-gradient(#081115b3,transparent 35%,transparent 60%,#081115bc); }
+      midnry-fps .mf-preparation-heading { position:absolute;left:16px;right:16px;top:14%; }
+      midnry-fps .mf-preparation-heading small { color:#c4af83;letter-spacing:.18em;font-size:12px;font-weight:800; }
+      midnry-fps .mf-preparation-heading h2 { font-size:clamp(22px,4vw,32px);margin:6px 0; }
+      midnry-fps .mf-preparation-heading p { font-size:12px;color:#c6d0cf;margin:0; }
+      midnry-fps .mf-preparation-sides { position:absolute;left:6%;right:6%;bottom:20%;display:grid;grid-template-columns:1fr 1fr;gap:20px; }
+      midnry-fps .mf-preparation-sides b,midnry-fps .mf-preparation-sides small { display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+      midnry-fps .mf-preparation-sides small { color:#c4af83;font-size:12px;letter-spacing:.08em; }
+      midnry-fps .mf-preparation-sides b { font-size:15px;margin-top:4px; }
+      midnry-fps .mf-preparation-countdown { position:absolute;bottom:9%;left:16px;right:16px;font-size:14px;font-weight:700; }
+      midnry-fps .mf-protocol-preparing :is(.mf-touch,.mf-protocol-combatstats,.mf-playernames,.mf-navline,.mf-cross,.mf-toast,.mf-protocol-urgent) { visibility:hidden !important; }
+      midnry-fps .mf-protocol-preparing>canvas:not(.mf-webgl) { visibility:hidden; }
       midnry-fps .mf-protocol-combatstats { position:absolute;z-index:6;right:calc(14px + var(--mf-safe-right));bottom:calc(148px + var(--mf-safe-bottom));padding:8px 12px;max-width:230px;background:#16231fe6;border:1px solid #bfc5ab66;border-radius:12px;color:#f1f3e7;font:700 12px var(--mf-body);pointer-events:none; }
       @media(pointer:fine) and (min-width:701px) { midnry-fps .mf-protocol-combat :is(.mf-fire,.mf-reload) { display:none !important; } midnry-fps .mf-protocol-combatstats { bottom:20px; } }
       midnry-fps .mf-protocol .mf-modes { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -1104,6 +1130,7 @@ export class ProtocolUI {
     g.spectator?.update();
     g.shell.classList.toggle("mf-protocol", active);
     const gameplay = active && this.visibleGameplay();
+    this.updateBattleFeedback(active ? this.safeView() : null, gameplay, now);
     g.shell.classList.toggle(
       "mf-protocol-combat",
       gameplay && g.arena.protocol?.phase === "combat",
@@ -1820,6 +1847,29 @@ export class ProtocolUI {
     );
   }
 
+  updateBattleFeedback(view, gameplay, now) {
+    const g = this.g, confirmation = eliminationConfirmation(view);
+    const key = confirmation ? `${view.roundId}:${confirmation.sequence}` : null;
+    if (key && key !== this.lastKillConfirmation) {
+      this.lastKillConfirmation = key;
+      this.killConfirmationUntil = now + 2800;
+      setText(this.killConfirmation.querySelector("small"), `${confirmation.name} · Keep your cover intact.`);
+    }
+    this.killConfirmation.hidden = !confirmation || now >= (this.killConfirmationUntil || 0) ||
+      g.mode !== "protocol" || (!gameplay && g.state !== "ended");
+    const oldToast = g.$(".mf-toast");
+    if (!this.killConfirmation.hidden && oldToast?.textContent === "Patrol eliminated. Keep your cover intact.")
+      setText(oldToast, "");
+    const prep = gameplay && !this.hasDialogOpen() ? battlePreparation(view, g.selfId) : null;
+    this.preparation.hidden = !prep;
+    g.shell.classList.toggle("mf-protocol-preparing", !!prep);
+    if (!prep) return;
+    setText(this.preparation.querySelector(".mf-preparation-accused"), prep.target.name);
+    setText(this.preparation.querySelector(".mf-preparation-patrol"), prep.patrol.name);
+    setText(this.preparation.querySelector(".mf-preparation-count"), `PATROL · ${prep.count} VS 1`);
+    setText(this.preparation.querySelector(".mf-preparation-countdown"), `Battle begins in ${Math.ceil(prep.remaining)}`);
+  }
+
   refreshMenu() {
     if (this.disposed) return;
     this.g.practice?.refresh();
@@ -2074,10 +2124,13 @@ export class ProtocolUI {
       this.flightPad,
       this.combatStats,
       this.combatMarker,
+      this.verdict,
+      this.killConfirmation,
+      this.preparation,
     ]) {
       if (node?.tagName === "DIALOG" && node.open) node.close();
       node?.remove();
     }
-    this.g.shell.classList.remove("mf-protocol", "mf-protocol-piloting", "mf-protocol-combat");
+    this.g.shell.classList.remove("mf-protocol", "mf-protocol-piloting", "mf-protocol-combat", "mf-protocol-preparing");
   }
 }

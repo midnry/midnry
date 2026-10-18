@@ -48,6 +48,7 @@ export type ProtocolChannel = {
   deadline?: number;
 };
 export type ProtocolSelf = {
+  lastElimination?: { sequence: number; at: number; name: string } | null;
   role: ProtocolRole;
   contributions?: Record<string, number>;
   deathScene?: { id: string; kind: string; at: number } | null;
