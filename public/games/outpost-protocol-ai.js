@@ -118,6 +118,22 @@ export function suspectScores(ctx) {
     }
   }
   for (const claim of claims.values()) add(claim.id, claim.weight);
+  // Case board: the security log names everyone in the room; a smudge
+  // narrows a saboteur to two colours; footprints point at a room.
+  const byColor = (name) => ctx.entities.find((e) => e.colorName === name)?.id;
+  for (const clue of ctx.player.clues || []) {
+    if (clue.kind === "log") for (const id of clue.ids || []) add(id, 0.8);
+    if (clue.kind === "smudge") for (const c of clue.colors || []) add(byColor(c), 0.6);
+    if (clue.kind === "footprints")
+      for (const c of ctx.player.contacts || [])
+        if (c.room === clue.room && Math.abs(c.at - clue.at) < 30) add(c.id, 0.5);
+  }
+  // Clues shared aloud in the meeting count too, a little less.
+  for (const message of ctx.meeting?.messages || []) {
+    if (message.sender === ctx.self.id || !/^clue:/i.test(message.text)) continue;
+    for (const id of mentioned(message.text, ctx.entities)) add(id, 0.5);
+    for (const e of ctx.entities) if (e.colorName && new RegExp(`\\b${e.colorName}\\b`).test(message.text)) add(e.id, 0.35);
+  }
   // "X was with me / X is clear": a vouch lowers suspicion a little.
   for (const message of ctx.meeting?.messages || []) {
     if (message.sender === ctx.self.id || !VOUCH.test(message.text)) continue;
@@ -275,6 +291,8 @@ export function nextStatement(ctx) {
     }
     const sighting = nearBody(ctx);
     if (sighting) return { text: sighting };
+    const logClue = (ctx.player.clues || []).filter((c) => c.kind !== "log").at(-1);
+    if (logClue && hash(ctx.self.id + ctx.meeting.id) % 2 === 0) return { text: `Clue: ${logClue.text}` };
     const where = ctx.reportedBody?.room;
     const openers = [
       `I was checking supplies in ${cover}. I did not witness an attack.`,

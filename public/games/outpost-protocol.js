@@ -253,6 +253,8 @@ export class ProtocolArena extends Arena {
       // Public radio calls during play (bots and system), newest last.
       chatter: [],
       nextChatterAt: 20,
+      // Paint smudges left on sabotaged panels: { stationKind: { colors, at } }.
+      smudges: {},
       self: null,
       players: Object.create(null),
       nextId: 1,
@@ -318,6 +320,8 @@ export class ProtocolArena extends Arena {
         activities: [],
         contacts: [],
         botDialogue: null,
+        // Case board: evidence this player has found (private).
+        clues: [],
         botGoal: null,
         botNextThink: 0,
         botRestUntil: 8 + this.random() * 14,
@@ -855,6 +859,13 @@ export class ProtocolArena extends Arena {
     for (const body of this.protocol.bodies)
       if (this.near(entity, body, this.sightRange())) {
         if (!p.discoveredBodies.includes(body.id)) p.discoveredBodies.push(body.id);
+        if (body.killerId !== entity.id && body.trail?.length > 1 && body.trailRoom)
+          this.addClue(entity, {
+            key: `trail:${body.id}`,
+            kind: "footprints",
+            text: `Footprints lead away from ${body.name} toward ${body.trailRoom}.`,
+            room: body.trailRoom,
+          });
         p.bodyMemory[body.id] = { x: body.x, y: body.y };
       }
     p.discoveredBombs = p.discoveredBombs.filter((id) =>
@@ -891,6 +902,7 @@ export class ProtocolArena extends Arena {
     // Authoritative, recipient-private acknowledgement. A queued/rejected
     // attack never creates it, and replaying an action cannot create it twice.
     player.lastElimination = { sequence: entity.kills, at: this.time, name: target.name };
+    const killRoom = this.roomAt(target);
     this.protocol.bodies.push({
       id: `body-${this.protocol.nextId++}`,
       victimId: target.id,
@@ -900,7 +912,18 @@ export class ProtocolArena extends Arena {
       reported: false,
       carriedBy: null,
       killerId: entity.id,
+      // Clues: the attacker's footprints for a few seconds, and who the
+      // security log saw in the room around the attack.
+      room: killRoom?.name ?? "the corridor",
+      trail: [{ x: target.x, y: target.y }],
+      trailUntil: this.time + 8,
+      trailRoom: null,
+      roomLog: [entity.id],
+      logUntil: this.time + 10,
     });
+    for (const e of this.entities)
+      if (e !== entity && e !== target && this.active(e) && killRoom && this.roomAt(e) === killRoom)
+        this.protocol.bodies.at(-1).roomLog.push(e.id);
     this.record(
       `${entity.name} eliminated ${target.name}${this.roomAt(target)?.name ? ` in ${this.roomAt(target).name}` : ""}.`,
       "kill",
@@ -927,7 +950,30 @@ export class ProtocolArena extends Arena {
       );
       return;
     }
-    if (body) body.reported = true;
+    if (body) {
+      body.reported = true;
+      // Base security shares who was in the room around the attack. The
+      // attacker is always listed, alongside anyone else who was there.
+      // At least three names: a lone attacker is padded with others the
+      // sensors picked up nearby, so the log narrows the case, never solves it.
+      const ids = [...(body.roomLog || [])];
+      const nearby = shuffle(
+        this.entities.filter((e) => e.id !== body.victimId && !ids.includes(e.id) && this.active(e)),
+        () => this.random(),
+      ).sort((a, b) => distance(a, body) - distance(b, body));
+      while (ids.length < 3 && nearby.length) ids.push(nearby.shift().id);
+      const names = shuffle(ids, () => this.random())
+        .map((id) => this.entities.find((e) => e.id === id))
+        .filter(Boolean);
+      if (names.length)
+        for (const e of this.entities)
+          this.addClue(e, {
+            key: `log:${body.id}`,
+            kind: "log",
+            text: `Security log, ${body.room}: ${names.map((n) => n.name).join(", ")} ${names.length === 1 ? "was" : "were"} in or near the room around the attack.`,
+            ids: names.map((n) => n.id),
+          });
+    }
     p.phase = "discussion";
     p.meeting = {
       id: `meeting-${p.nextId++}`,
@@ -1158,6 +1204,14 @@ export class ProtocolArena extends Arena {
       if (this.protocol.sabotage[key] > this.time) return;
       this.protocol.sabotage[key] = this.time + PROTOCOL_RULES.sabotageDuration;
       recordContribution(player, "sabotage", `${targetId}:${this.time}`);
+      {
+        // A smudge on the panel: the saboteur's colour or one decoy.
+        const others = this.entities.filter((e) => e !== entity && e.colorName);
+        const decoy = others[Math.floor(this.random() * others.length)]?.colorName;
+        const colors = [entity.colorName, decoy].filter(Boolean);
+        this.protocol.smudges ??= {};
+        this.protocol.smudges[targetId] = { colors: this.random() < 0.5 ? colors : colors.reverse(), at: Math.round(this.time) };
+      }
       this.record(
         `${entity.name} ${targetId === "power" ? "cut the power" : "jammed the radio"}.`,
         "sabotage",
@@ -1693,7 +1747,7 @@ export class ProtocolArena extends Arena {
       // reasoning module, even on the authoritative server.
       allies: player.role === INFILTRATORS
         ? this.entities.filter(e => e.id !== entity.id && e.team === 1).map(e => e.id) : [],
-      entities: this.entities.map(e => ({id:e.id,name:e.name,hp:e.hp,departed:e.departed})),
+      entities: this.entities.map(e => ({id:e.id,name:e.name,colorName:e.colorName,hp:e.hp,departed:e.departed})),
       reportedBody:reported?{name:reported.name,room:this.roomAt(reported)?.name}:null,
       meeting: this.protocol.meeting,
       // Public knowledge only: the announced starting count and exposed roles.
@@ -1729,6 +1783,52 @@ export class ProtocolArena extends Arena {
       (e) => e !== entity && this.active(e) && distance(e, point) < 4,
     );
     return distance(entity, point) - (company ? 4 : 0);
+  }
+
+  /** Add evidence to a player's case board once. */
+  addClue(entity, clue) {
+    const player = this.privateFor(entity);
+    if (!player || !this.active(entity)) return;
+    player.clues ??= [];
+    if (player.clues.some((c) => c.key === clue.key)) return;
+    player.clues.push({ ...clue, at: Math.round(this.time) });
+    if (player.clues.length > 12) player.clues.shift();
+    if (!entity.bot) this.emit(entity.id, `New clue: ${clue.text}`);
+  }
+
+  /** Footprints and the security log keep recording for a few seconds. */
+  updateClues() {
+    const p = this.protocol;
+    for (const body of p.bodies) {
+      if (body.trailUntil > this.time) {
+        const killer = this.entities.find((e) => e.id === body.killerId);
+        const last = body.trail.at(-1);
+        // A hatch jump ends the trail rather than drawing prints through walls.
+        if (killer && distance(killer, last) > 1.5) body.trailUntil = this.time;
+        else if (killer && this.active(killer) && distance(killer, last) > 0.6 && body.trail.length < 16)
+          body.trail.push({ x: killer.x, y: killer.y });
+        body.trailRoom = this.roomAt(body.trail.at(-1))?.name ?? "the corridor";
+      }
+      if (body.logUntil > this.time) {
+        const room = (this.mapId === TRANSPORT_MAP.id ? TRANSPORT_MAP : PROTOCOL_MAP).rooms.find((r) => r.name === body.room);
+        if (room)
+          for (const e of this.entities)
+            if (e.id !== body.victimId && this.active(e) && !body.roomLog.includes(e.id) && this.roomAt(e) === room)
+              body.roomLog.push(e.id);
+      }
+    }
+    for (const [kind, smudge] of Object.entries(p.smudges ?? {})) {
+      const station = p.stations.find((s) => s.kind === kind || (kind === "power" && /power|generator/.test(s.kind)) || (kind === "comms" && /comms|radio/.test(s.kind)));
+      if (!station) continue;
+      for (const e of this.entities)
+        if (this.active(e) && this.near(e, station, 1.8))
+          this.addClue(e, {
+            key: `smudge:${kind}:${smudge.at}`,
+            kind: "smudge",
+            text: `Smudge on the ${kind === "power" ? "generator" : "radio"} panel: ${smudge.colors.join(" or ")}.`,
+            colors: [...smudge.colors],
+          });
+    }
   }
 
   /** A public radio call during play. Jammed comms carry nothing. */
@@ -2155,6 +2255,7 @@ export class ProtocolArena extends Arena {
       if (entity.bot) this.botRoam(entity, dt);
     }
     this.botChatter();
+    this.updateClues();
     for (const body of this.protocol.bodies)
       if (body.carriedBy) {
         const carrier = this.entities.find((e) => e.id === body.carriedBy);
@@ -2277,6 +2378,8 @@ export function protocolView(data, selfId) {
         x: knownPosition.x,
         y: knownPosition.y,
         reported: body.reported,
+        // Footprints show only to players who have found this body.
+        trail: body.killerId !== selfId && (player?.discoveredBodies?.includes(body.id) || body.reported) ? clone(body.trail ?? []) : [],
         carriedBy:
           currentlyVisible || (isInfiltrator && body.carriedBy === selfId)
             ? (body.carriedBy ?? null)
@@ -2438,6 +2541,7 @@ export function protocolView(data, selfId) {
                   .map((e) => ({ id: e.id, name: e.name })),
               }
             : {}),
+          clues: clone(player.clues ?? []).map(({ key, kind, text, at }) => ({ key, kind, text, at })),
           actionSeq: player.actionSeq,
           lastActionSeq: player.actionSeq,
           killReadyAt: player.killReadyAt,

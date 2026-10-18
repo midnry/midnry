@@ -12,6 +12,9 @@ export class ProtocolFocus {
       midnry-fps .mf-protocol-infoopen { position:absolute;z-index:7;top:calc(14px + var(--mf-safe-top));left:calc(14px + var(--mf-safe-left));min-height:44px;padding:10px 14px;border:1px solid #a5bba966;border-radius:14px;color:#f2f7ef;background:#12231dd9;font:700 13px var(--mf-body);touch-action:manipulation; }
       midnry-fps .mf-protocol-infoopen:focus-visible { outline:3px solid #d6edae;outline-offset:3px; }
       midnry-fps .mf-protocol-info { width:min(560px,calc(100% - 28px));max-height:calc(100% - 28px); }
+      midnry-fps .mf-protocol-caseboard { list-style:none;margin:6px 0 12px;padding:0;display:grid;gap:6px; }
+      midnry-fps .mf-protocol-caseboard li { padding:8px 10px;border-radius:10px;background:#ffffff0d;border:1px solid #a9bdb233;font-size:14px;line-height:1.4; }
+      midnry-fps .mf-protocol-caseboard li small { display:block;color:#b7c5bd;font-size:12px; }
       midnry-fps .mf-protocol-info .mf-protocol-hud { position:static;width:auto;color:#eef4ed; }
       midnry-fps .mf-protocol-info .mf-protocol-role { width:100%; }
       midnry-fps .mf-protocol-info .mf-protocol-tasklist { max-height:none; }
@@ -55,7 +58,7 @@ export class ProtocolFocus {
     g.shell.append(this.button);
     this.info = ui.dialog("mf-protocol-info", "Mission information");
     this.info.innerHTML =
-      '<div class="mf-protocol-dialoghead"><h2>Mission info</h2><button class="mf-protocol-infoclose">Done</button></div><p class="mf-protocol-infonote"></p><h3>Next objective</h3><p class="mf-protocol-infoobjective"></p>';
+      '<div class="mf-protocol-dialoghead"><h2>Mission info</h2><button class="mf-protocol-infoclose">Done</button></div><p class="mf-protocol-infonote"></p><h3>Next objective</h3><p class="mf-protocol-infoobjective"></p><h3>Case board</h3><ul class="mf-protocol-caseboard"></ul>';
     this.info.append(ui.hud);
     this.radio=document.createElement('section');this.radio.className='mf-protocol-radio-controls';
     this.radio.innerHTML='<h3>Emergency radio</h3><button class="mf-protocol-callradio">Call emergency meeting</button><p class="mf-protocol-radiohint"></p>';
@@ -262,6 +265,7 @@ export class ProtocolFocus {
     if (this.urgent.dataset.level !== level) this.urgent.dataset.level = level;
     if (this.urgent.textContent !== warning) this.urgent.textContent = warning;
     if (this.info.open) {
+      renderCaseBoard(this.info.querySelector(".mf-protocol-caseboard"), view);
       this.info.querySelector(".mf-protocol-infoobjective").textContent =
         `${this.ui.context.querySelector("b").textContent}. ${this.ui.context.querySelector("p").textContent}`;
       if (this.mapDetails.open && performance.now() - (this.mapAt || 0) > 500) this.drawMap();
@@ -291,5 +295,30 @@ export class ProtocolFocus {
     this.close();
     for (const node of [this.style, this.button, this.info, this.urgent]) node.remove();
     this.g.shell.classList.remove("mf-protocol-focus");
+  }
+}
+
+const CLUE_ICON = { log: "📋", footprints: "👣", smudge: "🖐️", camera: "🎥", note: "📝" };
+/** The player's private evidence, newest first. */
+export function renderCaseBoard(list, view) {
+  if (!list) return;
+  const clues = view?.protocol?.self?.clues || [];
+  const key = clues.map((c) => c.key).join("|");
+  if (list.dataset.key === key) return;
+  list.dataset.key = key;
+  list.replaceChildren();
+  if (!clues.length) {
+    const li = document.createElement("li");
+    li.textContent = "No clues yet. Find bodies, check sabotaged panels and wait for the security log after a report.";
+    list.append(li);
+    return;
+  }
+  for (const clue of [...clues].reverse()) {
+    const li = document.createElement("li");
+    li.textContent = `${CLUE_ICON[clue.kind] || "🔎"} ${clue.text}`;
+    const when = document.createElement("small");
+    when.textContent = `Found at ${Math.floor(clue.at / 60)}:${String(clue.at % 60).padStart(2, "0")}`;
+    li.append(when);
+    list.append(li);
   }
 }

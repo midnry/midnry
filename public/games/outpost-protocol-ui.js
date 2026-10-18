@@ -8,7 +8,7 @@ import { shareSummary, shareResult, whatsappUrl } from "./outpost-share.js";
 const GHOST_OPS = new Set(["ghost-begin", "task-step", "task-cancel"]);
 import { MissionTaskPanel } from "./outpost-task-ui.js";
 import { INTERACTIVE_TASKS } from "./outpost-task-games.js";
-import { ProtocolFocus } from "./outpost-protocol-focus.js";
+import { ProtocolFocus, renderCaseBoard } from "./outpost-protocol-focus.js";
 import { battlePreparation, eliminationConfirmation } from "./outpost-battle-presentation.js";
 import { protocolView } from "./outpost-protocol.js";
 import { PROTOCOL_MAP, TRANSPORT_MAP } from "./outpost-protocol-map.js";
@@ -52,6 +52,10 @@ const GUIDE = [
   [
     "Witnesses and radio meetings",
     "Report a nearby fallen operator with F or Report body. Press C or use Info → Emergency radio to call from anywhere with working communications. If jammed, use the wired emergency console or restore communications. Each player gets one emergency call. Meetings allow fifteen seconds of discussion and fifteen seconds to vote. Patient vitals and the flight pause during meetings and Last Stand; new meetings are blocked while autopilot is disengaged during flight. More than half the living patrol must vote for one suspect. The accused fights every other survivor after a five-second preparation. Ties and Skip return to the rescue. A 90-second limit prevents hiding indefinitely; expiry forfeits the accused. Combat eliminations are permanent. Unless the host turns it off, the patrol learns whether a removed player was an infiltrator. Operators win the moment every infiltrator is stopped; infiltrators win once they equal the remaining crew.",
+  ],
+  [
+    "Clues and the case board",
+    "Attacks and sabotage leave evidence. Find a body and you see muddy footprints leading toward where the attacker went. When a body is reported, base security shares who was in or near that room (the attacker is always on the list, with at least two others). Check a sabotaged generator or radio panel and you find a smudge: one of two colours belongs to the saboteur. Everything you find goes on your Case board in Info. In meetings, use Share clue, or tap Accuse, Ask where, Vouch or I saw an attack and then a name; the bots answer, argue and vote on what they hear.",
   ],
   [
     "Controls",
@@ -219,10 +223,15 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-radio p { margin:3px 0;font-size:13px;overflow-wrap:anywhere; }
       midnry-fps .mf-protocol-chatform { display:flex;gap:8px;margin-top:10px; }
       midnry-fps .mf-protocol-chatform input { flex:1;min-width:0;color:#edf5eb;background:#091710;border:1px solid #789c8166;font-size:14px; }
-      midnry-fps .mf-protocol-quicktalk { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px; }
+      midnry-fps .mf-protocol-quicktalk { display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:8px; }
+      midnry-fps .mf-protocol-meetingcase { margin-top:8px; }
+      midnry-fps .mf-protocol-meetingcase summary { cursor:pointer;font-size:14px;padding:6px 0; }
+      midnry-fps .mf-protocol-meetingcase .mf-protocol-caseboard { list-style:none;margin:4px 0;padding:0;display:grid;gap:5px; }
+      midnry-fps .mf-protocol-meetingcase li { padding:7px 9px;border-radius:9px;background:#ffffff0d;font-size:13px;line-height:1.4; }
+      midnry-fps .mf-protocol-meetingcase li small { display:block;color:#b7c5bd;font-size:12px; }
       midnry-fps .mf-protocol-quicktalk button { min-height:40px;padding:6px 4px;font-size:13px; }
       midnry-fps .mf-protocol-quicktalk button[aria-pressed="true"] { background:#ffc857;color:#1d1505;border-color:#ffc857; }
-      @media(max-width:600px) { midnry-fps .mf-protocol-quicktalk { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+      @media(max-width:600px) { midnry-fps .mf-protocol-quicktalk { grid-template-columns:repeat(2,minmax(0,1fr)); } midnry-fps .mf-protocol-quicktalk [data-say="clue"] { grid-column:1/-1; } }
       midnry-fps .mf-protocol-chatter { position:absolute;z-index:5;left:calc(14px + var(--mf-safe-left,0px));bottom:calc(150px + var(--mf-safe-bottom,0px));width:min(330px,calc(100% - 28px));display:grid;gap:4px;pointer-events:none; }
       midnry-fps .mf-protocol-chatter p { margin:0;padding:6px 10px;border-radius:10px;background:#0d1714d9;border:1px solid #a9bdb233;color:#e9f0ea;font:500 13px/1.35 var(--mf-body);animation:mf-chatter-in .25s ease-out; }
       midnry-fps .mf-protocol-chatter b { font-weight:700; }
@@ -358,7 +367,7 @@ export class ProtocolUI {
     this.arming = this.dialog("mf-protocol-codeform", "Arming-code challenge");
     this.arming.innerHTML = `<div class="mf-protocol-kicker">Final stage / Stay stationary</div><h2>Confirm the arming code</h2><p>Enter the displayed three-digit code. A wrong code, movement or an expired timer resets this planting attempt.</p><div class="mf-protocol-armingnumber" aria-label="Required arming code"></div><p class="mf-protocol-armingtimer" role="status"></p><form class="mf-protocol-code"><input type="text" inputmode="numeric" pattern="[0-9]{3}" maxlength="3" autocomplete="off" aria-label="Enter the displayed three-digit arming code" required><button type="submit">Arm charge</button></form>`;
     this.meeting = this.dialog("mf-protocol-meeting", "Radio meeting and Last Stand vote");
-    this.meeting.innerHTML = `<div class="mf-protocol-dialoghead"><div><span class="mf-protocol-kicker">Command radio / Movement paused</span><h2>Emergency meeting</h2><span class="mf-protocol-meetingphase"></span></div><button class="mf-protocol-meetingmenu">Menu</button></div><p class="mf-protocol-meetingreason"></p><div class="mf-protocol-radio" role="log" aria-live="polite" aria-label="Meeting discussion"></div><form class="mf-protocol-chatform"><input type="text" maxlength="180" autocomplete="off" aria-label="Radio discussion message" placeholder="Where were you? What did you see?"><button type="submit">Send</button></form><div class="mf-protocol-quicktalk" role="group" aria-label="Quick talk: choose, then tap a player"><button type="button" data-say="accuse">Accuse</button><button type="button" data-say="ask">Ask where</button><button type="button" data-say="vouch">Vouch</button><button type="button" data-say="saw">I saw an attack</button></div><p class="mf-protocol-meetinghint"></p><div class="mf-protocol-votes" role="group" aria-label="Vote for a Last Stand suspect"></div><button class="mf-protocol-skip" aria-pressed="false">Skip combat</button>`;
+    this.meeting.innerHTML = `<div class="mf-protocol-dialoghead"><div><span class="mf-protocol-kicker">Command radio / Movement paused</span><h2>Emergency meeting</h2><span class="mf-protocol-meetingphase"></span></div><button class="mf-protocol-meetingmenu">Menu</button></div><p class="mf-protocol-meetingreason"></p><div class="mf-protocol-radio" role="log" aria-live="polite" aria-label="Meeting discussion"></div><form class="mf-protocol-chatform"><input type="text" maxlength="180" autocomplete="off" aria-label="Radio discussion message" placeholder="Where were you? What did you see?"><button type="submit">Send</button></form><div class="mf-protocol-quicktalk" role="group" aria-label="Quick talk: choose, then tap a player"><button type="button" data-say="accuse">Accuse</button><button type="button" data-say="ask">Ask where</button><button type="button" data-say="vouch">Vouch</button><button type="button" data-say="saw">I saw an attack</button><button type="button" data-say="clue">Share clue</button></div><details class="mf-protocol-meetingcase"><summary>Case board</summary><ul class="mf-protocol-caseboard"></ul></details><p class="mf-protocol-meetinghint"></p><div class="mf-protocol-votes" role="group" aria-label="Vote for a Last Stand suspect"></div><button class="mf-protocol-skip" aria-pressed="false">Skip combat</button>`;
     this.live = element("div", "mf-sr-only");
     this.live.setAttribute("role", "status");
     this.live.setAttribute("aria-live", "polite");
@@ -625,6 +634,14 @@ export class ProtocolUI {
     g.on(this.meeting.querySelector(".mf-protocol-quicktalk"), "click", (event) => {
       const button = event.target.closest("[data-say]");
       if (!button || button.disabled) return;
+      if (button.dataset.say === "clue") {
+        const clue = this.safeView()?.protocol?.self?.clues?.at(-1);
+        if (clue && this.alive() && !this.actions.some((action) => action.op === "chat")) {
+          this.enqueue("chat", undefined, `Clue: ${clue.text}`);
+          this.chatReadyAt = performance.now() + 1050;
+        }
+        return;
+      }
       this.sayMode = this.sayMode === button.dataset.say ? null : button.dataset.say;
       this.voteKey = null;
       this.meetingKey = null;
@@ -1824,8 +1841,9 @@ export class ProtocolUI {
       votePhase ||
       performance.now() < (this.chatReadyAt || 0) ||
       this.actions.some((action) => action.op === "chat");
+    renderCaseBoard(this.meeting.querySelector(".mf-protocol-caseboard"), view);
     for (const button of this.meeting.querySelectorAll("[data-say]")) {
-      button.disabled = !alive || votePhase;
+      button.disabled = !alive || votePhase || (button.dataset.say === "clue" && !protocol.self?.clues?.length);
       button.setAttribute("aria-pressed", String(this.sayMode === button.dataset.say));
     }
     if (votePhase && this.sayMode) this.sayMode = null;

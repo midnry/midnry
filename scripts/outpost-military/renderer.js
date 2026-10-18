@@ -3024,6 +3024,10 @@ export class MilitaryRenderer {
     }
     this.protocolCharges.clear();
     this.protocolBodies.clear();
+    if (this.footprints) {
+      this.footprints.count = 0;
+      this.footprintKey = "";
+    }
   }
   updateProtocol(view, camera) {
     const protocol = view?.protocol;
@@ -3142,6 +3146,52 @@ export class MilitaryRenderer {
         this.removeProtocolObject(body.root, true);
         this.protocolBodies.delete(id);
       }
+    this.updateFootprints(protocol.bodies || []);
+  }
+  /** Clue: dark boot prints from a body along the attacker's first steps.
+   * The view only carries trails for players who found that body. */
+  updateFootprints(bodies) {
+    if (!this.footprints) {
+      const shape = new THREE.Shape();
+      shape.absellipse(0, 0, 0.07, 0.16, 0, Math.PI * 2);
+      const geometry = new THREE.ShapeGeometry(shape, 10);
+      geometry.rotateX(-Math.PI / 2);
+      const material = new THREE.MeshBasicMaterial({ color: "#4a3320", transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3 });
+      this.materials.add(material);
+      this.geometries.set("protocol-footprint", geometry);
+      this.footprints = new THREE.InstancedMesh(geometry, material, 160);
+      this.footprints.count = 0;
+      this.footprints.frustumCulled = false;
+      this.footprints.userData.noRoomCull = true;
+      this.scene.add(this.footprints);
+    }
+    const key = bodies.map((b) => `${b.id}:${b.trail?.length || 0}`).join("|");
+    if (key === this.footprintKey) return;
+    this.footprintKey = key;
+    const dummy = new THREE.Object3D();
+    let n = 0;
+    for (const body of bodies) {
+      const trail = body.trail || [];
+      for (let i = 1; i < trail.length && n < 160; i++) {
+        const a = trail[i - 1],
+          b = trail[i],
+          dx = (b.x - a.x) * SCALE,
+          dz = (b.y - a.y) * SCALE,
+          length = Math.hypot(dx, dz);
+        if (length < 0.01) continue;
+        const yaw = Math.atan2(dx, dz),
+          side = [Math.cos(yaw), -Math.sin(yaw)];
+        for (let d = 0.3; d < length && n < 160; d += 0.55) {
+          const left = Math.floor(d / 0.55) % 2 ? 1 : -1;
+          dummy.position.set(a.x * SCALE + (dx / length) * d + side[0] * 0.09 * left, 0.02, a.y * SCALE + (dz / length) * d + side[1] * 0.09 * left);
+          dummy.rotation.set(0, yaw, 0);
+          dummy.updateMatrix();
+          this.footprints.setMatrixAt(n++, dummy.matrix);
+        }
+      }
+    }
+    this.footprints.count = n;
+    this.footprints.instanceMatrix.needsUpdate = true;
   }
   hideCameraBody(camera) {
     // Takedown cleanup can restore actor visibility after updateActors. Enforce
