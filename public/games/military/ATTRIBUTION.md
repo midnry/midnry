@@ -38,3 +38,9 @@ The retained **legacy** head source is **Infinite, 3D Head Scan by Lee Perry-Smi
 Three.js 0.180.0 and its included addons are MIT licensed:
 https://github.com/mrdoob/three.js/blob/r180/LICENSE
 The bundled license is in THREE-LICENSE.txt. Weapons, fittings, crates, and projectile geometry are original procedural meshes.
+
+## Scanned props (models/props-v1.glb)
+
+CC0 models from Poly Haven, textures reduced to 512 px and meshes simplified for the web:
+old_military_crate, metal_jerrycan_green, barrel_03, Barrel_02, medical_box, plastic_crate_02,
+steel_frame_shelves_01, ammo_box and utility_box_01 — https://polyhaven.com/models

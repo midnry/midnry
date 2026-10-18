@@ -43,6 +43,7 @@ import { WorldVisibility } from "./world-visibility.js";
 import { roofLayout } from "./architecture.js";
 import { GroundTrail } from "./ground-trail.js";
 import { NightDressing } from "./realism-night.js";
+import { preparePropKit, buildFurniture } from "./realism-props.js";
 import { BattlePreparation } from "./battle-preparation.js";
 const SCALE = 3,
   ASSET = "/games/military/",
@@ -371,6 +372,30 @@ export class MilitaryRenderer {
     if (this.metalColor) this.metalColor.colorSpace = THREE.SRGBColorSpace;
     await Promise.all([
       loadRealismSurfaces(this),
+      (async () => {
+        // Scanned CC0 props. Optional: without them the base keeps plain blocks.
+        try {
+          const gltf = await new GLTFLoader().loadAsync(ASSET + "models/props-v1.glb?assetVersion=" + ASSET_CACHE);
+          if (this.disposed) {
+            this.disposeObject(gltf.scene);
+            return;
+          }
+          this.propScene = gltf.scene;
+          gltf.scene.traverse((o) => {
+            if (o.isMesh) {
+              this.geometries.set(`prop:${o.uuid}`, o.geometry);
+              for (const key of ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap"])
+                if (o.material[key]) this.textures.add(o.material[key]);
+              this.materials.add(o.material);
+            }
+          });
+          this.propKit = preparePropKit(gltf);
+          // Furniture tiles switch from wall blocks to props on the next build.
+          this.wallKeys = null;
+        } catch {
+          this.assetErrors.push("props");
+        }
+      })(),
       (async () => {
         try {
           const gltf = await new GLTFLoader().loadAsync(ASSET + "models/operator-v1.glb?assetVersion=" + ASSET_CACHE);
@@ -859,6 +884,19 @@ export class MilitaryRenderer {
   }
   protocolPropTile(x, y) {
     if (!["breakwater", "medevac"].includes(this.g.arena.mapId)) return false;
+    return this.metadataPropTile(x, y) || this.furnitureTile(x, y);
+  }
+  /** Solid furniture tiles (storage, racks, mess island, radar) dressed with
+   * scanned props once the prop kit has loaded; plain blocks otherwise. */
+  furnitureTile(x, y) {
+    return (
+      this.g.arena.mapId === "breakwater" &&
+      !!this.propKit &&
+      [2, 3, 4, 5].includes(this.g.level[y]?.[x]) &&
+      !this.metadataPropTile(x, y)
+    );
+  }
+  metadataPropTile(x, y) {
     return (this.protocolMetadata()?.props || []).some(
       (prop) =>
         prop.solid &&
@@ -1186,6 +1224,8 @@ export class MilitaryRenderer {
       this.cylinder(root, amber, [x, 8.8, z + 0.8], 0.045, 1.1, "z", 12);
     }
     this.buildMedicalFixtures(map, root, { steel, paint, rubber, amber, lamp });
+    if (map.id === "breakwater")
+      buildFurniture(this, root, this.g.level, (x, y) => this.furnitureTile(x, y));
     if (map.id === "medevac")
       this.buildTransportInterior(map, root, { steel, paint, rubber, amber, lamp });
     this.batchProtocolStatic(root);
@@ -3007,7 +3047,11 @@ export class MilitaryRenderer {
     // Natural lighting owns these values; resetting them here defeats fading.
     for (const material of this.protocolLightMaterials) {
       material.emissiveIntensity = powerOut ? 0.035 : 1.6;
-      material.color.set(powerOut ? "#414d4f" : "#d3edf0");
+      // Night shift fixtures burn warm, matching the light they cast.
+      material.color.set(powerOut ? "#414d4f" : this.night?.active ? "#ffe0b8" : "#d3edf0");
+      material.userData.dayEmissive ??= material.emissive.getHex();
+      if (this.night?.active) material.emissive.set("#ffcf96");
+      else material.emissive.setHex(material.userData.dayEmissive);
     }
     const tasks = protocol.self?.tasks || [];
     for (const [id, material] of this.protocolScreens) {
