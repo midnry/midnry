@@ -16,6 +16,7 @@ import {
   TRANSPORT_MAP,
   MEDICAL_SUPPLIES,
   AIRCRAFT_TASKS,
+  FLIGHT_DUTIES,
 } from "./outpost-protocol-map.js";
 import { beginCombat, advanceCombat, combatDamage, canFight } from "./outpost-protocol-combat.js";
 import { rememberObservation, chooseSuspect, strongestEvidence, nextStatement, roamLine } from './outpost-protocol-ai.js';
@@ -744,8 +745,31 @@ export class ProtocolArena extends Arena {
       player.bodyMemory = {};
       player.vehicleInput = { pitch: 0, steer: 0 };
     }
+    this.assignFlightDuties();
     this.addLog("Medical manifest loaded. All living patrols have boarded Lifeline Medevac.");
     return true;
+  }
+
+  /** One aircraft duty per crew member aboard, infiltrators included so they
+   * blend in (theirs only ever gets faked). Any operator may finish any open
+   * duty; the assignment is private to its holder. */
+  assignFlightDuties() {
+    const mission = this.protocol.mission,
+      tasks = mission.flightTasks,
+      crew = shuffled(this.entities.filter((e) => this.active(e)), () => this.random()),
+      spare = FLIGHT_DUTIES.filter((duty) => !tasks.some((task) => task.id === duty.id));
+    for (const task of tasks) delete task.assignee;
+    for (const e of crew) {
+      let task = tasks.find((t) => !t.done && !t.assignee);
+      if (!task && spare.length) {
+        task = { ...spare.shift(), done: false };
+        tasks.push(task);
+      }
+      if (!task) break;
+      task.assignee = e.id;
+      const duty = task.name.charAt(0).toLowerCase() + task.name.slice(1);
+      this.emit(e.id, `Your flight duty: ${duty}.`);
+    }
   }
 
   flightSafe() {
@@ -2297,16 +2321,20 @@ export class ProtocolArena extends Arena {
         if (mission.phase === "transport") {
           if (!vehicle.autopilot && !vehicle.pilotId && !vehicle.arrived) goal = TRANSPORT_MAP.helm;
           else if (vehicle.cargoDamage) goal = TRANSPORT_MAP.cargo;
-          else
+          else {
+            const open = mission.flightTasks.filter(
+              (task) =>
+                !task.done &&
+                (!task.system || this.protocol.sabotage[`${task.system}Until`] <= this.time),
+            );
+            // Own duty first; others' open duties once a little time has passed.
             goal =
-              mission.flightTasks
-                .filter(
-                  (task) =>
-                    !task.done &&
-                    (!task.system || this.protocol.sabotage[`${task.system}Until`] <= this.time),
-                )
-                .sort((a, b) => distance(entity, a) - distance(entity, b))[0] ??
+              open.find((task) => task.assignee === entity.id) ??
+              (this.time - (mission.departedAt ?? 0) > 20
+                ? open.sort((a, b) => distance(entity, a) - distance(entity, b))[0]
+                : null) ??
               TRANSPORT_MAP.cargo;
+          }
         }
         // Everything aboard: take off. Leaving also leaves any charges behind.
         if (mission.phase === "base" && this.manifestComplete()) goal = mission.loading;
@@ -2362,6 +2390,9 @@ export class ProtocolArena extends Arena {
               : vehicle.cargoDamage < 60
                 ? TRANSPORT_MAP.cargo
                 : null;
+        // Between sabotage attempts, stand at the assigned duty for cover.
+        if (!goal && mission.phase === "transport")
+          goal = mission.flightTasks.find((task) => task.assignee === entity.id && !task.done) ?? null;
         const choices = this.protocol.sites.filter((site) => this.availableSite(site, entity.id));
         choices.sort((a, b) => {
           const observers = (site) =>
@@ -2711,6 +2742,7 @@ export function protocolView(data, selfId) {
           duration: task.duration,
           system: task.system,
           done: task.done,
+          mine: !!task.assignee && task.assignee === selfId,
         })),
         manifest: mission.manifest.map((item) => ({
           id: item.id,

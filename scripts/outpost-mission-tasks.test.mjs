@@ -165,7 +165,7 @@ test("oxygen gauge and landing checks validate choices and record real flight du
     solve(a, e);
     assert.equal(task.done, true);
   }
-  assert.equal(a.privateFor(e).contributions.checks, 3);
+  assert.equal(a.privateFor(e).contributions.checks, Math.min(6, tasks.length));
 });
 test("fake packing maintains identical work posture but does not load the manifest", () => {
   const a = fresh(),
@@ -377,4 +377,32 @@ test("spatial material batches preserve transformed geometry, UVs and dynamic fi
   a.geometry.dispose();
   b.geometry.dispose();
   material.dispose();
+});
+test("every crew member aboard gets one private flight duty", () => {
+  const a = flight(),
+    tasks = a.protocol.mission.flightTasks,
+    aboard = a.entities.filter((e) => a.active(e));
+  assert.equal(tasks.length, Math.max(3, aboard.length));
+  for (const e of aboard) assert.equal(tasks.filter((t) => t.assignee === e.id).length, 1, e.id);
+  // Each player sees only their own assignment.
+  const me = aboard[0],
+    view = protocolView(a.snapshot(), me.id);
+  const mine = view.protocol.mission.flightTasks.filter((t) => t.mine);
+  assert.equal(mine.length, 1);
+  assert.equal(mine[0].id, tasks.find((t) => t.assignee === me.id).id);
+  assert.ok(view.protocol.mission.flightTasks.every((t) => !("assignee" in t)));
+});
+test("bot operators head for their own flight duty first", () => {
+  const a = flight(),
+    bot = a.entities.find((e) => e.team === 0 && a.privateFor(e).role === a.privateFor(a.entities[0]).role && e !== a.entities[0]) || a.entities[1];
+  bot.bot = true;
+  const p = a.privateFor(bot);
+  assert.equal(p.role, "operator");
+  p.botNextThink = 0;
+  p.botGoal = null;
+  a.protocol.mission.vehicle.autopilot = true;
+  a.botThink?.(bot, 0.1);
+  tick(a, 0.1);
+  const own = a.protocol.mission.flightTasks.find((t) => t.assignee === bot.id);
+  assert.equal(p.botGoal?.id, own.id);
 });

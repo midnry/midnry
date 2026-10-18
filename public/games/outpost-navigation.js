@@ -29,7 +29,8 @@ export function navigationGoals(view,selfId,wantMeeting=false){
    if(!goals.length)put(m.loading,'rally','Rally at the loading pad',40);
   }
  }else if(m.phase==='transport'){
-  for(const task of m.flightTasks||[])if(!task.done&&(!task.system||!(p.sabotage?.[task.system+'Until']>view.time)))put(task,'flight:'+task.id,task.name,20);
+  // Your own duty first; the rest are help once it is done.
+  for(const task of m.flightTasks||[])if(!task.done&&(!task.system||!(p.sabotage?.[task.system+'Until']>view.time)))put(task,'flight:'+task.id,(task.mine?'Your duty: ':'')+task.name,task.mine?18:20);
   if(operator&&v.arrived&&v.cargoDamage<=0&&m.flightTasks.every(t=>t.done))put(stations.find(s=>s.kind==='cargo'),'deliver','Deliver medical aid',10);
  }
  return goals;

@@ -250,8 +250,8 @@ export class ProtocolFocus {
       level = mission.vehicle.underControl ? "info" : "danger";
       warnings.push(
         mission.vehicle.underControl
-          ? "Manual flight"
-          : `Autopilot off · ${Math.max(0, Math.ceil((mission.vehicle.recoveryDeadline || view.time) - view.time))}s to recover`,
+          ? "Manual flight · pilot: restore autopilot"
+          : `Autopilot off · ${mission.vehicle.pilotId ? "pilot steadying the aircraft" : "take the helm in the cockpit"} · ${Math.max(0, Math.ceil((mission.vehicle.recoveryDeadline || view.time) - view.time))}s`,
       );
     } else if (p.detonateAt != null) {
       level = "danger";

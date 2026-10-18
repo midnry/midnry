@@ -68,6 +68,28 @@ export function createTaskGame(context, mission, id, now, random = Math.random) 
   } else if (context.kind === "flight-task" && context.target === "landing") {
     title = "Landing confirmation";
     steps = [memoryCode("The casualty station flashes its beacon code. Type it back to confirm landing.", random)];
+  } else if (context.kind === "flight-task" && context.target === "vitals") {
+    title = "Patient monitors";
+    steps = [memoryCode("Log the monitor reading. It shows for a moment, then type it from memory.", random)];
+  } else if (context.kind === "flight-task" && context.target === "fuel") {
+    title = "Fuel and engine gauges";
+    const target = 30 + Math.floor(random() * 9) * 5;
+    steps = [
+      {
+        prompt: `Balance the fuel transfer to ${target}% (±3%).`,
+        range: { min: 0, max: 100, target, tolerance: 3 },
+        answer: String(target),
+      },
+    ];
+  } else if (context.kind === "flight-task" && context.target === "restraints") {
+    title = "Stretcher restraints";
+    steps = [needle("Ratchet the stretcher strap tight: stop the needle in the green band.", random, 16)];
+  } else if (context.kind === "flight-task" && context.target === "rotor") {
+    title = "Rotor temperature";
+    steps = [needle("Open the cooling vent: stop the needle in the green band.", random, 16)];
+  } else if (context.kind === "flight-task" && context.target === "seals") {
+    title = "Cargo door seals";
+    steps = [sequence("Test the seal lights in the order they flash.", random)];
   } else if (context.kind === "deliver") {
     title = "Casualty delivery";
     const patients = mission.patients

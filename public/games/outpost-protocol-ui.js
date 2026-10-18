@@ -90,7 +90,7 @@ const GUIDE = [
   ],
   [
     "Recover a sabotaged aircraft",
-    "Aboard, complete the aircraft duties in Info: open the oxygen valve and set the gauge, secure the trauma packs, and type back the landing beacon code. If autopilot fails (sabotage or the Turbulence twist), take the cockpit helm: W/S sets altitude, A/D steers. Hold both gauges in their safe bands for three seconds, restore autopilot, then release the helm.",
+    "At take-off everyone aboard is given their own flight duty (shown as Yours in the duty list, and the arrow leads to it). Finish yours, then help with any duty still open: the aid can only be delivered once every duty is done. If autopilot fails (sabotage or the Turbulence twist), someone runs to the cockpit and presses Take helm. The flight panel shows a box with a dot: W moves the dot up, S down, A left and D right. Steer the dot into the green box and hold it there for three seconds, press Restore autopilot, then press Release helm. Miss the countdown and the aircraft crashes.",
   ],
   [
     "Infiltrators: stop the rescue",
@@ -347,6 +347,20 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-flight b { display:block;font-size:14px;color:#e2eccd; }
       midnry-fps .mf-protocol-flight meter { width:100%;height:12px;accent-color:#b6daa4; }
       midnry-fps .mf-protocol-flight .mf-protocol-recovery { color:#ffbf9d;font-weight:700; }
+      midnry-fps .mf-protocol-flightguide { display:grid;grid-template-columns:118px 1fr;gap:12px;align-items:center;margin:8px 0; }
+      midnry-fps .mf-protocol-attitude { position:relative;width:118px;height:118px;border:1px solid #ffffff40;background:#0006;overflow:hidden; }
+      midnry-fps .mf-protocol-attitude .mf-att-zone { position:absolute;left:41%;width:18%;top:7.5%;height:35%;background:#5fd38d40;border:1px solid #5fd38dcc; }
+      midnry-fps .mf-protocol-attitude span { position:absolute;font:700 11px var(--mf-display);color:#ffffff99; }
+      midnry-fps .mf-protocol-attitude .mf-att-up { top:2px;left:50%;transform:translateX(-50%); }
+      midnry-fps .mf-protocol-attitude .mf-att-down { bottom:2px;left:50%;transform:translateX(-50%); }
+      midnry-fps .mf-protocol-attitude .mf-att-left { left:4px;top:50%;transform:translateY(-50%); }
+      midnry-fps .mf-protocol-attitude .mf-att-right { right:4px;top:50%;transform:translateY(-50%); }
+      midnry-fps .mf-protocol-attitude .mf-att-dot { position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#ff8a65;box-shadow:0 0 0 3px #ff8a6544;transition:left .1s linear,top .1s linear; }
+      midnry-fps .mf-protocol-attitude.mf-att-ok .mf-att-dot { background:#5fd38d;box-shadow:0 0 0 3px #5fd38d55; }
+      midnry-fps .mf-protocol-recoverysteps { margin:0;padding-left:18px;font-size:13px;line-height:1.45;color:#ffffff99; }
+      midnry-fps .mf-protocol-recoverysteps li.now { color:#fff;font-weight:700; }
+      midnry-fps .mf-protocol-recoverysteps li.done { color:#5fd38d;text-decoration:line-through; }
+      midnry-fps .mf-protocol-flight :is(.mf-protocol-altitude,.mf-protocol-heading) { font-size:11px;color:#ffffffb3; }
       midnry-fps .mf-protocol-flightpad { position:absolute;z-index:5;left:14px;bottom:18px;display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:6px; }
       midnry-fps .mf-protocol-flightpad button { min-width:44px;min-height:44px;padding:4px;border:1px solid #b1cda177;background:#163025ed;border-radius:11px;color:#edf5e2;touch-action:none;font:700 18px var(--mf-body); }
       midnry-fps .mf-protocol-flightpad button[aria-pressed="true"] { background:#b9d5a1;color:#122219; }
@@ -393,7 +407,7 @@ export class ProtocolUI {
     this.flight = element("aside", "mf-protocol-flight");
     this.flight.hidden = true;
     this.flight.innerHTML =
-      '<b class="mf-protocol-flightstate">Manual aircraft control</b><div class="mf-protocol-altitude"></div><meter class="mf-protocol-altitudemeter" min="0" max="1" low=".5" high=".85" optimum=".65" aria-label="Flight level; safe range 50 to 85 percent"></meter><div class="mf-protocol-heading"></div><meter class="mf-protocol-headingmeter" min="-1" max="1" low="-.18" high=".18" optimum="0" aria-label="Course offset; target within plus or minus 18 percent"></meter><div class="mf-protocol-stabilize"></div><div class="mf-protocol-recovery" role="status"></div>';
+      '<b class="mf-protocol-flightstate">Manual aircraft control</b><div class="mf-protocol-flightguide"><div class="mf-protocol-attitude" aria-hidden="true"><i class="mf-att-zone"></i><span class="mf-att-up">W</span><span class="mf-att-down">S</span><span class="mf-att-left">A</span><span class="mf-att-right">D</span><b class="mf-att-dot"></b></div><ol class="mf-protocol-recoverysteps"><li data-step="dot">Steer the dot into the green box</li><li data-step="hold">Keep it there for 3 seconds</li><li data-step="auto">Press Restore autopilot</li><li data-step="release">Press Release helm</li></ol></div><div class="mf-protocol-altitude"></div><meter class="mf-protocol-altitudemeter" min="0" max="1" low=".5" high=".85" optimum=".65" aria-label="Flight level; safe range 50 to 85 percent"></meter><div class="mf-protocol-heading"></div><meter class="mf-protocol-headingmeter" min="-1" max="1" low="-.18" high=".18" optimum="0" aria-label="Course offset; target within plus or minus 18 percent"></meter><div class="mf-protocol-stabilize"></div><div class="mf-protocol-recovery" role="status"></div>';
     g.shell.append(this.flight);
     this.flightPad = element("div", "mf-protocol-flightpad");
     this.flightPad.hidden = true;
@@ -1446,7 +1460,7 @@ export class ProtocolUI {
     if (mission.phase === "transport") {
       const tasks = mission.flightTasks || [];
       if (!tasks.some((task) => task.id === this.trackedFlightTask && !task.done))
-        this.trackedFlightTask = tasks.find((task) => !task.done)?.id;
+        this.trackedFlightTask = (tasks.find((task) => task.mine && !task.done) ?? tasks.find((task) => !task.done))?.id;
       setText(
         details.querySelector("summary"),
         `Aircraft duties ${tasks.filter((task) => task.done).length}/${tasks.length}`,
@@ -1456,19 +1470,19 @@ export class ProtocolUI {
       this.taskKey = key;
       const list = details.querySelector(".mf-protocol-tasklist");
       list.replaceChildren();
-      for (const task of tasks) {
+      for (const task of [...tasks].sort((a, b) => Number(!!b.mine) - Number(!!a.mine))) {
         const button = element("button", "mf-protocol-task");
         button.dataset.flightTask = task.id;
         button.disabled = task.done;
         button.setAttribute("aria-pressed", String(task.id === this.trackedFlightTask));
         button.append(
-          element("span", "", task.name),
+          element("span", "", `${task.mine ? "Your duty: " : ""}${task.name}`),
           element(
             "small",
             "",
             task.done
               ? "Complete"
-              : `${this.roomName(task.room)} · ${task.duration}s hold · select to track`,
+              : `${this.roomName(task.room)} · ${task.duration}s hold · ${task.mine ? "yours" : "help if yours is done"}`,
           ),
         );
         list.append(button);
@@ -1605,7 +1619,7 @@ export class ProtocolUI {
           ? "Autopilot engaged · release helm to move"
           : vehicle.underControl
             ? "Aircraft stabilized · restore autopilot"
-            : "MANUAL RECOVERY / W S A D",
+            : "Manual recovery",
     );
     setText(
       this.flight.querySelector(".mf-protocol-altitude"),
@@ -1614,6 +1628,29 @@ export class ProtocolUI {
     setText(
       this.flight.querySelector(".mf-protocol-heading"),
       `Course offset ${vehicle.heading >= 0 ? "+" : ""}${Math.round(vehicle.heading * 100)}% · target ±18%${vehicle.heading > 0.18 ? " · hold A / ←" : vehicle.heading < -0.18 ? " · hold D / →" : ""}`,
+    );
+    // The picture: course across, height up and down; the green box is safe.
+    const attitude = this.flight.querySelector(".mf-protocol-attitude"),
+      dot = attitude.querySelector(".mf-att-dot"),
+      inZone = vehicle.altitude >= 0.5 && vehicle.altitude <= 0.85 && Math.abs(vehicle.heading) <= 0.18;
+    dot.style.left = `${clamp((vehicle.heading + 1) / 2, 0, 1) * 100}%`;
+    dot.style.top = `${clamp(1 - vehicle.altitude, 0, 1) * 100}%`;
+    attitude.classList.toggle("mf-att-ok", inZone || vehicle.autopilot);
+    if (!attitude.dataset.labels) {
+      // Touch players fly with the arrow pad, keyboards with W/S/A/D.
+      const touch = matchMedia("(pointer: coarse)").matches;
+      attitude.dataset.labels = touch ? "arrows" : "keys";
+      const labels = touch ? ["↑", "↓", "←", "→"] : ["W", "S", "A", "D"];
+      attitude.querySelectorAll("span").forEach((span, i) => (span.textContent = labels[i]));
+    }
+    const stage = vehicle.arrived || vehicle.autopilot ? 4 : vehicle.underControl ? 2 : inZone ? 1 : 0;
+    this.flight.querySelectorAll(".mf-protocol-recoverysteps li").forEach((li, i) => {
+      li.className = i < stage ? "done" : i === stage ? "now" : "";
+    });
+    if (vehicle.autopilot) this.flight.querySelectorAll(".mf-protocol-recoverysteps li")[3].className = "now";
+    setText(
+      this.flight.querySelector('[data-step="hold"]'),
+      stage === 1 ? `Keep it there: ${Math.min(3, vehicle.stableFor || 0).toFixed(1)} / 3 seconds` : "Keep it there for 3 seconds",
     );
     this.flight.querySelector(".mf-protocol-altitudemeter").value = vehicle.altitude;
     this.flight.querySelector(".mf-protocol-headingmeter").value = vehicle.heading;

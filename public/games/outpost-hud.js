@@ -49,6 +49,8 @@ midnry-fps .mf-protocol-focus .mf-toast { font-family: var(--mf-display) !import
   midnry-fps .mf-hudmanifest li b { font: 600 18px var(--mf-display); color: #ff7b6b; }
   midnry-fps .mf-hudmanifest li.part b { color: #f1f4ef; }
   midnry-fps .mf-hudmanifest li.done b { color: #8fe3a8; }
+  midnry-fps .mf-hudmanifest li.mine { background: #ffc85714; box-shadow: inset 3px 0 0 var(--mf-accent); }
+  midnry-fps .mf-hudmanifest li.mine b { color: var(--mf-accent); }
   midnry-fps .mf-hudmanifest li.done { color: #aeb9b2; }
   midnry-fps .mf-hudmanifest h4 { margin: 0; padding: 8px 14px 4px; font: 600 13px var(--mf-display); letter-spacing: 0.16em; text-transform: uppercase; color: #aeb9b2; }
   midnry-fps .mf-shell.mf-hudon .mf-hudphase { display: flex; position: absolute; z-index: 6; top: 16px; right: 78px; align-items: center; gap: 18px; height: 44px; padding: 0 16px; border: 1px solid #ffffff2b; border-radius: 3px; background: #070b0acc; backdrop-filter: blur(6px); pointer-events: none; font: 600 16px var(--mf-display); letter-spacing: 0.1em; text-transform: uppercase; color: #eef2ee; }
@@ -72,6 +74,11 @@ midnry-fps .mf-protocol-focus .mf-toast { font-family: var(--mf-display) !import
   midnry-fps .mf-shell.mf-hudon .mf-protocol-actions button:focus-visible { outline: 2px solid var(--mf-accent) !important; outline-offset: 2px; }
   /* Alert banner and radio ticker, top centre. */
   midnry-fps .mf-shell.mf-hudon .mf-protocol-urgent { top: 76px !important; padding: 8px 22px !important; border-radius: 4px !important; background: #06121acc !important; border: 1.5px solid #4fc3ff !important; color: #bfe9ff !important; box-shadow: 0 0 18px #4fc3ff55, inset 0 0 12px #4fc3ff22 !important; font: 600 22px var(--mf-display) !important; letter-spacing: 0.06em !important; text-transform: uppercase; animation: none !important; }
+  /* At the helm the flight panel takes the duty list's place; the alert stays centred. */
+  midnry-fps .mf-shell.mf-hudon.mf-protocol-piloting .mf-hudmanifest { display: none !important; }
+  midnry-fps .mf-shell.mf-hudon.mf-protocol-piloting .mf-protocol-flight { top: 118px !important; left: 22px !important; width: 330px !important; z-index: 7; padding: 14px 16px !important; border-radius: 0 0 3px 3px !important; border: 1px solid #ffffff2b !important; border-top: 0 !important; background: #070b0ae0 !important; font-size: 13px !important; }
+  midnry-fps .mf-shell.mf-hudon.mf-protocol-piloting .mf-protocol-flight > b { font: 700 16px var(--mf-display) !important; letter-spacing: 0.06em; text-transform: uppercase; }
+  midnry-fps .mf-shell.mf-hudon.mf-protocol-piloting .mf-protocol-urgent { left: 50% !important; right: auto !important; transform: translateX(-50%) !important; width: auto !important; }
   midnry-fps .mf-shell.mf-hudon .mf-protocol-urgent[data-level="danger"] { background: #1c0807cc !important; border-color: #ff5a4a !important; color: #ffd2cc !important; box-shadow: 0 0 18px #ff5a4a55, inset 0 0 12px #ff5a4a22 !important; }
   midnry-fps .mf-shell.mf-hudon .mf-protocol-urgent[data-level="warn"] { background: #1a1305cc !important; border-color: var(--mf-accent) !important; color: #ffe6a8 !important; box-shadow: 0 0 18px #ffc85744, inset 0 0 12px #ffc85722 !important; }
   midnry-fps .mf-shell.mf-hudon .mf-protocol-chatter { left: 50% !important; right: auto !important; top: 132px !important; bottom: auto !important; transform: translateX(-50%); width: min(520px, 46vw) !important; justify-items: center; }
@@ -158,8 +165,9 @@ export class OutpostHud {
     else if (mission?.flightTasks)
       rows =
         "<h4>Aircraft duties</h4>" +
-        mission.flightTasks
-          .map((task) => `<li class="${task.done ? "done" : ""}">${icon("plane")}<span>${task.name}</span><b>${task.done ? "Done" : "Open"}</b></li>`)
+        [...mission.flightTasks]
+          .sort((a, b) => Number(!!b.mine) - Number(!!a.mine))
+          .map((task) => `<li class="${task.done ? "done" : task.mine ? "mine" : ""}">${icon("plane")}<span>${task.mine ? "Yours: " : ""}${task.name}</span><b>${task.done ? "Done" : task.mine ? "You" : "Open"}</b></li>`)
           .join("");
     const manifestHtml = rows ? (rows.startsWith("<h4>") ? rows.replace(/^(<h4>.*?<\/h4>)/, "$1<ul>") + "</ul>" : `<ul>${rows}</ul>`) : "";
     if (manifestHtml !== this.lastManifest) {

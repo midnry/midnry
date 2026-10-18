@@ -266,6 +266,16 @@ export const AIRCRAFT_TASKS = Object.freeze([
   },
 ]);
 
+/** Extra in-flight duties: at take-off every crew member is assigned one
+ * (the three above first), so nobody aboard is left without a job. */
+export const FLIGHT_DUTIES = Object.freeze([
+  { id: "vitals", name: "Monitor the patients' vital signs", kind: "flight-task", x: 7.5, y: 5.5, room: "cabin", duration: 5, system: "power" },
+  { id: "fuel", name: "Check the fuel and engine gauges", kind: "flight-task", x: 10.5, y: 2.5, room: "cockpit", duration: 5, system: null },
+  { id: "restraints", name: "Tighten the stretcher restraints", kind: "flight-task", x: 8.5, y: 15.5, room: "cargo", duration: 5, system: null },
+  { id: "rotor", name: "Watch the rotor temperature", kind: "flight-task", x: 4.5, y: 8.5, room: "avionics", duration: 5, system: "power" },
+  { id: "seals", name: "Check the cargo door seals", kind: "flight-task", x: 10.5, y: 12.5, room: "cargo", duration: 5, system: null },
+]);
+
 export const TRANSPORT_MAP = {
   id: "medevac",
   name: "Lifeline Medevac",
@@ -298,6 +308,7 @@ export const TRANSPORT_MAP = {
   stations: [
     helm, avionics, cargo,
     ...AIRCRAFT_TASKS.filter(task=>task.id!=="landing"),
+    ...FLIGHT_DUTIES,
     { id: "medevac-radio", name: "Aircraft radio uplink", kind: "comms", x: 10.5, y: 5.5, room: "cabin" },
     { id: "medevac-power", name: "Aircraft power distribution", kind: "power", x: 5.5, y: 9.5, room: "avionics" },
   ],
