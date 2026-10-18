@@ -232,7 +232,9 @@ export class ProtocolArena extends Arena {
     // Variety (new base layout, a modifier and a twist) is for real matches;
     // practice and tests keep the classic fixed round.
     this.varietyRandom = options.variety === true ? random : null;
-    this.matchRoll = this.varietyRandom
+    // A newcomer's first matches skip the modifier, twist and emergencies.
+    const rookie = options.rookie === true;
+    this.matchRoll = this.varietyRandom && !rookie
       ? rollMatch(random, modifierChoice(options.modifier), this.shift === "full" ? [] : ["lone-wolf"])
       : { modifier: null, twist: null };
     const infiltrators = new Set(
@@ -245,7 +247,7 @@ export class ProtocolArena extends Arena {
       // Roles are announced when the assembly removes someone (host setting).
       revealRoles: options.revealRoles !== false,
       revealed: {},
-      match: { ...this.matchRoll, ...(this.shift === "full" ? {} : { shift: this.shift }) },
+      match: { ...this.matchRoll, ...(this.shift === "full" ? {} : { shift: this.shift }), ...(rookie ? { rookie: true } : {}) },
       // Everything that happened, secrets included: shown only after the round.
       timeline: [],
       killCooldown: this.matchRoll.modifier === "lone-wolf" ? 25 : PROTOCOL_RULES.killCooldown,
@@ -274,7 +276,7 @@ export class ProtocolArena extends Arena {
       events: [],
       // Real matches only; practice and tests keep the classic round.
       nextEventAt:
-        options.variety === true && options.events !== false
+        options.variety === true && options.events !== false && !rookie
           ? (this.shift === "full" ? 80 : QUICK.firstEvent) + random() * 30
           : Infinity,
       sandstormUntil: 0,
@@ -357,6 +359,14 @@ export class ProtocolArena extends Arena {
     }
     // One specialty per player, dealt from the seeded random.
     const dealt = dealSpecialties(this.entities, () => this.random());
+    // Rookies get the passive specialty: nothing extra to learn or press.
+    if (rookie)
+      for (const e of this.entities)
+        if (!e.bot && e.team === 0) {
+          const swap = Object.keys(dealt).find((id) => id !== e.id && dealt[id] === "engineer");
+          if (swap) dealt[swap] = dealt[e.id];
+          dealt[e.id] = "engineer";
+        }
     for (const e of this.entities) {
       const spec = SPECIALTIES[dealt[e.id]];
       Object.assign(this.protocol.players[e.id], {

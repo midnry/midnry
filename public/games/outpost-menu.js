@@ -52,6 +52,21 @@ midnry-fps .mf-modal.mf-home .mf-panel h1 em { color: var(--mf-accent) !importan
 midnry-fps .mf-logosub { margin: 4px 0 10px; font: 600 14px var(--mf-display); letter-spacing: 0.34em; text-transform: uppercase; color: #d9e0da; }
 midnry-fps .mf-logosub span { color: var(--mf-accent); }
 midnry-fps .mf-modal.mf-home[data-mode="signal"] label:has(.mf-protocol-preference) { display: none !important; }
+midnry-fps .mf-modal.mf-home[data-rookie] label:has(.mf-protocol-preference),
+midnry-fps .mf-modal.mf-home[data-rookie] .mf-challenges { display: none !important; }
+midnry-fps .mf-newhere { display: grid; gap: 6px; padding: 12px 14px; border: 1px solid var(--mf-accent); border-radius: 3px; background: #1a1305d9; color: #f1f4ef; }
+midnry-fps .mf-newhere[hidden] { display: none !important; }
+midnry-fps .mf-modal:not(.mf-home) .mf-newhere { display: none !important; }
+midnry-fps .mf-newhere b { font: 700 16px var(--mf-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--mf-accent); }
+midnry-fps .mf-newhere span { font-size: 14px; line-height: 1.4; color: #d9e0da; }
+midnry-fps .mf-newhere button { all: unset; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-self: start; min-height: 44px; padding: 0 16px; border-radius: 3px; background: var(--mf-accent); color: #1a1406; font: 700 15px var(--mf-display); letter-spacing: 0.06em; text-transform: uppercase; }
+midnry-fps .mf-newhere button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+midnry-fps .mf-newhere .mf-ico { width: 18px; height: 18px; }
+midnry-fps .mf-systemcheck { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 12px; }
+midnry-fps .mf-systemcheck .mf-ico { width: 18px; height: 18px; }
+midnry-fps .mf-playlists button[data-start]::after { content: "Start here"; position: absolute; top: 10px; left: 10px; padding: 3px 8px; border-radius: 2px; background: #8fe3a8; color: #0b1a10; font: 700 11px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; }
+/* Desktop has the top menu bar; the left column copies are only for phones. */
+@media (min-width: 1101px) and (min-height: 641px) { midnry-fps .mf-modal.mf-home .mf-homeactions { display: none !important; } }
 /* Last Signal on touch: lift the health box clear of the movement stick. */
 @media (pointer: coarse) { midnry-fps .mf-shell:not(.mf-protocol) .mf-bottom .mf-stat:first-child { transform: translateY(-128px); } }
 midnry-fps .mf-modal.mf-home .mf-modes { display: grid !important; grid-template-columns: 1fr !important; gap: 8px !important; margin: 0 !important; }
@@ -263,6 +278,13 @@ export class OutpostMenu {
       "mf-homeactions",
       `<button type="button" data-go="locker">${icon("lock")}Locker</button><button type="button" data-go="settings">${icon("gear")}Settings</button><button type="button" data-go="guide">${icon("book")}How to play</button><button type="button" data-go="practice">${icon("target")}Practice</button>`,
     );
+    // First visits: one clear suggestion before anything else.
+    this.welcome = el(
+      "div",
+      "mf-newhere",
+      `<b>New here?</b><span>Learn the basics in a 2-minute training, or just press Play: your first matches are kept simple.</span><button type="button" data-go="training">${icon("target")}Start training</button>`,
+    );
+    this.panel.querySelector(".mf-start")?.before(this.welcome);
     // Say what Play starts, so the choice below is never a surprise.
     this.summary = el("p", "mf-playsummary");
     this.summary.setAttribute("aria-live", "polite");
@@ -271,7 +293,7 @@ export class OutpostMenu {
     this.foot = el(
       "div",
       "mf-homefoot",
-      `<button type="button" data-go="device">${icon("chip")}Device check</button><button type="button" class="mf-homeexit" data-go="exit">${icon("exit")}Exit game</button>`,
+      `<button type="button" class="mf-homeexit" data-go="exit">${icon("exit")}Exit game</button>`,
     );
     this.panel.append(this.foot);
     // Right column.
@@ -299,7 +321,7 @@ export class OutpostMenu {
       const mode = event.target.closest("[data-mode]");
       if (mode && !mode.disabled) this.pick(mode.dataset.mode);
     };
-    for (const node of [this.top, this.actions, this.foot, this.side, this.cards]) g.on(node, "click", go);
+    for (const node of [this.top, this.actions, this.foot, this.side, this.cards, this.welcome]) g.on(node, "click", go);
   }
 
   /** Split the settings dialog into sections with a sidebar. The controls
@@ -326,6 +348,17 @@ export class OutpostMenu {
         continue;
       }
       current.section.append(node);
+    }
+    // The device check lives in System rather than on the home screen.
+    const system = tabs.find((t) => t.title === "System");
+    if (system) {
+      const check = el("button", "mf-systemcheck", `${icon("chip")}Run device check`);
+      check.type = "button";
+      check.addEventListener("click", () => {
+        dialog.close?.();
+        this.go("device");
+      });
+      system.section.append(check);
     }
     // Graphics first, like most games.
     tabs.sort((a, b) => (b.title === "Graphics") - (a.title === "Graphics"));
@@ -367,6 +400,12 @@ export class OutpostMenu {
   /** Run an original control so its behaviour stays the single source of truth. */
   go(where) {
     const g = this.g;
+    // First-timers go straight into the operator drills, no track choice.
+    if (where === "training") {
+      if (g.mode !== "protocol") g.mode = "protocol";
+      if (g.practice?.start?.(0, "operator")) return;
+      where = "practice";
+    }
     const find = {
       locker: () => g.$(".mf-lockeropen"),
       settings: () => g.$(".mf-graphics"),
@@ -441,6 +480,18 @@ export class OutpostMenu {
     }
     if (!this.modal.hidden) g.shell.classList.remove("mf-hudon");
     if (!home) return;
+    // Newcomers (fewer than two finished rounds) see a simpler home screen.
+    const rounds = g.retention?.profile?.matches ?? 0,
+      rookie = rounds < 2 && !g.online;
+    if (this.modal.hasAttribute("data-rookie") !== rookie) this.modal.toggleAttribute("data-rookie", rookie);
+    let trained = false;
+    try {
+      trained = !!localStorage.getItem("midnry-outpost-practice");
+    } catch {}
+    const welcome = rookie && rounds === 0 && !trained && !signal;
+    if (this.welcome.hidden === welcome) this.welcome.hidden = !welcome;
+    const quick = this.cards.querySelector('[data-mode="quick"]');
+    if (quick && quick.hasAttribute("data-start") !== (rookie && !signal)) quick.toggleAttribute("data-start", rookie && !signal);
     const profile = g.retention?.profile;
     const name = g.playerName || "Operator";
     const level = profile ? levelOf(profile) : 1,
@@ -497,7 +548,7 @@ export class OutpostMenu {
     // Mirror the original buttons' availability.
     for (const proxy of this.modal.querySelectorAll("[data-go]")) {
       const where = proxy.dataset.go;
-      if (where === "home") continue;
+      if (where === "home" || where === "training") continue;
       const original = {
         locker: ".mf-lockeropen",
         settings: ".mf-graphics",

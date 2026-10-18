@@ -52,3 +52,19 @@ test("quick shifts never roll Lone wolf, since they already have one infiltrator
   }
   assert.notEqual(new ProtocolArena({ humans: [{ id: "me" }], variety: true, shift: "quick", modifier: "lone-wolf" }).protocol.match.modifier, "lone-wolf");
 });
+
+test("rookie matches skip modifiers, twists, emergencies and active specialties", async () => {
+  const { createArena } = await import("../public/games/outpost-protocol.js");
+  for (let seed = 1; seed < 6; seed++) {
+    let s = seed;
+    const random = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+    const a = createArena({ mode: "protocol", humans: [{ id: "player", team: 0 }], variety: true, rookie: true, shift: "quick", rolePreference: "operator", random });
+    assert.equal(a.protocol.match.modifier, null);
+    assert.equal(a.protocol.match.twist, null);
+    assert.equal(a.protocol.match.rookie, true);
+    assert.equal(a.protocol.nextEventAt, Infinity);
+    const me = a.privateFor(a.entities.find((e) => e.id === "player"));
+    assert.equal(me.role, "operator");
+    assert.equal(me.specialty, "engineer");
+  }
+});

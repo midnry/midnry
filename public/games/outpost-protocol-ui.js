@@ -988,6 +988,28 @@ export class ProtocolUI {
     const match = (this.view || this.safeView())?.protocol?.match;
     const list = this.brief.querySelector(".mf-protocol-briefmatch");
     list.replaceChildren();
+    // A newcomer's first matches: four plain steps and nothing else.
+    if (match?.rookie && !infiltrator) {
+      const total = this.view?.protocol?.mission?.manifest?.reduce((n, i) => n + i.required, 0) ?? 9,
+        touch = matchMedia("(pointer: coarse)").matches;
+      setText(this.brief.querySelector(".mf-protocol-briefcopy"), "Save the wounded soldiers. Here is all you need to know:");
+      setText(this.brief.querySelector(".mf-protocol-brieffoot"), "");
+      for (const [name, text] of [
+        ["1 · Follow the arrow", "It always points to your next job."],
+        [touch ? "2 · Tap Check equipment at a cabinet" : "2 · Press E at a cabinet", "Take a medical item, then carry it to the helicopter pad. Do this until all " + total + " are loaded."],
+        ["3 · Board and fly", "Get on the helicopter, do your flight duty, then hand out the aid."],
+        ["4 · Watch your crew", `One player is secretly working against you. If you see something suspicious, ${touch ? "use Info → Emergency radio" : "press C"} to call a vote.`],
+      ]) {
+        const item = element("li");
+        item.append(element("b", "", name), document.createTextNode(text));
+        list.append(item);
+      }
+      list.hidden = false;
+      this.releaseMouse();
+      if (!this.brief.open) this.brief.showModal();
+      this.brief.querySelector("button").focus({ preventScroll: true });
+      return;
+    }
     const spec = SPECIALTIES[self.specialty?.id];
     const shiftLine =
       match?.shift === "daily"
@@ -2249,7 +2271,7 @@ export class ProtocolUI {
         instructions,
         "On foot: WASD / left joystick moves. Press E / Check equipment for packing, repairs, aircraft checks and delivery. Hold E / the action button to load, depart, disable a charge or sabotage. F reports, C calls a meeting, X eliminates, B opens tactics. At the helm: W/S adjusts flight level; A/D steers. Hold both gauges in their safe bands for three seconds, restore autopilot, then release the helm. Escape / P opens the menu.",
       );
-    if (g.state === "fresh" && !g.online) setText(g.$(".mf-start"), "PLAY OFFLINE →");
+    if (g.state === "fresh" && !g.online) setText(g.$(".mf-start"), "PLAY →");
     if (g.state === "ended") this.result();
   }
 

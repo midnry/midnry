@@ -10,7 +10,7 @@ export class MenuUI {
     g.$(".mf-eyebrow").textContent = "MIDNRY / TACTICAL OPERATIONS";
     this.playChoice = new URLSearchParams(location.search).has("room") ? "online" : "offline";
     modes.setAttribute("aria-label", "Play Blackout Protocol");
-    modes.innerHTML = '<button class="mf-offlinechoice" data-play="offline" aria-pressed="true">Offline<small>Smart AI operators & infiltrators</small></button><button class="mf-onlinechoice" data-play="online" aria-pressed="false">Online<small>Friends + smart bots</small></button>';
+    modes.innerHTML = '<button class="mf-offlinechoice" data-play="offline" aria-pressed="true">Offline<small>Play with bots on this device</small></button><button class="mf-onlinechoice" data-play="online" aria-pressed="false">Online<small>Play with friends</small></button>';
     g.$(".mf-boot").hidden = true;
     // The old field guide covers retired combat modes; "How to play" in the
     // menu opens the Blackout Protocol manual instead.
@@ -285,7 +285,7 @@ export class MenuUI {
       g.$(".mf-start").textContent = "CREATE OR JOIN A ROOM";
     } else if (!g.online) {
       g.$(".mf-start").disabled = !g.militaryLoaded;
-      if (g.state === "fresh") g.$(".mf-start").textContent = "PLAY OFFLINE →";
+      if (g.state === "fresh") g.$(".mf-start").textContent = "PLAY →";
     }
     g.$(".mf-maphint").textContent = map.tag;
     g.$(".mf-weaponhint").textContent = `${weapon.kind} · ${weapon.mag} rounds`;

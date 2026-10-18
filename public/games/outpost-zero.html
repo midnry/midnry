@@ -2352,6 +2352,14 @@
         if (customElements.get("midnry-fps")) return;
         const TAU = Math.PI * 2;
 
+        /** Finished rounds on this device (the locker profile). */
+        const completedRounds = () => {
+          try {
+            return Number(JSON.parse(localStorage.getItem("midnry-outpost-profile") || "{}").matches) || 0;
+          } catch {
+            return 0;
+          }
+        };
         const storedSetting = (key) => {
           try {
             return localStorage.getItem(key);
@@ -2829,12 +2837,16 @@
             }
             // Offline shift length; the daily case is a seeded Quick shift
             // where everyone is an operator hunting the same infiltrator.
-            this.shift = shiftChoice(this.shift || storedSetting("midnry-outpost-shift"));
+            // A newcomer's first two matches: a short Quick shift with no
+            // surprises (no modifier, twist, emergencies or active specialty).
+            const rookie = this.mode === "protocol" && !this.online && completedRounds() < 2;
+            this.shift = shiftChoice(this.shift || storedSetting("midnry-outpost-shift") || (rookie ? "quick" : null));
             const daily = this.mode === "protocol" && this.shift === "daily";
             this.dailyCase = daily ? dailyKey() : null;
             this.arena = createArena({
               interactiveTasks: true,
-              rolePreference: daily ? "operator" : this.rolePreference,
+              rookie: rookie && !daily,
+              rolePreference: daily || rookie ? "operator" : this.rolePreference,
               shift: this.mode === "protocol" ? this.shift : "full",
               ...(daily ? { random: dailyRandom(this.dailyCase) } : {}),
               mode: this.mode,

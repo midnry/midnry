@@ -74,6 +74,8 @@ midnry-fps .mf-protocol-focus .mf-toast { font-family: var(--mf-display) !import
   midnry-fps .mf-shell.mf-hudon .mf-protocol-actions button:focus-visible { outline: 2px solid var(--mf-accent) !important; outline-offset: 2px; }
   /* Alert banner and radio ticker, top centre. */
   midnry-fps .mf-shell.mf-hudon .mf-protocol-urgent { top: 76px !important; padding: 8px 22px !important; border-radius: 4px !important; background: #06121acc !important; border: 1.5px solid #4fc3ff !important; color: #bfe9ff !important; box-shadow: 0 0 18px #4fc3ff55, inset 0 0 12px #4fc3ff22 !important; font: 600 22px var(--mf-display) !important; letter-spacing: 0.06em !important; text-transform: uppercase; animation: none !important; }
+  /* Training drills: the coach sits top-centre, clear of the supply list. */
+  midnry-fps .mf-shell.mf-hudon .mf-practice-coach { top: 16px !important; left: 50% !important; transform: translateX(-50%); width: min(520px, 44vw) !important; min-height: 44px; padding: 10px 16px !important; border: 1px solid var(--mf-accent) !important; border-radius: 3px !important; background: #070b0ae6 !important; font: 600 15px/1.35 var(--mf-body) !important; z-index: 7; }
   /* At the helm the flight panel takes the duty list's place; the alert stays centred. */
   midnry-fps .mf-shell.mf-hudon.mf-protocol-piloting .mf-hudmanifest { display: none !important; }
   midnry-fps .mf-shell.mf-hudon.mf-protocol-piloting .mf-protocol-flight { top: 118px !important; left: 22px !important; width: 330px !important; z-index: 7; padding: 14px 16px !important; border-radius: 0 0 3px 3px !important; border: 1px solid #ffffff2b !important; border-top: 0 !important; background: #070b0ae0 !important; font-size: 13px !important; }
