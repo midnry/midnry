@@ -2370,17 +2370,7 @@ export class ProtocolUI {
       const row = element("div", "mf-protocol-sharerow");
       row.append(share, chat);
       box.append(element("p", "", card.headline), row, status);
-      const board = element("section", "mf-protocol-dailyboard");
-      board.setAttribute("aria-live", "polite");
-      board.append(element("h3", "", "Today's leaderboard"), element("p", "", "Posting your score…"));
-      box.append(board);
       this.results.append(box);
-      const name = g.playerName || storedName() || "Operator";
-      submitDaily(daily.key, name, daily.run)
-        .then((data) => renderDailyBoard(board, data))
-        .catch(() => {
-          board.querySelector("p").textContent = "The leaderboard is offline right now. Your best score is saved on this device.";
-        });
     }
     // What really happened, secrets included.
     if (protocol.timeline?.length) {
