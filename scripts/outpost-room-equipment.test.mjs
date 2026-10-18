@@ -110,6 +110,9 @@ test("authenticated online votes unlock Last Stand weapons only for opposing pub
     members = [host];
   for (let i = 0; i < 7; i++)
     members.push(await roomAction({ op: "join", code: host.code }, `last-stand-${i}`));
+  // A fixed modifier: Lone wolf leaves one infiltrator, and voting them out
+  // would end the round instead of returning to it.
+  await roomAction({ op: "settings", ...session(host), modifier: "short-supplies" }, "host");
   await roomAction({ op: "start", ...session(host) }, "host");
   const row = rooms.get(host.code),
     a = restoreArena(row.state.arena),
@@ -121,7 +124,13 @@ test("authenticated online votes unlock Last Stand weapons only for opposing pub
     entity.bot = false;
   }
   Object.assign(e, { x: a.protocol.emergency.x, y: a.protocol.emergency.y });
-  a.entities.find((e) => e.id === members[7].id).hp = 0;
+  // An absent crew member: always an operator who is not voting, so the
+  // round keeps both infiltrators' outcome open.
+  const voters = new Set(members.slice(0, 4).map((m) => m.id));
+  const absent =
+    a.entities.find((x) => x.team === 0 && x.id !== target.id && !voters.has(x.id)) ??
+    a.entities.find((e) => e.id === members[7].id);
+  absent.hp = 0;
   // Rooms deal a random modifier; Radio silence would delay this meeting.
   a.protocol.emergencyReadyAt = 0;
   a.action(e, { seq: 0, op: "meeting" });

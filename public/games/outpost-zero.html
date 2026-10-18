@@ -2316,6 +2316,8 @@
       import { ProtocolUI } from "./outpost-protocol-ui.js";
       import { SpectatorUI } from "./outpost-spectator.js";
       import { OutpostTheme } from "./outpost-theme.js";
+      import { OutpostMenu } from "./outpost-menu.js";
+      import { OutpostHud } from "./outpost-hud.js";
       import { deathTiming, deathFrame } from "./outpost-death.js";
       import { VictimDeathUI } from "./outpost-death-ui.js";
       import { ConnectionUI } from "./outpost-connection.js";
@@ -2463,6 +2465,8 @@
             this.voice = new ProximityVoice(this);
             this.assetCache = new AssetCacheUI(this);
             this.theme = new OutpostTheme(this);
+            this.homeMenu = new OutpostMenu(this);
+            this.hudStyle = new OutpostHud(this);
             this.protocolUI.refreshMenu();
             this.initMilitaryStatus();
             // Every entry point uses the same cinematic renderer. Query strings
@@ -4332,6 +4336,8 @@
             this.deathUI?.dispose();
             this.spectator?.dispose();
             this.theme?.dispose();
+            this.homeMenu?.dispose();
+            this.hudStyle?.dispose();
             this.protocolUI?.dispose();
             clearTimeout(this.loadingTimer);
             window.outpostLoading?.stop();

@@ -41,6 +41,8 @@ export const PROTOCOL_RULES = Object.freeze({
   killCooldown: 40,
   // Each quarter of the manifest loaded locks the base down for 25 seconds.
   lockdown: 25,
+  // Minimum distance between two players, in tiles (about a metre).
+  personalSpace: 0.34,
   sabotageCooldown: 35,
   sabotageDuration: 40,
   ventCooldown: 10,
@@ -2418,6 +2420,36 @@ export class ProtocolArena extends Arena {
       player.botGoal = null;
   }
 
+  /** Bodies do not overlap: anyone closer than a shoulder width is eased
+   * apart (walls still block). Gentle, so it never feels like a shove. */
+  separate(dt) {
+    const gap = PROTOCOL_RULES.personalSpace,
+      pilot = this.protocol.mission?.vehicle?.pilotId,
+      people = this.entities.filter((e) => this.active(e) && e.id !== pilot);
+    for (let i = 0; i < people.length; i++)
+      for (let j = i + 1; j < people.length; j++) {
+        const a = people[i],
+          b = people[j];
+        let dx = b.x - a.x,
+          dy = b.y - a.y,
+          d = Math.hypot(dx, dy);
+        if (d >= gap) continue;
+        if (d < 1e-4) {
+          // Exactly on top of each other: split along a fixed direction.
+          const angle = (i * 2.399 + j) % (Math.PI * 2);
+          dx = Math.cos(angle);
+          dy = Math.sin(angle);
+          d = 1;
+        } else {
+          dx /= d;
+          dy /= d;
+        }
+        const push = Math.min((gap - Math.min(d, gap)) / 2, 2.5 * dt);
+        this.move(a, -dx * push, -dy * push);
+        this.move(b, dx * push, dy * push);
+      }
+  }
+
   freezeDeadlines(dt) {
     const p = this.protocol;
     if (p.detonateAt !== null) p.detonateAt += dt;
@@ -2515,6 +2547,7 @@ export class ProtocolArena extends Arena {
       if (this.protocol.phase !== "roam") break;
       if (entity.bot) this.botRoam(entity, dt);
     }
+    if (this.protocol.phase === "roam") this.separate(dt);
     this.botChatter();
     this.updateClues();
     this.updateEvents();

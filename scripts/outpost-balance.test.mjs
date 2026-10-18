@@ -54,3 +54,17 @@ test("operator bots head for take-off as soon as everything is loaded", () => {
     [a.protocol.mission.loading.x, a.protocol.mission.loading.y],
   );
 });
+
+test("players never stand inside each other; walls still win", () => {
+  const a = make();
+  const [one, two, three] = a.entities;
+  for (const e of a.entities) Object.assign(e, { x: 20.5, y: 20.5 + a.entities.indexOf(e) * 2 });
+  Object.assign(one, { x: 12.5, y: 15.5 });
+  Object.assign(two, { x: 12.5, y: 15.5 });
+  Object.assign(three, { x: 12.6, y: 15.5 });
+  for (let i = 0; i < 20; i++) a.separate(0.1);
+  const d = (p, q) => Math.hypot(p.x - q.x, p.y - q.y);
+  for (const [p, q] of [[one, two], [one, three], [two, three]])
+    assert.ok(d(p, q) >= PROTOCOL_RULES.personalSpace - 0.01, `${d(p, q)}`);
+  for (const e of [one, two, three]) assert.ok(a.canMove(e.x, e.y), "nobody is pushed into a wall");
+});
