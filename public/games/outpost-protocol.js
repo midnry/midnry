@@ -10,7 +10,7 @@ import { recordVictimTakedown } from "./outpost-death.js";
 import { rollMatch, modifierChoice, dealSupplies, liveSites, shuffled, sightRange } from "./outpost-variety.js";
 import { SPECIALTIES, dealSpecialties } from "./outpost-specialties.js";
 import { EVENT_KINDS, nextEvent } from "./outpost-events.js";
-import { QUICK, quickRequired } from "./outpost-shifts.js";
+import { QUICK } from "./outpost-shifts.js";
 import {
   PROTOCOL_MAP,
   TRANSPORT_MAP,
@@ -35,7 +35,12 @@ export const PROTOCOL_RULES = Object.freeze({
   reportRange: 1.7,
   eliminateRange: 1.2,
   consoleRange: 1.2,
-  killCooldown: 25,
+  // Kills are spaced out so the rescue can realistically finish: no kill in
+  // the first 50 seconds, then one per infiltrator every 40.
+  firstKill: 50,
+  killCooldown: 40,
+  // Each quarter of the manifest loaded locks the base down for 25 seconds.
+  lockdown: 25,
   sabotageCooldown: 35,
   sabotageDuration: 40,
   ventCooldown: 10,
@@ -240,7 +245,7 @@ export class ProtocolArena extends Arena {
       match: { ...this.matchRoll, ...(this.shift === "full" ? {} : { shift: this.shift }) },
       // Everything that happened, secrets included: shown only after the round.
       timeline: [],
-      killCooldown: this.matchRoll.modifier === "lone-wolf" ? 15 : PROTOCOL_RULES.killCooldown,
+      killCooldown: this.matchRoll.modifier === "lone-wolf" ? 25 : PROTOCOL_RULES.killCooldown,
       taskDone: 0,
       taskTotal: 0,
       armedCount: 0,
@@ -322,7 +327,7 @@ export class ProtocolArena extends Arena {
         channel: null,
         contributions: contributionsOf(),
         contributionEvents: [],
-        killReadyAt: 12,
+        killReadyAt: PROTOCOL_RULES.firstKill,
         sabotageReadyAt: 15,
         ventReadyAt: 0,
         emergenciesLeft: 1,
@@ -410,7 +415,7 @@ export class ProtocolArena extends Arena {
     const manifest = MEDICAL_SUPPLIES.map((item) => ({
       id: item.id,
       name: item.name,
-      required: this.shift === "full" ? item.required : quickRequired(item.required),
+      required: item.required,
       loaded: 0,
     }));
     let priority = null;
@@ -641,6 +646,28 @@ export class ProtocolArena extends Arena {
         this.privateFor(entity).cargo?.supplyId === supplyId,
     ).length;
     return Math.max(0, item.required - item.loaded - carried);
+  }
+
+  /** Each quarter of the manifest loaded: a short base lockdown that holds
+   * every infiltrator's elimination and sabotage. Progress pushes back. */
+  checkLockdown() {
+    const p = this.protocol,
+      manifest = p.mission.manifest,
+      loaded = manifest.reduce((n, item) => n + item.loaded, 0),
+      total = manifest.reduce((n, item) => n + item.required, 0);
+    const quarter = Math.min(3, Math.floor((loaded / Math.max(1, total)) * 4));
+    if (quarter <= (p.lockdowns || 0)) return;
+    p.lockdowns = quarter;
+    p.lockdownUntil = this.time + PROTOCOL_RULES.lockdown;
+    for (const player of Object.values(p.players))
+      if (player.role === INFILTRATORS) {
+        player.killReadyAt = Math.max(player.killReadyAt, p.lockdownUntil);
+        player.sabotageReadyAt = Math.max(player.sabotageReadyAt, p.lockdownUntil);
+      }
+    const text = `🔒 ${quarter * 25}% loaded. Base lockdown: ${PROTOCOL_RULES.lockdown} seconds of security sweeps.`;
+    this.addLog(text);
+    this.radio(this.entities.find((e) => e.bot && this.active(e) && e.team === 0) ?? null, text);
+    for (const e of this.entities) if (this.active(e) && !e.bot) this.emit(e.id, text);
   }
 
   manifestComplete() {
@@ -914,6 +941,8 @@ export class ProtocolArena extends Arena {
       !this.active(target) ||
       target.team === 1 ||
       player.killReadyAt > this.time ||
+      // Aboard the medevac there is nowhere to hide: sabotage only.
+      this.protocol.mission?.phase === "transport" ||
       !this.near(entity, target, PROTOCOL_RULES.eliminateRange) ||
       this.protocol.bodies.some((b) => b.carriedBy === entity.id)
     )
@@ -1680,6 +1709,7 @@ export class ProtocolArena extends Arena {
         recordContribution(player, "supplies", cargo.id || `${cargo.supplyId}:${item.loaded}`);
         player.cargo = null;
         this.addLog("A medical supply was secured in the medevac cargo hold.");
+        this.checkLockdown();
       } else if (player.role === INFILTRATORS) player.cargo = null;
       else this.returnCargo(entity);
     } else if (channel.kind === "depart") {
@@ -2121,8 +2151,13 @@ export class ProtocolArena extends Arena {
     const p = this.protocol,
       player = this.privateFor(entity);
     if (p.mission.phase !== "base" || !p.bombs.length) return null;
-    const seat = this.entities.indexOf(entity);
-    if (p.detonateAt === null && seat % 3 !== 0) return null;
+    // Outside a countdown, only one operator bot keeps checking covers; the
+    // rest keep the supplies moving.
+    if (
+      p.detonateAt === null &&
+      this.entities.find((e) => e.bot && e.team === 0 && this.active(e)) !== entity
+    )
+      return null;
     player.checkedCovers ??= {};
     for (const cover of PROTOCOL_MAP.sites)
       if (this.near(entity, cover, 2)) player.checkedCovers[cover.id] = this.time;
@@ -2225,7 +2260,8 @@ export class ProtocolArena extends Arena {
           this.near(entity, e, 1.15) &&
           (finishing || !this.witnessed(entity, e)),
       );
-      if (target && this.time >= player.killReadyAt) this.botAction(entity, "eliminate", target.id);
+      if (target && this.time >= player.killReadyAt && mission.phase === "base")
+        this.botAction(entity, "eliminate", target.id);
       if (mission.phase === "base" && this.time >= player.sabotageReadyAt && this.time > 25) {
         const kind = this.protocol.detonateAt !== null ? "comms" : "power";
         if (this.protocol.sabotage[`${kind}Until`] <= this.time)
@@ -2270,7 +2306,9 @@ export class ProtocolArena extends Arena {
                 .sort((a, b) => distance(entity, a) - distance(entity, b))[0] ??
               TRANSPORT_MAP.cargo;
         }
-        goal =
+        // Everything aboard: take off. Leaving also leaves any charges behind.
+        if (mission.phase === "base" && this.manifestComplete()) goal = mission.loading;
+        goal ??=
           this.protocol.bombs
             .filter((bomb) => player.discoveredBombs.includes(bomb.id))
             .sort((a, b) => distance(entity, a) - distance(entity, b))[0] ?? goal;
@@ -2728,6 +2766,7 @@ export function protocolView(data, selfId) {
     chatter: clone(p.chatter ?? []),
     events: (p.events ?? []).filter((ev) => ev.active).map(({ id, kind, x, y, room, until }) => ({ id, kind, x, y, room, until })),
     sandstormUntil: p.sandstormUntil ?? 0,
+    lockdownUntil: p.lockdownUntil ?? 0,
     mission: publicMission,
     combat: p.combat
       ? {

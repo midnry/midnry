@@ -6,15 +6,13 @@ import { dailyKey, dailyRandom, dailyScore, shiftChoice } from "../public/games/
 const make = (shift, random = () => 0.31) =>
   new ProtocolArena({ humans: [{ id: "me", name: "Me" }], rolePreference: "operator", variety: true, shift, random });
 
-test("a quick shift has five players, one infiltrator, seven supplies and a shorter flight", () => {
+test("a quick shift has five players, one infiltrator and a shorter flight", () => {
   const full = make("full"),
     quick = make("quick");
   assert.equal(full.entities.length, 8);
   assert.equal(quick.entities.length, 5);
   assert.equal(quick.entities.filter((e) => e.team === 1).length, 1);
   assert.ok(quick.entities.some((e) => e.id === "me" && e.team === 0));
-  const total = (a) => a.protocol.mission.manifest.reduce((n, item) => n + item.required, 0);
-  assert.ok(total(quick) <= 8 && total(full) >= 13);
   assert.ok(quick.protocol.mission.vehicle.duration < full.protocol.mission.vehicle.duration);
   assert.ok(quick.protocol.nextEventAt < 80);
   assert.equal(protocolView(quick.snapshot(), "me").protocol.match.shift, "quick");

@@ -18689,7 +18689,7 @@ var pp = {
 			id: "trauma-barracks",
 			supplyId: "trauma",
 			name: "Barracks medic locker",
-			stock: 2,
+			stock: 1,
 			x: 3.5,
 			y: 13.5,
 			room: "barracks"
@@ -18725,7 +18725,7 @@ var pp = {
 			id: "fluids-maintenance",
 			supplyId: "fluids",
 			name: "Maintenance reserve",
-			stock: 2,
+			stock: 1,
 			x: 15.5,
 			y: 23.5,
 			room: "maintenance"
@@ -18734,7 +18734,7 @@ var pp = {
 			id: "nutrition-armory",
 			supplyId: "nutrition",
 			name: "Armory stores",
-			stock: 2,
+			stock: 1,
 			x: 15.5,
 			y: 8.5,
 			room: "armory"
@@ -18743,7 +18743,7 @@ var pp = {
 			id: "nutrition-generator",
 			supplyId: "nutrition",
 			name: "Generator-room cache",
-			stock: 2,
+			stock: 1,
 			x: 7.5,
 			y: 23.5,
 			room: "generators"

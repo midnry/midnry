@@ -43,7 +43,7 @@ export const readDaily = () => {
 const GUIDE = [
   [
     "Lifeline Run / two phases",
-    "Win one of two ways: deliver medical aid to the wounded before they all die, or find the infiltrators and vote every one of them out. First gather the medical items at Breakwater Forward Base (usually 13: trauma kits, surgical packs, IV fluids and recovery supplements). Cabinets are restocked differently every round, so follow the arrow and the manifest in Info. Carry one item at a time to the hangar loading pad, then board the medevac, fly to the casualty station and deliver. Every match also has a modifier and a twist, shown in your orders.",
+    "Win one of two ways: deliver medical aid to the wounded before they all die, or find the infiltrators and vote every one of them out. First gather the medical items at Breakwater Forward Base (usually 9: trauma kits, surgical packs, IV fluids and recovery supplements). Cabinets are restocked differently every round, so follow the arrow and the manifest in Info. Carry one item at a time to the hangar loading pad, then board the medevac, fly to the casualty station and deliver. Each quarter of the manifest loaded triggers a 25-second base lockdown that holds the infiltrators back, and nobody can be eliminated aboard the medevac: in the air, infiltrators can only sabotage. Every match also has a modifier and a twist, shown in your orders.",
   ],
   [
     "Operators: deliver aid before patients die",
@@ -67,7 +67,7 @@ const GUIDE = [
   ],
   [
     "Quick shift and the daily case",
-    "In the menu, pick a shift. Full shift is the classic eight-player match. Quick shift is five players, one infiltrator and seven supplies, about five minutes. The daily case is a Quick shift that is the same for everyone each day: same base, same crew, same infiltrator, and you are always an operator. Win fast and vote out the infiltrator yourself for a score out of 1000, then share it and see who beats you.",
+    "In the menu, pick a shift. Full shift is the classic eight-player match. Quick shift is five players and one infiltrator, about four minutes. The daily case is a Quick shift that is the same for everyone each day: same base, same crew, same infiltrator, and you are always an operator. Win fast and vote out the infiltrator yourself for a score out of 1000, then share it and see who beats you.",
   ],
   [
     "Emergencies",
@@ -914,7 +914,7 @@ export class ProtocolUI {
       this.brief.querySelector(".mf-protocol-briefcopy"),
       infiltrator
         ? "Stop the rescue without getting caught. Eliminate operators until your side matches theirs, plant three charges, or sabotage the flight. Blend in: fake tasks and move with the crowd."
-        : `Save the wounded soldiers. Carry ${this.view?.protocol?.mission?.manifest?.reduce((n, i) => n + i.required, 0) ?? 13} medical items to the hangar pad one at a time, fly the medevac and deliver aid. Or find the infiltrators: vote them all out and you win.`,
+        : `Save the wounded soldiers. Carry ${this.view?.protocol?.mission?.manifest?.reduce((n, i) => n + i.required, 0) ?? 9} medical items to the hangar pad one at a time, fly the medevac and deliver aid. Or find the infiltrators: vote them all out and you win.`,
     );
     const partners = (self.allies || []).map((ally) => ally.name || "Covert partner").join(", ");
     setText(
@@ -931,7 +931,7 @@ export class ProtocolUI {
       match?.shift === "daily"
         ? { icon: "📅", name: `Daily case · ${dailyKey()}`, text: "Same case for everyone today. Find the one infiltrator quickly." }
         : match?.shift === "quick"
-          ? { icon: "⏱️", name: "Quick shift", text: "Five players, one infiltrator, seven supplies." }
+          ? { icon: "⏱️", name: "Quick shift", text: "Five players, one infiltrator, a shorter flight." }
           : null;
     for (const option of [shiftLine, spec ? { ...spec, name: `Your specialty: ${spec.name}` } : null, modifierOf(match?.modifier), twistOf(match?.twist)].filter(Boolean)) {
       const item = element("li");
@@ -1234,6 +1234,7 @@ export class ProtocolUI {
       this.alive() &&
       this.view?.protocol?.self?.role === "infiltrator" &&
       this.view.protocol.phase === "roam" &&
+      this.view.protocol.mission?.phase !== "transport" &&
       this.view.time >= this.view.protocol.self.killReadyAt
     )
       this.enqueue("eliminate", this.nearby.target.id);
@@ -1776,7 +1777,8 @@ export class ProtocolUI {
       );
     }
     const kill = this.actionBar.querySelector(".mf-protocol-eliminate");
-    kill.hidden = !alive || !roam || !infiltrator || !this.nearby.target;
+    // No eliminations aboard the medevac.
+    kill.hidden = !alive || !roam || !infiltrator || !this.nearby.target || this.view?.protocol?.mission?.phase === "transport";
     kill.disabled =
       !this.nearby.target ||
       time < self.killReadyAt ||

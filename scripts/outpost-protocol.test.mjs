@@ -15,8 +15,15 @@ const humans = Array.from({ length: 8 }, (_, i) => ({
   name: `Patrol ${i}`,
   team: i % 4,
 }));
+// Mechanics tests use the original quick kill timing; match balance (first
+// kill, cooldown, lockdowns) is covered in outpost-balance.test.mjs.
+const classicTiming = (arena) => {
+  arena.protocol.killCooldown = 25;
+  for (const player of Object.values(arena.protocol.players)) player.killReadyAt = 12;
+  return arena;
+};
 const fresh = (rolePreference = "operator") =>
-  new ProtocolArena({ humans, rolePreference, random: () => 0.4 });
+  classicTiming(new ProtocolArena({ humans, rolePreference, random: () => 0.4 }));
 const tick = (arena, seconds, inputs = {}) => {
   for (let left = seconds; left > 1e-8; left -= 0.05) arena.advance(Math.min(left, 0.05), inputs);
 };
@@ -99,7 +106,7 @@ test("factory keeps combat modes and protocol always uses the sealed dedicated b
   assert.equal(arena.entities.length, 8);
   assert.equal(arena.entities.filter((e) => e.team === 1).length, 2);
   assert.equal(arena.entities.filter((e) => e.team === 0).length, 6);
-  assert.equal(arena.protocol.taskTotal, 13);
+  assert.equal(arena.protocol.taskTotal, 9);
   assert.ok(arena.entities.every((e) => e.weapon === "carbine" && !arena.wall(e.x, e.y)));
   assert.ok(arena.level[0].every(Boolean) && arena.level.at(-1).every(Boolean));
   assert.deepEqual(arena.crates, []);
@@ -697,7 +704,7 @@ test("full medical mission gathers every required item, boards the aircraft and 
       load(arena, crew);
     }
   }
-  assert.equal(arena.protocol.taskDone, 13);
+  assert.equal(arena.protocol.taskDone, 9);
   assert.ok(mission.manifest.every((item) => item.loaded === item.required));
   assert.equal(arena.state, "playing"); // Loaded cargo alone cannot win.
   const roundId = arena.roundId,
@@ -1041,7 +1048,7 @@ test("operator bots legally gather/load/depart and deliver without legacy instan
   tick(arena, 440);
   assert.equal(arena.winner, 0);
   assert.equal(arena.protocol.mission.phase, "delivered");
-  assert.equal(arena.protocol.taskDone, 13);
+  assert.equal(arena.protocol.taskDone, 9);
   assert.ok(arena.protocol.mission.patients.some((patient) => patient.rescued));
 });
 

@@ -90,7 +90,7 @@ test("Detailed equipment props stay on their declared collision footprint", () =
 });
 
 test("Medical stores contain the complete public manifest without duplicate stock IDs", () => {
-  assert.equal(MEDICAL_SUPPLIES.reduce((total, item) => total + item.required, 0), 13);
+  assert.equal(MEDICAL_SUPPLIES.reduce((total, item) => total + item.required, 0), 9);
   assert.equal(new Set(MEDICAL_SUPPLIES.map((item) => item.id)).size, MEDICAL_SUPPLIES.length);
   assert.equal(new Set(map.supplies.map((fixture) => fixture.id)).size, map.supplies.length);
   const categories = new Set(MEDICAL_SUPPLIES.map((item) => item.id));

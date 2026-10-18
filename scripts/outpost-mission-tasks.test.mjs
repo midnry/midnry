@@ -211,7 +211,7 @@ test("smart operator bots finish the entire interactive medical mission", () => 
   tick(a, 440);
   assert.equal(a.winner, 0);
   assert.equal(a.protocol.mission.phase, "delivered");
-  assert.equal(a.protocol.taskDone, 13);
+  assert.equal(a.protocol.taskDone, 9);
   assert.ok(a.protocol.mission.patients.some((p) => p.rescued));
 });
 test("delivery rescues remaining patients and credits only the acting operator", () => {

@@ -129,10 +129,10 @@ const vents = [
 
 /** Public manifest categories. Stock exists once per fixture, not per player. */
 export const MEDICAL_SUPPLIES = [
-  { id: "trauma", name: "Trauma kits", required: 4 },
+  { id: "trauma", name: "Trauma kits", required: 3 },
   { id: "surgical", name: "Surgical packs", required: 2 },
-  { id: "fluids", name: "IV fluids", required: 3 },
-  { id: "nutrition", name: "Recovery supplements", required: 4 },
+  { id: "fluids", name: "IV fluids", required: 2 },
+  { id: "nutrition", name: "Recovery supplements", required: 2 },
 ];
 
 // Reuse existing, wall-mounted storage locations. Their original terminal IDs
@@ -143,13 +143,13 @@ export const MEDICAL_SUPPLIES = [
 // cabinets that start empty here (see outpost-variety.js).
 const medicalStock = [
   { id: "trauma-armory", supplyId: "trauma", name: "Armory locker", stock: 2, x: 12.5, y: 3.5, room: "armory" },
-  { id: "trauma-barracks", supplyId: "trauma", name: "Barracks medic locker", stock: 2, x: 3.5, y: 13.5, room: "barracks" },
+  { id: "trauma-barracks", supplyId: "trauma", name: "Barracks medic locker", stock: 1, x: 3.5, y: 13.5, room: "barracks" },
   { id: "surgical-command", supplyId: "surgical", name: "Operations cabinet", stock: 1, x: 4.5, y: 3.5, room: "command" },
   { id: "surgical-depot", supplyId: "surgical", name: "Depot cargo cabinet", stock: 1, x: 20.5, y: 23.5, room: "ammo" },
   { id: "fluids-mess", supplyId: "fluids", name: "Mess-hall cold cabinet", stock: 1, x: 5.5, y: 15.5, room: "barracks" },
-  { id: "fluids-maintenance", supplyId: "fluids", name: "Maintenance reserve", stock: 2, x: 15.5, y: 23.5, room: "maintenance" },
-  { id: "nutrition-armory", supplyId: "nutrition", name: "Armory stores", stock: 2, x: 15.5, y: 8.5, room: "armory" },
-  { id: "nutrition-generator", supplyId: "nutrition", name: "Generator-room cache", stock: 2, x: 7.5, y: 23.5, room: "generators" },
+  { id: "fluids-maintenance", supplyId: "fluids", name: "Maintenance reserve", stock: 1, x: 15.5, y: 23.5, room: "maintenance" },
+  { id: "nutrition-armory", supplyId: "nutrition", name: "Armory stores", stock: 1, x: 15.5, y: 8.5, room: "armory" },
+  { id: "nutrition-generator", supplyId: "nutrition", name: "Generator-room cache", stock: 1, x: 7.5, y: 23.5, room: "generators" },
   { id: "cabinet-comms", supplyId: "trauma", name: "Radio-room cabinet", stock: 0, x: 22.5, y: 3.5, room: "communications" },
   { id: "cabinet-sensors", supplyId: "fluids", name: "Sensor-bay cabinet", stock: 0, x: 7.5, y: 8.5, room: "command" },
   { id: "cabinet-tunnel", supplyId: "nutrition", name: "Tunnel cabinet", stock: 0, x: 12.5, y: 19.5, room: "maintenance" },

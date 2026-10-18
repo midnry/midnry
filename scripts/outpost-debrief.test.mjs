@@ -21,6 +21,9 @@ const fresh = () => {
     random: () => 0.4,
   });
   for (const e of a.entities) e.bot = false;
+  // Original quick kill timing for these mechanics checks.
+  a.protocol.killCooldown = 25;
+  for (const player of Object.values(a.protocol.players)) player.killReadyAt = 12;
   return a;
 };
 

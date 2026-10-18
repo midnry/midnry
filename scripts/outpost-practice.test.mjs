@@ -89,7 +89,7 @@ test("practice fixtures do not change normal arenas or recipient privacy", () =>
   assert.equal(JSON.stringify(real.snapshot()), before);
   assert.equal(
     real.protocol.mission.manifest.reduce((s, i) => s + i.required, 0),
-    13,
+    9,
   );
   assert.ok(real.entities.some((e) => e.bot));
   const view = protocolView(practice.arena.snapshot(), "player");

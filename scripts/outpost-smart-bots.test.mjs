@@ -66,7 +66,8 @@ const arena = () =>
 
 test("operator bots sweep the public access covers once a charge is announced", () => {
   const a = arena();
-  const op = a.entities.find((e, i) => e.bot && e.team === 0 && i % 3 === 0);
+  // One designated operator bot sweeps; the rest keep moving supplies.
+  const [op, other] = a.entities.filter((e) => e.bot && e.team === 0);
   assert.equal(a.botSearchCover(op), null);
   a.protocol.bombs.push({ id: "charge-x", siteId: "s", room: "r", x: 1, y: 1 });
   const cover = a.botSearchCover(op);
@@ -74,6 +75,7 @@ test("operator bots sweep the public access covers once a charge is announced", 
   // Nearby covers count as checked; the bot moves on to another one.
   Object.assign(op, { x: cover.x, y: cover.y });
   assert.notEqual(a.botSearchCover(op).id, cover.id);
+  assert.equal(a.botSearchCover(other), null);
 });
 
 test("an infiltrator bot takes a witnessed kill only when it wins the match", () => {

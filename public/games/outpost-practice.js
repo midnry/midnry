@@ -10,7 +10,7 @@ export const PRACTICE_STEPS = Object.freeze([
     title: "Pack a medical kit",
     hint: "Follow the ground trail to the medic locker. Press E or the action button, then pass the quick skill check.",
     detail:
-      "Move with WASD or the left joystick; aim with the mouse or a right-side drag. This rehearsal needs one trauma kit. In a live mission the crew gathers all 13 items. Wrong answers can be corrected.",
+      "Move with WASD or the left joystick; aim with the mouse or a right-side drag. This rehearsal needs one trauma kit. In a live mission the crew gathers all 9 items. Wrong answers can be corrected.",
   },
   {
     id: "load",

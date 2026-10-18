@@ -1,8 +1,8 @@
 /** Shift lengths for offline Lifeline Run, and the daily case: one seeded
  * Quick shift that is the same for every player on a given (UTC) day. */
 export const SHIFTS = Object.freeze({
-  full: { id: "full", name: "Full shift", copy: "8 players · 2 infiltrators · about 12 minutes" },
-  quick: { id: "quick", name: "Quick shift", copy: "5 players · 1 infiltrator · about 5 minutes" },
+  full: { id: "full", name: "Full shift", copy: "8 players · 2 infiltrators · about 6 minutes" },
+  quick: { id: "quick", name: "Quick shift", copy: "5 players · 1 infiltrator · about 4 minutes" },
   daily: { id: "daily", name: "Daily case", copy: "Today's Quick shift, the same for everyone. You are an operator." },
 });
 
@@ -16,9 +16,6 @@ export const QUICK = Object.freeze({
 });
 
 export const shiftChoice = (value) => (SHIFTS[value] ? value : "full");
-
-/** Half of each medical item, rounded up: 7 items instead of 13. */
-export const quickRequired = (required) => Math.ceil(required / 2);
 
 /** "2026-10-18" for the case everyone shares today. */
 export const dailyKey = (date = new Date()) => date.toISOString().slice(0, 10);

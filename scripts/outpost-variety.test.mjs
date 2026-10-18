@@ -40,7 +40,7 @@ test("dealt cabinets always cover the manifest, two cases at most, one kind each
         assert.ok(total >= item.required, `seed ${seed}: ${item.id} short`);
       }
       const total = stock.reduce((n, s) => n + s.stock, 0);
-      assert.equal(total, 13 + spare);
+      assert.equal(total, 9 + spare);
     }
   }
 });
@@ -80,7 +80,7 @@ test("every modifier and twist comes up, and a host can lock a modifier", () => 
 test("modifiers change the rules they promise", () => {
   const lone = match(5, { modifier: "lone-wolf" });
   assert.equal(lone.entities.filter((e) => e.team === 1).length, 1);
-  assert.equal(lone.protocol.killCooldown, 15);
+  assert.equal(lone.protocol.killCooldown, 25);
   const dark = match(6, { modifier: "blackout" });
   assert.equal(dark.protocol.sabotage.powerUntil, 45);
   assert.equal(dark.sightRange(), 2.6);
@@ -89,7 +89,7 @@ test("modifiers change the rules they promise", () => {
   assert.equal(critical.filter((p) => p.critical).length, 1);
   assert.ok(critical.find((p) => p.critical).decay > 0.3);
   const short = match(9, { modifier: "short-supplies" }).protocol.mission.supplyStock;
-  assert.equal(short.reduce((n, s) => n + s.stock, 0), 13);
+  assert.equal(short.reduce((n, s) => n + s.stock, 0), 9);
   const rush = match(10, { modifier: "rush" }).protocol.mission;
   assert.ok(rush.vehicle.duration < (rush.twist === "headwind" ? 150 : 120));
   assert.ok(rush.patients[0].decay > 0.22);
@@ -106,7 +106,7 @@ test("twists: priority cargo, headwind and mid-flight turbulence", () => {
   }
   const m = priority.protocol.mission;
   assert.equal(m.manifest.find((i) => i.id === m.priority).required, MEDICAL_SUPPLIES.find((i) => i.id === m.priority).required + 1);
-  assert.equal(m.supplyStock.reduce((n, s) => n + s.stock, 0), 14 + 2);
+  assert.equal(m.supplyStock.reduce((n, s) => n + s.stock, 0), 10 + 2);
   assert.equal(headwind.protocol.mission.vehicle.duration, 150);
   // Fly the turbulence match straight to the halfway point.
   const t = turbulence;
