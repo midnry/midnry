@@ -6,6 +6,7 @@
  */
 import * as THREE from "three";
 import { surfaceMaterial } from "./realism-surfaces.js";
+import { roofLayout } from "./architecture.js";
 
 const SCALE = 3;
 const FACES = [
@@ -41,6 +42,7 @@ export function decorateRealisticEnvironment(r, id, n) {
   const box = r.geo("realism-environment:box", () => new THREE.BoxGeometry(1, 1, 1));
   const plane = r.geo("realism-environment:plane", () => new THREE.PlaneGeometry(1, 1));
   const height = ["breakwater", "medevac"].includes(id) ? 3.5 : 3;
+  const roofCells = roofLayout(id === "breakwater" ? r.g.protocolMap : id === "medevac" ? r.g.transportMap : null).cells;
   const transforms = FACES.map(([dx, dz]) =>
     new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(dx, dz)),
   );
@@ -233,7 +235,9 @@ export function decorateRealisticEnvironment(r, id, n) {
     for (const v of [bottom, top]) atFace(f, frame, 0, v, -0.06, width + 0.07, 0.07, 0.12);
     paneAtFace(f, glazing, 0, centre, -depth + 0.003, width - 0.065, windowHeight - 0.065);
     atFace(f, frame, 0, centre, -0.08, 0.033, windowHeight - 0.08, 0.06);
-    atFace(f, stone, 0, bottom - 0.035, -0.065, width + 0.16, 0.07, 0.13);
+    // Let the sill project 12 mm into the reveal and beyond the plaster.
+    // Its old top/front surfaces coincided with the lower wall strip.
+    atFace(f, stone, 0, bottom - 0.023, -0.053, width + 0.16, 0.07, 0.13);
     return true;
   }
 
@@ -307,7 +311,7 @@ export function decorateRealisticEnvironment(r, id, n) {
           }
         }
       }
-      if (id !== "medevac") {
+      if (id !== "medevac" && !roofCells.has(`${x},${y}`)) {
         // Coping is over the existing wall footprint, never over a route.
         add(
           box,
@@ -342,7 +346,10 @@ export function decorateRealisticEnvironment(r, id, n) {
           : [(line + 0.5) * SCALE, 0, (from + width / 2) * SCALE];
         const quaternion = horizontal ? transforms[0] : transforms[2];
         const f = { position, quaternion };
-        for (const u of [-((width * SCALE) / 2 + 0.05), (width * SCALE) / 2 + 0.05]) {
+        // The old inner jamb face lay exactly on the collision wall plane.
+        // Expose a 20 mm frame lip instead; a coplanar steel/wall strip causes
+        // the full-height hatching seen while moving, especially on phones.
+        for (const u of [-((width * SCALE) / 2 + 0.03), (width * SCALE) / 2 + 0.03]) {
           atFace(f, id === "testblock" ? timber : steel, u, height / 2, 0, 0.1, height, 0.16);
         }
         atFace(

@@ -33,10 +33,10 @@ try{
   assert.ok(initial.navBounds.x>=0&&initial.navBounds.right<=width&&initial.navBounds.bottom<=height);
   const lighting=await page.evaluate(()=>{
    const g=document.querySelector('midnry-fps').engine,r=g.military;
-   Object.assign(g.player,{x:14.5,y:11.8,a:Math.PI/2});
+   Object.assign(g.player,{x:13.5,y:24.8,a:Math.PI/2});
    r.naturalLighting.initialized=false;g.protocolCache=null;r.frameProtocolArena=null;g.render();
    const before={ambient:r.scene.environmentIntensity,exposure:r.renderer.toneMappingExposure,span:r.sun.shadow.camera.right,inside:r.naturalLighting.inside};
-   // Walk through the courtyard doorway using the production control path.
+   // Walk through the southern exit using the production control path.
    g.keys.add('w');for(let i=0;i<16;i++)g.update(.05);g.keys.clear();
    r.lastRenderAt=performance.now()-1000/120;g.render();
    const after={ambient:r.scene.environmentIntensity,exposure:r.renderer.toneMappingExposure,span:r.sun.shadow.camera.right,inside:r.naturalLighting.inside};

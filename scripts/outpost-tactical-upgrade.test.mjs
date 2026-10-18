@@ -6,7 +6,8 @@ import { ProtocolArena, protocolView, restoreArena } from "../public/games/outpo
 import { connectionAdvice, testConnection } from "../public/games/outpost-connection.js";
 import { AnimationMixer, Box3, Group, Vector3 } from "three";
 import { readMotionAsset } from "./outpost-military/motion-build.mjs";
-import { bindWeaponGrip, updateWeaponGrip } from "./outpost-military/realism-grips.js";
+import { bindWeaponGrip, updateWeaponGrip, placeSupportPalm } from "./outpost-military/realism-grips.js";
+import { fitOperatorGoggles } from "./outpost-military/operator-goggles.mjs";
 
 test("five server-chosen takedowns are delivered only to their victim", () => {
   for (let i = 0; i < 5; i++) {
@@ -128,6 +129,35 @@ test("rigged operator retains sculpt UVs, embedded surface maps and captured mot
     }
 });
 
+test("goggles cover the eye line in both LODs without altering UVs, skinning or other equipment",async()=>{
+  const {gltf}=await readMotionAsset("scripts/assets/outpost-operator/swat-source.glb");
+  const helmet=gltf.scene.getObjectByName('Soldier_head_1'),geometry=helmet.geometry;
+  const originals=new Map();gltf.scene.traverse(o=>{if(o.isMesh)originals.set(o,o.geometry.attributes.position.array.slice());});
+  const attributes=new Map(['uv','skinIndex','skinWeight'].map(key=>[key,geometry.attributes[key].array.slice()]));
+  const index=geometry.index.array.slice(),before=originals.get(helmet);
+  fitOperatorGoggles(gltf.scene);
+  assert.equal(helmet.userData.gogglesPosition,'eyes');
+  assert.deepEqual(geometry.index.array,index,'no additional triangles or draw calls');
+  for(const [key,values]of attributes)assert.deepEqual(geometry.attributes[key].array,values,key+' preserved');
+  for(const [mesh,values]of originals)if(mesh!==helmet)assert.deepEqual(mesh.geometry.attributes.position.array,values);
+  const p=geometry.attributes.position;
+  let lowered=0;const lens=new Box3();
+  for(let i=0;i<p.count;i++){
+    if(before[i*3+1]-p.getY(i)>.03)lowered++;
+    if(before[i*3+1]-p.getY(i)>.03&&before[i*3+2]>.06&&Math.abs(before[i*3])<.06)
+      lens.expandByPoint(new Vector3().fromBufferAttribute(p,i));
+  }
+  assert.ok(lowered>250,'frame moves off the forehead');
+  assert.ok(lens.min.y<1.65&&lens.max.y>1.65,'lens spans the eye line');
+  assert.ok(lens.min.y>1.60&&lens.max.y<1.70,'frame stays above the mouth and below the helmet crown');
+  assert.ok(lens.min.z>.075&&lens.max.z<.14,'lens seats just in front of the face');
+  const once=p.array.slice();fitOperatorGoggles(gltf.scene);assert.deepEqual(p.array,once,'fitting is idempotent');
+  const built=await readMotionAsset('public/games/military/models/operator-v1.glb');
+  const lods=[];built.gltf.scene.traverse(o=>{if(o.isMesh&&o.userData.gogglesPosition==='eyes')lods.push(o);});
+  assert.deepEqual(lods.map(o=>o.userData.operatorLOD).sort(),[0,1]);
+  for(const mesh of lods)assert.deepEqual(mesh.geometry.attributes.position.array,p.array,'both LODs use the fitted skinned geometry');
+});
+
 test("motion preserves bone lengths and skin weights; crouch and death are posed, not bind/T poses", async () => {
   const {gltf}=await readMotionAsset("public/games/military/models/operator-v1.glb");
   let vertices=0;
@@ -182,5 +212,31 @@ test("captured rifle grip remains in the firing palm across crouch and reload po
     const palm=joints.get('RightHand').getWorldPosition(new Vector3()).lerp(joints.get('RightHandMiddle1').getWorldPosition(new Vector3()),.5);
     const grip=actor.equipment.localToWorld(new Vector3(0,-.109,-.001));
     assert.ok(grip.distanceTo(palm)<.001,name+' weapon stays in the firing palm');
+  }
+});
+
+test("preparation palm IK preserves wrist orientation and bone lengths in the scaled soldier rig",async()=>{
+  const {gltf}=await readMotionAsset("public/games/military/models/operator-v1.glb");
+  gltf.scene.userData.riggedOperator=true;
+  const bones=new Map();gltf.scene.traverse(o=>{if(o.isBone)bones.set(o.name.replace(/^mixamorig\d*[:_]?/i,''),o);});
+  const actor={root:new Group(),model:gltf.scene,equipment:new Group(),weaponAnchor:bones.get('RightHand')};
+  actor.root.add(actor.model,actor.equipment);actor.root.rotation.y=.7;actor.root.position.set(4,.2,-2);
+  const mixer=new AnimationMixer(actor.model),idle=gltf.animations.find(c=>c.name==='Idle');
+  mixer.clipAction(idle).play();mixer.update(0);bindWeaponGrip(actor);
+  const g=actor.grip,knuckle=bones.get('LeftHandMiddle1');
+  const lengths=[g.arm.position.length(),g.elbow.position.length(),g.support.position.length()];
+  for(const name of ['Idle','Reload'])for(const phase of [0,.2,.4,.6,.8,.99]){
+    mixer.stopAllAction();const action=mixer.clipAction(gltf.animations.find(c=>c.name===name)).play();
+    action.time=action.getClip().duration*phase;mixer.update(0);actor.root.updateMatrixWorld(true);
+    const wrist=g.support.getWorldPosition(new Vector3()),shoulder=g.arm.getWorldPosition(new Vector3());
+    const orientation=g.support.getWorldQuaternion(actor.equipment.quaternion.clone()).normalize();
+    const target=knuckle.getWorldPosition(new Vector3()).lerp(wrist,.5)
+      .add(shoulder.sub(wrist).normalize().multiplyScalar(.012));
+    assert.equal(placeSupportPalm(actor,target,orientation),true);
+    const actual=knuckle.getWorldPosition(new Vector3()).lerp(g.support.getWorldPosition(new Vector3()),.5);
+    assert.ok(actual.distanceTo(target)<.002,`${name} ${phase}: palm contact stays within 2 mm`);
+    const angle=g.support.getWorldQuaternion(actor.equipment.quaternion.clone()).normalize().angleTo(orientation);
+    assert.ok(angle<.0001,`wrist orientation survives elbow correction: ${angle}`);
+    assert.deepEqual([g.arm.position.length(),g.elbow.position.length(),g.support.position.length()],lengths);
   }
 });
