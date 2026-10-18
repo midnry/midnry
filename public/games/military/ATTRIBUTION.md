@@ -44,3 +44,10 @@ The bundled license is in THREE-LICENSE.txt. Weapons, fittings, crates, and proj
 CC0 models from Poly Haven, textures reduced to 512 px and meshes simplified for the web:
 old_military_crate, metal_jerrycan_green, barrel_03, Barrel_02, medical_box, plastic_crate_02,
 steel_frame_shelves_01, ammo_box and utility_box_01 — https://polyhaven.com/models
+
+## Medevac helicopter (models/medevac-v1.glb)
+
+"Rescue Helicopter (low poly)" by blueskinrulez (https://sketchfab.com/blueskinrulez), shared on
+OpenGameArt by brylie: https://opengameart.org/node/82169. Licensed CC-BY 4.0
+(https://creativecommons.org/licenses/by/4.0/). Changes: packed as a single GLB, animation removed,
+repainted in-game (olive drab, medical markings) and the rotor spun by the renderer.

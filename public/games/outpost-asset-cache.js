@@ -11,7 +11,7 @@ export class AssetCacheUI {
     g.$(".mf-settingsbody").append(this.panel);
     this.credits = document.createElement("details");
     this.credits.innerHTML =
-      '<summary>Asset credits</summary><p>Soldier sculpt, textured gloves and motion clips: Adobe Mixamo, adapted for embedded game use. Environment photographs: Poly Haven, CC0.</p><a href="/games/military/ATTRIBUTION.md" target="_blank" rel="noopener noreferrer">Sources and licences</a>';
+      '<summary>Asset credits</summary><p>Soldier sculpt, textured gloves and motion clips: Adobe Mixamo, adapted for embedded game use. Environment photographs and props: Poly Haven, CC0. Medevac helicopter: "Rescue Helicopter (low poly)" by blueskinrulez, CC-BY 4.0.</p><a href="/games/military/ATTRIBUTION.md" target="_blank" rel="noopener noreferrer">Sources and licences</a>';
     g.$(".mf-settingsbody").append(this.credits);
     this.status = this.panel.querySelector(".mf-cachestatus");
     this.save = this.panel.querySelector(".mf-saveassets");

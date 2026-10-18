@@ -43,6 +43,7 @@ import { WorldVisibility } from "./world-visibility.js";
 import { roofLayout } from "./architecture.js";
 import { GroundTrail } from "./ground-trail.js";
 import { NightDressing } from "./realism-night.js";
+import { prepareMedevac, buildMedevac } from "./realism-medevac.js";
 import { EventDressing } from "./realism-events.js";
 import { preparePropKit, buildFurniture } from "./realism-props.js";
 import { BattlePreparation } from "./battle-preparation.js";
@@ -373,6 +374,18 @@ export class MilitaryRenderer {
     if (this.metalColor) this.metalColor.colorSpace = THREE.SRGBColorSpace;
     await Promise.all([
       loadRealismSurfaces(this),
+      (async () => {
+        // The medevac helicopter (CC-BY). Optional: the plain shape remains.
+        try {
+          const gltf = await new GLTFLoader().loadAsync(ASSET + "models/medevac-v1.glb?assetVersion=" + ASSET_CACHE);
+          if (this.disposed) return;
+          this.medevacKit = prepareMedevac(gltf);
+          for (const part of this.medevacKit.parts) this.geometries.set(`medevac:${part.geometry.uuid}`, part.geometry);
+          this.wallKeys = null;
+        } catch {
+          this.assetErrors.push("medevac");
+        }
+      })(),
       (async () => {
         // Scanned CC0 props. Optional: without them the base keeps plain blocks.
         try {
@@ -1232,6 +1245,10 @@ export class MilitaryRenderer {
     this.batchProtocolStatic(root);
   }
   buildMedevacExterior(root, paint, steel, rubber, lamp) {
+    if (this.medevacKit) {
+      this.medevacRotor = buildMedevac(this, root, this.medevacKit);
+      return;
+    }
     // The fuselage stays inside the map's blocked vehicle footprint. Rotor
     // blades clear the walking/player head height and never change collision.
     this.mesh(

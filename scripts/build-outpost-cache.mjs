@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 const names = [
   "models/operator-v1.glb",
   "models/props-v1.glb",
+  "models/medevac-v1.glb",
   "sky.hdr",
   ...readdirSync("public/games/military/textures")
     .filter((x) => x.endsWith(".jpg") && !x.includes("-source"))
