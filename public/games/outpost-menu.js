@@ -5,6 +5,7 @@
 import { icon } from "./outpost-icons.js";
 import { levelOf } from "./outpost-progression.js";
 import { readDaily } from "./outpost-protocol-ui.js";
+import { fetchBoard, cachedBoard } from "./outpost-daily-board.js";
 import { dailyKey, shiftChoice } from "./outpost-shifts.js";
 import { modifierChoice } from "./outpost-variety.js";
 
@@ -211,8 +212,11 @@ export class OutpostMenu {
     this.tabSettings();
     this.observer = new MutationObserver(() => this.schedule());
     this.observer.observe(this.modal, { attributes: true, attributeFilter: ["hidden"] });
-    this.observer.observe(this.panel, { attributes: true, attributeFilter: ["class"], subtree: false });
     this.observer.observe(this.panel, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "aria-pressed", "disabled"] });
+    // A second observe() on the same node replaces the first one's options,
+    // so the panel's own class (leaving the debrief) needs its own observer.
+    this.panelObserver = new MutationObserver(() => this.schedule());
+    this.panelObserver.observe(this.panel, { attributes: true, attributeFilter: ["class"] });
     this.refresh();
   }
 
@@ -432,7 +436,17 @@ export class OutpostMenu {
     this.side.querySelector(".mf-chcount").textContent = `${daily.filter((c) => c.done).length}/${daily.length || 3}`;
     // Today's case.
     const best = readDaily()[dailyKey()];
-    this.side.querySelector(".mf-casenote").textContent = best ? "Your best today" : "Not played yet";
+    const board = cachedBoard(),
+      rank = board?.you ? ` · #${board.you.rank} of ${board.total}` : board?.total ? ` · ${board.total} played` : "",
+      note = (best ? "Your best today" : "Not played yet") + rank;
+    if (this.side.querySelector(".mf-casenote").textContent !== note) this.side.querySelector(".mf-casenote").textContent = note;
+    // Refresh the shared ranking now and then (refresh runs on menu changes).
+    if (!this.boardAt || Date.now() - this.boardAt > 60000) {
+      this.boardAt = Date.now();
+      fetchBoard()
+        .then(() => this.refresh?.())
+        .catch(() => {});
+    }
     this.side.querySelector(".mf-casescore").innerHTML = best ? `${best.score} <span>/ 1000</span>` : "Play now";
     // Mode cards: offline picks the mode; online shows the room's mode only.
     const online = Boolean(g.online || g.ui?.playChoice === "online");
@@ -472,6 +486,7 @@ export class OutpostMenu {
 
   dispose() {
     this.observer?.disconnect();
+    this.panelObserver?.disconnect();
     for (const node of [this.style, this.hero, this.top, this.side, this.cards, this.actions, this.foot, this.logoSub, this.summary]) node?.remove();
     this.modal?.classList.remove("mf-home");
   }

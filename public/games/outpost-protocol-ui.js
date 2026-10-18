@@ -8,6 +8,7 @@ import { SPECIALTIES } from "./outpost-specialties.js";
 import { EVENT_KINDS } from "./outpost-events.js";
 import { SHIFTS, shiftChoice, dailyKey, dailyScore, formatTime } from "./outpost-shifts.js";
 import { shareSummary, shareResult, whatsappUrl } from "./outpost-share.js";
+import { submitDaily } from "./outpost-daily-board.js";
 const GHOST_OPS = new Set(["ghost-begin", "task-step", "task-cancel"]);
 import { MissionTaskPanel } from "./outpost-task-ui.js";
 import { INTERACTIVE_TASKS } from "./outpost-task-games.js";
@@ -25,6 +26,44 @@ const setText = (element, text) => {
   const value = String(text ?? "");
   if (element.textContent !== value) element.textContent = value;
 };
+const storedName = () => {
+  try {
+    return localStorage.getItem("midnry-outpost-name");
+  } catch {
+    return null;
+  }
+};
+
+/** Today's top 20, your row highlighted, and your rank if you're further down. */
+export function renderDailyBoard(board, data) {
+  const head = board.querySelector("h3"),
+    list = element("ol");
+  board.replaceChildren(head || element("h3", "", "Today's leaderboard"));
+  for (const row of data.top || []) {
+    const li = element("li", row.you ? "mf-you" : "");
+    li.append(
+      element("b", "", `${row.rank}`),
+      element("span", "", `${row.name}${row.you ? " (you)" : ""}`),
+      element("em", "", row.won ? formatTime(row.seconds) : "Lost"),
+      element("strong", "", `${row.score}`),
+    );
+    list.append(li);
+  }
+  if (list.children.length) board.append(list);
+  const you = data.you;
+  board.append(
+    element(
+      "p",
+      "",
+      you
+        ? `You're #${you.rank} of ${data.total} today with ${you.score}.`
+        : data.total
+          ? `${data.total} played today.`
+          : "No scores yet today.",
+    ),
+  );
+}
+
 const element = (tag, className, text) => {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -71,7 +110,7 @@ const GUIDE = [
   ],
   [
     "Quick shift and the daily case",
-    "In the menu, pick a shift. Full shift is the classic eight-player match. Quick shift is five players and one infiltrator, about four minutes. The daily case is a Quick shift that is the same for everyone each day: same base, same crew, same infiltrator, and you are always an operator. Win fast and vote out the infiltrator yourself for a score out of 1000, then share it and see who beats you.",
+    "In the menu, pick a shift. Full shift is the classic eight-player match. Quick shift is five players and one infiltrator, about four minutes. The daily case is a Quick shift that is the same for everyone each day: same base, same crew, same infiltrator, and you are always an operator. Win fast and vote out the infiltrator yourself for a score out of 1000. Your best score each day goes on a shared leaderboard under your locker name, with no account needed.",
   ],
   [
     "Emergencies",
@@ -2213,7 +2252,7 @@ export class ProtocolUI {
       const key = g.dailyCase || dailyKey();
       const scores = readDaily(),
         best = scores[key];
-      daily = { key, ...run, score: dailyScore(run), best: best?.score ?? null };
+      daily = { key, run, score: dailyScore(run), best: best?.score ?? null };
       if (!best || daily.score > best.score) {
         scores[key] = { score: daily.score, won: run.won, seconds: run.seconds };
         // Keep the last month only.
@@ -2263,7 +2302,17 @@ export class ProtocolUI {
               : `Your best today is still ${daily.best}.`,
         ),
       );
+      const board = element("section", "mf-protocol-dailyboard");
+      board.setAttribute("aria-live", "polite");
+      board.append(element("h3", "", "Today's leaderboard"), element("p", "", "Posting your score…"));
+      box.append(board);
       this.results.append(box);
+      const name = g.playerName || storedName() || "Operator";
+      submitDaily(daily.key, name, daily.run)
+        .then((data) => renderDailyBoard(board, data))
+        .catch(() => {
+          board.querySelector("p").textContent = "The leaderboard is offline right now. Your best score is saved on this device.";
+        });
     }
     const roles = protocol.revealedRoles || {},
       list = element("ul");
@@ -2297,7 +2346,7 @@ export class ProtocolUI {
     if (!g.practice?.active && !g.academy?.active) {
       const card = shareSummary(view, g.selfId);
       if (daily) {
-        const lead = `Daily case ${daily.key}: ${daily.score}/1000${daily.won ? ` in ${formatTime(daily.seconds)}` : ""}. Beat my score!`;
+        const lead = `Daily case ${daily.key}: ${daily.score}/1000${daily.run.won ? ` in ${formatTime(daily.run.seconds)}` : ""}. Beat my score!`;
         card.headline = `${lead} ${card.headline}`;
         card.text = `${lead} ${card.text}`;
       }
@@ -2321,7 +2370,17 @@ export class ProtocolUI {
       const row = element("div", "mf-protocol-sharerow");
       row.append(share, chat);
       box.append(element("p", "", card.headline), row, status);
+      const board = element("section", "mf-protocol-dailyboard");
+      board.setAttribute("aria-live", "polite");
+      board.append(element("h3", "", "Today's leaderboard"), element("p", "", "Posting your score…"));
+      box.append(board);
       this.results.append(box);
+      const name = g.playerName || storedName() || "Operator";
+      submitDaily(daily.key, name, daily.run)
+        .then((data) => renderDailyBoard(board, data))
+        .catch(() => {
+          board.querySelector("p").textContent = "The leaderboard is offline right now. Your best score is saved on this device.";
+        });
     }
     // What really happened, secrets included.
     if (protocol.timeline?.length) {
