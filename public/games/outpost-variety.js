@@ -51,8 +51,11 @@ export function shuffled(list, random) {
 }
 
 /** The match's modifier and twist. A locked modifier comes from the host. */
-export function rollMatch(random, choice = "random") {
-  const modifier = modifierOf(choice)?.id ?? pick(MODIFIERS, random).id;
+export function rollMatch(random, choice = "random", exclude = []) {
+  // Shifts that already have one infiltrator skip Lone wolf.
+  const allowed = MODIFIERS.filter((m) => !exclude.includes(m.id));
+  const chosen = modifierOf(choice);
+  const modifier = chosen && !exclude.includes(chosen.id) ? chosen.id : pick(allowed, random).id;
   const twist = pick(TWISTS, random).id;
   return { modifier, twist };
 }

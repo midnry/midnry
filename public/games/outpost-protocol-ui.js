@@ -6,6 +6,7 @@
 import { modifierOf, twistOf } from "./outpost-variety.js";
 import { SPECIALTIES } from "./outpost-specialties.js";
 import { EVENT_KINDS } from "./outpost-events.js";
+import { SHIFTS, shiftChoice, dailyKey, dailyScore, formatTime } from "./outpost-shifts.js";
 import { shareSummary, shareResult, whatsappUrl } from "./outpost-share.js";
 const GHOST_OPS = new Set(["ghost-begin", "task-step", "task-cancel"]);
 import { MissionTaskPanel } from "./outpost-task-ui.js";
@@ -30,6 +31,15 @@ const element = (tag, className, text) => {
   if (text != null) node.textContent = text;
   return node;
 };
+/** Best daily-case scores on this device, by date. */
+export const readDaily = () => {
+  try {
+    return JSON.parse(localStorage.getItem("midnry-outpost-daily") || "{}") || {};
+  } catch {
+    return {};
+  }
+};
+
 const GUIDE = [
   [
     "Lifeline Run / two phases",
@@ -54,6 +64,10 @@ const GUIDE = [
   [
     "Witnesses and radio meetings",
     "Report a nearby fallen operator with F or Report body. Press C or use Info → Emergency radio to call from anywhere with working communications. If jammed, use the wired emergency console or restore communications. Each player gets one emergency call. Meetings allow fifteen seconds of discussion and fifteen seconds to vote. Patient vitals and the flight pause during meetings and Last Stand; new meetings are blocked while autopilot is disengaged during flight. More than half the living patrol must vote for one suspect. The accused fights every other survivor after a five-second preparation. Ties and Skip return to the rescue. A 90-second limit prevents hiding indefinitely; expiry forfeits the accused. Combat eliminations are permanent. Unless the host turns it off, the patrol learns whether a removed player was an infiltrator. Operators win the moment every infiltrator is stopped; infiltrators win once they equal the remaining crew.",
+  ],
+  [
+    "Quick shift and the daily case",
+    "In the menu, pick a shift. Full shift is the classic eight-player match. Quick shift is five players, one infiltrator and seven supplies, about five minutes. The daily case is a Quick shift that is the same for everyone each day: same base, same crew, same infiltrator, and you are always an operator. Win fast and vote out the infiltrator yourself for a score out of 1000, then share it and see who beats you.",
   ],
   [
     "Emergencies",
@@ -352,7 +366,7 @@ export class ProtocolUI {
     g.shell.append(this.tactics);
     this.menu = element("section", "mf-protocol-menu");
     this.menu.hidden = true;
-    this.menu.innerHTML = `<label>Offline role preference<select aria-label="Offline secret role preference"><option value="operator">Operator · learn the base</option><option value="infiltrator">Infiltrator · covert objectives</option><option value="random">Surprise me · random role</option></select></label><p>Offline preference starts a fresh round. Online roles are secret and assigned by the server; your choice here cannot change them.</p><button>How to play</button>`;
+    this.menu.innerHTML = `<label class="mf-protocol-shiftpick">Shift<select class="mf-protocol-shift" aria-label="Shift length">${Object.values(SHIFTS).map((shift) => `<option value="${shift.id}">${shift.name}</option>`).join("")}</select></label><p class="mf-protocol-dailynote"></p><label>Offline role preference<select class="mf-protocol-preference" aria-label="Offline secret role preference"><option value="operator">Operator · learn the base</option><option value="infiltrator">Infiltrator · covert objectives</option><option value="random">Surprise me · random role</option></select></label><p class="mf-protocol-menunote"></p><button>How to play</button>`;
     g.$(".mf-start").before(this.menu);
     this.results = element("section", "mf-protocol-results");
     this.results.hidden = true;
@@ -594,7 +608,16 @@ export class ProtocolUI {
         this.update(true);
       }
     });
-    g.on(this.menu.querySelector("select"), "change", (event) => {
+    g.on(this.menu.querySelector(".mf-protocol-shift"), "change", (event) => {
+      if (g.online) return;
+      g.shift = shiftChoice(event.target.value);
+      try {
+        localStorage.setItem("midnry-outpost-shift", g.shift);
+      } catch {}
+      g.reset();
+      this.refreshMenu();
+    });
+    g.on(this.menu.querySelector(".mf-protocol-preference"), "change", (event) => {
       if (g.online) return;
       g.rolePreference = event.target.value;
       g.reset();
@@ -904,7 +927,13 @@ export class ProtocolUI {
     const list = this.brief.querySelector(".mf-protocol-briefmatch");
     list.replaceChildren();
     const spec = SPECIALTIES[self.specialty?.id];
-    for (const option of [spec ? { ...spec, name: `Your specialty: ${spec.name}` } : null, modifierOf(match?.modifier), twistOf(match?.twist)].filter(Boolean)) {
+    const shiftLine =
+      match?.shift === "daily"
+        ? { icon: "📅", name: `Daily case · ${dailyKey()}`, text: "Same case for everyone today. Find the one infiltrator quickly." }
+        : match?.shift === "quick"
+          ? { icon: "⏱️", name: "Quick shift", text: "Five players, one infiltrator, seven supplies." }
+          : null;
+    for (const option of [shiftLine, spec ? { ...spec, name: `Your specialty: ${spec.name}` } : null, modifierOf(match?.modifier), twistOf(match?.twist)].filter(Boolean)) {
       const item = element("li");
       item.append(element("b", "", `${option.icon} ${option.name}`), document.createTextNode(option.text));
       list.append(item);
@@ -2037,12 +2066,29 @@ export class ProtocolUI {
       this.focus?.close();
       for (const dialog of [this.brief, this.arming, this.meeting]) if (dialog.open) dialog.close();
     }
-    const preference = this.menu.querySelector("select");
+    const offline = !(g.online || g.ui?.playChoice === "online");
+    const shift = shiftChoice(g.shift);
+    const shiftSelect = this.menu.querySelector(".mf-protocol-shift");
+    shiftSelect.value = shift;
+    shiftSelect.closest("label").hidden = !offline;
+    const preference = this.menu.querySelector(".mf-protocol-preference");
     preference.value = g.rolePreference || "operator";
     preference.disabled = Boolean(g.online);
-    preference.closest("label").hidden = Boolean(g.online) || g.ui?.playChoice === "online";
+    // The daily case always makes you an operator.
+    preference.closest("label").hidden = !offline || shift === "daily";
+    const best = shift === "daily" ? readDaily()[dailyKey()] : null;
     setText(
-      this.menu.querySelector("p"),
+      this.menu.querySelector(".mf-protocol-dailynote"),
+      offline && shift === "daily"
+        ? best
+          ? `Today's case: your best is ${best.score}/1000${best.won ? ` (solved in ${formatTime(best.seconds)})` : ""}. Play again to beat it. A new case starts at 01:00 Nigerian time.`
+          : "Today's case: everyone gets the same base, crew and infiltrator, and you are an operator. Win fast and vote right for a top score. Share it with friends."
+        : offline
+          ? SHIFTS[shift].copy
+          : "",
+    );
+    setText(
+      this.menu.querySelector(".mf-protocol-menunote"),
       g.online || g.ui?.playChoice === "online"
         ? "Roles are secret and dealt by the server. Bots fill empty seats."
         : "",
@@ -2102,7 +2148,9 @@ export class ProtocolUI {
     if (g.state === "fresh")
       setText(
         copy,
-        "Load the medevac and fly aid to wounded soldiers before they die. Two of your crew are secret infiltrators. Find them.",
+        !g.online && g.ui?.playChoice !== "online" && shiftChoice(g.shift) !== "full"
+          ? "Load the medevac and fly aid to wounded soldiers before they die. One of your crew is a secret infiltrator. Find them."
+          : "Load the medevac and fly aid to wounded soldiers before they die. Two of your crew are secret infiltrators. Find them.",
       );
     setText(
       g.$(".mf-kitnote"),
@@ -2144,6 +2192,30 @@ export class ProtocolUI {
     if (card && again && this.results.parentElement !== card) again.before(this.results);
     const operatorsWon = view.winner === 0,
       delivered = protocol.mission?.patients.some((patient) => patient.rescued);
+    // Daily case: score this run and keep the day's best on this device.
+    let daily = null;
+    if (protocol.match?.shift === "daily" && !g.online) {
+      const roles = protocol.revealedRoles || {};
+      const run = {
+        won: operatorsWon,
+        seconds: Math.round(view.time || 0),
+        correctVotes: protocol.self?.correctVotes || 0,
+        crewAlive: view.entities.filter((e) => roles[e.id] !== "infiltrator" && e.hp > 0).length,
+        rescued: protocol.mission?.patients.filter((patient) => patient.rescued).length || 0,
+      };
+      const key = g.dailyCase || dailyKey();
+      const scores = readDaily(),
+        best = scores[key];
+      daily = { key, ...run, score: dailyScore(run), best: best?.score ?? null };
+      if (!best || daily.score > best.score) {
+        scores[key] = { score: daily.score, won: run.won, seconds: run.seconds };
+        // Keep the last month only.
+        for (const day of Object.keys(scores).sort().slice(0, -30)) delete scores[day];
+        try {
+          localStorage.setItem("midnry-outpost-daily", JSON.stringify(scores));
+        } catch {}
+      }
+    }
     this.results.append(
       element(
         "h2",
@@ -2168,6 +2240,24 @@ export class ProtocolUI {
         `Patients rescued: ${protocol.mission?.patients.filter((patient) => patient.rescued).length || 0}/${protocol.mission?.patients.length || 4}. Your role: ${protocol.self?.role === "infiltrator" ? "Infiltrator" : "Operator"}. Roles are now declassified.`,
       ),
     );
+    if (daily) {
+      const box = element("div", "mf-protocol-dailyscore");
+      box.append(
+        element("small", "", `Daily case · ${daily.key}`),
+        element("strong", "", `${daily.score}`),
+        element("span", "", "/ 1000"),
+        element(
+          "p",
+          "",
+          daily.best == null
+            ? "Your first score today. Play again to improve it, or share it and see who beats you."
+            : daily.score > daily.best
+              ? `New best today (was ${daily.best}).`
+              : `Your best today is still ${daily.best}.`,
+        ),
+      );
+      this.results.append(box);
+    }
     const roles = protocol.revealedRoles || {},
       list = element("ul");
     for (const entity of view.entities)
@@ -2200,6 +2290,11 @@ export class ProtocolUI {
     // Share how it went, with a link that brings friends to the game.
     if (!g.practice?.active && !g.academy?.active) {
       const card = shareSummary(view, g.selfId);
+      if (daily) {
+        const lead = `📅 Daily case ${daily.key}: ${daily.score}/1000${daily.won ? ` in ${formatTime(daily.seconds)}` : ""}. Beat my score!`;
+        card.headline = `${lead} ${card.headline}`;
+        card.text = `${lead} ${card.text}`;
+      }
       const box = element("div", "mf-protocol-share"),
         status = element("small", "mf-protocol-sharestatus", "");
       const share = element("button", "mf-protocol-sharebtn", "Share result"),

@@ -112,6 +112,11 @@ midnry-fps .mf-protocol-sharerow > * { height: 48px; min-height: 48px !important
 midnry-fps .mf-results .mf-protocol-results > h2 { order: 1; font-size: 22px !important; text-transform: uppercase; color: var(--mf-text); }
 midnry-fps .mf-results .mf-protocol-results > p { order: 2; font-size: 15px !important; line-height: 1.5; color: var(--mf-muted); }
 midnry-fps .mf-results .mf-resultstats { order: 3; }
+midnry-fps .mf-results .mf-protocol-dailyscore { order: 2; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; padding: 12px 14px; border: 1px solid var(--mf-accent); border-radius: 12px; background: #ffc8570f; }
+midnry-fps .mf-protocol-dailyscore small { flex-basis: 100%; font: 700 14px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--mf-accent); }
+midnry-fps .mf-protocol-dailyscore strong { font: 700 44px/1 var(--mf-display); color: var(--mf-text); }
+midnry-fps .mf-protocol-dailyscore span { font: 600 18px var(--mf-display); color: var(--mf-muted); }
+midnry-fps .mf-protocol-dailyscore p { flex-basis: 100%; margin: 0; font-size: 14px; color: var(--mf-muted); }
 midnry-fps .mf-results .mf-resultstats small { font-size: 13px !important; color: var(--mf-muted); }
 midnry-fps .mf-results .mf-resultstats strong { font-family: var(--mf-display); font-size: 30px !important; }
 midnry-fps .mf-results .mf-earned { order: 4; font-size: 15px !important; color: var(--mf-accent); }

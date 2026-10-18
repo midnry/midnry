@@ -10,6 +10,7 @@ import { recordVictimTakedown } from "./outpost-death.js";
 import { rollMatch, modifierChoice, dealSupplies, liveSites, shuffled, sightRange } from "./outpost-variety.js";
 import { SPECIALTIES, dealSpecialties } from "./outpost-specialties.js";
 import { EVENT_KINDS, nextEvent } from "./outpost-events.js";
+import { QUICK, quickRequired } from "./outpost-shifts.js";
 import {
   PROTOCOL_MAP,
   TRANSPORT_MAP,
@@ -187,6 +188,9 @@ export class ProtocolArena extends Arena {
     this.cores = [];
     this.projectiles = [];
     this.fields = [];
+    // Quick shift (offline only): five seats, bots trimmed from the end.
+    this.shift = options.shift === "quick" || options.shift === "daily" ? options.shift : "full";
+    if (this.shift !== "full") this.entities = this.entities.filter((e, i) => !e.bot || i < QUICK.seats);
     const size = this.level.length;
     this.zone = {
       cx: size / 2,
@@ -221,10 +225,10 @@ export class ProtocolArena extends Arena {
     // practice and tests keep the classic fixed round.
     this.varietyRandom = options.variety === true ? random : null;
     this.matchRoll = this.varietyRandom
-      ? rollMatch(random, modifierChoice(options.modifier))
+      ? rollMatch(random, modifierChoice(options.modifier), this.shift === "full" ? [] : ["lone-wolf"])
       : { modifier: null, twist: null };
     const infiltrators = new Set(
-      seats.slice(0, this.matchRoll.modifier === "lone-wolf" ? 1 : PROTOCOL_RULES.infiltrators),
+      seats.slice(0, this.infiltratorTotal()),
     );
     this.protocol = {
       version: 1,
@@ -233,7 +237,7 @@ export class ProtocolArena extends Arena {
       // Roles are announced when the assembly removes someone (host setting).
       revealRoles: options.revealRoles !== false,
       revealed: {},
-      match: { ...this.matchRoll },
+      match: { ...this.matchRoll, ...(this.shift === "full" ? {} : { shift: this.shift }) },
       // Everything that happened, secrets included: shown only after the round.
       timeline: [],
       killCooldown: this.matchRoll.modifier === "lone-wolf" ? 15 : PROTOCOL_RULES.killCooldown,
@@ -261,7 +265,10 @@ export class ProtocolArena extends Arena {
       // Mid-match events (fire, casualty, delivery, sandstorm) in the base.
       events: [],
       // Real matches only; practice and tests keep the classic round.
-      nextEventAt: options.variety === true && options.events !== false ? 80 + random() * 30 : Infinity,
+      nextEventAt:
+        options.variety === true && options.events !== false
+          ? (this.shift === "full" ? 80 : QUICK.firstEvent) + random() * 30
+          : Infinity,
       sandstormUntil: 0,
       self: null,
       players: Object.create(null),
@@ -360,6 +367,7 @@ export class ProtocolArena extends Arena {
     if (!data?.protocol || data.mode !== "protocol") return Arena.restore(data);
     const arena = Arena.restore(data);
     Object.setPrototypeOf(arena, ProtocolArena.prototype);
+    arena.shift = ["quick", "daily"].includes(data.protocol.match?.shift) ? data.protocol.match.shift : "full";
     // A public recipient snapshot can render and interpolate, but may never
     // invent teammates' roles or be used as an authoritative server simulation.
     arena.presentationOnly =
@@ -392,13 +400,17 @@ export class ProtocolArena extends Arena {
     return arena;
   }
 
+  infiltratorTotal() {
+    return this.matchRoll?.modifier === "lone-wolf" || this.shift !== "full" ? 1 : PROTOCOL_RULES.infiltrators;
+  }
+
   newMedicalMission() {
     const roll = this.matchRoll ?? {},
       random = this.varietyRandom;
     const manifest = MEDICAL_SUPPLIES.map((item) => ({
       id: item.id,
       name: item.name,
-      required: item.required,
+      required: this.shift === "full" ? item.required : quickRequired(item.required),
       loaded: 0,
     }));
     let priority = null;
@@ -417,7 +429,10 @@ export class ProtocolArena extends Arena {
     const critical =
       random && roll.modifier === "critical" ? Math.min(3, Math.floor(random() * 4)) : -1;
     const duration = Math.round(
-      120 * (roll.modifier === "rush" ? 0.85 : 1) * (roll.twist === "headwind" ? 1.25 : 1),
+      120 *
+        (roll.modifier === "rush" ? 0.85 : 1) *
+        (roll.twist === "headwind" ? 1.25 : 1) *
+        (this.shift === "full" ? 1 : QUICK.flightScale),
     );
     return {
       version: 1,
@@ -1791,7 +1806,7 @@ export class ProtocolArena extends Arena {
       reportedBody:reported?{name:reported.name,room:this.roomAt(reported)?.name}:null,
       meeting: this.protocol.meeting,
       // Public knowledge only: the announced starting count and exposed roles.
-      infiltratorCount: this.protocol.match?.modifier === "lone-wolf" ? 1 : PROTOCOL_RULES.infiltrators,
+      infiltratorCount: this.infiltratorTotal(),
       revealed: this.protocol.revealRoles !== false ? this.protocol.revealed : {},
     };
   }
@@ -1850,7 +1865,7 @@ export class ProtocolArena extends Arena {
       } else if (ev.kind === "drop") this.addLog("The supply delivery was left unopened.");
       else if (ev.kind === "sandstorm") this.addLog("The sandstorm has passed.");
     }
-    if (mission.phase !== "base" || this.time < (p.nextEventAt ?? Infinity) || (p.eventCount || 0) >= 3) return;
+    if (mission.phase !== "base" || this.time < (p.nextEventAt ?? Infinity) || (p.eventCount || 0) >= (this.shift === "full" ? 3 : QUICK.maxEvents)) return;
     p.nextEventAt = this.time + 75 + this.random() * 35;
     p.eventCount = (p.eventCount || 0) + 1;
     const { kind, spot } = nextEvent(() => this.random(), p.events.at(-1)?.kind);

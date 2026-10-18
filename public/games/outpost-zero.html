@@ -2311,6 +2311,7 @@
     <script type="module">
       import { MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf, clamp } from "./outpost-sim.js";
       import { createArena, restoreArena, protocolView } from "./outpost-protocol.js";
+      import { dailyKey, dailyRandom, shiftChoice } from "./outpost-shifts.js";
       import { PROTOCOL_MAP, TRANSPORT_MAP } from "./outpost-protocol-map.js";
       import { ProtocolUI } from "./outpost-protocol-ui.js";
       import { SpectatorUI } from "./outpost-spectator.js";
@@ -2811,9 +2812,16 @@
               this.mapId = "breakwater";
               this.weapon = "carbine";
             } else if (MAPS[this.mapId]?.protocolOnly) this.mapId = "outpost";
+            // Offline shift length; the daily case is a seeded Quick shift
+            // where everyone is an operator hunting the same infiltrator.
+            this.shift = shiftChoice(this.shift || storedSetting("midnry-outpost-shift"));
+            const daily = this.mode === "protocol" && this.shift === "daily";
+            this.dailyCase = daily ? dailyKey() : null;
             this.arena = createArena({
               interactiveTasks: true,
-              rolePreference: this.rolePreference,
+              rolePreference: daily ? "operator" : this.rolePreference,
+              shift: this.mode === "protocol" ? this.shift : "full",
+              ...(daily ? { random: dailyRandom(this.dailyCase) } : {}),
               mode: this.mode,
               mapId: this.mapId,
               weapon: this.weapon,
@@ -2830,7 +2838,7 @@
                 },
               ],
               variety: true,
-              modifier: this.modifier || storedSetting("midnry-outpost-modifier") || "random",
+              modifier: daily ? "random" : this.modifier || storedSetting("midnry-outpost-modifier") || "random",
             });
             this.damageSeen = 0;
             this.damageTotalSeen = 0;

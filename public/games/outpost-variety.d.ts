@@ -8,6 +8,7 @@ export function shuffled<T>(list: readonly T[], random: () => number): T[];
 export function rollMatch(
   random: () => number,
   choice?: string,
+  exclude?: readonly string[],
 ): { modifier: string; twist: string };
 export function dealSupplies<T extends { id: string; name: string; supplyId: string; stock: number }>(
   random: () => number,
