@@ -219,6 +219,16 @@ export class ProtocolUI {
       midnry-fps .mf-protocol-radio p { margin:3px 0;font-size:13px;overflow-wrap:anywhere; }
       midnry-fps .mf-protocol-chatform { display:flex;gap:8px;margin-top:10px; }
       midnry-fps .mf-protocol-chatform input { flex:1;min-width:0;color:#edf5eb;background:#091710;border:1px solid #789c8166;font-size:14px; }
+      midnry-fps .mf-protocol-quicktalk { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px; }
+      midnry-fps .mf-protocol-quicktalk button { min-height:40px;padding:6px 4px;font-size:13px; }
+      midnry-fps .mf-protocol-quicktalk button[aria-pressed="true"] { background:#ffc857;color:#1d1505;border-color:#ffc857; }
+      @media(max-width:600px) { midnry-fps .mf-protocol-quicktalk { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+      midnry-fps .mf-protocol-chatter { position:absolute;z-index:5;left:calc(14px + var(--mf-safe-left,0px));bottom:calc(150px + var(--mf-safe-bottom,0px));width:min(330px,calc(100% - 28px));display:grid;gap:4px;pointer-events:none; }
+      midnry-fps .mf-protocol-chatter p { margin:0;padding:6px 10px;border-radius:10px;background:#0d1714d9;border:1px solid #a9bdb233;color:#e9f0ea;font:500 13px/1.35 var(--mf-body);animation:mf-chatter-in .25s ease-out; }
+      midnry-fps .mf-protocol-chatter b { font-weight:700; }
+      @keyframes mf-chatter-in { from { opacity:0;transform:translateY(6px); } }
+      @media(prefers-reduced-motion:reduce) { midnry-fps .mf-protocol-chatter p { animation:none; } }
+      @media(max-width:600px) { midnry-fps .mf-protocol-chatter { bottom:calc(190px + var(--mf-safe-bottom,0px));width:min(260px,calc(100% - 28px)); } midnry-fps .mf-protocol-chatter p { font-size:12px; } }
       midnry-fps .mf-protocol-votes { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0; }
       midnry-fps .mf-protocol-votes button { text-align:left;font-size:13px;overflow-wrap:anywhere; }
       midnry-fps .mf-protocol-votes button[aria-pressed="true"] { border-color:#d4e7b7;background:#507143; }
@@ -348,7 +358,7 @@ export class ProtocolUI {
     this.arming = this.dialog("mf-protocol-codeform", "Arming-code challenge");
     this.arming.innerHTML = `<div class="mf-protocol-kicker">Final stage / Stay stationary</div><h2>Confirm the arming code</h2><p>Enter the displayed three-digit code. A wrong code, movement or an expired timer resets this planting attempt.</p><div class="mf-protocol-armingnumber" aria-label="Required arming code"></div><p class="mf-protocol-armingtimer" role="status"></p><form class="mf-protocol-code"><input type="text" inputmode="numeric" pattern="[0-9]{3}" maxlength="3" autocomplete="off" aria-label="Enter the displayed three-digit arming code" required><button type="submit">Arm charge</button></form>`;
     this.meeting = this.dialog("mf-protocol-meeting", "Radio meeting and Last Stand vote");
-    this.meeting.innerHTML = `<div class="mf-protocol-dialoghead"><div><span class="mf-protocol-kicker">Command radio / Movement paused</span><h2>Emergency meeting</h2><span class="mf-protocol-meetingphase"></span></div><button class="mf-protocol-meetingmenu">Menu</button></div><p class="mf-protocol-meetingreason"></p><div class="mf-protocol-radio" role="log" aria-live="polite" aria-label="Meeting discussion"></div><form class="mf-protocol-chatform"><input type="text" maxlength="180" autocomplete="off" aria-label="Radio discussion message" placeholder="Where were you? What did you see?"><button type="submit">Send</button></form><p class="mf-protocol-meetinghint"></p><div class="mf-protocol-votes" role="group" aria-label="Vote for a Last Stand suspect"></div><button class="mf-protocol-skip" aria-pressed="false">Skip combat</button>`;
+    this.meeting.innerHTML = `<div class="mf-protocol-dialoghead"><div><span class="mf-protocol-kicker">Command radio / Movement paused</span><h2>Emergency meeting</h2><span class="mf-protocol-meetingphase"></span></div><button class="mf-protocol-meetingmenu">Menu</button></div><p class="mf-protocol-meetingreason"></p><div class="mf-protocol-radio" role="log" aria-live="polite" aria-label="Meeting discussion"></div><form class="mf-protocol-chatform"><input type="text" maxlength="180" autocomplete="off" aria-label="Radio discussion message" placeholder="Where were you? What did you see?"><button type="submit">Send</button></form><div class="mf-protocol-quicktalk" role="group" aria-label="Quick talk: choose, then tap a player"><button type="button" data-say="accuse">Accuse</button><button type="button" data-say="ask">Ask where</button><button type="button" data-say="vouch">Vouch</button><button type="button" data-say="saw">I saw an attack</button></div><p class="mf-protocol-meetinghint"></p><div class="mf-protocol-votes" role="group" aria-label="Vote for a Last Stand suspect"></div><button class="mf-protocol-skip" aria-pressed="false">Skip combat</button>`;
     this.live = element("div", "mf-sr-only");
     this.live.setAttribute("role", "status");
     this.live.setAttribute("aria-live", "polite");
@@ -612,13 +622,69 @@ export class ProtocolUI {
       this.chatReadyAt = performance.now() + 1050;
       input.value = "";
     });
+    g.on(this.meeting.querySelector(".mf-protocol-quicktalk"), "click", (event) => {
+      const button = event.target.closest("[data-say]");
+      if (!button || button.disabled) return;
+      this.sayMode = this.sayMode === button.dataset.say ? null : button.dataset.say;
+      this.voteKey = null;
+      this.meetingKey = null;
+    });
     g.on(this.meeting.querySelector(".mf-protocol-votes"), "click", (event) => {
       const button = event.target.closest("[data-vote]");
-      if (button && !button.disabled) this.enqueue("vote", button.dataset.vote);
+      if (!button || button.disabled) return;
+      if (this.sayMode) {
+        this.quickTalk(this.sayMode, button.dataset.vote);
+        return;
+      }
+      this.enqueue("vote", button.dataset.vote);
     });
     g.on(this.meeting.querySelector(".mf-protocol-skip"), "click", (event) => {
       if (!event.currentTarget.disabled) this.enqueue("vote", "skip");
     });
+  }
+
+  /** A tap-to-talk line the bots understand. Typing still works too. */
+  quickTalk(mode, targetId) {
+    const view = this.safeView(),
+      target = view?.entities.find((e) => e.id === targetId);
+    this.sayMode = null;
+    this.voteKey = null;
+    if (!target || !this.alive() || this.actions.some((action) => action.op === "chat")) return;
+    const name = target.name || "Operator";
+    const text = {
+      accuse: `I suspect ${name}. ${name}, where were you?`,
+      ask: `${name}, where were you?`,
+      vouch: `${name} was with me. ${name} is clear.`,
+      saw: `I saw ${name} attack someone.`,
+    }[mode];
+    if (!text) return;
+    this.enqueue("chat", undefined, text);
+    this.chatReadyAt = performance.now() + 1050;
+  }
+
+  /** Recent radio calls during play, shown briefly above the controls. */
+  updateChatter(view, gameplay) {
+    if (!this.chatter) {
+      this.chatter = element("div", "mf-protocol-chatter");
+      this.chatter.setAttribute("role", "log");
+      this.chatter.setAttribute("aria-label", "Team radio");
+      this.g.shell.append(this.chatter);
+    }
+    const lines = (view?.protocol?.chatter || []).filter((c) => view.time - c.at < 9).slice(-3);
+    const show = gameplay && view?.protocol?.phase === "roam" && lines.length > 0 && !this.hasDialogOpen();
+    this.chatter.hidden = !show;
+    const key = lines.map((c) => c.id).join(",");
+    if (!show || key === this.chatterKey) return;
+    this.chatterKey = key;
+    this.chatter.replaceChildren();
+    for (const c of lines) {
+      const sender = view.entities.find((e) => e.id === c.sender);
+      const who = element("b", "", `📻 ${sender?.mark ? sender.mark + " " : ""}${c.name}: `);
+      if (sender?.color) who.style.color = sender.color;
+      const line = element("p");
+      line.append(who, document.createTextNode(c.text));
+      this.chatter.append(line);
+    }
   }
 
   safeView() {
@@ -1239,6 +1305,7 @@ export class ProtocolUI {
     this.updateContext(view);
     this.updateActions(view);
     this.taskPanel?.update(view, gameplay);
+    this.updateChatter(view, gameplay);
     this.updateArming(view);
     this.updateMeeting(view);
     this.updateCombat(view);
@@ -1740,7 +1807,9 @@ export class ProtocolUI {
       this.meeting.querySelector(".mf-protocol-meetinghint"),
       !alive
         ? "Observer only. Eliminated operators cannot speak or vote."
-        : ownVote
+        : this.sayMode && !votePhase
+          ? "Now tap a player below."
+          : ownVote
           ? "Vote recorded. Your vote cannot be changed."
           : pendingVote
             ? "Submitting your vote…"
@@ -1755,6 +1824,11 @@ export class ProtocolUI {
       votePhase ||
       performance.now() < (this.chatReadyAt || 0) ||
       this.actions.some((action) => action.op === "chat");
+    for (const button of this.meeting.querySelectorAll("[data-say]")) {
+      button.disabled = !alive || votePhase;
+      button.setAttribute("aria-pressed", String(this.sayMode === button.dataset.say));
+    }
+    if (votePhase && this.sayMode) this.sayMode = null;
     const messageKey = `${meeting.id}:${meeting.messages?.map((message) => message.id).join(",")}`;
     if (messageKey !== this.messageKey) {
       this.messageKey = messageKey;
@@ -1774,7 +1848,7 @@ export class ProtocolUI {
       if (nearEnd) radio.scrollTop = radio.scrollHeight;
     }
     const living = view.entities.filter((entity) => entity.hp > 0 && !entity.departed);
-    const voteKey = `${meeting.id}:${protocol.phase}:${living.map((item) => item.id).join(",")}:${selectedVote || ""}:${alive}`;
+    const voteKey = `${meeting.id}:${protocol.phase}:${living.map((item) => item.id).join(",")}:${selectedVote || ""}:${alive}:${this.sayMode || ""}`;
     if (voteKey !== this.voteKey) {
       this.voteKey = voteKey;
       const choices = this.meeting.querySelector(".mf-protocol-votes");
@@ -1796,7 +1870,10 @@ export class ProtocolUI {
           if (candidate.colorName) button.setAttribute("aria-label", `${candidate.name}, ${candidate.colorName}`);
         }
         button.dataset.vote = candidate.id;
-        button.disabled = !votePhase || !alive || Boolean(selectedVote);
+        // In quick-talk mode the player list picks who you talk about.
+        button.disabled = this.sayMode
+          ? !alive || votePhase || candidate.id === this.g.selfId
+          : !votePhase || !alive || Boolean(selectedVote);
         button.setAttribute("aria-pressed", String(candidate.id === selectedVote));
         choices.append(button);
       }
@@ -2107,6 +2184,7 @@ export class ProtocolUI {
     this.disposed = true;
     this.actions = [];
     this.held = false;
+    this.chatter?.remove();
     for (const node of [
       this.style,
       this.hud,

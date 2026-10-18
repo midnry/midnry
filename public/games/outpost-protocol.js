@@ -15,7 +15,7 @@ import {
   AIRCRAFT_TASKS,
 } from "./outpost-protocol-map.js";
 import { beginCombat, advanceCombat, combatDamage, canFight } from "./outpost-protocol-combat.js";
-import { rememberObservation, chooseSuspect, strongestEvidence, nextStatement } from './outpost-protocol-ai.js';
+import { rememberObservation, chooseSuspect, strongestEvidence, nextStatement, roamLine } from './outpost-protocol-ai.js';
 
 export const PROTOCOL_RULES = Object.freeze({
   seats: 8,
@@ -250,6 +250,9 @@ export class ProtocolArena extends Arena {
       meeting: null,
       combat: null,
       log: [],
+      // Public radio calls during play (bots and system), newest last.
+      chatter: [],
+      nextChatterAt: 20,
       self: null,
       players: Object.create(null),
       nextId: 1,
@@ -1167,6 +1170,7 @@ export class ProtocolArena extends Arena {
           ? "Base power interrupted. Restore the generator circuit."
           : "Radio link jammed. Restore the communications terminal.",
       );
+      if (targetId === "power") this.protocol.nextChatterAt = Math.min(this.protocol.nextChatterAt ?? 0, this.time + 2);
     } else if (action.op === "vent") {
       if (
         player.role !== INFILTRATORS ||
@@ -1727,6 +1731,50 @@ export class ProtocolArena extends Arena {
     return distance(entity, point) - (company ? 4 : 0);
   }
 
+  /** A public radio call during play. Jammed comms carry nothing. */
+  radio(entity, text) {
+    const p = this.protocol;
+    if (!entity || !text || p.sabotage.commsUntil > this.time) return;
+    p.chatter ??= [];
+    p.chatter.push({ id: p.nextId++, sender: entity.id, name: entity.name, text, at: this.time });
+    if (p.chatter.length > 8) p.chatter.shift();
+  }
+
+  /** Bots keep the radio alive: where they are, what they saw, who they
+   * suspect, and a word when a human shadows them. */
+  botChatter() {
+    const p = this.protocol;
+    if (p.phase !== "roam" || this.time < (p.nextChatterAt ?? 0)) return;
+    p.nextChatterAt = this.time + 9 + this.random() * 9;
+    const speakers = this.entities.filter((e) => e.bot && this.active(e));
+    if (!speakers.length) return;
+    // Someone being followed by a human says so first.
+    for (const bot of speakers) {
+      const player = this.privateFor(bot);
+      for (const [id, seconds] of Object.entries(player.shadowedBy || {}))
+        if (seconds >= 12 && this.time >= (player.shadowCallAt || 0)) {
+          const human = this.entities.find((e) => e.id === id);
+          if (!human || !this.active(human)) continue;
+          player.shadowCallAt = this.time + 60;
+          player.shadowedBy[id] = 0;
+          this.radio(bot, `${human.name}, why are you following me?`);
+          return;
+        }
+    }
+    const bot = speakers[Math.floor(this.random() * speakers.length)];
+    const map = this.mapId === TRANSPORT_MAP.id ? TRANSPORT_MAP : PROTOCOL_MAP;
+    const ctx = {
+      ...this.botMeetingContext(bot),
+      sabotage: p.sabotage.powerUntil > this.time ? "power" : null,
+      // Only one radio call per power cut; afterwards bots talk normally.
+      firstPowerCall: p.sabotage.powerUntil > this.time && p.powerCalled !== p.sabotage.powerUntil,
+      patientsCritical: p.mission.patients.some((pt) => pt.hp > 0 && pt.hp <= 25 && !pt.rescued),
+      rooms: map.rooms.map((room) => room.name),
+    };
+    if (ctx.firstPowerCall) p.powerCalled = p.sabotage.powerUntil;
+    this.radio(bot, roamLine(ctx, () => this.random()));
+  }
+
   /** One more operator lost and the infiltrators match the crew. */
   finishingKill() {
     const living = (team) => this.entities.filter((e) => e.team === team && this.active(e)).length;
@@ -1831,6 +1879,12 @@ export class ProtocolArena extends Arena {
       for(const other of this.entities)if(other!==entity&&this.sees(entity,other)) {
         player.contacts=player.contacts.filter(c=>c.id!==other.id);
         player.contacts.push({id:other.id,at:this.time,room:this.roomAt(other)?.name||'the corridor'});
+      }
+      // How long each human has stayed close behind this bot.
+      player.shadowedBy ||= {};
+      for(const other of this.entities)if(!other.bot&&other!==entity) {
+        const close=this.active(other)&&distance(entity,other)<3&&this.sees(entity,other);
+        player.shadowedBy[other.id]=close?(player.shadowedBy[other.id]||0)+1.2:0;
       }
       player.contacts=player.contacts.filter(c=>this.time-c.at<120).slice(-12);
     }
@@ -2100,6 +2154,7 @@ export class ProtocolArena extends Arena {
       if (this.protocol.phase !== "roam") break;
       if (entity.bot) this.botRoam(entity, dt);
     }
+    this.botChatter();
     for (const body of this.protocol.bodies)
       if (body.carriedBy) {
         const carrier = this.entities.find((e) => e.id === body.carriedBy);
@@ -2343,6 +2398,7 @@ export function protocolView(data, selfId) {
         }
       : null,
     log: clone(p.log),
+    chatter: clone(p.chatter ?? []),
     mission: publicMission,
     combat: p.combat
       ? {

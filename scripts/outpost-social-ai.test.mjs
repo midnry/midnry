@@ -193,7 +193,7 @@ test("bots retain their discussion budget when public radio history is full", ()
     });
   bot.bot = true;
   tick(a, 12);
-  assert.equal(a.privateFor(bot).botDialogue.sent, 3);
-  assert.equal(meeting.messages.filter((m) => m.sender === bot.id).length, 3);
+  assert.equal(a.privateFor(bot).botDialogue.sent, 4);
+  assert.equal(meeting.messages.filter((m) => m.sender === bot.id).length, 4);
   assert.equal(meeting.messages.length, 48);
 });

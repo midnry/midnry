@@ -72,6 +72,18 @@ export function accusationTargets(text, entities) {
   }
   return targets;
 }
+const VOUCH = /\b(was with me|is clear|i vouch|vouch for|i trust)\b/i;
+/** IDs whose unique name appears in a message, with no accusation needed. */
+export function mentioned(text, entities) {
+  const lower = String(text || "").toLowerCase();
+  return entities
+    .filter((e) => {
+      const name = e.name?.trim().toLowerCase();
+      if (!name || entities.filter((p) => p.name?.trim().toLowerCase() === name).length !== 1) return false;
+      return new RegExp("(?:^|[^\\p{L}\\p{N}_])" + escape(name) + "(?=$|[^\\p{L}\\p{N}_])", "u").test(lower);
+    })
+    .map((e) => e.id);
+}
 export function suspectScores(ctx) {
   const scores = new Map(),
     add = (id, n) => {
@@ -106,6 +118,12 @@ export function suspectScores(ctx) {
     }
   }
   for (const claim of claims.values()) add(claim.id, claim.weight);
+  // "X was with me / X is clear": a vouch lowers suspicion a little.
+  for (const message of ctx.meeting?.messages || []) {
+    if (message.sender === ctx.self.id || !VOUCH.test(message.text)) continue;
+    for (const id of mentioned(message.text, ctx.entities))
+      if (id !== message.sender) add(id, -1.2);
+  }
   // Votes already cast are public; each one lends a little momentum.
   for (const [voter, target] of Object.entries(ctx.meeting?.votes || {}))
     if (voter !== ctx.self.id && target !== "skip") add(target, 0.5);
@@ -195,7 +213,7 @@ export function strongestEvidence(ctx) {
  * Infiltrators can lie, but their claims have the same credibility as any voice. */
 export function nextStatement(ctx) {
   const state = ctx.player.botDialogue;
-  if (!state || state.sent >= 3) return null;
+  if (!state || state.sent >= 4) return null;
   const messages = ctx.meeting.messages || [],
     proof = strongestEvidence(ctx);
   const accusation = [...messages]
@@ -214,6 +232,17 @@ export function nextStatement(ctx) {
   const framed =
     ctx.entities.find((e) => e.id === contacts.at(-1)?.id) ||
     candidates[hash(ctx.self.id + ctx.meeting.id) % Math.max(1, candidates.length)];
+  if (accusation && /where were you/i.test(accusation.text) && !/\b(suspect|attack|kill|lying|traitor)\b/i.test(accusation.text)) {
+    // A plain question gets an alibi, not a denial. Infiltrators may lie.
+    const buddy =
+      ctx.player.role === "infiltrator"
+        ? framed && hash(ctx.self.id + accusation.id) % 2 === 0 ? framed : null
+        : ctx.entities.find((e) => e.id === contacts.at(-1)?.id);
+    return {
+      text: `I was in ${cover}${buddy ? `, ${buddy.name} was with me` : ""}.`,
+      replyTo: accusation.id,
+    };
+  }
   if (accusation) {
     const speaker = ctx.entities.find((e) => e.id === accusation.sender)?.name || "Patrol";
     const denial = [
@@ -246,11 +275,17 @@ export function nextStatement(ctx) {
     }
     const sighting = nearBody(ctx);
     if (sighting) return { text: sighting };
-    return {
-      text: ctx.player.activities?.length
-        ? `I was checking supplies in ${cover}. I did not witness an attack.`
-        : "I have no clear witness evidence. Who saw the attack, and where?",
-    };
+    const where = ctx.reportedBody?.room;
+    const openers = [
+      `I was checking supplies in ${cover}. I did not witness an attack.`,
+      "I have no clear witness evidence. Who saw the attack, and where?",
+      `Nothing solid from me. I was in ${cover} the whole time.`,
+      where ? `Who was near ${where}? I came from ${cover}.` : `Quiet on my side. I was in ${cover}.`,
+      `I didn't see it happen. Let's hear where everyone was before we vote.`,
+    ];
+    // Each seat starts from a different line so a room never echoes itself.
+    const seat = Math.max(0, ctx.entities.findIndex((e) => e.id === ctx.self.id));
+    return { text: openers[(seat + hash(ctx.meeting.id)) % openers.length] };
   }
   const claim = [...messages]
     .reverse()
@@ -263,6 +298,13 @@ export function nextStatement(ctx) {
   if (!claim) return null;
   if (proof && accusationTargets(claim.text, ctx.entities).includes(proof.actorId))
     return { text: witnessStatement(ctx, proof), replyTo: claim.id };
+  const target = accusationTargets(claim.text, ctx.entities).find((id) => eligible(ctx, id));
+  const mine = target && suspectScores(ctx).get(target);
+  if (ctx.player.role !== "infiltrator" && mine >= 1) {
+    const name = ctx.entities.find((e) => e.id === target)?.name;
+    const sender = ctx.entities.find((e) => e.id === claim.sender)?.name || "them";
+    return { text: `I agree with ${sender}. ${name} has been acting strange.`, replyTo: claim.id };
+  }
   if (ctx.player.role === "infiltrator" && framed)
     return {
       text: `I am not convinced. ${framed.name} has not explained their route. Are we sure about this accusation?`,
@@ -272,4 +314,32 @@ export function nextStatement(ctx) {
     text: "Was that an eyewitness account or a guess? I cannot confirm it from my patrol. Check the locations before voting.",
     replyTo: claim.id,
   };
+}
+
+/** One radio call during play. Operators report what they actually saw;
+ * infiltrators sometimes invent sightings to frame someone. */
+export function roamLine(ctx, random = Math.random) {
+  const name = (id) => ctx.entities.find((e) => e.id === id)?.name;
+  const here = ctx.room || "the corridor";
+  if (ctx.sabotage === "power" && ctx.firstPowerCall) return pickOne(random, [`Power's down! Who's near the generators?`, `Lights are out in ${here}. Stay close to someone.`]);
+  if (ctx.patientsCritical) return pickOne(random, ["The patients are fading. We need those supplies now!", "Someone get the medevac loaded, we're losing them."]);
+  const scores = [...suspectScores(ctx)].sort((a, b) => b[1] - a[1]);
+  const recent = (ctx.player.contacts || []).filter((c) => ctx.time - c.at < 30 && eligible(ctx, c.id) && c.room !== here);
+  const roll = random();
+  if (ctx.player.role === "infiltrator" && roll < 0.35) {
+    const pool = ctx.entities.filter((e) => eligible(ctx, e.id));
+    const victim = pool[Math.floor(random() * pool.length)];
+    const room = ctx.rooms[Math.floor(random() * ctx.rooms.length)];
+    if (victim && room) return `Saw ${victim.name} hanging around ${room}. Bit odd.`;
+  }
+  if (ctx.player.role !== "infiltrator" && scores[0]?.[1] >= 1.5 && roll < 0.45)
+    return `Keep an eye on ${name(scores[0][0])}. Something's off.`;
+  if (recent.length && roll < 0.65) {
+    const c = recent[Math.floor(random() * recent.length)];
+    return `${name(c.id)} just went through ${c.room}.`;
+  }
+  return pickOne(random, [`Working in ${here}.`, `Heading through ${here}.`, `${here} looks clear.`, `Checking supplies in ${here}.`]);
+}
+function pickOne(random, list) {
+  return list[Math.floor(random() * list.length)];
 }
