@@ -2114,7 +2114,7 @@
       />
       <img class="mf-loadimage" alt="" decoding="async" />
       <header class="mf-loadheader">
-        <div class="mf-loadbrand">MIDNRY<small>BLACKOUT PROTOCOL</small></div>
+        <div class="mf-loadbrand">OUTPOST ZERO<small>BLACKOUT PROTOCOL</small></div>
         <div class="mf-loadtitle">LIFELINE RUN<br />PREPARE TO DEPLOY</div>
       </header>
       <div class="mf-loadbody">
@@ -2318,6 +2318,7 @@
       import { OutpostTheme } from "./outpost-theme.js";
       import { OutpostMenu } from "./outpost-menu.js";
       import { OutpostHud } from "./outpost-hud.js";
+      import { OutpostSkin } from "./outpost-skin.js";
       import { deathTiming, deathFrame } from "./outpost-death.js";
       import { VictimDeathUI } from "./outpost-death-ui.js";
       import { ConnectionUI } from "./outpost-connection.js";
@@ -2467,6 +2468,7 @@
             this.theme = new OutpostTheme(this);
             this.homeMenu = new OutpostMenu(this);
             this.hudStyle = new OutpostHud(this);
+            this.skin = new OutpostSkin(this);
             this.protocolUI.refreshMenu();
             this.initMilitaryStatus();
             // Every entry point uses the same cinematic renderer. Query strings
@@ -4338,6 +4340,7 @@
             this.theme?.dispose();
             this.homeMenu?.dispose();
             this.hudStyle?.dispose();
+            this.skin?.dispose();
             this.protocolUI?.dispose();
             clearTimeout(this.loadingTimer);
             window.outpostLoading?.stop();

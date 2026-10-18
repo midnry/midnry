@@ -142,7 +142,7 @@ export class OutpostHud {
     const g = this.g,
       view = ui.view,
       protocol = view?.protocol,
-      on = Boolean(protocol && ui.visibleGameplay?.());
+      on = Boolean(protocol && g.mode === "protocol" && g.state === "playing" && g.$(".mf-modal")?.hidden);
     g.shell.classList.toggle("mf-hudon", on);
     if (!on) return;
     const mission = protocol.mission;

@@ -906,6 +906,7 @@ export class ProtocolUI {
     const self = (this.view || this.safeView())?.protocol?.self;
     if (!self) return;
     const infiltrator = self.role === "infiltrator";
+    this.brief.dataset.role = infiltrator ? "infiltrator" : "operator";
     setText(
       this.brief.querySelector(".mf-protocol-briefrole"),
       infiltrator ? "INFILTRATOR" : "OPERATOR",

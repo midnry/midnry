@@ -212,6 +212,7 @@ export default defineConfig(({ command, isPreview }) => ({
                   "outpost-menu.js",
                   "outpost-icons.js",
                   "outpost-hud.js",
+                  "outpost-skin.js",
                   "outpost-realtime.js",
                   "outpost-spatial-audio.js",
                   "outpost-voice.js",
