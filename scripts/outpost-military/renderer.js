@@ -508,7 +508,8 @@ export class MilitaryRenderer {
       this.bloom.enabled = preset !== "performance";
     }
     if (this.reflection) {
-      this.reflection.visible = this.profile.reflections && preset !== "performance";
+      // Mirror puddles redraw the whole scene, so only High pays for them.
+      this.reflection.visible = this.profile.reflections && preset === "high";
       this.reflection
         .getRenderTarget()
         .setSize(preset === "high" ? 1024 : 512, preset === "high" ? 1024 : 512);
@@ -674,17 +675,21 @@ export class MilitaryRenderer {
     this.rebuildWalls();
     const rail = this.material({ color: "#555c58", metalness: 0.7, roughness: 0.65 });
     rail.userData.world = true;
+    // The perimeter rail is ~120 small parts: batch them like other fixtures.
+    const fence = new THREE.Group();
+    this.world.add(fence);
     for (let side = 0; side < (id === "medevac" ? 0 : 4); side++)
       for (let i = 0; i < n; i += 4) {
         const x = side === 0 ? 1 : side === 1 ? n - 1 : i + 1,
           z = side === 2 ? 1 : side === 3 ? n - 1 : i + 1;
-        const pole = this.cylinder(this.world, rail, [x * SCALE, 4.8, z * SCALE], 0.055, 3.6, "y");
+        const pole = this.cylinder(fence, rail, [x * SCALE, 4.8, z * SCALE], 0.055, 3.6, "y");
         pole.castShadow = false;
-        const bar = this.box(this.world, rail, [x * SCALE, 6.55, z * SCALE], [1, 0.08, 0.08]);
+        const bar = this.box(fence, rail, [x * SCALE, 6.55, z * SCALE], [1, 0.08, 0.08]);
         bar.castShadow = false;
         for (const dx of [-0.3, 0.3])
-          this.box(this.world, rail, [x * SCALE + dx, 6.55, z * SCALE], [0.25, 0.18, 0.2]);
+          this.box(fence, rail, [x * SCALE + dx, 6.55, z * SCALE], [0.25, 0.18, 0.2]);
       }
+    batchStaticByMaterial(fence);
     if (["breakwater", "medevac"].includes(id) && this.protocolMetadata())
       this.buildProtocolBase(this.protocolMetadata());
     else this.addLandmarks(id, n, rail);
@@ -1875,12 +1880,16 @@ export class MilitaryRenderer {
     reflector.material.transparent = true;
     reflector.material.depthWrite = false;
     reflector.userData.ownedGeometry = true;
-    reflector.visible = this.g.academy.preset !== "performance";
+    reflector.visible = this.g.academy.preset === "high";
     this.world.add(reflector);
     this.reflection = reflector;
     const draw = reflector.onBeforeRender.bind(reflector);
+    // Refresh the mirror every other frame; ripples hide the half-step.
+    let frame = 0;
     reflector.onBeforeRender = (...args) => {
       if (this.scene.overrideMaterial) return;
+      if (frame++ % 2 && reflector.userData.drawn) return;
+      reflector.userData.drawn = true;
       draw(...args);
     };
   }

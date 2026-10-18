@@ -50,6 +50,13 @@ export function preparePropKit(gltf) {
       size: box.getSize(new THREE.Vector3()),
       parts: parts.map((part) => {
         part.material.userData.world = true;
+        // The crate's open sides are hard-edged holes: a cut-out draws the
+        // same and, unlike blending, lets every crate share one draw.
+        if (part.material.transparent && part.material.map) {
+          part.material.transparent = false;
+          part.material.alphaTest = 0.5;
+          part.material.depthWrite = true;
+        }
         return {
           geometry: part.geometry,
           material: part.material,

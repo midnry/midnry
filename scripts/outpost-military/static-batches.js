@@ -5,6 +5,30 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
  * Unlike geometry-only instancing, this also combines differently sized trims
  * and pipes. Photographic UVs, normals and each part's transform are retained.
  * Animated props, transparent glass and dynamic screens keep their own meshes. */
+// Fixtures build their own copy of identical paints and metals. Non-glowing
+// copies with the same settings and textures are interchangeable, so they
+// batch together; anything emissive (lamps, alarms, screens) changes during
+// play and keeps its own material.
+const COLORS = ["color", "emissive"];
+const MAPS = ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap", "alphaMap", "emissiveMap", "bumpMap", "displacementMap"];
+function materialKey(m) {
+  // Custom shaders are set as own properties; those keep their identity.
+  if (
+    !m.isMeshStandardMaterial ||
+    m.emissive?.getHex() ||
+    Object.hasOwn(m, "onBeforeCompile") ||
+    Object.hasOwn(m, "customProgramCacheKey")
+  )
+    return m.uuid;
+  return [
+    m.type,
+    ...COLORS.map((k) => m[k]?.getHexString()),
+    ...MAPS.map((k) => m[k]?.uuid ?? ""),
+    m.roughness, m.metalness, m.opacity, m.alphaTest, m.side, m.envMapIntensity,
+    m.normalScale?.x, m.normalScale?.y, m.flatShading, m.vertexColors, m.depthWrite, m.polygonOffset,
+  ].join("|");
+}
+
 export function batchStaticByMaterial(root, tiles = 6) {
   root.updateMatrixWorld(true);
   const groups = new Map(),
@@ -29,7 +53,7 @@ export function batchStaticByMaterial(root, tiles = 6) {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([k, a]) => `${k}/${a.itemSize}/${a.normalized}/${a.array.constructor.name}`)
         .join(",");
-    const key = `${object.material.uuid}:${Math.floor(p.x / (tiles * 3))}:${Math.floor(p.z / (tiles * 3))}:${object.castShadow}:${object.receiveShadow}:${!!object.userData.noRoomCull}:${object.frustumCulled}:${signature}`;
+    const key = `${materialKey(object.material)}:${Math.floor(p.x / (tiles * 3))}:${Math.floor(p.z / (tiles * 3))}:${object.castShadow}:${object.receiveShadow}:${!!object.userData.noRoomCull}:${object.frustumCulled}:${signature}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(object);
   });
