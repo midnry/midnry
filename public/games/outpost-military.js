@@ -17051,12 +17051,12 @@ function Nf(e, t, n, r, i) {
 	a.lastSample = i, t.lastSample = i;
 	let d = u > 0 ? a.distance / u : 0;
 	a.speed = Cf(a.speed, d, .6);
-	let f = e.motion?.matches, p = !f && a.speed > .15 && n.hp > 0 && !(n.slideUntil > e.g.time), m = a.signedDistance < -a.distance * .35, h = (n.crouching || n.slideUntil > e.g.time) && t.actions.Crouch, g = h ? "Crouch" : p ? m && t.actions.BackWalk ? "BackWalk" : a.speed > 2.5 && !m ? "Run" : "Walk" : "Idle";
+	let f = e.motion?.matches, p = !f && a.speed > .15 && n.hp > 0 && !(n.slideUntil > e.g.time), m = a.signedDistance < -a.distance * .35, h = (n.crouching || n.slideUntil > e.g.time) && t.actions.Crouch, g = h ? "Crouch" : p ? "Run" : "Idle";
 	g !== t.action && (t.actions[t.action]?.fadeOut(.15), t.actions[g]?.reset().fadeIn(.15).play(), t.action = g);
 	let _ = t.actions[g];
 	if (_) {
 		let t = _.getClip().duration, n = e.characterProfile?.[g] || (g === "Run" ? 2.25 : 1.45);
-		_.setEffectiveTimeScale(p && !h ? (m && g !== "BackWalk" ? -1 : 1) * Sf(d * t / n, .25, 3) : 1);
+		_.setEffectiveTimeScale(p && !h ? (m ? -1 : 1) * Sf(d * t / n, .25, 3) : 1);
 	}
 	a.distance = 0, a.signedDistance = 0;
 	let v = n.reloadUntil > e.g.time;

@@ -399,7 +399,9 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
   const moving = !reduced && state.speed > 0.15 && e.hp > 0 && !(e.slideUntil > r.g.time);
   const backward = state.signedDistance < -state.distance * 0.35;
   const capturedCrouch = (e.crouching || e.slideUntil > r.g.time) && actor.actions.Crouch;
-  const next = capturedCrouch ? "Crouch" : moving ? (backward && actor.actions.BackWalk ? "BackWalk" : state.speed > 2.5 && !backward ? "Run" : "Walk") : "Idle";
+  // The bundled Walk and BackWalk clips are broken (a flying kick and a fall),
+  // so every gait plays Run, slowed to the actual speed and reversed backwards.
+  const next = capturedCrouch ? "Crouch" : moving ? "Run" : "Idle";
   if (next !== actor.action) {
     actor.actions[actor.action]?.fadeOut(0.15);
     actor.actions[next]?.reset().fadeIn(0.15).play();
@@ -410,7 +412,7 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
     const duration = action.getClip().duration;
     const loopDistance = r.characterProfile?.[next] || (next === "Run" ? 2.25 : 1.45);
     action.setEffectiveTimeScale(
-      moving && !capturedCrouch ? (backward && next !== "BackWalk" ? -1 : 1) * clamp((speed * duration) / loopDistance, 0.25, 3) : 1,
+      moving && !capturedCrouch ? (backward ? -1 : 1) * clamp((speed * duration) / loopDistance, 0.25, 3) : 1,
     );
   }
   state.distance = 0;
