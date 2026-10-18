@@ -1927,7 +1927,7 @@ export class MilitaryRenderer {
       model.scale.multiplyScalar(factor);
       model.position.y -= bounds.min.y * factor;
       finishActor(this, model, e);
-      if (this.g.mode !== "protocol") {
+      if (!this.soldierLook()) {
         model.traverse((o) => {
           // Parts of one actor can share a material: patch each material once,
           // or the fabric shader declares its varyings twice and fails.
@@ -2036,7 +2036,7 @@ export class MilitaryRenderer {
       lastSample: null,
       deadAt: null,
     };
-    if (this.g.mode !== "protocol") this.dressActor(actor, e);
+    if (!this.soldierLook()) this.dressActor(actor, e);
     else this.dyeUniform(model, e.color);
     actor.dye = e.color || null;
     this.equipActor(actor, e);
@@ -2083,6 +2083,10 @@ export class MilitaryRenderer {
    * vests, straps, boots and skin keep their own colours. Colours never
    * reveal a role, they only make "I saw Red" possible.
    */
+  /** Lifeline Run and Last Signal both use the plain soldier uniform. */
+  soldierLook() {
+    return this.g.mode === "protocol" || this.g.mode === "signal";
+  }
   dyeUniform(model, color) {
     if (!color) return;
     const tint = new THREE.Color(color).lerp(new THREE.Color("#808080"), 0.1);
@@ -2451,7 +2455,7 @@ export class MilitaryRenderer {
         a &&
         (a.outfit !== outfitOf(e.outfit).id ||
           a.weapon !== e.weapon ||
-          (this.g.mode === "protocol" && a.dye !== (e.color || null)))
+          (this.soldierLook() && a.dye !== (e.color || null)))
       ) {
         this.disposeActor(a);
         this.actors.delete(e.id);
@@ -2459,7 +2463,7 @@ export class MilitaryRenderer {
       }
       if (!a) a = this.makeActor(e);
       a.patch.color.set(
-        this.g.mode === "protocol"
+        this.soldierLook()
           ? "#97a79b"
           : e.team === this.g.player.team && this.g.mode === "duo"
             ? "#a2c8b1"
@@ -2534,7 +2538,7 @@ export class MilitaryRenderer {
   }
   weaponMaterials(firstPerson = true) {
     const materials = realisticWeaponMaterials(this, firstPerson);
-    if (this.g.mode !== "protocol") {
+    if (!this.soldierLook()) {
       materials.cloth.map = this.skinTexture(outfitOf(this.g.camera().outfit));
       materials.cloth.color.set("#ffffff");
     }

@@ -2310,7 +2310,7 @@
     </script>
     <script type="module">
       import { MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf, clamp } from "./outpost-sim.js";
-      import { createArena, restoreArena, protocolView } from "./outpost-protocol.js";
+      import { createArena, restoreArena, protocolView, PLAYER_COLORS } from "./outpost-protocol.js";
       import { dailyKey, dailyRandom, shiftChoice } from "./outpost-shifts.js";
       import { PROTOCOL_MAP, TRANSPORT_MAP } from "./outpost-protocol-map.js";
       import { ProtocolUI } from "./outpost-protocol-ui.js";
@@ -2855,6 +2855,10 @@
               variety: true,
               modifier: daily ? "random" : this.modifier || storedSetting("midnry-outpost-modifier") || "random",
             });
+            // Last Signal fighters wear the Lifeline soldiers' uniform, one
+            // colour each, like the crew.
+            if (this.mode === "signal")
+              this.arena.entities.forEach((e, i) => (e.color ??= PLAYER_COLORS[i % PLAYER_COLORS.length].hex));
             this.damageSeen = 0;
             this.damageTotalSeen = 0;
             this.hitSeen = 0;

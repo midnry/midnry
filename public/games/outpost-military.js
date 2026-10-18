@@ -22489,7 +22489,7 @@ var vm = class {
 				e.isSkinnedMesh && (e.skeleton.update(), e.computeBoundingBox());
 			});
 			let o = new qe().setFromObject(r), s = 1.82 / (o.max.y - o.min.y);
-			r.scale.multiplyScalar(s), r.position.y -= o.min.y * s, Af(this, r, e), this.g.mode !== "protocol" && r.traverse((t) => {
+			r.scale.multiplyScalar(s), r.position.y -= o.min.y * s, Af(this, r, e), this.soldierLook() || r.traverse((t) => {
 				if (t.isMesh && !t.material.userData.outfitFabric) {
 					t.material.userData.outfitFabric = !0;
 					let n = wp(e.outfit), r = this.skinTexture(n);
@@ -22558,7 +22558,7 @@ var vm = class {
 			lastSample: null,
 			deadAt: null
 		};
-		return this.g.mode === "protocol" ? this.dyeUniform(r, e.color) : this.dressActor(s, e), s.dye = e.color || null, this.equipActor(s, e), s.ownedMaterials = [...this.materials].filter((e) => !t.has(e)), this.actors.set(e.id, s), s;
+		return this.soldierLook() ? this.dyeUniform(r, e.color) : this.dressActor(s, e), s.dye = e.color || null, this.equipActor(s, e), s.ownedMaterials = [...this.materials].filter((e) => !t.has(e)), this.actors.set(e.id, s), s;
 	}
 	mergeStatic(e) {
 		e.updateMatrixWorld(!0);
@@ -22576,6 +22576,9 @@ var vm = class {
 			let i = new Kn(n, t);
 			i.castShadow = !0, i.receiveShadow = !0, i.userData.ownedGeometry = !0, e.add(i);
 		}
+	}
+	soldierLook() {
+		return this.g.mode === "protocol" || this.g.mode === "signal";
 	}
 	dyeUniform(e, t) {
 		if (!t) return;
@@ -23174,7 +23177,7 @@ var vm = class {
 				continue;
 			}
 			let o = this.actors.get(a.id);
-			o && (o.outfit !== wp(a.outfit).id || o.weapon !== a.weapon || this.g.mode === "protocol" && o.dye !== (a.color || null)) && (this.disposeActor(o), this.actors.delete(a.id), o = null), o ||= this.makeActor(a), o.patch.color.set(this.g.mode === "protocol" ? "#97a79b" : a.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465");
+			o && (o.outfit !== wp(a.outfit).id || o.weapon !== a.weapon || this.soldierLook() && o.dye !== (a.color || null)) && (this.disposeActor(o), this.actors.delete(a.id), o = null), o ||= this.makeActor(a), o.patch.color.set(this.soldierLook() ? "#97a79b" : a.team === this.g.player.team && this.g.mode === "duo" ? "#a2c8b1" : "#9b7465");
 			let s = a.hp > 0, c = a.cloakedUntil > this.g.time && a.team !== this.g.player.team, l = performance.now() / 1e3;
 			s ? o.deadAt = null : o.deadAt === null && (o.deadAt = l);
 			let u = s ? 0 : Math.min(1, (l - o.deadAt) / .85);
@@ -23197,7 +23200,7 @@ var vm = class {
 	}
 	weaponMaterials(e = !0) {
 		let t = Lf(this, e);
-		return this.g.mode !== "protocol" && (t.cloth.map = this.skinTexture(wp(this.g.camera().outfit)), t.cloth.color.set("#ffffff")), t;
+		return this.soldierLook() || (t.cloth.map = this.skinTexture(wp(this.g.camera().outfit)), t.cloth.color.set("#ffffff")), t;
 	}
 	hand(e, t, n, r, i) {
 		return Yf(this, e, t, n, r) || Bf(this, e, t, n, r, i);
