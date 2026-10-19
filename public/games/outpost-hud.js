@@ -105,6 +105,8 @@ midnry-fps .mf-protocol-focus .mf-toast { font-family: var(--mf-display) !import
   midnry-fps .mf-shell.mf-hudon .mf-protocol-context { left: 50% !important; right: auto !important; bottom: 26px !important; transform: translateX(-50%) !important; width: auto !important; min-width: 200px; max-width: 420px !important; padding: 34px 18px 8px !important; text-align: center !important; border: 0 !important; border-radius: 0 !important; background: radial-gradient(closest-side, #000a, #0000) !important; box-shadow: none !important; }
   midnry-fps .mf-shell.mf-hudon .mf-protocol-context::before { content: ""; position: absolute; top: 4px; left: 50%; width: 30px; height: 22px; transform: translateX(-50%); background: var(--mf-accent); clip-path: polygon(50% 0, 100% 100%, 50% 72%, 0 100%); }
   midnry-fps .mf-shell.mf-hudon .mf-protocol-context :is(b, .mf-navline, .mf-navline *) { font: 600 19px var(--mf-display) !important; letter-spacing: 0.04em; color: #f1f4ef; text-shadow: 0 2px 6px #000; }
+  midnry-fps .mf-shell.mf-hudon .mf-protocol-context.mf-navactive::before { top: 0; width: 24px; height: 30px; clip-path: polygon(50% 0,100% 48%,66% 48%,66% 100%,34% 100%,34% 48%,0 48%); transform: translateX(-50%) rotate(var(--mf-navturn, 0deg)); transition: transform 0.12s linear; }
+  midnry-fps .mf-shell.mf-hudon .mf-protocol-context .mf-navarrow { display: none; }
   midnry-fps .mf-shell.mf-hudon .mf-protocol-context .mf-navline { display: grid !important; justify-items: center; gap: 0; }
   midnry-fps .mf-shell.mf-hudon .mf-protocol-context.mf-navactive > :is(b, p) { display: none !important; }
   midnry-fps .mf-shell.mf-hudon .mf-protocol-context .mf-navdistance { font-size: 17px !important; color: #d5ddd7 !important; }

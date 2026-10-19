@@ -21378,7 +21378,7 @@ var wm = 3, Tm = .065, Em = 40, Dm = class {
 		}), this.ring = new qn(this.ringGeometry, this.ringMaterial), this.ring.renderOrder = 2, this.root.add(this.mesh, this.ring), this.root.visible = !1, this.matrix = new G(), this.position = new U(), this.rotation = new H(), this.axis = new U(0, 1, 0), this.scale = new U(1, 1, 1);
 	}
 	update(e, t, n, r) {
-		let i = this.r.g, a = i.navigation, o = i.protocolUI, s = !!a?.route && a.mapId === e?.mapId && a.roundId === e?.roundId && !a.line.hidden && o.visibleGameplay() && !o.hasDialogOpen() && !o.piloting && !i.deathSequence && !n && t.id === i.selfId && t.hp > 0 && e?.state !== "ended" && e?.protocol?.phase === "roam" && !!e.protocol.self && !e.protocol.self?.channel;
+		let i = this.r.g, a = i.navigation, o = i.protocolUI, s = !!a?.trail && !!a?.route && a.mapId === e?.mapId && a.roundId === e?.roundId && !a.line.hidden && o.visibleGameplay() && !o.hasDialogOpen() && !o.piloting && !i.deathSequence && !n && t.id === i.selfId && t.hp > 0 && e?.state !== "ended" && e?.protocol?.phase === "roam" && !!e.protocol.self && !e.protocol.self?.channel;
 		if (this.root.visible = s, !s) {
 			this.nextUpdate = 0;
 			return;

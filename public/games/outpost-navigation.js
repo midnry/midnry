@@ -114,6 +114,8 @@ export class ObjectiveNavigation {
    midnry-fps .mf-navline{display:flex;align-items:center;gap:9px;min-height:24px}
    midnry-fps .mf-navline[hidden]{display:none}
    midnry-fps .mf-navline[data-urgent="true"] .mf-navlabel{color:#ffe1ac}
+   midnry-fps .mf-navarrow{flex:0 0 auto;width:16px;height:20px;background:currentColor;color:#b9eedb;clip-path:polygon(50% 0,100% 48%,66% 48%,66% 100%,34% 100%,34% 48%,0 48%);transform:rotate(var(--mf-navturn,0deg));transition:transform .12s linear}
+   midnry-fps .mf-navline[data-urgent="true"] .mf-navarrow{color:#ffd18c}
    midnry-fps .mf-navlabel{min-width:0;flex:1;font:600 12px/1.3 var(--mf-body);overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal}
    midnry-fps .mf-navdistance{flex:0 0 auto;font:500 12px var(--mf-body);color:#c1d0c5;font-variant-numeric:tabular-nums}
    midnry-fps .mf-navactive>b{display:none}
@@ -123,16 +125,25 @@ export class ObjectiveNavigation {
   `;
   this.line=document.createElement('div');this.line.className='mf-navline';this.line.hidden=true;
   this.label=document.createElement('span');this.label.className='mf-navlabel';this.distance=document.createElement('span');this.distance.className='mf-navdistance';
-  this.line.append(this.label,this.distance);ui.context.append(this.line);g.shell.append(this.style);
+  this.arrow=document.createElement('i');this.arrow.className='mf-navarrow';this.arrow.setAttribute('aria-hidden','true');
+  this.line.append(this.arrow,this.label,this.distance);ui.context.append(this.line);g.shell.append(this.style);
   this.details=document.createElement('details');this.details.className='mf-navdetails';
   const summary=document.createElement('summary');summary.textContent='Navigation & player names';
   this.select=document.createElement('select');this.select.setAttribute('aria-label','Track an objective');
   this.select.append(new Option('Automatic · next useful objective',''));
-  const note=document.createElement('p');note.textContent='Follow the mint trail on the ground. Amber trails mark urgent repairs and reports. The ring marks your destination. Hidden charges appear after you locate them.';
+  const note=document.createElement('p');note.textContent='Follow the arrow at the bottom of the screen. Amber marks urgent repairs and reports. Hidden charges appear after you locate them.';
+  // The floor trail is opt-in; the bottom arrow is the default guide.
+  try{this.trail=localStorage.getItem('midnry-outpost-trail')==='on';}catch{this.trail=false;}
+  const trailBoxes=[];
+  const trailToggle=()=>{const label=document.createElement('label');label.className='mf-namesetting';const box=document.createElement('input');box.type='checkbox';box.className='mf-trailsetting';box.checked=this.trail;trailBoxes.push(box);
+   g.on(box,'change',()=>{this.trail=box.checked;for(const b of trailBoxes)b.checked=this.trail;try{localStorage.setItem('midnry-outpost-trail',this.trail?'on':'off');}catch{}});
+   label.append(box,document.createTextNode('Show a trail on the ground to the objective'));return label;};
   const names=document.createElement('label');names.className='mf-namesetting';this.names=document.createElement('input');this.names.type='checkbox';
   try{this.names.checked=localStorage.getItem('midnry-outpost-names')!=='off';}catch{this.names.checked=true;}
   names.append(this.names,document.createTextNode('Show visible player names'));
-  this.details.append(summary,this.select,note,names);ui.focus.info.append(this.details);
+  this.details.append(summary,this.select,note,trailToggle(),names);ui.focus.info.append(this.details);
+  const settings=g.$('.mf-experience');
+  if(settings){const row=trailToggle();row.className='mf-setting';const text=row.lastChild,box=row.firstChild;const span=document.createElement('span');span.textContent='Ground trail to objective';text.remove();row.replaceChildren(span,box);settings.append(row);}
   g.on(this.select,'change',()=>{this.pinned=this.select.value||null;this.nextUpdate=0;this.update(ui.safeView());ui.focus.drawMap();});
   g.on(this.names,'change',()=>{try{localStorage.setItem('midnry-outpost-names',this.names.checked?'on':'off');}catch{}});
  }
@@ -162,6 +173,13 @@ export class ObjectiveNavigation {
   this.label.textContent=(urgent?'URGENT · ':'')+this.route.goal.label;
   this.distance.textContent=Math.max(1,Math.round(this.route.metres))+' m';
   this.line.title=this.route.goal.label+' · follow the corridor route';
+  // Point the arrow at the next corner of the walking route, relative to
+  // where the player faces: up is straight ahead, right is a right turn.
+  const ahead=navigationTrail(view.level,actor,this.route.path,{range:1.6,spacing:.2,offset:.2}),
+   target=ahead.end||ahead.markers.at(-1)||this.route.goal;
+  let turn=Math.atan2(target.y-actor.y,target.x-actor.x)-(g.player?.a??actor.a??0);
+  turn=Math.atan2(Math.sin(turn),Math.cos(turn));
+  ui.context.style.setProperty('--mf-navturn',Math.round(turn*180/Math.PI)+'deg');
  }
  drawMap(ctx,scale){
   if(!this.route)return;const p=this.g.player;
