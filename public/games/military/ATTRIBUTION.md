@@ -1,8 +1,67 @@
 # Outpost Zero tactical 3D preview assets
 
+## 2026-10-19 corridor benchmark
+
+No new third-party models or photographs were downloaded for this benchmark.
+The concrete wall/floor panels reuse the existing Poly Haven **brushed_concrete_03**
+colour, OpenGL normal and roughness photographs (CC0):
+https://polyhaven.com/a/brushed_concrete_03 . Terminal and weapon data maps reuse
+the existing **metal_plate** OpenGL normal and roughness (CC0):
+https://polyhaven.com/a/metal_plate . See REALISM-ASSETS.md for the original files.
+
+New files (512 x 512, 68,362 bytes combined):
+
+- `textures/benchmark-operator-body-orm.png` (64,909 bytes): authored material-region
+  roughness and restricted metalness derived from the existing Mixamo SWAT body atlas.
+- `textures/benchmark-operator-skin-roughness.png` (3,453 bytes): authored skin
+  roughness mask aligned to the existing Mixamo SWAT head UVs.
+
+These derivative material masks retain **Adobe Mixamo terms**, including embedded
+game use; they are not CC0. Sources and permission links are in Character and
+animation below. `scripts/build-outpost-benchmark-materials.py` records the original
+GLB SHA-256 and generates the masks reproducibly. No original model, colour atlas,
+normal atlas, skeleton, animation or UV was replaced. The red mask channel is
+constant and is not presented as baked ambient occlusion.
+
+Corridor pipes, trays, trims, terminal fittings, safety markings and sign/screen
+artwork are original procedural meshes and authored graphics, not scanned or
+production-model assets. They are part of the game's source; no external licence
+is claimed for them. The existing soldier remains a Mixamo game asset.
+
 This is a browser WebGL game. Actual rendering resolution and frame rate depend on hardware and display refresh. The operator uses the licensed Mixamo Swat sculpt, its original UVs and colour/normal maps, and retargeted Mixamo motion. The earlier Vanguard armor and procedural uniform/head-scan operator are not rendered.
 
+## Shared interactable equipment pass (2026-10-19)
+
+Station chassis/screens, medical cabinets and kit cases, supply-drop boxes,
+concealed-charge cases/status plates and emergency-console fittings use original
+procedural geometry and original authored trim/status artwork from
+`scripts/outpost-military/interactables.js`. These are authored game assets, not
+scanned or production-model assets. One runtime 2048 px colour atlas (sRGB) and
+256 px roughness/metalness data atlas (linear) are shared by all copies. There
+are no new third-party downloads. The subtle metal normal reuses the existing
+Poly Haven `metal_plate_02` OpenGL normal photograph (CC0, source in
+REALISM-ASSETS.md).
+
 ## Physically based photographs and sky
+
+The 2026-10-19 Medical / Supply Depot room kit adds original architectural
+fittings, closed cold-chain storage, impact strips and authored wayfinding
+artwork (`scripts/outpost-military/room-medical-depot.js`). These are procedural
+game assets, not production/scanned models. They reuse the existing licensed
+plaster, concrete and metal photographs listed here and in REALISM-ASSETS.md.
+The runtime 2048×512 wayfinding atlas adds no third-party download. The updated
+radio-cabinet nameplate and larger charge status artwork are also original.
+All other rooms retain their existing environment assets.
+
+## World-text clarity pass (2026-10-19)
+
+Room/station/medical signs, the corridor/depot atlases and equipment screen text
+are original canvas artwork, rebuilt at 2–3× linear resolution. They reuse the
+game's bundled **Barlow Condensed**, by Jeremy Tribby, under the SIL Open Font
+License 1.1: https://github.com/jpt/barlow . The exact bundled licence is
+[`../fonts/OFL.txt`](../fonts/OFL.txt). No new font, model or texture download was
+added. The shared equipment normal/roughness photographs and their licences
+remain unchanged; this typography is not presented as a production/scanned asset.
 
 Poly Haven publishes these assets under CC0: https://polyhaven.com/license.
 The bundled maps use the 1K diffuse, OpenGL normal, and roughness photographs:
@@ -34,6 +93,13 @@ Modifications: rest-pose-aware retargeting to the Swat skeleton at 30 Hz, remova
 The retained **legacy** head source is **Infinite, 3D Head Scan by Lee Perry-Smith**, based on work at **www.triplegangers.com**, licensed **Creative Commons Attribution 3.0 Unported**. Source: https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf/LeePerrySmith . Original permission text: [HEAD-SCAN-LICENSE.txt](HEAD-SCAN-LICENSE.txt). Its earlier adaptation cropped the shoulder bust, rescaled/reoriented the head and derived roughness from the specular map. `models/head-source.glb` and the legacy face textures retain this provenance but are not loaded by the current game. CC BY 3.0: https://creativecommons.org/licenses/by/3.0/ . The face scan is not an endorsement by its creator.
 
 ## Renderer
+
+The Central Passage pass reuses the existing Poly Haven CC0 concrete and metal
+maps documented in REALISM-ASSETS.md. Its impact strips, pipework, cable tray,
+shielded practicals, utility panel, floor paint and wayfinding atlas are original
+authored procedural fittings, not scanned or downloaded production models.
+Sign artwork uses the existing Barlow Condensed font (SIL Open Font License 1.1).
+No model, photograph or font download was added for this room.
 
 Three.js 0.180.0 and its included addons are MIT licensed:
 https://github.com/mrdoob/three.js/blob/r180/LICENSE

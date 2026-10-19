@@ -48,3 +48,29 @@ test("repeated slow frames trigger adaptation even when average work looks healt
   assert.ok(b.work < 6.8);
   assert.ok(b.scale < 1);
 });
+test("cinematic headroom can raise resolution above its base and GPU load brings it back down", () => {
+  const b=new FrameBudget();
+  for(let i=0;i<4000;i++)b.sample(2,i*1000/60,true,true,2,1.5);
+  assert.equal(b.scale,1.5);
+  for(let i=0;i<480;i++)b.sample(2,70000+i*1000/60,true,true,12,1.5);
+  assert.ok(b.scale<1,"GPU cost wins over cheap CPU submission");
+  b.sample(2,80000,true,false,2,1.5);
+  assert.equal(b.scale,1,"manual resolution restores the base cap");
+});
+test("slow cadence without GPU queries does not claim extra cinematic headroom", () => {
+  const b=new FrameBudget();
+  for(let i=0;i<5000;i++)b.sample(2,i*1000/60,true,true,null,1.5);
+  assert.equal(b.scale,1);
+  for(let i=0;i<4000;i++)b.sample(2,90000+i*1000/120,true,true,null,1.5);
+  assert.equal(b.scale,1.5);
+});
+test("menus and intermittent spikes do not count as sustained upward headroom",()=>{
+ const b=new FrameBudget();let now=0;
+ for(let i=0;i<1200;i++)b.sample(1,now+=1000/120,false,true,1,1.5);
+ for(let i=0;i<100;i++)b.sample(2,now+=1000/120,true,true,2,1.5);
+ assert.equal(b.scale,1,"menu time cannot earn an immediate upgrade");
+ for(let i=0;i<1200;i++)b.sample(i%120===0?4:2,now+=1000/120,true,true,2,1.5);
+ assert.equal(b.scale,1,"isolated spikes restart the upward hold");
+ for(let i=0;i<600;i++)b.sample(2,now+=1000/120,true,true,2,1.5);
+ assert.ok(b.scale>1,"uninterrupted fast gameplay earns extra detail");
+});

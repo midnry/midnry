@@ -301,11 +301,11 @@ export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
       light,
       "intensity",
       fixture && state.activeFixtures[i] === desired && !powerOut
-        ? fixture.outdoor ? 34 : night ? (lighting ? 26 : 21) : lighting ? 22 : 18
+        ? fixture.intensity ?? (fixture.outdoor ? 34 : night ? (lighting ? 26 : 21) : lighting ? 22 : 18)
         : 0,
     );
-    light.color.set(fixture?.outdoor ? "#ffbf7a" : night ? "#ffd6a6" : "#e2ebdf");
-    light.distance = fixture?.outdoor ? 16 : 13;
+    light.color.set(fixture?.color || (fixture?.outdoor ? "#ffbf7a" : night ? "#ffd6a6" : "#e2ebdf"));
+    light.distance = fixture?.distance || (fixture?.outdoor ? 16 : 13);
     if (fixture) light.position.set(fixture.x, fixture.y, fixture.z);
   }
 

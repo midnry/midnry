@@ -2,6 +2,9 @@
  * lamp posts that pool light on the ground, and glowing signs that bloom.
  * Presentation only; the simulation's night rule is a shorter sight range. */
 import * as THREE from "three";
+import { batchStaticByMaterial } from "./static-batches.js";
+
+import {fitDisplay,textTexture} from "./world-text.js";
 
 const SCALE = 3;
 
@@ -10,8 +13,12 @@ export const isNightShift = (view) => view?.protocol?.match?.modifier === "night
 /** Lamp posts on the base's open-air ground: [tile x, tile y, head direction x, z].
  * Poles stand against a wall so nobody walks through them. */
 const LAMPS = [
-  [3.5, 26.88, 0, -1], [9.5, 26.88, 0, -1], [17.5, 26.88, 0, -1], [24.5, 26.88, 0, -1], // Perimeter road.
-  [1.12, 22.5, 1, 0], [26.88, 22.5, -1, 0], // Gate approaches.
+  [3.5, 26.88, 0, -1],
+  [9.5, 26.88, 0, -1],
+  [17.5, 26.88, 0, -1],
+  [24.5, 26.88, 0, -1], // Perimeter road.
+  [1.12, 22.5, 1, 0],
+  [26.88, 22.5, -1, 0], // Gate approaches.
 ];
 /** Glowing signs: [tile x, tile y, text, colour, width]. Mounted on the nearest wall. */
 const SIGNS = [
@@ -43,7 +50,7 @@ function skyTexture() {
   g.fillStyle = glow;
   g.fillRect(0, 120, 1024, 160);
   let seed = 7;
-  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   // Small, dim stars: bright ones would bloom into blobs.
   for (let i = 0; i < 700; i++) {
     const x = rand() * 1024,
@@ -72,7 +79,14 @@ function poolTexture() {
   return texture;
 }
 
-function signTexture(text, color) {
+function signTexture(text, color, r, sharp = false) {
+  if (sharp) {
+    const c=document.createElement("canvas");c.width=2048;c.height=512;
+    const g=c.getContext("2d");g.fillStyle="#152126";g.fillRect(0,0,c.width,c.height);
+    fitDisplay(r,g,text,300,1920);g.textAlign="center";g.textBaseline="middle";
+    g.fillStyle=color;g.fillText(text,1024,256);
+    return textTexture(r,c,"Atrium night wayfinding / "+text);
+  }
   const c = document.createElement("canvas");
   c.width = 512;
   c.height = 128;
@@ -120,11 +134,16 @@ export class NightDressing {
   }
   build(mapId) {
     this.mapId = mapId;
+    this.disposeBatches();
     this.root.clear();
     this.lamps = [];
     if (mapId !== "breakwater") return;
-    const pole = this.material(() => new THREE.MeshStandardMaterial({ color: "#2b2f31", roughness: 0.6, metalness: 0.7 }));
-    const bulb = this.material(() => new THREE.MeshBasicMaterial({ color: new THREE.Color("#ffd9a3").multiplyScalar(3.5) }));
+    const pole = this.material(
+      () => new THREE.MeshStandardMaterial({ color: "#2b2f31", roughness: 0.6, metalness: 0.7 }),
+    );
+    const bulb = this.material(
+      () => new THREE.MeshBasicMaterial({ color: new THREE.Color("#ffd9a3").multiplyScalar(3.5) }),
+    );
     const pool = this.material(
       () =>
         new THREE.MeshBasicMaterial({
@@ -170,32 +189,53 @@ export class NightDressing {
       }
       this.lamps.push({ x: hx, y: 3.9, z: hz, outdoor: true });
     }
-    const panel = this.material(() => new THREE.MeshStandardMaterial({ color: "#14181b", roughness: 0.5, metalness: 0.4 }));
+    const panel = this.material(
+      () => new THREE.MeshStandardMaterial({ color: "#14181b", roughness: 0.5, metalness: 0.4 }),
+    );
     for (const [tx, ty, text, color, width] of SIGNS) {
       const mount = this.r.protocolMount(tx, ty, 2.75);
+      const atrium = ty < 20;
+      if(atrium){
+        // Explicit solid wall bays, away from all openings, rather than the
+        // nearest-wall fallback. Letter planes clear their backing by 35mm.
+        mount.position.set(tx<14?36.045:47.955,2.55,tx<14?40.5:46.5);
+        mount.rotation.y=tx<14?Math.PI/2:-Math.PI/2;
+      }
       const back = new THREE.Mesh(new THREE.BoxGeometry(width + 0.2, 0.62, 0.06), panel);
       this.geometries.push(back.geometry);
       back.position.z = 0.04;
-      const texture = signTexture(text, color);
+      const texture = signTexture(text, color, this.r, atrium);
       this.textures.push(texture);
       const glow = this.material(
         () =>
           new THREE.MeshBasicMaterial({
             map: texture,
-            color: new THREE.Color("#ffffff").multiplyScalar(2.4),
+            color: new THREE.Color("#ffffff").multiplyScalar(atrium ? .8 : 2.4),
             transparent: true,
             depthWrite: false,
           }),
       );
       const face = new THREE.Mesh(new THREE.PlaneGeometry(width, width / 4), glow);
       this.geometries.push(face.geometry);
-      face.position.z = 0.08;
+      face.position.z = atrium ? 0.105 : 0.08;
+      if(atrium) face.userData.atriumSign=text;
       mount.add(back, face);
       mount.traverse((o) => (o.userData.noRoomCull = true));
       this.root.add(mount);
       // One sign buzzes now and then, like an old tube.
       if (text === "OPEN 24H") this.flicker = glow;
     }
+    // Pole/arm assemblies, bulb heads and sign housings are stationary. Merge
+    // or instance those shared substrates; transparent glow faces/pools and
+    // the existing flickering sign keep their independent state. This pays
+    // for night bloom without adding per-lamp calls to the room budget.
+    batchStaticByMaterial(this.root, 32);
+  }
+  disposeBatches() {
+    this.root.traverse((object) => {
+      if (object.isInstancedMesh) object.dispose();
+      if (object.userData.ownedGeometry) object.geometry.dispose();
+    });
   }
   /** Turn the dressing on or off for this frame. Returns whether night is active. */
   update(view, mapId, time) {
@@ -210,6 +250,7 @@ export class NightDressing {
     return night;
   }
   dispose() {
+    this.disposeBatches();
     this.r.scene.remove(this.root);
     for (const item of [...this.textures, ...this.materials, ...this.geometries]) item.dispose();
   }

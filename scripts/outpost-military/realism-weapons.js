@@ -24,6 +24,7 @@ function weaponMaterial(r, options) {
 /** Same material keys as the renderer's firearm builders. */
 export function weaponMaterials(r, firstPerson = true) {
   const fabric = r.realismSurfaces?.fabric;
+  const finish = r.realismSurfaces?.weaponMetal;
   const texture = (source, repeat) =>
     firstPerson ? ownedTexture(r, source, repeat) : source || null;
   const materials = {
@@ -33,6 +34,9 @@ export function weaponMaterials(r, firstPerson = true) {
       color: "#414747",
       metalness: 0.72,
       roughness: 0.43,
+      normalMap: texture(finish?.normal, 6),
+      roughnessMap: texture(finish?.roughness, 6),
+      normalScale: new THREE.Vector2(.055,.055),
     }),
     polymer: weaponMaterial(r, {
       color: "#41463c",
@@ -43,6 +47,8 @@ export function weaponMaterials(r, firstPerson = true) {
       color: "#889293",
       metalness: 1,
       roughness: 0.3,
+      normalMap: texture(finish?.normal, 6),
+      normalScale: new THREE.Vector2(.04,.04),
     }),
     cloth: weaponMaterial(r, {
       color: "#707665",

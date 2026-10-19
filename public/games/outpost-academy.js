@@ -4,6 +4,7 @@ export const PRESETS = {
   performance: {
     adaptive: true,
     width: 720,
+    militaryWidth: 720,
     texture: 128,
     floor: 6,
     distance: 10,
@@ -13,6 +14,7 @@ export const PRESETS = {
   balanced: {
     adaptive: true,
     width: 960,
+    militaryWidth: 1280,
     texture: 256,
     floor: 3,
     distance: 18,
@@ -22,6 +24,7 @@ export const PRESETS = {
   high: {
     adaptive: true,
     width: 1440,
+    militaryWidth: 1920,
     texture: 512,
     floor: 2,
     distance: 28,
@@ -227,7 +230,7 @@ export class Academy {
       )
       .join(
         "",
-      )}</select></label><p>Up to ${this.options.width}px render width · ${shadowSize}px shadow maps${this.preset === "performance" ? " · streamlined lighting" : " · cinematic finishing"}</p><p class="mf-perfstatus">120 FPS target · 30 FPS animation</p><label class="mf-setting"><span>Automatic resolution for 120 FPS</span><input type="checkbox" data-option="adaptive" ${this.options.adaptive ? "checked" : ""}></label><p>Resolution adapts to rendering cost. Actual FPS depends on your device and display refresh rate. Turn this off to keep the selected render resolution.</p><label class="mf-setting"><span>Dynamic and contact shadows</span><input type="checkbox" data-option="shadows" ${this.options.shadows ? "checked" : ""}></label><label class="mf-setting"><span>Cinematic material lighting</span><input type="checkbox" data-option="lighting" ${this.options.lighting ? "checked" : ""}></label><p>Photographic color, normal and roughness maps add surface detail. Anisotropic filtering keeps angled textures clear. High adds mirror reflections in wet ground, screen-space contact shadows and larger shadow maps. Preferences are saved on this device.</p>`;
+      )}</select></label><p>${this.g.military ? this.options.militaryWidth : this.options.width}px base render width · ${shadowSize}px shadow maps${this.preset === "performance" ? " · streamlined lighting" : " · cinematic finishing"}</p><p class="mf-perfstatus">120 FPS target · 30 FPS animation</p><label class="mf-setting"><span>Automatic resolution for 120 FPS</span><input type="checkbox" data-option="adaptive" ${this.options.adaptive ? "checked" : ""}></label><p>Resolution adapts to rendering cost and can increase when sustained headroom is measured. Actual FPS depends on your device and display refresh rate. Turn this off to keep the selected render resolution.</p><label class="mf-setting"><span>Dynamic and contact shadows</span><input type="checkbox" data-option="shadows" ${this.options.shadows ? "checked" : ""}></label><label class="mf-setting"><span>Cinematic material lighting</span><input type="checkbox" data-option="lighting" ${this.options.lighting ? "checked" : ""}></label><p>Photographic color, normal and roughness maps add surface detail. Anisotropic filtering keeps angled textures clear. High adds mirror reflections in wet ground, screen-space contact shadows and larger shadow maps. Preferences are saved on this device.</p>`;
   }
   begin() {
     const g = this.g;
@@ -519,8 +522,9 @@ export class FrameBudget {
     this.windowFrames = 0;
     this.cooldown = 0;
     this.slowFrames = 0;
+    this.headroomFrames = 0;
   }
-  sample(cost, now, active, adaptive = true, gpuMs = null) {
+  sample(cost, now, active, adaptive = true, gpuMs = null, maxScale = 1) {
     if (!Number.isFinite(cost) || cost < 0 || !Number.isFinite(now)) return false;
     if (this.windowStart === null || now - this.windowStart > 2000) {
       this.windowStart = now;
@@ -538,19 +542,31 @@ export class FrameBudget {
     this.cooldown++;
     if (active && Math.max(cost, this.gpu || 0) > 7.5) this.slowFrames++;
     if (!adaptive) {
+      this.headroomFrames = 0;
       const changed = this.scale !== 1;
       this.scale = 1;
       return changed;
     }
-    if (!active || this.samples < 60) return false;
+    const ceiling = Math.max(1, Math.min(1.5, Number.isFinite(maxScale) ? maxScale : 1));
+    if (this.scale > ceiling) { this.scale = ceiling; return true; }
+    if (!active) { this.headroomFrames = 0; return false; }
+    // Count fast gameplay samples, not time spent in a cheap loading/menu view.
+    // A spike restarts the upward hold even when the EMA still looks cheap.
+    this.headroomFrames = Math.max(cost, this.gpu || 0) < 3.2 && renderingCost < 3.2 && this.slowFrames === 0
+      ? this.headroomFrames + 1 : 0;
+    if (this.samples < 60) return false;
     const previous = this.scale;
     if ((renderingCost > 6.8 || this.slowFrames >= 3) && this.cooldown >= 60) {
       this.scale = Math.max(0.5, Math.round(this.scale * 0.9 * 100) / 100);
       this.cooldown = 0;
       this.slowFrames = 0;
-    } else if (renderingCost < 3.2 && this.cooldown >= 480) {
-      this.scale = Math.min(1, this.scale + 0.04);
+    } else if (this.headroomFrames >= 480 && this.cooldown >= 480 &&
+      // Above the base cap, cheap CPU submission alone is not GPU headroom.
+      // Without timer queries require near-target measured display cadence.
+      (this.scale < 1 || this.gpu !== null || this.fps >= 110 || ceiling === 1)) {
+      this.scale = Math.min(ceiling, Math.round((this.scale + 0.08) * 100) / 100);
       this.cooldown = 0;
+      this.headroomFrames = 0;
     }
     if (this.cooldown % 60 === 0) this.slowFrames = 0;
     return Math.abs(this.scale - previous) > 0.001;

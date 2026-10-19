@@ -12,7 +12,9 @@ export function buildCarbine(r, parent, m, hands = true) {
   m.polymer.color.set("#343b34");
   m.metal.color.set("#343c3d");
   m.metal.metalness = 0.3;
-  m.metal.roughness = 0.54;
+  // Photographed roughness modulates this coating; its dark substrate must
+  // not turn the whole receiver into polished metal.
+  m.metal.roughness = 0.9;
   const gun = new THREE.Group();
   gun.name = "VX-7 / machined field carbine";
   parent.add(gun);

@@ -53,13 +53,14 @@ try {
       true,
     );
     await page.screenshot({ path: `/workspace/screenshots/outpost-loading-current-${name}.png` });
-    for (const title of [
-      "Watch the patrol",
-      "Lifeline Medevac",
-      "Protect the rescue",
-      "Report, discuss, decide",
-      "Every patrol matters",
-      "Blackout Protocol",
+    // Main's current briefing artwork/sequence (the screen itself is unchanged).
+    for (const [title, image] of [
+      ["Watch the patrol", "lz-patrol"],
+      ["The base fights back", "lz-fire"],
+      ["Lifeline Medevac", "lz-hangar"],
+      ["After dark", "lz-night"],
+      ["Every patrol matters", "lz-medevac"],
+      ["Lifeline Run", "lz-keyart"],
     ]) {
       await page.getByRole("button", { name: "Next loading slide", exact: true }).click();
       await page.waitForFunction(
@@ -67,7 +68,7 @@ try {
         title,
       );
       assert.ok(
-        (await page.locator(".mf-loadimage.is-active").getAttribute("src")).includes("/blackout-"),
+        (await page.locator(".mf-loadimage.is-active").getAttribute("src")).includes(`/loading/${image}.webp`),
       );
       assert.ok((await page.locator(".mf-loadtip p").textContent()).length > 35);
     }
@@ -103,8 +104,8 @@ try {
     console.log(
       JSON.stringify({
         name,
-        loadingArt: "current game captures only",
-        carousel: "six medical/role/radio briefings",
+        loadingArt: "current main briefing assets",
+        carousel: "six medical/role/emergency/night briefings",
         reducedMotion: "paused",
         deployment: "passed",
         errors,

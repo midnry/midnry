@@ -16,8 +16,12 @@ import { Reflector } from "three/addons/objects/Reflector.js";
 import { loadRealismSurfaces, surfaceMaterial } from "./realism-surfaces.js";
 import { initNaturalLighting, updateNaturalLighting } from "./realism-lighting.js";
 import { decorateRealisticEnvironment } from "./realism-environment.js";
+import { buildStationTerminal, buildMedicalCabinet, buildCabinetLabel, buildMedicalCase, buildSupplyBox, buildCharge, buildEmergencyConsole, updateChargePresentation } from './interactables.js';
+import { medicalDepotStorage } from './room-medical-depot.js';
+import { commandStorage } from './room-command-operations.js';
 import {
   prepareCharacterAsset,
+  loadOperatorResponse,
   finishActor,
   updateActorPresentation,
 } from "./realism-characters.js";
@@ -36,13 +40,14 @@ import { skinPattern } from "../../public/games/outpost-skins.js";
 import { VictimTakedown } from "./takedowns.js";
 import { ASSET_CACHE } from "../../public/games/outpost-asset-manifest.js";
 import { sightRange } from "../../public/games/outpost-variety.js";
-import { isAppleTouchDevice, graphicsProfile, renderSize } from "./compatibility.js";
+import { isAppleTouchDevice, graphicsProfile, cinematicRenderSize } from "./compatibility.js";
 import { RenderTelemetry, actorInView } from "./telemetry.js";
 import { batchStaticByMaterial } from "./static-batches.js";
 import { WorldVisibility } from "./world-visibility.js";
 import { roofLayout } from "./architecture.js";
 import { GroundTrail } from "./ground-trail.js";
 import { NightDressing } from "./realism-night.js";
+import { prepareWorldTypography, makeProtocolSign } from './world-text.js';
 import { prepareMedevac, buildMedevac } from "./realism-medevac.js";
 import { EventDressing } from "./realism-events.js";
 import { preparePropKit, buildFurniture } from "./realism-props.js";
@@ -74,6 +79,7 @@ export class MilitaryRenderer {
     this.protocolCharges = new Map();
     this.protocolBodies = new Map();
     this.protocolFixtures = [];
+    this.interactableInstances = [];
     this.protocolScreens = new Map();
     this.protocolLights = [];
     this.protocolLightMaterials = [];
@@ -276,7 +282,7 @@ export class MilitaryRenderer {
       this.composer.addPass(this.grade);
       this.composer.addPass(new OutputPass());
     }
-    this.ready = this.loadAssets().then(() => {
+    this.ready = Promise.all([this.loadAssets(),prepareWorldTypography(this)]).then(() => {
       if (!this.disposed) {
         this.mapKey = "";
         this.updateWeapon();
@@ -374,6 +380,7 @@ export class MilitaryRenderer {
     if (this.metalColor) this.metalColor.colorSpace = THREE.SRGBColorSpace;
     await Promise.all([
       loadRealismSurfaces(this),
+      loadOperatorResponse(this),
       (async () => {
         // The medevac helicopter (CC-BY). Optional: the plain shape remains.
         try {
@@ -503,9 +510,9 @@ export class MilitaryRenderer {
           target.samples = samples;
         }
       }
-      // Grading is a cheap full-screen pass; bloom is skipped on Performance.
+      // Balanced keeps lamp detail without paying for the bloom pyramid.
       this.grade.enabled = true;
-      this.bloom.enabled = preset !== "performance";
+      this.bloom.enabled = preset === "high";
     }
     if (this.reflection) {
       // Mirror puddles redraw the whole scene, so only High pays for them.
@@ -518,7 +525,9 @@ export class MilitaryRenderer {
   resize() {
     if (this.disposed) return;
     const { w, h } = this.g;
-    const [renderWidth, renderHeight] = renderSize(w, h, this.profile);
+    const rect=this.g.shell.getBoundingClientRect();
+    const [renderWidth, renderHeight] = cinematicRenderSize(rect.width,rect.height,window.devicePixelRatio,
+      this.g.academy.options,this.profile,this.g.budget?.scale||1);
     this.renderer.setSize(renderWidth, renderHeight, false);
     this.composer?.setSize(renderWidth, renderHeight);
     this.fxaa?.uniforms.resolution.value.set(1 / renderWidth, 1 / renderHeight);
@@ -577,12 +586,16 @@ export class MilitaryRenderer {
     this.worldTextures.clear();
     this.world.clear();
     this.realismDecor = null;
+    this.medicalDepotPresentation = null;
+    this.commandOperationsPresentation = null;
     this.wallMeshes = null;
     this.fittings = [];
     this.fittingMaterial = null;
     this.reflection = null;
     this.protocolFixtures = [];
+    this.interactableInstances = [];
     this.protocolScreens.clear();
+    this.protocolSignMaterials = new Set();
     this.protocolLightMaterials = [];
     this.protocolPowerOut = false;
     this.medicalStocks.clear();
@@ -913,7 +926,7 @@ export class MilitaryRenderer {
   }
   protocolPropTile(x, y) {
     if (!["breakwater", "medevac"].includes(this.g.arena.mapId)) return false;
-    return this.metadataPropTile(x, y) || this.furnitureTile(x, y);
+    return this.metadataPropTile(x, y) || this.furnitureTile(x, y) || (this.g.arena.mapId === 'breakwater' && commandStorage(x,y));
   }
   /** Solid furniture tiles (storage, racks, mess island, radar) dressed with
    * scanned props once the prop kit has loaded; plain blocks otherwise. */
@@ -941,33 +954,8 @@ export class MilitaryRenderer {
     material.userData.world = true;
     return material;
   }
-  protocolSign(title, subtitle = "BREAKWATER / FIELD OPERATIONS", color = "#81b7bd") {
-    const canvas = document.createElement("canvas");
-    canvas.width = 768;
-    canvas.height = 224;
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#18272b";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, 12, canvas.height);
-    let fontSize = 62;
-    ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
-    // Font weight and size are separate: this bounded fit also handles long room names.
-    while (fontSize > 12 && ctx.measureText(title.toUpperCase()).width > 700) {
-      fontSize -= 2;
-      ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
-    }
-    ctx.fillStyle = "#e3eee9";
-    ctx.fillText(title.toUpperCase(), 36, 106);
-    ctx.fillStyle = color;
-    ctx.font = "22px monospace";
-    ctx.fillText(subtitle.toUpperCase().slice(0, 56), 38, 160);
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
-    this.textures.add(texture);
-    this.worldTextures.add(texture);
-    return this.protocolMaterial({ map: texture, roughness: 0.85, metalness: 0.08 });
+  protocolSign(title, subtitle = "BREAKWATER / FIELD OPERATIONS", color = "#81b7bd", size = [2.5,.73]) {
+    return makeProtocolSign(this,title,subtitle,color,size);
   }
   // Mount a panel against the closest adjacent collision wall. Its maximum
   // protrusion is 0.10 tile, so an open corridor remains fully traversable.
@@ -1028,11 +1016,11 @@ export class MilitaryRenderer {
     for (const room of rooms) {
       if (room.roofed === false) continue;
       const roomFloor = surfaceMaterial(this, map.id === "medevac" ? "fabric" : "concrete", {
-        color: /maintenance|generat|ammo/.test(room.id || "") ? "#687570" : "#a0aaa3",
+        color: room.id === 'ammo' ? '#acb4ad' : /maintenance|generat/.test(room.id || "") ? "#687570" : "#a0aaa3",
         repeat: [room.w * 1.5, room.h * 1.5],
         roughness: 0.94,
         metalness: 0,
-        normalStrength: 0.2,
+        normalStrength: room.id === 'ammo' ? .14 : 0.2,
       });
       roomFloor.userData.world = true;
       const floor = this.mesh(
@@ -1079,6 +1067,11 @@ export class MilitaryRenderer {
         if (map.corridors?.includes(room) || /corridor|passage|access|bulkhead/.test(room.id || "")) {
           const alongZ = Math.abs(Math.abs(signRoot.rotation.y) - Math.PI / 2) < 0.01;
           if (alongZ ? room.h >= 2 : room.w >= 2) signRoot.position[alongZ ? "z" : "x"] += SCALE / 2;
+        }
+        // Atrium's former north-centre mount floated across its open doorway.
+        // This existing solid bay clears the jamb by 17cm and the ceiling pipe.
+        if (map.id === 'breakwater' && room.id === 'courtyard') {
+          signRoot.position.set(37.5,2.6,39.045);signRoot.rotation.y=0;
         }
         root.add(signRoot);
         const sign = this.mesh(
@@ -1129,35 +1122,7 @@ export class MilitaryRenderer {
       const panel = this.protocolMount(station.x, station.y, 1.34);
       if (map.id === "medevac" && station.kind === "cargo") panel.position.z -= 1.1;
       root.add(panel);
-      this.box(panel, steel, [0, 0, 0.07], [1.05, 0.88, 0.14]);
-      this.box(panel, paint, [0, -0.47, 0.07], [1.12, 0.11, 0.22]);
-      const screenMaterial = this.protocolMaterial({
-        color: "#acd4d3",
-        emissive: "#4b8588",
-        emissiveIntensity: 0.75,
-        roughness: 0.35,
-        metalness: 0.15,
-      });
-      const screen = this.box(panel, screenMaterial, [0, 0.06, 0.153], [0.79, 0.52, 0.028]);
-      screen.userData.noBatch = true;
-      this.protocolScreens.set(station.id, screenMaterial);
-      for (let i = 0; i < 5; i++)
-        this.box(panel, rubber, [-0.32 + i * 0.16, -0.3, 0.163], [0.1, 0.045, 0.025]);
-      const label = this.mesh(
-        panel,
-        this.geo("protocol-label", () => new THREE.PlaneGeometry(1.18, 0.34)),
-        this.protocolSign(station.name, "HOLD TO SERVICE"),
-        [0, 0.69, 0.05],
-      );
-      label.castShadow = false;
-      label.userData.noBatch = true;
-      if (/fuel|generator|power/.test(station.kind || "")) {
-        for (const x of [-0.39, 0.39])
-          this.cylinder(panel, amber, [x, -0.04, 0.18], 0.07, 0.018, "z", 16);
-      } else if (/radio|radar|comms|intel/.test(station.kind || "")) {
-        for (let i = 0; i < 3; i++)
-          this.box(panel, lamp, [-0.28 + i * 0.22, 0.38, 0.157], [0.075, 0.035, 0.02]);
-      }
+      buildStationTerminal(this,panel,station);
     }
     // These neutral access covers are ordinary public map scenery. A cover
     // never signals whether it currently contains a hidden charge.
@@ -1183,19 +1148,7 @@ export class MilitaryRenderer {
       const alarm = new THREE.Group();
       alarm.position.set(map.emergency.x * SCALE, 1.32, map.emergency.y * SCALE);
       root.add(alarm);
-      this.box(alarm, steel, [0, -0.68, 0], [0.13, 1.28, 0.13]);
-      this.box(alarm, steel, [0, -1.26, 0], [0.55, 0.08, 0.55]);
-      this.box(alarm, steel, [0, 0, 0.06], [0.58, 0.82, 0.12]);
-      this.box(alarm, amber, [0, 0, 0.14], [0.41, 0.56, 0.03]);
-      const red = this.protocolMaterial({ color: "#c66051", roughness: 0.45 });
-      this.cylinder(alarm, red, [0, 0, 0.2], 0.13, 0.06, "z", 24);
-      const label = this.mesh(
-        alarm,
-        this.geo("protocol-label", () => new THREE.PlaneGeometry(1.18, 0.34)),
-        this.protocolSign("RADIO ASSEMBLY", "EMERGENCY MEETING", "#d3ae75"),
-        [0, 0.7, 0.04],
-      );
-      label.userData.noBatch = true;
+      buildEmergencyConsole(this,alarm);
     }
     for (const prop of map.props || []) {
       if (
@@ -1262,7 +1215,7 @@ export class MilitaryRenderer {
     }
     this.buildMedicalFixtures(map, root, { steel, paint, rubber, amber, lamp });
     if (map.id === "breakwater")
-      buildFurniture(this, root, this.g.level, (x, y) => this.furnitureTile(x, y));
+      buildFurniture(this, root, this.g.level, (x, y) => this.furnitureTile(x, y) && !medicalDepotStorage(x,y) && !commandStorage(x,y));
     if (map.id === "medevac")
       this.buildTransportInterior(map, root, { steel, paint, rubber, amber, lamp });
     this.batchProtocolStatic(root);
@@ -1317,45 +1270,20 @@ export class MilitaryRenderer {
   }
   buildMedicalFixtures(map, root, materials) {
     const { steel, paint, lamp } = materials;
-    const shell = this.protocolMaterial({
-      color: "#a8bab2",
-      roughness: 0.84,
-      metalness: 0,
-    });
-    const band = this.protocolMaterial({ color: "#357b73", roughness: 0.78 });
-    const symbol = this.protocolMaterial({ color: "#e1ebe4", roughness: 0.75 });
-    const medicalCase = (parent, position, movable = false) => {
-      const group = new THREE.Group();
-      group.position.set(...position);
-      parent.add(group);
-      this.box(group, shell, [0, 0, 0], [0.78, 0.4, 0.26]);
-      this.box(group, band, [0, 0, 0.14], [0.33, 0.32, 0.025]);
-      this.box(group, symbol, [0, 0, 0.16], [0.2, 0.045, 0.02]);
-      this.box(group, symbol, [0, 0, 0.162], [0.045, 0.2, 0.02]);
-      if (movable)
-        group.traverse((object) => {
-          if (object.isMesh) object.userData.noBatch = true;
-        });
-      return group;
-    };
+    const medicalCase = (parent, position, movable = false) => buildMedicalCase(this,parent,position,movable);
     for (const fixture of map.supplies || []) {
       const cabinet = this.protocolMount(fixture.x, fixture.y, 0.57);
       root.add(cabinet);
-      this.box(cabinet, steel, [0, 0.01, 0.08], [1.08, 1.12, 0.16]);
-      this.box(cabinet, paint, [0, 0.6, 0.1], [1.14, 0.06, 0.23]);
+      buildMedicalCabinet(this,cabinet);
       const cases = [
         medicalCase(cabinet, [0, -0.23, 0.15], true),
         medicalCase(cabinet, [0, 0.23, 0.15], true),
       ];
       this.medicalStocks.set(fixture.id, cases);
-      const label = this.mesh(
-        cabinet,
-        this.geo("medical-label", () => new THREE.PlaneGeometry(1.55, 0.45)),
-        this.protocolSign(fixture.name, "MEDICAL RESUPPLY", "#a1c7b7"),
-        [0, 0.98, 0.12],
-      );
-      label.castShadow = false;
-      label.userData.noBatch = true;
+      // This stock label shares the benchmark station's wall mount. Keep the
+      // visual labels separated without moving either interaction/collision.
+      const sharedStation = (map.stations || []).some(station => station.x === fixture.x && station.y === fixture.y);
+      buildCabinetLabel(this,cabinet,fixture,sharedStation);
     }
     if (map.loading) {
       const pad = map.loading;
@@ -1369,7 +1297,7 @@ export class MilitaryRenderer {
       const label = this.mesh(
         labelRoot,
         this.geo("loading-label", () => new THREE.PlaneGeometry(2.8, 0.82)),
-        this.protocolSign("LIFELINE MEDEVAC", "LOAD SUPPLIES / BOARD TO DEPART", "#a1c7b7"),
+        this.protocolSign("LIFELINE MEDEVAC", "LOAD SUPPLIES / BOARD TO DEPART", "#a1c7b7",[2.8,.82]),
         [0, 0, 0.03],
       );
       label.userData.noBatch = true;
@@ -1609,7 +1537,7 @@ export class MilitaryRenderer {
     const sign = this.mesh(
       clinic,
       this.geo("clinic-sign", () => new THREE.PlaneGeometry(4.4, 0.9)),
-      this.protocolSign("FIELD CLINIC", "MEDICAL CARGO / RECEIVING BAY", "#a9c6b7"),
+      this.protocolSign("FIELD CLINIC", "MEDICAL CARGO / RECEIVING BAY", "#a9c6b7",[4.4,.9]),
       [46.9, 2.52, 46.5],
     );
     sign.rotation.y = -Math.PI / 2;
@@ -2835,17 +2763,6 @@ export class MilitaryRenderer {
     return true;
   }
   updatePickups(t) {
-    const crateMat =
-      this.crateMaterial ||
-      (this.crateMaterial = this.material({
-        color: "#767869",
-        roughness: 0.88,
-        metalness: 0.12,
-        map: this.metalColor,
-      }));
-    const latch =
-      this.latchMaterial ||
-      (this.latchMaterial = this.material({ color: "#bab5a1", roughness: 0.62, metalness: 0.8 }));
     const activeCrates = new Set();
     for (const e of this.g.crates) {
       if (e.hp <= 0) continue;
@@ -2854,12 +2771,7 @@ export class MilitaryRenderer {
       if (!root) {
         root = new THREE.Group();
         this.dynamic.add(root);
-        this.box(root, crateMat, [0, 0.9, 0], [1.85, 1.8, 1.85]);
-        for (const x of [-0.6, 0.6]) {
-          this.box(root, latch, [x, 0.9, 0.94], [0.055, 1.7, 0.025]);
-          this.box(root, latch, [x, 1.83, 0], [0.055, 0.025, 1.7]);
-        }
-        this.box(root, latch, [0, 1.05, 0.95], [0.34, 0.13, 0.06]);
+        buildSupplyBox(this,root);
         this.crates.set(e.id, root);
       }
       root.position.set(e.x * SCALE, 0, e.y * SCALE);
@@ -3072,6 +2984,8 @@ export class MilitaryRenderer {
       this.removeProtocolObject(body.root, true);
     }
     this.protocolCharges.clear();
+    this.defusingChargeId = null;
+    this.lastChargeNotice = null;
     this.protocolBodies.clear();
     if (this.footprints) {
       this.footprints.count = 0;
@@ -3097,9 +3011,14 @@ export class MilitaryRenderer {
     }
     const powerOut = protocol.sabotage?.powerUntil > this.g.time;
     this.protocolPowerOut = powerOut;
+    for (const material of this.protocolSignMaterials || []) {
+      material.emissiveIntensity = material.userData.textEmission * (powerOut ? .16 : 1);
+    }
     // Natural lighting owns these values; resetting them here defeats fading.
     for (const material of this.protocolLightMaterials) {
-      material.emissiveIntensity = powerOut ? 0.035 : 1.6;
+      // Preserve the diffuser's colour instead of clipping it into a white
+      // patch. Real pooled lights supply illumination independently of bloom.
+      material.emissiveIntensity = powerOut ? 0.035 : this.g.academy.preset === 'high' ? 1.6 : 1.0;
       // Night shift fixtures burn warm, matching the light they cast.
       material.color.set(powerOut ? "#414d4f" : this.night?.active ? "#ffe0b8" : "#d3edf0");
       material.userData.dayEmissive ??= material.emissive.getHex();
@@ -3129,40 +3048,37 @@ export class MilitaryRenderer {
       .addScaledVector(this.torchDirection, 12);
     this.protocolTorch.target.updateMatrixWorld();
     const chargeIds = new Set();
+    const notice = this.g.player?.noticeId;
+    const confirmedDefuse = notice !== this.lastChargeNotice && /^Charge disabled\./.test(this.g.player?.notice || '');
+    const defusedId = confirmedDefuse ? this.defusingChargeId : null;
+    this.lastChargeNotice = notice;
+    this.defusingChargeId = protocol.self?.channel?.kind === 'defuse' ? protocol.self.channel.target : null;
     // Read only the public, already redacted list. Do not consult map sites,
     // authoritative protocol.players, private planted coordinates or roles.
     for (const charge of protocol.bombs || []) {
-      if (charge.state !== "armed") continue;
+      if (!['armed','disabled'].includes(charge.state)) continue;
       chargeIds.add(charge.id);
       let root = this.protocolCharges.get(charge.id);
       if (!root) {
         root = new THREE.Group();
         this.dynamic.add(root);
-        this.chargeCaseMaterial ||= this.material({
-          color: "#273638",
-          map: this.gunColor,
-          normalMap: this.gunNormal,
-          metalness: 0.4,
-          roughness: 0.78,
-        });
-        this.chargeBandMaterial ||= this.material({ color: "#858b7d", roughness: 0.75 });
-        this.chargeIndicatorMaterial ||= this.material({
-          color: "#d09769",
-          emissive: "#9b5a39",
-          emissiveIntensity: 0.7,
-          roughness: 0.6,
-        });
-        this.box(root, this.chargeCaseMaterial, [0, 0.095, 0], [0.46, 0.19, 0.36]);
-        for (const x of [-0.16, 0.16])
-          this.box(root, this.chargeBandMaterial, [x, 0.2, 0], [0.026, 0.02, 0.3]);
-        this.box(root, this.chargeIndicatorMaterial, [0, 0.2, 0.03], [0.11, 0.017, 0.08]);
+        buildCharge(this,root);
         this.protocolCharges.set(charge.id, root);
       }
+      updateChargePresentation(this,root,charge.state);
       root.position.set(charge.x * SCALE, 0.045, charge.y * SCALE);
       root.visible = !powerOut || Math.hypot(charge.x - camera.x, charge.y - camera.y) <= 2.2;
     }
     for (const [id, root] of this.protocolCharges)
       if (!chargeIds.has(id)) {
+        // The protocol removes defused charges. Retain a short SAFE shell only
+        // for a confirmed local defuse of an already-public object. Loss of
+        // sight/redaction must never be inferred to mean a charge was disabled.
+        if (id === defusedId) {
+          updateChargePresentation(this,root,'disabled');
+          root.userData.disabledUntil = this.g.time + 4;
+        }
+        if (root.userData.disabledUntil > this.g.time) continue;
         this.removeProtocolObject(root);
         this.protocolCharges.delete(id);
       }
@@ -3263,27 +3179,19 @@ export class MilitaryRenderer {
     if (!this.grade) return;
     const u = this.grade.uniforms;
     u.time.value = time % 100;
-    if (night) {
-      u.highlight.value.set(1.1, 0.98, 0.84);
-      u.shadow.value.set(0.84, 0.95, 1.16);
-      u.saturation.value = 1.12;
-      u.vignette.value = 0.38;
-      u.grain.value = 0.035;
-      this.bloom.strength = 0.45;
-      this.bloom.threshold = 1.0;
-      this.bloom.radius = 0.5;
-    } else {
-      // Late-afternoon sun: golden highlights, slightly cool shade.
-      u.highlight.value.set(1.12, 1.01, 0.82);
-      u.shadow.value.set(0.93, 0.98, 1.08);
-      u.saturation.value = 1.06;
-      u.vignette.value = 0.26;
-      u.grain.value = 0.022;
-      this.bloom.strength = 0.24;
-      this.bloom.threshold = 1.1;
-      this.bloom.radius = 0.45;
-    }
+    // One material-assessment grade across every room and map. Night/day
+    // differences come from their actual lighting, not location-based filters.
+    u.highlight.value.set(1.025, 1.01, .98);
+    u.shadow.value.set(.97, 1.0, 1.025);
+    u.saturation.value = 1.0;
+    u.vignette.value = .08;
+    u.grain.value = .002;
+    this.bloom.enabled = this.g.academy.preset === 'high';
+    this.bloom.strength = .12;
+    this.bloom.threshold = 1.35;
+    this.bloom.radius = .35;
   }
+
   /** Rebuild the world when the arena moved to another map. */
   ensureWorld() {
     const g = this.g;

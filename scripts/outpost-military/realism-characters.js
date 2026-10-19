@@ -1,6 +1,7 @@
 // @ts-nocheck
 /** Authored character materials and distance-driven skeletal presentation. */
 import * as THREE from "three";
+import { ASSET_CACHE } from "../../public/games/outpost-asset-manifest.js";
 
 const TARGET_HEIGHT = 1.82;
 const TILE_METRES = 3;
@@ -19,10 +20,17 @@ function materialKind(material) {
 function configureMaterial(material, kind, r) {
   if (material.userData.riggedOperator) {
     material.userData.realismCharacterKind = kind;
-    material.metalness = 0;
-    material.roughness = kind === "skin" ? .76 : .93;
-    material.normalScale?.set(.55,.55);
-    material.envMapIntensity = .35;
+    // Head 1 is the helmet/goggles and uses the body atlas. Head 2 is skin.
+    // Preserve material names: /uniform|fabric/ is the gameplay dye contract.
+    const skin = material.name === "Operator head 2";
+    const response = skin ? r?.operatorResponse?.skin : r?.operatorResponse?.body;
+    material.metalness = skin || !response ? 0 : 1;
+    material.roughness = response ? 1 : skin ? 0.76 : 0.93;
+    material.roughnessMap = response || null;
+    material.metalnessMap = response && !skin ? response : null;
+    const normal = response ? (skin ? 0.3 : 0.45) : 0.55;
+    material.normalScale?.set(normal, normal);
+    material.envMapIntensity = 0.35;
     material.needsUpdate = true;
     return;
   }
@@ -103,21 +111,67 @@ function configureMaterial(material, kind, r) {
   material.needsUpdate = true;
 }
 
+/** Two small data maps, shared by all LODs/instances. The original colour and
+ * normal atlases, silhouette, bones, eyewear fit and dye shader stay intact. */
+export async function loadOperatorResponse(r) {
+  const loader = new THREE.TextureLoader();
+  r.operatorResponse = {};
+  await Promise.all(
+    [
+      ["body", "body-orm"],
+      ["skin", "skin-roughness"],
+    ].map(async ([key, file]) => {
+      const path = `textures/benchmark-operator-${file}.png`;
+      try {
+        const map = await loader.loadAsync(`/games/military/${path}?assetVersion=${ASSET_CACHE}`);
+        if (r.disposed) {
+          map.dispose();
+          return;
+        }
+        map.colorSpace = THREE.NoColorSpace;
+        map.flipY = false;
+        map.anisotropy = Math.min(8, r.renderer.capabilities.getMaxAnisotropy());
+        map.minFilter = THREE.LinearMipmapLinearFilter;
+        map.generateMipmaps = true;
+        r.textures.add(map);
+        r.operatorResponse[key] = map;
+      } catch (error) {
+        if (r.disposed) return;
+        // Optional polish must never enter assetErrors: the page intentionally
+        // treats that list as fatal, even when the loader promise resolves.
+        r.optionalAssetWarnings ||= [];
+        r.optionalAssetWarnings.push(path);
+        console.warn(
+          "[Outpost] Optional operator response map unavailable; using original materials:",
+          path,
+          error,
+        );
+      }
+    }),
+  );
+}
+
 /** Prepare shared source resources once; every role uses the same uniform. */
 export function prepareCharacterAsset(r, gltf) {
-  gltf.scene.traverse(o=>{if(o.userData.riggedOperator)gltf.scene.userData.riggedOperator=true;});
+  gltf.scene.traverse((o) => {
+    if (o.userData.riggedOperator) gltf.scene.userData.riggedOperator = true;
+  });
   const materials = new Set();
   const textures = new Set();
   const anisotropy = Math.min(8, r.renderer?.capabilities?.getMaxAnisotropy?.() || 1);
   gltf.scene.traverse((object) => {
     if (!object.isMesh) return;
-    if(object.userData.operatorLOD===1)object.visible=false;
+    if (object.userData.operatorLOD === 1) object.visible = false;
     object.castShadow = true;
     object.receiveShadow = true;
     for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
       if (!material || materials.has(material)) continue;
       materials.add(material);
-      configureMaterial(material, material.userData.realismCharacterKind || materialKind(material), r);
+      configureMaterial(
+        material,
+        material.userData.realismCharacterKind || materialKind(material),
+        r,
+      );
       r.materials.add(material);
       for (const key of ["map", "normalMap", "roughnessMap", "metalnessMap", "aoMap"]) {
         const texture = material[key];
@@ -377,7 +431,14 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
   const state = characterState.get(actor.model);
   if (!state || !actor.mixer) return false;
   if (e.hp <= 0) return updateDeathPose(r, actor, state);
-  if(state.capturedDeath){actor.actions.Death.stop();state.capturedDeath=false;state.deadSample=null;actor.deathAnimated=false;actor.action="";actor.actions.Idle.reset().setEffectiveWeight(1).play();}
+  if (state.capturedDeath) {
+    actor.actions.Death.stop();
+    state.capturedDeath = false;
+    state.deadSample = null;
+    actor.deathAnimated = false;
+    actor.action = "";
+    actor.actions.Idle.reset().setEffectiveWeight(1).play();
+  }
   state.deathPose = null;
   const dx = e.x - state.previousX,
     dy = e.y - state.previousY;
@@ -412,27 +473,39 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
     const duration = action.getClip().duration;
     const loopDistance = r.characterProfile?.[next] || (next === "Run" ? 2.25 : 1.45);
     action.setEffectiveTimeScale(
-      moving && !capturedCrouch ? (backward ? -1 : 1) * clamp((speed * duration) / loopDistance, 0.25, 3) : 1,
+      moving && !capturedCrouch
+        ? (backward ? -1 : 1) * clamp((speed * duration) / loopDistance, 0.25, 3)
+        : 1,
     );
   }
   state.distance = 0;
   state.signedDistance = 0;
   const reloading = e.reloadUntil > r.g.time;
   if (actor.actions.Reload) {
-    const layer=actor.actions.Reload;
-    state.reloadWeight=smooth(state.reloadWeight||0,reloading?1:0,1-Math.exp(-dt*20));
-    layer.enabled=true;layer.setEffectiveWeight(state.reloadWeight).setEffectiveTimeScale(0).play();
-    if(reloading)layer.time=clamp(1-(e.reloadUntil-r.g.time)/1.4,0,1)*layer.getClip().duration;
+    const layer = actor.actions.Reload;
+    state.reloadWeight = smooth(state.reloadWeight || 0, reloading ? 1 : 0, 1 - Math.exp(-dt * 20));
+    layer.enabled = true;
+    layer.setEffectiveWeight(state.reloadWeight).setEffectiveTimeScale(0).play();
+    if (reloading)
+      layer.time = clamp(1 - (e.reloadUntil - r.g.time) / 1.4, 0, 1) * layer.getClip().duration;
   }
-  if(actor.actions.Hit){
-    const layer=actor.actions.Hit,elapsed=r.g.time-(e.hit??-100);
-    layer.enabled=true;layer.setEffectiveTimeScale(0).setEffectiveWeight(elapsed>=0&&elapsed<.35?Math.sin(elapsed/.35*Math.PI)*.45:0).play();
-    layer.time=clamp(elapsed/.35,0,1)*layer.getClip().duration;
+  if (actor.actions.Hit) {
+    const layer = actor.actions.Hit,
+      elapsed = r.g.time - (e.hit ?? -100);
+    layer.enabled = true;
+    layer
+      .setEffectiveTimeScale(0)
+      .setEffectiveWeight(
+        elapsed >= 0 && elapsed < 0.35 ? Math.sin((elapsed / 0.35) * Math.PI) * 0.45 : 0,
+      )
+      .play();
+    layer.time = clamp(elapsed / 0.35, 0, 1) * layer.getClip().duration;
   }
   actor.mixer.update(dt);
   const sliding = e.slideUntil > r.g.time,
     crouching = sliding || e.crouching;
-  actor.model.position.y = state.baseY - (capturedCrouch ? 0 : sliding ? 0.45 : crouching ? 0.28 : 0);
+  actor.model.position.y =
+    state.baseY - (capturedCrouch ? 0 : sliding ? 0.45 : crouching ? 0.28 : 0);
   if (crouching && !capturedCrouch) {
     if (state.hip) state.hip.rotation.x += 0.22;
     if (state.leftKnee) state.leftKnee.rotation.x -= 0.7;
@@ -482,16 +555,23 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
 function updateDeathPose(r, actor, state) {
   const now = performance.now() / 1000,
     sample = Math.floor(now * 30);
-  if(actor.actions.Death){
-    if(!state.capturedDeath){
-      actor.mixer.stopAllAction();state.capturedDeath=true;
+  if (actor.actions.Death) {
+    if (!state.capturedDeath) {
+      actor.mixer.stopAllAction();
+      state.capturedDeath = true;
       actor.actions.Death.reset().setEffectiveWeight(1).setEffectiveTimeScale(0).play();
-      actor.action="Dead";actor.deathAnimated=true;for(const leg of state.legs)leg.planted=false;
+      actor.action = "Dead";
+      actor.deathAnimated = true;
+      for (const leg of state.legs) leg.planted = false;
     }
-    if(state.deadSample===sample)return false;state.deadSample=sample;
-    const progress=r.motion?.matches?1:clamp((now-(actor.deadAt??now))/.85,0,1);
-    actor.actions.Death.time=progress*actor.actions.Death.getClip().duration;
-    actor.mixer.update(0);actor.model.position.y=state.baseY;actor.model.updateMatrixWorld(true);return true;
+    if (state.deadSample === sample) return false;
+    state.deadSample = sample;
+    const progress = r.motion?.matches ? 1 : clamp((now - (actor.deadAt ?? now)) / 0.85, 0, 1);
+    actor.actions.Death.time = progress * actor.actions.Death.getClip().duration;
+    actor.mixer.update(0);
+    actor.model.position.y = state.baseY;
+    actor.model.updateMatrixWorld(true);
+    return true;
   }
   if (!state.deathPose) {
     actor.model.position.y = state.baseY;
