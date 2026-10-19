@@ -139,6 +139,15 @@ midnry-fps .mf-playlists[data-online] button:not([aria-pressed="true"]) { displa
    the system asks for less, and selection never shown by colour alone. */
 midnry-fps :is(.mf-hometop nav button, .mf-playlists button, .mf-casecard, .mf-settingsnav button, .mf-homeactions button, .mf-homefoot button):focus-visible { outline: 2px solid var(--mf-accent) !important; outline-offset: 2px; }
 midnry-fps .mf-playlists button[aria-pressed="true"]::after { content: "Selected"; position: absolute; top: 10px; left: 10px; padding: 3px 8px; border-radius: 2px; background: var(--mf-accent); color: var(--mf-accent-ink); font: 700 12px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; }
+midnry-fps .mf-matchbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+midnry-fps .mf-matchbar[hidden] { display: none !important; }
+midnry-fps .mf-matchbar button { display: flex !important; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 12px !important; border-radius: 3px !important; border: 1px solid #ffffff3d !important; background: #0c1210e6 !important; color: #f1f4ef !important; font: 600 16px var(--mf-display) !important; letter-spacing: 0.08em !important; text-transform: uppercase; box-shadow: none !important; }
+midnry-fps .mf-matchbar button[hidden] { display: none !important; }
+midnry-fps .mf-matchbar button:only-of-type, midnry-fps .mf-matchbar button:not([hidden]):last-child:first-child { grid-column: 1 / -1; }
+midnry-fps .mf-matchbar .mf-leavematch { border-color: #e0786b80 !important; color: #ffd6cf !important; }
+midnry-fps .mf-matchbar .mf-ico { width: 18px; height: 18px; }
+midnry-fps .mf-matchbar button:focus-visible { outline: 2px solid var(--mf-accent) !important; outline-offset: 2px; }
+midnry-fps .mf-modal:not(.mf-home) .mf-matchbar { display: none !important; }
 midnry-fps .mf-playsummary { margin: -2px 0 0; font: 400 14px var(--mf-body); color: #c3ccc6; text-align: center; }
 midnry-fps .mf-playsummary b { color: #f1f4ef; font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { midnry-fps :is(.mf-modal.mf-home, .mf-settings) * { transition: none !important; animation: none !important; } }
@@ -289,7 +298,36 @@ export class OutpostMenu {
     this.summary = el("p", "mf-playsummary");
     this.summary.setAttribute("aria-live", "polite");
     this.panel.querySelector(".mf-start")?.after(this.summary);
-    this.summary.after(this.actions);
+    // Mid-match (paused): start the round again, or leave it for this menu.
+    this.matchbar = el(
+      "div",
+      "mf-matchbar",
+      `<button type="button" class="mf-restartmatch">↻ Restart</button><button type="button" class="mf-leavematch">${icon("exit")}Leave match</button>`,
+    );
+    this.matchbar.hidden = true;
+    this.summary.after(this.matchbar);
+    this.matchbar.after(this.actions);
+    g.on(this.matchbar.querySelector(".mf-restartmatch"), "click", () =>
+      g.ui.confirm("Restart match?", "This round ends and a fresh one starts with the same mode.", "Restart", (yes) => {
+        if (!yes || g.online) return;
+        g.reset();
+        g.start();
+      }),
+    );
+    g.on(this.matchbar.querySelector(".mf-leavematch"), "click", () =>
+      g.ui.confirm(
+        "Leave match?",
+        g.online
+          ? "You leave the online room and return to the menu. Bots take your place."
+          : "This round ends and you return to the menu.",
+        "Leave match",
+        (yes) => {
+          if (!yes) return;
+          if (g.online) g.leaveOnline();
+          else g.reset();
+        },
+      ),
+    );
     this.foot = el(
       "div",
       "mf-homefoot",
@@ -545,6 +583,10 @@ export class OutpostMenu {
     const summary = online ? "" : `<b>${chosen.title}</b> · ${chosen.sub}${g.state === "playing" ? " · in progress" : ""}`;
     if (this.summary.innerHTML !== summary) this.summary.innerHTML = summary;
     this.summary.hidden = !summary;
+    const midMatch = g.state === "playing" && !g.deathSequence;
+    if (this.matchbar.hidden !== !midMatch) this.matchbar.hidden = !midMatch;
+    const restart = this.matchbar.querySelector(".mf-restartmatch");
+    if (restart.hidden !== Boolean(g.online)) restart.hidden = Boolean(g.online);
     // Mirror the original buttons' availability.
     for (const proxy of this.modal.querySelectorAll("[data-go]")) {
       const where = proxy.dataset.go;
@@ -568,7 +610,7 @@ export class OutpostMenu {
   dispose() {
     this.observer?.disconnect();
     this.panelObserver?.disconnect();
-    for (const node of [this.style, this.hero, this.top, this.side, this.cards, this.actions, this.foot, this.logoSub, this.summary]) node?.remove();
+    for (const node of [this.style, this.hero, this.top, this.side, this.cards, this.actions, this.foot, this.logoSub, this.summary, this.matchbar]) node?.remove();
     this.modal?.classList.remove("mf-home");
   }
 }

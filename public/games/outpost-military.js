@@ -25783,21 +25783,25 @@ var ch = class {
 		return this.previews.set(i, S), e.drawImage(S, 0, 0, n, r), !0;
 	}
 	updatePickups(e) {
-		let t = /* @__PURE__ */ new Set();
+		let t = this.latchMaterial ||= this.material({
+			color: "#bab5a1",
+			roughness: .62,
+			metalness: .8
+		}), n = /* @__PURE__ */ new Set();
 		for (let e of this.g.crates) {
 			if (e.hp <= 0) continue;
-			t.add(e.id);
-			let n = this.crates.get(e.id);
-			n || (n = new Y(), this.dynamic.add(n), op(this, n), this.crates.set(e.id, n)), n.position.set(e.x * $, 0, e.y * $);
+			n.add(e.id);
+			let t = this.crates.get(e.id);
+			t || (t = new Y(), this.dynamic.add(t), op(this, t), this.crates.set(e.id, t)), t.position.set(e.x * $, 0, e.y * $);
 		}
-		for (let [e, n] of this.crates) t.has(e) || (this.dynamic.remove(n), this.crates.delete(e));
-		let n = /* @__PURE__ */ new Set();
-		for (let t = 0; t < this.g.cores.length; t++) {
-			let r = this.g.cores[t], i = r.x + ":" + r.y + ":" + t;
-			n.add(i);
-			let a = this.cores.get(i);
-			if (!a) {
-				a = new Y(), this.dynamic.add(a), this.box(a, latch, [
+		for (let [e, t] of this.crates) n.has(e) || (this.dynamic.remove(t), this.crates.delete(e));
+		let r = /* @__PURE__ */ new Set();
+		for (let n = 0; n < this.g.cores.length; n++) {
+			let i = this.g.cores[n], a = i.x + ":" + i.y + ":" + n;
+			r.add(a);
+			let o = this.cores.get(a);
+			if (!o) {
+				o = new Y(), this.dynamic.add(o), this.box(o, t, [
 					0,
 					0,
 					0
@@ -25813,7 +25817,7 @@ var ch = class {
 					metalness: .5,
 					roughness: .3
 				});
-				this.box(a, e, [
+				this.box(o, e, [
 					0,
 					0,
 					.11
@@ -25821,12 +25825,12 @@ var ch = class {
 					.18,
 					.26,
 					.025
-				]), this.cores.set(i, a);
+				]), this.cores.set(a, o);
 			}
-			a.position.set(r.x * $, .5 + (this.motion.matches ? 0 : Math.sin(e * 2) * .06), r.y * $), a.rotation.y = this.motion.matches ? 0 : e * .5;
+			o.position.set(i.x * $, .5 + (this.motion.matches ? 0 : Math.sin(e * 2) * .06), i.y * $), o.rotation.y = this.motion.matches ? 0 : e * .5;
 		}
-		for (let [e, t] of this.cores) n.has(e) || (this.dynamic.remove(t), t.traverse((e) => {
-			e.isMesh && e.material !== latch && (e.material.dispose(), this.materials.delete(e.material));
+		for (let [e, n] of this.cores) r.has(e) || (this.dynamic.remove(n), n.traverse((e) => {
+			e.isMesh && e.material !== t && (e.material.dispose(), this.materials.delete(e.material));
 		}), this.cores.delete(e));
 	}
 	updateFields() {

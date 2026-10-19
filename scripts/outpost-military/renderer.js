@@ -2763,6 +2763,11 @@ export class MilitaryRenderer {
     return true;
   }
   updatePickups(t) {
+    // Charge Cores keep the shared latch metal; the crates moved to the
+    // interactables kit, but the cores and their disposal still use this.
+    const latch =
+      this.latchMaterial ||
+      (this.latchMaterial = this.material({ color: "#bab5a1", roughness: 0.62, metalness: 0.8 }));
     const activeCrates = new Set();
     for (const e of this.g.crates) {
       if (e.hp <= 0) continue;
