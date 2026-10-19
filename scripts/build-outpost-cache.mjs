@@ -5,6 +5,8 @@ const names = [
   "models/props-v1.glb",
   "models/medevac-v1.glb",
   "sky.hdr",
+  "textures/benchmark-operator-body-orm.png",
+  "textures/benchmark-operator-skin-roughness.png",
   ...readdirSync("public/games/military/textures")
     .filter((x) => x.endsWith(".jpg") && !x.includes("-source"))
     .map((x) => "textures/" + x),

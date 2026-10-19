@@ -1,0 +1,545 @@
+{
+  "operator-v1.glb": {
+    "bytes": 7036524,
+    "meshes": 6,
+    "trianglesAllLODs": 28618,
+    "materials": [
+      {
+        "name": "Uniform fabric",
+        "pbr": {
+          "metallicFactor": 0,
+          "roughnessFactor": 0.93,
+          "baseColorTexture": {
+            "index": 1
+          }
+        },
+        "normal": {
+          "index": 0,
+          "scale": 0.55
+        },
+        "ao": null
+      },
+      {
+        "name": "Operator head 1",
+        "pbr": {
+          "metallicFactor": 0,
+          "roughnessFactor": 0.76,
+          "baseColorTexture": {
+            "index": 3
+          }
+        },
+        "normal": {
+          "index": 2,
+          "scale": 0.55
+        },
+        "ao": null
+      },
+      {
+        "name": "Operator head 2",
+        "pbr": {
+          "metallicFactor": 0,
+          "roughnessFactor": 0.76,
+          "baseColorTexture": {
+            "index": 5
+          }
+        },
+        "normal": {
+          "index": 4,
+          "scale": 0.55
+        },
+        "ao": null
+      }
+    ],
+    "images": [
+      {
+        "name": "Soldier_Body_normal",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 438364
+      },
+      {
+        "name": "Soldier_Body_diffuse",
+        "size": [
+          1024,
+          1024
+        ],
+        "bytes": 1479855
+      },
+      {
+        "name": "Soldier_head_normal",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 259594
+      },
+      {
+        "name": "Soldier_head_diffuse",
+        "size": [
+          1024,
+          1024
+        ],
+        "bytes": 1350593
+      }
+    ],
+    "animations": [
+      {
+        "name": "Idle",
+        "channels": 66
+      },
+      {
+        "name": "Walk",
+        "channels": 66
+      },
+      {
+        "name": "Run",
+        "channels": 66
+      },
+      {
+        "name": "BackWalk",
+        "channels": 66
+      },
+      {
+        "name": "Crouch",
+        "channels": 66
+      },
+      {
+        "name": "Reload",
+        "channels": 66
+      },
+      {
+        "name": "Hit",
+        "channels": 66
+      },
+      {
+        "name": "Death",
+        "channels": 66
+      },
+      {
+        "name": "Struggle",
+        "channels": 66
+      },
+      {
+        "name": "Stealth",
+        "channels": 66
+      },
+      {
+        "name": "Grapple",
+        "channels": 66
+      },
+      {
+        "name": "Stab",
+        "channels": 66
+      }
+    ]
+  },
+  "props-v1.glb": {
+    "bytes": 1915392,
+    "meshes": 25,
+    "trianglesAllLODs": 13566,
+    "materials": [
+      {
+        "name": "military_crate_m_01",
+        "pbr": {
+          "baseColorTexture": {
+            "index": 0
+          },
+          "metallicRoughnessTexture": {
+            "index": 2
+          }
+        },
+        "normal": {
+          "index": 1
+        },
+        "ao": null
+      },
+      {
+        "name": "metal_jerrycan_green",
+        "pbr": {
+          "baseColorTexture": {
+            "index": 3
+          },
+          "metallicRoughnessTexture": {
+            "index": 5
+          }
+        },
+        "normal": {
+          "index": 4
+        },
+        "ao": null
+      },
+      {
+        "name": "barrel_03",
+        "pbr": {
+          "baseColorTexture": {
+            "index": 6
+          },
+          "metallicRoughnessTexture": {
+            "index": 8
+          }
+        },
+        "normal": {
+          "index": 7
+        },
+        "ao": null
+      },
+      {
+        "name": "medical_box",
+        "pbr": {
+          "baseColorTexture": {
+            "index": 9
+          },
+          "metallicRoughnessTexture": {
+            "index": 11
+          }
+        },
+        "normal": {
+          "index": 10
+        },
+        "ao": null
+      },
+      {
+        "name": "plastic_crate_02",
+        "pbr": {
+          "baseColorFactor": [
+            1,
+            0.40816283226013184,
+            0,
+            1
+          ],
+          "metallicFactor": 0,
+          "baseColorTexture": {
+            "index": 12
+          },
+          "metallicRoughnessTexture": {
+            "index": 14
+          }
+        },
+        "normal": {
+          "index": 13
+        },
+        "ao": null
+      },
+      {
+        "name": "steel_frame_shelves_01",
+        "pbr": {
+          "baseColorTexture": {
+            "index": 15
+          },
+          "metallicRoughnessTexture": {
+            "index": 17
+          }
+        },
+        "normal": {
+          "index": 16
+        },
+        "ao": null
+      },
+      {
+        "name": "ammo_box",
+        "pbr": {
+          "baseColorTexture": {
+            "index": 18
+          },
+          "metallicRoughnessTexture": {
+            "index": 20
+          }
+        },
+        "normal": {
+          "index": 19
+        },
+        "ao": null
+      },
+      {
+        "name": "Barrel_02",
+        "pbr": {
+          "baseColorTexture": {
+            "index": 21
+          },
+          "metallicRoughnessTexture": {
+            "index": 23
+          }
+        },
+        "normal": {
+          "index": 22
+        },
+        "ao": null
+      },
+      {
+        "name": "utility_box_01",
+        "pbr": {
+          "baseColorTexture": {
+            "index": 24
+          },
+          "metallicRoughnessTexture": {
+            "index": 26
+          }
+        },
+        "normal": {
+          "index": 25
+        },
+        "ao": null
+      }
+    ],
+    "images": [
+      {
+        "name": "old_military_crate_nor_gl",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 47986
+      },
+      {
+        "name": "old_military_crate_diff",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 41460
+      },
+      {
+        "name": "old_military_crate_metal-old_military_crate_rough",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 57610
+      },
+      {
+        "name": "metal_jerrycan_green_nor_gl",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 61247
+      },
+      {
+        "name": "metal_jerrycan_green_diff",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 30703
+      },
+      {
+        "name": "metal_jerrycan_green_metal-metal_jerrycan_green_rough",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 115119
+      },
+      {
+        "name": "barrel_03_nor_gl",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 43903
+      },
+      {
+        "name": "barrel_03_diff",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 33334
+      },
+      {
+        "name": "barrel_03_metal-barrel_03_rough",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 84241
+      },
+      {
+        "name": "medical_box_nor_gl",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 35946
+      },
+      {
+        "name": "medical_box_diff",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 49637
+      },
+      {
+        "name": "medical_box_metal-medical_box_rough",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 80136
+      },
+      {
+        "name": "plastic_crate_02_nor_gl",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 79069
+      },
+      {
+        "name": "plastic_crate_02_diff-plastic_crate_02_opacity",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 42537
+      },
+      {
+        "name": "plastic_crate_02_rough",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 68444
+      },
+      {
+        "name": "steel_frame_shelves_01_nor_gl",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 9229
+      },
+      {
+        "name": "steel_frame_shelves_01_diff",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 32589
+      },
+      {
+        "name": "steel_frame_shelves_01_metal-steel_frame_shelves_01_rough",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 66856
+      },
+      {
+        "name": "ammo_box_nor_gl",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 4207
+      },
+      {
+        "name": "ammo_box_diff",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 29509
+      },
+      {
+        "name": "ammo_box_metal-ammo_box_rough",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 58248
+      },
+      {
+        "name": "Barrel_02_nor_gl",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 39844
+      },
+      {
+        "name": "Barrel_02_diff",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 19416
+      },
+      {
+        "name": "Barrel_02_metallic-Barrel_02_roughness",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 67252
+      },
+      {
+        "name": "utility_box_01_nor_gl",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 34927
+      },
+      {
+        "name": "utility_box_01_diff",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 35949
+      },
+      {
+        "name": "utility_box_01_metal-utility_box_01_rough",
+        "size": [
+          512,
+          512
+        ],
+        "bytes": 75989
+      }
+    ],
+    "animations": []
+  },
+  "medevac-v1.glb": {
+    "bytes": 358644,
+    "meshes": 15,
+    "trianglesAllLODs": 8661,
+    "materials": [
+      {
+        "name": "Material.005",
+        "pbr": {},
+        "normal": null,
+        "ao": null
+      },
+      {
+        "name": "Material.001",
+        "pbr": {},
+        "normal": null,
+        "ao": null
+      },
+      {
+        "name": "Material.004",
+        "pbr": {},
+        "normal": null,
+        "ao": null
+      },
+      {
+        "name": "Material",
+        "pbr": {},
+        "normal": null,
+        "ao": null
+      },
+      {
+        "name": "Material.002",
+        "pbr": {},
+        "normal": null,
+        "ao": null
+      }
+    ],
+    "images": [],
+    "animations": []
+  }
+}

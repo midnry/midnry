@@ -16,8 +16,10 @@ import { Reflector } from "three/addons/objects/Reflector.js";
 import { loadRealismSurfaces, surfaceMaterial } from "./realism-surfaces.js";
 import { initNaturalLighting, updateNaturalLighting } from "./realism-lighting.js";
 import { decorateRealisticEnvironment } from "./realism-environment.js";
+import { dressBenchmarkTerminal, inBenchmark } from './benchmark-corridor.js';
 import {
   prepareCharacterAsset,
+  loadOperatorResponse,
   finishActor,
   updateActorPresentation,
 } from "./realism-characters.js";
@@ -374,6 +376,7 @@ export class MilitaryRenderer {
     if (this.metalColor) this.metalColor.colorSpace = THREE.SRGBColorSpace;
     await Promise.all([
       loadRealismSurfaces(this),
+      loadOperatorResponse(this),
       (async () => {
         // The medevac helicopter (CC-BY). Optional: the plain shape remains.
         try {
@@ -1121,6 +1124,7 @@ export class MilitaryRenderer {
       const panel = this.protocolMount(station.x, station.y, 1.34);
       if (map.id === "medevac" && station.kind === "cargo") panel.position.z -= 1.1;
       root.add(panel);
+      if (dressBenchmarkTerminal(this,panel,station,{steel,paint,rubber,amber,lamp})) continue;
       this.box(panel, steel, [0, 0, 0.07], [1.05, 0.88, 0.14]);
       this.box(panel, paint, [0, -0.47, 0.07], [1.12, 0.11, 0.22]);
       const screenMaterial = this.protocolMaterial({
@@ -1340,11 +1344,14 @@ export class MilitaryRenderer {
         medicalCase(cabinet, [0, 0.23, 0.15], true),
       ];
       this.medicalStocks.set(fixture.id, cases);
+      // This stock label shares the benchmark station's wall mount. Keep the
+      // visual labels separated without moving either interaction/collision.
+      const coldStorage = this.g.arena.mapId === 'breakwater' && fixture.x === 7.5 && fixture.y === 23.5;
       const label = this.mesh(
         cabinet,
-        this.geo("medical-label", () => new THREE.PlaneGeometry(1.55, 0.45)),
+        this.geo(coldStorage ? "medical-label-cold-storage" : "medical-label", () => new THREE.PlaneGeometry(coldStorage ? 1.1 : 1.55, coldStorage ? .2 : .45)),
         this.protocolSign(fixture.name, "MEDICAL RESUPPLY", "#a1c7b7"),
-        [0, 0.98, 0.12],
+        [0, coldStorage ? .44 : .98, 0.12],
       );
       label.castShadow = false;
       label.userData.noBatch = true;
@@ -3274,6 +3281,21 @@ export class MilitaryRenderer {
       this.bloom.strength = 0.24;
       this.bloom.threshold = 1.1;
       this.bloom.radius = 0.45;
+    }
+    // Benchmark only: judge real materials without the previous warm grade,
+    // grain and broad bloom. Other areas retain their approved presentation.
+    const benchmark = this.g.arena.mapId === 'breakwater' && inBenchmark(this.g.camera());
+    this.bloom.enabled = this.g.academy.preset !== 'performance' &&
+      (!benchmark || this.g.academy.preset === 'high');
+    if (benchmark) {
+      u.highlight.value.set(1.025,1.01,.98);
+      u.shadow.value.set(.97,1.0,1.025);
+      u.saturation.value = 1.0;
+      u.vignette.value = .08;
+      u.grain.value = .002;
+      this.bloom.strength = .12;
+      this.bloom.threshold = 1.35;
+      this.bloom.radius = .35;
     }
   }
   /** Rebuild the world when the arena moved to another map. */

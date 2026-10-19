@@ -7,6 +7,7 @@
 import * as THREE from "three";
 import { surfaceMaterial } from "./realism-surfaces.js";
 import { roofLayout } from "./architecture.js";
+import { decorateBenchmark } from './benchmark-corridor.js';
 
 const SCALE = 3;
 const FACES = [
@@ -241,6 +242,7 @@ export function decorateRealisticEnvironment(r, id, n) {
     return true;
   }
 
+  const benchmark = decorateBenchmark(r, id, { add, box, plane, own, steel, darkSteel, seal, floorMark, extraFixtures, lightMaterials });
   function skipTile(x, y) {
     return (
       r.protocolPropTile?.(x, y) || r.transportWindowTile?.(x, y) || r.transportHiddenWall?.(x, y)
@@ -273,6 +275,7 @@ export function decorateRealisticEnvironment(r, id, n) {
       }
       for (const index of exposed) {
         const f = face(x, y, index);
+        if (benchmark?.handles(f)) { benchmark.face(f); continue; }
         const trim = id === "medevac" ? steel : id === "outpost" ? stone : render;
         // Mount trim 8 mm clear of the wall face. Sub-millimetre/coplanar
         // surfaces fight for depth at grazing angles while the camera moves.
@@ -587,6 +590,7 @@ export function decorateRealisticEnvironment(r, id, n) {
     }
   }
 
+  benchmark?.finish(group);
   for (const batch of batches.values()) {
     if (!batch.matrices.length) continue;
     const mesh = new THREE.InstancedMesh(batch.geometry, batch.material, batch.matrices.length);
@@ -628,6 +632,7 @@ export function decorateRealisticEnvironment(r, id, n) {
       r.world.remove(group);
       group.traverse((object) => {
         if (object.isInstancedMesh) object.dispose();
+        if (object.userData.ownedGeometry) object.geometry.dispose();
       });
       group.clear();
       for (const material of ownMaterials) {

@@ -1,5 +1,33 @@
 # Outpost Zero tactical 3D preview assets
 
+## 2026-10-19 corridor benchmark
+
+No new third-party models or photographs were downloaded for this benchmark.
+The concrete wall/floor panels reuse the existing Poly Haven **brushed_concrete_03**
+colour, OpenGL normal and roughness photographs (CC0):
+https://polyhaven.com/a/brushed_concrete_03 . Terminal and weapon data maps reuse
+the existing **metal_plate** OpenGL normal and roughness (CC0):
+https://polyhaven.com/a/metal_plate . See REALISM-ASSETS.md for the original files.
+
+New files (512 x 512, 68,362 bytes combined):
+
+- `textures/benchmark-operator-body-orm.png` (64,909 bytes): authored material-region
+  roughness and restricted metalness derived from the existing Mixamo SWAT body atlas.
+- `textures/benchmark-operator-skin-roughness.png` (3,453 bytes): authored skin
+  roughness mask aligned to the existing Mixamo SWAT head UVs.
+
+These derivative material masks retain **Adobe Mixamo terms**, including embedded
+game use; they are not CC0. Sources and permission links are in Character and
+animation below. `scripts/build-outpost-benchmark-materials.py` records the original
+GLB SHA-256 and generates the masks reproducibly. No original model, colour atlas,
+normal atlas, skeleton, animation or UV was replaced. The red mask channel is
+constant and is not presented as baked ambient occlusion.
+
+Corridor pipes, trays, trims, terminal fittings, safety markings and sign/screen
+artwork are original procedural meshes and authored graphics, not scanned or
+production-model assets. They are part of the game's source; no external licence
+is claimed for them. The existing soldier remains a Mixamo game asset.
+
 This is a browser WebGL game. Actual rendering resolution and frame rate depend on hardware and display refresh. The operator uses the licensed Mixamo Swat sculpt, its original UVs and colour/normal maps, and retargeted Mixamo motion. The earlier Vanguard armor and procedural uniform/head-scan operator are not rendered.
 
 ## Physically based photographs and sky

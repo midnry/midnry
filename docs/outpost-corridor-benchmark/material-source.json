@@ -1,0 +1,18 @@
+{
+  "source": "operator-v1.glb / original Mixamo SWAT atlases",
+  "sourceSHA256": "d4d9b3d5e48e57c180f8e75b0515c18a606448cabbba272b1ada5e805810daf4",
+  "licence": "Adobe Mixamo terms, embedded game use; derivative material masks",
+  "generated": [
+    "benchmark-operator-body-orm.png",
+    "benchmark-operator-skin-roughness.png"
+  ],
+  "channels": {
+    "R": "constant 1 (not assigned as AO)",
+    "G": "authored roughness",
+    "B": "restricted hardware metalness"
+  },
+  "dimensions": [
+    512,
+    512
+  ]
+}

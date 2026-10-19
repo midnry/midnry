@@ -1,6 +1,7 @@
 // @ts-nocheck
 /** Authored character materials and distance-driven skeletal presentation. */
 import * as THREE from "three";
+import { ASSET_CACHE } from '../../public/games/outpost-asset-manifest.js';
 
 const TARGET_HEIGHT = 1.82;
 const TILE_METRES = 3;
@@ -19,9 +20,17 @@ function materialKind(material) {
 function configureMaterial(material, kind, r) {
   if (material.userData.riggedOperator) {
     material.userData.realismCharacterKind = kind;
-    material.metalness = 0;
-    material.roughness = kind === "skin" ? .76 : .93;
-    material.normalScale?.set(.55,.55);
+    // Head 1 is the helmet/goggles and uses the body atlas. Head 2 is skin.
+    // Preserve material names: /uniform|fabric/ is the gameplay dye contract.
+    const skin = material.name === 'Operator head 2';
+    const response = skin ? r?.operatorResponse?.skin : r?.operatorResponse?.body;
+    material.metalness = skin || !response ? 0 : 1;
+    material.roughness = response ? 1 : skin ? .76 : .93;
+    if (response) {
+      material.roughnessMap = response;
+      material.metalnessMap = skin ? null : response;
+    }
+    material.normalScale?.set(skin ? .3 : .45,skin ? .3 : .45);
     material.envMapIntensity = .35;
     material.needsUpdate = true;
     return;
@@ -101,6 +110,24 @@ function configureMaterial(material, kind, r) {
     };
   }
   material.needsUpdate = true;
+}
+
+/** Two small data maps, shared by all LODs/instances. The original colour and
+ * normal atlases, silhouette, bones, eyewear fit and dye shader stay intact. */
+export async function loadOperatorResponse(r) {
+  const loader = new THREE.TextureLoader();
+  r.operatorResponse = {};
+  await Promise.all([['body','body-orm'],['skin','skin-roughness']].map(async([key,file])=>{
+    const path=`textures/benchmark-operator-${file}.png`;
+    try {
+      const map=await loader.loadAsync(`/games/military/${path}?assetVersion=${ASSET_CACHE}`);
+      if(r.disposed){map.dispose();return;}
+      map.colorSpace=THREE.NoColorSpace;map.flipY=false;
+      map.anisotropy=Math.min(8,r.renderer.capabilities.getMaxAnisotropy());
+      map.minFilter=THREE.LinearMipmapLinearFilter;map.generateMipmaps=true;
+      r.textures.add(map);r.operatorResponse[key]=map;
+    } catch(error) {r.assetErrors.push(path);throw error;}
+  }));
 }
 
 /** Prepare shared source resources once; every role uses the same uniform. */
