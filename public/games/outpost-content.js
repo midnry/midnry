@@ -41,6 +41,44 @@ function layout(size, build) {
     for (let x = size / 2 - 1; x <= size / 2; x++) tiles[y][x] = 0;
   return tiles;
 }
+// Last Signal arenas grow by a ring of RING tiles: the original layout stays
+// whole at the heart, its outer wall becomes a compound wall with gates, and
+// the ring adds flank rooms, cover clusters and lanes. One side's pieces are
+// placed four times, rotated a quarter turn each time (a pinwheel), so every
+// spawn edge gets the same routes.
+const RING = 6;
+function ringed(base, side) {
+  const m = base.length,
+    size = m + RING * 2;
+  return layout(size, (b, h, t) => {
+    for (let y = 0; y < m; y++) for (let x = 0; x < m; x++) t[y + RING][x + RING] = base[y][x];
+    let turn = (x, y, w, h) => [x, y, w, h];
+    for (let q = 0; q < 4; q++) {
+      for (const [kind, x0, y0, w0 = 1, h0 = 1, type = 1] of side) {
+        const [x, y, w, hh] = turn(x0, y0, w0, h0);
+        if (kind === "block") b(x, y, w, hh, type);
+        else if (kind === "shell") h(x, y, w, hh, type);
+        else b(x, y, w, hh, 0);
+      }
+      const previous = turn;
+      turn = (x, y, w, hh) => {
+        const [px, py, pw, ph] = previous(x, y, w, hh);
+        return [size - py - ph, px, ph, pw];
+      };
+    }
+  });
+}
+/** Supply crates: the heart's crates moved in by RING, plus one side's ring
+ * crates placed four times like the pinwheel pieces. */
+function ringCrates(base, side, size) {
+  const out = base.map(([x, y]) => [x + RING, y + RING]);
+  for (let [x, y] of side)
+    for (let q = 0; q < 4; q++) {
+      out.push([x, y]);
+      [x, y] = [size - y, x];
+    }
+  return out;
+}
 const warm = {
   sky: "#f4cd87",
   floor: "#73564a",
@@ -60,9 +98,43 @@ export const MAPS = {
   outpost: {
     id: "outpost",
     name: "Dust Outpost",
-    tag: "CLASSIC / 16 × 16",
-    description: "Sandstone cover and an open center.",
-    level: LEVEL,
+    tag: "LARGE / COMPOUND + OUTER RING",
+    description:
+      "Sandstone cover around an open center, walled in by a gated compound with flank huts outside.",
+    level: ringed(LEVEL, [
+      ["open", 9, 6, 2, 1],
+      ["open", 17, 6, 2, 1],
+      ["shell", 19, 1, 5, 4, 1],
+      ["open", 21, 4],
+      ["open", 19, 2],
+      ["block", 8, 3, 1, 2, 2],
+      ["block", 13, 4, 2, 1, 3],
+    ]),
+    // The academy and practice drills keep the classic 16 × 16 yard.
+    trainingLevel: LEVEL,
+    crates: ringCrates(
+      [
+        [4.5, 2.5],
+        [11.5, 2.5],
+        [5.5, 5.5],
+        [10.5, 5.5],
+        [2.5, 6.5],
+        [13.5, 6.5],
+        [4.5, 9.5],
+        [11.5, 9.5],
+        [5.5, 12.5],
+        [10.5, 12.5],
+        [7.5, 6.5],
+        [8.5, 9.5],
+      ],
+      [
+        [5.5, 2.5],
+        [11.5, 3.5],
+        [16.5, 4.5],
+        [21.5, 2.5],
+      ],
+      28,
+    ),
     theme: warm,
     props: [],
     zones: [],
@@ -104,21 +176,57 @@ export const MAPS = {
   skyport: {
     id: "skyport",
     name: "Skyport",
-    tag: "LARGE / INTERIOR + APRON",
-    description: "Boarding halls, baggage cover and an aircraft cabin connect to an open apron.",
-    level: layout(24, (b, h, t) => {
-      h(3, 3, 12, 9, 5);
-      for (const x of [5, 9, 12]) t[11][x] = 0;
-      for (const y of [5, 8]) t[y][14] = 0;
-      b(7, 4, 1, 3, 2);
-      b(10, 7, 3, 1, 2);
-      h(18, 4, 4, 14, 6);
-      for (const y of [7, 12, 15]) t[y][18] = 0;
-      t[17][19] = 0;
-      b(5, 16, 2, 3, 3);
-      b(9, 17, 3, 1, 2);
-      b(15, 19, 2, 2, 3);
-    }),
+    tag: "HUGE / TERMINAL + AIRFIELD",
+    description:
+      "Boarding halls, baggage cover and an aircraft cabin inside the airside fence; service sheds and carts outside it.",
+    level: ringed(
+      layout(24, (b, h, t) => {
+        h(3, 3, 12, 9, 5);
+        for (const x of [5, 9, 12]) t[11][x] = 0;
+        for (const y of [5, 8]) t[y][14] = 0;
+        b(7, 4, 1, 3, 2);
+        b(10, 7, 3, 1, 2);
+        h(18, 4, 4, 14, 6);
+        for (const y of [7, 12, 15]) t[y][18] = 0;
+        t[17][19] = 0;
+        b(5, 16, 2, 3, 3);
+        b(9, 17, 3, 1, 2);
+        b(15, 19, 2, 2, 3);
+      }),
+      [
+        ["open", 11, 6, 2, 1],
+        ["open", 23, 6, 2, 1],
+        ["shell", 24, 1, 6, 4, 6],
+        ["open", 26, 4],
+        ["open", 24, 2],
+        ["block", 7, 3, 2, 1, 3],
+        ["block", 15, 4, 2, 1, 3],
+        ["block", 19, 2, 1, 2, 2],
+        ["block", 21, 4, 2, 1, 5],
+      ],
+    ),
+    crates: ringCrates(
+      [
+        [17.5, 3.5],
+        [8.5, 8.5],
+        [15.5, 8.5],
+        [20.5, 9.5],
+        [6.5, 14.5],
+        [17.5, 14.5],
+        [8.5, 18.5],
+        [15.5, 18.5],
+        [11.5, 9.5],
+        [12.5, 14.5],
+      ],
+      [
+        [5.5, 4.5],
+        [12.5, 2.5],
+        [17.5, 4.5],
+        [22.5, 2.5],
+        [27.5, 2.5],
+      ],
+      36,
+    ),
     theme: {
       ...warm,
       sky: "#aad8e8",
@@ -126,14 +234,14 @@ export const MAPS = {
       walls: { ...warm.walls, 1: ["#d0d9d5", "#899caa", "#eff8f3"] },
     },
     props: [
-      { x: 5.5, y: 5.5, kind: "sign", label: "GATE 07" },
-      { x: 20.5, y: 6.5, kind: "sign", label: "SKYLINE AIR" },
-      { x: 7.5, y: 20.5, kind: "luggage", label: "BAGGAGE" },
+      { x: 11.5, y: 11.5, kind: "sign", label: "GATE 07" },
+      { x: 26.5, y: 12.5, kind: "sign", label: "SKYLINE AIR" },
+      { x: 13.5, y: 26.5, kind: "luggage", label: "BAGGAGE" },
     ],
     zones: [
-      { x: 4, y: 4, w: 10, h: 7, color: "#718d9d" },
-      { x: 19, y: 5, w: 2, h: 12, color: "#a6a9a3" },
-      { x: 1, y: 13, w: 22, h: 9, color: "#586971" },
+      { x: 10, y: 10, w: 10, h: 7, color: "#718d9d" },
+      { x: 25, y: 11, w: 2, h: 12, color: "#a6a9a3" },
+      { x: 7, y: 19, w: 22, h: 9, color: "#586971" },
     ],
   },
   freight: {
@@ -157,29 +265,62 @@ export const MAPS = {
   estate: {
     id: "estate",
     name: "Wreck Estate",
-    tag: "MEDIUM / VILLA + CRASH SITE",
+    tag: "LARGE / VILLA + GARDENS",
     description:
-      "A downed rotorcraft anchors three connected lanes between villa rooms and a turquoise pool court.",
-    level: layout(20, (b, h, t) => {
-      h(3, 3, 5, 5, 1);
-      h(12, 3, 5, 5, 5);
-      for (const x of [3, 7, 12, 16]) t[5][x] = 0;
-      for (const x of [5, 14]) t[7][x] = 0;
-      b(9, 7, 2, 1, 3);
-      b(9, 12, 2, 1, 3);
-      b(3, 12, 2, 3, 1);
-      b(16, 12, 1, 4, 2);
-      b(6, 16, 3, 1, 1);
-    }),
+      "A downed rotorcraft anchors three lanes between villa rooms and a pool court; garden sheds and hedges ring the walls.",
+    level: ringed(
+      layout(20, (b, h, t) => {
+        h(3, 3, 5, 5, 1);
+        h(12, 3, 5, 5, 5);
+        for (const x of [3, 7, 12, 16]) t[5][x] = 0;
+        for (const x of [5, 14]) t[7][x] = 0;
+        b(9, 7, 2, 1, 3);
+        b(9, 12, 2, 1, 3);
+        b(3, 12, 2, 3, 1);
+        b(16, 12, 1, 4, 2);
+        b(6, 16, 3, 1, 1);
+      }),
+      [
+        ["open", 9, 6, 2, 1],
+        ["open", 20, 6, 2, 1],
+        ["shell", 21, 1, 5, 4, 4],
+        ["open", 23, 4],
+        ["open", 21, 2],
+        ["block", 6, 3, 2, 1, 2],
+        ["block", 13, 4, 3, 1, 2],
+        ["block", 17, 2, 1, 2, 3],
+      ],
+    ),
+    crates: ringCrates(
+      [
+        [6.5, 6.5],
+        [13.5, 6.5],
+        [3.5, 8.5],
+        [16.5, 8.5],
+        [5.5, 11.5],
+        [14.5, 11.5],
+        [6.5, 15.5],
+        [13.5, 15.5],
+        [9.5, 8.5],
+        [10.5, 11.5],
+      ],
+      [
+        [4.5, 4.5],
+        [11.5, 2.5],
+        [18.5, 4.5],
+        [23.5, 2.5],
+      ],
+      32,
+    ),
     theme: { ...warm, sky: "#e2b9a0", floor: "#816a64" },
     props: [
-      { x: 10, y: 8.5, kind: "wreck", label: "DOWNED / 04" },
-      { x: 14, y: 14, kind: "sign", label: "POOL COURT" },
+      { x: 16, y: 14.5, kind: "wreck", label: "DOWNED / 04" },
+      { x: 20, y: 20, kind: "sign", label: "POOL COURT" },
     ],
     zones: [
-      { x: 11, y: 12, w: 5, h: 4, color: "#34999f" },
-      { x: 4, y: 4, w: 3, h: 3, color: "#a18d72" },
-      { x: 13, y: 4, w: 3, h: 3, color: "#90949e" },
+      { x: 17, y: 18, w: 5, h: 4, color: "#34999f" },
+      { x: 10, y: 10, w: 3, h: 3, color: "#a18d72" },
+      { x: 19, y: 10, w: 3, h: 3, color: "#90949e" },
     ],
   },
 };

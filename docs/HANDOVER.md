@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=signal-pace-20261019`.
+  Current live value: `v=signal-pace-20261019` (`game-look` carries `v=signal-arenas-20261019`, not yet deployed).
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -49,6 +49,7 @@ hash is stored: `e4ecd2762674dd4bb706fe3aa4fd2d8fc49e1124691d66437d26f8194c9106d
 | Script | Checks |
 |---|---|
 | `signal-pace-sim.mjs` | Headless Last Signal round length (no browser). `ROUNDS=25` per arena. |
+| `signal-arena-views.mjs [width]` | Photos of each Last Signal arena with 8 fighters in view + draw calls → `screenshots/qa/arenas`. |
 | `signal-rounds.mjs [width]` | Plays 3 Last Signal rounds watching for page errors (caught the Charge Core crash). |
 | `signal-lives.mjs` | Start shield, losing a life, last life ends the round. |
 | `signal-regen.mjs` | Health recovery after 5 s without damage. |
@@ -122,6 +123,20 @@ space is the limit (8 fighters on 16×16 / 24×24 / 20×20).
 
 Do one stage per session if usage is tight, and report results to the owner before
 deploying.
+
+**Stage 1 status (on `game-look`, not deployed, awaiting owner):** arenas are now
+28×28 / 36×36 / 32×32. Each keeps its old layout whole at the heart, shifted 6 tiles in
+(`ringed()` in `outpost-content.js`); the old outer wall is a compound wall with 2 gates
+per side, and a pinwheel ring adds a flank hut, cover and crates per side. Renderer
+landmark coordinates (terminal/villa roofs, fuselage, wreck, apron markings, windows)
+moved by +6. Training/academy keeps the classic 16×16 yard (`trainingLevel`).
+Measured (25 rounds per arena): avg 48 s → 64 s (median 64, max 108; Dust 59, Skyport 69,
+Wreck 64); first life lost ~12 s. Draw calls with 8 fighters in view: 83–228 (was 67–102),
+under the 520 budget. Finding: almost all lives are lost in bot-vs-bot fights, not the
+haze — space alone won't reach 2–3 min. Simulated options (not applied, owner to decide):
+bots roam near their own area instead of hunting map-wide until 1 rival is left → ~79 s;
+plus a later/slower haze (starts 30 s, closes over 180 s) → ~97 s; bots never hunt + that
+haze → ~111 s.
 
 ## Where things live
 

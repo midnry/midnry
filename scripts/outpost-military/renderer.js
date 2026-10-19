@@ -1736,16 +1736,16 @@ export class MilitaryRenderer {
         -Math.PI / 2,
         Math.PI,
       );
-      const fuselage = this.mesh(this.world, hullGeometry, aluminum, [20 * SCALE, 3, 11 * SCALE]);
+      const fuselage = this.mesh(this.world, hullGeometry, aluminum, [26 * SCALE, 3, 17 * SCALE]);
       fuselage.rotation.x = -Math.PI / 2;
       fuselage.userData.ownedGeometry = true;
       aluminum.side = THREE.DoubleSide;
-      this.box(this.world, aluminum, [20 * SCALE, 3.1, 11 * SCALE], [14, 0.12, 3]);
+      this.box(this.world, aluminum, [26 * SCALE, 3.1, 17 * SCALE], [14, 0.12, 3]);
     }
     if (id === "estate") {
       const wreck = new THREE.Group();
       this.world.add(wreck);
-      wreck.position.set(10 * SCALE, 0, 8.5 * SCALE);
+      wreck.position.set(16 * SCALE, 0, 14.5 * SCALE);
       wreck.rotation.y = 0.5;
       this.box(wreck, mat, [0, 1.4, 0], [3, 2.3, 5]);
       this.box(wreck, mat, [0, 2.6, 0], [11, 0.07, 0.32]);

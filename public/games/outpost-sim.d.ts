@@ -140,6 +140,9 @@ export type MapSpec = {
   tag: string;
   description: string;
   level: number[][];
+  /** Smaller layout used by practice/academy (training mode) instead of `level`. */
+  trainingLevel?: number[][];
+  crates?: [number, number][];
   theme: Record<string, unknown>;
   props: unknown[];
   zones: unknown[];

@@ -259,8 +259,9 @@ export function decorateRealisticEnvironment(r, id, n) {
   function wantsWindow(x, y, type) {
     if (id === "breakwater") return y >= 3 && y <= 15 && [2, 8, 19, 25].includes(x);
     if (id === "testblock") return [2, 4].includes(type) && y >= 4 && y <= 11;
-    if (id === "skyport") return type === 5 && x >= 3 && x <= 14 && y >= 3 && y <= 11;
-    if (id === "estate") return [1, 5].includes(type) && y >= 3 && y <= 7;
+    // Skyport and Wreck Estate sit 6 tiles in from the arena edge (outer ring).
+    if (id === "skyport") return type === 5 && x >= 9 && x <= 20 && y >= 9 && y <= 17;
+    if (id === "estate") return [1, 5].includes(type) && x >= 9 && x <= 22 && y >= 9 && y <= 13;
     return false;
   }
   for (let y = 0; y < n; y++) {
@@ -406,11 +407,11 @@ export function decorateRealisticEnvironment(r, id, n) {
   }
   if (id === "testblock") for (let y = 1.8; y < n - 1; y += 2.1) floorRectangle(8, y, 0.028, 0.85);
   if (id === "skyport") {
-    for (let x = 2.3; x < 16; x += 2.5) floorRectangle(x, 14.2, 0.95, 0.03);
-    for (const x of [5.2, 10.2, 15.2]) {
-      floorRectangle(x, 20.4, 0.035, 2.2);
-      floorRectangle(x + 2.1, 20.4, 0.035, 2.2);
-      floorRectangle(x + 1.05, 21.5, 2.13, 0.035);
+    for (let x = 8.3; x < 22; x += 2.5) floorRectangle(x, 20.2, 0.95, 0.03);
+    for (const x of [11.2, 16.2, 21.2]) {
+      floorRectangle(x, 26.4, 0.035, 2.2);
+      floorRectangle(x + 2.1, 26.4, 0.035, 2.2);
+      floorRectangle(x + 1.05, 27.5, 2.13, 0.035);
     }
   }
   if (id === "freight") {
@@ -440,13 +441,13 @@ export function decorateRealisticEnvironment(r, id, n) {
         ]
       : id === "estate"
         ? [
-            { id: "west-villa", x: 3, y: 3, w: 5, h: 5, pitched: true, color: "#6f655a" },
-            { id: "east-villa", x: 12, y: 3, w: 5, h: 5, pitched: true, color: "#626e73" },
+            { id: "west-villa", x: 9, y: 9, w: 5, h: 5, pitched: true, color: "#6f655a" },
+            { id: "east-villa", x: 18, y: 9, w: 5, h: 5, pitched: true, color: "#626e73" },
           ]
         : id === "skyport"
           ? [
-              { id: "terminal", x: 3, y: 3, w: 12, h: 9, pitched: false, color: "#92968f" },
-              { id: "aircraft-cabin", x: 18, y: 4, w: 4, h: 14, aircraft: true },
+              { id: "terminal", x: 9, y: 9, w: 12, h: 9, pitched: false, color: "#92968f" },
+              { id: "aircraft-cabin", x: 24, y: 10, w: 4, h: 14, aircraft: true },
             ]
           : [];
   for (const roof of roofs) {

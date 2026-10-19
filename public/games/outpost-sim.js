@@ -56,7 +56,9 @@ export class Arena {
     this.state = "playing";
     this.winner = null;
     this.events = [];
-    this.level = mapOf(this.mapId).level.map((row) => [...row]);
+    const map = mapOf(this.mapId),
+      classic = mode === "training" && !!map.trainingLevel;
+    this.level = (classic ? map.trainingLevel : map.level).map((row) => [...row]);
     const size = this.level.length,
       center = size / 2;
     this.zone = {
@@ -71,8 +73,7 @@ export class Arena {
     if (mode !== "training")
       for (let y = center - 1; y <= center; y++)
         for (let x = center - 1; x <= center; x++) this.level[y][x] = 0;
-    const spawns =
-      this.mapId === "outpost"
+    const spawns = classic
         ? SPAWNS
         : [
             [2.5, 2.5],
@@ -84,8 +85,7 @@ export class Arena {
             [2.5, size - 2.5],
             [1.5, center],
           ];
-    const teamSpawns =
-      this.mapId === "outpost" ? TEAM_SPAWNS : [spawns[0], spawns[2], spawns[4], spawns[6]];
+    const teamSpawns = classic ? TEAM_SPAWNS : [spawns[0], spawns[2], spawns[4], spawns[6]];
     const points = spawns.map((p) => [...p]);
     for (let i = points.length - 1; i > 0; i--) {
       const j = Math.floor(random() * (i + 1));
@@ -114,7 +114,7 @@ export class Arena {
       const slot = mode === "duo" ? teamCounts[team] - 1 : 0;
       let [x, y] = mode === "duo" ? teamSpawns[team] : points[i];
       if (mode === "duo") x += slot * 0.8;
-      if (mode === "training" && this.mapId === "outpost") {
+      if (classic) {
         const training = [
           [3.5, 13.5],
           [11.5, 12.5],
@@ -191,7 +191,7 @@ export class Arena {
     }
     if (mode !== "training")
       this.crates = (
-        mapOf(this.mapId).crates ?? [
+        map.crates ?? [
           [4.5, 2.5],
           [11.5, 2.5],
           [5.5, 5.5],
@@ -207,18 +207,14 @@ export class Arena {
         ]
       )
         .map(([x, y]) =>
-          mapOf(this.mapId).crates
-            ? [x, y]
-            : this.mapId === "outpost"
-              ? [x, y]
-              : [Math.floor((x * size) / 16) + 0.5, Math.floor((y * size) / 16) + 0.5],
+          map.crates ? [x, y] : [Math.floor((x * size) / 16) + 0.5, Math.floor((y * size) / 16) + 0.5],
         )
         .filter(
           ([x, y]) =>
             !this.wall(x, y) && !this.entities.some((e) => Math.hypot(e.x - x, e.y - y) < 1),
         )
         .map(([x, y], i) => ({ id: "crate" + i, x, y, hp: 80, maxHp: 80, hit: -10 }));
-    if (this.mapId !== "outpost")
+    if (!classic)
       for (const e of this.entities) {
         const point = this.pathTo(e, { x: this.zone.cx, y: this.zone.cy })[0];
         if (point) e.a = Math.atan2(point.y - e.y, point.x - e.x);

@@ -76,6 +76,37 @@ test("five distinct arenas: sealed walls, connected lanes, valid spawns and safe
     }
   assert.ok(layouts.size >= 5);
 });
+test("Last Signal arenas are large, spread their spawns and scale supply crates with area", () => {
+  const sizes = { outpost: 28, skyport: 36, estate: 32 };
+  for (const [mapId, size] of Object.entries(sizes)) {
+    const a = new Arena({ mapId, mode: "signal", random: () => 0.5 }),
+      open = a.level.flat().filter((v) => !v).length;
+    assert.equal(a.level.length, size, mapId);
+    assert.equal(a.entities.length, 8);
+    for (const e of a.entities) {
+      const others = a.entities.filter((o) => o !== e);
+      assert.ok(
+        Math.min(...others.map((o) => Math.hypot(o.x - e.x, o.y - e.y))) >= 8,
+        mapId + " spawn gap",
+      );
+      assert.ok(Math.min(e.x, e.y, size - e.x, size - e.y) < 3, mapId + " spawn on the edge");
+    }
+    // Every listed crate is placed (none dropped onto a wall or a spawn).
+    assert.equal(a.crates.length, MAPS[mapId].crates.length, mapId + " crates");
+    // Before the enlargement the sparsest arena (Skyport) had one crate per ~40 open tiles.
+    assert.ok(a.crates.length >= open / 40, mapId + " crate density");
+    for (const t of [0, 60, 120, 160]) {
+      a.time = t;
+      a.updateZone();
+      assert.ok(!a.wall(a.zone.cx, a.zone.cy), mapId + " zone centre");
+      const e = a.entities[0];
+      a.redeploy(e);
+      assert.ok(a.canMove(e.x, e.y) && !a.outsideSafe(e), mapId + " redeploy at " + t);
+    }
+  }
+  // The academy and practice drills keep the classic 16 × 16 Dust Outpost yard.
+  assert.equal(new Arena({ mapId: "outpost", mode: "training" }).level.length, 16);
+});
 test("all eleven loadouts shoot, reload to their own magazine and serialize effects", () => {
   assert.equal(Object.keys(WEAPONS).length, 11);
   for (const weapon of Object.keys(WEAPONS)) {
