@@ -5,15 +5,17 @@
 import * as THREE from "three";
 import { surfaceMaterial } from "./realism-surfaces.js";
 import { batchStaticByMaterial } from "./static-batches.js";
+import { textTexture, drawAtlasText, signMaterial } from './world-text.js';
 
 export const medicalDepotStorage = (x, y) => x === 22 && y === 24;
 
 function signage(r) {
   if (r.medicalDepotAtlas) return r.medicalDepotAtlas;
   const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 256;
+  canvas.width = 2048;
+  canvas.height = 512;
   const c = canvas.getContext("2d");
+  c.scale(2,2);
   for (const [i, text] of [
     "MEDICAL DEPOT  /  SUPPLY CONTROL",
     "STERILE RESERVE  /  SEALED STORES",
@@ -25,15 +27,10 @@ function signage(r) {
     c.fillStyle = i === 3 ? "#b9aa77" : "#8fb7a7";
     c.fillRect(0, i * 64, 8, 64);
     c.fillStyle = "#e0e6dd";
-    c.font = "600 32px Arial";
-    c.textBaseline = "middle";
-    c.fillText(text, 26, i * 64 + 33, 974);
+    const aspect=[2.55/.16,2.45/.16,2.48/.155,2.1/.14][i];
+    drawAtlasText(r,c,text,{y:i*64,aspect});
   }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = Math.min(4, r.renderer.capabilities.getMaxAnisotropy());
-  texture.name = "Original medical depot wayfinding atlas";
-  r.textures.add(texture);
+  const texture = textTexture(r,canvas,'Original medical depot wayfinding / Barlow Condensed');
   r.medicalDepotAtlas = texture;
   return texture;
 }
@@ -53,7 +50,7 @@ export function decorateMedicalDepot(r, id, ctx) {
   );
   // Matte impact strips reuse the existing rubber substrate/batch.
   const band = seal;
-  const signMaterial = own(r.material({ map: signage(r), roughness: 0.9, metalness: 0 }));
+  const labelMaterial = own(signMaterial(r,signage(r),{world:false}));
   const signs = new THREE.Group();
   signs.name = "Medical depot / shared wayfinding";
   const records = [];
@@ -78,7 +75,7 @@ export function decorateMedicalDepot(r, id, ctx) {
       for (let i = 0; i < uv.count; i++) uv.setY(i, (3 - row + uv.getY(i)) / 4);
       return g;
     });
-    const mesh = new THREE.Mesh(g, signMaterial);
+    const mesh = new THREE.Mesh(g, labelMaterial);
     mesh.position.set(...p);
     mesh.scale.set(...s);
     if (q) mesh.quaternion.copy(q);

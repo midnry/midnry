@@ -4,6 +4,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { textTexture, displayFont, fitDisplay, registerTextMaterial } from './world-text.js';
 
 const CELL = 256,
   COLS = 4;
@@ -14,13 +15,17 @@ function cellUV(cell, u, v) {
   ];
 }
 function shared(r) {
-  if (r.interactableKit) return r.interactableKit;
+  if (r.interactableKit) {
+    registerTextMaterial(r,r.interactableKit.material,.1);
+    return r.interactableKit;
+  }
   const canvas = document.createElement("canvas");
-  canvas.width = canvas.height = 1024;
+  canvas.width = canvas.height = 2048;
   const c = canvas.getContext("2d"),
     data = document.createElement("canvas");
   data.width = data.height = 256;
   const d = data.getContext("2d");
+  c.scale(2,2);
   const titles = [
     "",
     "",
@@ -63,50 +68,65 @@ function shared(r) {
     d.fillStyle = `rgb(255,${Math.round(rough * 255)},${Math.round(metal * 255)})`;
     d.fillRect((i % 4) * 64, Math.floor(i / 4) * 64, 64, 64);
     if (i < 4) continue;
+    if(i>=5&&i<=8){
+      // Precompensate the square atlas cell for the 0.79 × 0.52 m screen.
+      // Glyphs keep the font's proportions after mapping onto that rectangle.
+      c.save();c.translate(x,y);c.scale(1,.79/.52);
+      c.fillStyle='#c4d7d1';fitDisplay(r,c,titles[i],26,232,20);
+      c.fillText(titles[i],12,29);
+      c.strokeStyle='#4f7179';c.lineWidth=1;
+      for(const y of [45,92,120]){c.beginPath();c.moveTo(14,y);c.lineTo(240,y);c.stroke();}
+      c.font=displayFont(r,24);c.fillText('SYSTEM READY',15,78);
+      c.font=displayFont(r,21,600);c.fillText('LOCAL CONTROL',15,113);
+      c.fillStyle='#adc9c3';c.font=displayFont(r,18,600);
+      c.fillText('HOLD TO SERVICE',15,139);
+      c.restore();continue;
+    }
     c.fillStyle = i === 10 ? "#edbb88" : i === 11 ? "#b2d9ba" : "#c4d7d1";
-    c.font = "bold 17px Arial";
-    c.fillText(titles[i], x + 12, y + 31, 232);
+    fitDisplay(r,c,titles[i],26,232,18);
+    c.fillText(titles[i], x + 12, y + 34);
     if ([4, 9, 13].includes(i)) {
       c.fillStyle = "#e2e9dd";
       c.fillRect(x + 106, y + 62, 44, 123);
       c.fillRect(x + 67, y + 101, 123, 44);
-      c.font = "12px Arial";
+      c.font = displayFont(r,16,600);
       c.fillText(i === 9 ? "HANDLE WITH CARE" : "MEDICAL RESUPPLY", x + 16, y + 232);
     } else if (i === 10 || i === 11) {
-      c.font = "bold 34px monospace";
+      c.font = displayFont(r,38);
       c.fillText(i === 10 ? "●  LIVE" : "✓ SAFE", x + 20, y + 118);
-      c.font = "14px monospace";
+      c.font = displayFont(r,18,600);
       c.fillText(i === 10 ? "LINK ACTIVE" : "LINK ISOLATED", x + 18, y + 196);
     } else if (i === 12) {
-      c.font = "bold 32px Arial";
+      c.font = displayFont(r,36);
       c.fillStyle = "#dfb882";
       c.fillText("EMERGENCY", x + 14, y + 106);
       c.fillText("RADIO", x + 14, y + 146);
-      c.font = "14px Arial";
+      c.font = displayFont(r,18,600);
       c.fillText("CALL ASSEMBLY", x + 14, y + 225);
     } else {
       c.strokeStyle = "#4f7179";
       c.lineWidth = 2;
-      for (let row = 0; row < 4; row++) {
+      for (let row = 0; row < 3; row++) {
         c.beginPath();
-        c.moveTo(x + 14, y + 66 + row * 35);
-        c.lineTo(x + 233, y + 66 + row * 35);
+        c.moveTo(x + 14, y + 70 + row * 52);
+        c.lineTo(x + 233, y + 70 + row * 52);
         c.stroke();
       }
-      c.font = "14px monospace";
-      ["SYSTEM STATUS", "SERVICE CIRCUIT", "LOCAL CONTROL"].forEach((s, j) =>
-        c.fillText(s, x + 15, y + 89 + j * 35),
+      c.font = displayFont(r,24);
+      ["SYSTEM READY", "LOCAL CONTROL"].forEach((s, j) =>
+        c.fillText(s, x + 15, y + 108 + j * 52),
       );
       c.fillStyle = "#adc9c3";
+      c.font = displayFont(r,18,600);
       c.fillText(i === 14 ? "KEEP CLEAR" : "HOLD TO SERVICE", x + 15, y + 232);
     }
   }
-  const color = new THREE.CanvasTexture(canvas),
+  const color = textTexture(r,canvas,'Shared equipment text / Barlow Condensed',{metadata:{font:r.worldTypography?.family,screenAspect:.79/.52,linearScale:2}}),
     response = new THREE.CanvasTexture(data);
   color.colorSpace = THREE.SRGBColorSpace;
   response.colorSpace = THREE.NoColorSpace;
   for (const t of [color, response]) {
-    t.anisotropy = Math.min(8, r.renderer.capabilities.getMaxAnisotropy());
+    t.anisotropy = r.renderer.capabilities.getMaxAnisotropy();
     r.textures.add(t);
   }
   color.name = "Original shared interactable trim atlas";
@@ -120,7 +140,16 @@ function shared(r) {
     vertexColors: true,
     normalMap: r.realismSurfaces?.weaponMetal?.normal,
     normalScale: new THREE.Vector2(0.025, 0.025),
+    emissiveMap:color,emissive:'#dce5df',emissiveIntensity:.1,
   });
+  // The first atlas row is plain fabric/metal/rubber, not lettering. Keep
+  // those substrates non-emissive without another texture or material/draw.
+  material.onBeforeCompile=shader=>{
+    shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>',
+      '#include <emissivemap_fragment>\n totalEmissiveRadiance *= 1.0 - step(0.75, vEmissiveMapUv.y);');
+  };
+  material.customProgramCacheKey=()=> 'equipment-lettering-only-v1';
+  registerTextMaterial(r,material,.1);
   material.name = "Paint, rubber and metal / shared interactable trim sheet";
   return (r.interactableKit = { color, response, material, geometries: new Map() });
 }
@@ -222,15 +251,21 @@ export function buildStationTerminal(r, panel, station) {
       : /armory|ammo|suppl|cargo/.test(station.kind)
         ? 6
         : 8;
-  const material = r.protocolMaterial({
+  // Anti-reflection LCD coating: the flashlight must reveal the lettering
+  // rather than turn the entire dark display into a white specular hotspot.
+  // PhysicalMaterial's specular control is supported by Three r180; no extra
+  // pass/clearcoat/transmission or light is introduced.
+  const material = new THREE.MeshPhysicalMaterial({
     map: shared(r).color,
     emissiveMap: shared(r).color,
     color: "#bfd7d3",
     emissive: "#85b9c4",
     emissiveIntensity: 0.32,
-    roughness: 0.38,
+    roughness: 0.6,
     metalness: 0,
+    specularIntensity:0.04,
   });
+  material.userData.world=true;r.materials.add(material);
   const screen = r.mesh(panel, faceGeometry(r, cell, 0.79, 0.52), material, [0, 0.06, 0.17]);
   screen.castShadow = false;
   screen.userData.noBatch = true;
@@ -238,7 +273,7 @@ export function buildStationTerminal(r, panel, station) {
   const label = r.mesh(
     panel,
     r.geo("protocol-label", () => new THREE.PlaneGeometry(1.18, 0.34)),
-    r.protocolSign(station.name, "HOLD TO SERVICE"),
+    r.protocolSign(station.name, "HOLD TO SERVICE",undefined,[1.18,.34]),
     [0, 0.69, 0.05],
   );
   label.castShadow = false;
@@ -271,29 +306,8 @@ export function buildMedicalCabinet(r, parent) {
  * already-approved cabinet labels retain their positions and artwork. */
 export function buildCabinetLabel(r, cabinet, fixture, sharedStation) {
   const radio = fixture.id === "cabinet-comms";
-  let material;
-  if (radio) {
-    const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 48;
-    const c = canvas.getContext("2d");
-    c.fillStyle = "#243934";
-    c.fillRect(0, 0, 512, 48);
-    c.fillStyle = "#a7bcb1";
-    c.fillRect(0, 0, 512, 2);
-    c.fillRect(0, 46, 512, 2);
-    c.fillStyle = "#e3eee9";
-    c.font = "600 28px Arial";
-    c.textAlign = "center";
-    c.textBaseline = "middle";
-    c.fillText(fixture.name.toUpperCase(), 256, 25, 480);
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = Math.min(4, r.renderer.capabilities.getMaxAnisotropy());
-    r.textures.add(texture);
-    r.worldTextures.add(texture);
-    material = r.protocolMaterial({ map: texture, roughness: 0.9, metalness: 0 });
-  } else material = r.protocolSign(fixture.name, "MEDICAL RESUPPLY", "#a1c7b7");
+  const size=radio?[1.04,.08]:sharedStation?[.65,.24]:[1.55,.45];
+  const material=r.protocolSign(fixture.name,radio?'':"MEDICAL RESUPPLY","#a1c7b7",size);
   const label = r.mesh(
     cabinet,
     r.geo(
@@ -438,7 +452,7 @@ export function buildEmergencyConsole(r, root) {
   const label = r.mesh(
     root,
     r.geo("protocol-label", () => new THREE.PlaneGeometry(1.18, 0.34)),
-    r.protocolSign("RADIO ASSEMBLY", "EMERGENCY MEETING", "#d3ae75"),
+    r.protocolSign("RADIO ASSEMBLY", "EMERGENCY MEETING", "#d3ae75",[1.18,.34]),
     [0, 0.7, 0.04],
   );
   label.castShadow = false;

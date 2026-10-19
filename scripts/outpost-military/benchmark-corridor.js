@@ -3,6 +3,7 @@
 import * as THREE from "three";
 import { surfaceMaterial } from "./realism-surfaces.js";
 import { batchStaticByMaterial } from "./static-batches.js";
+import { textTexture, drawAtlasText, signMaterial } from './world-text.js';
 export const BENCHMARK = { x0: 9, x1: 11, y0: 14, y1: 24, station: "coolant-test" };
 export const benchmarkFace = (f) =>
   (f.x + f.dx >= 9 && f.x + f.dx < 11 && f.y + f.dz >= 14 && f.y + f.dz < 24) ||
@@ -11,8 +12,8 @@ export const benchmarkFace = (f) =>
 function atlas(r) {
   if (r.benchmarkAtlas) return r.benchmarkAtlas;
   const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 512;
+  canvas.width = 2048;
+  canvas.height = 1024;
   const c = canvas.getContext("2d"),
     labels = [
       "RATIONS  /  COLD STORAGE",
@@ -24,6 +25,7 @@ function atlas(r) {
       "MAINTENANCE  →",
       "MEDICAL SUPPLY ROUTE",
     ];
+  c.scale(2,2);
   c.clearRect(0, 0, 1024, 512);
   labels.forEach((label, i) => {
     const y = i * 64;
@@ -32,15 +34,11 @@ function atlas(r) {
     c.fillStyle = i === 4 ? "#d1b46b" : "#9dc9cb";
     c.fillRect(0, y, 8, 64);
     c.fillStyle = "#e7e5d9";
-    c.font = "600 32px Arial";
-    c.textBaseline = "middle";
-    c.fillText(label, 29, y + 32);
+    const aspect=[16,2.5/.29,2.5/.29,1.6/.1,2/.29,16,2.5/.29,16][i];
+    drawAtlasText(r,c,label,{y,aspect,margin:29});
   });
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = Math.min(4, r.renderer.capabilities.getMaxAnisotropy());
+  const texture = textTexture(r,canvas,'Benchmark wayfinding / Barlow Condensed');
   texture.userData.source = "Original benchmark signage atlas (authored canvas, not a photograph)";
-  r.textures.add(texture);
   r.benchmarkAtlas = texture;
   return texture;
 }
@@ -68,7 +66,7 @@ export function decorateBenchmark(r, id, ctx) {
     }),
   );
   const signage = own(
-    r.material({ map: atlas(r), color: "#ffffff", roughness: 0.88, metalness: 0 }),
+    signMaterial(r,atlas(r),{world:false}),
   );
   const caution = own(r.material({ color: "#b4a367", roughness: 0.94, metalness: 0 }));
   const warm = own(

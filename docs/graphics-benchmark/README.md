@@ -7,7 +7,9 @@ and fixes optional loading, the inconsistent grade and the terminal hotspot.
 No merge or deployment is included. The medical depot is the latest isolated
 room pass; further room-specific environment expansion remains pending review.
 
-**Latest review: [Medical depot and night refinements](medical-depot/README.md)**
+**Latest review: [World-text clarity and Retina rendering](text-clarity/README.md)**
+
+[Medical depot and night refinements](medical-depot/README.md)
 
 [Approved shared interactables and first review fixes](interactables/README.md)
 

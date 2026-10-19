@@ -3948,7 +3948,9 @@
                 1,
                 Math.min(this.academy?.options.width || 960, Math.round(r.width)),
               ),
-              scale = this.academy?.options.adaptive ? this.budget?.scale || 1 : 1;
+              // The 3D renderer can earn extra Retina pixels independently;
+              // keep the existing HUD canvas/projection at its previous cap.
+              scale = this.academy?.options.adaptive ? Math.min(1,this.budget?.scale || 1) : 1;
             this.w = Math.max(Math.min(240, baseWidth), Math.round(baseWidth * scale));
             this.h = Math.max(1, Math.round((this.w * r.height) / Math.max(1, r.width)));
             this.canvas.width = this.w;
@@ -4338,6 +4340,7 @@
                 activeScene,
                 this.academy.options.adaptive,
                 this.military?.metrics?.gpuMs,
+                this.military && this.academy.preset !== "performance" ? 1.5 : 1,
               )
             )
               this.resize();

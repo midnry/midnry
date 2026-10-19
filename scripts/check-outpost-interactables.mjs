@@ -4,10 +4,11 @@ import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { verifyMedicalDepot } from "./qa-outpost-medical-depot.mjs";
+import { verifyWorldText } from './qa-outpost-world-text.mjs';
 const base = process.argv[2] || "http://127.0.0.1:8080",
   label = process.argv[3] || "dev";
 const pass = process.env.OUTPOST_GRAPHICS_PASS || "interactables";
-assert.ok(["interactables", "medical-depot"].includes(pass));
+assert.ok(["interactables", "medical-depot", "text-clarity"].includes(pass));
 const directory = "/workspace/screenshots/outpost-" + pass;
 const evidence = "docs/graphics-benchmark/" + pass;
 mkdirSync(directory, { recursive: true });
@@ -18,10 +19,11 @@ const browser = await chromium.launch({
 });
 const results = [];
 try {
-  for (const variant of ["blocked", "desktop", "mobile"]) {
+  for (const variant of ["blocked", "desktop", "mobile", ...(pass==='text-clarity'?['font-fallback']:[])]) {
     if (process.env.OUTPOST_QA_VARIANT && process.env.OUTPOST_QA_VARIANT !== variant) continue;
     const mobile = variant === "mobile",
       blocked = variant === "blocked",
+      fallback = variant === 'font-fallback',
       errors = [],
       warnings = [],
       aborted = [];
@@ -33,9 +35,9 @@ try {
     });
     page.on("pageerror", (e) => errors.push(e.message));
     page.on("console", (e) => {
-      if (e.type() === "warning" && e.text().includes("Optional operator response"))
+      if (e.type() === "warning" && /Optional operator response|Outpost world text/.test(e.text()))
         warnings.push(e.text());
-      if (e.type() === "error" && !(blocked && /benchmark-operator/.test(e.location().url)))
+      if (e.type() === "error" && !(blocked && /benchmark-operator/.test(e.location().url)) && !(fallback&&/\.woff2/.test(e.location().url)))
         errors.push(e.text());
     });
     if (blocked)
@@ -43,6 +45,7 @@ try {
         aborted.push(r.request().url());
         return r.abort();
       });
+    if(fallback) await page.route(/barlow-condensed.*\.woff2/,route=>{aborted.push(route.request().url());return route.abort();});
     await page.addInitScript(() => {
       localStorage.setItem(
         "midnry-outpost-graphics",
@@ -228,8 +231,10 @@ try {
     assert.equal(states.grades[0].bloom, false);
     assert.deepEqual(states.emergency, [19.5, 1.32, 19.5]);
     assert.equal(states.collisionUnchanged, true);
-    assert.deepEqual(states.atlas, [1024, 256]);
-    const room = pass === "medical-depot" ? await verifyMedicalDepot(page) : null;
+    assert.deepEqual(states.atlas, [2048, 256]);
+    const room = ['medical-depot','text-clarity'].includes(pass) ? await verifyMedicalDepot(page) : null;
+    const text = pass==='text-clarity'?await verifyWorldText(page,{fallback}):null;
+    if(fallback) assert.ok(aborted.length>=2,'both optional font weights were blocked');
     if (!room) await page.evaluate(() => window.equipmentDraw());
     await page.screenshot({
       path: `${directory}/${label}-${variant}.png`,
@@ -367,7 +372,7 @@ try {
       });
     }
     assert.deepEqual(errors, []);
-    results.push({ variant, initial, states, room, charge, transport, warnings, aborted, errors });
+    results.push({ variant, initial, states, room, text, charge, transport, warnings, aborted, errors });
     console.log(
       JSON.stringify({
         variant,

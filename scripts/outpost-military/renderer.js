@@ -39,13 +39,14 @@ import { skinPattern } from "../../public/games/outpost-skins.js";
 import { VictimTakedown } from "./takedowns.js";
 import { ASSET_CACHE } from "../../public/games/outpost-asset-manifest.js";
 import { sightRange } from "../../public/games/outpost-variety.js";
-import { isAppleTouchDevice, graphicsProfile, renderSize } from "./compatibility.js";
+import { isAppleTouchDevice, graphicsProfile, cinematicRenderSize } from "./compatibility.js";
 import { RenderTelemetry, actorInView } from "./telemetry.js";
 import { batchStaticByMaterial } from "./static-batches.js";
 import { WorldVisibility } from "./world-visibility.js";
 import { roofLayout } from "./architecture.js";
 import { GroundTrail } from "./ground-trail.js";
 import { NightDressing } from "./realism-night.js";
+import { prepareWorldTypography, makeProtocolSign } from './world-text.js';
 import { prepareMedevac, buildMedevac } from "./realism-medevac.js";
 import { EventDressing } from "./realism-events.js";
 import { preparePropKit, buildFurniture } from "./realism-props.js";
@@ -280,7 +281,7 @@ export class MilitaryRenderer {
       this.composer.addPass(this.grade);
       this.composer.addPass(new OutputPass());
     }
-    this.ready = this.loadAssets().then(() => {
+    this.ready = Promise.all([this.loadAssets(),prepareWorldTypography(this)]).then(() => {
       if (!this.disposed) {
         this.mapKey = "";
         this.updateWeapon();
@@ -523,7 +524,9 @@ export class MilitaryRenderer {
   resize() {
     if (this.disposed) return;
     const { w, h } = this.g;
-    const [renderWidth, renderHeight] = renderSize(w, h, this.profile);
+    const rect=this.g.shell.getBoundingClientRect();
+    const [renderWidth, renderHeight] = cinematicRenderSize(rect.width,rect.height,window.devicePixelRatio,
+      this.g.academy.options,this.profile,this.g.budget?.scale||1);
     this.renderer.setSize(renderWidth, renderHeight, false);
     this.composer?.setSize(renderWidth, renderHeight);
     this.fxaa?.uniforms.resolution.value.set(1 / renderWidth, 1 / renderHeight);
@@ -590,6 +593,7 @@ export class MilitaryRenderer {
     this.protocolFixtures = [];
     this.interactableInstances = [];
     this.protocolScreens.clear();
+    this.protocolSignMaterials = new Set();
     this.protocolLightMaterials = [];
     this.protocolPowerOut = false;
     this.medicalStocks.clear();
@@ -948,33 +952,8 @@ export class MilitaryRenderer {
     material.userData.world = true;
     return material;
   }
-  protocolSign(title, subtitle = "BREAKWATER / FIELD OPERATIONS", color = "#81b7bd") {
-    const canvas = document.createElement("canvas");
-    canvas.width = 768;
-    canvas.height = 224;
-    const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#18272b";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, 12, canvas.height);
-    let fontSize = 62;
-    ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
-    // Font weight and size are separate: this bounded fit also handles long room names.
-    while (fontSize > 12 && ctx.measureText(title.toUpperCase()).width > 700) {
-      fontSize -= 2;
-      ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
-    }
-    ctx.fillStyle = "#e3eee9";
-    ctx.fillText(title.toUpperCase(), 36, 106);
-    ctx.fillStyle = color;
-    ctx.font = "22px monospace";
-    ctx.fillText(subtitle.toUpperCase().slice(0, 56), 38, 160);
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
-    this.textures.add(texture);
-    this.worldTextures.add(texture);
-    return this.protocolMaterial({ map: texture, roughness: 0.85, metalness: 0.08 });
+  protocolSign(title, subtitle = "BREAKWATER / FIELD OPERATIONS", color = "#81b7bd", size = [2.5,.73]) {
+    return makeProtocolSign(this,title,subtitle,color,size);
   }
   // Mount a panel against the closest adjacent collision wall. Its maximum
   // protrusion is 0.10 tile, so an open corridor remains fully traversable.
@@ -1303,7 +1282,7 @@ export class MilitaryRenderer {
       const label = this.mesh(
         labelRoot,
         this.geo("loading-label", () => new THREE.PlaneGeometry(2.8, 0.82)),
-        this.protocolSign("LIFELINE MEDEVAC", "LOAD SUPPLIES / BOARD TO DEPART", "#a1c7b7"),
+        this.protocolSign("LIFELINE MEDEVAC", "LOAD SUPPLIES / BOARD TO DEPART", "#a1c7b7",[2.8,.82]),
         [0, 0, 0.03],
       );
       label.userData.noBatch = true;
@@ -1543,7 +1522,7 @@ export class MilitaryRenderer {
     const sign = this.mesh(
       clinic,
       this.geo("clinic-sign", () => new THREE.PlaneGeometry(4.4, 0.9)),
-      this.protocolSign("FIELD CLINIC", "MEDICAL CARGO / RECEIVING BAY", "#a9c6b7"),
+      this.protocolSign("FIELD CLINIC", "MEDICAL CARGO / RECEIVING BAY", "#a9c6b7",[4.4,.9]),
       [46.9, 2.52, 46.5],
     );
     sign.rotation.y = -Math.PI / 2;
@@ -3017,6 +2996,9 @@ export class MilitaryRenderer {
     }
     const powerOut = protocol.sabotage?.powerUntil > this.g.time;
     this.protocolPowerOut = powerOut;
+    for (const material of this.protocolSignMaterials || []) {
+      material.emissiveIntensity = material.userData.textEmission * (powerOut ? .16 : 1);
+    }
     // Natural lighting owns these values; resetting them here defeats fading.
     for (const material of this.protocolLightMaterials) {
       material.emissiveIntensity = powerOut ? 0.035 : 1.6;

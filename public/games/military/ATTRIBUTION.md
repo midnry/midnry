@@ -36,7 +36,7 @@ Station chassis/screens, medical cabinets and kit cases, supply-drop boxes,
 concealed-charge cases/status plates and emergency-console fittings use original
 procedural geometry and original authored trim/status artwork from
 `scripts/outpost-military/interactables.js`. These are authored game assets, not
-scanned or production-model assets. One runtime 1024 px colour atlas (sRGB) and
+scanned or production-model assets. One runtime 2048 px colour atlas (sRGB) and
 256 px roughness/metalness data atlas (linear) are shared by all copies. There
 are no new third-party downloads. The subtle metal normal reuses the existing
 Poly Haven `metal_plate_02` OpenGL normal photograph (CC0, source in
@@ -49,9 +49,19 @@ fittings, closed cold-chain storage, impact strips and authored wayfinding
 artwork (`scripts/outpost-military/room-medical-depot.js`). These are procedural
 game assets, not production/scanned models. They reuse the existing licensed
 plaster, concrete and metal photographs listed here and in REALISM-ASSETS.md.
-The runtime 1024×256 wayfinding atlas adds no third-party download. The updated
+The runtime 2048×512 wayfinding atlas adds no third-party download. The updated
 radio-cabinet nameplate and larger charge status artwork are also original.
 All other rooms retain their existing environment assets.
+
+## World-text clarity pass (2026-10-19)
+
+Room/station/medical signs, the corridor/depot atlases and equipment screen text
+are original canvas artwork, rebuilt at 2–3× linear resolution. They reuse the
+game's bundled **Barlow Condensed**, by Jeremy Tribby, under the SIL Open Font
+License 1.1: https://github.com/jpt/barlow . The exact bundled licence is
+[`../fonts/OFL.txt`](../fonts/OFL.txt). No new font, model or texture download was
+added. The shared equipment normal/roughness photographs and their licences
+remain unchanged; this typography is not presented as a production/scanned asset.
 
 Poly Haven publishes these assets under CC0: https://polyhaven.com/license.
 The bundled maps use the 1K diffuse, OpenGL normal, and roughness photographs:

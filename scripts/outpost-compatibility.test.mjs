@@ -33,6 +33,7 @@ import {
   isAppleTouchDevice,
   graphicsProfile,
   renderSize,
+  cinematicRenderSize,
 } from "./outpost-military/compatibility.js";
 
 test("iPad desktop browsing mode receives the Apple touch budget", () => {
@@ -43,6 +44,23 @@ test("iPad desktop browsing mode receives the Apple touch budget", () => {
   assert(
     !isAppleTouchDevice({ userAgent: "Macintosh Safari", platform: "MacIntel", maxTouchPoints: 0 }),
   );
+});
+
+test("Retina cinematic pixels grow with measured headroom without changing HUD/aim geometry",()=>{
+ const p=graphicsProfile(),options={width:960,militaryWidth:1280,adaptive:true};
+ assert.deepEqual(cinematicRenderSize(1280,720,2,options,p,1),[1280,720]);
+ assert.deepEqual(cinematicRenderSize(1280,720,2,options,p,1.5),[1920,1080]);
+ assert.deepEqual(cinematicRenderSize(1280,720,1,options,p,1.5),[1280,720],"no supersampling above display");
+ assert.deepEqual(cinematicRenderSize(1280,720,2,{...options,adaptive:false},p,1.5),[1280,720]);
+ const phone=cinematicRenderSize(390,844,2,options,p,1),down=cinematicRenderSize(390,844,2,options,p,.5);
+ assert.ok(down[0]<phone[0]&&down[1]<phone[1],"continued pressure actually reduces a capped phone buffer");
+ const apple=graphicsProfile({appleTouch:true});
+ const base=cinematicRenderSize(1024,768,2,options,apple,1),extra=cinematicRenderSize(1024,768,2,options,apple,1.5);
+ assert.ok(base[0]*base[1]<=1000000);
+ assert.ok(extra[0]*extra[1]<=1600000&&extra[0]>base[0]);
+ const safe=graphicsProfile({appleTouch:true,safeMode:true});
+ const recovery=cinematicRenderSize(1024,768,2,options,safe,1.5);
+ assert.ok(recovery[0]*recovery[1]<=600000,"recovery mode keeps its original hard ceiling");
 });
 
 test("portrait and landscape stay within pixel and GPU dimension limits without changing aspect", () => {
