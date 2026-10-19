@@ -33,11 +33,11 @@ try {
       );
       localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 10 }));
     });
-    await page.goto(base + "/games/outpost-zero.html");
+    await page.goto(base + "/games/outpost-zero.html",{waitUntil:'domcontentloaded',timeout:120000});
     await page.waitForFunction(
       () => document.querySelector("midnry-fps")?.engine?.militaryLoaded,
       null,
-      { timeout: 120000 },
+      { timeout: 180000 },
     );
     const result = await page.evaluate(async () => {
       const g = document.querySelector("midnry-fps").engine,
@@ -181,6 +181,10 @@ try {
       draw(9.7, 22.4, -Math.PI / 2);
       g.lookPitch = -0.035;
       g.render();
+      // The software QA GPU queues the preceding state/dye renders. Drain
+      // them before Playwright's separate screenshot timeout starts. This
+      // synchronization is test-only, never part of the game's frame loop.
+      r.renderer.getContext().finish();
       return {
         materials,
         response,
@@ -227,11 +231,15 @@ try {
     assert.equal(result.nightActive, true);
     assert.ok(Number.isFinite(result.nightExposure));
     assert.deepEqual(errors, []);
-    await page.screenshot({
-      path: `${screenshotRoot}/${process.env.OUTPOST_GRAPHICS_PASS?'corridor-':''}${label}-${device}.png`,
-      timeout: 120000,
-      animations: "disabled",
+    // Functional QA exports the actual WebGL frame in the same task as render.
+    // This avoids full-page CSS-animation screenshot stalls in SwiftShader.
+    // Matched room/HUD evidence still uses the separate Playwright captures.
+    const frame = await page.evaluate(() => {
+      const g=document.querySelector('midnry-fps').engine,r=g.military;
+      r.lastRenderAt=performance.now()-16;g.render();
+      return r.renderer.domElement.toDataURL('image/png');
     });
+    writeFileSync(`${screenshotRoot}/${process.env.OUTPOST_GRAPHICS_PASS?'corridor-':''}${label}-${device}.png`,Buffer.from(frame.split(',')[1],'base64'));
     results.push({ device, ...result, errors });
     console.log(
       JSON.stringify({

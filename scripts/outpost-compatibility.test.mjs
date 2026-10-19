@@ -53,6 +53,8 @@ test("Retina cinematic pixels grow with measured headroom without changing HUD/a
  assert.deepEqual(cinematicRenderSize(1280,720,1,options,p,1.5),[1280,720],"no supersampling above display");
  assert.deepEqual(cinematicRenderSize(1280,720,2,{...options,adaptive:false},p,1.5),[1280,720]);
  const phone=cinematicRenderSize(390,844,2,options,p,1),down=cinematicRenderSize(390,844,2,options,p,.5);
+ assert.deepEqual(phone,[390,844],"phone default keeps its original CSS-pixel budget");
+ assert.deepEqual(cinematicRenderSize(844,390,3,options,p,1),[844,390],"landscape phone keeps its original budget too");
  assert.ok(down[0]<phone[0]&&down[1]<phone[1],"continued pressure actually reduces a capped phone buffer");
  const apple=graphicsProfile({appleTouch:true});
  const base=cinematicRenderSize(1024,768,2,options,apple,1),extra=cinematicRenderSize(1024,768,2,options,apple,1.5);

@@ -5,10 +5,11 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { verifyMedicalDepot } from "./qa-outpost-medical-depot.mjs";
 import { verifyWorldText } from './qa-outpost-world-text.mjs';
+import { verifyCentralPassage } from './qa-outpost-central-passage.mjs';
 const base = process.argv[2] || "http://127.0.0.1:8080",
   label = process.argv[3] || "dev";
 const pass = process.env.OUTPOST_GRAPHICS_PASS || "interactables";
-assert.ok(["interactables", "medical-depot", "text-clarity"].includes(pass));
+assert.ok(["interactables", "medical-depot", "text-clarity", "central-passage"].includes(pass));
 const directory = "/workspace/screenshots/outpost-" + pass;
 const evidence = "docs/graphics-benchmark/" + pass;
 mkdirSync(directory, { recursive: true });
@@ -19,7 +20,7 @@ const browser = await chromium.launch({
 });
 const results = [];
 try {
-  for (const variant of ["blocked", "desktop", "mobile", ...(pass==='text-clarity'?['font-fallback']:[])]) {
+  for (const variant of ["blocked", "desktop", "mobile", ...(['text-clarity','central-passage'].includes(pass)?['font-fallback']:[])]) {
     if (process.env.OUTPOST_QA_VARIANT && process.env.OUTPOST_QA_VARIANT !== variant) continue;
     const mobile = variant === "mobile",
       blocked = variant === "blocked",
@@ -53,11 +54,11 @@ try {
       );
       localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 10 }));
     });
-    await page.goto(base + "/games/outpost-zero.html");
+    await page.goto(base + "/games/outpost-zero.html",{waitUntil:'domcontentloaded',timeout:120000});
     await page.waitForFunction(
       () => document.querySelector("midnry-fps")?.engine?.militaryLoaded,
       null,
-      { timeout: 120000 },
+      { timeout: 180000 },
     );
     const initial = await page.evaluate(async () => {
       const g = document.querySelector("midnry-fps").engine,
@@ -232,13 +233,14 @@ try {
     assert.deepEqual(states.emergency, [19.5, 1.32, 19.5]);
     assert.equal(states.collisionUnchanged, true);
     assert.deepEqual(states.atlas, [2048, 256]);
-    const room = ['medical-depot','text-clarity'].includes(pass) ? await verifyMedicalDepot(page) : null;
-    const text = pass==='text-clarity'?await verifyWorldText(page,{fallback}):null;
+    const room = ['medical-depot','text-clarity','central-passage'].includes(pass) ? await verifyMedicalDepot(page) : null;
+    const text = ['text-clarity','central-passage'].includes(pass)?await verifyWorldText(page,{fallback}):null;
+    const central = pass==='central-passage'?await verifyCentralPassage(page):null;
     if(fallback) assert.ok(aborted.length>=2,'both optional font weights were blocked');
     if (!room) await page.evaluate(() => window.equipmentDraw());
     await page.screenshot({
       path: `${directory}/${label}-${variant}.png`,
-      animations: "disabled",
+      animations: "allow",
       timeout: 120000,
     });
     let charge, transport;
@@ -372,7 +374,7 @@ try {
       });
     }
     assert.deepEqual(errors, []);
-    results.push({ variant, initial, states, room, text, charge, transport, warnings, aborted, errors });
+    results.push({ variant, initial, states, room, text, central, charge, transport, warnings, aborted, errors });
     console.log(
       JSON.stringify({
         variant,

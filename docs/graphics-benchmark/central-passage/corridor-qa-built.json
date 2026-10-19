@@ -1,0 +1,250 @@
+[
+  {
+    "device": "desktop",
+    "materials": [
+      {
+        "name": "Uniform fabric",
+        "dye": true,
+        "roughness": true,
+        "metalness": true,
+        "colorSpace": ""
+      },
+      {
+        "name": "Operator head 1",
+        "dye": false,
+        "roughness": true,
+        "metalness": true,
+        "colorSpace": ""
+      },
+      {
+        "name": "Operator head 2",
+        "dye": false,
+        "roughness": true,
+        "metalness": false,
+        "colorSpace": ""
+      }
+    ],
+    "response": [
+      {
+        "colorSpace": "",
+        "flipY": false,
+        "size": [
+          512,
+          512
+        ]
+      },
+      {
+        "colorSpace": "",
+        "flipY": false,
+        "size": [
+          512,
+          512
+        ]
+      }
+    ],
+    "left": {
+      "forward": 1,
+      "strafe": -1
+    },
+    "right": {
+      "forward": 1,
+      "strafe": 1
+    },
+    "blocked": 0,
+    "clearances": {
+      "floor": 25,
+      "ceiling": 126,
+      "wall": 143
+    },
+    "clearanceErrors": [],
+    "baffles": [
+      1,
+      1
+    ],
+    "dyes": [
+      "c9625e",
+      "70a3c4",
+      "ceb160",
+      "a48ac8"
+    ],
+    "lods": [
+      {
+        "lod": 0,
+        "visible": true,
+        "skinned": true
+      },
+      {
+        "lod": 0,
+        "visible": true,
+        "skinned": true
+      },
+      {
+        "lod": 0,
+        "visible": true,
+        "skinned": true
+      },
+      {
+        "lod": 1,
+        "visible": false,
+        "skinned": true
+      },
+      {
+        "lod": 1,
+        "visible": false,
+        "skinned": true
+      },
+      {
+        "lod": 1,
+        "visible": false,
+        "skinned": true
+      }
+    ],
+    "run": "Run",
+    "lightOn": 1,
+    "lightOff": 0.035,
+    "exposure": [
+      0.96,
+      0.96,
+      0.9573538443037132,
+      0.9575273377453115
+    ],
+    "nightActive": true,
+    "nightExposure": 0.9644070070465207,
+    "reflection": false,
+    "assetErrors": [],
+    "viewport": [
+      1280,
+      800
+    ],
+    "buffer": [
+      1280,
+      800
+    ],
+    "lightPool": 4,
+    "errors": []
+  },
+  {
+    "device": "mobile",
+    "materials": [
+      {
+        "name": "Uniform fabric",
+        "dye": true,
+        "roughness": true,
+        "metalness": true,
+        "colorSpace": ""
+      },
+      {
+        "name": "Operator head 1",
+        "dye": false,
+        "roughness": true,
+        "metalness": true,
+        "colorSpace": ""
+      },
+      {
+        "name": "Operator head 2",
+        "dye": false,
+        "roughness": true,
+        "metalness": false,
+        "colorSpace": ""
+      }
+    ],
+    "response": [
+      {
+        "colorSpace": "",
+        "flipY": false,
+        "size": [
+          512,
+          512
+        ]
+      },
+      {
+        "colorSpace": "",
+        "flipY": false,
+        "size": [
+          512,
+          512
+        ]
+      }
+    ],
+    "left": {
+      "forward": 1,
+      "strafe": -1
+    },
+    "right": {
+      "forward": 1,
+      "strafe": 1
+    },
+    "blocked": 0,
+    "clearances": {
+      "floor": 25,
+      "ceiling": 126,
+      "wall": 143
+    },
+    "clearanceErrors": [],
+    "baffles": [
+      1,
+      1
+    ],
+    "dyes": [
+      "c9625e",
+      "70a3c4",
+      "ceb160",
+      "a48ac8"
+    ],
+    "lods": [
+      {
+        "lod": 0,
+        "visible": true,
+        "skinned": true
+      },
+      {
+        "lod": 0,
+        "visible": true,
+        "skinned": true
+      },
+      {
+        "lod": 0,
+        "visible": true,
+        "skinned": true
+      },
+      {
+        "lod": 1,
+        "visible": false,
+        "skinned": true
+      },
+      {
+        "lod": 1,
+        "visible": false,
+        "skinned": true
+      },
+      {
+        "lod": 1,
+        "visible": false,
+        "skinned": true
+      }
+    ],
+    "run": "Run",
+    "lightOn": 1,
+    "lightOff": 0.035,
+    "exposure": [
+      0.96,
+      0.96,
+      0.9573242573980048,
+      0.9574626963804963
+    ],
+    "nightActive": true,
+    "nightExposure": 0.9639840127221018,
+    "reflection": false,
+    "assetErrors": [],
+    "viewport": [
+      390,
+      844
+    ],
+    "buffer": [
+      390,
+      844
+    ],
+    "lightPool": 2,
+    "errors": []
+  }
+]

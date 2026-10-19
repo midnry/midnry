@@ -41,9 +41,15 @@ export function cinematicRenderSize(cssWidth, cssHeight, dpr, options, profile, 
   const density = Math.max(1, Math.min(2, Number.isFinite(dpr) ? dpr : 1));
   const physicalWidth = cssWidth * density;
   const adaptiveScale = options.adaptive ? Math.max(0.5, Math.min(1.5, scale)) : 1;
+  // Phones retain the pre-Retina default in either orientation. Extra desktop
+  // pixels must not silently quadruple a phone's fragment work at startup.
+  const phone = Math.min(cssWidth, cssHeight) < 600;
+  const baseWidth = phone
+    ? Math.min(cssWidth, options.width)
+    : options.militaryWidth || options.width;
   const width = Math.max(
     1,
-    Math.min(physicalWidth, (options.militaryWidth || options.width) * adaptiveScale),
+    Math.min(physicalWidth, baseWidth * adaptiveScale),
   );
   const height = (width * cssHeight) / Math.max(1, cssWidth);
   const maxPixels = Math.min(

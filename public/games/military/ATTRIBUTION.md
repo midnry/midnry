@@ -94,6 +94,13 @@ The retained **legacy** head source is **Infinite, 3D Head Scan by Lee Perry-Smi
 
 ## Renderer
 
+The Central Passage pass reuses the existing Poly Haven CC0 concrete and metal
+maps documented in REALISM-ASSETS.md. Its impact strips, pipework, cable tray,
+shielded practicals, utility panel, floor paint and wayfinding atlas are original
+authored procedural fittings, not scanned or downloaded production models.
+Sign artwork uses the existing Barlow Condensed font (SIL Open Font License 1.1).
+No model, photograph or font download was added for this room.
+
 Three.js 0.180.0 and its included addons are MIT licensed:
 https://github.com/mrdoob/three.js/blob/r180/LICENSE
 The bundled license is in THREE-LICENSE.txt. Weapons, fittings, crates, and projectile geometry are original procedural meshes.

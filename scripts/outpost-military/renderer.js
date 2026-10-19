@@ -509,9 +509,9 @@ export class MilitaryRenderer {
           target.samples = samples;
         }
       }
-      // Grading is a cheap full-screen pass; bloom is skipped on Performance.
+      // Balanced keeps lamp detail without paying for the bloom pyramid.
       this.grade.enabled = true;
-      this.bloom.enabled = preset !== "performance";
+      this.bloom.enabled = preset === "high";
     }
     if (this.reflection) {
       // Mirror puddles redraw the whole scene, so only High pays for them.
@@ -3001,7 +3001,9 @@ export class MilitaryRenderer {
     }
     // Natural lighting owns these values; resetting them here defeats fading.
     for (const material of this.protocolLightMaterials) {
-      material.emissiveIntensity = powerOut ? 0.035 : 1.6;
+      // Preserve the diffuser's colour instead of clipping it into a white
+      // patch. Real pooled lights supply illumination independently of bloom.
+      material.emissiveIntensity = powerOut ? 0.035 : this.g.academy.preset === 'high' ? 1.6 : 1.0;
       // Night shift fixtures burn warm, matching the light they cast.
       material.color.set(powerOut ? "#414d4f" : this.night?.active ? "#ffe0b8" : "#d3edf0");
       material.userData.dayEmissive ??= material.emissive.getHex();
@@ -3169,8 +3171,7 @@ export class MilitaryRenderer {
     u.saturation.value = 1.0;
     u.vignette.value = .08;
     u.grain.value = .002;
-    this.bloom.enabled = this.g.academy.preset === 'high' ||
-      (this.g.academy.preset === 'balanced' && night);
+    this.bloom.enabled = this.g.academy.preset === 'high';
     this.bloom.strength = .12;
     this.bloom.threshold = 1.35;
     this.bloom.radius = .35;

@@ -115,12 +115,15 @@ export function makeProtocolSign(r, title, subtitle, color, size) {
   const text = title.toUpperCase(),
     sub = subtitle.toUpperCase();
   // Compact cabinet plates are one clear line rather than two illegible lines.
-  const single = h < 0.28 || w / h > 8;
-  let titlePx = fitDisplay(r, c, text, H * (single ? 0.62 : 0.42), available);
-  const subPx = Math.round(titlePx * 0.4);
+  const single = h < 0.5 || w / h > 8;
+  // A compact plate can carry a long task name. Fit its complete title rather
+  // than clipping at fitDisplay's normal minimum size after dropping line two.
+  let titlePx = fitDisplay(r, c, text, H * (single ? 0.62 : 0.42), available, 1);
+  const titleWidth = c.measureText(text).width;
+  const subPx = Math.ceil(titlePx * 0.6);
   c.textBaseline = "middle";
   c.fillStyle = "#e3eee9";
-  c.fillText(text, margin, H * (single ? 0.51 : 0.4));
+  c.fillText(text, margin, H * (single ? 0.51 : 0.35));
   let secondary = false;
   if (!single && sub) {
     c.font = displayFont(r, subPx, 600);
@@ -135,6 +138,8 @@ export function makeProtocolSign(r, title, subtitle, color, size) {
     subtitle: secondary ? subtitle : "",
     font: r.worldTypography?.family,
     titlePx,
+    titleWidth,
+    availableWidth: available,
     subtitlePx: secondary ? subPx : 0,
     worldSize: size,
   };

@@ -1,0 +1,17 @@
+[
+  {
+    "file": "public/games/outpost-navigation.js",
+    "sha256": "8dce6f85bc942b5f87967fb21a7037f4351db560543b28103c6abfa8f4a685df",
+    "unchangedFromOriginMain": true
+  },
+  {
+    "file": "public/games/outpost-hud.js",
+    "sha256": "4b9c71bab19daa128cb31a146078dd4f6294525ac356ddcdf1056d4b0dffb007",
+    "unchangedFromOriginMain": true
+  },
+  {
+    "file": "scripts/outpost-military/ground-trail.js",
+    "sha256": "7339db008cbfb38e9739234ff559249b0520fc65079949ae6c6434a89e4fbfe1",
+    "unchangedFromOriginMain": true
+  }
+]

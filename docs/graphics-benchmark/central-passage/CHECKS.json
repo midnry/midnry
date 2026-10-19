@@ -1,0 +1,19 @@
+{
+  "rendererSHA256": "fe25ce635afaea7ac18cce44788822b0587abf3a51157ace0451f3617f3714c5",
+  "packagedRendererMatchesSource": true,
+  "nodeTests": {
+    "files": 37,
+    "failures": 0
+  },
+  "typescript": "passed",
+  "renderBuild": "passed",
+  "militaryBundle": "passed",
+  "packagedGameplay": "passed: desktop and mobile",
+  "packagedSharedInteractables": "passed",
+  "packagedSiteSmoke": "passed: desktop and mobile",
+  "allSignTitlesFit": true,
+  "roomClearanceRecords": 164,
+  "openTransitRoutes": 4,
+  "collisionUnchanged": true,
+  "timingLimit": "SwiftShader software rendering; no hardware FPS or GPU-ms claim"
+}

@@ -172,7 +172,7 @@ export async function verifyMedicalDepot(page) {
   assert.equal(result.removedWithTile, true);
   assert.equal(result.collisionUnchanged, true);
   for (const b of result.blooms)
-    assert.equal(b.enabled, b.preset === "high" || (b.preset === "balanced" && b.night));
+    assert.equal(b.enabled, b.preset === "high");
   assert.ok(
     result.blooms.every((b) => JSON.stringify(b.grade) === JSON.stringify(result.blooms[0].grade)),
   );

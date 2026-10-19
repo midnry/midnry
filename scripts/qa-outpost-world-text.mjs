@@ -24,8 +24,11 @@ export async function verifyWorldText(page, { fallback = false } = {}) {
           Math.abs(t.image.width / t.image.height - meta.worldSize[0] / meta.worldSize[1]) > 0.025
         )
           errors.push("stretched: " + meta.title);
-        if (meta.subtitlePx && meta.subtitlePx / meta.titlePx < 0.35)
+        if (meta.subtitlePx && meta.subtitlePx / meta.titlePx < 0.55)
           errors.push("tiny secondary: " + meta.title);
+        if (!Number.isFinite(meta.titleWidth) || !Number.isFinite(meta.availableWidth) ||
+          meta.titleWidth > meta.availableWidth)
+          errors.push("clipped title: " + meta.title);
         signs.push({
           title: meta.title,
           image: [t.image.width, t.image.height],

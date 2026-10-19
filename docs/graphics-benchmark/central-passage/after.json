@@ -1,0 +1,1425 @@
+{
+  "phase": "after",
+  "seed": "outpost-corridor-20261019",
+  "rendererSHA256": "fe25ce635afaea7ac18cce44788822b0587abf3a51157ace0451f3617f3714c5",
+  "timingLimit": "Chromium SwiftShader software rendering; no device FPS or hardware GPU time claim",
+  "memoryScope": "Estimated unique uploaded managed source textures, RGBA plus mipmaps; excludes render targets, PMREM internals, depth/MSAA and driver allocations. Not total VRAM.",
+  "rows": [
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-central-west-day.png",
+      "id": "central-west-day",
+      "camera": {
+        "x": 11.7,
+        "y": 11.1,
+        "a": -0.11,
+        "pitch": 0.035
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 60,
+          "calls": 352,
+          "triangles": 539363,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 64,
+          "calls": 352,
+          "triangles": 539363,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 68,
+          "calls": 352,
+          "triangles": 539363,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 352,
+      "triangles": 539363,
+      "textureObjects": 77,
+      "sourceTextureBytesEstimate": 306907819,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-central-east-day.png",
+      "id": "central-east-day",
+      "camera": {
+        "x": 16.2,
+        "y": 10.55,
+        "a": 3.041592653589793,
+        "pitch": 0.02
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 72,
+          "calls": 338,
+          "triangles": 577796,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 76,
+          "calls": 338,
+          "triangles": 577796,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 80,
+          "calls": 338,
+          "triangles": 577796,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 338,
+      "triangles": 577796,
+      "textureObjects": 89,
+      "sourceTextureBytesEstimate": 330476203,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-central-west-night.png",
+      "id": "central-west-night",
+      "camera": {
+        "x": 11.7,
+        "y": 11.1,
+        "a": -0.11,
+        "pitch": 0.035
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 84,
+          "calls": 357,
+          "triangles": 539799,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 88,
+          "calls": 357,
+          "triangles": 539799,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 92,
+          "calls": 357,
+          "triangles": 539799,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 357,
+      "triangles": 539799,
+      "textureObjects": 90,
+      "sourceTextureBytesEstimate": 330563584,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-central-east-night.png",
+      "id": "central-east-night",
+      "camera": {
+        "x": 16.2,
+        "y": 10.55,
+        "a": 3.041592653589793,
+        "pitch": 0.02
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 96,
+          "calls": 344,
+          "triangles": 578234,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 100,
+          "calls": 344,
+          "triangles": 578234,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 104,
+          "calls": 344,
+          "triangles": 578234,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 344,
+      "triangles": 578234,
+      "textureObjects": 90,
+      "sourceTextureBytesEstimate": 330563584,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-rations-approach.png",
+      "id": "rations-approach",
+      "camera": {
+        "x": 9.7,
+        "y": 16.4,
+        "a": 1.5707963267948966,
+        "pitch": -0.035
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 108,
+          "calls": 313,
+          "triangles": 554191,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 112,
+          "calls": 313,
+          "triangles": 554191,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 116,
+          "calls": 313,
+          "triangles": 554191,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 313,
+      "triangles": 554191,
+      "textureObjects": 98,
+      "sourceTextureBytesEstimate": 355500032,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-cold-storage-junction.png",
+      "id": "cold-storage-junction",
+      "camera": {
+        "x": 9.7,
+        "y": 22.4,
+        "a": -1.5707963267948966,
+        "pitch": -0.035
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 120,
+          "calls": 312,
+          "triangles": 392075,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 124,
+          "calls": 312,
+          "triangles": 392075,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 128,
+          "calls": 312,
+          "triangles": 392075,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 312,
+      "triangles": 392075,
+      "textureObjects": 98,
+      "sourceTextureBytesEstimate": 355500032,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-cold-storage-terminal.png",
+      "id": "cold-storage-terminal",
+      "camera": {
+        "x": 6.45,
+        "y": 23.5,
+        "a": 0,
+        "pitch": -0.04
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 132,
+          "calls": 268,
+          "triangles": 336725,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 136,
+          "calls": 268,
+          "triangles": 336725,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 140,
+          "calls": 268,
+          "triangles": 336725,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 268,
+      "triangles": 336725,
+      "textureObjects": 102,
+      "sourceTextureBytesEstimate": 371081216,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-soldier.png",
+      "id": "soldier",
+      "camera": {
+        "x": 9.7,
+        "y": 18.2,
+        "a": 1.5707963267948966,
+        "pitch": -0.11
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 144,
+          "calls": 294,
+          "triangles": 522060,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 148,
+          "calls": 294,
+          "triangles": 522060,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 152,
+          "calls": 294,
+          "triangles": 522060,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 294,
+      "triangles": 522060,
+      "textureObjects": 102,
+      "sourceTextureBytesEstimate": 371081216,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-patrol.png",
+      "id": "patrol",
+      "camera": {
+        "x": 3.5,
+        "y": 5.5,
+        "a": 0,
+        "pitch": 0
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 156,
+          "calls": 447,
+          "triangles": 773705,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 160,
+          "calls": 447,
+          "triangles": 773705,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 164,
+          "calls": 447,
+          "triangles": 773705,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 447,
+      "triangles": 773705,
+      "textureObjects": 108,
+      "sourceTextureBytesEstimate": 379469824,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "phone",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-phone-balanced-central-west-day.png",
+      "id": "central-west-day",
+      "camera": {
+        "x": 11.7,
+        "y": 11.1,
+        "a": -0.11,
+        "pitch": 0.035
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 54,
+          "calls": 323,
+          "triangles": 526431,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 58,
+          "calls": 323,
+          "triangles": 526431,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 62,
+          "calls": 323,
+          "triangles": 526431,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 323,
+      "triangles": 526431,
+      "textureObjects": 70,
+      "sourceTextureBytesEstimate": 283074560,
+      "drawingBuffer": [
+        390,
+        844
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "phone",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-phone-balanced-central-east-day.png",
+      "id": "central-east-day",
+      "camera": {
+        "x": 16.2,
+        "y": 10.55,
+        "a": 3.041592653589793,
+        "pitch": 0.02
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 66,
+          "calls": 323,
+          "triangles": 571894,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 70,
+          "calls": 323,
+          "triangles": 571894,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 74,
+          "calls": 323,
+          "triangles": 571894,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 323,
+      "triangles": 571894,
+      "textureObjects": 75,
+      "sourceTextureBytesEstimate": 290065067,
+      "drawingBuffer": [
+        390,
+        844
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "phone",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-phone-balanced-central-west-night.png",
+      "id": "central-west-night",
+      "camera": {
+        "x": 11.7,
+        "y": 11.1,
+        "a": -0.11,
+        "pitch": 0.035
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 84,
+          "calls": 332,
+          "triangles": 526935,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 88,
+          "calls": 326,
+          "triangles": 526863,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 92,
+          "calls": 326,
+          "triangles": 526863,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 332,
+      "triangles": 526935,
+      "textureObjects": 77,
+      "sourceTextureBytesEstimate": 290065067,
+      "drawingBuffer": [
+        390,
+        844
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "phone",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-phone-balanced-central-east-night.png",
+      "id": "central-east-night",
+      "camera": {
+        "x": 16.2,
+        "y": 10.55,
+        "a": 3.041592653589793,
+        "pitch": 0.02
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 96,
+          "calls": 328,
+          "triangles": 572330,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 100,
+          "calls": 328,
+          "triangles": 572330,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 104,
+          "calls": 328,
+          "triangles": 572330,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 328,
+      "triangles": 572330,
+      "textureObjects": 79,
+      "sourceTextureBytesEstimate": 290501973,
+      "drawingBuffer": [
+        390,
+        844
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "ipad",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-ipad-balanced-central-west-day.png",
+      "id": "central-west-day",
+      "camera": {
+        "x": 11.7,
+        "y": 11.1,
+        "a": -0.11,
+        "pitch": 0.035
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 60,
+          "calls": 352,
+          "triangles": 539363,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 64,
+          "calls": 352,
+          "triangles": 539363,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 68,
+          "calls": 352,
+          "triangles": 539363,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 352,
+      "triangles": 539363,
+      "textureObjects": 79,
+      "sourceTextureBytesEstimate": 300706475,
+      "drawingBuffer": [
+        1154,
+        866
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "ipad",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-ipad-balanced-central-west-night.png",
+      "id": "central-west-night",
+      "camera": {
+        "x": 11.7,
+        "y": 11.1,
+        "a": -0.11,
+        "pitch": 0.035
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 72,
+          "calls": 357,
+          "triangles": 539799,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 76,
+          "calls": 357,
+          "triangles": 539799,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 80,
+          "calls": 357,
+          "triangles": 539799,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 357,
+      "triangles": 539799,
+      "textureObjects": 79,
+      "sourceTextureBytesEstimate": 300706475,
+      "drawingBuffer": [
+        1154,
+        866
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "ipad",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-ipad-balanced-patrol.png",
+      "id": "patrol",
+      "camera": {
+        "x": 3.5,
+        "y": 5.5,
+        "a": 0,
+        "pitch": 0
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 84,
+          "calls": 447,
+          "triangles": 773705,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 88,
+          "calls": 447,
+          "triangles": 773705,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 92,
+          "calls": 447,
+          "triangles": 773705,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 447,
+      "triangles": 773705,
+      "textureObjects": 103,
+      "sourceTextureBytesEstimate": 356166315,
+      "drawingBuffer": [
+        1154,
+        866
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-central-sign-3m.png",
+      "id": "central-sign-3m",
+      "camera": {
+        "x": 14.5,
+        "y": 11.025,
+        "a": -1.5707963267948966,
+        "pitch": 0.3066763194016828
+      },
+      "clip": {
+        "x": 338,
+        "y": 232,
+        "width": 604,
+        "height": 260
+      },
+      "distanceMetres": 3,
+      "text": {
+        "title": "Central Passage",
+        "subtitle": "AUTHORIZED PERSONNEL",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 188.57999999999998,
+        "titleWidth": 1246.87841796875,
+        "availableWidth": 1397.76,
+        "subtitlePx": 114,
+        "worldSize": [
+          2.5,
+          0.73
+        ]
+      },
+      "samples": [
+        {
+          "frame": 54,
+          "calls": 327,
+          "triangles": 594557,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 58,
+          "calls": 327,
+          "triangles": 594557,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 62,
+          "calls": 327,
+          "triangles": 594557,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 327,
+      "triangles": 594557,
+      "textureObjects": 97,
+      "sourceTextureBytesEstimate": 350950741,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-central-sign-6m.png",
+      "id": "central-sign-6m",
+      "camera": {
+        "x": 14.5,
+        "y": 12.025,
+        "a": -1.5707963267948966,
+        "pitch": 0.1570297759717319
+      },
+      "clip": {
+        "x": 448,
+        "y": 258,
+        "width": 384,
+        "height": 205
+      },
+      "distanceMetres": 6,
+      "text": {
+        "title": "Central Passage",
+        "subtitle": "AUTHORIZED PERSONNEL",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 188.57999999999998,
+        "titleWidth": 1246.87841796875,
+        "availableWidth": 1397.76,
+        "subtitlePx": 114,
+        "worldSize": [
+          2.5,
+          0.73
+        ]
+      },
+      "samples": [
+        {
+          "frame": 66,
+          "calls": 333,
+          "triangles": 578893,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 70,
+          "calls": 333,
+          "triangles": 578893,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 74,
+          "calls": 333,
+          "triangles": 578893,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 333,
+      "triangles": 578893,
+      "textureObjects": 99,
+      "sourceTextureBytesEstimate": 359224661,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-station-label-3m.png",
+      "id": "station-label-3m",
+      "camera": {
+        "x": 15.5,
+        "y": 7.968333333333333,
+        "a": 1.5707963267948966,
+        "pitch": 0.12599568216401266
+      },
+      "clip": {
+        "x": 454,
+        "y": 260,
+        "width": 372,
+        "height": 201
+      },
+      "distanceMetres": 3,
+      "text": {
+        "title": "Audit recovery-ration stores",
+        "subtitle": "",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 116.66000000000003,
+        "titleWidth": 1374.91064453125,
+        "availableWidth": 1397.76,
+        "subtitlePx": 0,
+        "worldSize": [
+          1.18,
+          0.34
+        ]
+      },
+      "samples": [
+        {
+          "frame": 78,
+          "calls": 367,
+          "triangles": 497295,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 82,
+          "calls": 367,
+          "triangles": 497295,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 86,
+          "calls": 367,
+          "triangles": 497295,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 367,
+      "triangles": 497295,
+      "textureObjects": 101,
+      "sourceTextureBytesEstimate": 374038528,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-terminal-screen-3m.png",
+      "id": "terminal-screen-3m",
+      "camera": {
+        "x": 15.5,
+        "y": 7.928333333333332,
+        "a": 1.5707963267948966,
+        "pitch": -0.08314123188844115
+      },
+      "clip": {
+        "x": 489,
+        "y": 243,
+        "width": 302,
+        "height": 233
+      },
+      "distanceMetres": 3,
+      "text": {
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "screenAspect": 1.5192307692307692,
+        "linearScale": 2
+      },
+      "samples": [
+        {
+          "frame": 90,
+          "calls": 366,
+          "triangles": 497031,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 94,
+          "calls": 366,
+          "triangles": 497031,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 98,
+          "calls": 366,
+          "triangles": 497031,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 366,
+      "triangles": 497031,
+      "textureObjects": 101,
+      "sourceTextureBytesEstimate": 374038528,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-central-sign-3m.png",
+      "id": "central-sign-3m",
+      "camera": {
+        "x": 14.5,
+        "y": 11.025,
+        "a": -1.5707963267948966,
+        "pitch": 0.3066763194016828
+      },
+      "clip": {
+        "x": 338,
+        "y": 232,
+        "width": 604,
+        "height": 260
+      },
+      "distanceMetres": 3,
+      "text": {
+        "title": "Central Passage",
+        "subtitle": "AUTHORIZED PERSONNEL",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 188.57999999999998,
+        "titleWidth": 1246.87841796875,
+        "availableWidth": 1397.76,
+        "subtitlePx": 114,
+        "worldSize": [
+          2.5,
+          0.73
+        ]
+      },
+      "samples": [
+        {
+          "frame": 194,
+          "calls": 480,
+          "triangles": 764601,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 216,
+          "calls": 610,
+          "triangles": 934581,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 237,
+          "calls": 480,
+          "triangles": 764601,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 610,
+      "triangles": 934581,
+      "textureObjects": 98,
+      "sourceTextureBytesEstimate": 310517760,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-central-sign-6m.png",
+      "id": "central-sign-6m",
+      "camera": {
+        "x": 14.5,
+        "y": 12.025,
+        "a": -1.5707963267948966,
+        "pitch": 0.1570297759717319
+      },
+      "clip": {
+        "x": 448,
+        "y": 258,
+        "width": 384,
+        "height": 205
+      },
+      "distanceMetres": 6,
+      "text": {
+        "title": "Central Passage",
+        "subtitle": "AUTHORIZED PERSONNEL",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 188.57999999999998,
+        "titleWidth": 1246.87841796875,
+        "availableWidth": 1397.76,
+        "subtitlePx": 114,
+        "worldSize": [
+          2.5,
+          0.73
+        ]
+      },
+      "samples": [
+        {
+          "frame": 259,
+          "calls": 632,
+          "triangles": 918767,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 280,
+          "calls": 493,
+          "triangles": 749225,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 302,
+          "calls": 632,
+          "triangles": 918767,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 632,
+      "triangles": 918767,
+      "textureObjects": 100,
+      "sourceTextureBytesEstimate": 318791680,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-station-label-3m.png",
+      "id": "station-label-3m",
+      "camera": {
+        "x": 15.5,
+        "y": 7.968333333333333,
+        "a": 1.5707963267948966,
+        "pitch": 0.12599568216401266
+      },
+      "clip": {
+        "x": 454,
+        "y": 260,
+        "width": 372,
+        "height": 201
+      },
+      "distanceMetres": 3,
+      "text": {
+        "title": "Audit recovery-ration stores",
+        "subtitle": "",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 116.66000000000003,
+        "titleWidth": 1374.91064453125,
+        "availableWidth": 1397.76,
+        "subtitlePx": 0,
+        "worldSize": [
+          1.18,
+          0.34
+        ]
+      },
+      "samples": [
+        {
+          "frame": 323,
+          "calls": 557,
+          "triangles": 612925,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 345,
+          "calls": 722,
+          "triangles": 722465,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 366,
+          "calls": 557,
+          "triangles": 612925,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 722,
+      "triangles": 722465,
+      "textureObjects": 105,
+      "sourceTextureBytesEstimate": 338051072,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-terminal-screen-3m.png",
+      "id": "terminal-screen-3m",
+      "camera": {
+        "x": 15.5,
+        "y": 7.928333333333332,
+        "a": 1.5707963267948966,
+        "pitch": -0.08314123188844115
+      },
+      "clip": {
+        "x": 489,
+        "y": 243,
+        "width": 302,
+        "height": 233
+      },
+      "distanceMetres": 3,
+      "text": {
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "screenAspect": 1.5192307692307692,
+        "linearScale": 2
+      },
+      "samples": [
+        {
+          "frame": 388,
+          "calls": 727,
+          "triangles": 728331,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 409,
+          "calls": 555,
+          "triangles": 612397,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 431,
+          "calls": 727,
+          "triangles": 728331,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 727,
+      "triangles": 728331,
+      "textureObjects": 105,
+      "sourceTextureBytesEstimate": 338051072,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "centralRecords": 164
+    }
+  ]
+}
