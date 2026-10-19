@@ -103,8 +103,9 @@ test("health recovers after five seconds without damage, never past maximum", ()
   for (let i = 0; i < 20; i++) a.recover(p, 1);
   assert.equal(p.hp, p.maxHp);
 });
-test("Last Signal pacing: start shield, two lives, reduced weapon damage", async () => {
+test("Last Signal pacing: start shield, three lives, reduced weapon damage", async () => {
   const { SIGNAL } = await import("../public/games/outpost-sim.js");
+  assert.equal(SIGNAL.lives, 3);
   const a = new Arena({ mode: "signal", humans: [{ id: "p", team: 0 }], random: () => 0.5 }),
     p = a.entities.find((e) => e.id === "p"),
     rival = a.entities.find((e) => e.id !== "p");
@@ -117,7 +118,8 @@ test("Last Signal pacing: start shield, two lives, reduced weapon damage", async
   p.cores = 2;
   a.damage(p, 500, rival);
   assert.equal(p.hp, p.maxHp, "a spare life redeploys at full health");
-  assert.equal(p.lives, 0);
+  assert.equal(p.lives, 1);
+  assert.ok(!(p.adrenalineUntil > a.time), "no rush before the last life");
   assert.equal(rival.kills, 1, "the rival still gets the elimination");
   assert.equal(a.cores.length, 2, "upgrades drop where the life was lost");
   assert.ok(a.canMove(p.x, p.y) && !a.outsideSafe(p));
@@ -125,7 +127,57 @@ test("Last Signal pacing: start shield, two lives, reduced weapon damage", async
   assert.equal(p.hp, p.maxHp, "brief shield after redeploying");
   a.time += SIGNAL.respawnShield + 0.1;
   a.damage(p, 500, rival);
+  assert.equal(p.lives, 0, "third life is the last");
+  assert.equal(p.adrenalineUntil, a.time + SIGNAL.rush, "last life starts with an adrenaline rush");
+  assert.ok(p.speedUntil > a.time);
+  a.time += SIGNAL.respawnShield + 0.1;
+  a.damage(p, 500, rival);
   assert.equal(p.hp, 0, "the last life ends your round");
   const duo = new Arena({ mode: "duo", humans: [{ id: "a", team: 0 }], random: () => 0.5 });
   assert.equal(duo.entities[0].lives, 0, "other modes are unchanged");
+});
+test("Last Signal last life: faster reloads in the rush, harder hits, earlier recovery", async () => {
+  const { SIGNAL, REGEN_DELAY } = await import("../public/games/outpost-sim.js");
+  const a = new Arena({ mode: "signal", humans: [{ id: "p", team: 0 }], random: () => 0.5 }),
+    p = a.entities.find((e) => e.id === "p"),
+    rival = a.entities.find((e) => e.id !== "p");
+  a.time = SIGNAL.shield + 1;
+  p.lives = 0;
+  p.adrenalineUntil = a.time + 2;
+  p.ammo = 0;
+  a.reload(p);
+  assert.ok(Math.abs(p.reloadUntil - a.time - 1.4 * SIGNAL.rushReload) < 1e-9);
+  a.damage(rival, 50, p);
+  assert.ok(Math.abs(rival.hp - (100 - 50 * SIGNAL.damage * SIGNAL.lastStand)) < 1e-9);
+  rival.lives = 1;
+  a.damage(p, 20, rival);
+  const hurt = p.hp;
+  a.time += SIGNAL.lastRegenDelay + 0.1;
+  a.recover(p, 1);
+  assert.ok(p.hp > hurt, "last life recovers after " + SIGNAL.lastRegenDelay + "s");
+  assert.ok(SIGNAL.lastRegenDelay < REGEN_DELAY);
+});
+test("Last Signal bots slide out of the line of fire and heal behind cover", () => {
+  const a = new Arena({ mode: "signal", mapId: "outpost", difficulty: "hard", random: () => 0.5 }),
+    bot = a.entities[1],
+    shooter = a.entities[2];
+  a.time = 20;
+  let slid = 0;
+  for (let i = 0; i < 40; i++) {
+    Object.assign(bot, { x: 14, y: 9.5, hp: 100, slideUntil: 0, slideCooldown: 0 });
+    Object.assign(shooter, { x: 14, y: 4.5 });
+    a.damage(bot, 1, shooter);
+    a.dodge(bot, { dodge: 0.7 });
+    if (bot.slideUntil > a.time) {
+      slid++;
+      assert.ok(Math.abs(bot.slideDy) < 1e-9, "slides sideways to the shot");
+    }
+  }
+  assert.ok(slid > 10 && slid < 40, "some hits, not all, trigger a slide: " + slid);
+  // A hurt bot in the open picks a tile the shooter cannot see.
+  Object.assign(bot, { x: 14.5, y: 3.5, hp: 30, cover: null });
+  Object.assign(shooter, { x: 14.5, y: 1.5, hp: 100 });
+  const cover = a.coverFrom(bot, shooter);
+  assert.ok(cover && !a.visible(shooter, cover) && a.canMove(cover.x, cover.y), "cover found");
+  assert.ok(Math.hypot(cover.x - bot.x, cover.y - bot.y) <= 6);
 });

@@ -6,9 +6,21 @@ import { LEVEL, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf } from "./outp
 export const REGEN_DELAY = 5;
 export const REGEN_RATE = 0.12;
 // Last Signal pacing (measured in simulation: rounds ~23s -> ~1 min).
-// A start shield, two lives each, 60% weapon damage and bots that back off
-// to heal keep 8 fighters in small arenas from ending a round in seconds.
-export const SIGNAL = Object.freeze({ shield: 8, lives: 2, damage: 0.6, retreatAt: 0.45, respawnShield: 3 });
+// A start shield, three lives each, 60% weapon damage and bots that back off
+// to heal keep 8 fighters from ending a round in seconds.
+export const SIGNAL = Object.freeze({
+  shield: 8,
+  lives: 3,
+  damage: 0.6,
+  retreatAt: 0.45,
+  respawnShield: 3,
+  // Last life: an adrenaline rush on redeploy (faster movement and reloads
+  // for `rush` seconds), then harder hits and earlier health recovery.
+  rush: 6,
+  rushReload: 0.6,
+  lastStand: 1.15,
+  lastRegenDelay: 3,
+});
 export { LEVEL, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf };
 const SPAWNS = [
   [2.5, 2.5],
@@ -27,9 +39,9 @@ const TEAM_SPAWNS = [
   [2.5, 13.5],
 ];
 export const DIFFICULTIES = {
-  easy: { speed: 0.7, reaction: 1.5, aim: 0.13, awareness: 5 },
-  normal: { speed: 1, reaction: 1, aim: 0, awareness: 7 },
-  hard: { speed: 1.25, reaction: 0.8, aim: 0, awareness: 9 },
+  easy: { speed: 0.7, reaction: 1.5, aim: 0.13, awareness: 5, dodge: 0.2 },
+  normal: { speed: 1, reaction: 1, aim: 0, awareness: 7, dodge: 0.45 },
+  hard: { speed: 1.25, reaction: 0.8, aim: 0, awareness: 9, dodge: 0.7 },
 };
 export const difficultyOf = (id) => (Object.hasOwn(DIFFICULTIES, id) ? id : "normal");
 export class Arena {
@@ -383,7 +395,8 @@ export class Arena {
     if (this.mode === "duo" && source && source !== target && source.team === target.team) return;
     if (this.mode === "signal" && !target.id.startsWith("crate")) {
       if (target.shieldUntil > this.time) return;
-      if (source && source !== target) amount *= SIGNAL.damage;
+      if (source && source !== target)
+        amount *= SIGNAL.damage * (source.lives === 0 ? SIGNAL.lastStand : 1);
     }
     const actual = Math.min(target.hp, amount);
     target.hp = Math.max(0, target.hp - amount);
@@ -435,7 +448,11 @@ export class Arena {
     if (this.mode === "signal" && target.lives > 0 && !target.departed) {
       target.lives--;
       this.redeploy(target);
-      this.emit(target.id, target.lives ? "LIFE LOST / REDEPLOYED" : "LIFE LOST / LAST LIFE");
+      if (target.lives) this.emit(target.id, "LIFE LOST / REDEPLOYED");
+      else {
+        target.speedUntil = target.adrenalineUntil = this.time + SIGNAL.rush;
+        this.emit(target.id, "LAST LIFE / ADRENALINE RUSH");
+      }
       return;
     }
     // Reserve a respawn only while a living teammate can keep this team in play.
@@ -465,6 +482,56 @@ export class Arena {
       }
     }
   }
+  /** Last Signal bots under fire sometimes slide sideways out of the line of
+   * fire, like a player would (same slide speed, longer cooldown). */
+  dodge(bot, skill) {
+    if (bot.damageSeq === bot.dodgeSeen) return;
+    bot.dodgeSeen = bot.damageSeq;
+    if (bot.damageAngle == null || this.time < (bot.slideCooldown || 0) || bot.hp <= 0) return;
+    const roll = (n) => {
+      const v = Math.sin(bot.damageSeq * 12.9898 + bot.phase * 78.233 + n) * 43758.5453;
+      return v - Math.floor(v);
+    };
+    if (roll(0) >= skill.dodge) return;
+    const side = roll(1) < 0.5 ? 1 : -1;
+    for (const s of [side, -side]) {
+      const a = bot.damageAngle + (s * Math.PI) / 2,
+        dx = Math.cos(a),
+        dy = Math.sin(a);
+      if (!this.canMove(bot.x + dx * 1.2, bot.y + dy * 1.2, 0.3)) continue;
+      bot.slideUntil = this.time + 0.65;
+      bot.slideCooldown = this.time + 2.4;
+      bot.slideDx = dx;
+      bot.slideDy = dy;
+      return;
+    }
+  }
+  /** A nearby open, safe tile no nearby rival can see, for a hurt bot to heal
+   * behind. Kept while it stays hidden; searched again at most every second. */
+  coverFrom(bot, threat, threats = [threat]) {
+    const c = bot.cover,
+      hidden = (p) => !threats.some((t) => this.visible(t, p));
+    if (c && !c.none && !this.outsideSafe(c) && hidden(c)) return c;
+    if (c && this.time < c.searched + 1) return null;
+    bot.cover = null;
+    let best = null,
+      bestScore = Infinity;
+    const bx = Math.floor(bot.x),
+      by = Math.floor(bot.y),
+      away = Math.hypot(bot.x - threat.x, bot.y - threat.y);
+    for (let y = by - 6; y <= by + 6; y++)
+      for (let x = bx - 6; x <= bx + 6; x++) {
+        const p = { x: x + 0.5, y: y + 0.5 },
+          d = Math.hypot(p.x - bot.x, p.y - bot.y);
+        if (d > 6 || d + 4 >= bestScore || !this.canMove(p.x, p.y, 0.3) || this.outsideSafe(p))
+          continue;
+        // Prefer close cover that does not mean running past the threat.
+        const score = d + 4 * Math.max(0, away - Math.hypot(p.x - threat.x, p.y - threat.y));
+        if (score < bestScore && hidden(p)) (best = p), (bestScore = score);
+      }
+    bot.cover = { ...(best || { x: bot.x, y: bot.y, none: true }), searched: this.time };
+    return best ? bot.cover : null;
+  }
   /** Back to full health on the open, safe tile farthest from living rivals. */
   redeploy(e) {
     const rivals = this.entities.filter((v) => v !== e && v.hp > 0 && !v.departed);
@@ -487,7 +554,8 @@ export class Arena {
    * shooters. Not inside the Red Haze (its damage resets the timer) and at
    * a reduced rate while poisoned, through heal(). */
   recover(e, dt) {
-    if (e.hp <= 0 || e.hp >= e.maxHp || this.time - (e.hurtAt ?? -Infinity) < REGEN_DELAY) return;
+    const delay = this.mode === "signal" && e.lives === 0 ? SIGNAL.lastRegenDelay : REGEN_DELAY;
+    if (e.hp <= 0 || e.hp >= e.maxHp || this.time - (e.hurtAt ?? -Infinity) < delay) return;
     this.heal(e, e.maxHp * REGEN_RATE * dt);
   }
   applyHaze(e, dt) {
@@ -713,7 +781,7 @@ export class Arena {
     if (this.countdown > 0) return false;
     const w = weaponOf(e.weapon);
     if (e.hp > 0 && !e.reloadUntil && e.ammo < w.mag) {
-      e.reloadUntil = this.time + 1.4;
+      e.reloadUntil = this.time + 1.4 * (e.adrenalineUntil > this.time ? SIGNAL.rushReload : 1);
       e.burst = null;
       this.emit(e.id, "RELOADING");
     }
@@ -1102,14 +1170,20 @@ export class Arena {
       else if (bot.hp / bot.maxHp > 0.9) bot.retreating = false;
     }
     const threat = bot.retreating && nearest(rivals.filter((e) => dist(e) < 6 && this.visible(bot, e)));
+    if (this.mode === "signal") this.dodge(bot, skill);
     if (this.outsideSafe(bot)) goal = { x: this.zone.cx, y: this.zone.cy };
     else if (threat) {
       const n = this.level.length;
-      goal = {
+      const threats = rivals.filter((e) => dist(e) < 8 && this.visible(e, bot));
+      goal = this.coverFrom(bot, threat, threats) || {
         x: clamp(bot.x + (bot.x - threat.x) * 3, 1.5, n - 1.5),
         y: clamp(bot.y + (bot.y - threat.y) * 3, 1.5, n - 1.5),
       };
-    } else if (bot.retreating) goal = { x: bot.x, y: bot.y };
+    } else if (bot.retreating)
+      goal =
+        bot.cover && !bot.cover.none && !this.outsideSafe(bot.cover)
+          ? bot.cover
+          : { x: bot.x, y: bot.y };
     else if (core && dist(core) < 4) goal = core;
     else if (foe) goal = foe;
     else if (box) goal = box;
@@ -1120,7 +1194,12 @@ export class Arena {
     }
     const stop =
       goal === foe ? Math.min(2.1, weaponOf(bot.weapon).range * 0.65) : goal === box ? 1.2 : 0.25;
-    if (dist(goal) > stop) {
+    const sliding = bot.slideUntil > this.time;
+    if (sliding) {
+      const speed =
+        (3 + 3 * ((bot.slideUntil - this.time) / 0.65)) * (bot.speedUntil > this.time ? 1.4 : 1);
+      this.move(bot, bot.slideDx * speed * dt, bot.slideDy * speed * dt);
+    } else if (dist(goal) > stop) {
       let point = bot.path[0];
       if (point && dist(point) < 0.18) {
         bot.path.shift();
@@ -1131,8 +1210,13 @@ export class Arena {
         const dx = point.x - bot.x,
           dy = point.y - bot.y,
           d = Math.hypot(dx, dy);
+        const boost = bot.speedUntil > this.time ? 1.4 : 1;
         if (d > 0.01)
-          this.move(bot, (dx / d) * dt * 1.25 * skill.speed, (dy / d) * dt * 1.25 * skill.speed);
+          this.move(
+            bot,
+            (dx / d) * dt * 1.25 * skill.speed * boost,
+            (dy / d) * dt * 1.25 * skill.speed * boost,
+          );
       }
     }
     const target = (bot.retreating && foe && dist(foe) > 2.2 ? null : foe) || (box && dist(box) < 3 && this.visible(bot, box) ? box : null);

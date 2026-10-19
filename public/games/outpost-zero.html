@@ -1077,6 +1077,76 @@
         text-shadow: 2px 2px #101720;
         pointer-events: none;
       }
+      /* Last Signal: vision narrows as lives run out. Two of three lives left
+         darkens the edges; the last life adds a red heartbeat (faster when
+         badly hurt) and a gold flash during the adrenaline rush. */
+      midnry-fps .mf-lifefx {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+      }
+      midnry-fps .mf-lifefx::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        transition: opacity 0.8s;
+        box-shadow: inset 0 0 110px 28px rgba(255, 196, 85, 0.6);
+      }
+      midnry-fps .mf-lifefx.mf-wounded {
+        opacity: 1;
+        background: radial-gradient(ellipse at center, transparent 48%, rgba(14, 6, 4, 0.72) 100%);
+      }
+      midnry-fps .mf-lifefx.mf-laststand {
+        opacity: 1;
+        background: radial-gradient(
+          ellipse at center,
+          transparent 42%,
+          rgba(130, 12, 14, 0.32) 74%,
+          rgba(58, 0, 4, 0.78) 100%
+        );
+        animation: mf-heartbeat 1s infinite;
+      }
+      midnry-fps .mf-lifefx.mf-laststand.mf-lowhp {
+        background: radial-gradient(
+          ellipse at center,
+          transparent 38%,
+          rgba(150, 10, 14, 0.36) 68%,
+          rgba(60, 0, 4, 0.8) 100%
+        );
+        animation-duration: 0.65s;
+      }
+      midnry-fps .mf-lifefx.mf-rush::after {
+        opacity: 1;
+      }
+      @keyframes mf-heartbeat {
+        0%,
+        100% {
+          opacity: 0.72;
+        }
+        12% {
+          opacity: 1;
+        }
+        24% {
+          opacity: 0.8;
+        }
+        36% {
+          opacity: 1;
+        }
+        60% {
+          opacity: 0.72;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        midnry-fps .mf-lifefx.mf-laststand {
+          animation: none;
+        }
+      }
+      midnry-fps .mf-teamstat.mf-lastlife {
+        color: #ff675c;
+        font-weight: 900;
+      }
       midnry-fps .mf-hitmark {
         position: absolute;
         top: 46%;
@@ -2407,7 +2477,7 @@
           connectedCallback() {
             if (this.engine) return;
             this.innerHTML = `<div class="mf-shell mf-military" tabindex="0">
-        <canvas aria-label="Game viewport"></canvas>
+        <canvas aria-label="Game viewport"></canvas><div class="mf-lifefx" aria-hidden="true"></div>
         <div class="mf-top"><div class="mf-brand">MIDNRY<small>OUTPOST ZERO / FIELD OPS</small></div><div class="mf-topright"><span class="mf-tag">TACTICAL 3D / LOADING</span><button class="mf-pause" aria-label="Open game menu">II</button></div></div>
         <div class="mf-objective">BLACKOUT PROTOCOL<b class="mf-mission">Lifeline Run</b></div>
         <div class="mf-match" hidden><b class="mf-cores">CHARGE CORES 0</b><div class="mf-teamstat"></div><div class="mf-zone"></div></div><div class="mf-cross"></div><div class="mf-toast" role="status" aria-live="polite"></div>
@@ -4133,12 +4203,19 @@
             this.$(".mf-match").hidden = !survival;
             this.$(".mf-cores").textContent =
               `CORES ${p.cores} / DMG ${Math.round(p.damage * (this.mode === "signal" ? SIGNAL.damage : 1))} / MAX HP ${p.maxHp}`;
+            this.signalIntensity(p);
             this.$(".mf-teamstat").textContent = duo
               ? `REDEPLOYS LEFT ${p.respawns}${p.hp <= 0 ? (p.respawnAt ? " / IN " + Math.ceil(Math.max(0, p.respawnAt - this.time)) + "s" : " / SPECTATING") : ""}`
               : p.hp <= 0
                 ? "SPECTATING / NO REDEPLOYS"
                 : this.mode === "signal"
-                  ? `${p.shieldUntil > this.time ? `SHIELDED ${Math.ceil(p.shieldUntil - this.time)}s / ` : ""}LIVES ${p.lives + 1}`
+                  ? `${p.shieldUntil > this.time ? `SHIELDED ${Math.ceil(p.shieldUntil - this.time)}s / ` : ""}${
+                      p.lives
+                        ? `LIVES ${p.lives + 1}`
+                        : p.adrenalineUntil > this.time
+                          ? `LAST LIFE / ADRENALINE ${Math.ceil(p.adrenalineUntil - this.time)}s`
+                          : "LAST LIFE"
+                    }`
                   : "";
             this.$(".mf-zone").textContent =
               this.time < this.zone.delay
@@ -4201,6 +4278,28 @@
             this.practice?.update();
             this.checkResult();
             this.updateHUD(false);
+          }
+          /** Last Signal tension: the life overlay, and a call-out when the
+           * field is down to three fighters and then to the final duel. */
+          signalIntensity(p) {
+            const fx = this.$(".mf-lifefx"),
+              signal = this.mode === "signal" && p.hp > 0,
+              last = signal && p.lives === 0;
+            fx.classList.toggle("mf-wounded", signal && p.lives === 1);
+            fx.classList.toggle("mf-laststand", last);
+            fx.classList.toggle("mf-lowhp", last && p.hp / p.maxHp < 0.3);
+            fx.classList.toggle("mf-rush", last && p.adrenalineUntil > this.time);
+            this.$(".mf-teamstat").classList.toggle("mf-lastlife", last);
+            if (this.mode !== "signal") return;
+            if (this.finalRound !== this.arena.roundId) {
+              this.finalRound = this.arena.roundId;
+              this.finalCall = 8;
+            }
+            const left = this.combatants().filter((e) => e.hp > 0).length;
+            if (left < this.finalCall && left <= 3 && left > 1 && this.arena.state !== "ended") {
+              this.finalCall = left;
+              this.message(left === 2 ? "FINAL DUEL / ONE RIVAL LEFT" : "FINAL THREE / STAY SHARP");
+            }
           }
           drawMap() {
             if (this.mode === "protocol") return;

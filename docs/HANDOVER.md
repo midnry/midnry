@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=signal-arenas-20261019`.
+  Current live value: `v=signal-arenas-20261019` (`game-look` carries `v=signal-laststand-20261019`, not yet deployed).
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -50,6 +50,7 @@ hash is stored: `e4ecd2762674dd4bb706fe3aa4fd2d8fc49e1124691d66437d26f8194c9106d
 |---|---|
 | `signal-pace-sim.mjs` | Headless Last Signal round length (no browser). `ROUNDS=25` per arena. |
 | `signal-arena-views.mjs [width]` | Photos of each Last Signal arena with 8 fighters in view + draw calls → `screenshots/qa/arenas`. |
+| `signal-last-life.mjs [width]` | Screen look at 3 lives, 2 lives, last life + rush, last life low health; FINAL THREE / DUEL call-outs → `screenshots/qa/lastlife`. |
 | `signal-rounds.mjs [width]` | Plays 3 Last Signal rounds watching for page errors (caught the Charge Core crash). |
 | `signal-lives.mjs` | Start shield, losing a life, last life ends the round. |
 | `signal-regen.mjs` | Health recovery after 5 s without damage. |
@@ -154,3 +155,20 @@ makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to
 - Menus: `outpost-menu.js` (home / pause), `outpost-ui.js` (settings, confirm dialog).
 - Navigation and trail: `outpost-navigation.js`, `scripts/outpost-military/ground-trail.js`.
 - Online rooms: `src/games/outpost/rooms.server.ts` (uses the same rules files).
+
+## Last stand update (on `game-look`, awaiting owner's "deploy")
+
+- Last Signal has 3 lives (`SIGNAL.lives`). Last life: 6 s adrenaline rush on redeploy
+  (×1.4 speed, reloads ×0.6), then hits ×1.15 and health recovery after 3 s instead of 5
+  (all in `outpost-sim.js`, applies to bots and online too).
+- Screen by lives (`.mf-lifefx` + `signalIntensity()` in `outpost-zero.html`): 3 = clear,
+  2 = dark edges, last = red heartbeat edges (faster and closer below 30 % health) and a
+  gold edge glow during the rush. Heartbeat sound + rush sound in `lastStand()`
+  (`outpost-retention.js`). "FINAL THREE" / "FINAL DUEL" call-outs. Don't put an opacity
+  transition on `.mf-lifefx`: it never completed in testing and left the overlay hidden.
+- Bots: `dodge()` slides sideways from incoming fire (chance per hit: easy 20 %, normal
+  45 %, hard 70 %; 2.4 s cooldown); `coverFrom()` sends hurt bots to a nearby tile no
+  nearby rival can see. Bots slide on ~1 in 6 hits overall.
+- Simulated rounds: avg 84 s (median 83, max 111), was 64 s.
+- Owner asked about a multi-round match (first to 3 round wins = 1st, rest ranked by wins
+  then kills). Not built yet; see the reply in that session.

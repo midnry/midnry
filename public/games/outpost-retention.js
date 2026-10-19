@@ -506,6 +506,27 @@ export class Retention {
         if (e.coresCollected > old.cores) this.audio.tone(740, 0.17, 0.1, 0, "sine", 980);
       }
     }
+    this.lastStand(g, audible);
+  }
+  /** Last Signal last life: a heartbeat (faster below 30% health) and a
+   * rising rush when the adrenaline kicks in. Real time, so it keeps its
+   * rhythm when the frame rate drops. */
+  lastStand(g, audible) {
+    const p = g.player;
+    if (g.mode !== "signal" || !audible || !p || p.hp <= 0 || p.lives !== 0) return;
+    if (p.adrenalineUntil !== this.rushSeen) {
+      this.rushSeen = p.adrenalineUntil;
+      if (p.adrenalineUntil > g.time) {
+        this.audio.hiss(0.6, 0.16, 2400);
+        this.audio.tone(180, 0.45, 0.1, 0, "sawtooth", 720);
+      }
+    }
+    const now = performance.now(),
+      gap = p.hp / p.maxHp < 0.3 ? 650 : 1000;
+    if (now - (this.beatAt || 0) < gap) return;
+    this.beatAt = now;
+    this.audio.tone(62, 0.11, 0.22, 0, "sine", 40);
+    setTimeout(() => this.audio.tone(55, 0.1, 0.15, 0, "sine", 38), 170);
   }
   destroy() {
     this.audio.destroy();
