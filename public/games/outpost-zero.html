@@ -4,6 +4,19 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
     <title>Midnry — Outpost Zero</title>
+    <!-- The game's two typefaces are fetched first and used from the first
+         paint, so the loading screen and menus never swap fonts mid-load. -->
+    <link rel="preload" href="fonts/barlow-condensed-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/barlow-condensed-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/barlow-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/barlow-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <style>
+      @font-face { font-family: "Barlow Condensed"; font-weight: 600; font-display: block; src: url("fonts/barlow-condensed-latin-600-normal.woff2") format("woff2"); }
+      @font-face { font-family: "Barlow Condensed"; font-weight: 700; font-display: block; src: url("fonts/barlow-condensed-latin-700-normal.woff2") format("woff2"); }
+      @font-face { font-family: "Barlow"; font-weight: 400; font-display: block; src: url("fonts/barlow-latin-400-normal.woff2") format("woff2"); }
+      @font-face { font-family: "Barlow"; font-weight: 600; font-display: block; src: url("fonts/barlow-latin-600-normal.woff2") format("woff2"); }
+      :root { --mf-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif; --mf-body: "Barlow", system-ui, sans-serif; }
+    </style>
     <style>
       /* All selectors belong to this component; host-page elements are untouched. */
       midnry-fps {
