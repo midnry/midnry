@@ -1,7 +1,7 @@
 # Outpost Zero — corridor benchmark review
 
-Branch: `feat/outpost-corridor-benchmark`, based on `origin/main` **c44d2bb**.
-Three.js **0.180.0** retained. Local review only; no push, merge or deployment.
+Branch: `codex/graphics-benchmark`, based on `origin/main` **c44d2bb**.
+Three.js **0.180.0** retained. Review branch only; no merge or deployment.
 
 ## Scope and visible changes
 

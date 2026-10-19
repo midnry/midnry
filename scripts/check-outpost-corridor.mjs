@@ -246,7 +246,7 @@ try {
 } finally {
   await browser.close();
   writeFileSync(
-    `docs/outpost-corridor-benchmark/qa-${label}.json`,
+    `docs/graphics-benchmark/qa-${label}.json`,
     JSON.stringify(results, null, 2),
   );
 }

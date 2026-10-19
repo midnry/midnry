@@ -1,0 +1,27 @@
+# Outpost Zero graphics benchmark
+
+Review branch: `codex/graphics-benchmark`. Based on `origin/main` at `c44d2bb`.
+The work is limited to the West Service Corridor, its cold-storage terminal,
+and the existing soldier/weapon material pass. No merge or deployment is included.
+Further rooms are awaiting review and approval.
+
+- [Full report: changes, budgets, validation, licences and limitations](REPORT.md)
+- [Rendering audit with file:line evidence](AUDIT.md)
+- [Before measurements](before.json) · [After measurements](after.json)
+- [Desktop/mobile development checks](qa-dev.json) · [Packaged checks](qa-built.json)
+
+## Before / after screenshots
+
+These are real engine captures at matched 1280×800 viewports, seed and cameras.
+The existing HUD is preserved. Click a screenshot to inspect it at full size.
+
+| View | Before | After |
+|---|---|---|
+| Corridor, Balanced | ![Before corridor](images/before-balanced-rations-approach.png) | ![After corridor](images/after-balanced-rations-approach.png) |
+| Cold-storage terminal, Balanced | ![Before terminal](images/before-balanced-cold-storage-terminal.png) | ![After terminal](images/after-balanced-cold-storage-terminal.png) |
+| Soldier, High | ![Before soldier](images/before-high-soldier.png) | ![After soldier](images/after-high-soldier.png) |
+
+Balanced draw calls stayed below the matching baseline in all four views.
+Managed source-texture residency increased by about 20 MiB at its Balanced peak;
+this estimate excludes render targets and driver allocations. The browser used
+software rendering, so no hardware FPS result is claimed.

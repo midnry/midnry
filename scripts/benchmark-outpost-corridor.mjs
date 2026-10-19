@@ -15,7 +15,7 @@ const poses = [
   { id: "soldier", x: 9.7, y: 18.2, a: Math.PI / 2, pitch: -0.11 },
 ];
 mkdirSync("/workspace/screenshots/outpost-corridor", { recursive: true });
-mkdirSync("docs/outpost-corridor-benchmark", { recursive: true });
+mkdirSync("docs/graphics-benchmark", { recursive: true });
 const browser = await chromium.launch({
   executablePath: "/usr/bin/chromium",
   args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
@@ -188,7 +188,7 @@ try {
       assert.deepEqual(row.assetErrors, []);
       assert.ok(row.calls > 0);
       if (phase === "after" && preset === "balanced") {
-        const baseline = JSON.parse(readFileSync("docs/outpost-corridor-benchmark/before.json"))
+        const baseline = JSON.parse(readFileSync("docs/graphics-benchmark/before.json"))
           .results.find((r) => r.preset === "balanced")
           .rows.find((r) => r.pose === pose.id);
         assert.ok(
@@ -232,10 +232,10 @@ try {
   }
 } finally {
   await browser.close();
-  writeFileSync(`docs/outpost-corridor-benchmark/${phase}.json`, JSON.stringify(output, null, 2));
+  writeFileSync(`docs/graphics-benchmark/${phase}.json`, JSON.stringify(output, null, 2));
 }
 if (phase === "after") {
-  const before = JSON.parse(readFileSync("docs/outpost-corridor-benchmark/before.json"));
+  const before = JSON.parse(readFileSync("docs/graphics-benchmark/before.json"));
   for (const result of output.results.filter((r) => r.preset === "balanced"))
     for (const row of result.rows) {
       const old = before.results
