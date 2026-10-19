@@ -2,7 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Arena, MAPS, WEAPONS } from "../public/games/outpost-sim.js";
 const setup = (weapon = "carbine", distance = 2) => {
-  const a = new Arena({ mode: "signal", weapon, random: () => 0.5 });
+  // Raw weapon mechanics on plain free-for-all rules: Last Signal's pacing
+  // (start shield, lives, reduced damage) is covered in outpost-sim.test.mjs.
+  const a = new Arena({ mode: "versus", weapon, random: () => 0.5 });
   a.level = a.level.map((row, y) =>
     row.map((v, x) => (x === 0 || y === 0 || x === 15 || y === 15 ? 1 : 0)),
   );

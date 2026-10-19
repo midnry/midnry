@@ -5,6 +5,10 @@ import { LEVEL, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf } from "./outp
 // then restores this fraction of maximum health per second.
 export const REGEN_DELAY = 5;
 export const REGEN_RATE = 0.12;
+// Last Signal pacing (measured in simulation: rounds ~23s -> ~1 min).
+// A start shield, two lives each, 60% weapon damage and bots that back off
+// to heal keep 8 fighters in small arenas from ending a round in seconds.
+export const SIGNAL = Object.freeze({ shield: 8, lives: 2, damage: 0.6, retreatAt: 0.45, respawnShield: 3 });
 export { LEVEL, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf };
 const SPAWNS = [
   [2.5, 2.5],
@@ -175,6 +179,8 @@ export class Arena {
         placement: 0,
         eliminatedAt: null,
         respawns: mode === "duo" ? 2 : 0,
+        lives: mode === "signal" ? SIGNAL.lives - 1 : 0,
+        shieldUntil: mode === "signal" ? SIGNAL.shield : 0,
         respawnAt: 0,
         phase: i * 1.3,
         attack: 1 + i * 0.2,
@@ -379,6 +385,10 @@ export class Arena {
   damage(target, amount, source = null) {
     if (target.hp <= 0 || !Number.isFinite(amount) || amount <= 0) return;
     if (this.mode === "duo" && source && source !== target && source.team === target.team) return;
+    if (this.mode === "signal" && !target.id.startsWith("crate")) {
+      if (target.shieldUntil > this.time) return;
+      if (source && source !== target) amount *= SIGNAL.damage;
+    }
     const actual = Math.min(target.hp, amount);
     target.hp = Math.max(0, target.hp - amount);
     if (!target.id.startsWith("crate")) {
@@ -425,6 +435,13 @@ export class Arena {
     target.cloakedUntil = 0;
     target.speedUntil = 0;
     target.slowUntil = 0;
+    // Last Signal: a spare life redeploys you somewhere quiet, upgrades dropped.
+    if (this.mode === "signal" && target.lives > 0 && !target.departed) {
+      target.lives--;
+      this.redeploy(target);
+      this.emit(target.id, target.lives ? "LIFE LOST / REDEPLOYED" : "LIFE LOST / LAST LIFE");
+      return;
+    }
     // Reserve a respawn only while a living teammate can keep this team in play.
     if (
       this.mode === "duo" &&
@@ -451,6 +468,24 @@ export class Arena {
         this.emit(e.id, "+1 CHARGE CORE / HEALTH +25 · DAMAGE +8");
       }
     }
+  }
+  /** Back to full health on the open, safe tile farthest from living rivals. */
+  redeploy(e) {
+    const rivals = this.entities.filter((v) => v !== e && v.hp > 0 && !v.departed);
+    let best = null,
+      bestScore = -1;
+    for (let y = 1; y < this.level.length - 1; y++)
+      for (let x = 1; x < this.level.length - 1; x++) {
+        const p = { x: x + 0.5, y: y + 0.5 };
+        if (!this.canMove(p.x, p.y) || this.outsideSafe(p)) continue;
+        const score = Math.min(99, ...rivals.map((r) => Math.hypot(r.x - p.x, r.y - p.y)));
+        if (score > bestScore) (best = p), (bestScore = score);
+      }
+    if (best) Object.assign(e, best);
+    e.hp = e.maxHp;
+    e.hurtAt = this.time;
+    e.shieldUntil = this.time + SIGNAL.respawnShield;
+    e.path = [];
   }
   /** Health recovers after a few seconds without taking damage, as in most
    * shooters. Not inside the Red Haze (its damage resets the timer) and at
@@ -1065,7 +1100,20 @@ export class Arena {
       box = nearest(this.crates.filter((c) => c.hp > 0 && !this.outsideSafe(c))),
       core = nearest(this.cores.filter((c) => !this.outsideSafe(c)));
     let goal;
+    // Last Signal bots back off when badly hurt and come back once healed.
+    if (this.mode === "signal") {
+      if (bot.hp / bot.maxHp < SIGNAL.retreatAt) bot.retreating = true;
+      else if (bot.hp / bot.maxHp > 0.9) bot.retreating = false;
+    }
+    const threat = bot.retreating && nearest(rivals.filter((e) => dist(e) < 6 && this.visible(bot, e)));
     if (this.outsideSafe(bot)) goal = { x: this.zone.cx, y: this.zone.cy };
+    else if (threat) {
+      const n = this.level.length;
+      goal = {
+        x: clamp(bot.x + (bot.x - threat.x) * 3, 1.5, n - 1.5),
+        y: clamp(bot.y + (bot.y - threat.y) * 3, 1.5, n - 1.5),
+      };
+    } else if (bot.retreating) goal = { x: bot.x, y: bot.y };
     else if (core && dist(core) < 4) goal = core;
     else if (foe) goal = foe;
     else if (box) goal = box;
@@ -1091,7 +1139,7 @@ export class Arena {
           this.move(bot, (dx / d) * dt * 1.25 * skill.speed, (dy / d) * dt * 1.25 * skill.speed);
       }
     }
-    const target = foe || (box && dist(box) < 3 && this.visible(bot, box) ? box : null);
+    const target = (bot.retreating && foe && dist(foe) > 2.2 ? null : foe) || (box && dist(box) < 3 && this.visible(bot, box) ? box : null);
     if (target && dist(target) < weaponOf(bot.weapon).range && this.time >= bot.attack) {
       bot.attack = this.time + Math.max(0.5, weaponOf(bot.weapon).cooldown) * skill.reaction;
       bot.a =

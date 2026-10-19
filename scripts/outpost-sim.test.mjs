@@ -85,6 +85,7 @@ test("server snapshots survive JSON round-trip with identical rules", () => {
 test("health recovers after five seconds without damage, never past maximum", () => {
   const a = new Arena({ mode: "signal", humans: [{ id: "p", team: 0 }], random: () => 0.5 }),
     p = a.entities.find((e) => e.id === "p");
+  a.time = 20; // after the start shield
   a.damage(p, 60);
   assert.equal(p.hp, 40);
   a.time += 4;
@@ -101,4 +102,30 @@ test("health recovers after five seconds without damage, never past maximum", ()
   a.time += 10;
   for (let i = 0; i < 20; i++) a.recover(p, 1);
   assert.equal(p.hp, p.maxHp);
+});
+test("Last Signal pacing: start shield, two lives, reduced weapon damage", async () => {
+  const { SIGNAL } = await import("../public/games/outpost-sim.js");
+  const a = new Arena({ mode: "signal", humans: [{ id: "p", team: 0 }], random: () => 0.5 }),
+    p = a.entities.find((e) => e.id === "p"),
+    rival = a.entities.find((e) => e.id !== "p");
+  a.damage(p, 50, rival);
+  assert.equal(p.hp, 100, "nobody can be hurt during the start shield");
+  a.time = SIGNAL.shield + 0.1;
+  a.damage(p, 50, rival);
+  assert.equal(p.hp, 100 - 50 * SIGNAL.damage, "weapon damage is scaled");
+  assert.equal(p.lives, SIGNAL.lives - 1);
+  p.cores = 2;
+  a.damage(p, 500, rival);
+  assert.equal(p.hp, p.maxHp, "a spare life redeploys at full health");
+  assert.equal(p.lives, 0);
+  assert.equal(rival.kills, 1, "the rival still gets the elimination");
+  assert.equal(a.cores.length, 2, "upgrades drop where the life was lost");
+  assert.ok(a.canMove(p.x, p.y) && !a.outsideSafe(p));
+  a.damage(p, 50, rival);
+  assert.equal(p.hp, p.maxHp, "brief shield after redeploying");
+  a.time += SIGNAL.respawnShield + 0.1;
+  a.damage(p, 500, rival);
+  assert.equal(p.hp, 0, "the last life ends your round");
+  const duo = new Arena({ mode: "duo", humans: [{ id: "a", team: 0 }], random: () => 0.5 });
+  assert.equal(duo.entities[0].lives, 0, "other modes are unchanged");
 });
