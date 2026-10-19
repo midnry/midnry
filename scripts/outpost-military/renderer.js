@@ -1072,6 +1072,14 @@ export class MilitaryRenderer {
       }
       if (room.name && !(map.id === "medevac" && room.id === "cockpit")) {
         const signRoot = this.protocolMount(room.x + room.w / 2, room.y + 0.5, 2.6);
+        // Corridors carry a steel rib (jambs + header) at every tile centre, and
+        // a sign mounts at a tile centre: the header pierced it and the jamb
+        // fought it for depth. Slide corridor signs half a tile along the wall,
+        // between two ribs.
+        if (map.corridors?.includes(room) || /corridor|passage|access|bulkhead/.test(room.id || "")) {
+          const alongZ = Math.abs(Math.abs(signRoot.rotation.y) - Math.PI / 2) < 0.01;
+          if (alongZ ? room.h >= 2 : room.w >= 2) signRoot.position[alongZ ? "z" : "x"] += SCALE / 2;
+        }
         root.add(signRoot);
         const sign = this.mesh(
           signRoot,
