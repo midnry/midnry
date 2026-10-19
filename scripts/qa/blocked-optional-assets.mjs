@@ -1,0 +1,10 @@
+import { chromium } from "playwright";
+const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+const p = await (await b.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
+const errs = []; p.on("pageerror", (e) => errs.push(e.message)); p.on("console", (m) => /error|fail/i.test(m.type() + m.text()) && errs.push(m.text().slice(0, 200)));
+await p.route(/benchmark-operator/, (r) => r.abort());
+await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
+const ok = await p.waitForFunction(() => { const g = document.querySelector("midnry-fps")?.engine; return g?.militaryLoaded || g?.militaryLoadError || g?.militaryError || /could not|failed|unavailable|retry|try again/i.test(document.querySelector(".mf-render-status")?.innerText || ""); }, null, { timeout: 180000 }).then(() => true).catch(() => false);
+console.log("result", await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine; return JSON.stringify({ loaded: !!g.militaryLoaded, err: String(g.militaryLoadError || g.militaryError || ""), status: document.querySelector(".mf-render-status")?.innerText?.slice(0, 200), start: document.querySelector(".mf-start")?.disabled }); }));
+console.log("errors", errs.slice(0, 5));
+await b.close();

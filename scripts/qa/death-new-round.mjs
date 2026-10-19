@@ -1,0 +1,35 @@
+import { chromium } from "playwright";
+const S = "screenshots/qa/look";
+const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+const p = await (await b.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
+const errs = []; p.on("pageerror", (e) => errs.push(e.stack)); p.on("console", (m) => m.type() === "error" && errs.push(m.text()));
+await p.addInitScript(() => { localStorage.setItem("midnry-outpost-role", "operator"); });
+await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
+await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
+await p.click(".mf-start"); await p.waitForTimeout(2000);
+await p.evaluate(() => [...document.querySelectorAll("button")].find((x) => /Understood/.test(x.textContent))?.click());
+const state = () => p.evaluate(() => { const g = document.querySelector("midnry-fps").engine, c = g.camera(), me = g.player; return JSON.stringify({ state: g.state, running: g.running, map: g.arena.mapId, cam: [c.id, +c.x.toFixed(1), +c.y.toFixed(1)], me: [me.id, me.team, me.hp, +me.x.toFixed(1), +me.y.toFixed(1)], death: !!g.deathSequence, stage: g.deathStage, spect: g.spectator?.active?.(), modal: document.querySelector(".mf-modal").hidden, trans: document.querySelector(".mf-transition")?.hidden, dying: g.shell.classList.contains("mf-dying") }); });
+// Kill the player.
+console.log("kill", await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine, a = g.arena, me = g.player; if (me.team === 1) return "I am infiltrator"; const spy = a.entities.find((e) => e.team === 1); Object.assign(spy, { x: me.x + 0.4, y: me.y }); a.privateFor(spy).killReadyAt = 0; a.protocol.mission.phase = "load"; a.eliminate(spy, me.id); return me.hp; }));
+await p.waitForTimeout(8000);
+console.log("after kill", await state());
+await p.evaluate(() => document.querySelector("midnry-fps").engine.skipTakedown());
+await p.waitForTimeout(8000);
+console.log("after death anim", await state());
+await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine, a = g.arena; a.time = 200; a.protocol.resultReason = "Test end"; a.state = "ended"; a.winner = 1; });
+await p.waitForFunction(() => !document.querySelector(".mf-modal").hidden, null, { timeout: 60000 }).catch(() => console.log("no results modal"));
+console.log("ended", await state());
+console.log("tomenu box", await p.evaluate(() => { const b = document.querySelector(".mf-tomenu"); const r = b.getBoundingClientRect(); const at = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2); return JSON.stringify({ r: [r.x, r.y, r.width, r.height], vis: b.offsetParent != null, at: at?.className, results: document.querySelector(".mf-results")?.hidden, panel: document.querySelector(".mf-panel").className }); }));
+await p.screenshot({ path: `${S}/stuck-results.png` });
+await p.click(".mf-tomenu", { timeout: 60000 }).catch((e) => console.log("tomenu", e.message.slice(0, 80)));
+await p.waitForTimeout(3000);
+await p.click(".mf-playlists [data-mode=quick]", { timeout: 60000 }).catch((e) => console.log("card", e.message.slice(0, 80)));
+await p.waitForTimeout(2000);
+console.log("picked", await state(), "| home?", await p.evaluate(()=>document.querySelector(".mf-modal").className+" | "+[...document.querySelectorAll("button")].filter(b=>b.offsetParent).map(b=>b.textContent.trim()).slice(0,6).join(" / ")));
+await p.click(".mf-start", { timeout: 60000 }).catch((e) => console.log("start", e.message.slice(0, 80)));
+await p.waitForTimeout(4000);
+await p.evaluate(() => [...document.querySelectorAll("button")].find((x) => /Understood/.test(x.textContent) && x.offsetParent)?.click());
+for (let k = 0; k < 12; k++) { await p.waitForTimeout(5000); const st = JSON.parse(await state()); console.log("t+" + (k + 1) * 5 + "s", st.state, st.running, "modal:", await p.evaluate(() => document.querySelector(".mf-modal")?.className + " | " + [...document.querySelectorAll("button")].filter(b => b.offsetParent).map(b => b.textContent.trim()).slice(0, 8).join(" / "))); if (st.running) break; }
+console.log("new game", await state());
+await p.screenshot({ path: `${S}/stuck.png` });
+console.log("errors", errs); await b.close();

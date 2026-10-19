@@ -1,0 +1,41 @@
+import { chromium } from "playwright";
+const W = Number(process.argv[2] ?? 390), M = W < 500, H = M ? 844 : 720, MODE = process.argv[3] || "signal";
+const S = "screenshots/qa/signal";
+const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+const p = await (await b.newContext({ viewport: { width: W, height: H }, isMobile: M, hasTouch: M })).newPage();
+const errs = []; p.on("pageerror", (e) => errs.push(e.message)); p.on("console", (m) => m.type() === "error" && errs.push(m.text().slice(0, 200)));
+await p.addInitScript(() => localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 5 })));
+await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
+await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
+const bar = () => p.evaluate(() => { const m = document.querySelector(".mf-matchbar"); return m && !m.hidden && m.offsetParent ? [...m.querySelectorAll("button")].filter(b => !b.hidden).map(b => b.textContent.trim()).join(" + ") : "hidden"; });
+console.log("home before playing, bar:", await bar());
+if (MODE === "signal") await p.click(".mf-playlists [data-mode=signal]", { timeout: 60000 });
+await p.waitForTimeout(800);
+await p.click(".mf-start", { timeout: 60000 }); await p.waitForTimeout(5000);
+await p.evaluate(() => [...document.querySelectorAll("button")].find((x) => /Understood/.test(x.textContent))?.click());
+await p.waitForTimeout(3000);
+const pause = async () => { await p.keyboard.press("Escape").catch(()=>{}); await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine; if (g.running) g.pause(); }); await p.waitForTimeout(1200); };
+await pause();
+console.log("paused mid-match, bar:", await bar(), await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine; return JSON.stringify({ state: g.state, running: g.running, death: !!g.deathSequence, modal: !document.querySelector(".mf-modal").hidden, cls: document.querySelector(".mf-modal").className, phase: g.arena.protocol?.phase }); }));
+await p.waitForTimeout(2000); await p.screenshot({ path: `${S}/matchbar-${MODE}-${W}.png` }); console.log("geom", await p.evaluate(()=>{const pn=document.querySelector(".mf-modal .mf-panel"), m=document.querySelector(".mf-matchbar"); const r=m.getBoundingClientRect(), q=pn.getBoundingClientRect(); return JSON.stringify({bar:[r.top,r.bottom].map(Math.round), panel:[q.top,q.bottom].map(Math.round), scrollH:pn.scrollHeight, clientH:pn.clientHeight, vh:innerHeight});}));
+// Restart
+const t0 = await p.evaluate(() => document.querySelector("midnry-fps").engine.arena.time);
+await p.click(".mf-restartmatch", { timeout: 60000 }); await p.waitForTimeout(800);
+console.log("confirm dialog:", await p.evaluate(() => document.querySelector(".mf-confirm").open ? document.querySelector(".mf-confirm h2").textContent : "none"));
+await p.click(".mf-confirmapply", { timeout: 60000 }); await p.waitForTimeout(5000);
+console.log("after restart:", await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine; return JSON.stringify({ mode: g.mode, state: g.state, running: g.running, t: +g.arena.time.toFixed(1), hp: g.player.hp, menu: !document.querySelector(".mf-modal").hidden }); }), "(time before restart", t0.toFixed(1) + ")");
+// Leave
+await pause();
+await p.screenshot({ path: `${S}/matchbar-2nd-${MODE}-${W}.png` }); console.log("dialogs open:", await p.evaluate(()=>[...document.querySelectorAll("dialog")].filter(d=>d.open).map(d=>d.className).join(",")||"none"), "pointer at leave:", await p.evaluate(()=>{const b=document.querySelector(".mf-leavematch"), r=b.getBoundingClientRect(); const e=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2); return (e?.className||e?.tagName)+" rect "+[r.x,r.y,r.width,r.height].map(Math.round)+" pe="+getComputedStyle(b).pointerEvents+" panel-pe="+getComputedStyle(document.querySelector(".mf-modal .mf-panel")).pointerEvents+" inert="+!!b.closest("[inert]");}));
+console.log("before leave:", await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine; return JSON.stringify({ state: g.state, running: g.running, death: !!g.deathSequence, modal: !document.querySelector(".mf-modal").hidden, home: document.querySelector(".mf-modal").className }); }), "bar:", await bar());
+await p.click(".mf-leavematch", { timeout: 60000 }); await p.waitForTimeout(800);
+console.log("leave dialog:", await p.evaluate(() => document.querySelector(".mf-confirm").open ? document.querySelector(".mf-confirm h2").textContent : "none"));
+await p.click(".mf-confirmapply", { timeout: 60000 }); await p.waitForTimeout(2500);
+console.log("after leave:", await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine; return JSON.stringify({ mode: g.mode, state: g.state, running: g.running, home: document.querySelector(".mf-modal").classList.contains("mf-home") && !document.querySelector(".mf-modal").hidden, summary: document.querySelector(".mf-playsummary")?.innerText, start: document.querySelector(".mf-start").innerText }); }), "bar:", await bar());
+await p.screenshot({ path: `${S}/matchbar-left-${MODE}-${W}.png` });
+// Can play again after leaving
+await p.click(".mf-start", { timeout: 60000 }); await p.waitForTimeout(5000);
+await p.evaluate(() => [...document.querySelectorAll("button")].find((x) => /Understood/.test(x.textContent))?.click());
+console.log("play after leave:", await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine; return g.mode + " " + g.state + " running=" + g.running; }));
+console.log("errors", errs);
+await b.close();
