@@ -1,0 +1,1745 @@
+[
+  {
+    "variant": "blocked",
+    "initial": {
+      "loaded": true,
+      "assetErrors": [],
+      "optionalWarnings": [
+        "textures/benchmark-operator-body-orm.png",
+        "textures/benchmark-operator-skin-roughness.png"
+      ],
+      "response": [],
+      "materials": [
+        {
+          "name": "Uniform fabric",
+          "roughness": 0.93,
+          "metalness": 0,
+          "roughnessMap": false,
+          "normal": 0.55
+        },
+        {
+          "name": "Operator head 1",
+          "roughness": 0.93,
+          "metalness": 0,
+          "roughnessMap": false,
+          "normal": 0.55
+        },
+        {
+          "name": "Operator head 2",
+          "roughness": 0.76,
+          "metalness": 0,
+          "roughnessMap": false,
+          "normal": 0.55
+        }
+      ]
+    },
+    "states": {
+      "stations": 16,
+      "expectedStations": 16,
+      "mounts": [
+        {
+          "id": "intel-upload",
+          "position": [
+            13.5,
+            1.34,
+            9.045
+          ],
+          "expected": [
+            13.5,
+            1.34,
+            9.045
+          ]
+        },
+        {
+          "id": "sensor-reset",
+          "position": [
+            23.955000000000002,
+            1.34,
+            25.5
+          ],
+          "expected": [
+            23.955000000000002,
+            1.34,
+            25.5
+          ]
+        },
+        {
+          "id": "armory-restock",
+          "position": [
+            37.5,
+            1.34,
+            9.045
+          ],
+          "expected": [
+            37.5,
+            1.34,
+            9.045
+          ]
+        },
+        {
+          "id": "ammo-audit",
+          "position": [
+            46.5,
+            1.34,
+            26.955
+          ],
+          "expected": [
+            46.5,
+            1.34,
+            26.955
+          ]
+        },
+        {
+          "id": "radio-link",
+          "position": [
+            67.5,
+            1.34,
+            9.045
+          ],
+          "expected": [
+            67.5,
+            1.34,
+            9.045
+          ]
+        },
+        {
+          "id": "radar-calibration",
+          "position": [
+            74.955,
+            1.34,
+            19.5
+          ],
+          "expected": [
+            74.955,
+            1.34,
+            19.5
+          ]
+        },
+        {
+          "id": "barracks-supplies",
+          "position": [
+            10.5,
+            1.34,
+            39.045
+          ],
+          "expected": [
+            10.5,
+            1.34,
+            39.045
+          ]
+        },
+        {
+          "id": "mess-restock",
+          "position": [
+            16.5,
+            1.34,
+            45.045
+          ],
+          "expected": [
+            16.5,
+            1.34,
+            45.045
+          ]
+        },
+        {
+          "id": "vehicle-fuel",
+          "position": [
+            60.045,
+            1.34,
+            43.5
+          ],
+          "expected": [
+            60.045,
+            1.34,
+            43.5
+          ]
+        },
+        {
+          "id": "drone-check",
+          "position": [
+            74.955,
+            1.34,
+            55.5
+          ],
+          "expected": [
+            74.955,
+            1.34,
+            55.5
+          ]
+        },
+        {
+          "id": "generator-reset",
+          "position": [
+            9.045,
+            1.34,
+            61.5
+          ],
+          "expected": [
+            9.045,
+            1.34,
+            61.5
+          ]
+        },
+        {
+          "id": "coolant-test",
+          "position": [
+            23.955000000000002,
+            1.6600000000000001,
+            70.5
+          ],
+          "expected": [
+            23.955000000000002,
+            1.6600000000000001,
+            70.5
+          ]
+        },
+        {
+          "id": "tunnel-clear",
+          "position": [
+            37.5,
+            1.34,
+            57.045
+          ],
+          "expected": [
+            37.5,
+            1.34,
+            57.045
+          ]
+        },
+        {
+          "id": "pump-service",
+          "position": [
+            45.045,
+            1.34,
+            70.5
+          ],
+          "expected": [
+            45.045,
+            1.34,
+            70.5
+          ]
+        },
+        {
+          "id": "depot-seal",
+          "position": [
+            61.5,
+            1.34,
+            69.045
+          ],
+          "expected": [
+            61.5,
+            1.34,
+            69.045
+          ]
+        },
+        {
+          "id": "gate-sensors",
+          "position": [
+            73.5,
+            1.34,
+            78.045
+          ],
+          "expected": [
+            73.5,
+            1.34,
+            78.045
+          ]
+        }
+      ],
+      "active": [
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9
+      ],
+      "done": [
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4
+      ],
+      "dark": [
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015
+      ],
+      "medical": [
+        {
+          "stock": 0,
+          "values": [
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ]
+          ]
+        },
+        {
+          "stock": 1,
+          "values": [
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ]
+          ]
+        },
+        {
+          "stock": 2,
+          "values": [
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ]
+          ]
+        }
+      ],
+      "caseMeshes": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "grades": [
+        {
+          "highlight": [
+            1.025,
+            1.01,
+            0.98
+          ],
+          "shadow": [
+            0.97,
+            1,
+            1.025
+          ],
+          "saturation": 1,
+          "vignette": 0.08,
+          "bloom": false
+        },
+        {
+          "highlight": [
+            1.025,
+            1.01,
+            0.98
+          ],
+          "shadow": [
+            0.97,
+            1,
+            1.025
+          ],
+          "saturation": 1,
+          "vignette": 0.08,
+          "bloom": false
+        },
+        {
+          "highlight": [
+            1.025,
+            1.01,
+            0.98
+          ],
+          "shadow": [
+            0.97,
+            1,
+            1.025
+          ],
+          "saturation": 1,
+          "vignette": 0.08,
+          "bloom": false
+        },
+        {
+          "highlight": [
+            1.025,
+            1.01,
+            0.98
+          ],
+          "shadow": [
+            0.97,
+            1,
+            1.025
+          ],
+          "saturation": 1,
+          "vignette": 0.08,
+          "bloom": false
+        }
+      ],
+      "emergency": [
+        19.5,
+        1.32,
+        19.5
+      ],
+      "collisionUnchanged": true,
+      "atlas": [
+        1024,
+        256
+      ]
+    },
+    "warnings": [
+      "[Outpost] Optional operator response map unavailable; using original materials: textures/benchmark-operator-body-orm.png Event",
+      "[Outpost] Optional operator response map unavailable; using original materials: textures/benchmark-operator-skin-roughness.png Event"
+    ],
+    "aborted": [
+      "http://127.0.0.1:8080/games/military/textures/benchmark-operator-body-orm.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+      "http://127.0.0.1:8080/games/military/textures/benchmark-operator-skin-roughness.png?assetVersion=outpost-assets-7251c21d3c42afb4"
+    ],
+    "errors": []
+  },
+  {
+    "variant": "desktop",
+    "initial": {
+      "loaded": true,
+      "assetErrors": [],
+      "optionalWarnings": [],
+      "response": [
+        "body",
+        "skin"
+      ],
+      "materials": [
+        {
+          "name": "Uniform fabric",
+          "roughness": 1,
+          "metalness": 1,
+          "roughnessMap": true,
+          "normal": 0.45
+        },
+        {
+          "name": "Operator head 1",
+          "roughness": 1,
+          "metalness": 1,
+          "roughnessMap": true,
+          "normal": 0.45
+        },
+        {
+          "name": "Operator head 2",
+          "roughness": 1,
+          "metalness": 0,
+          "roughnessMap": true,
+          "normal": 0.3
+        }
+      ]
+    },
+    "states": {
+      "stations": 16,
+      "expectedStations": 16,
+      "mounts": [
+        {
+          "id": "intel-upload",
+          "position": [
+            13.5,
+            1.34,
+            9.045
+          ],
+          "expected": [
+            13.5,
+            1.34,
+            9.045
+          ]
+        },
+        {
+          "id": "sensor-reset",
+          "position": [
+            23.955000000000002,
+            1.34,
+            25.5
+          ],
+          "expected": [
+            23.955000000000002,
+            1.34,
+            25.5
+          ]
+        },
+        {
+          "id": "armory-restock",
+          "position": [
+            37.5,
+            1.34,
+            9.045
+          ],
+          "expected": [
+            37.5,
+            1.34,
+            9.045
+          ]
+        },
+        {
+          "id": "ammo-audit",
+          "position": [
+            46.5,
+            1.34,
+            26.955
+          ],
+          "expected": [
+            46.5,
+            1.34,
+            26.955
+          ]
+        },
+        {
+          "id": "radio-link",
+          "position": [
+            67.5,
+            1.34,
+            9.045
+          ],
+          "expected": [
+            67.5,
+            1.34,
+            9.045
+          ]
+        },
+        {
+          "id": "radar-calibration",
+          "position": [
+            74.955,
+            1.34,
+            19.5
+          ],
+          "expected": [
+            74.955,
+            1.34,
+            19.5
+          ]
+        },
+        {
+          "id": "barracks-supplies",
+          "position": [
+            10.5,
+            1.34,
+            39.045
+          ],
+          "expected": [
+            10.5,
+            1.34,
+            39.045
+          ]
+        },
+        {
+          "id": "mess-restock",
+          "position": [
+            16.5,
+            1.34,
+            45.045
+          ],
+          "expected": [
+            16.5,
+            1.34,
+            45.045
+          ]
+        },
+        {
+          "id": "vehicle-fuel",
+          "position": [
+            60.045,
+            1.34,
+            43.5
+          ],
+          "expected": [
+            60.045,
+            1.34,
+            43.5
+          ]
+        },
+        {
+          "id": "drone-check",
+          "position": [
+            74.955,
+            1.34,
+            55.5
+          ],
+          "expected": [
+            74.955,
+            1.34,
+            55.5
+          ]
+        },
+        {
+          "id": "generator-reset",
+          "position": [
+            9.045,
+            1.34,
+            61.5
+          ],
+          "expected": [
+            9.045,
+            1.34,
+            61.5
+          ]
+        },
+        {
+          "id": "coolant-test",
+          "position": [
+            23.955000000000002,
+            1.6600000000000001,
+            70.5
+          ],
+          "expected": [
+            23.955000000000002,
+            1.6600000000000001,
+            70.5
+          ]
+        },
+        {
+          "id": "tunnel-clear",
+          "position": [
+            37.5,
+            1.34,
+            57.045
+          ],
+          "expected": [
+            37.5,
+            1.34,
+            57.045
+          ]
+        },
+        {
+          "id": "pump-service",
+          "position": [
+            45.045,
+            1.34,
+            70.5
+          ],
+          "expected": [
+            45.045,
+            1.34,
+            70.5
+          ]
+        },
+        {
+          "id": "depot-seal",
+          "position": [
+            61.5,
+            1.34,
+            69.045
+          ],
+          "expected": [
+            61.5,
+            1.34,
+            69.045
+          ]
+        },
+        {
+          "id": "gate-sensors",
+          "position": [
+            73.5,
+            1.34,
+            78.045
+          ],
+          "expected": [
+            73.5,
+            1.34,
+            78.045
+          ]
+        }
+      ],
+      "active": [
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9
+      ],
+      "done": [
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4
+      ],
+      "dark": [
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015
+      ],
+      "medical": [
+        {
+          "stock": 0,
+          "values": [
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ]
+          ]
+        },
+        {
+          "stock": 1,
+          "values": [
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ]
+          ]
+        },
+        {
+          "stock": 2,
+          "values": [
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ]
+          ]
+        }
+      ],
+      "caseMeshes": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "grades": [
+        {
+          "highlight": [
+            1.025,
+            1.01,
+            0.98
+          ],
+          "shadow": [
+            0.97,
+            1,
+            1.025
+          ],
+          "saturation": 1,
+          "vignette": 0.08,
+          "bloom": false
+        },
+        {
+          "highlight": [
+            1.025,
+            1.01,
+            0.98
+          ],
+          "shadow": [
+            0.97,
+            1,
+            1.025
+          ],
+          "saturation": 1,
+          "vignette": 0.08,
+          "bloom": false
+        },
+        {
+          "highlight": [
+            1.025,
+            1.01,
+            0.98
+          ],
+          "shadow": [
+            0.97,
+            1,
+            1.025
+          ],
+          "saturation": 1,
+          "vignette": 0.08,
+          "bloom": false
+        },
+        {
+          "highlight": [
+            1.025,
+            1.01,
+            0.98
+          ],
+          "shadow": [
+            0.97,
+            1,
+            1.025
+          ],
+          "saturation": 1,
+          "vignette": 0.08,
+          "bloom": false
+        }
+      ],
+      "emergency": [
+        19.5,
+        1.32,
+        19.5
+      ],
+      "collisionUnchanged": true,
+      "atlas": [
+        1024,
+        256
+      ]
+    },
+    "charge": {
+      "channel": "defuse",
+      "position": [
+        61.5,
+        0.045,
+        58.5
+      ],
+      "state": "disabled",
+      "geometryChanged": true,
+      "simulationRemoved": true,
+      "notice": "Charge disabled. The linked countdown is stopped.",
+      "retained": true
+    },
+    "transport": {
+      "map": "medevac",
+      "empty": 0,
+      "loaded": 3,
+      "slots": 13,
+      "stations": 11,
+      "errors": []
+    },
+    "warnings": [],
+    "aborted": [],
+    "errors": []
+  },
+  {
+    "variant": "mobile",
+    "initial": {
+      "loaded": true,
+      "assetErrors": [],
+      "optionalWarnings": [],
+      "response": [
+        "body",
+        "skin"
+      ],
+      "materials": [
+        {
+          "name": "Uniform fabric",
+          "roughness": 1,
+          "metalness": 1,
+          "roughnessMap": true,
+          "normal": 0.45
+        },
+        {
+          "name": "Operator head 1",
+          "roughness": 1,
+          "metalness": 1,
+          "roughnessMap": true,
+          "normal": 0.45
+        },
+        {
+          "name": "Operator head 2",
+          "roughness": 1,
+          "metalness": 0,
+          "roughnessMap": true,
+          "normal": 0.3
+        }
+      ]
+    },
+    "states": {
+      "stations": 16,
+      "expectedStations": 16,
+      "mounts": [
+        {
+          "id": "intel-upload",
+          "position": [
+            13.5,
+            1.34,
+            9.045
+          ],
+          "expected": [
+            13.5,
+            1.34,
+            9.045
+          ]
+        },
+        {
+          "id": "sensor-reset",
+          "position": [
+            23.955000000000002,
+            1.34,
+            25.5
+          ],
+          "expected": [
+            23.955000000000002,
+            1.34,
+            25.5
+          ]
+        },
+        {
+          "id": "armory-restock",
+          "position": [
+            37.5,
+            1.34,
+            9.045
+          ],
+          "expected": [
+            37.5,
+            1.34,
+            9.045
+          ]
+        },
+        {
+          "id": "ammo-audit",
+          "position": [
+            46.5,
+            1.34,
+            26.955
+          ],
+          "expected": [
+            46.5,
+            1.34,
+            26.955
+          ]
+        },
+        {
+          "id": "radio-link",
+          "position": [
+            67.5,
+            1.34,
+            9.045
+          ],
+          "expected": [
+            67.5,
+            1.34,
+            9.045
+          ]
+        },
+        {
+          "id": "radar-calibration",
+          "position": [
+            74.955,
+            1.34,
+            19.5
+          ],
+          "expected": [
+            74.955,
+            1.34,
+            19.5
+          ]
+        },
+        {
+          "id": "barracks-supplies",
+          "position": [
+            10.5,
+            1.34,
+            39.045
+          ],
+          "expected": [
+            10.5,
+            1.34,
+            39.045
+          ]
+        },
+        {
+          "id": "mess-restock",
+          "position": [
+            16.5,
+            1.34,
+            45.045
+          ],
+          "expected": [
+            16.5,
+            1.34,
+            45.045
+          ]
+        },
+        {
+          "id": "vehicle-fuel",
+          "position": [
+            60.045,
+            1.34,
+            43.5
+          ],
+          "expected": [
+            60.045,
+            1.34,
+            43.5
+          ]
+        },
+        {
+          "id": "drone-check",
+          "position": [
+            74.955,
+            1.34,
+            55.5
+          ],
+          "expected": [
+            74.955,
+            1.34,
+            55.5
+          ]
+        },
+        {
+          "id": "generator-reset",
+          "position": [
+            9.045,
+            1.34,
+            61.5
+          ],
+          "expected": [
+            9.045,
+            1.34,
+            61.5
+          ]
+        },
+        {
+          "id": "coolant-test",
+          "position": [
+            23.955000000000002,
+            1.6600000000000001,
+            70.5
+          ],
+          "expected": [
+            23.955000000000002,
+            1.6600000000000001,
+            70.5
+          ]
+        },
+        {
+          "id": "tunnel-clear",
+          "position": [
+            37.5,
+            1.34,
+            57.045
+          ],
+          "expected": [
+            37.5,
+            1.34,
+            57.045
+          ]
+        },
+        {
+          "id": "pump-service",
+          "position": [
+            45.045,
+            1.34,
+            70.5
+          ],
+          "expected": [
+            45.045,
+            1.34,
+            70.5
+          ]
+        },
+        {
+          "id": "depot-seal",
+          "position": [
+            61.5,
+            1.34,
+            69.045
+          ],
+          "expected": [
+            61.5,
+            1.34,
+            69.045
+          ]
+        },
+        {
+          "id": "gate-sensors",
+          "position": [
+            73.5,
+            1.34,
+            78.045
+          ],
+          "expected": [
+            73.5,
+            1.34,
+            78.045
+          ]
+        }
+      ],
+      "active": [
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9,
+        0.9
+      ],
+      "done": [
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4
+      ],
+      "dark": [
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015,
+        0.015
+      ],
+      "medical": [
+        {
+          "stock": 0,
+          "values": [
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              false
+            ]
+          ]
+        },
+        {
+          "stock": 1,
+          "values": [
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ],
+            [
+              true,
+              false
+            ]
+          ]
+        },
+        {
+          "stock": 2,
+          "values": [
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ],
+            [
+              true,
+              true
+            ]
+          ]
+        }
+      ],
+      "caseMeshes": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "grades": [
+        {
+          "highlight": [
+            1.025,
+            1.01,
+            0.98
+          ],
+          "shadow": [
+            0.97,
+            1,
+            1.025
+          ],
+          "saturation": 1,
+          "vignette": 0.08,
+          "bloom": false
+        },
+        {
+          "highlight": [
+            1.025,
+            1.01,
+            0.98
+          ],
+          "shadow": [
+            0.97,
+            1,
+            1.025
+          ],
+          "saturation": 1,
+          "vignette": 0.08,
+          "bloom": false
+        },
+        {
+          "highlight": [
+            1.025,
+            1.01,
+            0.98
+          ],
+          "shadow": [
+            0.97,
+            1,
+            1.025
+          ],
+          "saturation": 1,
+          "vignette": 0.08,
+          "bloom": false
+        },
+        {
+          "highlight": [
+            1.025,
+            1.01,
+            0.98
+          ],
+          "shadow": [
+            0.97,
+            1,
+            1.025
+          ],
+          "saturation": 1,
+          "vignette": 0.08,
+          "bloom": false
+        }
+      ],
+      "emergency": [
+        19.5,
+        1.32,
+        19.5
+      ],
+      "collisionUnchanged": true,
+      "atlas": [
+        1024,
+        256
+      ]
+    },
+    "charge": {
+      "channel": "defuse",
+      "position": [
+        61.5,
+        0.045,
+        58.5
+      ],
+      "state": "disabled",
+      "geometryChanged": true,
+      "simulationRemoved": true,
+      "notice": "Charge disabled. The linked countdown is stopped.",
+      "retained": true
+    },
+    "transport": {
+      "map": "medevac",
+      "empty": 0,
+      "loaded": 3,
+      "slots": 13,
+      "stations": 11,
+      "errors": []
+    },
+    "warnings": [],
+    "aborted": [],
+    "errors": []
+  }
+]

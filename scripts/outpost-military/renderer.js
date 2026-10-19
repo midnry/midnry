@@ -16,7 +16,7 @@ import { Reflector } from "three/addons/objects/Reflector.js";
 import { loadRealismSurfaces, surfaceMaterial } from "./realism-surfaces.js";
 import { initNaturalLighting, updateNaturalLighting } from "./realism-lighting.js";
 import { decorateRealisticEnvironment } from "./realism-environment.js";
-import { dressBenchmarkTerminal, inBenchmark } from './benchmark-corridor.js';
+import { buildStationTerminal, buildMedicalCabinet, buildMedicalCase, buildSupplyBox, buildCharge, buildEmergencyConsole, updateChargePresentation } from './interactables.js';
 import {
   prepareCharacterAsset,
   loadOperatorResponse,
@@ -76,6 +76,7 @@ export class MilitaryRenderer {
     this.protocolCharges = new Map();
     this.protocolBodies = new Map();
     this.protocolFixtures = [];
+    this.interactableInstances = [];
     this.protocolScreens = new Map();
     this.protocolLights = [];
     this.protocolLightMaterials = [];
@@ -585,6 +586,7 @@ export class MilitaryRenderer {
     this.fittingMaterial = null;
     this.reflection = null;
     this.protocolFixtures = [];
+    this.interactableInstances = [];
     this.protocolScreens.clear();
     this.protocolLightMaterials = [];
     this.protocolPowerOut = false;
@@ -1124,36 +1126,7 @@ export class MilitaryRenderer {
       const panel = this.protocolMount(station.x, station.y, 1.34);
       if (map.id === "medevac" && station.kind === "cargo") panel.position.z -= 1.1;
       root.add(panel);
-      if (dressBenchmarkTerminal(this,panel,station,{steel,paint,rubber,amber,lamp})) continue;
-      this.box(panel, steel, [0, 0, 0.07], [1.05, 0.88, 0.14]);
-      this.box(panel, paint, [0, -0.47, 0.07], [1.12, 0.11, 0.22]);
-      const screenMaterial = this.protocolMaterial({
-        color: "#acd4d3",
-        emissive: "#4b8588",
-        emissiveIntensity: 0.75,
-        roughness: 0.35,
-        metalness: 0.15,
-      });
-      const screen = this.box(panel, screenMaterial, [0, 0.06, 0.153], [0.79, 0.52, 0.028]);
-      screen.userData.noBatch = true;
-      this.protocolScreens.set(station.id, screenMaterial);
-      for (let i = 0; i < 5; i++)
-        this.box(panel, rubber, [-0.32 + i * 0.16, -0.3, 0.163], [0.1, 0.045, 0.025]);
-      const label = this.mesh(
-        panel,
-        this.geo("protocol-label", () => new THREE.PlaneGeometry(1.18, 0.34)),
-        this.protocolSign(station.name, "HOLD TO SERVICE"),
-        [0, 0.69, 0.05],
-      );
-      label.castShadow = false;
-      label.userData.noBatch = true;
-      if (/fuel|generator|power/.test(station.kind || "")) {
-        for (const x of [-0.39, 0.39])
-          this.cylinder(panel, amber, [x, -0.04, 0.18], 0.07, 0.018, "z", 16);
-      } else if (/radio|radar|comms|intel/.test(station.kind || "")) {
-        for (let i = 0; i < 3; i++)
-          this.box(panel, lamp, [-0.28 + i * 0.22, 0.38, 0.157], [0.075, 0.035, 0.02]);
-      }
+      buildStationTerminal(this,panel,station);
     }
     // These neutral access covers are ordinary public map scenery. A cover
     // never signals whether it currently contains a hidden charge.
@@ -1179,19 +1152,7 @@ export class MilitaryRenderer {
       const alarm = new THREE.Group();
       alarm.position.set(map.emergency.x * SCALE, 1.32, map.emergency.y * SCALE);
       root.add(alarm);
-      this.box(alarm, steel, [0, -0.68, 0], [0.13, 1.28, 0.13]);
-      this.box(alarm, steel, [0, -1.26, 0], [0.55, 0.08, 0.55]);
-      this.box(alarm, steel, [0, 0, 0.06], [0.58, 0.82, 0.12]);
-      this.box(alarm, amber, [0, 0, 0.14], [0.41, 0.56, 0.03]);
-      const red = this.protocolMaterial({ color: "#c66051", roughness: 0.45 });
-      this.cylinder(alarm, red, [0, 0, 0.2], 0.13, 0.06, "z", 24);
-      const label = this.mesh(
-        alarm,
-        this.geo("protocol-label", () => new THREE.PlaneGeometry(1.18, 0.34)),
-        this.protocolSign("RADIO ASSEMBLY", "EMERGENCY MEETING", "#d3ae75"),
-        [0, 0.7, 0.04],
-      );
-      label.userData.noBatch = true;
+      buildEmergencyConsole(this,alarm);
     }
     for (const prop of map.props || []) {
       if (
@@ -1313,32 +1274,11 @@ export class MilitaryRenderer {
   }
   buildMedicalFixtures(map, root, materials) {
     const { steel, paint, lamp } = materials;
-    const shell = this.protocolMaterial({
-      color: "#a8bab2",
-      roughness: 0.84,
-      metalness: 0,
-    });
-    const band = this.protocolMaterial({ color: "#357b73", roughness: 0.78 });
-    const symbol = this.protocolMaterial({ color: "#e1ebe4", roughness: 0.75 });
-    const medicalCase = (parent, position, movable = false) => {
-      const group = new THREE.Group();
-      group.position.set(...position);
-      parent.add(group);
-      this.box(group, shell, [0, 0, 0], [0.78, 0.4, 0.26]);
-      this.box(group, band, [0, 0, 0.14], [0.33, 0.32, 0.025]);
-      this.box(group, symbol, [0, 0, 0.16], [0.2, 0.045, 0.02]);
-      this.box(group, symbol, [0, 0, 0.162], [0.045, 0.2, 0.02]);
-      if (movable)
-        group.traverse((object) => {
-          if (object.isMesh) object.userData.noBatch = true;
-        });
-      return group;
-    };
+    const medicalCase = (parent, position, movable = false) => buildMedicalCase(this,parent,position,movable);
     for (const fixture of map.supplies || []) {
       const cabinet = this.protocolMount(fixture.x, fixture.y, 0.57);
       root.add(cabinet);
-      this.box(cabinet, steel, [0, 0.01, 0.08], [1.08, 1.12, 0.16]);
-      this.box(cabinet, paint, [0, 0.6, 0.1], [1.14, 0.06, 0.23]);
+      buildMedicalCabinet(this,cabinet);
       const cases = [
         medicalCase(cabinet, [0, -0.23, 0.15], true),
         medicalCase(cabinet, [0, 0.23, 0.15], true),
@@ -1346,12 +1286,12 @@ export class MilitaryRenderer {
       this.medicalStocks.set(fixture.id, cases);
       // This stock label shares the benchmark station's wall mount. Keep the
       // visual labels separated without moving either interaction/collision.
-      const coldStorage = this.g.arena.mapId === 'breakwater' && fixture.x === 7.5 && fixture.y === 23.5;
+      const sharedStation = (map.stations || []).some(station => station.x === fixture.x && station.y === fixture.y);
       const label = this.mesh(
         cabinet,
-        this.geo(coldStorage ? "medical-label-cold-storage" : "medical-label", () => new THREE.PlaneGeometry(coldStorage ? 1.1 : 1.55, coldStorage ? .2 : .45)),
+        this.geo(sharedStation ? "medical-label-shared-station" : "medical-label", () => new THREE.PlaneGeometry(sharedStation ? .65 : 1.55, sharedStation ? .24 : .45)),
         this.protocolSign(fixture.name, "MEDICAL RESUPPLY", "#a1c7b7"),
-        [0, coldStorage ? .44 : .98, 0.12],
+        [sharedStation ? -.94 : 0, sharedStation ? .2 : .98, .185],
       );
       label.castShadow = false;
       label.userData.noBatch = true;
@@ -2834,17 +2774,6 @@ export class MilitaryRenderer {
     return true;
   }
   updatePickups(t) {
-    const crateMat =
-      this.crateMaterial ||
-      (this.crateMaterial = this.material({
-        color: "#767869",
-        roughness: 0.88,
-        metalness: 0.12,
-        map: this.metalColor,
-      }));
-    const latch =
-      this.latchMaterial ||
-      (this.latchMaterial = this.material({ color: "#bab5a1", roughness: 0.62, metalness: 0.8 }));
     const activeCrates = new Set();
     for (const e of this.g.crates) {
       if (e.hp <= 0) continue;
@@ -2853,12 +2782,7 @@ export class MilitaryRenderer {
       if (!root) {
         root = new THREE.Group();
         this.dynamic.add(root);
-        this.box(root, crateMat, [0, 0.9, 0], [1.85, 1.8, 1.85]);
-        for (const x of [-0.6, 0.6]) {
-          this.box(root, latch, [x, 0.9, 0.94], [0.055, 1.7, 0.025]);
-          this.box(root, latch, [x, 1.83, 0], [0.055, 0.025, 1.7]);
-        }
-        this.box(root, latch, [0, 1.05, 0.95], [0.34, 0.13, 0.06]);
+        buildSupplyBox(this,root);
         this.crates.set(e.id, root);
       }
       root.position.set(e.x * SCALE, 0, e.y * SCALE);
@@ -3071,6 +2995,8 @@ export class MilitaryRenderer {
       this.removeProtocolObject(body.root, true);
     }
     this.protocolCharges.clear();
+    this.defusingChargeId = null;
+    this.lastChargeNotice = null;
     this.protocolBodies.clear();
     if (this.footprints) {
       this.footprints.count = 0;
@@ -3128,40 +3054,37 @@ export class MilitaryRenderer {
       .addScaledVector(this.torchDirection, 12);
     this.protocolTorch.target.updateMatrixWorld();
     const chargeIds = new Set();
+    const notice = this.g.player?.noticeId;
+    const confirmedDefuse = notice !== this.lastChargeNotice && /^Charge disabled\./.test(this.g.player?.notice || '');
+    const defusedId = confirmedDefuse ? this.defusingChargeId : null;
+    this.lastChargeNotice = notice;
+    this.defusingChargeId = protocol.self?.channel?.kind === 'defuse' ? protocol.self.channel.target : null;
     // Read only the public, already redacted list. Do not consult map sites,
     // authoritative protocol.players, private planted coordinates or roles.
     for (const charge of protocol.bombs || []) {
-      if (charge.state !== "armed") continue;
+      if (!['armed','disabled'].includes(charge.state)) continue;
       chargeIds.add(charge.id);
       let root = this.protocolCharges.get(charge.id);
       if (!root) {
         root = new THREE.Group();
         this.dynamic.add(root);
-        this.chargeCaseMaterial ||= this.material({
-          color: "#273638",
-          map: this.gunColor,
-          normalMap: this.gunNormal,
-          metalness: 0.4,
-          roughness: 0.78,
-        });
-        this.chargeBandMaterial ||= this.material({ color: "#858b7d", roughness: 0.75 });
-        this.chargeIndicatorMaterial ||= this.material({
-          color: "#d09769",
-          emissive: "#9b5a39",
-          emissiveIntensity: 0.7,
-          roughness: 0.6,
-        });
-        this.box(root, this.chargeCaseMaterial, [0, 0.095, 0], [0.46, 0.19, 0.36]);
-        for (const x of [-0.16, 0.16])
-          this.box(root, this.chargeBandMaterial, [x, 0.2, 0], [0.026, 0.02, 0.3]);
-        this.box(root, this.chargeIndicatorMaterial, [0, 0.2, 0.03], [0.11, 0.017, 0.08]);
+        buildCharge(this,root);
         this.protocolCharges.set(charge.id, root);
       }
+      updateChargePresentation(this,root,charge.state);
       root.position.set(charge.x * SCALE, 0.045, charge.y * SCALE);
       root.visible = !powerOut || Math.hypot(charge.x - camera.x, charge.y - camera.y) <= 2.2;
     }
     for (const [id, root] of this.protocolCharges)
       if (!chargeIds.has(id)) {
+        // The protocol removes defused charges. Retain a short SAFE shell only
+        // for a confirmed local defuse of an already-public object. Loss of
+        // sight/redaction must never be inferred to mean a charge was disabled.
+        if (id === defusedId) {
+          updateChargePresentation(this,root,'disabled');
+          root.userData.disabledUntil = this.g.time + 4;
+        }
+        if (root.userData.disabledUntil > this.g.time) continue;
         this.removeProtocolObject(root);
         this.protocolCharges.delete(id);
       }
@@ -3262,42 +3185,19 @@ export class MilitaryRenderer {
     if (!this.grade) return;
     const u = this.grade.uniforms;
     u.time.value = time % 100;
-    if (night) {
-      u.highlight.value.set(1.1, 0.98, 0.84);
-      u.shadow.value.set(0.84, 0.95, 1.16);
-      u.saturation.value = 1.12;
-      u.vignette.value = 0.38;
-      u.grain.value = 0.035;
-      this.bloom.strength = 0.45;
-      this.bloom.threshold = 1.0;
-      this.bloom.radius = 0.5;
-    } else {
-      // Late-afternoon sun: golden highlights, slightly cool shade.
-      u.highlight.value.set(1.12, 1.01, 0.82);
-      u.shadow.value.set(0.93, 0.98, 1.08);
-      u.saturation.value = 1.06;
-      u.vignette.value = 0.26;
-      u.grain.value = 0.022;
-      this.bloom.strength = 0.24;
-      this.bloom.threshold = 1.1;
-      this.bloom.radius = 0.45;
-    }
-    // Benchmark only: judge real materials without the previous warm grade,
-    // grain and broad bloom. Other areas retain their approved presentation.
-    const benchmark = this.g.arena.mapId === 'breakwater' && inBenchmark(this.g.camera());
-    this.bloom.enabled = this.g.academy.preset !== 'performance' &&
-      (!benchmark || this.g.academy.preset === 'high');
-    if (benchmark) {
-      u.highlight.value.set(1.025,1.01,.98);
-      u.shadow.value.set(.97,1.0,1.025);
-      u.saturation.value = 1.0;
-      u.vignette.value = .08;
-      u.grain.value = .002;
-      this.bloom.strength = .12;
-      this.bloom.threshold = 1.35;
-      this.bloom.radius = .35;
-    }
+    // One material-assessment grade across every room and map. Night/day
+    // differences come from their actual lighting, not location-based filters.
+    u.highlight.value.set(1.025, 1.01, .98);
+    u.shadow.value.set(.97, 1.0, 1.025);
+    u.saturation.value = 1.0;
+    u.vignette.value = .08;
+    u.grain.value = .002;
+    this.bloom.enabled = this.g.academy.preset === 'high';
+    this.bloom.strength = .12;
+    this.bloom.threshold = 1.35;
+    this.bloom.radius = .35;
   }
+
   /** Rebuild the world when the arena moved to another map. */
   ensureWorld() {
     const g = this.g;

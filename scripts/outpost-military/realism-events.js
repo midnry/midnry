@@ -2,6 +2,7 @@
  * stretcher at the south gate, a delivery crate with a smoke flare. The
  * sandstorm is fog, applied by the renderer. Presentation only. */
 import * as THREE from "three";
+import { buildSupplyBox, buildMedicalCase } from "./interactables.js";
 
 const SCALE = 3;
 
@@ -35,13 +36,51 @@ export class EventDressing {
       flame: this.geo(() => new THREE.ConeGeometry(0.28, 1, 10, 1, true)),
       smoke: this.geo(() => new THREE.SphereGeometry(0.4, 10, 8)),
       box: this.geo(() => new THREE.BoxGeometry(1, 1, 1)),
-      flameOuter: this.mat(() => new THREE.MeshBasicMaterial({ color: new THREE.Color("#ff6a1a").multiplyScalar(2.2), transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false })),
-      flameInner: this.mat(() => new THREE.MeshBasicMaterial({ color: new THREE.Color("#ffd27a").multiplyScalar(2.6), transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })),
-      smokeMat: this.mat(() => new THREE.MeshBasicMaterial({ color: "#2a2724", transparent: true, opacity: 0.35, depthWrite: false })),
-      flareSmoke: this.mat(() => new THREE.MeshBasicMaterial({ color: "#ff7a2e", transparent: true, opacity: 0.32, depthWrite: false })),
+      flameOuter: this.mat(
+        () =>
+          new THREE.MeshBasicMaterial({
+            color: new THREE.Color("#ff6a1a").multiplyScalar(2.2),
+            transparent: true,
+            opacity: 0.85,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          }),
+      ),
+      flameInner: this.mat(
+        () =>
+          new THREE.MeshBasicMaterial({
+            color: new THREE.Color("#ffd27a").multiplyScalar(2.6),
+            transparent: true,
+            opacity: 0.9,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+          }),
+      ),
+      smokeMat: this.mat(
+        () =>
+          new THREE.MeshBasicMaterial({
+            color: "#2a2724",
+            transparent: true,
+            opacity: 0.35,
+            depthWrite: false,
+          }),
+      ),
+      flareSmoke: this.mat(
+        () =>
+          new THREE.MeshBasicMaterial({
+            color: "#ff7a2e",
+            transparent: true,
+            opacity: 0.32,
+            depthWrite: false,
+          }),
+      ),
       canvas: this.mat(() => new THREE.MeshStandardMaterial({ color: "#5c6b4f", roughness: 0.9 })),
-      blanket: this.mat(() => new THREE.MeshStandardMaterial({ color: "#7d2f2a", roughness: 0.95 })),
-      pole: this.mat(() => new THREE.MeshStandardMaterial({ color: "#3b3f3e", roughness: 0.5, metalness: 0.6 })),
+      blanket: this.mat(
+        () => new THREE.MeshStandardMaterial({ color: "#7d2f2a", roughness: 0.95 }),
+      ),
+      pole: this.mat(
+        () => new THREE.MeshStandardMaterial({ color: "#3b3f3e", roughness: 0.5, metalness: 0.6 }),
+      ),
     };
     return this.parts;
   }
@@ -62,18 +101,40 @@ export class EventDressing {
       for (let i = 0; i < 5; i++) {
         const a = (i / 5) * Math.PI * 2,
           d = i === 0 ? 0 : 0.35;
-        item.flames.push(add(p.flame, i % 2 ? p.flameInner : p.flameOuter, [Math.cos(a) * d, 0.5, Math.sin(a) * d], [1, 1, 1]));
+        item.flames.push(
+          add(
+            p.flame,
+            i % 2 ? p.flameInner : p.flameOuter,
+            [Math.cos(a) * d, 0.5, Math.sin(a) * d],
+            [1, 1, 1],
+          ),
+        );
       }
       for (let i = 0; i < 4; i++) item.smoke.push(add(p.smoke, p.smokeMat, [0, 1.6 + i * 0.6, 0]));
     } else if (ev.kind === "casualty") {
       add(p.box, p.canvas, [0, 0.45, 0], [0.7, 0.06, 2]);
       for (const x of [-0.36, 0.36]) add(p.box, p.pole, [x, 0.45, 0], [0.05, 0.05, 2.4]);
-      for (const z of [-0.8, 0.8]) for (const x of [-0.3, 0.3]) add(p.box, p.pole, [x, 0.22, z], [0.04, 0.44, 0.04]);
+      for (const z of [-0.8, 0.8])
+        for (const x of [-0.3, 0.3]) add(p.box, p.pole, [x, 0.22, z], [0.04, 0.44, 0.04]);
       add(p.box, p.blanket, [0, 0.58, 0.15], [0.6, 0.2, 1.3]);
       add(p.box, p.canvas, [0, 0.58, -0.75], [0.3, 0.18, 0.3]);
     } else if (ev.kind === "drop") {
       const kit = this.r.propKit;
       const place = (name, x, y, z, yaw) => {
+        if (name === "crate" || name === "crateOpen") {
+          const size = kit?.[name]?.size || new THREE.Vector3(0.7, 0.35, 0.45);
+          const mesh = buildSupplyBox(this.r, group, size.toArray());
+          mesh.position.set(x, y, z);
+          mesh.rotation.y = yaw;
+          return;
+        }
+        if (name === "medkit") {
+          const size = kit?.medkit?.size || new THREE.Vector3(0.78, 0.4, 0.26);
+          const med = buildMedicalCase(this.r, group, [x, y + size.y / 2, z], true);
+          med.scale.set(size.x / 0.78, size.y / 0.4, size.z / 0.26);
+          med.rotation.y = yaw;
+          return;
+        }
         for (const part of kit?.[name]?.parts || []) {
           const mesh = new THREE.Mesh(part.geometry, part.material);
           const m = new THREE.Matrix4().makeRotationY(yaw).setPosition(x, y, z);
@@ -86,7 +147,8 @@ export class EventDressing {
       place("crate", 0, 0.27, 0, 0.35);
       place("crateOpen", 0.9, 0, 0.3, -0.4);
       place("medkit", 0.9, 0.3, 0.3, 0.1);
-      for (let i = 0; i < 4; i++) item.smoke.push(add(p.smoke, p.flareSmoke, [-0.6, 0.4 + i * 0.55, 0]));
+      for (let i = 0; i < 4; i++)
+        item.smoke.push(add(p.smoke, p.flareSmoke, [-0.6, 0.4 + i * 0.55, 0]));
     }
     this.root.add(group);
     return item;
@@ -100,7 +162,8 @@ export class EventDressing {
       let item = this.items.get(ev.id);
       if (!item) this.items.set(ev.id, (item = this.build(ev)));
       item.flames.forEach((flame, i) => {
-        const f = 0.75 + Math.sin(time * (9 + i * 2.3) + i) * 0.18 + Math.sin(time * 23 + i * 5) * 0.08;
+        const f =
+          0.75 + Math.sin(time * (9 + i * 2.3) + i) * 0.18 + Math.sin(time * 23 + i * 5) * 0.08;
         flame.scale.set(0.9 + f * 0.25, 0.7 + f * 0.9, 0.9 + f * 0.25);
         flame.position.y = flame.scale.y * 0.5;
       });

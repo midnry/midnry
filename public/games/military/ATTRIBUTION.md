@@ -30,6 +30,17 @@ is claimed for them. The existing soldier remains a Mixamo game asset.
 
 This is a browser WebGL game. Actual rendering resolution and frame rate depend on hardware and display refresh. The operator uses the licensed Mixamo Swat sculpt, its original UVs and colour/normal maps, and retargeted Mixamo motion. The earlier Vanguard armor and procedural uniform/head-scan operator are not rendered.
 
+## Shared interactable equipment pass (2026-10-19)
+
+Station chassis/screens, medical cabinets and kit cases, supply-drop boxes,
+concealed-charge cases/status plates and emergency-console fittings use original
+procedural geometry and original authored trim/status artwork from
+`scripts/outpost-military/interactables.js`. These are authored game assets, not
+scanned or production-model assets. One runtime 1024 px colour atlas (sRGB) and
+256 px roughness/metalness data atlas (linear) are shared by all copies. There
+are no new third-party downloads. The subtle metal normal reuses the existing
+Poly Haven `metal_plate` OpenGL normal photograph (CC0, source below).
+
 ## Physically based photographs and sky
 
 Poly Haven publishes these assets under CC0: https://polyhaven.com/license.

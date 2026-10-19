@@ -57,6 +57,7 @@ try {
     assert.match(response.headers.get("cache-control") || "", /no-cache/);
   }
   await run(["scripts/check-outpost-corridor.mjs", base, "built"], "gameplay");
+  await run(["scripts/check-outpost-interactables.mjs", base, "built"], "interactables");
   const smoke = existsSync("node_modules/.cache/outpost-browser-smoke.mjs")
     ? "node_modules/.cache/outpost-browser-smoke.mjs"
     : "scripts/browser-smoke.mjs";

@@ -4,10 +4,6 @@ import * as THREE from "three";
 import { surfaceMaterial } from "./realism-surfaces.js";
 import { batchStaticByMaterial } from "./static-batches.js";
 export const BENCHMARK = { x0: 9, x1: 11, y0: 14, y1: 24, station: "coolant-test" };
-export const inBenchmark = (p) =>
-  p &&
-  ((p.x >= 9 && p.x < 11 && p.y >= 14 && p.y < 24) ||
-    (p.x >= 6 && p.x < 8 && p.y >= 22 && p.y < 25));
 export const benchmarkFace = (f) =>
   (f.x + f.dx >= 9 && f.x + f.dx < 11 && f.y + f.dz >= 14 && f.y + f.dz < 24) ||
   (f.x === 8 && f.y === 23 && f.dx === -1);
@@ -262,81 +258,4 @@ export function decorateBenchmark(r, id, ctx) {
       group.add(signs);
     },
   };
-}
-
-/** Enrich the existing station; its mount, input, label and power-state owner
- * remain the original renderer. No additional station or collision is added. */
-export function dressBenchmarkTerminal(r, panel, station, { steel, paint, rubber, amber, lamp }) {
-  if (r.g.arena.mapId !== "breakwater" || station.id !== BENCHMARK.station) return false;
-  panel.position.y += 0.32;
-  // Reuse the station's photographed PBR metal so the chassis remains in its
-  // existing spatial material batch instead of creating another draw/pass.
-  r.box(panel, steel, [0, 0, 0.07], [1.05, 0.88, 0.14]);
-  for (const x of [-0.48, 0.48]) r.box(panel, rubber, [x, 0.04, 0.159], [0.035, 0.68, 0.018]);
-  r.box(panel, paint, [0, -0.47, 0.09], [1.12, 0.11, 0.25]);
-  // Detachable lower instrument shelf, grilles, fasteners and keyed buttons.
-  r.box(panel, steel, [0, -0.61, 0.07], [0.98, 0.16, 0.17]);
-  for (let i = 0; i < 9; i++)
-    r.box(panel, rubber, [-0.36 + i * 0.09, -0.61, 0.163], [0.045, 0.08, 0.01]);
-  for (const x of [-0.455, 0.455])
-    for (const y of [-0.34, 0.34]) {
-      const fastener = r.cylinder(panel, steel, [x, y, 0.16], 0.015, 0.013, "z", 8);
-      fastener.castShadow = false; // sub-centimetre depth stays in the surface normal/contact response
-    }
-  const canvas = document.createElement("canvas");
-  canvas.width = 512;
-  canvas.height = 256;
-  const c = canvas.getContext("2d");
-  c.fillStyle = "#14232a";
-  c.fillRect(0, 0, 512, 256);
-  c.fillStyle = "#9dc5c6";
-  c.font = "24px Arial";
-  c.fillText("COLD-CHAIN POWER", 22, 40);
-  c.font = "17px Arial";
-  c.fillStyle = "#638c94";
-  for (let i = 0; i < 3; i++) {
-    c.fillRect(22, 74 + i * 43, 330 - i * 35, 1);
-    c.fillText(["SUPPLY CIRCUIT", "REFRIGERATION", "SERVICE TERMINAL"][i], 22, 96 + i * 43);
-  }
-  c.fillStyle = "#b7c5ba";
-  c.fillText("HOLD TO SERVICE", 22, 232);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  r.textures.add(tex);
-  r.worldTextures.add(tex);
-  const screenMaterial = r.protocolMaterial({
-    map: tex,
-    emissiveMap: tex,
-    color: "#bfd7d3",
-    emissive: "#85b9c4",
-    emissiveIntensity: 0.32,
-    roughness: 0.27,
-    metalness: 0,
-  });
-  const screen = r.box(panel, screenMaterial, [0, 0.06, 0.153], [0.79, 0.52, 0.028]);
-  screen.userData.noBatch = true;
-  r.protocolScreens.set(station.id, screenMaterial);
-  for (let i = 0; i < 5; i++)
-    r.box(panel, i === 4 ? amber : rubber, [-0.32 + i * 0.16, -0.3, 0.163], [0.1, 0.045, 0.025]);
-  const label = r.mesh(
-    panel,
-    r.geo("protocol-label", () => new THREE.PlaneGeometry(1.18, 0.34)),
-    r.protocolSign(station.name, "AUTHORIZED SERVICE"),
-    [0, 0.69, 0.05],
-  );
-  label.castShadow = false;
-  label.userData.noBatch = true;
-  const taskLamp = r.box(panel, lamp, [0, 0.51, 0.16], [0.9, 0.025, 0.12]);
-  taskLamp.castShadow = false;
-  // Offset the pooled source from the label. A near-coplanar point source
-  // blows out the sign under inverse-square falloff, even without bloom.
-  r.protocolFixtures.push({
-    x: panel.position.x - 0.8,
-    y: 2.85,
-    z: panel.position.z,
-    color: "#ffdec2",
-    intensity: 12,
-    distance: 6,
-  });
-  return true;
 }

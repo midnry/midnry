@@ -1,9 +1,13 @@
 # Outpost Zero graphics benchmark
 
 Review branch: `codex/graphics-benchmark`. Based on `origin/main` at `c44d2bb`.
-The work is limited to the West Service Corridor, its cold-storage terminal,
-and the existing soldier/weapon material pass. No merge or deployment is included.
-Further rooms are awaiting review and approval.
+The first-pass evidence below covers the West Service Corridor and the existing
+soldier/weapon material pass. The approved follow-up upgrades shared interactables
+and fixes optional loading, the inconsistent grade and the terminal hotspot.
+No merge or deployment is included. Room-specific environment expansion remains
+pending review.
+
+**Latest review: [Shared interactables and review fixes](interactables/README.md)**
 
 - [Full report: changes, budgets, validation, licences and limitations](REPORT.md)
 - [Rendering audit with file:line evidence](AUDIT.md)
