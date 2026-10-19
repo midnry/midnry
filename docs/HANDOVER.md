@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=signal-pace-20261019` (`game-look` carries `v=signal-arenas-20261019`, not yet deployed).
+  Current live value: `v=signal-arenas-20261019`.
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -124,7 +124,7 @@ space is the limit (8 fighters on 16×16 / 24×24 / 20×20).
 Do one stage per session if usage is tight, and report results to the owner before
 deploying.
 
-**Stage 1 status (on `game-look`, not deployed, awaiting owner):** arenas are now
+**Stage 1 status (deployed 2026-10-19):** arenas are now
 28×28 / 36×36 / 32×32. Each keeps its old layout whole at the heart, shifted 6 tiles in
 (`ringed()` in `outpost-content.js`); the old outer wall is a compound wall with 2 gates
 per side, and a pinwheel ring adds a flank hut, cover and crates per side. Renderer
@@ -137,6 +137,12 @@ haze — space alone won't reach 2–3 min. Simulated options (not applied, owne
 bots roam near their own area instead of hunting map-wide until 1 rival is left → ~79 s;
 plus a later/slower haze (starts 30 s, closes over 180 s) → ~97 s; bots never hunt + that
 haze → ~111 s.
+**Owner declined all bot-behaviour changes.** Non-bot rule tests (15 rounds per arena,
+average round): lives 3 → 79 s; haze starting 30 s / closing over 180 s → 75 s; damage
+× 0.45 → 67 s; 15 s start shield → 68 s; faster health recovery → no change; lives 3 +
+that haze → 96 s; lives 4 → 93 s; lives 4 + haze 40 s / 200 s → 116 s; lives 4 + haze
+45 s / 225 s → 119 s; lives 5 + haze 40 s / 200 s → 128 s. Haze alone starting at 60 s
+makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to choose.
 
 ## Where things live
 
