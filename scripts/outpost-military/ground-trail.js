@@ -64,6 +64,7 @@ export class GroundTrail {
       nav = g.navigation,
       ui = g.protocolUI;
     const enabled =
+      !!nav?.trail &&
       !!nav?.route &&
       nav.mapId === view?.mapId &&
       nav.roundId === view?.roundId &&

@@ -19976,7 +19976,7 @@ var Wp = 3, Gp = .065, Kp = 40, qp = class {
 		}), this.ring = new Kn(this.ringGeometry, this.ringMaterial), this.ring.renderOrder = 2, this.root.add(this.mesh, this.ring), this.root.visible = !1, this.matrix = new K(), this.position = new W(), this.rotation = new U(), this.axis = new W(0, 1, 0), this.scale = new W(1, 1, 1);
 	}
 	update(e, t, n, r) {
-		let i = this.r.g, a = i.navigation, o = i.protocolUI, s = !!a?.route && a.mapId === e?.mapId && a.roundId === e?.roundId && !a.line.hidden && o.visibleGameplay() && !o.hasDialogOpen() && !o.piloting && !i.deathSequence && !n && t.id === i.selfId && t.hp > 0 && e?.state !== "ended" && e?.protocol?.phase === "roam" && !!e.protocol.self && !e.protocol.self?.channel;
+		let i = this.r.g, a = i.navigation, o = i.protocolUI, s = !!a?.trail && !!a?.route && a.mapId === e?.mapId && a.roundId === e?.roundId && !a.line.hidden && o.visibleGameplay() && !o.hasDialogOpen() && !o.piloting && !i.deathSequence && !n && t.id === i.selfId && t.hp > 0 && e?.state !== "ended" && e?.protocol?.phase === "roam" && !!e.protocol.self && !e.protocol.self?.channel;
 		if (this.root.visible = s, !s) {
 			this.nextUpdate = 0;
 			return;
