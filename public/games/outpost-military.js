@@ -23002,14 +23002,18 @@ var th = class {
 				});
 			}
 			if (r.name && (e.id !== "medevac" || r.id !== "cockpit")) {
-				let e = this.protocolMount(r.x + r.w / 2, r.y + .5, 2.6);
-				t.add(e);
-				let n = this.mesh(e, this.geo("protocol-sign", () => new Ua(2.5, .73)), this.protocolSign(r.name, r.roofed === !1 ? "EXTERNAL AREA" : "AUTHORIZED PERSONNEL"), [
+				let n = this.protocolMount(r.x + r.w / 2, r.y + .5, 2.6);
+				if (e.corridors?.includes(r) || /corridor|passage|access|bulkhead/.test(r.id || "")) {
+					let e = Math.abs(Math.abs(n.rotation.y) - Math.PI / 2) < .01;
+					(e ? r.h >= 2 : r.w >= 2) && (n.position[e ? "z" : "x"] += $ / 2);
+				}
+				t.add(n);
+				let i = this.mesh(n, this.geo("protocol-sign", () => new Ua(2.5, .73)), this.protocolSign(r.name, r.roofed === !1 ? "EXTERNAL AREA" : "AUTHORIZED PERSONNEL"), [
 					0,
 					0,
 					.03
 				]);
-				n.castShadow = !1, n.userData.noBatch = !0;
+				i.castShadow = !1, i.userData.noBatch = !0;
 			}
 		}
 		let u = /* @__PURE__ */ new Map();
