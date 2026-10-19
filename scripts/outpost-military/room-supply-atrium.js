@@ -8,16 +8,15 @@ import {drawAtlasText,signMaterial,textTexture} from './world-text.js';
 
 const LABELS=[
   ['STAGING A  /  MEDICAL CARGO',2.45,.36],
-  ['CARGO MANIFEST',1.5,.25],
   ['DISPATCH  /  FLIGHT DECK',2.4,.34],
 ];
 function artwork(r){
   if(r.supplyAtriumAtlas)return r.supplyAtriumAtlas;
-  const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=512;
+  const canvas=document.createElement('canvas');canvas.width=2048;canvas.height=256;
   const c=canvas.getContext('2d');c.scale(2,2);
   LABELS.forEach(([text,w,h],i)=>{
     c.fillStyle='#1b2a2d';c.fillRect(0,i*64,1024,64);
-    c.fillStyle=i===1?'#b8ab85':'#9cbfbb';c.fillRect(0,i*64,10,64);
+    c.fillStyle='#9cbfbb';c.fillRect(0,i*64,10,64);
     c.fillStyle='#e1e7df';drawAtlasText(r,c,text,{y:i*64,aspect:w/h});
   });
   return r.supplyAtriumAtlas=textTexture(r,canvas,'Supply Atrium / original Barlow logistics labels');
@@ -42,7 +41,7 @@ export function decorateSupplyAtrium(r,id,ctx){
   function label(row,p,q,face){
     const geo=r.geo('supply-atrium:label:'+row,()=>{
       const g=new THREE.PlaneGeometry(1,1),uv=g.attributes.uv;
-      for(let i=0;i<uv.count;i++)uv.setY(i,(3-row+uv.getY(i))/4);
+      for(let i=0;i<uv.count;i++)uv.setY(i,(1-row+uv.getY(i))/2);
       return g;
     });
     const m=new THREE.Mesh(geo,labels);m.position.set(...p);m.scale.set(LABELS[row][1],LABELS[row][2],1);
@@ -89,18 +88,17 @@ export function decorateSupplyAtrium(r,id,ctx){
         for(let u=-1.1;u<1.2;u+=.28)wall(box,seal,u,v,.077,.055,.042,.007);
       }
     }
-    if(f.x===16&&f.y===15){
-      wall(box,darkSteel,0,1.88,.049,1.67,.42,.035);
-      // Letter face is 38.5mm clear of its integral backing, and all external
-      // pipes, lamps and frames are further away. Measured again in real QA.
-      label(1,at(0,1.9,.105),f.quaternion,anchor);
-    }
+    // The small manifest plate carried no gameplay information and could not
+    // be read across the room. Remove it rather than retain illegible decor.
     if(f.x===12&&f.y===16)label(0,at(0,2.1,.105),f.quaternion,anchor);
-    if(f.x===15&&f.y===12)label(2,at(0,2.45,.105),f.quaternion,anchor);
+    if(f.x===15&&f.y===12)label(1,at(0,2.45,.105),f.quaternion,anchor);
     if((f.x===12&&f.y===16)||(f.x===15&&f.y===12)){
-      wall(box,darkSteel,0,2.99,.055,.8,.16,.07);
-      wall(box,warm,0,2.96,.099,.6,.045,.015);
-      const p=at(0,2.86,.25),fixture={x:p[0],y:p[1],z:p[2],color:'#efd8b4',intensity:2.6,distance:5};
+      const dispatch=f.y===12,u=dispatch ? 1.05 : 0,lift=dispatch ? .22 : 0;
+      wall(box,darkSteel,u,2.99+lift,.055,dispatch ? .55 : .8,.16,.07);
+      wall(box,warm,u,2.96+lift,.099,dispatch ? .4 : .6,.045,.015);
+      // Side light, raised above the plate, replaces the point hotspot directly
+      // over its title. No extra light or change to the existing pool/state.
+      const p=at(u,2.86+lift,dispatch ? .35 : .25),fixture={x:p[0],y:p[1],z:p[2],color:'#efd8b4',intensity:dispatch ? 1.6 : 2.6,distance:5};
       extraFixtures.push(fixture);r.protocolFixtures.push(fixture);
     }
   }

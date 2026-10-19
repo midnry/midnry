@@ -18,6 +18,7 @@ import { initNaturalLighting, updateNaturalLighting } from "./realism-lighting.j
 import { decorateRealisticEnvironment } from "./realism-environment.js";
 import { buildStationTerminal, buildMedicalCabinet, buildCabinetLabel, buildMedicalCase, buildSupplyBox, buildCharge, buildEmergencyConsole, updateChargePresentation } from './interactables.js';
 import { medicalDepotStorage } from './room-medical-depot.js';
+import { commandStorage } from './room-command-operations.js';
 import {
   prepareCharacterAsset,
   loadOperatorResponse,
@@ -586,6 +587,7 @@ export class MilitaryRenderer {
     this.world.clear();
     this.realismDecor = null;
     this.medicalDepotPresentation = null;
+    this.commandOperationsPresentation = null;
     this.wallMeshes = null;
     this.fittings = [];
     this.fittingMaterial = null;
@@ -924,7 +926,7 @@ export class MilitaryRenderer {
   }
   protocolPropTile(x, y) {
     if (!["breakwater", "medevac"].includes(this.g.arena.mapId)) return false;
-    return this.metadataPropTile(x, y) || this.furnitureTile(x, y);
+    return this.metadataPropTile(x, y) || this.furnitureTile(x, y) || (this.g.arena.mapId === 'breakwater' && commandStorage(x,y));
   }
   /** Solid furniture tiles (storage, racks, mess island, radar) dressed with
    * scanned props once the prop kit has loaded; plain blocks otherwise. */
@@ -1213,7 +1215,7 @@ export class MilitaryRenderer {
     }
     this.buildMedicalFixtures(map, root, { steel, paint, rubber, amber, lamp });
     if (map.id === "breakwater")
-      buildFurniture(this, root, this.g.level, (x, y) => this.furnitureTile(x, y) && !medicalDepotStorage(x,y));
+      buildFurniture(this, root, this.g.level, (x, y) => this.furnitureTile(x, y) && !medicalDepotStorage(x,y) && !commandStorage(x,y));
     if (map.id === "medevac")
       this.buildTransportInterior(map, root, { steel, paint, rubber, amber, lamp });
     this.batchProtocolStatic(root);

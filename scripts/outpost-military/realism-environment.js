@@ -11,6 +11,7 @@ import { decorateBenchmark } from './benchmark-corridor.js';
 import { decorateMedicalDepot } from './room-medical-depot.js';
 import { decorateCentralPassage } from './room-central-passage.js';
 import { decorateSupplyAtrium } from './room-supply-atrium.js';
+import { decorateCommandOperations } from './room-command-operations.js';
 
 const SCALE = 3;
 const FACES = [
@@ -249,6 +250,7 @@ export function decorateRealisticEnvironment(r, id, n) {
   const medical = decorateMedicalDepot(r,id,{add,box,plane,own,steel,darkSteel,seal,floorMark,warm:benchmark?.materials.warm,extraFixtures});
   const central = decorateCentralPassage(r,id,{add,box,plane,own,steel,darkSteel,seal,floorMark,...benchmark?.materials,extraFixtures});
   const atrium = decorateSupplyAtrium(r,id,{add,box,plane,own,steel,darkSteel,seal,floorMark,...benchmark?.materials,extraFixtures});
+  const command = decorateCommandOperations(r,id,{add,box,plane,own,steel,darkSteel,seal,floorMark,...benchmark?.materials,extraFixtures});
   function skipTile(x, y) {
     return (
       r.protocolPropTile?.(x, y) || r.transportWindowTile?.(x, y) || r.transportHiddenWall?.(x, y)
@@ -281,6 +283,7 @@ export function decorateRealisticEnvironment(r, id, n) {
       }
       for (const index of exposed) {
         const f = face(x, y, index);
+        if (command?.handles(f)) { command.face(f); continue; }
         if (atrium?.handles(f)) { atrium.face(f); continue; }
         if (central?.handles(f)) { central.face(f); continue; }
         if (medical?.handles(f)) { medical.face(f); continue; }
@@ -603,6 +606,7 @@ export function decorateRealisticEnvironment(r, id, n) {
   medical?.finish(group);
   central?.finish(group);
   atrium?.finish(group);
+  command?.finish(group);
   for (const batch of batches.values()) {
     if (!batch.matrices.length) continue;
     const mesh = new THREE.InstancedMesh(batch.geometry, batch.material, batch.matrices.length);

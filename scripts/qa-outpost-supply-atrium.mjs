@@ -60,7 +60,7 @@ export async function verifySupplyAtrium(page){
       maxAnisotropy:r.renderer.capabilities.getMaxAnisotropy(),buffer:[r.renderer.domElement.width,r.renderer.domElement.height]};
   });
   assert.deepEqual(result.errors,[]);assert.equal(result.blocked,0);assert.equal(result.collisionUnchanged,true);
-  assert.equal(result.signClearances.length,6);assert.deepEqual(result.atlas,[2048,512]);assert.equal(result.anisotropy,result.maxAnisotropy);
+  assert.equal(result.signClearances.length,5);assert.deepEqual(result.atlas,[2048,256]);assert.equal(result.anisotropy,result.maxAnisotropy);
   for(const sign of result.signClearances)assert.ok(Number.isFinite(sign.minimumMetres)&&sign.trianglesChecked>0&&sign.minimumMetres>=.02,JSON.stringify(sign));
   return result;
 }

@@ -1,0 +1,567 @@
+{
+  "atrium": {
+    "records": 160,
+    "errors": [],
+    "blocked": 0,
+    "collisionUnchanged": true,
+    "signClearances": [
+      {
+        "name": "DISPATCH  /  FLIGHT DECK",
+        "min": [
+          45.3,
+          2.2800000000000002,
+          39.105
+        ],
+        "max": [
+          47.7,
+          2.62,
+          39.105
+        ],
+        "minimumMetres": 0.0869984436035125,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "PlaneGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 0,
+          "instance": 76
+        },
+        "trianglesChecked": 86
+      },
+      {
+        "name": "STAGING A  /  MEDICAL CARGO",
+        "min": [
+          36.275,
+          1.9200000000000002,
+          47.895
+        ],
+        "max": [
+          38.725,
+          2.2800000000000002,
+          47.895
+        ],
+        "minimumMetres": 0.0869984436035125,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "PlaneGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 0,
+          "instance": 86
+        },
+        "trianglesChecked": 98
+      },
+      {
+        "name": "Covered Supply Atrium",
+        "min": [
+          36.25,
+          2.234999990463257,
+          39.075
+        ],
+        "max": [
+          38.75,
+          2.9650000095367433,
+          39.075
+        ],
+        "minimumMetres": 0.05699844360351847,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "PlaneGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 0,
+          "instance": 74
+        },
+        "trianglesChecked": 232
+      },
+      {
+        "name": "MEDEVAC \u25b8",
+        "min": [
+          47.85,
+          2.249999988079071,
+          45.299999952316284
+        ],
+        "max": [
+          47.85,
+          2.8500000119209288,
+          47.700000047683716
+        ],
+        "minimumMetres": 0.034998321533201704,
+        "nearest": {
+          "mesh": "Mesh",
+          "geometry": "BufferGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 8,
+          "instance": 0
+        },
+        "trianglesChecked": 124
+      },
+      {
+        "name": "\u271a MEDICAL",
+        "min": [
+          36.15,
+          2.249999988079071,
+          39.299999952316284
+        ],
+        "max": [
+          36.15,
+          2.8500000119209288,
+          41.700000047683716
+        ],
+        "minimumMetres": 0.034998321533201704,
+        "nearest": {
+          "mesh": "Mesh",
+          "geometry": "BufferGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 20,
+          "instance": 0
+        },
+        "trianglesChecked": 268
+      }
+    ],
+    "atlas": [
+      2048,
+      256
+    ],
+    "anisotropy": 16,
+    "maxAnisotropy": 16,
+    "buffer": [
+      1280,
+      720
+    ]
+  },
+  "command": {
+    "records": 232,
+    "errors": [],
+    "blocked": 0,
+    "collisionUnchanged": true,
+    "signClearances": [
+      {
+        "name": "RESCUE COORDINATION",
+        "min": [
+          15.65,
+          1.8800000000000001,
+          14.955
+        ],
+        "max": [
+          20.35,
+          2.2,
+          14.955
+        ],
+        "minimumMetres": 0.024999633356928896,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "BoxGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 8,
+          "instance": 190
+        },
+        "trianglesChecked": 884
+      },
+      {
+        "name": "OPERATIONS ARCHIVE",
+        "min": [
+          12.3,
+          1.8800000000000001,
+          23.955
+        ],
+        "max": [
+          14.7,
+          2.2,
+          23.955
+        ],
+        "minimumMetres": 0.02099995400756427,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "BoxGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 0,
+          "instance": 74
+        },
+        "trianglesChecked": 1048
+      },
+      {
+        "name": "Command / Operations",
+        "min": [
+          15.25,
+          2.234999990463257,
+          9.075
+        ],
+        "max": [
+          17.75,
+          2.9650000095367433,
+          9.075
+        ],
+        "minimumMetres": 0.05700035095214773,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "PlaneGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 0,
+          "instance": 2
+        },
+        "trianglesChecked": 526
+      },
+      {
+        "name": "Prepare the medical handover",
+        "min": [
+          12.910000026226044,
+          1.859999998211861,
+          9.095
+        ],
+        "max": [
+          14.089999973773956,
+          2.2000000017881396,
+          9.095
+        ],
+        "minimumMetres": 0.07700035095214908,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "PlaneGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 0,
+          "instance": 1
+        },
+        "trianglesChecked": 454
+      },
+      {
+        "name": "Verify perimeter sensors",
+        "min": [
+          23.905,
+          1.859999998211861,
+          24.910000026226044
+        ],
+        "max": [
+          23.905,
+          2.2000000017881396,
+          26.089999973773956
+        ],
+        "minimumMetres": 0.09499999999999886,
+        "nearest": {
+          "mesh": "Mesh",
+          "geometry": "BoxGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 2,
+          "instance": 2
+        },
+        "trianglesChecked": 410
+      },
+      {
+        "name": "RADIO ASSEMBLY",
+        "min": [
+          18.910000026226044,
+          1.8499999982118607,
+          19.54
+        ],
+        "max": [
+          20.089999973773956,
+          2.1900000017881394,
+          19.54
+        ],
+        "minimumMetres": 1.3099999237060547,
+        "nearest": {
+          "mesh": "Continuous interior roof",
+          "geometry": "BoxGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 6,
+          "instance": 0
+        },
+        "trianglesChecked": 1312
+      },
+      {
+        "name": "Operations cabinet",
+        "min": [
+          12.23500001192093,
+          0.650000002682209,
+          9.23
+        ],
+        "max": [
+          12.884999988079072,
+          0.889999997317791,
+          9.23
+        ],
+        "minimumMetres": 0.21200035095214886,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "PlaneGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 0,
+          "instance": 1
+        },
+        "trianglesChecked": 410
+      },
+      {
+        "name": "Sensor-bay cabinet",
+        "min": [
+          23.770000000000003,
+          0.650000002682209,
+          24.235000011920928
+        ],
+        "max": [
+          23.770000000000003,
+          0.889999997317791,
+          24.88499998807907
+        ],
+        "minimumMetres": 0.22999999999999687,
+        "nearest": {
+          "mesh": "Mesh",
+          "geometry": "BoxGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 2,
+          "instance": 2
+        },
+        "trianglesChecked": 354
+      },
+      {
+        "name": "Terminal screen / intel-upload",
+        "min": [
+          13.104999989271164,
+          1.1400000095367433,
+          9.215
+        ],
+        "max": [
+          13.895000010728836,
+          1.659999990463257,
+          9.215
+        ],
+        "minimumMetres": 0.1970003509521483,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "PlaneGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 0,
+          "instance": 1
+        },
+        "trianglesChecked": 456
+      },
+      {
+        "name": "Terminal screen / sensor-reset",
+        "min": [
+          23.785,
+          1.1400000095367433,
+          25.104999989271164
+        ],
+        "max": [
+          23.785,
+          1.659999990463257,
+          25.895000010728836
+        ],
+        "minimumMetres": 0.21499999999999986,
+        "nearest": {
+          "mesh": "Mesh",
+          "geometry": "BoxGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 2,
+          "instance": 2
+        },
+        "trianglesChecked": 412
+      },
+      {
+        "name": "Printed medical case / 10",
+        "min": [
+          13.334999993443489,
+          0.18000000357627866,
+          9.358000002503395
+        ],
+        "max": [
+          13.665000006556511,
+          0.4999999964237213,
+          9.358000002503395
+        ],
+        "minimumMetres": 0.14600000172853433,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "PlaneGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 0,
+          "instance": 43
+        },
+        "trianglesChecked": 350
+      },
+      {
+        "name": "Printed medical case / 11",
+        "min": [
+          13.334999993443489,
+          0.18000000357627866,
+          9.064000002741814
+        ],
+        "max": [
+          13.665000006556511,
+          0.4999999964237213,
+          9.064000002741814
+        ],
+        "minimumMetres": 0.04600035369396238,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "PlaneGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 0,
+          "instance": 1
+        },
+        "trianglesChecked": 348
+      },
+      {
+        "name": "Printed medical case / 12",
+        "min": [
+          13.334999993443489,
+          0.6400000035762786,
+          9.358000002503395
+        ],
+        "max": [
+          13.665000006556511,
+          0.9599999964237212,
+          9.358000002503395
+        ],
+        "minimumMetres": 0.3400003534555438,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "PlaneGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 0,
+          "instance": 1
+        },
+        "trianglesChecked": 444
+      },
+      {
+        "name": "Printed medical case / 13",
+        "min": [
+          13.334999993443489,
+          0.6400000035762786,
+          9.064000002741814
+        ],
+        "max": [
+          13.665000006556511,
+          0.9599999964237212,
+          9.064000002741814
+        ],
+        "minimumMetres": 0.04600035369396238,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "PlaneGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 0,
+          "instance": 1
+        },
+        "trianglesChecked": 444
+      },
+      {
+        "name": "Printed medical case / 14",
+        "min": [
+          23.641999997496608,
+          0.18000000357627866,
+          25.33499999344349
+        ],
+        "max": [
+          23.641999997496608,
+          0.4999999964237213,
+          25.66500000655651
+        ],
+        "minimumMetres": 0.14600000172853433,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "PlaneGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 0,
+          "instance": 68
+        },
+        "trianglesChecked": 308
+      },
+      {
+        "name": "Printed medical case / 15",
+        "min": [
+          23.93599999725819,
+          0.18000000357627866,
+          25.33499999344349
+        ],
+        "max": [
+          23.93599999725819,
+          0.4999999964237213,
+          25.66500000655651
+        ],
+        "minimumMetres": 0.055999437980350564,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "BoxGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 4,
+          "instance": 168
+        },
+        "trianglesChecked": 280
+      },
+      {
+        "name": "Printed medical case / 16",
+        "min": [
+          23.641999997496608,
+          0.6400000035762786,
+          25.33499999344349
+        ],
+        "max": [
+          23.641999997496608,
+          0.9599999964237212,
+          25.66500000655651
+        ],
+        "minimumMetres": 0.3580000025033918,
+        "nearest": {
+          "mesh": "Mesh",
+          "geometry": "BoxGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 2,
+          "instance": 2
+        },
+        "trianglesChecked": 400
+      },
+      {
+        "name": "Printed medical case / 17",
+        "min": [
+          23.93599999725819,
+          0.6400000035762786,
+          25.33499999344349
+        ],
+        "max": [
+          23.93599999725819,
+          0.9599999964237212,
+          25.66500000655651
+        ],
+        "minimumMetres": 0.06400000274181039,
+        "nearest": {
+          "mesh": "Mesh",
+          "geometry": "BoxGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 2,
+          "instance": 2
+        },
+        "trianglesChecked": 376
+      },
+      {
+        "name": "Printed emergency console / 18",
+        "min": [
+          19.350000381469727,
+          1.5700000524520874,
+          19.6299991607666
+        ],
+        "max": [
+          19.649999618530273,
+          1.6699999570846558,
+          19.6299991607666
+        ],
+        "minimumMetres": 1.536000050604343,
+        "nearest": {
+          "mesh": "Instanced architectural detail",
+          "geometry": "PlaneGeometry",
+          "material": "MeshStandardMaterial",
+          "triangle": 0,
+          "instance": 58
+        },
+        "trianglesChecked": 1312
+      }
+    ],
+    "atlas": [
+      2048,
+      512
+    ],
+    "anisotropy": 16,
+    "maxAnisotropy": 16,
+    "buffer": [
+      1280,
+      720
+    ]
+  },
+  "errors": []
+}

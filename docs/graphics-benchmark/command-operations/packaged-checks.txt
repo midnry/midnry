@@ -1,0 +1,9 @@
+gameplay: passed
+interactables: passed
+site: passed
+
+{"device":"desktop","blocked":0,"dyes":["c9625e","70a3c4","ceb160","a48ac8"],"lightPool":4,"errors":[]}
+{"device":"mobile","blocked":0,"dyes":["c9625e","70a3c4","ceb160","a48ac8"],"lightPool":2,"errors":[]}
+
+{"variant":"desktop","transport":{"map":"medevac","empty":0,"loaded":3,"slots":13,"stations":11,"errors":[]}}
+{"variant":"desktop","loaded":true,"stations":16,"charge":"disabled","transport":"medevac","errors":[]}
