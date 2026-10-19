@@ -77,8 +77,9 @@ No new third-party asset downloads. A shared runtime colour canvas atlas is
 Both use mipmaps and the existing anisotropic filtering cap. Together they cost
 approximately **5.67 MiB** of uncompressed source texture storage including
 mipmaps. The former corridor-only display atlas is removed. Subtle normal
-detail reuses the existing Poly Haven `metal_plate` OpenGL normal (CC0):
-<https://polyhaven.com/a/metal_plate> · <https://polyhaven.com/license>.
+detail reuses the existing Poly Haven `metal_plate_02` OpenGL normal (CC0):
+<https://polyhaven.com/a/metal_plate_02> · <https://polyhaven.com/license>.
+Source-name correction during the medical-depot pass; no asset bytes changed.
 
 Compared with the approved bundle, renderer JavaScript increases by 6,152 bytes
 uncompressed, approximately 2,118 bytes using Node's default gzip. The existing

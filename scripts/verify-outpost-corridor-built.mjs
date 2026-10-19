@@ -15,6 +15,7 @@ const server = spawn(process.execPath, [".output/server/index.mjs"], {
 server.stdout.pipe(log);
 server.stderr.pipe(log);
 const base = "http://127.0.0.1:8093";
+const screenshotRoot='/workspace/screenshots/outpost-'+(process.env.OUTPOST_GRAPHICS_PASS||'corridor');
 const run = (args, name) =>
   new Promise((resolve, reject) => {
     const stream = createWriteStream("/tmp/outpost-corridor-built-" + name + ".log");
@@ -65,9 +66,9 @@ try {
     [
       smoke,
       base,
-      "/workspace/screenshots/outpost-corridor/site-built.png",
+      screenshotRoot+"/site-built.png",
       "--baseline",
-      "/workspace/screenshots/outpost-corridor/site-dev.json",
+      screenshotRoot+"/site-dev.json",
     ],
     "site",
   );

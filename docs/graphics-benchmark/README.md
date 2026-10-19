@@ -4,10 +4,12 @@ Review branch: `codex/graphics-benchmark`. Based on `origin/main` at `c44d2bb`.
 The first-pass evidence below covers the West Service Corridor and the existing
 soldier/weapon material pass. The approved follow-up upgrades shared interactables
 and fixes optional loading, the inconsistent grade and the terminal hotspot.
-No merge or deployment is included. Room-specific environment expansion remains
-pending review.
+No merge or deployment is included. The medical depot is the latest isolated
+room pass; further room-specific environment expansion remains pending review.
 
-**Latest review: [Shared interactables and review fixes](interactables/README.md)**
+**Latest review: [Medical depot and night refinements](medical-depot/README.md)**
+
+[Approved shared interactables and first review fixes](interactables/README.md)
 
 - [Full report: changes, budgets, validation, licences and limitations](REPORT.md)
 - [Rendering audit with file:line evidence](AUDIT.md)

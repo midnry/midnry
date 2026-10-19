@@ -3,11 +3,15 @@
 import assert from "node:assert/strict";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
+import { verifyMedicalDepot } from "./qa-outpost-medical-depot.mjs";
 const base = process.argv[2] || "http://127.0.0.1:8080",
   label = process.argv[3] || "dev";
-const directory = "/workspace/screenshots/outpost-interactables";
+const pass = process.env.OUTPOST_GRAPHICS_PASS || "interactables";
+assert.ok(["interactables", "medical-depot"].includes(pass));
+const directory = "/workspace/screenshots/outpost-" + pass;
+const evidence = "docs/graphics-benchmark/" + pass;
 mkdirSync(directory, { recursive: true });
-mkdirSync("docs/graphics-benchmark/interactables", { recursive: true });
+mkdirSync(evidence, { recursive: true });
 const browser = await chromium.launch({
   executablePath: "/usr/bin/chromium",
   args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
@@ -225,7 +229,8 @@ try {
     assert.deepEqual(states.emergency, [19.5, 1.32, 19.5]);
     assert.equal(states.collisionUnchanged, true);
     assert.deepEqual(states.atlas, [1024, 256]);
-    await page.evaluate(() => window.equipmentDraw());
+    const room = pass === "medical-depot" ? await verifyMedicalDepot(page) : null;
+    if (!room) await page.evaluate(() => window.equipmentDraw());
     await page.screenshot({
       path: `${directory}/${label}-${variant}.png`,
       animations: "disabled",
@@ -362,7 +367,7 @@ try {
       });
     }
     assert.deepEqual(errors, []);
-    results.push({ variant, initial, states, charge, transport, warnings, aborted, errors });
+    results.push({ variant, initial, states, room, charge, transport, warnings, aborted, errors });
     console.log(
       JSON.stringify({
         variant,
@@ -377,8 +382,5 @@ try {
   }
 } finally {
   await browser.close();
-  writeFileSync(
-    `docs/graphics-benchmark/interactables/qa-${label}.json`,
-    JSON.stringify(results, null, 2),
-  );
+  writeFileSync(`${evidence}/qa-${label}.json`, JSON.stringify(results, null, 2));
 }

@@ -266,6 +266,57 @@ export function buildMedicalCabinet(r, parent) {
     for (const x of [-0.49, 0.49]) for (const y of [-0.45, 0.47]) k.screw([x, y, 0.195], 0.012);
   });
 }
+
+/** Radio-room stock label sits on the shared chassis below its screen. Other
+ * already-approved cabinet labels retain their positions and artwork. */
+export function buildCabinetLabel(r, cabinet, fixture, sharedStation) {
+  const radio = fixture.id === "cabinet-comms";
+  let material;
+  if (radio) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 48;
+    const c = canvas.getContext("2d");
+    c.fillStyle = "#243934";
+    c.fillRect(0, 0, 512, 48);
+    c.fillStyle = "#a7bcb1";
+    c.fillRect(0, 0, 512, 2);
+    c.fillRect(0, 46, 512, 2);
+    c.fillStyle = "#e3eee9";
+    c.font = "600 28px Arial";
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    c.fillText(fixture.name.toUpperCase(), 256, 25, 480);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = Math.min(4, r.renderer.capabilities.getMaxAnisotropy());
+    r.textures.add(texture);
+    r.worldTextures.add(texture);
+    material = r.protocolMaterial({ map: texture, roughness: 0.9, metalness: 0 });
+  } else material = r.protocolSign(fixture.name, "MEDICAL RESUPPLY", "#a1c7b7");
+  const label = r.mesh(
+    cabinet,
+    r.geo(
+      radio
+        ? "radio-cabinet-nameplate"
+        : sharedStation
+          ? "medical-label-shared-station"
+          : "medical-label",
+      () =>
+        new THREE.PlaneGeometry(
+          radio ? 1.04 : sharedStation ? 0.65 : 1.55,
+          radio ? 0.08 : sharedStation ? 0.24 : 0.45,
+        ),
+    ),
+    material,
+    radio ? [0, 0.534, 0.205] : [sharedStation ? -0.94 : 0, sharedStation ? 0.2 : 0.98, 0.185],
+  );
+  label.name = "Cabinet nameplate / " + fixture.id;
+  label.castShadow = false;
+  label.userData.noBatch = true;
+  r.interactableInstances.push({ type: "cabinet-label", id: fixture.id, root: cabinet, label });
+  return label;
+}
 export function buildMedicalCase(r, parent, position, movable = false) {
   const root = new THREE.Group();
   root.position.set(...position);
@@ -343,9 +394,11 @@ export function buildCharge(r, parent) {
     roughness: 0.45,
     metalness: 0,
   });
+  kit.disabledChargeMaterial ||= kit.chargeScreenMaterial.clone();
+  r.materials.add(kit.disabledChargeMaterial);
   const screen = r.mesh(
     parent,
-    faceGeometry(r, 10, 0.12, 0.1),
+    faceGeometry(r, 10, 0.18, 0.15),
     kit.chargeScreenMaterial,
     [0, 0.208, 0.03],
   );
@@ -355,11 +408,20 @@ export function buildCharge(r, parent) {
   parent.userData.chargeScreen = screen;
   return parent;
 }
-export function updateChargePresentation(r, root, state) {
+export function updateChargePresentation(r, root, state, time = r.g.animationTime) {
   const disabled = state === "disabled";
   root.userData.chargeMesh.geometry = chargeGeometry(r, disabled);
   root.userData.chargeMesh.name = "Concealed charge / " + (disabled ? "disabled" : "armed");
-  root.userData.chargeScreen.geometry = faceGeometry(r, disabled ? 11 : 10, 0.12, 0.1);
+  root.userData.chargeScreen.geometry = faceGeometry(r, disabled ? 11 : 10, 0.18, 0.15);
+  const kit = shared(r);
+  // A gentle one-cycle-per-second pulse on the armed display, not the body.
+  // Reduced-motion players get a steady bright indicator; SAFE never blinks.
+  kit.chargeScreenMaterial.emissiveIntensity = r.motion.matches
+    ? 3.8
+    : 1.2 + 3.8 * (0.5 + 0.5 * Math.sin(time * Math.PI * 2));
+  root.userData.chargeScreen.material = disabled
+    ? kit.disabledChargeMaterial
+    : kit.chargeScreenMaterial;
   root.userData.state = state;
 }
 export function buildEmergencyConsole(r, root) {

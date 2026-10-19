@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { surfaceMaterial } from "./realism-surfaces.js";
 import { roofLayout } from "./architecture.js";
 import { decorateBenchmark } from './benchmark-corridor.js';
+import { decorateMedicalDepot } from './room-medical-depot.js';
 
 const SCALE = 3;
 const FACES = [
@@ -243,6 +244,7 @@ export function decorateRealisticEnvironment(r, id, n) {
   }
 
   const benchmark = decorateBenchmark(r, id, { add, box, plane, own, steel, darkSteel, seal, floorMark, extraFixtures, lightMaterials });
+  const medical = decorateMedicalDepot(r,id,{add,box,plane,own,steel,darkSteel,seal,floorMark,warm:benchmark?.materials.warm,extraFixtures});
   function skipTile(x, y) {
     return (
       r.protocolPropTile?.(x, y) || r.transportWindowTile?.(x, y) || r.transportHiddenWall?.(x, y)
@@ -275,6 +277,7 @@ export function decorateRealisticEnvironment(r, id, n) {
       }
       for (const index of exposed) {
         const f = face(x, y, index);
+        if (medical?.handles(f)) { medical.face(f); continue; }
         if (benchmark?.handles(f)) { benchmark.face(f); continue; }
         const trim = id === "medevac" ? steel : id === "outpost" ? stone : render;
         // Mount trim 8 mm clear of the wall face. Sub-millimetre/coplanar
@@ -591,6 +594,7 @@ export function decorateRealisticEnvironment(r, id, n) {
   }
 
   benchmark?.finish(group);
+  medical?.finish(group);
   for (const batch of batches.values()) {
     if (!batch.matrices.length) continue;
     const mesh = new THREE.InstancedMesh(batch.geometry, batch.material, batch.matrices.length);
@@ -640,6 +644,9 @@ export function decorateRealisticEnvironment(r, id, n) {
         r.materials.delete(material);
       }
       for (const texture of ownTextures) {
+        // UV clones belong to the renderer cache, just as in clearWorld().
+        // A cover rebuild must not dispose them while tiledTextures retains them.
+        if (texture.userData.sharedSource) continue;
         texture.dispose();
         r.worldTextures.delete(texture);
         r.textures.delete(texture);

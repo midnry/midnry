@@ -249,6 +249,7 @@ export function decorateBenchmark(r, id, ctx) {
     drawPolicy: "instanced existing material batches",
   };
   return {
+    materials: {warm},
     handles: benchmarkFace,
     face,
     finish(group) {

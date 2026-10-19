@@ -1,0 +1,6118 @@
+{
+  "phase": "before",
+  "seed": "outpost-corridor-20261019",
+  "memoryScope": "Unique uploaded managed source textures with mipmaps; excludes render targets, driver allocations and internal PMREM/MSAA. Not total GPU memory.",
+  "bundleSHA256": "681a012dea83d844b145369c9fb6134413a200f4278372854896b6dcbb14829c",
+  "resolution": [
+    1280,
+    800
+  ],
+  "browser": "Chromium SwiftShader software renderer; timings are not hardware FPS",
+  "poses": [
+    {
+      "id": "night-street-lamp",
+      "x": 23,
+      "y": 26.5,
+      "a": 0.12,
+      "pitch": 0.33,
+      "night": true
+    },
+    {
+      "id": "night-ceiling-lights",
+      "x": 10.5,
+      "y": 22.2,
+      "a": 2.03444,
+      "pitch": 0.46,
+      "night": true
+    },
+    {
+      "id": "communications-label",
+      "x": 22.5,
+      "y": 4.5,
+      "a": -1.5707963267948966,
+      "pitch": -0.04
+    },
+    {
+      "id": "armed-charge",
+      "x": 21.2,
+      "y": 19.5,
+      "a": 3.141592653589793,
+      "pitch": -0.62
+    },
+    {
+      "id": "depot-station",
+      "x": 20.5,
+      "y": 24.15,
+      "a": -1.5707963267948966,
+      "pitch": -0.04,
+      "room": true
+    },
+    {
+      "id": "depot-east",
+      "x": 24.5,
+      "y": 23.5,
+      "a": 3.141592653589793,
+      "pitch": -0.015,
+      "room": true
+    },
+    {
+      "id": "depot-entry",
+      "x": 22.5,
+      "y": 21.5,
+      "a": 1.5707963267948966,
+      "pitch": 0.035,
+      "room": true
+    },
+    {
+      "id": "depot-night",
+      "x": 24.5,
+      "y": 23.5,
+      "a": 3.141592653589793,
+      "pitch": -0.015,
+      "night": true,
+      "room": true
+    }
+  ],
+  "results": [
+    {
+      "preset": "balanced",
+      "downloadBytes": 34948250,
+      "resources": [
+        {
+          "url": "/games/loading/lz-keyart.webp",
+          "bytes": 54056
+        },
+        {
+          "url": "/games/outpost-sim.js",
+          "bytes": 38768
+        },
+        {
+          "url": "/games/outpost-protocol.js",
+          "bytes": 116390
+        },
+        {
+          "url": "/games/outpost-shifts.js",
+          "bytes": 1966
+        },
+        {
+          "url": "/games/outpost-protocol-map.js",
+          "bytes": 18560
+        },
+        {
+          "url": "/games/outpost-protocol-ui.js",
+          "bytes": 135172
+        },
+        {
+          "url": "/games/outpost-spectator.js",
+          "bytes": 7549
+        },
+        {
+          "url": "/games/outpost-theme.js",
+          "bytes": 11535
+        },
+        {
+          "url": "/games/outpost-menu.js",
+          "bytes": 40334
+        },
+        {
+          "url": "/games/outpost-hud.js",
+          "bytes": 19922
+        },
+        {
+          "url": "/games/outpost-skin.js",
+          "bytes": 13429
+        },
+        {
+          "url": "/games/outpost-transition.js",
+          "bytes": 5456
+        },
+        {
+          "url": "/games/outpost-death.js",
+          "bytes": 2017
+        },
+        {
+          "url": "/games/outpost-gamepad.js",
+          "bytes": 14311
+        },
+        {
+          "url": "/games/outpost-death-ui.js",
+          "bytes": 1327
+        },
+        {
+          "url": "/games/outpost-connection.js",
+          "bytes": 6143
+        },
+        {
+          "url": "/games/outpost-asset-cache.js",
+          "bytes": 5089
+        },
+        {
+          "url": "/games/outpost-navigation.js",
+          "bytes": 12115
+        },
+        {
+          "url": "/games/outpost-practice.js",
+          "bytes": 24389
+        },
+        {
+          "url": "/games/outpost-realtime.js",
+          "bytes": 13033
+        },
+        {
+          "url": "/games/outpost-voice.js",
+          "bytes": 18753
+        },
+        {
+          "url": "/games/outpost-frame-diagnostics.js",
+          "bytes": 1342
+        },
+        {
+          "url": "/games/outpost-academy.js",
+          "bytes": 25687
+        },
+        {
+          "url": "/games/outpost-compatibility.js",
+          "bytes": 8599
+        },
+        {
+          "url": "/games/outpost-retention.js",
+          "bytes": 23358
+        },
+        {
+          "url": "/games/outpost-look.js",
+          "bytes": 4800
+        },
+        {
+          "url": "/games/outpost-ui.js",
+          "bytes": 16985
+        },
+        {
+          "url": "/games/outpost-content.js",
+          "bytes": 12987
+        },
+        {
+          "url": "/games/outpost-task-games.js",
+          "bytes": 9504
+        },
+        {
+          "url": "/games/outpost-mission-progress.js",
+          "bytes": 1182
+        },
+        {
+          "url": "/games/outpost-specialties.js",
+          "bytes": 1765
+        },
+        {
+          "url": "/games/outpost-events.js",
+          "bytes": 1326
+        },
+        {
+          "url": "/games/outpost-variety.js",
+          "bytes": 5196
+        },
+        {
+          "url": "/games/outpost-protocol-combat.js",
+          "bytes": 7055
+        },
+        {
+          "url": "/games/outpost-protocol-ai.js",
+          "bytes": 17584
+        },
+        {
+          "url": "/games/outpost-daily-board.js",
+          "bytes": 1742
+        },
+        {
+          "url": "/games/outpost-share.js",
+          "bytes": 5982
+        },
+        {
+          "url": "/games/outpost-battle-presentation.js",
+          "bytes": 1264
+        },
+        {
+          "url": "/games/outpost-task-ui.js",
+          "bytes": 14174
+        },
+        {
+          "url": "/games/outpost-protocol-focus.js",
+          "bytes": 17779
+        },
+        {
+          "url": "/games/outpost-icons.js",
+          "bytes": 3400
+        },
+        {
+          "url": "/games/outpost-progression.js",
+          "bytes": 9741
+        },
+        {
+          "url": "/games/outpost-asset-manifest.js",
+          "bytes": 6907
+        },
+        {
+          "url": "/games/outpost-spatial-audio.js",
+          "bytes": 1784
+        },
+        {
+          "url": "/games/fonts/barlow-condensed-latin-700-normal.woff2",
+          "bytes": 22444
+        },
+        {
+          "url": "/games/fonts/barlow-latin-400-normal.woff2",
+          "bytes": 22196
+        },
+        {
+          "url": "/games/fonts/barlow-latin-600-normal.woff2",
+          "bytes": 22772
+        },
+        {
+          "url": "/games/fonts/barlow-condensed-latin-600-normal.woff2",
+          "bytes": 22308
+        },
+        {
+          "url": "/api/games/outpost-daily",
+          "bytes": 50
+        },
+        {
+          "url": "/games/menu/hero.webp",
+          "bytes": 57672
+        },
+        {
+          "url": "/games/menu/card-lifeline.webp",
+          "bytes": 18626
+        },
+        {
+          "url": "/games/menu/card-quick.webp",
+          "bytes": 12054
+        },
+        {
+          "url": "/games/menu/card-night.webp",
+          "bytes": 4894
+        },
+        {
+          "url": "/games/menu/card-daily.webp",
+          "bytes": 12546
+        },
+        {
+          "url": "/games/menu/card-signal.webp",
+          "bytes": 9744
+        },
+        {
+          "url": "/games/outfits/ranger.webp",
+          "bytes": 40106
+        },
+        {
+          "url": "/games/loading/lz-hangar.webp",
+          "bytes": 57786
+        },
+        {
+          "url": "/games/outpost-military.js",
+          "bytes": 1069501
+        },
+        {
+          "url": "/games/military/textures/asphalt-color.jpg",
+          "bytes": 635143
+        },
+        {
+          "url": "/games/military/textures/asphalt-normal.jpg",
+          "bytes": 560227
+        },
+        {
+          "url": "/games/military/textures/asphalt-roughness.jpg",
+          "bytes": 312445
+        },
+        {
+          "url": "/games/military/textures/metal-color.jpg",
+          "bytes": 479372
+        },
+        {
+          "url": "/games/military/textures/metal-roughness.jpg",
+          "bytes": 175319
+        },
+        {
+          "url": "/games/military/textures/metal-normal.jpg",
+          "bytes": 524530
+        },
+        {
+          "url": "/games/military/textures/gun-color.jpg",
+          "bytes": 692234
+        },
+        {
+          "url": "/games/military/textures/gun-normal.jpg",
+          "bytes": 770307
+        },
+        {
+          "url": "/games/military/textures/gun-roughness.jpg",
+          "bytes": 775206
+        },
+        {
+          "url": "/games/military/textures/glove-normal.jpg",
+          "bytes": 679548
+        },
+        {
+          "url": "/games/military/textures/glove-roughness.jpg",
+          "bytes": 577850
+        },
+        {
+          "url": "/games/military/textures/glove-color.jpg",
+          "bytes": 510537
+        },
+        {
+          "url": "/games/military/models/medevac-v1.glb",
+          "bytes": 358644
+        },
+        {
+          "url": "/games/military/models/props-v1.glb",
+          "bytes": 1915392
+        },
+        {
+          "url": "/games/military/models/operator-v1.glb",
+          "bytes": 7036524
+        },
+        {
+          "url": "/games/military/sky.hdr",
+          "bytes": 1309268
+        },
+        {
+          "url": "/games/military/textures/realism-concrete-color.jpg",
+          "bytes": 3726708
+        },
+        {
+          "url": "/games/military/textures/realism-concrete-roughness.jpg",
+          "bytes": 530188
+        },
+        {
+          "url": "/games/military/textures/realism-plaster-normal.jpg",
+          "bytes": 900461
+        },
+        {
+          "url": "/games/military/textures/realism-concrete-normal.jpg",
+          "bytes": 1151266
+        },
+        {
+          "url": "/games/military/textures/realism-plaster-color.jpg",
+          "bytes": 3132937
+        },
+        {
+          "url": "/games/military/textures/realism-plaster-roughness.jpg",
+          "bytes": 354762
+        },
+        {
+          "url": "/games/military/textures/realism-brick-normal.jpg",
+          "bytes": 295279
+        },
+        {
+          "url": "/games/military/textures/realism-brick-color.jpg",
+          "bytes": 574381
+        },
+        {
+          "url": "/games/military/textures/realism-brick-roughness.jpg",
+          "bytes": 211093
+        },
+        {
+          "url": "/games/military/textures/realism-fabric-color.jpg",
+          "bytes": 886486
+        },
+        {
+          "url": "/games/military/textures/realism-fabric-normal.jpg",
+          "bytes": 474669
+        },
+        {
+          "url": "/games/military/textures/realism-fabric-roughness.jpg",
+          "bytes": 467773
+        },
+        {
+          "url": "/games/military/textures/realism-wood-color.jpg",
+          "bytes": 336305
+        },
+        {
+          "url": "/games/military/textures/realism-wood-normal.jpg",
+          "bytes": 193626
+        },
+        {
+          "url": "/games/military/textures/realism-wood-roughness.jpg",
+          "bytes": 215155
+        },
+        {
+          "url": "/games/military/textures/realism-weaponMetal-color.jpg",
+          "bytes": 625917
+        },
+        {
+          "url": "/games/military/textures/realism-weaponMetal-normal.jpg",
+          "bytes": 183264
+        },
+        {
+          "url": "/games/military/textures/realism-weaponMetal-roughness.jpg",
+          "bytes": 911772
+        },
+        {
+          "url": "/games/military/textures/benchmark-operator-body-orm.png",
+          "bytes": 64909
+        },
+        {
+          "url": "/games/military/textures/benchmark-operator-skin-roughness.png",
+          "bytes": 3453
+        },
+        {
+          "url": "/api/games/outpost-connection",
+          "bytes": 262144
+        }
+      ],
+      "rows": [
+        {
+          "pose": "night-street-lamp",
+          "bloomColorTargetBytes": 4221600,
+          "night": true,
+          "room": false,
+          "bloomEnabled": false,
+          "bloomStrength": 0.12,
+          "alternate": {
+            "enabled": true,
+            "calls": 245,
+            "triangles": 407518
+          },
+          "grade": {
+            "highlight": [
+              1.025,
+              1.01,
+              0.98
+            ],
+            "shadow": [
+              0.97,
+              1,
+              1.025
+            ],
+            "saturation": 1
+          },
+          "samples": [
+            {
+              "calls": 238,
+              "triangles": 407577
+            },
+            {
+              "calls": 232,
+              "triangles": 407505
+            },
+            {
+              "calls": 232,
+              "triangles": 407505
+            }
+          ],
+          "calls": 238,
+          "triangles": 407577,
+          "textureObjects": 81,
+          "managedTextureBytesEstimate": 171573248,
+          "textureInventory": [
+            {
+              "name": "realism-weaponMetal-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "benchmark-operator-body-orm.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "benchmark-operator-skin-roughness.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb-linear",
+              "bytes": 4194304
+            },
+            {
+              "name": "old_military_crate_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "metal_jerrycan_green_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "barrel_03_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_metal-medical_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_diff-plastic_crate_02_opacity",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_metal-steel_frame_shelves_01_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_metal-ammo_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_metallic-Barrel_02_roughness",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_Body_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_Body_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_head_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_head_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "asphalt-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-plaster-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "realism-concrete-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-concrete-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original shared interactable trim atlas",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Interactable roughness/metalness data",
+              "width": 256,
+              "height": 256,
+              "colorSpace": "",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 128,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 87381
+            },
+            {
+              "name": "",
+              "width": 512,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 64,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 43691
+            }
+          ],
+          "geometryObjects": 92,
+          "profile": {
+            "safeMode": false,
+            "halfFloat": true,
+            "maxTextureSize": 8192,
+            "maxPixels": 2400000,
+            "maxShadowSize": 4096,
+            "ambientOcclusion": true,
+            "reflections": true
+          },
+          "exposure": 1.08,
+          "shadowSize": 1024,
+          "pixelRatio": 1,
+          "drawingBuffer": [
+            960,
+            600
+          ],
+          "post": [
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "t",
+              "enabled": false
+            },
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "e",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": true
+            },
+            {
+              "type": "Xd",
+              "enabled": true
+            }
+          ],
+          "reflectionVisible": false,
+          "inside": false,
+          "assetErrors": [],
+          "actorMaterials": [
+            {
+              "name": "Uniform fabric",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": true,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 1",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 2",
+              "roughness": 1,
+              "metalness": 0,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            }
+          ]
+        },
+        {
+          "pose": "night-ceiling-lights",
+          "bloomColorTargetBytes": 4221600,
+          "night": true,
+          "room": false,
+          "bloomEnabled": false,
+          "bloomStrength": 0.12,
+          "alternate": {
+            "enabled": true,
+            "calls": 251,
+            "triangles": 433381
+          },
+          "grade": {
+            "highlight": [
+              1.025,
+              1.01,
+              0.98
+            ],
+            "shadow": [
+              0.97,
+              1,
+              1.025
+            ],
+            "saturation": 1
+          },
+          "samples": [
+            {
+              "calls": 238,
+              "triangles": 433368
+            },
+            {
+              "calls": 238,
+              "triangles": 433368
+            },
+            {
+              "calls": 238,
+              "triangles": 433368
+            }
+          ],
+          "calls": 238,
+          "triangles": 433368,
+          "textureObjects": 84,
+          "managedTextureBytesEstimate": 176204459,
+          "textureInventory": [
+            {
+              "name": "realism-weaponMetal-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "benchmark-operator-body-orm.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "benchmark-operator-skin-roughness.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb-linear",
+              "bytes": 4194304
+            },
+            {
+              "name": "old_military_crate_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "metal_jerrycan_green_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "barrel_03_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_metal-medical_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_diff-plastic_crate_02_opacity",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_metal-steel_frame_shelves_01_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_metal-ammo_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_metallic-Barrel_02_roughness",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_Body_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_Body_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_head_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_head_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "asphalt-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-plaster-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-concrete-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original shared interactable trim atlas",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Interactable roughness/metalness data",
+              "width": 256,
+              "height": 256,
+              "colorSpace": "",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original benchmark signage atlas (authored canvas, not a photograph)",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 2796203
+            },
+            {
+              "name": "",
+              "width": 128,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 87381
+            },
+            {
+              "name": "",
+              "width": 512,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 64,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 43691
+            }
+          ],
+          "geometryObjects": 96,
+          "profile": {
+            "safeMode": false,
+            "halfFloat": true,
+            "maxTextureSize": 8192,
+            "maxPixels": 2400000,
+            "maxShadowSize": 4096,
+            "ambientOcclusion": true,
+            "reflections": true
+          },
+          "exposure": 1.08,
+          "shadowSize": 1024,
+          "pixelRatio": 1,
+          "drawingBuffer": [
+            960,
+            600
+          ],
+          "post": [
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "t",
+              "enabled": false
+            },
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "e",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": true
+            },
+            {
+              "type": "Xd",
+              "enabled": true
+            }
+          ],
+          "reflectionVisible": false,
+          "inside": true,
+          "assetErrors": [],
+          "actorMaterials": [
+            {
+              "name": "Uniform fabric",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": true,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 1",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 2",
+              "roughness": 1,
+              "metalness": 0,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            }
+          ]
+        },
+        {
+          "pose": "communications-label",
+          "bloomColorTargetBytes": 4221600,
+          "night": false,
+          "room": false,
+          "bloomEnabled": false,
+          "bloomStrength": 0.12,
+          "alternate": {
+            "enabled": true,
+            "calls": 202,
+            "triangles": 274548
+          },
+          "grade": {
+            "highlight": [
+              1.025,
+              1.01,
+              0.98
+            ],
+            "shadow": [
+              0.97,
+              1,
+              1.025
+            ],
+            "saturation": 1
+          },
+          "samples": [
+            {
+              "calls": 189,
+              "triangles": 274535
+            },
+            {
+              "calls": 189,
+              "triangles": 274535
+            },
+            {
+              "calls": 189,
+              "triangles": 274535
+            }
+          ],
+          "calls": 189,
+          "triangles": 274535,
+          "textureObjects": 90,
+          "managedTextureBytesEstimate": 183151275,
+          "textureInventory": [
+            {
+              "name": "realism-weaponMetal-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "benchmark-operator-body-orm.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "benchmark-operator-skin-roughness.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb-linear",
+              "bytes": 4194304
+            },
+            {
+              "name": "old_military_crate_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "metal_jerrycan_green_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "barrel_03_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_metal-medical_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_diff-plastic_crate_02_opacity",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_metal-steel_frame_shelves_01_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_metal-ammo_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_metallic-Barrel_02_roughness",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_metal-utility_box_01_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_Body_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_Body_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_head_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_head_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "asphalt-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-plaster-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-concrete-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original shared interactable trim atlas",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Interactable roughness/metalness data",
+              "width": 256,
+              "height": 256,
+              "colorSpace": "",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original benchmark signage atlas (authored canvas, not a photograph)",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 2796203
+            },
+            {
+              "name": "",
+              "width": 128,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 87381
+            },
+            {
+              "name": "",
+              "width": 512,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 64,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 43691
+            }
+          ],
+          "geometryObjects": 100,
+          "profile": {
+            "safeMode": false,
+            "halfFloat": true,
+            "maxTextureSize": 8192,
+            "maxPixels": 2400000,
+            "maxShadowSize": 4096,
+            "ambientOcclusion": true,
+            "reflections": true
+          },
+          "exposure": 0.96,
+          "shadowSize": 1024,
+          "pixelRatio": 1,
+          "drawingBuffer": [
+            960,
+            600
+          ],
+          "post": [
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "t",
+              "enabled": false
+            },
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "e",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": true
+            },
+            {
+              "type": "Xd",
+              "enabled": true
+            }
+          ],
+          "reflectionVisible": false,
+          "inside": true,
+          "assetErrors": [],
+          "actorMaterials": [
+            {
+              "name": "Uniform fabric",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": true,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 1",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 2",
+              "roughness": 1,
+              "metalness": 0,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            }
+          ]
+        },
+        {
+          "pose": "armed-charge",
+          "bloomColorTargetBytes": 4221600,
+          "night": false,
+          "room": false,
+          "bloomEnabled": false,
+          "bloomStrength": 0.12,
+          "alternate": {
+            "enabled": true,
+            "calls": 358,
+            "triangles": 557252
+          },
+          "grade": {
+            "highlight": [
+              1.025,
+              1.01,
+              0.98
+            ],
+            "shadow": [
+              0.97,
+              1,
+              1.025
+            ],
+            "saturation": 1
+          },
+          "samples": [
+            {
+              "calls": 345,
+              "triangles": 557239
+            },
+            {
+              "calls": 345,
+              "triangles": 557239
+            },
+            {
+              "calls": 345,
+              "triangles": 557239
+            }
+          ],
+          "calls": 345,
+          "triangles": 557239,
+          "textureObjects": 99,
+          "managedTextureBytesEstimate": 191408811,
+          "textureInventory": [
+            {
+              "name": "realism-weaponMetal-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "benchmark-operator-body-orm.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "benchmark-operator-skin-roughness.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb-linear",
+              "bytes": 4194304
+            },
+            {
+              "name": "old_military_crate_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "metal_jerrycan_green_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "barrel_03_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_metal-medical_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_diff-plastic_crate_02_opacity",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_metal-steel_frame_shelves_01_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_metal-ammo_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_metallic-Barrel_02_roughness",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_metal-utility_box_01_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_Body_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_Body_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_head_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_head_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "asphalt-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-plaster-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-concrete-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original shared interactable trim atlas",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Interactable roughness/metalness data",
+              "width": 256,
+              "height": 256,
+              "colorSpace": "",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original benchmark signage atlas (authored canvas, not a photograph)",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 2796203
+            },
+            {
+              "name": "",
+              "width": 128,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 87381
+            },
+            {
+              "name": "",
+              "width": 512,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 64,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 43691
+            }
+          ],
+          "geometryObjects": 102,
+          "profile": {
+            "safeMode": false,
+            "halfFloat": true,
+            "maxTextureSize": 8192,
+            "maxPixels": 2400000,
+            "maxShadowSize": 4096,
+            "ambientOcclusion": true,
+            "reflections": true
+          },
+          "exposure": 0.96,
+          "shadowSize": 1024,
+          "pixelRatio": 1,
+          "drawingBuffer": [
+            960,
+            600
+          ],
+          "post": [
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "t",
+              "enabled": false
+            },
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "e",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": true
+            },
+            {
+              "type": "Xd",
+              "enabled": true
+            }
+          ],
+          "reflectionVisible": false,
+          "inside": true,
+          "assetErrors": [],
+          "actorMaterials": [
+            {
+              "name": "Uniform fabric",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": true,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 1",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 2",
+              "roughness": 1,
+              "metalness": 0,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            }
+          ]
+        },
+        {
+          "pose": "depot-station",
+          "bloomColorTargetBytes": 4221600,
+          "night": false,
+          "room": true,
+          "bloomEnabled": false,
+          "bloomStrength": 0.12,
+          "alternate": {
+            "enabled": true,
+            "calls": 392,
+            "triangles": 605032
+          },
+          "grade": {
+            "highlight": [
+              1.025,
+              1.01,
+              0.98
+            ],
+            "shadow": [
+              0.97,
+              1,
+              1.025
+            ],
+            "saturation": 1
+          },
+          "samples": [
+            {
+              "calls": 379,
+              "triangles": 605019
+            },
+            {
+              "calls": 379,
+              "triangles": 605019
+            },
+            {
+              "calls": 379,
+              "triangles": 605019
+            }
+          ],
+          "calls": 379,
+          "triangles": 605019,
+          "textureObjects": 115,
+          "managedTextureBytesEstimate": 206482091,
+          "textureInventory": [
+            {
+              "name": "realism-weaponMetal-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "benchmark-operator-body-orm.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "benchmark-operator-skin-roughness.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb-linear",
+              "bytes": 4194304
+            },
+            {
+              "name": "old_military_crate_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "old_military_crate_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "old_military_crate_metal-old_military_crate_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "metal_jerrycan_green_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "barrel_03_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_metal-medical_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_diff-plastic_crate_02_opacity",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_metal-steel_frame_shelves_01_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_metal-ammo_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_metallic-Barrel_02_roughness",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_metal-utility_box_01_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_Body_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_Body_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_head_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_head_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "asphalt-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-plaster-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-concrete-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original shared interactable trim atlas",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Interactable roughness/metalness data",
+              "width": 256,
+              "height": 256,
+              "colorSpace": "",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original benchmark signage atlas (authored canvas, not a photograph)",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 2796203
+            },
+            {
+              "name": "",
+              "width": 256,
+              "height": 256,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 128,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 87381
+            },
+            {
+              "name": "",
+              "width": 512,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 64,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 43691
+            }
+          ],
+          "geometryObjects": 104,
+          "profile": {
+            "safeMode": false,
+            "halfFloat": true,
+            "maxTextureSize": 8192,
+            "maxPixels": 2400000,
+            "maxShadowSize": 4096,
+            "ambientOcclusion": true,
+            "reflections": true
+          },
+          "exposure": 0.96,
+          "shadowSize": 1024,
+          "pixelRatio": 1,
+          "drawingBuffer": [
+            960,
+            600
+          ],
+          "post": [
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "t",
+              "enabled": false
+            },
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "e",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": true
+            },
+            {
+              "type": "Xd",
+              "enabled": true
+            }
+          ],
+          "reflectionVisible": false,
+          "inside": true,
+          "assetErrors": [],
+          "actorMaterials": [
+            {
+              "name": "Uniform fabric",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": true,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 1",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 2",
+              "roughness": 1,
+              "metalness": 0,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            }
+          ]
+        },
+        {
+          "pose": "depot-east",
+          "bloomColorTargetBytes": 4221600,
+          "night": false,
+          "room": true,
+          "bloomEnabled": false,
+          "bloomStrength": 0.12,
+          "alternate": {
+            "enabled": true,
+            "calls": 363,
+            "triangles": 538012
+          },
+          "grade": {
+            "highlight": [
+              1.025,
+              1.01,
+              0.98
+            ],
+            "shadow": [
+              0.97,
+              1,
+              1.025
+            ],
+            "saturation": 1
+          },
+          "samples": [
+            {
+              "calls": 350,
+              "triangles": 537999
+            },
+            {
+              "calls": 350,
+              "triangles": 537999
+            },
+            {
+              "calls": 350,
+              "triangles": 537999
+            }
+          ],
+          "calls": 350,
+          "triangles": 537999,
+          "textureObjects": 116,
+          "managedTextureBytesEstimate": 207399595,
+          "textureInventory": [
+            {
+              "name": "realism-weaponMetal-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "benchmark-operator-body-orm.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "benchmark-operator-skin-roughness.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb-linear",
+              "bytes": 4194304
+            },
+            {
+              "name": "old_military_crate_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "old_military_crate_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "old_military_crate_metal-old_military_crate_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "metal_jerrycan_green_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "barrel_03_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_metal-medical_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_diff-plastic_crate_02_opacity",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_metal-steel_frame_shelves_01_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_metal-ammo_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_metallic-Barrel_02_roughness",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_metal-utility_box_01_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_Body_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_Body_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_head_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_head_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "asphalt-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-plaster-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-concrete-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original shared interactable trim atlas",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Interactable roughness/metalness data",
+              "width": 256,
+              "height": 256,
+              "colorSpace": "",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original benchmark signage atlas (authored canvas, not a photograph)",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 2796203
+            },
+            {
+              "name": "",
+              "width": 256,
+              "height": 256,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 128,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 87381
+            },
+            {
+              "name": "",
+              "width": 512,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 64,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 43691
+            }
+          ],
+          "geometryObjects": 104,
+          "profile": {
+            "safeMode": false,
+            "halfFloat": true,
+            "maxTextureSize": 8192,
+            "maxPixels": 2400000,
+            "maxShadowSize": 4096,
+            "ambientOcclusion": true,
+            "reflections": true
+          },
+          "exposure": 0.96,
+          "shadowSize": 1024,
+          "pixelRatio": 1,
+          "drawingBuffer": [
+            960,
+            600
+          ],
+          "post": [
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "t",
+              "enabled": false
+            },
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "e",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": true
+            },
+            {
+              "type": "Xd",
+              "enabled": true
+            }
+          ],
+          "reflectionVisible": false,
+          "inside": true,
+          "assetErrors": [],
+          "actorMaterials": [
+            {
+              "name": "Uniform fabric",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": true,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 1",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 2",
+              "roughness": 1,
+              "metalness": 0,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            }
+          ]
+        },
+        {
+          "pose": "depot-entry",
+          "bloomColorTargetBytes": 4221600,
+          "night": false,
+          "room": true,
+          "bloomEnabled": false,
+          "bloomStrength": 0.12,
+          "alternate": {
+            "enabled": true,
+            "calls": 287,
+            "triangles": 554492
+          },
+          "grade": {
+            "highlight": [
+              1.025,
+              1.01,
+              0.98
+            ],
+            "shadow": [
+              0.97,
+              1,
+              1.025
+            ],
+            "saturation": 1
+          },
+          "samples": [
+            {
+              "calls": 274,
+              "triangles": 554479
+            },
+            {
+              "calls": 274,
+              "triangles": 554479
+            },
+            {
+              "calls": 274,
+              "triangles": 554479
+            }
+          ],
+          "calls": 274,
+          "triangles": 554479,
+          "textureObjects": 116,
+          "managedTextureBytesEstimate": 207399595,
+          "textureInventory": [
+            {
+              "name": "realism-weaponMetal-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "benchmark-operator-body-orm.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "benchmark-operator-skin-roughness.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb-linear",
+              "bytes": 4194304
+            },
+            {
+              "name": "old_military_crate_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "old_military_crate_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "old_military_crate_metal-old_military_crate_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "metal_jerrycan_green_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "barrel_03_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_metal-medical_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_diff-plastic_crate_02_opacity",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_metal-steel_frame_shelves_01_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_metal-ammo_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_metallic-Barrel_02_roughness",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_metal-utility_box_01_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_Body_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_Body_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_head_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_head_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "asphalt-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-plaster-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-concrete-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original shared interactable trim atlas",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Interactable roughness/metalness data",
+              "width": 256,
+              "height": 256,
+              "colorSpace": "",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original benchmark signage atlas (authored canvas, not a photograph)",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 2796203
+            },
+            {
+              "name": "",
+              "width": 256,
+              "height": 256,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 128,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 87381
+            },
+            {
+              "name": "",
+              "width": 512,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 64,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 43691
+            }
+          ],
+          "geometryObjects": 104,
+          "profile": {
+            "safeMode": false,
+            "halfFloat": true,
+            "maxTextureSize": 8192,
+            "maxPixels": 2400000,
+            "maxShadowSize": 4096,
+            "ambientOcclusion": true,
+            "reflections": true
+          },
+          "exposure": 0.96,
+          "shadowSize": 1024,
+          "pixelRatio": 1,
+          "drawingBuffer": [
+            960,
+            600
+          ],
+          "post": [
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "t",
+              "enabled": false
+            },
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "e",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": true
+            },
+            {
+              "type": "Xd",
+              "enabled": true
+            }
+          ],
+          "reflectionVisible": false,
+          "inside": true,
+          "assetErrors": [],
+          "actorMaterials": [
+            {
+              "name": "Uniform fabric",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": true,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 1",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 2",
+              "roughness": 1,
+              "metalness": 0,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            }
+          ]
+        },
+        {
+          "pose": "depot-night",
+          "bloomColorTargetBytes": 4221600,
+          "night": true,
+          "room": true,
+          "bloomEnabled": false,
+          "bloomStrength": 0.12,
+          "alternate": {
+            "enabled": true,
+            "calls": 385,
+            "triangles": 538318
+          },
+          "grade": {
+            "highlight": [
+              1.025,
+              1.01,
+              0.98
+            ],
+            "shadow": [
+              0.97,
+              1,
+              1.025
+            ],
+            "saturation": 1
+          },
+          "samples": [
+            {
+              "calls": 372,
+              "triangles": 538305
+            },
+            {
+              "calls": 372,
+              "triangles": 538305
+            },
+            {
+              "calls": 372,
+              "triangles": 538305
+            }
+          ],
+          "calls": 372,
+          "triangles": 538305,
+          "textureObjects": 119,
+          "managedTextureBytesEstimate": 208448171,
+          "textureInventory": [
+            {
+              "name": "realism-weaponMetal-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-weaponMetal-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "benchmark-operator-body-orm.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "benchmark-operator-skin-roughness.png?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb-linear",
+              "bytes": 4194304
+            },
+            {
+              "name": "old_military_crate_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "old_military_crate_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "old_military_crate_metal-old_military_crate_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "metal_jerrycan_green_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "barrel_03_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "medical_box_metal-medical_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_diff-plastic_crate_02_opacity",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "plastic_crate_02_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "steel_frame_shelves_01_metal-steel_frame_shelves_01_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "ammo_box_metal-ammo_box_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Barrel_02_metallic-Barrel_02_roughness",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_diff",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_nor_gl",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "utility_box_01_metal-utility_box_01_rough",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_Body_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_Body_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "Soldier_head_diffuse",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Soldier_head_normal",
+              "width": 512,
+              "height": 512,
+              "colorSpace": "",
+              "bytes": 1398101
+            },
+            {
+              "name": "asphalt-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "asphalt-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-plaster-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-plaster-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-color.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 2048,
+              "height": 2048,
+              "colorSpace": "srgb",
+              "bytes": 22369621
+            },
+            {
+              "name": "realism-concrete-normal.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "realism-concrete-roughness.jpg?assetVersion=outpost-assets-7251c21d3c42afb4",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "",
+              "bytes": 5592405
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original shared interactable trim atlas",
+              "width": 1024,
+              "height": 1024,
+              "colorSpace": "srgb",
+              "bytes": 5592405
+            },
+            {
+              "name": "Interactable roughness/metalness data",
+              "width": 256,
+              "height": 256,
+              "colorSpace": "",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "",
+              "width": 768,
+              "height": 224,
+              "colorSpace": "srgb",
+              "bytes": 917504
+            },
+            {
+              "name": "Original benchmark signage atlas (authored canvas, not a photograph)",
+              "width": 1024,
+              "height": 512,
+              "colorSpace": "srgb",
+              "bytes": 2796203
+            },
+            {
+              "name": "",
+              "width": 256,
+              "height": 256,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 128,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 87381
+            },
+            {
+              "name": "",
+              "width": 512,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 512,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 512,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 512,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 349525
+            },
+            {
+              "name": "",
+              "width": 64,
+              "height": 128,
+              "colorSpace": "srgb",
+              "bytes": 43691
+            }
+          ],
+          "geometryObjects": 110,
+          "profile": {
+            "safeMode": false,
+            "halfFloat": true,
+            "maxTextureSize": 8192,
+            "maxPixels": 2400000,
+            "maxShadowSize": 4096,
+            "ambientOcclusion": true,
+            "reflections": true
+          },
+          "exposure": 1.08,
+          "shadowSize": 1024,
+          "pixelRatio": 1,
+          "drawingBuffer": [
+            960,
+            600
+          ],
+          "post": [
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "t",
+              "enabled": false
+            },
+            {
+              "type": "Hd",
+              "enabled": true
+            },
+            {
+              "type": "e",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": false
+            },
+            {
+              "type": "Rd",
+              "enabled": true
+            },
+            {
+              "type": "Xd",
+              "enabled": true
+            }
+          ],
+          "reflectionVisible": false,
+          "inside": true,
+          "assetErrors": [],
+          "actorMaterials": [
+            {
+              "name": "Uniform fabric",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": true,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 1",
+              "roughness": 1,
+              "metalness": 1,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            },
+            {
+              "name": "Operator head 2",
+              "roughness": 1,
+              "metalness": 0,
+              "hasDye": false,
+              "normal": true,
+              "roughnessMap": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

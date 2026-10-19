@@ -16,7 +16,8 @@ import { Reflector } from "three/addons/objects/Reflector.js";
 import { loadRealismSurfaces, surfaceMaterial } from "./realism-surfaces.js";
 import { initNaturalLighting, updateNaturalLighting } from "./realism-lighting.js";
 import { decorateRealisticEnvironment } from "./realism-environment.js";
-import { buildStationTerminal, buildMedicalCabinet, buildMedicalCase, buildSupplyBox, buildCharge, buildEmergencyConsole, updateChargePresentation } from './interactables.js';
+import { buildStationTerminal, buildMedicalCabinet, buildCabinetLabel, buildMedicalCase, buildSupplyBox, buildCharge, buildEmergencyConsole, updateChargePresentation } from './interactables.js';
+import { medicalDepotStorage } from './room-medical-depot.js';
 import {
   prepareCharacterAsset,
   loadOperatorResponse,
@@ -581,6 +582,7 @@ export class MilitaryRenderer {
     this.worldTextures.clear();
     this.world.clear();
     this.realismDecor = null;
+    this.medicalDepotPresentation = null;
     this.wallMeshes = null;
     this.fittings = [];
     this.fittingMaterial = null;
@@ -1033,11 +1035,11 @@ export class MilitaryRenderer {
     for (const room of rooms) {
       if (room.roofed === false) continue;
       const roomFloor = surfaceMaterial(this, map.id === "medevac" ? "fabric" : "concrete", {
-        color: /maintenance|generat|ammo/.test(room.id || "") ? "#687570" : "#a0aaa3",
+        color: room.id === 'ammo' ? '#acb4ad' : /maintenance|generat/.test(room.id || "") ? "#687570" : "#a0aaa3",
         repeat: [room.w * 1.5, room.h * 1.5],
         roughness: 0.94,
         metalness: 0,
-        normalStrength: 0.2,
+        normalStrength: room.id === 'ammo' ? .14 : 0.2,
       });
       roomFloor.userData.world = true;
       const floor = this.mesh(
@@ -1219,7 +1221,7 @@ export class MilitaryRenderer {
     }
     this.buildMedicalFixtures(map, root, { steel, paint, rubber, amber, lamp });
     if (map.id === "breakwater")
-      buildFurniture(this, root, this.g.level, (x, y) => this.furnitureTile(x, y));
+      buildFurniture(this, root, this.g.level, (x, y) => this.furnitureTile(x, y) && !medicalDepotStorage(x,y));
     if (map.id === "medevac")
       this.buildTransportInterior(map, root, { steel, paint, rubber, amber, lamp });
     this.batchProtocolStatic(root);
@@ -1287,14 +1289,7 @@ export class MilitaryRenderer {
       // This stock label shares the benchmark station's wall mount. Keep the
       // visual labels separated without moving either interaction/collision.
       const sharedStation = (map.stations || []).some(station => station.x === fixture.x && station.y === fixture.y);
-      const label = this.mesh(
-        cabinet,
-        this.geo(sharedStation ? "medical-label-shared-station" : "medical-label", () => new THREE.PlaneGeometry(sharedStation ? .65 : 1.55, sharedStation ? .24 : .45)),
-        this.protocolSign(fixture.name, "MEDICAL RESUPPLY", "#a1c7b7"),
-        [sharedStation ? -.94 : 0, sharedStation ? .2 : .98, .185],
-      );
-      label.castShadow = false;
-      label.userData.noBatch = true;
+      buildCabinetLabel(this,cabinet,fixture,sharedStation);
     }
     if (map.loading) {
       const pad = map.loading;
@@ -3192,7 +3187,8 @@ export class MilitaryRenderer {
     u.saturation.value = 1.0;
     u.vignette.value = .08;
     u.grain.value = .002;
-    this.bloom.enabled = this.g.academy.preset === 'high';
+    this.bloom.enabled = this.g.academy.preset === 'high' ||
+      (this.g.academy.preset === 'balanced' && night);
     this.bloom.strength = .12;
     this.bloom.threshold = 1.35;
     this.bloom.radius = .35;

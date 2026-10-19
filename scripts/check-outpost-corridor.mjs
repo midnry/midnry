@@ -10,7 +10,8 @@ const browser = await chromium.launch({
   args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
 });
 const results = [];
-mkdirSync("/workspace/screenshots/outpost-corridor", { recursive: true });
+const screenshotRoot='/workspace/screenshots/outpost-'+(process.env.OUTPOST_GRAPHICS_PASS||'corridor');
+mkdirSync(screenshotRoot, { recursive: true });
 try {
   for (const mobile of [false, true]) {
     const device = mobile ? "mobile" : "desktop",
@@ -227,7 +228,7 @@ try {
     assert.ok(Number.isFinite(result.nightExposure));
     assert.deepEqual(errors, []);
     await page.screenshot({
-      path: `/workspace/screenshots/outpost-corridor/${label}-${device}.png`,
+      path: `${screenshotRoot}/${process.env.OUTPOST_GRAPHICS_PASS?'corridor-':''}${label}-${device}.png`,
       timeout: 120000,
       animations: "disabled",
     });
@@ -246,7 +247,9 @@ try {
 } finally {
   await browser.close();
   writeFileSync(
-    `docs/graphics-benchmark/qa-${label}.json`,
+    process.env.OUTPOST_GRAPHICS_PASS
+      ? `docs/graphics-benchmark/${process.env.OUTPOST_GRAPHICS_PASS}/corridor-qa-${label}.json`
+      : `docs/graphics-benchmark/qa-${label}.json`,
     JSON.stringify(results, null, 2),
   );
 }

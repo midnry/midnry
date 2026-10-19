@@ -39,9 +39,19 @@ procedural geometry and original authored trim/status artwork from
 scanned or production-model assets. One runtime 1024 px colour atlas (sRGB) and
 256 px roughness/metalness data atlas (linear) are shared by all copies. There
 are no new third-party downloads. The subtle metal normal reuses the existing
-Poly Haven `metal_plate` OpenGL normal photograph (CC0, source below).
+Poly Haven `metal_plate_02` OpenGL normal photograph (CC0, source in
+REALISM-ASSETS.md).
 
 ## Physically based photographs and sky
+
+The 2026-10-19 Medical / Supply Depot room kit adds original architectural
+fittings, closed cold-chain storage, impact strips and authored wayfinding
+artwork (`scripts/outpost-military/room-medical-depot.js`). These are procedural
+game assets, not production/scanned models. They reuse the existing licensed
+plaster, concrete and metal photographs listed here and in REALISM-ASSETS.md.
+The runtime 1024×256 wayfinding atlas adds no third-party download. The updated
+radio-cabinet nameplate and larger charge status artwork are also original.
+All other rooms retain their existing environment assets.
 
 Poly Haven publishes these assets under CC0: https://polyhaven.com/license.
 The bundled maps use the 1K diffuse, OpenGL normal, and roughness photographs:
