@@ -863,6 +863,29 @@
       }
       midnry-fps .mf-sprint {
         left: calc(24px + var(--mf-safe-left));
+        /* Sprint is the joystick pushed to its rim; the button only took space. */
+        display: none !important;
+      }
+      midnry-fps .mf-stick.mf-run {
+        border-color: var(--mf-accent, #f2b950);
+        box-shadow: 0 0 0 3px #f2b95040;
+      }
+      midnry-fps .mf-stick.mf-run i {
+        background: var(--mf-accent, #f2b950);
+      }
+      midnry-fps .mf-stick::before {
+        content: "▲";
+        position: absolute;
+        left: 50%;
+        top: -22px;
+        transform: translateX(-50%);
+        font: 700 12px/1 var(--mf-body, sans-serif);
+        color: #ffffff59;
+        pointer-events: none;
+      }
+      midnry-fps .mf-stick.mf-run::before {
+        content: "▲ RUN";
+        color: var(--mf-accent, #f2b950);
       }
       midnry-fps .mf-sprint[aria-pressed="true"] {
         background: #b3c3ae;
@@ -3037,7 +3060,7 @@
               strafe: Number(this.keys.has("d")) - Number(this.keys.has("a")) + this.touch.x,
               aim: this.player.a,
               pitch: this.viewPitch / this.projection,
-              sprint: this.keys.has("shift") || this.touchSprint,
+              sprint: this.keys.has("shift") || this.touchSprint || this.stickSprint,
               slide: this.pendingSlide,
               fire: this.firing || this.keys.has(" ") || this.pendingShot > 0,
               reload: this.pendingReload,
@@ -3104,6 +3127,8 @@
             this.touch = { x: 0, y: 0 };
             this.look = null;
             this.stickId = null;
+            this.stickSprint = false;
+            this.$(".mf-stick").classList.remove("mf-run");
             this.$(".mf-stick i").style.transform = "";
             this.$(".mf-sprint").setAttribute("aria-pressed", "false");
             this.$(".mf-modal").hidden = true;
@@ -3827,9 +3852,15 @@
               const r = stick.getBoundingClientRect(),
                 x = e.clientX - r.left - r.width / 2,
                 y = e.clientY - r.top - r.height / 2;
-              const length = Math.max(38, Math.hypot(x, y));
+              const reach = Math.hypot(x, y),
+                length = Math.max(38, reach);
               this.touch.x = x / length;
               this.touch.y = y / length;
+              // Pushing the stick to its rim, roughly forward, sprints (as in
+              // most mobile shooters); easing back inside the ring walks again.
+              const forward = -y / Math.max(1, reach) > 0.7;
+              this.stickSprint = forward && reach >= (this.stickSprint ? r.width * 0.4 : r.width * 0.48);
+              stick.classList.toggle("mf-run", this.stickSprint);
               this.$(".mf-stick i").style.transform =
                 `translate(${this.touch.x * 34}px,${this.touch.y * 34}px)`;
             };
@@ -3844,6 +3875,8 @@
             });
             const endStick = () => {
               this.stickId = null;
+              this.stickSprint = false;
+              stick.classList.remove("mf-run");
               this.touch = { x: 0, y: 0 };
               this.$(".mf-stick i").style.transform = "";
             };
@@ -3923,6 +3956,8 @@
             this.touch = { x: 0, y: 0 };
             this.look = null;
             this.stickId = null;
+            this.stickSprint = false;
+            this.$(".mf-stick").classList.remove("mf-run");
             this.$(".mf-stick i").style.transform = "";
             this.$(".mf-modal").hidden = false;
             this.updateMenu();

@@ -110,7 +110,7 @@ const GUIDE = [
   ],
   [
     "Last Signal: the solo showdown",
-    "Pick the Last Signal card on the home screen for a different game: no secret roles, just eight fighters and one survivor. Shoot to win (click or Space fires, R reloads, Shift sprints). Break supply crates for Charge Cores: each one adds 25 maximum health and 8 weapon damage. After 12 seconds the Red Haze starts closing in from the edges and hurts anyone caught outside the safe area, so keep moving toward the centre. Your Overdrive meter fills as you deal damage; press Q when it is full. The arena changes between Dust Outpost, Skyport and Wreck Estate.",
+    "Pick the Last Signal card on the home screen for a different game: no secret roles, just eight fighters and one survivor. Shoot to win (click or Space fires, R reloads, Shift sprints; on a phone, push the joystick all the way forward). Break supply crates for Charge Cores: each one adds 25 maximum health and 8 weapon damage. After 12 seconds the Red Haze starts closing in from the edges and hurts anyone caught outside the safe area, so keep moving toward the centre. Your Overdrive meter fills as you deal damage; press Q when it is full. The arena changes between Dust Outpost, Skyport and Wreck Estate.",
   ],
   [
     "Quick shift and the daily case",
