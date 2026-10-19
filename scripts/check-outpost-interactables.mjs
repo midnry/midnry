@@ -5,11 +5,12 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { verifyMedicalDepot } from "./qa-outpost-medical-depot.mjs";
 import { verifyWorldText } from './qa-outpost-world-text.mjs';
+import {verifySupplyAtrium} from './qa-outpost-supply-atrium.mjs';
 import { verifyCentralPassage } from './qa-outpost-central-passage.mjs';
 const base = process.argv[2] || "http://127.0.0.1:8080",
   label = process.argv[3] || "dev";
 const pass = process.env.OUTPOST_GRAPHICS_PASS || "interactables";
-assert.ok(["interactables", "medical-depot", "text-clarity", "central-passage"].includes(pass));
+assert.ok(["interactables", "medical-depot", "text-clarity", "central-passage", "supply-atrium"].includes(pass));
 const directory = "/workspace/screenshots/outpost-" + pass;
 const evidence = "docs/graphics-benchmark/" + pass;
 mkdirSync(directory, { recursive: true });
@@ -234,7 +235,8 @@ try {
     assert.equal(states.collisionUnchanged, true);
     assert.deepEqual(states.atlas, [2048, 256]);
     const room = ['medical-depot','text-clarity','central-passage'].includes(pass) ? await verifyMedicalDepot(page) : null;
-    const text = ['text-clarity','central-passage'].includes(pass)?await verifyWorldText(page,{fallback}):null;
+    const text = ['text-clarity','central-passage','supply-atrium'].includes(pass)?await verifyWorldText(page,{fallback}):null;
+    const atrium = pass==='supply-atrium'?await verifySupplyAtrium(page):null;
     const central = pass==='central-passage'?await verifyCentralPassage(page):null;
     if(fallback) assert.ok(aborted.length>=2,'both optional font weights were blocked');
     if (!room) await page.evaluate(() => window.equipmentDraw());
@@ -374,7 +376,7 @@ try {
       });
     }
     assert.deepEqual(errors, []);
-    results.push({ variant, initial, states, room, text, central, charge, transport, warnings, aborted, errors });
+    results.push({ variant, initial, states, room, text, central, atrium, charge, transport, warnings, aborted, errors });
     console.log(
       JSON.stringify({
         variant,

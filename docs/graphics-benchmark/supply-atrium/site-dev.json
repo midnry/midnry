@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Midnry — a desk of web apps",
+      "hasCanvas": false,
+      "bodyTextLen": 1752,
+      "bodyTextHash": "b5f6e52a8617914fba66d1a4db4b38d5c7fa2e500a5e53422d04c457ca0774f7",
+      "bodyTextPrefix": "Midnry Desk Browse Pricing Sign in Create account Simple tools f",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/outpost-supply-atrium/site-dev.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Midnry — a desk of web apps",
+      "hasCanvas": false,
+      "bodyTextLen": 1701,
+      "bodyTextHash": "870fe01a835029ff071e885f2c30a5b123854233a458741dce5db871cb98359b",
+      "bodyTextPrefix": "Midnry Create account Simple tools for everyday life. Free apps ",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/outpost-supply-atrium/site-dev-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/outpost-supply-atrium/site-dev.json"
+}

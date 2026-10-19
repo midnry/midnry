@@ -1066,6 +1066,11 @@ export class MilitaryRenderer {
           const alongZ = Math.abs(Math.abs(signRoot.rotation.y) - Math.PI / 2) < 0.01;
           if (alongZ ? room.h >= 2 : room.w >= 2) signRoot.position[alongZ ? "z" : "x"] += SCALE / 2;
         }
+        // Atrium's former north-centre mount floated across its open doorway.
+        // This existing solid bay clears the jamb by 17cm and the ceiling pipe.
+        if (map.id === 'breakwater' && room.id === 'courtyard') {
+          signRoot.position.set(37.5,2.6,39.045);signRoot.rotation.y=0;
+        }
         root.add(signRoot);
         const sign = this.mesh(
           signRoot,

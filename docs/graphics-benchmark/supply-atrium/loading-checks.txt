@@ -1,0 +1,3 @@
+{"name":"desktop","loadingArt":"current main briefing assets","carousel":"six medical/role/emergency/night briefings","reducedMotion":"paused","deployment":"passed","errors":[]}
+{"name":"mobile","loadingArt":"current main briefing assets","carousel":"six medical/role/emergency/night briefings","reducedMotion":"paused","deployment":"passed","errors":[]}
+Optional loading artwork failure does not block the game

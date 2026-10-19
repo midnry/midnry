@@ -4,6 +4,8 @@
 import * as THREE from "three";
 import { batchStaticByMaterial } from "./static-batches.js";
 
+import {fitDisplay,textTexture} from "./world-text.js";
+
 const SCALE = 3;
 
 export const isNightShift = (view) => view?.protocol?.match?.modifier === "night-shift";
@@ -77,7 +79,14 @@ function poolTexture() {
   return texture;
 }
 
-function signTexture(text, color) {
+function signTexture(text, color, r, sharp = false) {
+  if (sharp) {
+    const c=document.createElement("canvas");c.width=2048;c.height=512;
+    const g=c.getContext("2d");g.fillStyle="#152126";g.fillRect(0,0,c.width,c.height);
+    fitDisplay(r,g,text,300,1920);g.textAlign="center";g.textBaseline="middle";
+    g.fillStyle=color;g.fillText(text,1024,256);
+    return textTexture(r,c,"Atrium night wayfinding / "+text);
+  }
   const c = document.createElement("canvas");
   c.width = 512;
   c.height = 128;
@@ -185,23 +194,31 @@ export class NightDressing {
     );
     for (const [tx, ty, text, color, width] of SIGNS) {
       const mount = this.r.protocolMount(tx, ty, 2.75);
+      const atrium = ty < 20;
+      if(atrium){
+        // Explicit solid wall bays, away from all openings, rather than the
+        // nearest-wall fallback. Letter planes clear their backing by 35mm.
+        mount.position.set(tx<14?36.045:47.955,2.55,tx<14?40.5:46.5);
+        mount.rotation.y=tx<14?Math.PI/2:-Math.PI/2;
+      }
       const back = new THREE.Mesh(new THREE.BoxGeometry(width + 0.2, 0.62, 0.06), panel);
       this.geometries.push(back.geometry);
       back.position.z = 0.04;
-      const texture = signTexture(text, color);
+      const texture = signTexture(text, color, this.r, atrium);
       this.textures.push(texture);
       const glow = this.material(
         () =>
           new THREE.MeshBasicMaterial({
             map: texture,
-            color: new THREE.Color("#ffffff").multiplyScalar(2.4),
+            color: new THREE.Color("#ffffff").multiplyScalar(atrium ? .8 : 2.4),
             transparent: true,
             depthWrite: false,
           }),
       );
       const face = new THREE.Mesh(new THREE.PlaneGeometry(width, width / 4), glow);
       this.geometries.push(face.geometry);
-      face.position.z = 0.08;
+      face.position.z = atrium ? 0.105 : 0.08;
+      if(atrium) face.userData.atriumSign=text;
       mount.add(back, face);
       mount.traverse((o) => (o.userData.noRoomCull = true));
       this.root.add(mount);
