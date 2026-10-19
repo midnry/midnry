@@ -1,6 +1,10 @@
 /** Shared, DOM-free simulation for offline games and authoritative online rooms. */
 export const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 import { LEVEL, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf } from "./outpost-content.js";
+// Health recovery: starts this many seconds after the last damage taken,
+// then restores this fraction of maximum health per second.
+export const REGEN_DELAY = 5;
+export const REGEN_RATE = 0.12;
 export { LEVEL, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf };
 const SPAWNS = [
   [2.5, 2.5],
@@ -382,6 +386,7 @@ export class Arena {
       target.damageTotal = (target.damageTotal || 0) + actual;
       target.damageAngle = source ? Math.atan2(source.y - target.y, source.x - target.x) : null;
       target.cloakedUntil = 0;
+      target.hurtAt = this.time;
     }
     if (source && source !== target) {
       if (!target.id.startsWith("crate")) source.damageDealt = (source.damageDealt || 0) + actual;
@@ -446,6 +451,13 @@ export class Arena {
         this.emit(e.id, "+1 CHARGE CORE / HEALTH +25 · DAMAGE +8");
       }
     }
+  }
+  /** Health recovers after a few seconds without taking damage, as in most
+   * shooters. Not inside the Red Haze (its damage resets the timer) and at
+   * a reduced rate while poisoned, through heal(). */
+  recover(e, dt) {
+    if (e.hp <= 0 || e.hp >= e.maxHp || this.time - (e.hurtAt ?? -Infinity) < REGEN_DELAY) return;
+    this.heal(e, e.maxHp * REGEN_RATE * dt);
   }
   applyHaze(e, dt) {
     if (e.hp <= 0) return;
@@ -1152,6 +1164,7 @@ export class Arena {
       if (this.mode !== "training") {
         this.collectCores(e);
         this.applyHaze(e, dt);
+        this.recover(e, dt);
       }
     }
     this.checkResult();

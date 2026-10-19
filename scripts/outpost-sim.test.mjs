@@ -82,3 +82,23 @@ test("server snapshots survive JSON round-trip with identical rules", () => {
   b.advance(0.1);
   assert.deepEqual(a.snapshot(), b.snapshot());
 });
+test("health recovers after five seconds without damage, never past maximum", () => {
+  const a = new Arena({ mode: "signal", humans: [{ id: "p", team: 0 }], random: () => 0.5 }),
+    p = a.entities.find((e) => e.id === "p");
+  a.damage(p, 60);
+  assert.equal(p.hp, 40);
+  a.time += 4;
+  a.recover(p, 1);
+  assert.equal(p.hp, 40, "no recovery inside the delay");
+  a.time += 1.5;
+  a.recover(p, 1);
+  assert.ok(p.hp > 40 && p.hp <= 52.01, "recovers about 12% of maximum per second");
+  a.damage(p, 5);
+  const hurt = p.hp;
+  a.time += 1;
+  a.recover(p, 1);
+  assert.equal(p.hp, hurt, "new damage restarts the delay");
+  a.time += 10;
+  for (let i = 0; i < 20; i++) a.recover(p, 1);
+  assert.equal(p.hp, p.maxHp);
+});
