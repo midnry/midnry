@@ -8,7 +8,9 @@ export class ProtocolFocus {
     this.style.textContent = `
       midnry-fps { -webkit-user-select:none;user-select:none;-webkit-touch-callout:none; }
       midnry-fps :is(input,textarea,[contenteditable="true"]) { -webkit-user-select:text;user-select:text;-webkit-touch-callout:default; }
-      midnry-fps .mf-protocol-focus :is(.mf-kit,.mf-kitnotes,.mf-progresslabel,.mf-boot,.mf-difficulty,.mf-sprint,.mf-slide,.mf-movement) { display:none !important; }
+      midnry-fps .mf-protocol-focus :is(.mf-kit,.mf-kitnotes,.mf-progresslabel,.mf-boot,.mf-difficulty) { display:none !important; }
+      /* Last Signal keeps the focus shell but is a shooter: sprint and slide stay. */
+      midnry-fps .mf-protocol-focus.mf-protocol :is(.mf-sprint,.mf-slide,.mf-movement) { display:none !important; }
       midnry-fps .mf-protocol-infoopen { position:absolute;z-index:7;top:calc(14px + var(--mf-safe-top));left:calc(14px + var(--mf-safe-left));min-height:44px;padding:10px 14px;border:1px solid #a5bba966;border-radius:14px;color:#f2f7ef;background:#12231dd9;font:700 13px var(--mf-body);touch-action:manipulation; }
       midnry-fps .mf-protocol-infoopen:focus-visible { outline:3px solid #d6edae;outline-offset:3px; }
       midnry-fps .mf-protocol-info { width:min(560px,calc(100% - 28px));max-height:calc(100% - 28px); }
