@@ -23,7 +23,7 @@ console.log("tomenu box", await p.evaluate(() => { const b = document.querySelec
 await p.screenshot({ path: `${S}/stuck-results.png` });
 await p.click(".mf-tomenu", { timeout: 60000 }).catch((e) => console.log("tomenu", e.message.slice(0, 80)));
 await p.waitForTimeout(3000);
-await p.click(".mf-playlists [data-mode=quick]", { timeout: 60000 }).catch((e) => console.log("card", e.message.slice(0, 80)));
+await p.click(".mf-variants [data-variant=quick]", { timeout: 60000 }).catch((e) => console.log("card", e.message.slice(0, 80)));
 await p.waitForTimeout(2000);
 console.log("picked", await state(), "| home?", await p.evaluate(()=>document.querySelector(".mf-modal").className+" | "+[...document.querySelectorAll("button")].filter(b=>b.offsetParent).map(b=>b.textContent.trim()).slice(0,6).join(" / ")));
 await p.click(".mf-start", { timeout: 60000 }).catch((e) => console.log("start", e.message.slice(0, 80)));
