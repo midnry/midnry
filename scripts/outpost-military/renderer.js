@@ -285,7 +285,11 @@ export class MilitaryRenderer {
       this.composer.addPass(this.grade);
       this.composer.addPass(new OutputPass());
     }
-    this.ready = Promise.all([this.loadAssets(),prepareWorldTypography(this)]).then(() => {
+    // The Dust Outpost kit loads behind the opening loading screen, so a match
+    // never starts in the old look and swaps a moment later. Its failure is
+    // not fatal: the classic arena stays.
+    this.arenaStyle = new DustStyle(this, ASSET, ASSET_CACHE);
+    this.ready = Promise.all([this.loadAssets(),prepareWorldTypography(this),this.arenaStyle.load()]).then(() => {
       if (!this.disposed) {
         this.mapKey = "";
         this.updateWeapon();
@@ -651,9 +655,9 @@ export class MilitaryRenderer {
     floor.rotation.x = -Math.PI / 2;
     floor.castShadow = false;
     floor.visible = id !== "medevac";
-    // Arena art passes (Dust Outpost so far) load after the arena is playable
-    // and rebuild it once ready; until then the original look stays.
-    const style = (this.arenaStyle ||= new DustStyle(this, ASSET, ASSET_CACHE));
+    // Arena art passes (Dust Outpost so far) preload with the renderer; should
+    // one still be loading, the arena rebuilds once it is ready.
+    const style = this.arenaStyle;
     if (style.applies(id)) {
       if (style.ready) style.ground(ground, n);
       else if (!style.failed)

@@ -8,7 +8,7 @@
  * - Props: small CC0 props (jerrycans, ammo boxes, drums, tyres…) hugging wall
  *   bases, kept under 0.6 m deep so they never read as cover in a lane.
  *
- * Assets load after the arena is already playable; until then the original
+ * Assets load behind the opening loading screen; if they fail the original
  * look stays. "High" quality loads 2K textures, everything else 1K.
  * Sources and licences: public/games/military/ATTRIBUTION.md. */
 import * as THREE from "three";
@@ -129,7 +129,8 @@ export class DustStyle {
       this.groundSet = ground;
       this.ready = true;
     })().catch((error) => {
-      r.assetErrors?.push?.(String(error));
+      // Not an asset error: the classic arena is a complete fallback.
+      console.warn("Dust Outpost art unavailable", error);
       this.failed = true;
     });
     return this.loading;

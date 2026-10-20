@@ -290,4 +290,7 @@ HD pack ← this, (2) first desktop build, (3) Steam features, (4) phone apps.
   Then `node scripts/build-outpost-cache.mjs` (manifest now ~54 MB incl. HD set).
 - Budget measured (`node scripts/qa/arena-look.mjs <tag> outpost 1280|390`): laptop
   ≤ 251 draw calls / 548k tris worst view, phone ≤ 155 / 286k.
+- The kit preloads with the renderer (behind the opening loading screen) since
+  `v=dust-preload-20261020`; `node scripts/qa/arena-first-frame.mjs 1280|390` checks the
+  first match frame is already dressed. A failed kit load is non-fatal (classic look).
 - Next: other arenas + Blackout base in the same style, KTX2 textures, maybe WebGPU.

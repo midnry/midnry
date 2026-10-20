@@ -24416,7 +24416,7 @@ var fh = class {
 				e.isMesh && (e.castShadow = !0, e.receiveShadow = !0, e.material.userData.world = !0);
 			}), this.groundSet = l, this.ready = !0;
 		})().catch((e) => {
-			t.assetErrors?.push?.(String(e)), this.failed = !0;
+			console.warn("Dust Outpost art unavailable", e), this.failed = !0;
 		}), this.loading;
 	}
 	walls(e, t) {
@@ -24973,7 +24973,11 @@ var Bh = class {
 				fragmentShader: "uniform sampler2D tDiffuse; uniform vec3 highlight; uniform vec3 shadow; uniform float saturation; uniform float vignette; uniform float grain; uniform float time; varying vec2 vUv;\n          float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)) + time) * 43758.5453); }\n          void main(){\n            vec4 source = texture2D(tDiffuse, vUv);\n            vec3 c = source.rgb;\n            float l = dot(c, vec3(.2126,.7152,.0722));\n            float lift = smoothstep(0.0, 0.6, l);\n            c *= mix(shadow, highlight, lift);\n            c = mix(vec3(l), c, saturation);\n            vec2 d = vUv - .5;\n            c *= 1.0 - vignette * smoothstep(.25, .85, dot(d, d) * 2.2);\n            c += (hash(vUv * 731.0) - .5) * grain * (0.15 + sqrt(max(l, 0.0)));\n            gl_FragColor = vec4(max(c, 0.0), source.a);\n          }"
 			}), this.composer.addPass(this.grade), this.composer.addPass(new $d());
 		}
-		this.ready = Promise.all([this.loadAssets(), Df(this)]).then(() => {
+		this.arenaStyle = new Oh(this, Vh, rf), this.ready = Promise.all([
+			this.loadAssets(),
+			Df(this),
+			this.arenaStyle.load()
+		]).then(() => {
 			this.disposed || (this.mapKey = "", this.updateWeapon());
 		}), this.configure(), this.resize();
 	}
@@ -25169,7 +25173,7 @@ var Bh = class {
 			1
 		]);
 		a.rotation.x = -Math.PI / 2, a.castShadow = !1, a.visible = t !== "medevac";
-		let o = this.arenaStyle ||= new Oh(this, Vh, rf);
+		let o = this.arenaStyle;
 		o.applies(t) && (o.ready ? o.ground(i, r) : o.failed || o.load().then(() => {
 			!this.disposed && o.ready && o.applies(this.g.arena.mapId) && (this.mapKey = "");
 		})), this.wallMaterials = Array.from({ length: 7 }, (e, r) => {
