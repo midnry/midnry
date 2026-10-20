@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=signal-fixes-20261020`.
+  Current live value: `v=signal-fixes-20261020` (`game-look` carries `v=graphics-comms-20261020`, not yet deployed).
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -100,10 +100,12 @@ hash is stored: `e4ecd2762674dd4bb706fe3aa4fd2d8fc49e1124691d66437d26f8194c9106d
   and rebuild the bundle afterwards.
 - Release approved work by squash-merging the reviewed commit into `game-look`,
   excluding `docs/graphics-benchmark/`, rebuilding the bundle and verifying it matches.
-- Codex's queue: Communications / Radar (next) → Armory (+ stores) → Barracks / Mess
-  Hall → Vehicle Hangar / Flight Deck → Generators / Power → Maintenance Tunnels →
-  remaining passages. Small open note: in Command, the emergency radio stand sits in
-  front of the planning-table title from the south side.
+- Codex's queue: Armory (+ stores) (next) → Barracks / Mess Hall → Vehicle Hangar /
+  Flight Deck → Generators / Power → Maintenance Tunnels → remaining passages.
+  Communications / Radar and the Command sightline note were reviewed and released into
+  `game-look` on 2026-10-20 (codex 97e4991; Balanced patrol 482 draw calls; 37 signs clear;
+  Codex's own check passes laptop + phone after pointing it at `/opt/pw-browsers/chromium`).
+  Codex's branch does not yet include main's Last Signal work: ask it to merge `main` first.
 - **Last Signal arenas are no longer Codex's job** (owner agreed): the arena
   enlargement and its graphics pass are done by Claude (below). Codex keeps the
   Blackout Protocol base rooms.
