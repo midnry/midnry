@@ -387,6 +387,30 @@
       midnry-fps .mf-locker .mf-finishtile:disabled .mf-finishstate {
         color: #b9c6bd;
       }
+      midnry-fps .mf-locker .mf-currency {
+        display: inline-flex;
+        gap: 4px;
+        padding: 4px;
+        margin-top: 4px;
+        border-radius: 8px;
+        background: #121a17;
+      }
+      midnry-fps .mf-locker .mf-currency button {
+        margin: 0;
+        min-height: 40px;
+        padding: 0 14px;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: #b9c6bd;
+        font: 700 14px/1 var(--mf-display);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      midnry-fps .mf-locker .mf-currency button[aria-pressed="true"] {
+        background: var(--mf-accent, #f2c45a);
+        color: #101419;
+      }
       midnry-fps .mf-locker .mf-storestatus:empty {
         display: none;
       }
@@ -2544,32 +2568,34 @@
           ["bp-key", "MISSION BRIEFING / BASE", "Lifeline Run",
             "Gather medical supplies at Breakwater, load the medevac and fly aid to the wounded patrol.",
             "Start with Practice to learn collecting, loading, defusing, reporting, voting and flying."],
-          ["ls-outpost", "LAST SIGNAL / DUST OUTPOST", "Last one standing",
+          ["bp-key", "LAST SIGNAL / DUST OUTPOST", "Last one standing",
             "Eight fighters, three lives each, and the Red Haze closing in. Win three rounds to take the series.",
             "Shoot a red canister near a crowd, then slide away. Blue canisters heal whoever stands close."],
-          ["ls-estate", "LAST SIGNAL / WRECK ESTATE", "The ground fights too",
+          ["bp-key", "LAST SIGNAL / WRECK ESTATE", "The ground fights too",
             "Sandstorms, lightning and earthquakes hit mid-round. Watch for the warning and move before it lands.",
             "On your last life the adrenaline kicks in. Use it: push while the others are still careful."],
-          ["lz-patrol", "OPERATORS / TRUST", "Watch the patrol",
+          ["bp-key", "OPERATORS / TRUST", "Watch the patrol",
             "Operators and infiltrators wear the same uniforms. Evidence matters more than appearances.",
             "Report a fallen patrol with F. Footprints, paint smudges and the security log go on your case board."],
-          ["lz-fire", "EMERGENCIES", "The base fights back",
+          ["bp-key", "EMERGENCIES", "The base fights back",
             "Fires, new casualties, supply drops and sandstorms arrive mid-match. Handle them before the timer runs out.",
             "Each quarter of the supplies loaded locks the base down for 25 seconds. Keep the cargo moving."],
-          ["lz-hangar", "PHASE TWO / MEDEVAC", "Lifeline Medevac",
+          ["bp-key", "PHASE TWO / MEDEVAC", "Lifeline Medevac",
             "Once all nine supplies are aboard, take off. Nobody can be eliminated in the air, but sabotage still can.",
             "If autopilot fails, take the helm. Hold altitude and course in their safe bands, then restore autopilot."],
-          ["lz-night", "NIGHT SHIFT", "After dark",
+          ["bp-key", "NIGHT SHIFT", "After dark",
             "The same base under lamps and neon. You see less far, and so does everyone else.",
             "Stay with someone. A lone operator in the dark is exactly what an infiltrator is waiting for."],
-          ["lz-medevac", "DAILY CASE / ONLINE", "Every patrol matters",
+          ["bp-key", "DAILY CASE / ONLINE", "Every patrol matters",
             "Play the Daily case to compare scores with friends, or play online with friends and smart bots.",
             "After elimination, follow survivors and use Remote support to help the wounded from afar."],
         ];
         const images = [...screen.querySelectorAll(".mf-loadimage")];
         // Key art with the logo painted in: wide and tall cuts, and the
         // screen's own brand line steps aside while it shows.
-        const KEY_ART = new Set(["bp-key", "ls-outpost", "ls-estate"]);
+        // One painting for the whole loading screen; the briefings and tips
+        // still rotate over it.
+        const KEY_ART = new Set(["bp-key"]);
         const tall = matchMedia("(max-aspect-ratio: 4/5)");
         const art = (asset) =>
           KEY_ART.has(asset) ? `${asset}-${tall.matches ? "tall" : "wide"}` : asset;
@@ -2601,6 +2627,12 @@
               `${String(index + 1).padStart(2, "0")} / ${String(slides.length).padStart(2, "0")}`;
             screen.classList.toggle("mf-logoart", KEY_ART.has(asset));
           };
+          // Same picture: only the briefing text changes.
+          if (images[active].getAttribute("src")?.includes(`/${art(asset)}.webp`) || images[active].currentSrc.includes(`/${art(asset)}.webp`)) {
+            ++request;
+            updateCaption();
+            return;
+          }
           const image = images[1 - active],
             token = ++request;
           image.onload = () => {

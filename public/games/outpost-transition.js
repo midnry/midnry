@@ -1,7 +1,14 @@
 /** A short loading screen whenever the 3D scene switches between the base
- * and the medevac (take-off, or a rematch after a flight). Rebuilding the
- * scene can freeze the page for a moment; the screen is painted first, the
- * rebuild happens behind it, and it fades once a few frames have rendered. */
+ * and the medevac (take-off, or a rematch after a flight), and at the start
+ * of every Last Signal round (each round can be a different arena). Building
+ * the scene can freeze the page for a moment; the screen is painted first,
+ * the build happens behind it, and it fades once a few frames have rendered. */
+import { mapOf } from "./outpost-sim.js";
+
+// Last Signal key art (wide and tall cuts): Wreck Estate has its own,
+// the other arenas use the Dust Outpost painting.
+const SIGNAL_ART = { estate: "ls-estate" };
+const tall = () => matchMedia("(max-aspect-ratio: 4/5)").matches;
 const SCENES = {
   transport: {
     image: "loading/lz-hangar.webp",
@@ -21,6 +28,8 @@ const CSS = `
 midnry-fps .mf-shell:has(.mf-transition:not([hidden]):not(.mf-out)) > :not(.mf-transition, canvas, style) { visibility: hidden !important; }
 midnry-fps .mf-transition { position: absolute; inset: 0; z-index: 1000; display: grid; align-content: end; padding: 0 clamp(20px, 5vw, 64px) clamp(28px, 7vh, 72px); color: #f1f4ef; background: #070a09 center / cover no-repeat; opacity: 1; transition: opacity 0.35s ease; pointer-events: auto; }
 midnry-fps .mf-transition[hidden] { display: none; }
+midnry-fps .mf-transition.mf-art { background-position: 25% top; }
+midnry-fps .mf-transition.mf-art::before { background: linear-gradient(0deg, #050706f2 0%, #050706aa 30%, #05070600 58%); }
 midnry-fps .mf-transition.mf-out { opacity: 0; pointer-events: none; }
 midnry-fps .mf-transition::before { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, #050706f2 0%, #05070699 38%, #05070622 70%), linear-gradient(90deg, #050706cc, #05070600 60%); }
 midnry-fps .mf-transition > * { position: relative; max-width: 620px; margin: 0; }
@@ -48,7 +57,9 @@ export class SceneTransition {
     g.shell.append(this.style, this.el);
     // Warm the images so the screen never appears empty.
     for (const scene of Object.values(SCENES)) new Image().src = scene.image;
+    for (const art of ["ls-outpost", "ls-estate"]) new Image().src = `loading/${art}-${tall() ? "tall" : "wide"}.webp`;
     this.lastMap = null;
+    this.lastRound = null;
     this.pending = null;
     this.original = g.render.bind(g);
     g.render = (...args) => this.render(args);
@@ -57,6 +68,15 @@ export class SceneTransition {
   render(args) {
     const g = this.g,
       map = g.mode === "protocol" && g.militaryLoaded ? g.arena?.mapId : null;
+    // Last Signal: each new round (from the menu, a rematch or the next
+    // series round) opens on its arena's art while the arena is built.
+    const round = g.mode === "signal" && g.militaryLoaded && g.state === "playing" ? g.arena?.roundId : null;
+    if (round && round !== this.lastRound && !this.pending) {
+      this.lastRound = round;
+      this.showSignal(g.arena.mapId);
+      return undefined;
+    }
+    if (g.mode !== "signal") this.lastRound = null;
     if (map && this.lastMap && map !== this.lastMap && !this.pending) {
       this.lastMap = map;
       this.show(map);
@@ -75,19 +95,37 @@ export class SceneTransition {
       return undefined;
     }
     const result = this.original(...args);
-    if (this.pending && ++this.pending.frames >= 3 && performance.now() - this.pending.at > 900) this.hide();
+    // Painted round art stays long enough to be seen, even on fast devices.
+    if (this.pending && ++this.pending.frames >= 3 && performance.now() - this.pending.at > (this.pending.art ? 1600 : 900))
+      this.hide();
     return result;
   }
 
+  showSignal(mapId) {
+    const art = SIGNAL_ART[mapId] || "ls-outpost",
+      series = this.g.series?.rounds?.length ? `Round ${this.g.series.round} · ` : "";
+    this.present({
+      image: `loading/${art}-${tall() ? "tall" : "wide"}.webp`,
+      kicker: `Last Signal · ${series}${mapOf(mapId).name}`,
+      title: "Last one standing",
+      copy: "Three lives each. Watch for disaster warnings, and stay ahead of the Red Haze.",
+      art: true,
+    });
+  }
+
   show(map) {
-    const scene = map === this.g.transportMap?.id || /medevac|transport/.test(map) ? SCENES.transport : SCENES.base;
+    this.present(map === this.g.transportMap?.id || /medevac|transport/.test(map) ? SCENES.transport : SCENES.base);
+  }
+
+  present(scene) {
+    this.el.classList.toggle("mf-art", !!scene.art);
     this.el.style.backgroundImage = `url("${scene.image}")`;
     this.el.querySelector("small").textContent = scene.kicker;
     this.el.querySelector("h2").textContent = scene.title;
     this.el.querySelector("p").textContent = scene.copy;
     this.el.classList.remove("mf-out");
     this.el.hidden = false;
-    this.pending = { at: performance.now(), frames: 0 };
+    this.pending = { at: performance.now(), frames: 0, art: !!scene.art };
     clearTimeout(this.timer);
     // Never strand the player behind the screen.
     this.timer = setTimeout(() => this.hide(), 12000);

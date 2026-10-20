@@ -431,10 +431,21 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   `/games/outpost-zero?purchase=<ref>` (route passes it to the game; desktop app keeps it).
 - Game: `public/games/outpost-store.js` (ownership cache `midnry-outpost-store`), Locker grid in
   `outpost-retention.js` (`finishGrid`, `finishUsable`, `weaponFinish`). Stats page: Store section.
-- **The live Paystack account is set up in USD for Midnry Pass.** NGN must be enabled on the
-  account (Paystack dashboard) or checkout returns Paystack's error message in the Locker.
+- **Both currencies** (owner connected NGN and USD on Paystack): each premium finish has
+  `price: { NGN, USD }` (₦1,500/2,000/2,500/3,000 · $1.49/1.99/2.49/2.99). The Locker has a
+  ₦ Naira / $ Dollars switch (`midnry-outpost-currency`; default by time zone Africa/Lagos → NGN);
+  `buy` sends the currency, the row stores it, `settle` checks it. Stats shows revenue per currency.
 - QA: `scripts/qa/mock-paystack.mjs` (stand-in Paystack on :8099; `dev-up.sh` points the local
   server at it via `OUTPOST_QA_PAYSTACK_URL`, ignored when `RENDER` is set) and
   `node scripts/qa/outpost-store.mjs` (buy round trip, webhook-only, tampering, phone, admin);
   `node scripts/qa/finish-look.mjs` (every finish on the gun). Store API calls in Playwright must
   run inside a page: the `__Host-` session cookie is Secure.
+
+## Loading screens (owner, 2026-10-20)
+
+- Opening loading screen: one painting only (`bp-key`, wide/tall); the briefings and tips still
+  rotate over it (`outpost-zero.html` slideshow; `check-outpost-loading.mjs`).
+- Last Signal: every new round opens on its arena's painting (`SceneTransition.showSignal` in
+  `outpost-transition.js`): Wreck Estate → `ls-estate`, Dust Outpost and Skyport → `ls-outpost`;
+  painted screens stay at least 1.6 s. Blackout Protocol keeps its base/medevac screens.
+  QA: `node scripts/qa/signal-loading.mjs [width] [pick]` (`HOLD=1` keeps it open for a photo).

@@ -8,7 +8,7 @@ import { adminStats, type AdminApp, type AdminStats } from "@/lib/admin.function
 import { Button, Skeleton, TextInput, cn } from "@/components/ui";
 import { gameStats, type GameStats } from "@/games/abuja/play.functions";
 import { outpostAdminStats, outpostAdminSales, type OutpostStats, type StoreSales } from "@/games/outpost/stats.functions";
-import { finishOf, naira } from "../../public/games/outpost-finishes.js";
+import { finishOf, money } from "../../public/games/outpost-finishes.js";
 
 export const Route = createFileRoute("/stats")({
   head: () => ({ meta: [{ title: "Stats — Midnry" }, { name: "robots", content: "noindex" }] }),
@@ -355,7 +355,7 @@ function OutpostSection() {
         <div className="mt-6 rounded-2xl bg-card p-5 shadow-line">
           <h3 className="font-display text-2xl">Store</h3>
           <p className="mt-1 text-sm text-muted tabular-nums">
-            Last 30 days: {naira(sales.revenue30)} from {count(sales.sales30, "sale")} to {count(sales.buyers30, "buyer")} (before Paystack fees).
+            Last 30 days: {sales.revenue30.length ? sales.revenue30.map((r) => money(r.amount, r.currency)).join(" + ") : "nothing yet"} from {count(sales.sales30, "sale")} to {count(sales.buyers30, "buyer")} (before Paystack fees).
           </p>
           {sales.items.length ? (
             <ul className="mt-3 divide-y divide-line">
@@ -363,7 +363,7 @@ function OutpostSection() {
                 <li key={i.item} className="flex justify-between gap-3 py-2 text-sm">
                   <span>{finishOf(i.item).name}</span>
                   <span className="text-muted tabular-nums">
-                    {count(i.sales, "sale")} · {naira(i.revenue)} all time
+                    {count(i.sales, "sale")} · {i.revenue.map((r) => money(r.amount, r.currency)).join(" + ")} all time
                   </span>
                 </li>
               ))}

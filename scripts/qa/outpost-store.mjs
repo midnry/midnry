@@ -91,6 +91,13 @@ const last = await (await fetch(`${MOCK}/qa/last`)).json();
 result.webhookStatus = (await (await fetch(`${MOCK}/qa/pay`, { method: "POST", body: JSON.stringify({ reference: last.reference, webhook: true }) })).json()).webhook;
 result.afterWebhook = (await api(ctx, { op: "state" })).body.owned;
 
+// 3b. Dollars: the same flow priced in USD cents.
+await api(ctx, { op: "buy", item: "pixel", currency: "USD" });
+const usd = await (await fetch(`${MOCK}/qa/last`)).json();
+result.usdCharge = `${usd.currency} ${usd.amount}`;
+await fetch(`${MOCK}/qa/pay`, { method: "POST", body: JSON.stringify({ reference: usd.reference, webhook: true }) });
+result.usdOwned = (await api(ctx, { op: "state" })).body.owned.includes("pixel");
+
 // 4. Tampering: underpaid webhook, and another account confirming our reference.
 await api(ctx, { op: "buy", item: "damascus" });
 const cheap = await (await fetch(`${MOCK}/qa/last`)).json();
@@ -140,6 +147,9 @@ const ok =
   started.status === 200 &&
   result.webhookStatus === 200 &&
   result.afterWebhook.includes("carbon") &&
+  result.usdCharge === "USD 149" &&
+  result.usdOwned &&
+  /\$/.test(result.adminSales) &&
   !result.underpaidOwned &&
   result.thief.status >= 400 &&
   !result.thiefOwned.length &&

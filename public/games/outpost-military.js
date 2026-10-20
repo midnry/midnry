@@ -20717,7 +20717,10 @@ var nm = [
 		id: "tiger",
 		name: "Tiger Stripe",
 		kind: "premium",
-		price: 15e4,
+		price: {
+			NGN: 15e4,
+			USD: 149
+		},
 		pattern: "tiger",
 		colors: [
 			"#8b8a5c",
@@ -20730,7 +20733,10 @@ var nm = [
 		id: "pixel",
 		name: "Desert Pixel",
 		kind: "premium",
-		price: 15e4,
+		price: {
+			NGN: 15e4,
+			USD: 149
+		},
 		pattern: "pixel",
 		colors: [
 			"#c9b48a",
@@ -20744,7 +20750,10 @@ var nm = [
 		id: "carbon",
 		name: "Carbon Weave",
 		kind: "premium",
-		price: 2e5,
+		price: {
+			NGN: 2e5,
+			USD: 199
+		},
 		pattern: "carbon",
 		colors: ["#17191b", "#3a3f44"],
 		blurb: "Woven carbon fibre under clear lacquer."
@@ -20753,7 +20762,10 @@ var nm = [
 		id: "damascus",
 		name: "Damascus Steel",
 		kind: "premium",
-		price: 25e4,
+		price: {
+			NGN: 25e4,
+			USD: 249
+		},
 		pattern: "damascus",
 		colors: [
 			"#2b2e31",
@@ -20766,7 +20778,10 @@ var nm = [
 		id: "haze",
 		name: "Red Haze",
 		kind: "premium",
-		price: 3e5,
+		price: {
+			NGN: 3e5,
+			USD: 299
+		},
 		pattern: "haze",
 		colors: [
 			"#141213",

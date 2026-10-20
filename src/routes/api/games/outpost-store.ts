@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 // Outpost Zero store: { op: "state" } (owned items, Pass, open or not),
-// { op: "buy", item } (Paystack checkout page), { op: "confirm", reference }.
+// { op: "buy", item, currency: "NGN" | "USD" } (Paystack checkout page), { op: "confirm", reference }.
 export const Route = createFileRoute("/api/games/outpost-store")({
   server: {
     handlers: {
@@ -48,7 +48,7 @@ export const Route = createFileRoute("/api/games/outpost-store")({
         const { OutpostError } = await import("@/games/outpost/rooms.server");
         try {
           if (body.op === "state") return Response.json(await store.storeState(userId), { headers });
-          if (body.op === "buy") return Response.json(await store.beginPurchase(userId, body.item), { headers });
+          if (body.op === "buy") return Response.json(await store.beginPurchase(userId, body.item, body.currency), { headers });
           if (body.op === "confirm")
             return Response.json(await store.confirmPurchase(userId, body.reference), { headers });
           return Response.json({ error: "Invalid request." }, { status: 400, headers });

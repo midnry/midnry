@@ -15,7 +15,7 @@ import { standingsHTML } from "./outpost-series.js";
 import { BattleMusic, battleIntensity } from "./outpost-music.js";
 import { spatialSound } from "./outpost-spatial-audio.js";
 import { recordMatch } from "./outpost-account.js";
-import { finishOf, naira, drawFinish } from "./outpost-finishes.js";
+import { finishOf, money, drawFinish } from "./outpost-finishes.js";
 import { OutpostStore } from "./outpost-store.js";
 const read = (key) => {
   try {
@@ -262,6 +262,13 @@ export class Retention {
       }
     });
     g.on(g.$(".mf-lockerbody"), "click", (e) => {
+      const currency = e.target.closest("[data-currency]");
+      if (currency) {
+        this.store.setCurrency(currency.dataset.currency);
+        this.lockerContents();
+        this.g.$(`[data-currency="${currency.dataset.currency}"]`)?.focus({ preventScroll: true });
+        return;
+      }
       const tile = e.target.closest("[data-finish]");
       if (tile) {
         const finish = finishOf(tile.dataset.finish);
@@ -502,11 +509,17 @@ export class Retention {
               ? "With Midnry Pass"
               : store.signedIn === false
                 ? "Sign in to buy"
-                : `Buy · ${naira(f.price)}`;
+                : `Buy · ${money(f.price[store.currency], store.currency)}`;
       const locked = !usable && f.kind === "xp";
       return `<button type="button" class="mf-finishtile${on ? " is-on" : ""}${usable ? "" : " is-locked"}" data-finish="${f.id}" aria-pressed="${on}" ${locked ? "disabled" : ""}><canvas width="96" height="96" aria-hidden="true"></canvas><strong>${escapeText(f.name)}</strong><small>${escapeText(f.blurb || (f.kind === "xp" ? "Earned with XP." : ""))}</small><span class="mf-finishstate">${state}</span></button>`;
     }).join("");
-    return `<h3>Weapon finishes</h3><p>Your gun in first person. Looks only, never stats.</p><div class="mf-finishgrid">${tiles}</div><p class="mf-storestatus" role="status" aria-live="polite">${escapeText(store.message || (store.ready || store.signedIn === null ? "" : store.signedIn === false ? "Sign in with your Midnry account to buy finishes." : "The store is opening soon."))}</p>`;
+    const pay = `<div class="mf-currency" role="group" aria-label="Pay in">${[
+      ["NGN", "₦ Naira"],
+      ["USD", "$ Dollars"],
+    ]
+      .map(([c, label]) => `<button type="button" data-currency="${c}" aria-pressed="${store.currency === c}">${label}</button>`)
+      .join("")}</div>`;
+    return `<h3>Weapon finishes</h3><p>Your gun in first person. Looks only, never stats.</p>${pay}<div class="mf-finishgrid">${tiles}</div><p class="mf-storestatus" role="status" aria-live="polite">${escapeText(store.message || (store.ready || store.signedIn === null ? "" : store.signedIn === false ? "Sign in with your Midnry account to buy finishes." : "The store is opening soon."))}</p>`;
   }
   paintSwatches() {
     for (const tile of this.g.root.querySelectorAll(".mf-finishtile")) {

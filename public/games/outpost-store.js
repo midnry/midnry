@@ -2,8 +2,11 @@
  * buying one through Paystack, and confirming the payment on return.
  * The server owns prices and ownership; this only asks and remembers the
  * answer on the device so the gun is painted before the reply arrives. */
+import { CURRENCIES, defaultCurrency } from "./outpost-finishes.js";
+
 const ENDPOINT = "/api/games/outpost-store";
 const CACHE = "midnry-outpost-store";
+const CURRENCY = "midnry-outpost-currency";
 
 async function call(body) {
   const response = await fetch(ENDPOINT, {
@@ -29,6 +32,13 @@ export class OutpostStore {
     this.ready = false;
     this.signedIn = null;
     this.message = "";
+    // Naira or dollars: remembered once chosen, else guessed from time zone.
+    try {
+      const saved = localStorage.getItem(CURRENCY);
+      this.currency = CURRENCIES.includes(saved) ? saved : defaultCurrency();
+    } catch {
+      this.currency = defaultCurrency();
+    }
     try {
       const cached = JSON.parse(localStorage.getItem(CACHE) || "{}");
       this.owned = new Set(Array.isArray(cached.owned) ? cached.owned : []);
@@ -86,11 +96,21 @@ export class OutpostStore {
       setTimeout(() => this.refresh(), 20000);
     }
   }
+  setCurrency(currency) {
+    if (!CURRENCIES.includes(currency)) return;
+    this.currency = currency;
+    try {
+      localStorage.setItem(CURRENCY, currency);
+    } catch {
+      // Remembered for this visit only.
+    }
+    this.onChange?.();
+  }
   async buy(item) {
     this.message = "Opening secure checkout…";
     this.onChange?.();
     try {
-      const result = await call({ op: "buy", item });
+      const result = await call({ op: "buy", item, currency: this.currency });
       if (result.already) {
         this.message = "You already own that finish.";
         await this.refresh();

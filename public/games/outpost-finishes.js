@@ -2,7 +2,8 @@
  * the store server. Cosmetic only — a finish never changes a weapon.
  *
  * - kind "xp": unlocked by XP on this device (free).
- * - kind "premium": bought once with a Midnry account (price in kobo, NGN).
+ * - kind "premium": bought once with a Midnry account. price is in the
+ *   smallest unit of each currency the store takes (kobo, cents).
  * - kind "pass": included while the account has Midnry Pass.
  *
  * drawFinish() paints a tileable swatch on a 2D canvas; the renderer turns
@@ -16,7 +17,7 @@ export const FINISHES = [
     id: "tiger",
     name: "Tiger Stripe",
     kind: "premium",
-    price: 150000,
+    price: { NGN: 150000, USD: 149 },
     pattern: "tiger",
     colors: ["#8b8a5c", "#4d5232", "#1d1f17"],
     blurb: "Jungle brush strokes over olive drab.",
@@ -25,7 +26,7 @@ export const FINISHES = [
     id: "pixel",
     name: "Desert Pixel",
     kind: "premium",
-    price: 150000,
+    price: { NGN: 150000, USD: 149 },
     pattern: "pixel",
     colors: ["#c9b48a", "#a38b62", "#76664a", "#4f4636"],
     blurb: "Four-tone digital camo for the dust.",
@@ -34,7 +35,7 @@ export const FINISHES = [
     id: "carbon",
     name: "Carbon Weave",
     kind: "premium",
-    price: 200000,
+    price: { NGN: 200000, USD: 199 },
     pattern: "carbon",
     colors: ["#17191b", "#3a3f44"],
     blurb: "Woven carbon fibre under clear lacquer.",
@@ -43,7 +44,7 @@ export const FINISHES = [
     id: "damascus",
     name: "Damascus Steel",
     kind: "premium",
-    price: 250000,
+    price: { NGN: 250000, USD: 249 },
     pattern: "damascus",
     colors: ["#2b2e31", "#5f6468", "#999fa4"],
     blurb: "Folded-steel waves, etched and polished.",
@@ -52,7 +53,7 @@ export const FINISHES = [
     id: "haze",
     name: "Red Haze",
     kind: "premium",
-    price: 300000,
+    price: { NGN: 300000, USD: 299 },
     pattern: "haze",
     colors: ["#141213", "#3a1714", "#ff3b25"],
     glow: true,
@@ -70,8 +71,23 @@ export const FINISHES = [
 
 export const finishOf = (id) => FINISHES.find((f) => f.id === id) || FINISHES[0];
 
-/** "₦1,500" for a price in kobo. */
-export const naira = (kobo) => `₦${Math.round(kobo / 100).toLocaleString("en")}`;
+export const CURRENCIES = ["NGN", "USD"];
+
+/** "₦1,500" / "$1.49" for an amount in kobo / cents. */
+export const money = (amount, currency = "NGN") =>
+  currency === "USD"
+    ? `$${(amount / 100).toFixed(2)}`
+    : `₦${Math.round(amount / 100).toLocaleString("en")}`;
+export const naira = (kobo) => money(kobo, "NGN");
+
+/** Naira for players in Nigeria (by time zone), dollars elsewhere. */
+export function defaultCurrency() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone === "Africa/Lagos" ? "NGN" : "USD";
+  } catch {
+    return "NGN";
+  }
+}
 
 function seeded(seed) {
   let s = seed % 2147483647 || 1;

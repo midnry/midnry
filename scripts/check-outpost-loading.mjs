@@ -56,14 +56,15 @@ try {
     // Main's current briefing artwork/sequence (the screen itself is unchanged).
     // Key art (logo painted in) comes in wide and tall cuts.
     const cut = mobile ? "tall" : "wide";
+    // One painting (wide or tall cut) under every briefing.
     for (const [title, image] of [
-      ["Last one standing", `ls-outpost-${cut}`],
-      ["The ground fights too", `ls-estate-${cut}`],
-      ["Watch the patrol", "lz-patrol"],
-      ["The base fights back", "lz-fire"],
-      ["Lifeline Medevac", "lz-hangar"],
-      ["After dark", "lz-night"],
-      ["Every patrol matters", "lz-medevac"],
+      ["Last one standing", `bp-key-${cut}`],
+      ["The ground fights too", `bp-key-${cut}`],
+      ["Watch the patrol", `bp-key-${cut}`],
+      ["The base fights back", `bp-key-${cut}`],
+      ["Lifeline Medevac", `bp-key-${cut}`],
+      ["After dark", `bp-key-${cut}`],
+      ["Every patrol matters", `bp-key-${cut}`],
       ["Lifeline Run", `bp-key-${cut}`],
     ]) {
       await page.getByRole("button", { name: "Next loading slide", exact: true }).click();
@@ -72,7 +73,7 @@ try {
         title,
       );
       assert.ok(
-        (await page.locator(".mf-loadimage.is-active").getAttribute("src")).includes(`/loading/${image}.webp`),
+        (await page.locator(".mf-loadimage.is-active").evaluate((i) => i.currentSrc || i.src)).includes(`/loading/${image}.webp`),
       );
       assert.ok((await page.locator(".mf-loadtip p").textContent()).length > 35);
     }
@@ -124,14 +125,12 @@ try {
     await held;
     await route.continue();
   });
-  await page.route("**/loading/ls-outpost-*.webp", (route) => route.abort());
+  // Every loading painting fails: briefings still rotate, no retry prompt.
+  await page.route("**/loading/*.webp", (route) => route.abort());
   await page.goto(base + "/games/outpost-zero.html");
-  await page.waitForFunction(
-    () => document.querySelector(".mf-loadimage.is-active").naturalWidth > 0,
-  );
   await page.getByRole("button", { name: "Next loading slide" }).click();
   await page.waitForTimeout(500);
-  assert.equal(await page.locator(".mf-slidetitle").textContent(), "Blackout Protocol");
+  assert.equal(await page.locator(".mf-slidetitle").textContent(), "Last one standing");
   assert.equal(await page.locator(".mf-loadretry").isVisible(), false);
   release();
   await page.waitForFunction(
