@@ -5,8 +5,8 @@
  * the build happens behind it, and it fades once a few frames have rendered. */
 import { mapOf } from "./outpost-sim.js";
 
-// Last Signal round painting (portrait; the wide cut sets it on the right
-// over a blurred enlargement of itself, leaving the left for the text).
+// Last Signal round painting: a portrait cut for phones, a landscape cut
+// (logo centred at the top) for wider screens.
 const tall = () => matchMedia("(max-aspect-ratio: 4/5)").matches;
 const SCENES = {
   transport: {
@@ -27,7 +27,7 @@ const CSS = `
 midnry-fps .mf-shell:has(.mf-transition:not([hidden]):not(.mf-out)) > :not(.mf-transition, canvas, style) { visibility: hidden !important; }
 midnry-fps .mf-transition { position: absolute; inset: 0; z-index: 1000; display: grid; align-content: end; padding: 0 clamp(20px, 5vw, 64px) clamp(28px, 7vh, 72px); color: #f1f4ef; background: #070a09 center / cover no-repeat; opacity: 1; transition: opacity 0.35s ease; pointer-events: auto; }
 midnry-fps .mf-transition[hidden] { display: none; }
-midnry-fps .mf-transition.mf-art { background-position: right center; }
+midnry-fps .mf-transition.mf-art { background-position: center top; }
 @media (max-aspect-ratio: 4/5) { midnry-fps .mf-transition.mf-art { background-position: center top; } }
 midnry-fps .mf-transition.mf-art::before { background: linear-gradient(0deg, #050706f2 0%, #050706aa 30%, #05070600 58%); }
 midnry-fps .mf-transition.mf-out { opacity: 0; pointer-events: none; }
