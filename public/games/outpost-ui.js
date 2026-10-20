@@ -287,7 +287,7 @@ export class MenuUI {
       g.$(".mf-start").textContent = "CREATE OR JOIN A ROOM";
     } else if (!g.online) {
       g.$(".mf-start").disabled = !g.militaryLoaded;
-      if (g.state === "fresh") g.$(".mf-start").textContent = "PLAY →";
+      if (g.state === "fresh") g.$(".mf-start").textContent = g.homeMenu?.playLabel?.() ?? "PLAY →";
     }
     g.$(".mf-maphint").textContent = map.tag;
     g.$(".mf-weaponhint").textContent = `${weapon.kind} · ${weapon.mag} rounds`;

@@ -4893,7 +4893,12 @@
               this.mode === "protocol" &&
               (!this.$(".mf-modal").hidden || this.protocolUI?.hasDialogOpen());
             const quietInterval = this.protocolUI?.taskPanel?.dialog.open ? 1000 / 30 : 100;
-            if (!quietProtocol || now - (this.lastSceneRenderAt || 0) >= quietInterval) {
+            // The home menu is opaque: drawing (and, after a mode switch,
+            // rebuilding) the hidden 3D arena behind it only costs memory and
+            // freezes phones. The arena is built when Play starts.
+            const homeCovers =
+              !this.running && !this.online && this.$(".mf-modal.mf-home:not([hidden])") !== null;
+            if (!homeCovers && (!quietProtocol || now - (this.lastSceneRenderAt || 0) >= quietInterval)) {
               this.render();
               this.lastSceneRenderAt = now;
             }

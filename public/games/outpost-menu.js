@@ -27,6 +27,10 @@ const VARIANTS = {
 const MODES = [...VARIANTS.protocol, ...VARIANTS.signal];
 
 const CSS = `
+midnry-fps .mf-playlists[data-unchosen] :is(#mf-step2, .mf-variants, .mf-playnext) { display: none !important; }
+midnry-fps .mf-gamepick.mf-ask { animation: mf-ask 0.6s ease-in-out 2; border-radius: 12px; }
+@keyframes mf-ask { 50% { box-shadow: 0 0 0 3px var(--mf-accent); } }
+@media (prefers-reduced-motion: reduce) { midnry-fps .mf-gamepick.mf-ask { animation: none; box-shadow: 0 0 0 3px var(--mf-accent); } }
 midnry-fps .mf-modal.mf-home { display: block !important; padding: 0 !important; overflow: hidden; background: #070a09 !important; }
 midnry-fps .mf-hero { position: absolute; inset: 0; pointer-events: none;
   background:
@@ -270,6 +274,17 @@ export class OutpostMenu {
     try {
       saved = localStorage.getItem("midnry-outpost-mode");
     } catch {}
+    // Play never guesses the game: until a game has been picked (now or on
+    // an earlier visit), it asks the player to choose one first.
+    this.gameChosen = saved === "signal" || saved === "protocol";
+    this.guardPlay = (event) => {
+      if (this.gameChosen || g.online || g.ui?.playChoice === "online" || g.state === "playing") return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      this.askForGame();
+    };
+    // Capture on the button itself runs before the game's own start handler.
+    g.$(".mf-start")?.addEventListener("click", this.guardPlay, true);
     if (saved === "signal" && !g.online && g.state !== "playing") {
       g.mode = "signal";
       g.reset();
@@ -318,7 +333,7 @@ export class OutpostMenu {
     this.welcome = el(
       "div",
       "mf-newhere",
-      `<b>New here?</b><span>Learn the basics in a 2-minute training, or just press Play: your first matches are kept simple.</span><button type="button" data-go="training">${icon("target")}Start training</button>`,
+      `<b>New here?</b><span>Learn the basics in a 2-minute training, or choose a game below: your first matches are kept simple.</span><button type="button" data-go="training">${icon("target")}Start training</button>`,
     );
     this.panel.querySelector(".mf-start")?.before(this.welcome);
     // Say what Play starts, so the choice below is never a surprise.
@@ -504,9 +519,38 @@ export class OutpostMenu {
     return modifierChoice(g.modifier) === "night-shift" ? "night" : "lifeline";
   }
 
+  /** Play was pressed before choosing: show the game choice and say so. */
+  askForGame() {
+    const step = this.cards.querySelector("#mf-step1");
+    this.gamePick.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+    this.gamePick.classList.remove("mf-ask");
+    void this.gamePick.offsetWidth;
+    this.gamePick.classList.add("mf-ask");
+    step.textContent = "";
+    step.insertAdjacentHTML("beforeend", "<b>1</b>Choose a game to play");
+    this.gamePick.querySelector("button")?.focus({ preventScroll: true });
+  }
+
+  /** What the big button says: the game it will start, or the next step. */
+  playLabel() {
+    if (!this.gameChosen) return "CHOOSE A GAME ↓";
+    return this.g.mode === "signal" ? "PLAY LAST SIGNAL →" : "PLAY BLACKOUT PROTOCOL →";
+  }
+
   pick(mode) {
     const g = this.g;
-    if (g.online || g.state === "playing" || mode === this.current()) return;
+    if (g.online || g.state === "playing") return;
+    // Any pick (a game, a way to play, today's case) is a choice.
+    if (!this.gameChosen) {
+      this.gameChosen = true;
+      this.cards.querySelector("#mf-step1").innerHTML = "<b>1</b>Choose a game";
+      this.gamePick.classList.remove("mf-ask");
+      try {
+        localStorage.setItem("midnry-outpost-mode", mode === "signal" || Object.hasOwn(SERIES_KINDS, mode) ? "signal" : g.mode);
+      } catch {}
+      this.refresh();
+    }
+    if (mode === this.current()) return;
     // Step 1: switch game, keeping that game's last way to play.
     if (mode === "signal" || mode === "protocol") {
       if (g.mode === mode) return;
@@ -643,19 +687,25 @@ export class OutpostMenu {
     const locked = online || g.state === "playing";
     const now = this.current();
     this.cards.toggleAttribute("data-online", online);
+    // Before the first choice nothing looks selected and step 2 waits.
+    const unchosen = !this.gameChosen && !online;
+    if (this.cards.hasAttribute("data-unchosen") !== unchosen) this.cards.toggleAttribute("data-unchosen", unchosen);
     for (const card of this.cards.querySelectorAll("button")) {
-      const pressed = card.dataset.mode ? card.dataset.mode === (online ? "protocol" : game) : card.dataset.variant === now;
+      const pressed =
+        !unchosen &&
+        (card.dataset.mode ? card.dataset.mode === (online ? "protocol" : game) : card.dataset.variant === now);
       if (card.getAttribute("aria-pressed") !== String(pressed)) card.setAttribute("aria-pressed", String(pressed));
       card.disabled = locked;
       card.title = locked && !online ? "Finish or exit this round to change mode" : "";
     }
     this.side.querySelector(".mf-casecard").disabled = locked;
     const start = g.$(".mf-start");
+    if (start && g.state === "fresh" && !online && start.textContent !== this.playLabel()) start.textContent = this.playLabel();
     if (this.playNext.hidden !== (online || g.state === "playing")) this.playNext.hidden = online || g.state === "playing";
     if (this.playNext.disabled !== Boolean(start?.disabled)) this.playNext.disabled = Boolean(start?.disabled);
     const chosen = MODES.find((m) => m.id === (online ? "lifeline" : now));
     const series = signal && g.series?.rounds.length && !g.series.done ? ` · round ${g.series.round} next` : "";
-    const summary = online
+    const summary = online || unchosen
       ? ""
       : `<b>${signal ? "Last Signal" : "Blackout Protocol"} · ${chosen.title}</b> · ${chosen.sub}${series}${g.state === "playing" ? " · in progress" : ""}`;
     if (this.summary.innerHTML !== summary) this.summary.innerHTML = summary;

@@ -18,7 +18,10 @@ const seen = await p.evaluate(async () => {
   const render = g.render.bind(g);
   g.render = (...a) => {
     const out = render(...a);
-    if (g.arena?.mapId === "outpost" && frames.length < 5)
+    // Only frames a player can see: not behind the round's loading screen.
+    const screen = document.querySelector(".mf-transition");
+    const covered = screen && !screen.hidden && !screen.classList.contains("mf-out");
+    if (g.arena?.mapId === "outpost" && !covered && frames.length < 5)
       frames.push(!!g.military?.world?.children.find((c) => c.name === "Arena props"));
     return out;
   };

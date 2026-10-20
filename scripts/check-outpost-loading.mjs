@@ -19,12 +19,14 @@ try {
       }),
       errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
-    await page.addInitScript(() =>
+    await page.addInitScript(() => {
       localStorage.setItem(
         "midnry-outpost-graphics",
         JSON.stringify({ preset: "performance", options: { adaptive: false } }),
-      ),
-    );
+      );
+      // A returning player: Play starts the game chosen last time.
+      localStorage.setItem("midnry-outpost-mode", "protocol");
+    });
     let release;
     const held = new Promise((resolve) => (release = resolve));
     await page.route("**/outpost-military.js*", async (route) => {

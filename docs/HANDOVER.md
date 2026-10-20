@@ -449,3 +449,19 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   `outpost-transition.js`): Wreck Estate → `ls-estate`, Dust Outpost and Skyport → `ls-outpost`;
   painted screens stay at least 1.6 s. Blackout Protocol keeps its base/medevac screens.
   QA: `node scripts/qa/signal-loading.mjs [width] [pick]` (`HOLD=1` keeps it open for a photo).
+
+## Menu fixes: mode-switch crash, Play chooses nothing (owner report, 2026-10-20)
+
+- Crash: every Blackout ↔ Last Signal switch in the menu rebuilt the whole hidden 3D arena
+  (6–35 s freezes in QA, textures 65 → ~180). The loop in `outpost-zero.html` now skips
+  `render()` while the opaque home menu covers the scene (`.mf-modal.mf-home`, not running or
+  online); the arena is built when Play starts, behind the round screen (Last Signal) or the
+  base screen (`outpost-transition.js` also shows it when the renderer still holds another
+  mode's arena: `military.mapKey !== map`). QA: `node scripts/qa/mode-switch.mjs [width] [n]`
+  (memory flat: 81 geometries / 63 textures over 20 switches).
+- Play: `OutpostMenu.gameChosen` (saved `midnry-outpost-mode`, or any pick). Unchosen: the big
+  button reads "CHOOSE A GAME ↓", a capturing click guard scrolls to and pulses the game cards
+  instead of starting, nothing is shown selected and step 2 waits (`data-unchosen`). Chosen:
+  "PLAY LAST SIGNAL →" / "PLAY BLACKOUT PROTOCOL →" (`playLabel()`, also used by
+  `outpost-ui.js`). QA: `node scripts/qa/play-choice.mjs [width]`. Older QA that clicks
+  `.mf-start` directly must set `localStorage["midnry-outpost-mode"]` first.

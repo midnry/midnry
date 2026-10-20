@@ -77,7 +77,10 @@ export class SceneTransition {
       return undefined;
     }
     if (g.mode !== "signal") this.lastRound = null;
-    if (map && this.lastMap && map !== this.lastMap && !this.pending) {
+    // The menu no longer draws the arena behind it, so the scene may still
+    // hold another mode's arena when Blackout Protocol starts.
+    const stale = map && g.military?.mapKey && g.military.mapKey !== map;
+    if (map && ((this.lastMap && map !== this.lastMap) || stale) && !this.pending) {
       this.lastMap = map;
       this.show(map);
       // Skip this frame so the loading screen paints before the rebuild.
