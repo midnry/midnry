@@ -1,6 +1,7 @@
 /** Natural source lighting shared by the world and first-person equipment. */
 import * as THREE from "three";
 import { roofRoomAt } from "./architecture.js";
+import { isAppleTouchDevice } from "./compatibility.js";
 
 const SCALE = 3;
 
@@ -53,8 +54,14 @@ export function initNaturalLighting(r) {
   r.sun.color.set("#fff4df");
   r.hemisphere.color.set("#cad9e1");
   r.hemisphere.groundColor.set("#746c5c");
-  r.sun.shadow.bias = -0.00012;
-  r.sun.shadow.normalBias = 0.018;
+  // Phone GPUs (iPhone in particular) keep less shadow-depth precision, so
+  // the default offsets left fine "shadow acne" stripes shimmering on flat
+  // faces such as supply crates. Touch devices get a larger offset.
+  const touch =
+    (typeof navigator !== "undefined" && isAppleTouchDevice(navigator)) ||
+    !!globalThis.matchMedia?.("(pointer: coarse)").matches;
+  r.sun.shadow.bias = touch ? -0.0006 : -0.00012;
+  r.sun.shadow.normalBias = touch ? 0.04 : 0.018;
   r.sun.shadow.radius = 1.5;
   r.renderer.toneMappingExposure = 0.92;
 }

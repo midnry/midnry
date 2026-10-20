@@ -602,6 +602,13 @@ export class Retention {
         if (d.kind === "quake") this.audio.tone(46, 0.5, 0.2, 0, "sawtooth", 32);
       }
     }
+    // Electrified: a dry electric crackle until it wears off.
+    const self = g.player;
+    if (self?.hp > 0 && self.shockUntil > a.time && performance.now() - (this.crackleAt || 0) > 140) {
+      this.crackleAt = performance.now();
+      this.audio.hiss(0.06, 0.1, 5200);
+      if (Math.random() < 0.4) this.audio.tone(1800, 0.03, 0.04, 0, "square", 600);
+    }
     this.fxHeard ||= new Set();
     for (const f of a.fx) {
       if (this.fxHeard.has(f.id)) continue;

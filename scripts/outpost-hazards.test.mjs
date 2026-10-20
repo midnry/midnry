@@ -182,3 +182,41 @@ test("disasters change the ground for the rest of the round, and it slows you", 
   assert.ok(sand.terrain.filter((t) => t.kind === "sand").length >= 5, "sand drifts pile up");
   assert.equal(new Arena({ mode: "training", mapId: "estate" }).terrain, null);
 });
+
+test("lightning leaves you electrified: a smaller burn for a few seconds", async () => {
+  const { SHOCK } = await import("../public/games/outpost-hazards.js");
+  const a = arena("skyport");
+  for (const e of a.entities) Object.assign(e, { bot: false, shieldUntil: 0 });
+  const p = a.entities[0];
+  a.time = a.disaster.startAt + 1;
+  Object.assign(p, { hp: 100, x: 18.5, y: 30.5 });
+  a.disaster.strikes.push({ id: 999, kind: "storm", x: p.x, y: p.y, at: a.time });
+  a.advance(1 / 30, {});
+  const struck = p.hp;
+  assert.ok(struck < 100 && p.shockUntil > a.time, "struck and electrified");
+  for (let i = 0; i < SHOCK.seconds * 30 + 30; i++) {
+    a.disaster.strikes.length = 0;
+    a.disaster.nextStrike = Infinity;
+    a.advance(1 / 30, {});
+  }
+  const burn = struck - p.hp;
+  assert.ok(burn > 0, "the after-shock hurts");
+  assert.ok(burn < 100 - struck, "less than the strike itself: " + burn.toFixed(1));
+  assert.ok(!(p.shockUntil > a.time), "and wears off");
+});
+
+test("canisters are slim: you can walk right past one", () => {
+  for (const mapId of ["outpost", "skyport", "estate"]) {
+    const a = arena(mapId);
+    for (const c of a.crates.filter((c) => ["red", "green", "pink", "blue"].includes(c.kind))) {
+      // Half a tile beside it is free, and its lane is at least three tiles wide.
+      const free = [
+        [0.5, 0],
+        [-0.5, 0],
+        [0, 0.5],
+        [0, -0.5],
+      ].filter(([dx, dy]) => a.canMove(c.x + dx, c.y + dy));
+      assert.ok(free.length >= 3, `${mapId} canister at ${c.x},${c.y} leaves room`);
+    }
+  }
+});

@@ -52,6 +52,9 @@ export const DIFFICULTIES = {
   normal: { speed: 1, reaction: 1, aim: 0, awareness: 7, dodge: 0.45 },
   hard: { speed: 1.25, reaction: 0.8, aim: 0, awareness: 9, dodge: 0.7 },
 };
+// Half-width of a crate-like object's solid square, in tiles, matching its
+// model: supply crates, slim canisters, sandbag walls and foam.
+const footprint = (c) => (CANISTERS[c.kind] ? 0.14 : c.kind ? 0.42 : 0.32);
 export const difficultyOf = (id) => (Object.hasOwn(DIFFICULTIES, id) ? id : "normal");
 export class Arena {
   constructor({
@@ -372,7 +375,7 @@ export class Arena {
       !this.wall(x - r, y + r) &&
       !this.wall(x + r, y + r) &&
       !this.crates.some(
-        (c) => c.hp > 0 && Math.abs(x - c.x) < r + 0.32 && Math.abs(y - c.y) < r + 0.32,
+        (c) => c.hp > 0 && Math.abs(x - c.x) < r + footprint(c) && Math.abs(y - c.y) < r + footprint(c),
       )
     );
   }
@@ -389,7 +392,7 @@ export class Arena {
         ey = e.y - origin.y,
         along = ex * dx + ey * dy,
         across = Math.abs(ex * dy - ey * dx),
-        radius = e.id.startsWith("crate") ? 0.38 : 0.3;
+        radius = e.id.startsWith("crate") ? footprint(e) + 0.06 : 0.3;
       if (along <= 0 || across >= radius) continue;
       const entry = along - Math.sqrt(radius * radius - across * across);
       if (entry < nearest) {
@@ -1151,7 +1154,10 @@ export class Arena {
     const queue = [[sx, sy]],
       parents = new Map([[key(sx, sy), null]]),
       blocked = new Set(
-        this.crates.filter((c) => c.hp > 0).map((c) => key(Math.floor(c.x), Math.floor(c.y))),
+        // Canisters are slim enough to step around inside their tile.
+        this.crates
+          .filter((c) => c.hp > 0 && !CANISTERS[c.kind])
+          .map((c) => key(Math.floor(c.x), Math.floor(c.y))),
       );
     let end = null;
     for (let i = 0; i < queue.length; i++) {

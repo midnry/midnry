@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=signal-haze-aura-20261020`.
+  Current live value: `v=signal-haze-aura-20261020` (`game-look` carries `v=signal-fixes-20261020`, not yet deployed).
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -56,6 +56,8 @@ hash is stored: `e4ecd2762674dd4bb706fe3aa4fd2d8fc49e1124691d66437d26f8194c9106d
 | `phone-hud.mjs` | Phone game screen (portrait + landscape) with a disaster warning: HUD boxes, overlaps, % of screen covered → `screenshots/qa/phone`. |
 | `signal-haze.mjs [width]` | Red Haze curtain near / far / outside, sandstorm and storm half rolled in → `screenshots/qa/haze`. |
 | `music-preview.mjs` | Renders the battle music (stalk / hunt / fight) to `screenshots/qa/music-preview.wav`, prints loudness, checks it starts, builds and stops in a round. |
+| `crate-closeup.mjs [tag]` | Phone-size close-ups of a supply crate (shadow acne / z-fighting) → `screenshots/qa/crate`. |
+| `shock-and-net.mjs` | Lightning after-shock (arcs on a rival, blue edge on you) and the network meter in a real online room → `screenshots/qa/shock`. |
 | `signal-rounds.mjs [width]` | Plays 3 Last Signal rounds watching for page errors (caught the Charge Core crash). |
 | `signal-lives.mjs` | Start shield, losing a life, last life ends the round. |
 | `signal-regen.mjs` | Health recovery after 5 s without damage. |
@@ -245,3 +247,21 @@ makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to
 - Inside the Red Haze (owner: "it just looks like a line"): red fog (#9a2a22, 0.075),
   drifting red embers around the camera (`updateEmbers()`), and a pulsing red screen-edge
   aura (`.mf-hazefx`, toggled in `signalIntensity()`).
+
+## Owner's phone test fixes (on `game-look`, awaiting "deploy")
+
+- Canisters blocked a lane: crate-like objects now have per-kind footprints (`footprint()` in
+  `outpost-sim.js`: supply 0.32, canister 0.14, barrier/foam 0.42 tiles); pathing ignores
+  canisters; canisters are only placed in lanes ≥ 3 tiles wide.
+- Sand drifts looked like floating domes: now a flat soft sand decal + a low half-sunk ridge.
+- Crate flicker on iPhone: side ribs were flush with the crate's side faces (z-fighting);
+  ribs, side signs and handles moved out (`interactables.js`). Touch devices also get a
+  larger sun shadow bias (−0.0006 / normal 0.04) against shadow acne
+  (`realism-lighting.js`). Not reproducible in headless Chromium; owner to confirm.
+- Lightning after-shock: `SHOCK` in `outpost-hazards.js` (4 s, 6 HP/s ≈ 24 vs 45 strike);
+  arcs on others (`updateShock()`), blue flicker edge + "⚡ ELECTRIFIED" + crackle for you.
+- Network meter (`public/games/outpost-netmeter.js`): signal-bars badge by the pause button
+  in online matches (ping from 2 s heartbeats, jitter, update rate, dropouts in the last
+  minute, live vs backup link); panel from the badge or "Network check" in the pause menu;
+  offline it explains the match is local and offers the HTTP connection test.
+- Simulated rounds now average 95 s.

@@ -161,6 +161,7 @@ midnry-fps :is(.mf-hometop nav button, .mf-playlists button, .mf-casecard, .mf-s
 midnry-fps .mf-gamepick button[aria-pressed="true"]::after { content: "Selected"; position: absolute; top: 10px; left: 10px; padding: 3px 8px; border-radius: 2px; background: var(--mf-accent); color: var(--mf-accent-ink); font: 700 12px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; }
 midnry-fps .mf-matchbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 midnry-fps .mf-matchbar[hidden] { display: none !important; }
+midnry-fps .mf-matchbar .mf-netcheck { grid-column: 1 / -1; }
 midnry-fps .mf-matchbar button { display: flex !important; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 12px !important; border-radius: 3px !important; border: 1px solid #ffffff3d !important; background: #0c1210e6 !important; color: #f1f4ef !important; font: 600 16px var(--mf-display) !important; letter-spacing: 0.08em !important; text-transform: uppercase; box-shadow: none !important; }
 midnry-fps .mf-matchbar button[hidden] { display: none !important; }
 midnry-fps .mf-matchbar button:only-of-type, midnry-fps .mf-matchbar button:not([hidden]):last-child:first-child { grid-column: 1 / -1; }
@@ -329,11 +330,12 @@ export class OutpostMenu {
     this.matchbar = el(
       "div",
       "mf-matchbar",
-      `<button type="button" class="mf-restartmatch">↻ Restart</button><button type="button" class="mf-leavematch">${icon("exit")}Leave match</button>`,
+      `<button type="button" class="mf-restartmatch">↻ Restart</button><button type="button" class="mf-leavematch">${icon("exit")}Leave match</button><button type="button" class="mf-netcheck">${icon("globe")}Network check</button>`,
     );
     this.matchbar.hidden = true;
     this.summary.after(this.matchbar);
     this.matchbar.after(this.actions);
+    g.on(this.matchbar.querySelector(".mf-netcheck"), "click", () => g.netMeter?.open());
     g.on(this.matchbar.querySelector(".mf-restartmatch"), "click", () =>
       g.ui.confirm("Restart match?", "This round ends and a fresh one starts with the same mode.", "Restart", (yes) => {
         if (!yes || g.online) return;

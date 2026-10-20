@@ -43,6 +43,9 @@ export const DISASTERS = {
 };
 export const DISASTER_OF = { outpost: "sandstorm", skyport: "storm", estate: "quake" };
 export const DISASTER_WARNING = 10; // seconds of warning before it starts
+// Lightning leaves anyone it hits electrified: a smaller burn over a few
+// seconds after the strike itself.
+export const SHOCK = { seconds: 4, perSecond: 6 };
 const STRIKE_DELAY = { storm: 1.6, quake: 1.4 }; // marked ground → impact
 
 const COUNTS = {
@@ -86,7 +89,19 @@ export function placeHazards(level, mapId, spawns, crates) {
       corridor = (!open(x - 1, y) && !open(x + 1, y)) || (!open(x, y - 1) && !open(x, y + 1));
     let ring = 0;
     for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) if (open(x + i, y + j)) ring++;
-    if (canisters < count.canisters && walls === 1 && !corridor && far(px, py, 2.5)) {
+    // Canisters stand against a wall, in lanes at least three tiles wide so
+    // they never block the way.
+    const wallSide = [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1],
+      ].find(([i, j]) => !open(x + i, y + j)),
+      roomy =
+        wallSide &&
+        open(x - wallSide[0], y - wallSide[1]) &&
+        open(x - 2 * wallSide[0], y - 2 * wallSide[1]);
+    if (canisters < count.canisters && walls === 1 && roomy && !corridor && far(px, py, 2.5)) {
       const kind = KINDS[canisters % KINDS.length];
       out.push({
         id: `crate-can${canisters}`,
@@ -208,13 +223,18 @@ const roll = (arena, n) => {
 export function updateDisaster(arena, dt) {
   const d = arena.disaster;
   if (!d) return;
+  for (const e of arena.entities)
+    if (e.shockUntil > arena.time && e.hp > 0) arena.damage(e, SHOCK.perSecond * dt, null);
   for (let i = d.strikes.length - 1; i >= 0; i--) {
     const s = d.strikes[i];
     if (arena.time < s.at) continue;
     d.strikes.splice(i, 1);
     if (s.kind === "storm") {
       arena.effect(s.x, s.y, "lightning", 1.3, 0.5);
+      const before = new Map(arena.entities.map((e) => [e, e.hp]));
       arena.blast(null, s.x, s.y, 45, 1.3);
+      for (const e of arena.entities)
+        if (e.hp > 0 && e.hp < before.get(e)) e.shockUntil = arena.time + SHOCK.seconds;
       arena.addTerrain(s.x, s.y, "scorch");
     } else {
       // The ground splits and buckles; the cover beside it collapses.

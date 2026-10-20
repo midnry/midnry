@@ -173,7 +173,7 @@ export class RoomTransport {
     this.save();
     this.open();
     this.sendTimer = setInterval(() => this.sendInput(), 50);
-    this.heartbeat = setInterval(() => this.ping(), 3000);
+    this.heartbeat = setInterval(() => this.ping(), 2000);
     this.storageTimer = setInterval(() => this.save(), 1000);
   }
   open() {
@@ -233,6 +233,7 @@ export class RoomTransport {
       this.g.pendingSuper = false;
       this.g.protocolUI.held = false;
       this.g.protocolUI.actions.length = 0;
+      this.g.netMeter?.reconnected();
       this.fallback();
       this.attempts++;
       this.retry = setTimeout(
@@ -273,6 +274,7 @@ export class RoomTransport {
       const room = hydrateRoom(packet.room, this.lastRoom, packet.full);
       this.lastRoom = room;
       n.lastSnapshotAt = performance.now();
+      g.netMeter?.snapshot();
       g.applyRoom(room);
       this.acknowledge(room.ack);
       g.voice?.sync();
@@ -287,6 +289,7 @@ export class RoomTransport {
     } else if (packet.type === "pong") {
       if (Number.isFinite(packet.at)) {
         this.rtt = Math.round(performance.now() - packet.at);
+        g.netMeter?.ping(this.rtt);
         this.state("Connected · " + this.rtt + " ms roundtrip");
       }
     } else if (packet.type === "voice-peers") g.voice?.peersChanged(packet.peers);

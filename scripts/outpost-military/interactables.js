@@ -362,7 +362,9 @@ export function buildSupplyBox(r, parent, size = [1.85, 1.8, 1.85]) {
     (k) => {
       k.body([0, 0.49, 0], [0.96, 0.96, 0.96], "#586759");
       k.box([0, 0.92, 0], [1, 0.09, 1], "#7a8974", 1);
-      for (const x of [-0.45, 0.45]) {
+      // Ribs stand 2 cm proud of the side faces: flush faces flickered
+      // (z-fighting) on phone GPUs as the camera moved.
+      for (const x of [-0.47, 0.47]) {
         k.box([x, 0.49, 0], [0.06, 0.96, 1], "#344338", 2);
         k.box([x, 0.97, 0], [0.06, 0.025, 0.96], "#92a18c", 1);
       }
@@ -374,8 +376,8 @@ export function buildSupplyBox(r, parent, size = [1.85, 1.8, 1.85]) {
           new THREE.Vector3(0, 1, 0),
           (side * Math.PI) / 2,
         );
-        k.plate([side * 0.503, 0.48, 0], [0.45, 0.39, 1], 9, "#ffffff", turn);
-        k.box([side * 0.495, 0.72, 0], [0.018, 0.08, 0.3], "#24352b", 2);
+        k.plate([side * 0.513, 0.48, 0], [0.45, 0.39, 1], 9, "#ffffff", turn);
+        k.box([side * 0.509, 0.72, 0], [0.018, 0.08, 0.3], "#24352b", 2);
       }
     },
     { dynamic: true },

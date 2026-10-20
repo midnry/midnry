@@ -140,6 +140,7 @@ export class HazardDressing {
     this.updateTerrain();
     this.updateStorm(t);
     this.updateHaze(t);
+    this.updateShock();
   }
   sync(map, items, make, place) {
     const live = new Set();
@@ -375,6 +376,69 @@ export class HazardDressing {
       pos.needsUpdate = true;
     }
   }
+  /** Electric arcs crackling over fighters still electrified by lightning
+   * (your own shock shows on screen instead). Redrawn ~14 times a second. */
+  updateShock() {
+    const r = this.r,
+      a = r.g.arena,
+      self = r.g.camera(),
+      shocked = a.entities.filter((e) => e.shockUntil > a.time && e.hp > 0 && e !== self);
+    const now = performance.now(),
+      redraw = now - (this.arcAt || 0) > 70;
+    if (redraw) this.arcAt = now;
+    this.sync(
+      (this.arcs ||= new Map()),
+      shocked.map((e) => ({ id: e.id, e })),
+      () => {
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(3 * 2 * 30), 3));
+        const lines = new THREE.LineSegments(
+          geo,
+          new THREE.LineBasicMaterial({
+            color: "#9fd8ff",
+            transparent: true,
+            opacity: 0.95,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending,
+            toneMapped: false,
+          }),
+        );
+        lines.frustumCulled = false;
+        const root = new THREE.Group();
+        root.add(lines);
+        r.dynamic.add(root);
+        return root;
+      },
+      (root, { e }) => {
+        root.position.set(e.x * SCALE, 0, e.y * SCALE);
+        if (!redraw && root.userData.drawn) return;
+        root.userData.drawn = true;
+        // Three short jagged arcs at random heights around the body.
+        const pos = root.children[0].geometry.attributes.position;
+        let k = 0;
+        for (let arc = 0; arc < 3; arc++) {
+          let ang = Math.random() * Math.PI * 2,
+            y = 0.3 + Math.random() * 1.5,
+            px = Math.cos(ang) * 0.45,
+            pz = Math.sin(ang) * 0.45;
+          for (let seg = 0; seg < 10; seg++, k++) {
+            ang += 0.35 + Math.random() * 0.3;
+            const ny = y + (Math.random() - 0.5) * 0.35,
+              rad = 0.38 + Math.random() * 0.18,
+              nx = Math.cos(ang) * rad,
+              nz = Math.sin(ang) * rad;
+            pos.setXYZ(k * 2, px, y, pz);
+            pos.setXYZ(k * 2 + 1, nx, ny, nz);
+            px = nx;
+            pz = nz;
+            y = ny;
+          }
+        }
+        pos.needsUpdate = true;
+        root.children[0].material.opacity = 0.6 + Math.random() * 0.4;
+      },
+    );
+  }
   makeHaze() {
     const r = this.r,
       root = new THREE.Group(),
@@ -465,19 +529,23 @@ export class HazardDressing {
           );
       } else if (t.kind === "scorch")
         put("scorch", x, 0.025, z, -Math.PI / 2, 0, f(1) * 6.28, SCALE * 0.6, SCALE * 0.6, 1);
-      else if (t.kind === "sand")
+      else if (t.kind === "sand") {
+        // A soft-edged sand patch on the ground with a low ridge in it,
+        // half-sunk so it reads as piled on the floor, not resting on it.
+        put("sandpatch", x, 0.022, z, -Math.PI / 2, 0, f(3) * 6.28, SCALE * 0.62, SCALE * 0.62, 1);
         put(
           "sand",
-          x + (f(1) - 0.5),
-          0,
-          z + (f(2) - 0.5),
+          x + (f(1) - 0.5) * 0.8,
+          -0.06,
+          z + (f(2) - 0.5) * 0.8,
           0,
           f(3) * 6.28,
           0,
-          1.2 + f(4) * 0.5,
-          0.45 + f(5) * 0.25,
-          0.9 + f(6) * 0.4,
+          1.1 + f(4) * 0.4,
+          0.2 + f(5) * 0.08,
+          0.6 + f(6) * 0.3,
         );
+      }
     }
     for (const [name, mesh] of Object.entries(kinds)) {
       mesh.count = Math.min(counts[name] || 0, mesh.instanceMatrix.count);
@@ -524,10 +592,11 @@ export class HazardDressing {
       scorch: make(new THREE.PlaneGeometry(2, 2), decal(scorchTexture(), "#ffffff"), 400, false),
       sand: make(
         new THREE.SphereGeometry(1, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-        new THREE.MeshStandardMaterial({ color: "#cdb282", roughness: 1 }),
+        new THREE.MeshStandardMaterial({ color: "#b89e72", roughness: 1 }),
         400,
-        true,
+        false,
       ),
+      sandpatch: make(new THREE.PlaneGeometry(2, 2), decal(sandTexture(), "#ffffff"), 400, false),
     };
   }
   /** A thunderstorm (rolling black clouds, rain, distant sheet lightning) or
@@ -873,5 +942,22 @@ const emberTexture = once(() =>
     g.addColorStop(1, "#ffffff00");
     c.fillStyle = g;
     c.fillRect(0, 0, w, w);
+  }),
+);
+// Sand drift: a sandy patch that thins out to the edges.
+const sandTexture = once(() =>
+  canvasTexture(128, 128, (c, w) => {
+    let seed = 3;
+    const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 160; i++) {
+      const x = w / 2 + (rand() - 0.5) * w * 0.55,
+        y = w / 2 + (rand() - 0.5) * w * 0.55,
+        r = 8 + rand() * 22,
+        g = c.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, "rgba(196,170,124,0.35)");
+      g.addColorStop(1, "rgba(196,170,124,0)");
+      c.fillStyle = g;
+      c.fillRect(x - r, y - r, r * 2, r * 2);
+    }
   }),
 );

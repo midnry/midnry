@@ -1181,6 +1181,31 @@
           border-color: #ff675c;
         }
       }
+      /* Electrified by lightning: a flickering blue edge. */
+      midnry-fps .mf-shockfx {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+        box-shadow: inset 0 0 70px 18px #5fb8ffcc;
+      }
+      midnry-fps .mf-shockfx.mf-on {
+        animation: mf-shock 0.24s steps(2) infinite;
+      }
+      @keyframes mf-shock {
+        0% {
+          opacity: 0.9;
+        }
+        50% {
+          opacity: 0.35;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        midnry-fps .mf-shockfx.mf-on {
+          animation: none;
+          opacity: 0.7;
+        }
+      }
       /* Inside the Red Haze: a pulsing red aura at the screen edges. */
       midnry-fps .mf-hazefx {
         position: absolute;
@@ -2627,6 +2652,7 @@
       import { Retention } from "./outpost-retention.js";
       import { Series, SERIES_MAPS, seriesKindOf } from "./outpost-series.js";
       import { DISASTERS } from "./outpost-hazards.js";
+      import { NetMeter } from "./outpost-netmeter.js";
       import {
         LookSettings,
         lookDelta,
@@ -2660,7 +2686,7 @@
           connectedCallback() {
             if (this.engine) return;
             this.innerHTML = `<div class="mf-shell mf-military" tabindex="0">
-        <canvas aria-label="Game viewport"></canvas><div class="mf-hazefx" aria-hidden="true"></div><div class="mf-weatherfx" aria-hidden="true"></div><div class="mf-lifefx" aria-hidden="true"></div><div class="mf-disaster" role="status" aria-live="polite" hidden></div>
+        <canvas aria-label="Game viewport"></canvas><div class="mf-hazefx" aria-hidden="true"></div><div class="mf-shockfx" aria-hidden="true"></div><div class="mf-weatherfx" aria-hidden="true"></div><div class="mf-lifefx" aria-hidden="true"></div><div class="mf-disaster" role="status" aria-live="polite" hidden></div>
         <div class="mf-top"><div class="mf-brand">MIDNRY<small>OUTPOST ZERO / FIELD OPS</small></div><div class="mf-topright"><span class="mf-tag">TACTICAL 3D / LOADING</span><button class="mf-pause" aria-label="Open game menu">II</button></div></div>
         <div class="mf-objective">BLACKOUT PROTOCOL<b class="mf-mission">Lifeline Run</b></div>
         <div class="mf-match" hidden><b class="mf-cores">CHARGE CORES 0</b><div class="mf-teamstat"></div><div class="mf-zone"></div></div><div class="mf-cross"></div><div class="mf-toast" role="status" aria-live="polite"></div>
@@ -2762,6 +2788,7 @@
             this.navigation = new ObjectiveNavigation(this, this.protocolUI);
             this.practice = new ProtocolPractice(this);
             this.transport = new RoomTransport(this);
+            this.netMeter = new NetMeter(this);
             this.voice = new ProximityVoice(this);
             this.assetCache = new AssetCacheUI(this);
             this.theme = new OutpostTheme(this);
@@ -4489,6 +4516,12 @@
               this.time > this.zone.delay &&
               this.outsideSafe(p);
             this.$(".mf-hazefx").classList.toggle("mf-on", hazed);
+            const shocked = p.hp > 0 && p.shockUntil > this.time;
+            this.$(".mf-shockfx").classList.toggle("mf-on", shocked);
+            if (shocked && this.shockSeen !== p.shockUntil) {
+              this.shockSeen = p.shockUntil;
+              this.message("⚡ ELECTRIFIED", 2);
+            }
             if (this.mode !== "signal") return;
             if (this.finalRound !== this.arena.roundId) {
               this.finalRound = this.arena.roundId;
@@ -4635,6 +4668,7 @@
             }
             this.observeCombat();
             this.retention.observe();
+            this.netMeter?.update();
             const c = this.ctx,
               now = performance.now(),
               hurt =
