@@ -1,11 +1,17 @@
-/** Outpost Zero requires a Midnry account: the owner tracks who plays and how.
- * `requireSignIn()` asks the site who is signed in and, when nobody is, covers
- * the game with a sign-in screen whose buttons go to the site's login page and
- * come back here. `recordMatch()` stores a finished match on the account.
- * The server decides: it answers 401 for a signed-out visitor, and every match
- * is filed under the verified session, never an id from this page. */
+/** Outpost Zero needs a Midnry account after one free match: the owner tracks
+ * who plays and how. `requireSignIn()` asks the site who is signed in; a
+ * signed-out visitor may finish one match, then a sign-in screen covers the
+ * game, with buttons to the site's login page that come back here.
+ * `recordMatch()` stores a finished match on the account; the free match is
+ * kept on this device and filed once the player has signed in.
+ * The server decides who is signed in (401 otherwise), and every match is
+ * filed under the verified session, never an id from this page. The free-match
+ * count lives on this device only: the screen guides players, the stats
+ * themselves can only come from signed-in sessions. */
 const ENDPOINT = "/api/games/outpost-stats";
 const desktop = () => !!window.midnryDesktop;
+const GUEST = "midnry-outpost-guest";
+const FREE_MATCHES = 1;
 
 const CSS = `
 .oz-gate { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; padding: 24px;
@@ -44,10 +50,33 @@ function returnPath() {
   return `/games/outpost-zero${room ? `?room=${encodeURIComponent(room)}` : ""}`;
 }
 
+/** This device's signed-out play: { played, pending (the free match) }. */
+function guest() {
+  try {
+    const value = JSON.parse(localStorage.getItem(GUEST) || "{}");
+    return { played: Number(value.played) || 0, pending: value.pending || null };
+  } catch {
+    return { played: 0, pending: null };
+  }
+}
+function saveGuest(value) {
+  try {
+    if (value) localStorage.setItem(GUEST, JSON.stringify(value));
+    else localStorage.removeItem(GUEST);
+  } catch {
+    // Private mode: the free match simply isn't kept.
+  }
+}
+
+let root = null;
+let el = null;
+let signedIn = null;
+
 function gate() {
+  if (el) return el;
   const style = document.createElement("style");
   style.textContent = CSS;
-  const el = document.createElement("section");
+  el = document.createElement("section");
   el.className = "oz-gate";
   el.setAttribute("role", "dialog");
   el.setAttribute("aria-modal", "true");
@@ -58,7 +87,11 @@ function gate() {
   return el;
 }
 
-function show(el, title, copy, buttons) {
+function show(title, copy, buttons) {
+  gate();
+  if (root) root.inert = true;
+  // Free the mouse and stop the game loop's input while the screen is up.
+  if (document.pointerLockElement) document.exitPointerLock();
   el.querySelector("h2").textContent = title;
   el.querySelector("p").textContent = copy;
   const actions = el.querySelector(".oz-actions");
@@ -76,54 +109,80 @@ function show(el, title, copy, buttons) {
   actions.querySelector("button")?.focus();
 }
 
+function hide() {
+  if (el) el.hidden = true;
+  if (root) root.inert = false;
+}
+
 const login = (intent) => {
   const url = `/login?next=${encodeURIComponent(returnPath())}${intent === "register" ? "&intent=register" : ""}`;
   // The website runs the game in a same-origin frame: sign in on the whole page.
   (window.top || window).location.assign(url);
 };
 
-/** Resolves with the signed-in player once there is one. The game behind the
- * screen keeps loading (and caching its assets) but cannot be reached. */
-export function requireSignIn(root) {
-  let el = null;
-  return new Promise((resolve) => {
-    const check = async () => {
-      try {
-        const me = await whoAmI();
-        if (me) {
-          if (el) el.hidden = true;
-          if (root) root.inert = false;
-          return resolve(me);
-        }
-        el ||= gate();
-        if (root) root.inert = true;
-        show(el, "Sign in to play", "Your Midnry account saves your matches and stats on every device.", [
-          ["Sign in", () => login("sign-in")],
-          ["Create account", () => login("register"), true],
-        ]);
-      } catch {
-        el ||= gate();
-        if (root) root.inert = true;
-        show(el, "Can't reach Midnry", "Outpost Zero checks your account before you play. Check your connection and try again.", [
-          ["Try again", check],
-        ]);
-      }
-    };
-    check();
+function askToSignIn() {
+  const free = guest().pending;
+  show(
+    free ? "Sign in to keep playing" : "Sign in to play",
+    free
+      ? "That was your free match. Create a free account or sign in to keep playing. We'll add that match to your stats."
+      : "Your Midnry account saves your matches and stats on every device.",
+    [
+      [free ? "Create account" : "Sign in", () => login(free ? "register" : "sign-in")],
+      [free ? "I have an account" : "Create account", () => login(free ? "sign-in" : "register"), true],
+    ],
+  );
+}
+
+function send(match) {
+  return fetch(ENDPOINT, {
+    method: "POST",
+    credentials: "same-origin",
+    keepalive: true,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ op: "record", match }),
   });
 }
 
+/** Check the account once at start. Signed in: play, and file a free match
+ * played before signing in. Signed out: play the free match, or sign in. */
+export function requireSignIn(gameRoot) {
+  root = gameRoot;
+  const check = async () => {
+    try {
+      const me = await whoAmI();
+      signedIn = !!me;
+      if (me) {
+        hide();
+        const { pending } = guest();
+        if (pending) send(pending).then((r) => r.ok && saveGuest(null), () => {});
+        else saveGuest(null);
+      } else if (guest().played >= FREE_MATCHES) askToSignIn();
+      else hide();
+    } catch {
+      show("Can't reach Midnry", "Outpost Zero checks your account before you play. Check your connection and try again.", [
+        ["Try again", check],
+      ]);
+    }
+  };
+  return check();
+}
+
 /** Store a finished match on the player's account. Fire and forget: a lost
- * request only loses one row of stats, never the player's round. */
-export function recordMatch(match) {
+ * request only loses one row of stats, never the player's round. A
+ * signed-out player's match is their free one: kept here, and the sign-in
+ * screen follows once they have seen the result. */
+export function recordMatch(summary) {
+  const match = { ...summary, platform: desktop() ? "desktop" : "web" };
+  const asGuest = () => {
+    signedIn = false;
+    const state = guest();
+    saveGuest({ played: state.played + 1, pending: state.pending || match });
+    if (state.played + 1 >= FREE_MATCHES) setTimeout(askToSignIn, 6000);
+  };
+  if (signedIn === false) return asGuest();
   try {
-    fetch(ENDPOINT, {
-      method: "POST",
-      credentials: "same-origin",
-      keepalive: true,
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ op: "record", match: { ...match, platform: desktop() ? "desktop" : "web" } }),
-    }).catch(() => {});
+    send(match).then((response) => response.status === 401 && asGuest(), () => {});
   } catch {
     // Old browsers without keepalive still play.
   }

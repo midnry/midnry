@@ -41,8 +41,13 @@ result.errors = errors;
 // 2. Signed out: the sign-in screen, the site's login page inside the app
 // window, and straight back to the game (not the website's game page).
 app = await launch(site);
+// The app keeps its profile between launches: start signed out.
+await app.context().clearCookies();
 await app.context().addCookies([{ name: "outpost-qa-signed-out", value: "1", url: site }]);
 page = await app.firstWindow();
+// This device already used its free match.
+await page.waitForLoadState("domcontentloaded");
+await page.evaluate(() => localStorage.setItem("midnry-outpost-guest", JSON.stringify({ played: 1 })));
 await page.reload();
 await page.getByRole("heading", { name: "Sign in to play" }).waitFor({ timeout: 120000 });
 await page.getByRole("button", { name: "Create account" }).click({ noWaitAfter: true });

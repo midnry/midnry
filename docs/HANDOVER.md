@@ -318,12 +318,17 @@ HD pack ← this, (2) first desktop build, (3) Steam features, (4) phone apps.
 
 ## Sign-in required + player stats (on `game-look`, not deployed)
 
-Owner asked (2026-10-20) that Outpost Zero require sign-in so they can track stats.
+Owner asked (2026-10-20) that Outpost Zero require sign-in so they can track stats, then
+allowed **one free match** first.
 - `public/games/outpost-account.js`: `requireSignIn()` (called at the end of
-  `outpost-zero.html`) asks `POST /api/games/outpost-stats {op:"me"}`; on 401 it covers the
-  game with "Sign in to play" (Sign in / Create account → `/login?next=/games/outpost-zero[?room=…]`,
-  top-level navigation) and makes `<midnry-fps>` inert. `recordMatch()` is called from
-  `Retention.finish()` (so training/practice never count).
+  `outpost-zero.html`) asks `POST /api/games/outpost-stats {op:"me"}`. Signed out with no
+  free match used (localStorage `midnry-outpost-guest` = {played, pending}): play. After the
+  free match (`recordMatch()` gets 401) the match is kept as `pending` and 6 s later "Sign in to
+  keep playing" covers the game (Create account / I have an account →
+  `/login?next=/games/outpost-zero[?room=…]`, top-level navigation, `<midnry-fps>` inert).
+  Once signed in, `pending` is filed and the key removed. `recordMatch()` is called from
+  `Retention.finish()` (so training/practice never count). The free-match count is per
+  device and only guides players; stats only ever come from signed-in sessions.
 - Server: `src/routes/api/games/outpost-stats.ts` (`requireUserId`, never a client id) →
   `src/games/outpost/stats.server.ts` (validated/capped, 300 matches/user/day, dedupe on
   round id). Table `outpost_match` (`migrations/0018_outpost_matches.sql`).
@@ -337,7 +342,8 @@ Owner asked (2026-10-20) that Outpost Zero require sign-in so they can track sta
   a stand-in whose matches are not stored; ignored when `RENDER` is set) and
   `ADMIN_EMAIL=qa-admin@example.test` (local only). A dev server started any other way shows
   the sign-in screen to every QA script. The cookie `outpost-qa-signed-out=1` gets the real
-  answer: `node scripts/qa/outpost-signin.mjs` (gate laptop+phone → register → match → /stats)
+  answer: `node scripts/qa/outpost-signin.mjs` (free match → gate laptop+phone → register →
+  free match filed + second match → /stats; returning device + room code)
   and `xvfb-run -a node scripts/qa/desktop-app.mjs` (includes in-app sign-in).
 - `scripts/check-auth-invariant.test.mjs` / `migration-plan.test.mjs` each have one
   template test that already failed before this change (not related).
