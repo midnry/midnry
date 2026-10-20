@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=signal-arenas-20261019` (`game-look` carries `v=signal-weather-20261020`, not yet deployed).
+  Current live value: `v=signal-weather-2-20261020`.
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -159,7 +159,7 @@ makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to
 - Navigation and trail: `outpost-navigation.js`, `scripts/outpost-military/ground-trail.js`.
 - Online rooms: `src/games/outpost/rooms.server.ts` (uses the same rules files).
 
-## Last stand update (on `game-look`, awaiting owner's "deploy")
+## Last stand update (deployed 2026-10-20)
 
 - Last Signal has 3 lives (`SIGNAL.lives`). Last life: 6 s adrenaline rush on redeploy
   (×1.4 speed, reloads ×0.6), then hits ×1.15 and health recovery after 3 s instead of 5
@@ -176,7 +176,7 @@ makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to
 - Owner asked about a multi-round match (first to 3 round wins = 1st, rest ranked by wins
   then kills). Not built yet; see the reply in that session.
 
-## Series and the two-step menu (on `game-look`, awaiting owner's "deploy")
+## Series and the two-step menu (deployed 2026-10-20)
 
 - `public/games/outpost-series.js` (DOM-free, tested in `scripts/outpost-series.test.mjs`):
   Last Signal ways to play: Single round, Series (first to 3 round wins, max 5 rounds),
@@ -191,7 +191,7 @@ makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to
   Daily case — or Single, Series, Marathon). Phones get a step-3 Play button under them.
   Each game remembers its own last option.
 
-## Canisters, barriers and natural disasters (on `game-look`, awaiting owner's "deploy")
+## Canisters, barriers and natural disasters (deployed 2026-10-20)
 
 - Rules: `public/games/outpost-hazards.js` (tests `scripts/outpost-hazards.test.mjs`).
   Canisters / sandbag barriers / foam live in `arena.crates` with a `kind` and ids starting
@@ -215,7 +215,7 @@ makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to
 
 ### Disaster look and lasting ground damage (follow-up)
 
-- Markers: lightning = blue hologram (spinning grid disc + scrolling light column);
+- Markers: lightning = blue hologram flat on the ground (spinning grid disc + inward pulse ring; owner: nothing floating);
   earthquake = cracks that spread and glow during the warning (no circles).
 - Storm: cloud dome (`toneMapped: false`, or the grade crushes it), rain, distant sheet
   lightning; `HazardDressing.dim()` scales sun / sky light for one frame and restores it

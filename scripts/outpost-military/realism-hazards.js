@@ -118,16 +118,15 @@ export class HazardDressing {
           still = r.motion.matches;
         root.position.set(s.x * SCALE, 0.04, s.y * SCALE);
         if (s.kind === "storm") {
-          // Hologram: a spinning grid disc and a rising column of light,
-          // flickering faster as the strike gets close.
-          const [disc, column] = root.children,
+          // Hologram flat on the ground: a spinning grid disc and a pulse
+          // ring sweeping inwards, flickering faster as the strike nears.
+          const [disc, pulse] = root.children,
             flicker = still ? 1 : 0.75 + 0.25 * Math.sin(t * (left < 0.5 ? 40 : 14));
           disc.rotation.z = still ? 0 : t * 1.6;
           disc.material.opacity = (0.45 + 0.45 * grown) * flicker;
-          column.material.opacity = (0.1 + 0.25 * grown) * flicker;
-          column.material.map.offset.y = still ? 0 : -t * 0.8;
-          column.scale.y = 0.4 + grown * 0.6;
-          column.position.y = (column.scale.y * 2.6) / 2;
+          const sweep = still ? 0.5 : 1 - ((t * (left < 0.5 ? 2.5 : 1.2)) % 1);
+          pulse.scale.setScalar(1.3 * SCALE * (0.2 + 0.8 * sweep));
+          pulse.material.opacity = (0.3 + 0.5 * grown) * (1 - sweep * 0.5);
         } else {
           // Cracks spread out from the impact point and start to glow.
           const crack = root.children[0];
@@ -256,21 +255,17 @@ export class HazardDressing {
         }),
         1.3 * SCALE,
       );
-      const column = r.mesh(
-        root,
-        r.geo("holo-column", () => new THREE.CylinderGeometry(1, 1, 2.6, 32, 1, true)),
+      flat(
+        r.geo("holo-pulse", () => new THREE.RingGeometry(0.93, 1, 48)),
         new THREE.MeshBasicMaterial({
-          map: holoColumn(),
           transparent: true,
           depthWrite: false,
           blending: THREE.AdditiveBlending,
-          color: "#5fd8ff",
+          color: "#9ff0ff",
           side: THREE.DoubleSide,
         }),
-        [0, 2, 0],
-        [1.25 * SCALE, 1, 1.25 * SCALE],
-      );
-      column.castShadow = column.receiveShadow = false;
+        1.3 * SCALE,
+      ).position.y = 0.01;
     } else {
       const crack = flat(
         r.geo("crack-plane", () => new THREE.PlaneGeometry(2, 2)),
@@ -656,20 +651,6 @@ const holoDisc = once(() =>
     c.fillRect(0, 0, w, w);
   }),
 );
-// Hologram column: fades upward, with scan lines that scroll.
-const holoColumn = once(() => {
-  const tex = canvasTexture(64, 256, (c, w, h) => {
-    const g = c.createLinearGradient(0, h, 0, 0);
-    g.addColorStop(0, "#ffffffcc");
-    g.addColorStop(1, "#ffffff00");
-    c.fillStyle = g;
-    c.fillRect(0, 0, w, h);
-    c.globalCompositeOperation = "destination-out";
-    for (let y = 0; y < h; y += 8) c.fillRect(0, y, w, 3);
-  });
-  tex.wrapT = THREE.RepeatWrapping;
-  return tex;
-});
 // Storm clouds: dark, heavy and lumpy, darker towards the horizon.
 const stormClouds = once(() => {
   const tex = canvasTexture(1024, 512, (c, w, h) => {
