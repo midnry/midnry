@@ -29,7 +29,7 @@ function wallKey(level) {
 /** Called once after world construction, then after actual cover changes. */
 export function decorateRealisticEnvironment(r, id, n) {
   const level = r.g.level;
-  const key = `${id}:${wallKey(level)}`;
+  const key = `${id}:${wallKey(level)}:${r.arenaStyle?.ready ? 1 : 0}`;
   if (r.realismDecor?.key === key && r.realismDecor.group.parent === r.world) {
     return r.realismDecor;
   }
@@ -270,6 +270,8 @@ export function decorateRealisticEnvironment(r, id, n) {
     for (let x = 0; x < n; x++) {
       const type = level[y]?.[x];
       if (!type || skipTile(x, y)) continue;
+      // Modelled arena kit pieces carry their own detail: no trims or coping.
+      if (r.arenaStyle?.owns(id, type)) continue;
       const exposed = FACES.map(([dx, dz], index) =>
         level[y + dz]?.[x + dx] === 0 ? index : -1,
       ).filter((index) => index >= 0);

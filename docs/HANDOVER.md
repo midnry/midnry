@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=signal-fixes-20261020` (`game-look` carries `v=graphics-comms-20261020`, not yet deployed).
+  Current live value: `v=signal-fixes-20261020` (`game-look` carries `v=dust-outpost-20261020`: Comms/Radar + Dust Outpost, not yet deployed).
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -89,6 +89,9 @@ hash is stored: `e4ecd2762674dd4bb706fe3aa4fd2d8fc49e1124691d66437d26f8194c9106d
   health). Rounds went from ~23 s to ~48 s average in simulation.
 
 ## Codex (graphics) workflow
+
+**Paused (owner, 2026-10-20): Claude now owns all graphics.** The notes below are kept for
+reference only; do not send Codex new work unless the owner asks.
 
 - Codex works on `codex/graphics-benchmark` and pushes room by room for review.
   It must not edit HUD, navigation, menus, touch controls or gameplay rules.
@@ -267,3 +270,24 @@ makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to
   minute, live vs backup link); panel from the badge or "Network check" in the pause menu;
   offline it explains the match is local and offers the HTTP connection test.
 - Simulated rounds now average 95 s.
+
+## Graphics takeover: Dust Outpost showcase (on `game-look`, not deployed)
+
+Owner wants "2026 gamer" graphics, HD assets cached in the browser, then a PC/Mac
+Steam build (Electron), later iOS/Android. Agreed order: (1) Dust Outpost showcase +
+HD pack ← this, (2) first desktop build, (3) Steam features, (4) phone apps.
+
+- `scripts/outpost-military/arena-dust.js` (`DustStyle`): Last Signal "outpost" only
+  (not training). Loads after the arena is playable, then rebuilds: kit walls
+  (type 1 HESCO, 2 concrete blast blocks, 3 crate stacks) as instanced meshes,
+  desert gravel ground, 22 small CC0 props against single wall bases (never in
+  lanes, deterministic). Collision unchanged. "High" preset loads `textures/arena/hd/` (2K).
+- Asset pipeline (sources in gitignored `assets-src/`):
+  `node scripts/assets/fetch-polyhaven.mjs 1k <ids>`; ambientCG 2K JPG by hand;
+  `python3 scripts/assets/arena-textures.py`; `python3 scripts/assets/hesco-texture.py 1024|2048 <out>`;
+  Blender (`bpy` venv) `python scripts/assets/arena-kit.py public/games/military/models/arena-dust-kit-v1.glb`;
+  glTF-Transform `scripts/assets/pack-props.mjs` (copy next to its node_modules, run from repo).
+  Then `node scripts/build-outpost-cache.mjs` (manifest now ~54 MB incl. HD set).
+- Budget measured (`node scripts/qa/arena-look.mjs <tag> outpost 1280|390`): laptop
+  ≤ 251 draw calls / 548k tris worst view, phone ≤ 155 / 286k.
+- Next: other arenas + Blackout base in the same style, KTX2 textures, maybe WebGPU.

@@ -88,7 +88,8 @@ for (const directory of [
   "public/games/outfits",
   "public/games/military/textures",
 ])
-  for (const file of readdirSync(directory)) visit(resolve(directory, file));
+  for (const file of readdirSync(directory, { recursive: true }))
+    if (statSync(resolve(directory, file)).isFile()) visit(resolve(directory, file));
 // Checking source files alone cannot detect a stale preview/deployment output.
 // Supply the hosting build's public directory to verify the actual artefacts.
 const builtPublic = process.argv[2] ? resolve(process.argv[2]) : null;

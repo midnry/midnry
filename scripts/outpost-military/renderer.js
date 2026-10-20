@@ -51,6 +51,7 @@ import { NightDressing } from "./realism-night.js";
 import { prepareWorldTypography, makeProtocolSign } from './world-text.js';
 import { prepareMedevac, buildMedevac } from "./realism-medevac.js";
 import { HazardDressing, buildHazard } from "./realism-hazards.js";
+import { DustStyle } from "./arena-dust.js";
 import { EventDressing } from "./realism-events.js";
 import { preparePropKit, buildFurniture } from "./realism-props.js";
 import { BattlePreparation } from "./battle-preparation.js";
@@ -58,7 +59,7 @@ const SCALE = 3,
   ASSET = "/games/military/",
   TAU = Math.PI * 2;
 const PROFILES = {
-  outpost: { floor: "#a69980", fog: "#bbc2c3", metal: "#788178" },
+  outpost: { floor: "#a69980", fog: "#d4c8ad", metal: "#788178" },
   testblock: { floor: "#8e958c", fog: "#b8c1c5", metal: "#75806e" },
   skyport: { floor: "#bbc0bf", fog: "#bccbd0", metal: "#8e999b" },
   freight: { floor: "#747d7d", fog: "#a5b3bd", metal: "#647269" },
@@ -650,6 +651,16 @@ export class MilitaryRenderer {
     floor.rotation.x = -Math.PI / 2;
     floor.castShadow = false;
     floor.visible = id !== "medevac";
+    // Arena art passes (Dust Outpost so far) load after the arena is playable
+    // and rebuild it once ready; until then the original look stays.
+    const style = (this.arenaStyle ||= new DustStyle(this, ASSET, ASSET_CACHE));
+    if (style.applies(id)) {
+      if (style.ready) style.ground(ground, n);
+      else if (!style.failed)
+        style.load().then(() => {
+          if (!this.disposed && style.ready && style.applies(this.g.arena.mapId)) this.mapKey = "";
+        });
+    }
     this.wallMaterials = Array.from({ length: 7 }, (_, type) => {
       const colors =
         id === "breakwater"
@@ -709,7 +720,9 @@ export class MilitaryRenderer {
     if (["breakwater", "medevac"].includes(id) && this.protocolMetadata())
       this.buildProtocolBase(this.protocolMetadata());
     else this.addLandmarks(id, n, rail);
-    if (id !== "medevac") this.makePuddles(id, n);
+    if (style.ready && style.applies(id)) style.dress(this.world, g.level);
+    // No standing water in the desert compound.
+    if (id !== "medevac" && !(style.ready && style.applies(id))) this.makePuddles(id, n);
     // World props stay non-colliding, just like the prior cosmetic scenery.
     const props =
       {
@@ -734,7 +747,7 @@ export class MilitaryRenderer {
           [15.5, 16.5],
         ],
       }[id] || [];
-    for (const [x, z] of props) {
+    for (const [x, z] of style.ready && style.applies(id) ? [] : props) {
       const drum = this.cylinder(this.world, rail, [x * SCALE, 0.5, z * SCALE], 0.32, 1, "y", 32);
       for (const y of [0.2, 0.8])
         this.cylinder(drum, rail, [0, y - 0.5, 0], 1.03, 0.055, "y", 32).scale.set(
@@ -791,6 +804,13 @@ export class MilitaryRenderer {
           )
             tiles.push([x, y]);
       if (!tiles.length) continue;
+      if (this.arenaStyle?.owns(g.arena.mapId, type)) {
+        for (const mesh of this.arenaStyle.walls(type, tiles)) {
+          this.world.add(mesh);
+          this.wallMeshes.push(mesh);
+        }
+        continue;
+      }
       // Spatial batches can be culled behind opaque rooms instead of submitting
       // every wall in the base whenever one instance enters the camera frustum.
       const chunks = new Map();
