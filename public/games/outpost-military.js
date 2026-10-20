@@ -16265,7 +16265,7 @@ nf.ReflectorShader = {
 };
 //#endregion
 //#region public/games/outpost-asset-manifest.js
-var rf = "outpost-assets-4822b9cd1f263a99", af = Object.freeze({
+var rf = "outpost-assets-f45c43048048748f", af = Object.freeze({
 	concrete: {
 		roughness: .9,
 		metalness: 0,
@@ -23499,35 +23499,46 @@ var ch = 3, lh = {
 	}
 };
 function dh() {
-	let e = 1.24, t = .62, n = .19, r = .34, i = [], a = 7, o = () => (a = a * 16807 % 2147483647) / 2147483647;
+	let e = 1.24, t = .62, n = .2, r = .36, i = [], a = 7, o = () => (a = a * 16807 % 2147483647) / 2147483647, s = () => {
+		let e = new Ya(.5, 9, 5), t = e.attributes.position, n = (e, t) => Math.sign(e) * Math.abs(e * 2) ** t * .5;
+		for (let e = 0; e < t.count; e++) t.setXYZ(e, n(t.getX(e), .45), n(t.getY(e), .75), n(t.getZ(e), .5));
+		return e.computeVertexNormals(), e;
+	};
 	for (let a = 0; a < 6; a++) {
-		let s = n / 2 + a * n * .93;
-		for (let c = 0; c < 4; c++) for (let l = 0; l < 4; l++) {
-			let u = -.9299999999999999 + (e * 2 - t) / 3 * l + (a % 2 ? t / 4 : 0);
-			if (u > e - t / 3) continue;
-			let d = Math.min(u, e - t / 2), f = e - r / 2, p = new Ya(.5, 6, 4);
-			p.scale(t * (1.02 + o() * .06), n * (.95 + o() * .1), r), p.rotateY(c * Math.PI / 2 + (o() - .5) * .08);
-			let [m, h] = [
-				[d, -1.07],
-				[f, d],
-				[-d, f],
-				[-1.07, -d]
-			][c];
-			p.translate(m, s, h), i.push(p);
+		let c = n / 2 + a * n * .9;
+		for (let l = 0; l < 4; l++) for (let u = 0; u < 4; u++) {
+			let d = -.9299999999999999 + (e * 2 - t) / 3 * u + (a % 2 ? t / 4 : 0);
+			if (d > e - t / 3) continue;
+			let f = Math.min(d, e - t / 2), p = e - r / 2, m = s();
+			m.scale(t * (1.02 + o() * .06), n * (.95 + o() * .12), r * (.96 + o() * .08));
+			let h = .8 + o() * .24, g = m.attributes.position, _ = new Float32Array(g.count * 3);
+			for (let e = 0; e < g.count; e++) {
+				let t = Math.min(1, Math.max(0, g.getY(e) / n + .5)), r = h * (.62 + .38 * t * t * (3 - 2 * t));
+				_.set([
+					r,
+					r * .98,
+					r * .95
+				], e * 3);
+			}
+			m.setAttribute("color", new wn(_, 3)), m.rotateZ((o() - .5) * .06), m.rotateY(l * Math.PI / 2 + (o() - .5) * .1);
+			let [v, y] = [
+				[f, -1.06],
+				[p, f],
+				[-f, p],
+				[-1.06, -f]
+			][l];
+			m.translate(v, c, y), i.push(m);
 		}
 	}
-	let s = new Jn(e * 2 - r * 1.4, .1, e * 2 - r * 1.4);
-	s.translate(0, .9500000000000002, 0), i.push(s);
-	let c = Du(i);
+	let c = new Jn(e * 2 - r * 1.4, .1, e * 2 - r * 1.4);
+	c.translate(0, .9700000000000001, 0), c.setAttribute("color", new wn(new Float32Array(c.attributes.position.count * 3).fill(.7), 3)), i.push(c);
+	let l = Du(i);
 	for (let e of i) e.dispose();
-	return c;
+	return l;
 }
 function fh(e, t, n) {
 	if (n === "barrier") {
-		let n = e.hazardBag ||= e.material({
-			color: "#a89470",
-			roughness: .95
-		});
+		let n = e.arenaStyle.sandbagMaterial();
 		e.mesh(t, e.geo("sandbag-emplacement", dh), n, [
 			0,
 			0,
@@ -24626,10 +24637,37 @@ var ph = class {
 	}
 }, kh = class {
 	constructor(e, t, n) {
-		this.r = e, this.styles = new Map(Object.keys(Dh).map((r) => [r, new Oh(e, r, t, n)]));
+		this.r = e, this.asset = t, this.version = n, this.styles = new Map(Object.keys(Dh).map((r) => [r, new Oh(e, r, t, n)]));
 	}
 	of(e) {
 		return this.r.g.mode === "training" ? null : this.styles.get(e) || null;
+	}
+	sandbagMaterial() {
+		if (this.sandbag) return this.sandbag;
+		let t = this.r, n = new Qa({
+			color: "#b39d78",
+			vertexColors: !0,
+			roughness: 1,
+			metalness: 0
+		});
+		t.materials.add(n);
+		let r = t.g.academy?.preset === "high", i = new Io(), a = (e) => `${this.asset}textures/arena/${r ? "hd/" : ""}sandbag-${e}.jpg?assetVersion=${this.version}`;
+		return Promise.all([
+			"color",
+			"normal",
+			"roughness"
+		].map((e) => i.loadAsync(a(e)))).then(([r, i, a]) => {
+			for (let n of [
+				r,
+				i,
+				a
+			]) n.wrapS = n.wrapT = e, n.repeat.set(2, 2), n.anisotropy = t.renderer.capabilities.getMaxAnisotropy(), n.userData.sharedSource = !0, t.textures.add(n);
+			r.colorSpace = E, Object.assign(n, {
+				map: r,
+				normalMap: i,
+				roughnessMap: a
+			}), n.color.set("#ffffff"), n.needsUpdate = !0;
+		}).catch(() => {}), this.sandbag = n;
 	}
 	readyFor(e) {
 		return !!this.of(e)?.ready;

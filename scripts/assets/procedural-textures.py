@@ -2,6 +2,7 @@
   hedge     - clipped boxwood: thousands of small leaves over deep shade
   cardboard - shipping-carton board with faint fibres
   aluminium - brushed aluminium skin for air-cargo containers
+  sandbag   - woven polypropylene/burlap sack cloth, dusty
 
     python3 scripts/assets/procedural-textures.py
 Writes 1K and 2K (hd/) colour/normal/roughness JPEGs to
@@ -106,7 +107,33 @@ def aluminium():
     )
 
 
+def sandbag():
+    y, x = np.mgrid[0:S, 0:S].astype(np.float32)
+    period = S / 96  # threads per texture repeat
+    # Over-under weave: warp and weft threads alternate which is on top.
+    wx = np.sin(x / period * math.pi) ** 2
+    wy = np.sin(y / period * math.pi) ** 2
+    cell = ((np.floor(x / period) + np.floor(y / period)) % 2).astype(np.float32)
+    weave = np.where(cell > 0, wx * 0.7 + 0.3, wy * 0.7 + 0.3)
+    jitter = blur_noise(256, 1.0)
+    fibre = blur_noise(1024, 0.6)
+    dirt = blur_noise(8, 50)
+    dust = np.clip((blur_noise(24, 18) - 0.55) * 3, 0, 1)
+    height = weave * (0.85 + 0.3 * jitter) + 0.25 * fibre
+    tone = (0.78 + 0.22 * weave) * (0.9 + 0.12 * jitter) * (0.82 + 0.25 * dirt)
+    burlap = np.array([0.66, 0.56, 0.4])
+    sand = np.array([0.8, 0.72, 0.56])
+    c = tone[..., None] * burlap * (1 - 0.5 * dust[..., None]) + sand * 0.5 * dust[..., None]
+    save(
+        "sandbag",
+        Image.fromarray((np.clip(c, 0, 1) * 255).astype(np.uint8)),
+        normal_from_height(height * 3, 1.6),
+        Image.fromarray((np.clip(0.8 + 0.15 * (1 - weave) + 0.05 * dust, 0, 1) * 255).astype(np.uint8)),
+    )
+
+
 hedge()
 cardboard()
 aluminium()
+sandbag()
 print("procedural textures written")

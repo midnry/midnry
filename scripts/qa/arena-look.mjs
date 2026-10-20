@@ -35,6 +35,9 @@ const VIEWS = {
   skyport: [["spawn", 2.5, 2.5, 0.78, 0], ["apron", 18, 30.5, -1.57, 0.05], ["terminal", 11.5, 18.5, -1.2, 0], ["uld", 19.5, 6.2, -1.57, 0.05], ["cargo", 7.5, 6.5, -1.57, 0]],
   estate: [["spawn", 2.5, 2.5, 0.78, 0], ["pool", 16, 24, -1.57, 0], ["villa", 10.5, 15, -1.3, 0], ["hedge", 6.5, 6.2, -1.57, 0.05]],
 }[mapId];
+// A close look at the first sandbag barrier, wherever the round placed it.
+const barrier = await p.evaluate(() => document.querySelector("midnry-fps").engine.arena.crates.find((c) => c.kind === "barrier"));
+if (barrier) VIEWS.push(["barrier", barrier.x + 0.25, barrier.y + 1.25, -1.57, -0.12]);
 for (const [name, x, y, a, pitch] of VIEWS) {
   const info = await p.evaluate(({ x, y, a, pitch }) => {
     const g = document.querySelector("midnry-fps").engine, arena = g.arena;

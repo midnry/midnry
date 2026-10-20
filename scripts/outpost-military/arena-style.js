@@ -262,11 +262,40 @@ class ArenaStyle {
 export class ArenaStyles {
   constructor(r, asset, version) {
     this.r = r;
+    this.asset = asset;
+    this.version = version;
     this.styles = new Map(Object.keys(ARENAS).map((id) => [id, new ArenaStyle(r, id, asset, version)]));
   }
   /** The arena's style when it has one (training keeps the classic yard). */
   of(id) {
     return this.r.g.mode === "training" ? null : this.styles.get(id) || null;
+  }
+  /** Woven sack cloth for sandbag barriers in every arena. Untextured tan
+   * until the cloth texture arrives; kept for the renderer's lifetime. */
+  sandbagMaterial() {
+    if (this.sandbag) return this.sandbag;
+    const r = this.r,
+      m = new THREE.MeshStandardMaterial({ color: "#b39d78", vertexColors: true, roughness: 1, metalness: 0 });
+    r.materials.add(m);
+    const hd = r.g.academy?.preset === "high",
+      loader = new THREE.TextureLoader(),
+      url = (k) => `${this.asset}textures/arena/${hd ? "hd/" : ""}sandbag-${k}.jpg?assetVersion=${this.version}`;
+    Promise.all(["color", "normal", "roughness"].map((k) => loader.loadAsync(url(k))))
+      .then(([map, normalMap, roughnessMap]) => {
+        for (const t of [map, normalMap, roughnessMap]) {
+          t.wrapS = t.wrapT = THREE.RepeatWrapping;
+          t.repeat.set(2, 2);
+          t.anisotropy = r.renderer.capabilities.getMaxAnisotropy();
+          t.userData.sharedSource = true;
+          r.textures.add(t);
+        }
+        map.colorSpace = THREE.SRGBColorSpace;
+        Object.assign(m, { map, normalMap, roughnessMap });
+        m.color.set("#ffffff");
+        m.needsUpdate = true;
+      })
+      .catch(() => {});
+    return (this.sandbag = m);
   }
   readyFor(id) {
     return !!this.of(id)?.ready;

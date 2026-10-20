@@ -371,7 +371,9 @@ shadows the captions. `node scripts/qa/loading-art.mjs` screenshots laptop + pho
   cargo pallets (3); type 1 poured concrete, type 5 terminal cladding; concrete slab apron; cones.
 - Kit-owned tiles get no steel panel fittings, door frames or wall signs.
 - Sandbag barriers (all arenas) are now one merged emplacement filling the 2.5 m footprint
-  (`sandbagEmplacement` in `realism-hazards.js`) instead of spaced, floating-looking bags.
+  (`sandbagEmplacement` in `realism-hazards.js`) instead of spaced, floating-looking bags: squarish
+  flattened sacks, per-bag tint and contact shading (vertex colours), woven `sandbag` cloth texture
+  (`procedural-textures.py`) via `arenaStyle.sandbagMaterial()`.
 - Pipeline: `python3 scripts/assets/arena-textures.py`, `python3 scripts/assets/procedural-textures.py`,
   Blender `scripts/assets/kit-estate.py` / `kit-skyport.py` (shared `kit_common.py`), props with
   `PACK_RATIO=0.05 PACK_ERROR=0.006 node <tools>/pack-props.mjs …`, then `node scripts/build-outpost-cache.mjs`.

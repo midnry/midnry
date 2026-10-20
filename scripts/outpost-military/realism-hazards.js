@@ -23,17 +23,28 @@ const EFFECTS = {
   },
 };
 
-/** Sandbags around the edge of a 2.5 m square, six courses high. */
+/** Sandbags around the edge of a 2.5 m square, six courses high: filled
+ * sacks (squarish, flattened by the weight above), each a slightly
+ * different shade and darker underneath where they press together. */
 function sandbagEmplacement() {
   const half = 1.24,
     length = 0.62,
-    height = 0.19,
-    depth = 0.34,
+    height = 0.2,
+    depth = 0.36,
     bags = [];
   let seed = 7;
   const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const sack = () => {
+    const g = new THREE.SphereGeometry(0.5, 9, 5);
+    const p = g.attributes.position;
+    const shape = (v, e) => Math.sign(v) * Math.abs(v * 2) ** e * 0.5;
+    for (let i = 0; i < p.count; i++)
+      p.setXYZ(i, shape(p.getX(i), 0.45), shape(p.getY(i), 0.75), shape(p.getZ(i), 0.5));
+    g.computeVertexNormals();
+    return g;
+  };
   for (let course = 0; course < 6; course++) {
-    const y = height / 2 + course * height * 0.93;
+    const y = height / 2 + course * height * 0.9;
     // Each side runs from one corner to the next; odd courses start half a
     // bag in so the joints don't line up.
     for (let side = 0; side < 4; side++) {
@@ -43,9 +54,20 @@ function sandbagEmplacement() {
         if (t > half - length / 3) continue;
         const along = Math.min(t, half - length / 2),
           inset = half - depth / 2;
-        const g = new THREE.SphereGeometry(0.5, 6, 4);
-        g.scale(length * (1.02 + rand() * 0.06), height * (0.95 + rand() * 0.1), depth);
-        g.rotateY((side * Math.PI) / 2 + (rand() - 0.5) * 0.08);
+        const g = sack();
+        g.scale(length * (1.02 + rand() * 0.06), height * (0.95 + rand() * 0.12), depth * (0.96 + rand() * 0.08));
+        // Tint and contact shading as vertex colours (multiplying the cloth).
+        const tint = 0.8 + rand() * 0.24,
+          p = g.attributes.position,
+          colors = new Float32Array(p.count * 3);
+        for (let v = 0; v < p.count; v++) {
+          const up = Math.min(1, Math.max(0, p.getY(v) / height + 0.5));
+          const shade = tint * (0.62 + 0.38 * up * up * (3 - 2 * up));
+          colors.set([shade, shade * 0.98, shade * 0.95], v * 3);
+        }
+        g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+        g.rotateZ((rand() - 0.5) * 0.06);
+        g.rotateY((side * Math.PI) / 2 + (rand() - 0.5) * 0.1);
         const [x, z] = [
           [along, -inset],
           [inset, along],
@@ -59,7 +81,8 @@ function sandbagEmplacement() {
   }
   // Sand fill inside the ring, just below the top course.
   const fill = new THREE.BoxGeometry(half * 2 - depth * 1.4, 0.1, half * 2 - depth * 1.4);
-  fill.translate(0, height * 0.93 * 5 + height * 0.35, 0);
+  fill.translate(0, height * 0.9 * 5 + height * 0.35, 0);
+  fill.setAttribute("color", new THREE.BufferAttribute(new Float32Array(fill.attributes.position.count * 3).fill(0.7), 3));
   bags.push(fill);
   // Indexed parts merge with their own smooth normals.
   const merged = mergeGeometries(bags);
@@ -73,7 +96,7 @@ export function buildHazard(r, root, kind) {
     // A sandbag emplacement filling the barrier's 2.5 m footprint: six
     // courses laid in running bond around the edge, bags touching, with a
     // sand fill on top. One merged mesh, built once.
-    const bag = r.hazardBag || (r.hazardBag = r.material({ color: "#a89470", roughness: 0.95 }));
+    const bag = r.arenaStyle.sandbagMaterial();
     r.mesh(root, r.geo("sandbag-emplacement", sandbagEmplacement), bag, [0, 0, 0], [1, 1, 1]);
     return;
   }
