@@ -24,13 +24,13 @@ for (const id of ids.slice(1)) {
   for (const n of extra.listChildren()) main.addChild(n);
   extra.dispose();
 }
-// Props stay small on screen: simplify to ~12% of the source triangles,
-// within a small geometric error so silhouettes hold.
+// Props stay small on screen: simplify to ~12% of the source triangles
+// (PACK_RATIO overrides), within a small geometric error so silhouettes hold.
 await MeshoptSimplifier.ready;
 await MeshoptEncoder.ready;
 await doc.transform(dedup(), weld());
 await doc.transform(
-  simplify({ simplifier: MeshoptSimplifier, ratio: 0.12, error: 0.002, lockBorder: false }),
+  simplify({ simplifier: MeshoptSimplifier, ratio: Number(process.env.PACK_RATIO || 0.12), error: Number(process.env.PACK_ERROR || 0.002), lockBorder: false }),
   prune(),
   unpartition(),
   textureCompress({ encoder: sharp, targetFormat: "webp", resize: [Number(max), Number(max)], quality: 82 }),

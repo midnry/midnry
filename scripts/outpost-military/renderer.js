@@ -51,7 +51,7 @@ import { NightDressing } from "./realism-night.js";
 import { prepareWorldTypography, makeProtocolSign } from './world-text.js';
 import { prepareMedevac, buildMedevac } from "./realism-medevac.js";
 import { HazardDressing, buildHazard } from "./realism-hazards.js";
-import { DustStyle } from "./arena-dust.js";
+import { ArenaStyles } from "./arena-style.js";
 import { EventDressing } from "./realism-events.js";
 import { preparePropKit, buildFurniture } from "./realism-props.js";
 import { BattlePreparation } from "./battle-preparation.js";
@@ -285,14 +285,16 @@ export class MilitaryRenderer {
       this.composer.addPass(this.grade);
       this.composer.addPass(new OutputPass());
     }
-    // The Dust Outpost kit loads behind the opening loading screen, so a match
-    // never starts in the old look and swaps a moment later. Its failure is
-    // not fatal: the classic arena stays.
-    this.arenaStyle = new DustStyle(this, ASSET, ASSET_CACHE);
-    this.ready = Promise.all([this.loadAssets(),prepareWorldTypography(this),this.arenaStyle.load()]).then(() => {
+    // Arena art: Dust Outpost loads behind the opening loading screen, so a
+    // match there never starts in the old look and swaps a moment later; the
+    // other arenas follow in the background while players are in the menu.
+    // A failure is not fatal: that arena keeps its classic look.
+    this.arenaStyle = new ArenaStyles(this, ASSET, ASSET_CACHE);
+    this.ready = Promise.all([this.loadAssets(),prepareWorldTypography(this),this.arenaStyle.load("outpost")]).then(() => {
       if (!this.disposed) {
         this.mapKey = "";
         this.updateWeapon();
+        for (const id of ["estate", "skyport"]) this.loadArenaStyle(id);
       }
     });
     this.configure();
@@ -621,6 +623,14 @@ export class MilitaryRenderer {
     this.protocolTorch.intensity = 0;
     this.protocolTorch.visible = false;
   }
+  /** Load an arena's art; rebuild that arena if it is on screen when ready. */
+  loadArenaStyle(id) {
+    const style = this.arenaStyle.of(id);
+    if (!style || style.ready || style.failed) return;
+    style.load().then(() => {
+      if (!this.disposed && style.ready && this.g.arena.mapId === id) this.mapKey = "";
+    });
+  }
   buildWorld() {
     this.lastShadowAt = 0;
     const g = this.g,
@@ -655,17 +665,14 @@ export class MilitaryRenderer {
     floor.rotation.x = -Math.PI / 2;
     floor.castShadow = false;
     floor.visible = id !== "medevac";
-    // Arena art passes (Dust Outpost so far) preload with the renderer; should
-    // one still be loading, the arena rebuilds once it is ready.
-    const style = this.arenaStyle;
-    if (style.applies(id)) {
-      if (style.ready) style.ground(ground, n);
-      else if (!style.failed)
-        style.load().then(() => {
-          if (!this.disposed && style.ready && style.applies(this.g.arena.mapId)) this.mapKey = "";
-        });
-    }
+    // Arena art passes preload with the renderer; should one still be
+    // loading, the arena rebuilds once it is ready.
+    const styled = this.arenaStyle.readyFor(id);
+    if (styled) this.arenaStyle.ground(id, ground, n);
+    else this.loadArenaStyle(id);
     this.wallMaterials = Array.from({ length: 7 }, (_, type) => {
+      const themed = this.arenaStyle.wallMaterial(id, type);
+      if (themed) return themed;
       const colors =
         id === "breakwater"
           ? ["#b7b4a8", "#a29882", "#7c9094", "#9b927d", "#747b73", "#a3aaa1", "#718086"]
@@ -724,9 +731,9 @@ export class MilitaryRenderer {
     if (["breakwater", "medevac"].includes(id) && this.protocolMetadata())
       this.buildProtocolBase(this.protocolMetadata());
     else this.addLandmarks(id, n, rail);
-    if (style.ready && style.applies(id)) style.dress(this.world, g.level);
-    // No standing water in the desert compound.
-    if (id !== "medevac" && !(style.ready && style.applies(id))) this.makePuddles(id, n);
+    if (styled) this.arenaStyle.dress(id, this.world, g.level);
+    // Styled arenas are dry: no standing water on gravel, paving or apron.
+    if (id !== "medevac" && !styled) this.makePuddles(id, n);
     // World props stay non-colliding, just like the prior cosmetic scenery.
     const props =
       {
@@ -751,7 +758,7 @@ export class MilitaryRenderer {
           [15.5, 16.5],
         ],
       }[id] || [];
-    for (const [x, z] of style.ready && style.applies(id) ? [] : props) {
+    for (const [x, z] of styled ? [] : props) {
       const drum = this.cylinder(this.world, rail, [x * SCALE, 0.5, z * SCALE], 0.32, 1, "y", 32);
       for (const y of [0.2, 0.8])
         this.cylinder(drum, rail, [0, y - 0.5, 0], 1.03, 0.055, "y", 32).scale.set(
@@ -809,7 +816,7 @@ export class MilitaryRenderer {
             tiles.push([x, y]);
       if (!tiles.length) continue;
       if (this.arenaStyle?.owns(g.arena.mapId, type)) {
-        for (const mesh of this.arenaStyle.walls(type, tiles)) {
+        for (const mesh of this.arenaStyle.walls(g.arena.mapId, type, tiles)) {
           this.world.add(mesh);
           this.wallMeshes.push(mesh);
         }
@@ -879,6 +886,8 @@ export class MilitaryRenderer {
           // Concrete and plaster have architectural joints, not black steel
           // outlines around every tile. Keep hardware on real panel walls.
           this.wallMaterials[level[y][x]]?.userData.realismSurface ||
+          // Modelled arena kit pieces (hedges, containers…) carry their own detail.
+          this.arenaStyle?.owns(this.g.arena.mapId, level[y][x]) ||
           this.protocolPropTile(x, y) ||
           this.transportWindowTile(x, y) ||
           this.transportHiddenWall(x, y)
@@ -1739,7 +1748,13 @@ export class MilitaryRenderer {
     const signs = [];
     for (let y = 1; y < n - 1; y++)
       for (let x = 1; x < n - 1; x++)
-        if (this.g.level[y][x] && !this.g.level[y + 1]?.[x] && signs.length < 18)
+        if (
+          this.g.level[y][x] &&
+          !this.g.level[y + 1]?.[x] &&
+          // Signs go on built walls, not on hedges, pallets or sandbags.
+          !this.arenaStyle?.owns(id, this.g.level[y][x]) &&
+          signs.length < 18
+        )
           signs.push([x, y]);
     for (const [x, z] of signs) {
       const plaque = this.mesh(

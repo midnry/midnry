@@ -9,7 +9,7 @@ p.on("pageerror", (e) => errs.push(e.message));
 await p.addInitScript(() => localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 5 })));
 await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
 await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
-const before = await p.evaluate(() => document.querySelector("midnry-fps").engine.military?.arenaStyle?.ready);
+const before = await p.evaluate(() => document.querySelector("midnry-fps").engine.military?.arenaStyle?.readyFor("outpost"));
 await p.click(".mf-gamepick [data-mode=signal]");
 await p.waitForTimeout(500);
 // Watch every frame from the click: the first outpost frame must already be dressed.
@@ -19,7 +19,7 @@ const seen = await p.evaluate(async () => {
   g.render = (...a) => {
     const out = render(...a);
     if (g.arena?.mapId === "outpost" && frames.length < 5)
-      frames.push(!!g.military?.world?.children.find((c) => c.name === "Dust Outpost props"));
+      frames.push(!!g.military?.world?.children.find((c) => c.name === "Arena props"));
     return out;
   };
   Math.random = () => 0.1; g.reset(); Math.random = r;

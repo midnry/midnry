@@ -21,12 +21,19 @@ await p.waitForTimeout(800);
 const pick = { outpost: 0.1, skyport: 0.5, estate: 0.9 }[mapId];
 await p.evaluate((pick) => { const g = document.querySelector("midnry-fps").engine, r = Math.random; Math.random = () => pick; g.reset(); Math.random = r; document.querySelector(".mf-start").click(); }, pick);
 await p.waitForFunction(() => document.querySelector("midnry-fps")?.engine?.militaryLoaded, null, { timeout: 180000 });
+// Arena art loads in the background; wait for it (or its failure).
+await p.waitForFunction((id) => {
+  const s = document.querySelector("midnry-fps").engine.military?.arenaStyle?.of(id);
+  return !s || s.ready || s.failed;
+}, mapId, { timeout: 180000 });
+const failed = await p.evaluate((id) => !!document.querySelector("midnry-fps").engine.military.arenaStyle.of(id)?.failed, mapId);
+if (failed) console.log("ARENA ART FAILED", mapId);
 await p.waitForTimeout(4000);
 // [name, x, y, angle, pitch]
 const VIEWS = {
   outpost: [["spawn", 2.5, 2.5, 0.78, 0], ["ring", 6.5, 3.5, 0, 0.05], ["gate", 9.9, 4.2, 1.57, 0], ["court", 14, 10.5, 1.57, -0.05], ["hut", 21.5, 5.5, -1.57, 0], ["wide", 3, 24.5, -0.6, 0.12]],
-  skyport: [["spawn", 2.5, 2.5, 0.78, 0], ["apron", 18, 30.5, -1.57, 0.05], ["terminal", 11.5, 18.5, -1.2, 0]],
-  estate: [["spawn", 2.5, 2.5, 0.78, 0], ["pool", 16, 24, -1.57, 0], ["villa", 10.5, 15, -1.3, 0]],
+  skyport: [["spawn", 2.5, 2.5, 0.78, 0], ["apron", 18, 30.5, -1.57, 0.05], ["terminal", 11.5, 18.5, -1.2, 0], ["uld", 19.5, 6.2, -1.57, 0.05], ["cargo", 7.5, 6.5, -1.57, 0]],
+  estate: [["spawn", 2.5, 2.5, 0.78, 0], ["pool", 16, 24, -1.57, 0], ["villa", 10.5, 15, -1.3, 0], ["hedge", 6.5, 6.2, -1.57, 0.05]],
 }[mapId];
 for (const [name, x, y, a, pitch] of VIEWS) {
   const info = await p.evaluate(({ x, y, a, pitch }) => {
@@ -39,7 +46,7 @@ for (const [name, x, y, a, pitch] of VIEWS) {
     g.updateHUD(true);
     for (let i = 0; i < 4; i++) g.render();
     const info = g.military.renderer.info.render;
-    const props = g.military.world.children.find((c) => c.name === "Dust Outpost props");
+    const props = g.military.world.children.find((c) => c.name === "Arena props");
     return { calls: info.calls, tris: Math.round(info.triangles / 1000) + "k", props: props?.children.length ?? 0 };
   }, { x, y, a, pitch });
   await p.screenshot({ path: `${OUT}/${mapId}-${name}-${tag}-${W}.png` });

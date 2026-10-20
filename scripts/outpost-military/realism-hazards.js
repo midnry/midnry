@@ -3,6 +3,7 @@
  * cover), marked ground before a strike, and disaster weather and shake.
  * The rules live in public/games/outpost-hazards.js. */
 import * as THREE from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 
 const SCALE = 3;
 const COLORS = { red: "#c8352b", green: "#4f9a3a", pink: "#e276b8", blue: "#3f86d8" };
@@ -22,24 +23,58 @@ const EFFECTS = {
   },
 };
 
+/** Sandbags around the edge of a 2.5 m square, six courses high. */
+function sandbagEmplacement() {
+  const half = 1.24,
+    length = 0.62,
+    height = 0.19,
+    depth = 0.34,
+    bags = [];
+  let seed = 7;
+  const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let course = 0; course < 6; course++) {
+    const y = height / 2 + course * height * 0.93;
+    // Each side runs from one corner to the next; odd courses start half a
+    // bag in so the joints don't line up.
+    for (let side = 0; side < 4; side++) {
+      const count = 4;
+      for (let i = 0; i < count; i++) {
+        const t = -half + length / 2 + i * ((half * 2 - length) / (count - 1)) + (course % 2 ? length / 4 : 0);
+        if (t > half - length / 3) continue;
+        const along = Math.min(t, half - length / 2),
+          inset = half - depth / 2;
+        const g = new THREE.SphereGeometry(0.5, 6, 4);
+        g.scale(length * (1.02 + rand() * 0.06), height * (0.95 + rand() * 0.1), depth);
+        g.rotateY((side * Math.PI) / 2 + (rand() - 0.5) * 0.08);
+        const [x, z] = [
+          [along, -inset],
+          [inset, along],
+          [-along, inset],
+          [-inset, -along],
+        ][side];
+        g.translate(x, y, z);
+        bags.push(g);
+      }
+    }
+  }
+  // Sand fill inside the ring, just below the top course.
+  const fill = new THREE.BoxGeometry(half * 2 - depth * 1.4, 0.1, half * 2 - depth * 1.4);
+  fill.translate(0, height * 0.93 * 5 + height * 0.35, 0);
+  bags.push(fill);
+  // Indexed parts merge with their own smooth normals.
+  const merged = mergeGeometries(bags);
+  for (const g of bags) g.dispose();
+  return merged;
+}
+
 /** Model for a crate with a kind (supply crates keep the interactables kit). */
 export function buildHazard(r, root, kind) {
   if (kind === "barrier") {
-    // A short sandbag wall: three courses of rounded bags.
+    // A sandbag emplacement filling the barrier's 2.5 m footprint: six
+    // courses laid in running bond around the edge, bags touching, with a
+    // sand fill on top. One merged mesh, built once.
     const bag = r.hazardBag || (r.hazardBag = r.material({ color: "#a89470", roughness: 0.95 }));
-    const geo = r.geo("sandbag", () => new THREE.SphereGeometry(0.5, 12, 8));
-    for (let row = 0; row < 3; row++)
-      for (let i = 0; i < 3 - (row === 2 ? 1 : 0); i++) {
-        const m = r.mesh(
-          root,
-          geo,
-          bag,
-          [(i - (row === 2 ? 0.5 : 1)) * 0.62, 0.22 + row * 0.36, 0],
-          [0.34, 0.2, 0.42],
-        );
-        m.rotation.y = (i + row) * 0.3;
-      }
-    root.scale.setScalar(1.6);
+    r.mesh(root, r.geo("sandbag-emplacement", sandbagEmplacement), bag, [0, 0, 0], [1, 1, 1]);
     return;
   }
   if (kind === "foam") {

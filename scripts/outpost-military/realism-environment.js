@@ -29,7 +29,7 @@ function wallKey(level) {
 /** Called once after world construction, then after actual cover changes. */
 export function decorateRealisticEnvironment(r, id, n) {
   const level = r.g.level;
-  const key = `${id}:${wallKey(level)}:${r.arenaStyle?.ready ? 1 : 0}`;
+  const key = `${id}:${wallKey(level)}:${r.arenaStyle?.readyFor(id) ? 1 : 0}`;
   if (r.realismDecor?.key === key && r.realismDecor.group.parent === r.world) {
     return r.realismDecor;
   }
@@ -356,6 +356,8 @@ export function decorateRealisticEnvironment(r, id, n) {
         const width = end - from;
         if (width < 1 || width > 2 || !cell(line, end) || cell(line, from - 1) !== cell(line, end))
           continue;
+        // Hedges, planters, crate stacks… are not doorways: no steel frame.
+        if (r.arenaStyle?.owns(id, cell(line, end))) continue;
         if (
           !Array.from({ length: width }, (_, offset) => from + offset).every(
             (along) => cell(line - 1, along) === 0 && cell(line + 1, along) === 0,

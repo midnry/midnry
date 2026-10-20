@@ -16265,7 +16265,7 @@ nf.ReflectorShader = {
 };
 //#endregion
 //#region public/games/outpost-asset-manifest.js
-var rf = "outpost-assets-c604d62a7bc77603", af = Object.freeze({
+var rf = "outpost-assets-87c92409886af94f", af = Object.freeze({
 	concrete: {
 		roughness: .9,
 		metalness: 0,
@@ -18505,7 +18505,7 @@ function ip(e) {
 	return e.map((e) => e.join("")).join("");
 }
 function ap(e, t, n) {
-	let r = e.g.level, i = `${t}:${ip(r)}:${+!!e.arenaStyle?.ready}`;
+	let r = e.g.level, i = `${t}:${ip(r)}:${+!!e.arenaStyle?.readyFor(t)}`;
 	if (e.realismDecor?.key === i && e.realismDecor.group.parent === e.world) return e.realismDecor;
 	e.realismDecor?.dispose();
 	let a = new X();
@@ -18809,27 +18809,27 @@ function ap(e, t, n) {
 			Q
 		]);
 	}
-	for (let e of [!0, !1]) for (let i = 1; i < n - 1; i++) for (let a = 1; a < n - 1; a++) {
-		let o = (t, n) => e ? r[t]?.[n] : r[n]?.[t];
-		if (o(i, a) || !o(i, a - 1)) continue;
-		let s = a;
-		for (; s < n - 1 && o(i, s) === 0;) s++;
-		let c = s - a;
-		if (c < 1 || c > 2 || !o(i, s) || o(i, a - 1) !== o(i, s) || !Array.from({ length: c }, (e, t) => a + t).every((e) => o(i - 1, e) === 0 && o(i + 1, e) === 0)) continue;
-		let l = {
-			position: e ? [
-				(a + c / 2) * Q,
+	for (let i of [!0, !1]) for (let a = 1; a < n - 1; a++) for (let o = 1; o < n - 1; o++) {
+		let s = (e, t) => i ? r[e]?.[t] : r[t]?.[e];
+		if (s(a, o) || !s(a, o - 1)) continue;
+		let c = o;
+		for (; c < n - 1 && s(a, c) === 0;) c++;
+		let l = c - o;
+		if (l < 1 || l > 2 || !s(a, c) || s(a, o - 1) !== s(a, c) || e.arenaStyle?.owns(t, s(a, c)) || !Array.from({ length: l }, (e, t) => o + t).every((e) => s(a - 1, e) === 0 && s(a + 1, e) === 0)) continue;
+		let u = {
+			position: i ? [
+				(o + l / 2) * Q,
 				0,
-				(i + .5) * Q
+				(a + .5) * Q
 			] : [
-				(i + .5) * Q,
+				(a + .5) * Q,
 				0,
-				(a + c / 2) * Q
+				(o + l / 2) * Q
 			],
-			quaternion: e ? _[0] : _[2]
+			quaternion: i ? _[0] : _[2]
 		};
-		for (let e of [-(c * Q / 2 + .03), c * Q / 2 + .03]) A(l, t === "testblock" ? S : C, e, h / 2, 0, .1, h, .16);
-		A(l, C, 0, ["breakwater", "medevac"].includes(t) ? 2.42 : h + .06, 0, c * Q + .2, .12, .16), a = s;
+		for (let e of [-(l * Q / 2 + .03), l * Q / 2 + .03]) A(u, t === "testblock" ? S : C, e, h / 2, 0, .1, h, .16);
+		A(u, C, 0, ["breakwater", "medevac"].includes(t) ? 2.42 : h + .06, 0, l * Q + .2, .12, .16), o = c;
 	}
 	let oe = new U().setFromAxisAngle(new W(1, 0, 0), -Math.PI / 2);
 	function L(e, i, a, o, s = E) {
@@ -23498,25 +23498,45 @@ var ch = 3, lh = {
 		glow: !0
 	}
 };
-function dh(e, t, n) {
+function dh() {
+	let e = 1.24, t = .62, n = .19, r = .34, i = [], a = 7, o = () => (a = a * 16807 % 2147483647) / 2147483647;
+	for (let a = 0; a < 6; a++) {
+		let s = n / 2 + a * n * .93;
+		for (let c = 0; c < 4; c++) for (let l = 0; l < 4; l++) {
+			let u = -.9299999999999999 + (e * 2 - t) / 3 * l + (a % 2 ? t / 4 : 0);
+			if (u > e - t / 3) continue;
+			let d = Math.min(u, e - t / 2), f = e - r / 2, p = new Ya(.5, 6, 4);
+			p.scale(t * (1.02 + o() * .06), n * (.95 + o() * .1), r), p.rotateY(c * Math.PI / 2 + (o() - .5) * .08);
+			let [m, h] = [
+				[d, -1.07],
+				[f, d],
+				[-d, f],
+				[-1.07, -d]
+			][c];
+			p.translate(m, s, h), i.push(p);
+		}
+	}
+	let s = new Jn(e * 2 - r * 1.4, .1, e * 2 - r * 1.4);
+	s.translate(0, .9500000000000002, 0), i.push(s);
+	let c = Du(i);
+	for (let e of i) e.dispose();
+	return c;
+}
+function fh(e, t, n) {
 	if (n === "barrier") {
 		let n = e.hazardBag ||= e.material({
 			color: "#a89470",
 			roughness: .95
-		}), r = e.geo("sandbag", () => new Ya(.5, 12, 8));
-		for (let i = 0; i < 3; i++) for (let a = 0; a < 3 - (i === 2); a++) {
-			let o = e.mesh(t, r, n, [
-				(a - (i === 2 ? .5 : 1)) * .62,
-				.22 + i * .36,
-				0
-			], [
-				.34,
-				.2,
-				.42
-			]);
-			o.rotation.y = (a + i) * .3;
-		}
-		t.scale.setScalar(1.6);
+		});
+		e.mesh(t, e.geo("sandbag-emplacement", dh), n, [
+			0,
+			0,
+			0
+		], [
+			1,
+			1,
+			1
+		]);
 		return;
 	}
 	if (n === "foam") {
@@ -23594,7 +23614,7 @@ function dh(e, t, n) {
 		0
 	], .37, .06, "y", 20);
 }
-var fh = class {
+var ph = class {
 	constructor(e) {
 		this.r = e, this.effects = /* @__PURE__ */ new Map(), this.marks = /* @__PURE__ */ new Map(), this.flashUntil = 0;
 	}
@@ -23700,7 +23720,7 @@ var fh = class {
 			return a.rotation.x = -Math.PI / 2, a.castShadow = a.receiveShadow = !1, a;
 		};
 		if (e.kind === "storm") r(t.geo("holo-disc", () => new Ci(1, 48)), new hn({
-			map: yh(),
+			map: bh(),
 			transparent: !0,
 			depthWrite: !1,
 			blending: 2,
@@ -23715,12 +23735,12 @@ var fh = class {
 		}), 1.3 * ch).position.y = .01;
 		else {
 			let n = r(t.geo("crack-plane", () => new Ga(2, 2)), new Qa({
-				map: gh(),
+				map: _h(),
 				transparent: !0,
 				depthWrite: !1,
 				roughness: 1,
 				emissive: "#ff6a1e",
-				emissiveMap: _h(),
+				emissiveMap: vh(),
 				emissiveIntensity: .4
 			}), 1.3 * ch);
 			n.rotation.z = e.id % 7 * .9, t.materials.add(n.material);
@@ -23761,7 +23781,7 @@ var fh = class {
 			let t = new Pn();
 			t.setAttribute("position", new wn(e, 3)), this.embers = new _i(t, new fi({
 				color: "#ff5a3a",
-				map: Sh(),
+				map: Ch(),
 				alphaTest: .01,
 				size: .12,
 				transparent: !0,
@@ -23819,7 +23839,7 @@ var fh = class {
 		let e = this.r, t = new X(), n = new Ga(1, 8);
 		n.translate(0, 4, 0);
 		for (let e = 0; e < 4; e++) {
-			let r = xh().clone();
+			let r = Sh().clone();
 			r.needsUpdate = !0;
 			let i = new Y(n, new hn({
 				map: r,
@@ -23867,7 +23887,7 @@ var fh = class {
 			polygonOffsetFactor: -2
 		});
 		return {
-			crack: t(new Ga(2, 2), n(gh(), "#ffffff"), 400, !1),
+			crack: t(new Ga(2, 2), n(_h(), "#ffffff"), 400, !1),
 			slab: t(new Jn(1, 1, 1), new Qa({
 				color: "#3d3d40",
 				roughness: 1,
@@ -23878,12 +23898,12 @@ var fh = class {
 				roughness: 1,
 				flatShading: !0
 			}), 1600, !0),
-			scorch: t(new Ga(2, 2), n(vh(), "#ffffff"), 400, !1),
+			scorch: t(new Ga(2, 2), n(yh(), "#ffffff"), 400, !1),
 			sand: t(new Ya(1, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), new Qa({
 				color: "#b89e72",
 				roughness: 1
 			}), 400, !1),
-			sandpatch: t(new Ga(2, 2), n(Ch(), "#ffffff"), 400, !1)
+			sandpatch: t(new Ga(2, 2), n(wh(), "#ffffff"), 400, !1)
 		};
 	}
 	updateStorm(e) {
@@ -23908,7 +23928,7 @@ var fh = class {
 		l.needsUpdate = !0;
 	}
 	makeStorm() {
-		let e = this.r, t = new X(), n = bh(), r = new Y(new Ya(200, 32, 16), new hn({
+		let e = this.r, t = new X(), n = xh(), r = new Y(new Ya(200, 32, 16), new hn({
 			map: n,
 			side: 1,
 			toneMapped: !1,
@@ -23999,15 +24019,15 @@ var fh = class {
 		let s = .06 * Math.min(1, (n.time - r.startAt) / 1.5, (r.endAt - n.time) / 1.5);
 		e.position.x += Math.sin(t * 47) * s, e.position.y += Math.sin(t * 61 + 1) * s * .6, e.rotation.z += Math.sin(t * 37) * s * .15;
 	}
-}, ph = (e, t, n) => {
+}, mh = (e, t, n) => {
 	let r = document.createElement("canvas");
 	r.width = e, r.height = t, n(r.getContext("2d"), e, t);
 	let i = new yi(r);
 	return i.colorSpace = E, i;
-}, mh = (e) => {
+}, hh = (e) => {
 	let t;
 	return () => t ||= e();
-}, hh = (e, t, n, r) => {
+}, gh = (e, t, n, r) => {
 	let i = 7, a = () => (i = i * 16807 % 2147483647) / 2147483647;
 	e.strokeStyle = n, e.lineCap = "round";
 	let o = (t, n, i, s, c) => {
@@ -24018,12 +24038,12 @@ var fh = class {
 		e.stroke();
 	};
 	for (let e = 0; e < 7; e++) o(t / 2, t / 2, e / 7 * Math.PI * 2 + a() * .5, t * (.32 + a() * .14), 3.2);
-}, gh = mh(() => ph(256, 256, (e, t) => hh(e, t, "#0f0c09", 3.4))), _h = mh(() => ph(256, 256, (e, t) => {
-	e.filter = "blur(3px)", hh(e, t, "#ffffff", 5.5);
-})), vh = mh(() => ph(128, 128, (e, t) => {
+}, _h = hh(() => mh(256, 256, (e, t) => gh(e, t, "#0f0c09", 3.4))), vh = hh(() => mh(256, 256, (e, t) => {
+	e.filter = "blur(3px)", gh(e, t, "#ffffff", 5.5);
+})), yh = hh(() => mh(128, 128, (e, t) => {
 	let n = e.createRadialGradient(t / 2, t / 2, 2, t / 2, t / 2, t / 2);
 	n.addColorStop(0, "#0d0b0aee"), n.addColorStop(.45, "#1e1a17aa"), n.addColorStop(1, "#1e1a1700"), e.fillStyle = n, e.fillRect(0, 0, t, t);
-})), yh = mh(() => ph(256, 256, (e, t) => {
+})), bh = hh(() => mh(256, 256, (e, t) => {
 	let n = t / 2;
 	e.strokeStyle = "#ffffff";
 	for (let [t, r, i] of [
@@ -24056,8 +24076,8 @@ var fh = class {
 	e.globalAlpha = .5, e.lineWidth = 2, e.beginPath(), e.moveTo(n - 104, n), e.lineTo(n + 104, n), e.moveTo(n, n - 104), e.lineTo(n, n + 104), e.stroke();
 	let r = e.createRadialGradient(n, n, 0, n, n, 124);
 	r.addColorStop(0, "#ffffff33"), r.addColorStop(1, "#ffffff00"), e.globalAlpha = 1, e.fillStyle = r, e.fillRect(0, 0, t, t);
-})), bh = mh(() => {
-	let t = ph(1024, 512, (e, t, n) => {
+})), xh = hh(() => {
+	let t = mh(1024, 512, (e, t, n) => {
 		let r = e.createLinearGradient(0, 0, 0, n * .55);
 		r.addColorStop(0, "#0b0e13"), r.addColorStop(1, "#262c36"), e.fillStyle = r, e.fillRect(0, 0, t, n);
 		let i = 11, a = () => (i = i * 16807 % 2147483647) / 2147483647;
@@ -24069,8 +24089,8 @@ var fh = class {
 		o.addColorStop(0, "#3a4a5200"), o.addColorStop(.7, "#4c5f5ccc"), o.addColorStop(1, "#1b2225ff"), e.fillStyle = o, e.fillRect(0, n * .42, t, n * .58);
 	});
 	return t.wrapS = e, t;
-}), xh = mh(() => {
-	let t = ph(256, 256, (e, t, n) => {
+}), Sh = hh(() => {
+	let t = mh(256, 256, (e, t, n) => {
 		let r = e.createLinearGradient(0, n, 0, 0);
 		r.addColorStop(0, "#ffffffee"), r.addColorStop(.08, "#ffffff99"), r.addColorStop(.5, "#ffffff40"), r.addColorStop(1, "#ffffff00"), e.fillStyle = r, e.fillRect(0, 0, t, n);
 		let i = 5, a = () => (i = i * 16807 % 2147483647) / 2147483647;
@@ -24082,16 +24102,16 @@ var fh = class {
 		e.globalCompositeOperation = "source-over", e.fillStyle = "#ffffff", e.fillRect(0, n - 3, t, 3);
 	});
 	return t.wrapS = t.wrapT = e, t;
-}), Sh = mh(() => ph(64, 64, (e, t) => {
+}), Ch = hh(() => mh(64, 64, (e, t) => {
 	let n = e.createRadialGradient(t / 2, t / 2, 0, t / 2, t / 2, t / 2);
 	n.addColorStop(0, "#ffffffff"), n.addColorStop(.25, "#ffffffaa"), n.addColorStop(1, "#ffffff00"), e.fillStyle = n, e.fillRect(0, 0, t, t);
-})), Ch = mh(() => ph(128, 128, (e, t) => {
+})), wh = hh(() => mh(128, 128, (e, t) => {
 	let n = 3, r = () => (n = n * 16807 % 2147483647) / 2147483647;
 	for (let n = 0; n < 160; n++) {
 		let n = t / 2 + (r() - .5) * t * .55, i = t / 2 + (r() - .5) * t * .55, a = 8 + r() * 22, o = e.createRadialGradient(n, i, 0, n, i, a);
 		o.addColorStop(0, "rgba(196,170,124,0.35)"), o.addColorStop(1, "rgba(196,170,124,0)"), e.fillStyle = o, e.fillRect(n - a, i - a, a * 2, a * 2);
 	}
-})), wh = (function() {
+})), Th = (function() {
 	var e = "b9H79Tebbbe8Fv9Gbb9Gvuuuuueu9Giuuub9Geueu9Giuuueuikqbeeedddillviebeoweuec:q:Odkr;leDo9TW9T9VV95dbH9F9F939H79T9F9J9H229F9Jt9VV7bb8A9TW79O9V9Wt9F9KW9J9V9KW9wWVtW949c919M9MWVbeY9TW79O9V9Wt9F9KW9J9V9KW69U9KW949c919M9MWVbdE9TW79O9V9Wt9F9KW9J9V9KW69U9KW949tWG91W9U9JWbiL9TW79O9V9Wt9F9KW9J9V9KWS9P2tWV9p9JtblK9TW79O9V9Wt9F9KW9J9V9KWS9P2tWV9r919HtbvL9TW79O9V9Wt9F9KW9J9V9KWS9P2tWVT949Wbol79IV9Rbrq;w8Wqdbk;esezu8Jjjjjbcj;eb9Rgv8Kjjjjbc9:hodnadcefal0mbcuhoaiRbbc:Ge9hmbavaialfgrad9Radz1jjjbhwcj;abad9Uc;WFbGgocjdaocjd6EhDaicefhocbhqdnindndndnaeaq9nmbaDaeaq9RaqaDfae6Egkcsfglcl4cifcd4hxalc9WGgmTmecbhPawcjdfhsaohzinaraz9Rax6mvarazaxfgo9RcK6mvczhlcbhHinalgic9WfgOawcj;cbffhldndndndndnazaOco4fRbbaHcoG4ciGPlbedibkal9cb83ibalcwf9cb83ibxikalaoRblaoRbbgOco4gAaAciSgAE86bbawcj;cbfaifglcGfaoclfaAfgARbbaOcl4ciGgCaCciSgCE86bbalcVfaAaCfgARbbaOcd4ciGgCaCciSgCE86bbalc7faAaCfgARbbaOciGgOaOciSgOE86bbalctfaAaOfgARbbaoRbegOco4gCaCciSgCE86bbalc91faAaCfgARbbaOcl4ciGgCaCciSgCE86bbalc4faAaCfgARbbaOcd4ciGgCaCciSgCE86bbalc93faAaCfgARbbaOciGgOaOciSgOE86bbalc94faAaOfgARbbaoRbdgOco4gCaCciSgCE86bbalc95faAaCfgARbbaOcl4ciGgCaCciSgCE86bbalc96faAaCfgARbbaOcd4ciGgCaCciSgCE86bbalc97faAaCfgARbbaOciGgOaOciSgOE86bbalc98faAaOfgORbbaoRbigoco4gAaAciSgAE86bbalc99faOaAfgORbbaocl4ciGgAaAciSgAE86bbalc9:faOaAfgORbbaocd4ciGgAaAciSgAE86bbalcufaOaAfglRbbaociGgoaociSgoE86bbalaofhoxdkalaoRbwaoRbbgOcl4gAaAcsSgAE86bbawcj;cbfaifglcGfaocwfaAfgARbbaOcsGgOaOcsSgOE86bbalcVfaAaOfgORbbaoRbegAcl4gCaCcsSgCE86bbalc7faOaCfgORbbaAcsGgAaAcsSgAE86bbalctfaOaAfgORbbaoRbdgAcl4gCaCcsSgCE86bbalc91faOaCfgORbbaAcsGgAaAcsSgAE86bbalc4faOaAfgORbbaoRbigAcl4gCaCcsSgCE86bbalc93faOaCfgORbbaAcsGgAaAcsSgAE86bbalc94faOaAfgORbbaoRblgAcl4gCaCcsSgCE86bbalc95faOaCfgORbbaAcsGgAaAcsSgAE86bbalc96faOaAfgORbbaoRbvgAcl4gCaCcsSgCE86bbalc97faOaCfgORbbaAcsGgAaAcsSgAE86bbalc98faOaAfgORbbaoRbogAcl4gCaCcsSgCE86bbalc99faOaCfgORbbaAcsGgAaAcsSgAE86bbalc9:faOaAfgORbbaoRbrgocl4gAaAcsSgAE86bbalcufaOaAfglRbbaocsGgoaocsSgoE86bbalaofhoxekalao8Pbb83bbalcwfaocwf8Pbb83bbaoczfhokdnaiam9pmbaHcdfhHaiczfhlarao9RcL0mekkaiam6mvaoTmvdnakTmbawaPfRbbhHawcj;cbfhlashiakhOinaialRbbgzce4cbazceG9R7aHfgH86bbaiadfhialcefhlaOcufgOmbkkascefhsaohzaPcefgPad9hmbxikkcbc99arao9Radcaadca0ESEhoxlkaoaxad2fhCdnakmbadhlinaoTmlarao9Rax6mlaoaxfhoalcufglmbkaChoxekcbhmawcjdfhAinarao9Rax6miawamfRbbhHawcj;cbfhlaAhiakhOinaialRbbgzce4cbazceG9R7aHfgH86bbaiadfhialcefhlaOcufgOmbkaAcefhAaoaxfhoamcefgmad9hmbkaChokabaqad2fawcjdfakad2z1jjjb8Aawawcjdfakcufad2fadz1jjjb8Aakaqfhqaombkc9:hoxekc9:hokavcj;ebf8Kjjjjbaok;cseHu8Jjjjjbc;ae9Rgv8Kjjjjbc9:hodnaeci9UgrcHfal0mbcuhoaiRbbgwc;WeGc;Ge9hmbawcsGgwce0mbavc;abfcFecjez:jjjjb8AavcUf9cu83ibavc8Wf9cu83ibavcyf9cu83ibavcaf9cu83ibavcKf9cu83ibavczf9cu83ibav9cu83iwav9cu83ibaialfc9WfhDaicefgqarfhidnaeTmbcmcsawceSEhkcbhxcbhmcbhPcbhwcbhlindnaiaD9nmbc9:hoxikdndnaqRbbgoc;Ve0mbavc;abfalaocu7gscl4fcsGcitfgzydlhrazydbhzdnaocsGgHak9pmbavawasfcsGcdtfydbaxaHEhoaHThsdndnadcd9hmbabaPcetfgHaz87ebaHclfao87ebaHcdfar87ebxekabaPcdtfgHazBdbaHcwfaoBdbaHclfarBdbkaxasfhxcdhHavawcdtfaoBdbawasfhwcehsalhOxdkdndnaHcsSmbaHc987aHamffcefhoxekaicefhoai8SbbgHcFeGhsdndnaHcu9mmbaohixekaicvfhiascFbGhscrhHdninao8SbbgOcFbGaHtasVhsaOcu9kmeaocefhoaHcrfgHc8J9hmbxdkkaocefhikasce4cbasceG9R7amfhokdndnadcd9hmbabaPcetfgHaz87ebaHclfao87ebaHcdfar87ebxekabaPcdtfgHazBdbaHcwfaoBdbaHclfarBdbkcdhHavawcdtfaoBdbcehsawcefhwalhOaohmxekdnaocpe0mbaxcefgHavawaDaocsGfRbbgocl49RcsGcdtfydbaocz6gzEhravawao9RcsGcdtfydbaHazfgAaocsGgHEhoaHThCdndnadcd9hmbabaPcetfgHax87ebaHclfao87ebaHcdfar87ebxekabaPcdtfgHaxBdbaHcwfaoBdbaHclfarBdbkcdhsavawcdtfaxBdbavawcefgwcsGcdtfarBdbcihHavc;abfalcitfgOaxBdlaOarBdbavawazfgwcsGcdtfaoBdbalcefcsGhOawaCfhwaxhzaAaCfhxxekaxcbaiRbbgOEgzaoc;:eSgHfhraOcsGhCaOcl4hAdndnaOcs0mbarcefhoxekarhoavawaA9RcsGcdtfydbhrkdndnaCmbaocefhxxekaohxavawaO9RcsGcdtfydbhokdndnaHTmbaicefhHxekaicdfhHai8SbegscFeGhzdnascu9kmbaicofhXazcFbGhzcrhidninaH8SbbgscFbGaitazVhzascu9kmeaHcefhHaicrfgic8J9hmbkaXhHxekaHcefhHkazce4cbazceG9R7amfgmhzkdndnaAcsSmbaHhsxekaHcefhsaH8SbbgicFeGhrdnaicu9kmbaHcvfhXarcFbGhrcrhidninas8SbbgHcFbGaitarVhraHcu9kmeascefhsaicrfgic8J9hmbkaXhsxekascefhskarce4cbarceG9R7amfgmhrkdndnaCcsSmbashixekascefhias8SbbgocFeGhHdnaocu9kmbascvfhXaHcFbGhHcrhodninai8SbbgscFbGaotaHVhHascu9kmeaicefhiaocrfgoc8J9hmbkaXhixekaicefhikaHce4cbaHceG9R7amfgmhokdndnadcd9hmbabaPcetfgHaz87ebaHclfao87ebaHcdfar87ebxekabaPcdtfgHazBdbaHcwfaoBdbaHclfarBdbkcdhsavawcdtfazBdbavawcefgwcsGcdtfarBdbcihHavc;abfalcitfgXazBdlaXarBdbavawaOcz6aAcsSVfgwcsGcdtfaoBdbawaCTaCcsSVfhwalcefcsGhOkaqcefhqavc;abfaOcitfgOarBdlaOaoBdbavc;abfalasfcsGcitfgraoBdlarazBdbawcsGhwalaHfcsGhlaPcifgPae6mbkkcbc99aiaDSEhokavc;aef8Kjjjjbaok:flevu8Jjjjjbcz9Rhvc9:hodnaecvfal0mbcuhoaiRbbc;:eGc;qe9hmbav9cb83iwaicefhraialfc98fhwdnaeTmbdnadcdSmbcbhDindnaraw6mbc9:skarcefhoar8SbbglcFeGhidndnalcu9mmbaohrxekarcvfhraicFbGhicrhldninao8SbbgdcFbGaltaiVhiadcu9kmeaocefhoalcrfglc8J9hmbxdkkaocefhrkabaDcdtfaic8Etc8F91aicd47avcwfaiceGcdtVgoydbfglBdbaoalBdbaDcefgDae9hmbxdkkcbhDindnaraw6mbc9:skarcefhoar8SbbglcFeGhidndnalcu9mmbaohrxekarcvfhraicFbGhicrhldninao8SbbgdcFbGaltaiVhiadcu9kmeaocefhoalcrfglc8J9hmbxdkkaocefhrkabaDcetfaic8Etc8F91aicd47avcwfaiceGcdtVgoydbfgl87ebaoalBdbaDcefgDae9hmbkkcbc99arawSEhokaok:Lvoeue99dud99eud99dndnadcl9hmbaeTmeindndnabcdfgd8Sbb:Yab8Sbbgi:Ygl:l:tabcefgv8Sbbgo:Ygr:l:tgwJbb;:9cawawNJbbbbawawJbbbb9GgDEgq:mgkaqaicb9iEalMgwawNakaqaocb9iEarMgqaqNMM:r:vglNJbbbZJbbb:;aDEMgr:lJbbb9p9DTmbar:Ohixekcjjjj94hikadai86bbdndnaqalNJbbbZJbbb:;aqJbbbb9GEMgq:lJbbb9p9DTmbaq:Ohdxekcjjjj94hdkavad86bbdndnawalNJbbbZJbbb:;awJbbbb9GEMgw:lJbbb9p9DTmbaw:Ohdxekcjjjj94hdkabad86bbabclfhbaecufgembxdkkaeTmbindndnabclfgd8Ueb:Yab8Uebgi:Ygl:l:tabcdfgv8Uebgo:Ygr:l:tgwJb;:FSawawNJbbbbawawJbbbb9GgDEgq:mgkaqaicb9iEalMgwawNakaqaocb9iEarMgqaqNMM:r:vglNJbbbZJbbb:;aDEMgr:lJbbb9p9DTmbar:Ohixekcjjjj94hikadai87ebdndnaqalNJbbbZJbbb:;aqJbbbb9GEMgq:lJbbb9p9DTmbaq:Ohdxekcjjjj94hdkavad87ebdndnawalNJbbbZJbbb:;awJbbbb9GEMgw:lJbbb9p9DTmbaw:Ohdxekcjjjj94hdkabad87ebabcwfhbaecufgembkkk;oiliui99iue99dnaeTmbcbhiabhlindndnJ;Zl81Zalcof8UebgvciV:Y:vgoal8Ueb:YNgrJb;:FSNJbbbZJbbb:;arJbbbb9GEMgw:lJbbb9p9DTmbaw:OhDxekcjjjj94hDkalclf8Uebhqalcdf8UebhkabaiavcefciGfcetfaD87ebdndnaoak:YNgwJb;:FSNJbbbZJbbb:;awJbbbb9GEMgx:lJbbb9p9DTmbax:OhDxekcjjjj94hDkabaiavciGfgkcd7cetfaD87ebdndnaoaq:YNgoJb;:FSNJbbbZJbbb:;aoJbbbb9GEMgx:lJbbb9p9DTmbax:OhDxekcjjjj94hDkabaiavcufciGfcetfaD87ebdndnJbbjZararN:tawawN:taoaoN:tgrJbbbbarJbbbb9GE:rJb;:FSNJbbbZMgr:lJbbb9p9DTmbar:Ohvxekcjjjj94hvkabakcetfav87ebalcwfhlaiclfhiaecufgembkkk9mbdnadcd4ae2gdTmbinababydbgecwtcw91:Yaece91cjjj98Gcjjj;8if::NUdbabclfhbadcufgdmbkkk9teiucbcbydj1jjbgeabcifc98GfgbBdj1jjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaik;LeeeudndnaeabVciGTmbabhixekdndnadcz9pmbabhixekabhiinaiaeydbBdbaiclfaeclfydbBdbaicwfaecwfydbBdbaicxfaecxfydbBdbaeczfheaiczfhiadc9Wfgdcs0mbkkadcl6mbinaiaeydbBdbaeclfheaiclfhiadc98fgdci0mbkkdnadTmbinaiaeRbb86bbaicefhiaecefheadcufgdmbkkabk;aeedudndnabciGTmbabhixekaecFeGc:b:c:ew2hldndnadcz9pmbabhixekabhiinaialBdbaicxfalBdbaicwfalBdbaiclfalBdbaiczfhiadc9Wfgdcs0mbkkadcl6mbinaialBdbaiclfhiadc98fgdci0mbkkdnadTmbinaiae86bbaicefhiadcufgdmbkkabkkkebcjwklzNbb", t = "b9H79TebbbeKl9Gbb9Gvuuuuueu9Giuuub9Geueuikqbbebeedddilve9Weeeviebeoweuec:q:6dkr;leDo9TW9T9VV95dbH9F9F939H79T9F9J9H229F9Jt9VV7bb8A9TW79O9V9Wt9F9KW9J9V9KW9wWVtW949c919M9MWVbdY9TW79O9V9Wt9F9KW9J9V9KW69U9KW949c919M9MWVblE9TW79O9V9Wt9F9KW9J9V9KW69U9KW949tWG91W9U9JWbvL9TW79O9V9Wt9F9KW9J9V9KWS9P2tWV9p9JtboK9TW79O9V9Wt9F9KW9J9V9KWS9P2tWV9r919HtbrL9TW79O9V9Wt9F9KW9J9V9KWS9P2tWVT949Wbwl79IV9RbDq:p9sqlbzik9:evu8Jjjjjbcz9Rhbcbheincbhdcbhiinabcwfadfaicjuaead4ceGglE86bbaialfhiadcefgdcw9hmbkaec:q:yjjbfai86bbaecitc:q1jjbfab8Piw83ibaecefgecjd9hmbkk:N8JlHud97euo978Jjjjjbcj;kb9Rgv8Kjjjjbc9:hodnadcefal0mbcuhoaiRbbc:Ge9hmbavaialfgrad9Rad;8qbbcj;abad9UhlaicefhodnaeTmbadTmbalc;WFbGglcjdalcjd6EhwcbhDinawaeaD9RaDawfae6Egqcsfglc9WGgkci2hxakcethmalcl4cifcd4hPabaDad2fhsakc;ab6hzcbhHincbhOaohAdndninaraA9RaP6meavcj;cbfaOak2fhCaAaPfhocbhidnazmbarao9Rc;Gb6mbcbhlinaCalfhidndndndndnaAalco4fRbbgXciGPlbedibkaipxbbbbbbbbbbbbbbbbpklbxikaiaopbblaopbbbgQclp:meaQpmbzeHdOiAlCvXoQrLgQcdp:meaQpmbzeHdOiAlCvXoQrLpxiiiiiiiiiiiiiiiip9ogLpxiiiiiiiiiiiiiiiip8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spklbaoclfaYpQbfaKc:q:yjjbfRbbfhoxdkaiaopbbwaopbbbgQclp:meaQpmbzeHdOiAlCvXoQrLpxssssssssssssssssp9ogLpxssssssssssssssssp8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spklbaocwfaYpQbfaKc:q:yjjbfRbbfhoxekaiaopbbbpklbaoczfhokdndndndndnaXcd4ciGPlbedibkaipxbbbbbbbbbbbbbbbbpklzxikaiaopbblaopbbbgQclp:meaQpmbzeHdOiAlCvXoQrLgQcdp:meaQpmbzeHdOiAlCvXoQrLpxiiiiiiiiiiiiiiiip9ogLpxiiiiiiiiiiiiiiiip8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spklzaoclfaYpQbfaKc:q:yjjbfRbbfhoxdkaiaopbbwaopbbbgQclp:meaQpmbzeHdOiAlCvXoQrLpxssssssssssssssssp9ogLpxssssssssssssssssp8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spklzaocwfaYpQbfaKc:q:yjjbfRbbfhoxekaiaopbbbpklzaoczfhokdndndndndnaXcl4ciGPlbedibkaipxbbbbbbbbbbbbbbbbpklaxikaiaopbblaopbbbgQclp:meaQpmbzeHdOiAlCvXoQrLgQcdp:meaQpmbzeHdOiAlCvXoQrLpxiiiiiiiiiiiiiiiip9ogLpxiiiiiiiiiiiiiiiip8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spklaaoclfaYpQbfaKc:q:yjjbfRbbfhoxdkaiaopbbwaopbbbgQclp:meaQpmbzeHdOiAlCvXoQrLpxssssssssssssssssp9ogLpxssssssssssssssssp8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spklaaocwfaYpQbfaKc:q:yjjbfRbbfhoxekaiaopbbbpklaaoczfhokdndndndndnaXco4Plbedibkaipxbbbbbbbbbbbbbbbbpkl8WxikaiaopbblaopbbbgQclp:meaQpmbzeHdOiAlCvXoQrLgQcdp:meaQpmbzeHdOiAlCvXoQrLpxiiiiiiiiiiiiiiiip9ogLpxiiiiiiiiiiiiiiiip8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgXcitc:q1jjbfpbibaXc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgXcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spkl8WaoclfaYpQbfaXc:q:yjjbfRbbfhoxdkaiaopbbwaopbbbgQclp:meaQpmbzeHdOiAlCvXoQrLpxssssssssssssssssp9ogLpxssssssssssssssssp8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgXcitc:q1jjbfpbibaXc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgXcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spkl8WaocwfaYpQbfaXc:q:yjjbfRbbfhoxekaiaopbbbpkl8Waoczfhokalc;abfhialcjefak0meaihlarao9Rc;Fb0mbkkdnaiak9pmbaici4hlinarao9RcK6miaCaifhXdndndndndnaAaico4fRbbalcoG4ciGPlbedibkaXpxbbbbbbbbbbbbbbbbpkbbxikaXaopbblaopbbbgQclp:meaQpmbzeHdOiAlCvXoQrLgQcdp:meaQpmbzeHdOiAlCvXoQrLpxiiiiiiiiiiiiiiiip9ogLpxiiiiiiiiiiiiiiiip8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spkbbaoclfaYpQbfaKc:q:yjjbfRbbfhoxdkaXaopbbwaopbbbgQclp:meaQpmbzeHdOiAlCvXoQrLpxssssssssssssssssp9ogLpxssssssssssssssssp8JgQp5b9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibaKc:q:yjjbfpbbbgYaYpmbbbbbbbbbbbbbbbbaQp5e9cjF;8;4;W;G;ab9:9cU1:NgKcitc:q1jjbfpbibp9UpmbedilvorzHOACXQLpPaLaQp9spkbbaocwfaYpQbfaKc:q:yjjbfRbbfhoxekaXaopbbbpkbbaoczfhokalcdfhlaiczfgiak6mbkkaoTmeaohAaOcefgOclSmdxbkkc9:hoxlkdnakTmbavcjdfaHfhiavaHfpbdbhYcbhXinaiavcj;cbfaXfglpblbgLcep9TaLpxeeeeeeeeeeeeeeeegQp9op9Hp9rgLalakfpblbg8Acep9Ta8AaQp9op9Hp9rg8ApmbzeHdOiAlCvXoQrLgEalamfpblbg3cep9Ta3aQp9op9Hp9rg3alaxfpblbg5cep9Ta5aQp9op9Hp9rg5pmbzeHdOiAlCvXoQrLg8EpmbezHdiOAlvCXorQLgQaQpmbedibedibedibediaYp9UgYp9AdbbaiadfglaYaQaQpmlvorlvorlvorlvorp9UgYp9AdbbaladfglaYaQaQpmwDqkwDqkwDqkwDqkp9UgYp9AdbbaladfglaYaQaQpmxmPsxmPsxmPsxmPsp9UgYp9AdbbaladfglaYaEa8EpmwDKYqk8AExm35Ps8E8FgQaQpmbedibedibedibedip9UgYp9AdbbaladfglaYaQaQpmlvorlvorlvorlvorp9UgYp9AdbbaladfglaYaQaQpmwDqkwDqkwDqkwDqkp9UgYp9AdbbaladfglaYaQaQpmxmPsxmPsxmPsxmPsp9UgYp9AdbbaladfglaYaLa8ApmwKDYq8AkEx3m5P8Es8FgLa3a5pmwKDYq8AkEx3m5P8Es8Fg8ApmbezHdiOAlvCXorQLgQaQpmbedibedibedibedip9UgYp9AdbbaladfglaYaQaQpmlvorlvorlvorlvorp9UgYp9AdbbaladfglaYaQaQpmwDqkwDqkwDqkwDqkp9UgYp9AdbbaladfglaYaQaQpmxmPsxmPsxmPsxmPsp9UgYp9AdbbaladfglaYaLa8ApmwDKYqk8AExm35Ps8E8FgQaQpmbedibedibedibedip9UgYp9AdbbaladfglaYaQaQpmlvorlvorlvorlvorp9UgYp9AdbbaladfglaYaQaQpmwDqkwDqkwDqkwDqkp9UgYp9AdbbaladfglaYaQaQpmxmPsxmPsxmPsxmPsp9UgYp9AdbbaladfhiaXczfgXak6mbkkaHclfgHad6mbkasavcjdfaqad2;8qbbavavcjdfaqcufad2fad;8qbbaqaDfgDae6mbkkcbc99arao9Radcaadca0ESEhokavcj;kbf8Kjjjjbaokwbz:bjjjbk::seHu8Jjjjjbc;ae9Rgv8Kjjjjbc9:hodnaeci9UgrcHfal0mbcuhoaiRbbgwc;WeGc;Ge9hmbawcsGgwce0mbavc;abfcFecje;8kbavcUf9cu83ibavc8Wf9cu83ibavcyf9cu83ibavcaf9cu83ibavcKf9cu83ibavczf9cu83ibav9cu83iwav9cu83ibaialfc9WfhDaicefgqarfhidnaeTmbcmcsawceSEhkcbhxcbhmcbhPcbhwcbhlindnaiaD9nmbc9:hoxikdndnaqRbbgoc;Ve0mbavc;abfalaocu7gscl4fcsGcitfgzydlhrazydbhzdnaocsGgHak9pmbavawasfcsGcdtfydbaxaHEhoaHThsdndnadcd9hmbabaPcetfgHaz87ebaHclfao87ebaHcdfar87ebxekabaPcdtfgHazBdbaHcwfaoBdbaHclfarBdbkaxasfhxcdhHavawcdtfaoBdbawasfhwcehsalhOxdkdndnaHcsSmbaHc987aHamffcefhoxekaicefhoai8SbbgHcFeGhsdndnaHcu9mmbaohixekaicvfhiascFbGhscrhHdninao8SbbgOcFbGaHtasVhsaOcu9kmeaocefhoaHcrfgHc8J9hmbxdkkaocefhikasce4cbasceG9R7amfhokdndnadcd9hmbabaPcetfgHaz87ebaHclfao87ebaHcdfar87ebxekabaPcdtfgHazBdbaHcwfaoBdbaHclfarBdbkcdhHavawcdtfaoBdbcehsawcefhwalhOaohmxekdnaocpe0mbaxcefgHavawaDaocsGfRbbgocl49RcsGcdtfydbaocz6gzEhravawao9RcsGcdtfydbaHazfgAaocsGgHEhoaHThCdndnadcd9hmbabaPcetfgHax87ebaHclfao87ebaHcdfar87ebxekabaPcdtfgHaxBdbaHcwfaoBdbaHclfarBdbkcdhsavawcdtfaxBdbavawcefgwcsGcdtfarBdbcihHavc;abfalcitfgOaxBdlaOarBdbavawazfgwcsGcdtfaoBdbalcefcsGhOawaCfhwaxhzaAaCfhxxekaxcbaiRbbgOEgzaoc;:eSgHfhraOcsGhCaOcl4hAdndnaOcs0mbarcefhoxekarhoavawaA9RcsGcdtfydbhrkdndnaCmbaocefhxxekaohxavawaO9RcsGcdtfydbhokdndnaHTmbaicefhHxekaicdfhHai8SbegscFeGhzdnascu9kmbaicofhXazcFbGhzcrhidninaH8SbbgscFbGaitazVhzascu9kmeaHcefhHaicrfgic8J9hmbkaXhHxekaHcefhHkazce4cbazceG9R7amfgmhzkdndnaAcsSmbaHhsxekaHcefhsaH8SbbgicFeGhrdnaicu9kmbaHcvfhXarcFbGhrcrhidninas8SbbgHcFbGaitarVhraHcu9kmeascefhsaicrfgic8J9hmbkaXhsxekascefhskarce4cbarceG9R7amfgmhrkdndnaCcsSmbashixekascefhias8SbbgocFeGhHdnaocu9kmbascvfhXaHcFbGhHcrhodninai8SbbgscFbGaotaHVhHascu9kmeaicefhiaocrfgoc8J9hmbkaXhixekaicefhikaHce4cbaHceG9R7amfgmhokdndnadcd9hmbabaPcetfgHaz87ebaHclfao87ebaHcdfar87ebxekabaPcdtfgHazBdbaHcwfaoBdbaHclfarBdbkcdhsavawcdtfazBdbavawcefgwcsGcdtfarBdbcihHavc;abfalcitfgXazBdlaXarBdbavawaOcz6aAcsSVfgwcsGcdtfaoBdbawaCTaCcsSVfhwalcefcsGhOkaqcefhqavc;abfaOcitfgOarBdlaOaoBdbavc;abfalasfcsGcitfgraoBdlarazBdbawcsGhwalaHfcsGhlaPcifgPae6mbkkcbc99aiaDSEhokavc;aef8Kjjjjbaok:flevu8Jjjjjbcz9Rhvc9:hodnaecvfal0mbcuhoaiRbbc;:eGc;qe9hmbav9cb83iwaicefhraialfc98fhwdnaeTmbdnadcdSmbcbhDindnaraw6mbc9:skarcefhoar8SbbglcFeGhidndnalcu9mmbaohrxekarcvfhraicFbGhicrhldninao8SbbgdcFbGaltaiVhiadcu9kmeaocefhoalcrfglc8J9hmbxdkkaocefhrkabaDcdtfaic8Etc8F91aicd47avcwfaiceGcdtVgoydbfglBdbaoalBdbaDcefgDae9hmbxdkkcbhDindnaraw6mbc9:skarcefhoar8SbbglcFeGhidndnalcu9mmbaohrxekarcvfhraicFbGhicrhldninao8SbbgdcFbGaltaiVhiadcu9kmeaocefhoalcrfglc8J9hmbxdkkaocefhrkabaDcetfaic8Etc8F91aicd47avcwfaiceGcdtVgoydbfgl87ebaoalBdbaDcefgDae9hmbkkcbc99arawSEhokaok:wPliuo97eue978Jjjjjbca9Rhiaec98Ghldndnadcl9hmbdnalTmbcbhvabhdinadadpbbbgocKp:RecKp:Sep;6egraocwp:RecKp:Sep;6earp;Geaoczp:RecKp:Sep;6egwp;Gep;Kep;LegDpxbbbbbbbbbbbbbbbbp:2egqarpxbbbjbbbjbbbjbbbjgkp9op9rp;Kegrpxbb;:9cbb;:9cbb;:9cbb;:9cararp;MeaDaDp;Meawaqawakp9op9rp;Kegrarp;Mep;Kep;Kep;Jep;Negwp;Mepxbbn0bbn0bbn0bbn0gqp;KepxFbbbFbbbFbbbFbbbp9oaopxbbbFbbbFbbbFbbbFp9op9qarawp;Meaqp;Kecwp:RepxbFbbbFbbbFbbbFbbp9op9qaDawp;Meaqp;Keczp:RepxbbFbbbFbbbFbbbFbp9op9qpkbbadczfhdavclfgval6mbkkalaeSmeaipxbbbbbbbbbbbbbbbbgqpklbaiabalcdtfgdaeciGglcdtgv;8qbbdnalTmbaiaipblbgocKp:RecKp:Sep;6egraocwp:RecKp:Sep;6earp;Geaoczp:RecKp:Sep;6egwp;Gep;Kep;LegDaqp:2egqarpxbbbjbbbjbbbjbbbjgkp9op9rp;Kegrpxbb;:9cbb;:9cbb;:9cbb;:9cararp;MeaDaDp;Meawaqawakp9op9rp;Kegrarp;Mep;Kep;Kep;Jep;Negwp;Mepxbbn0bbn0bbn0bbn0gqp;KepxFbbbFbbbFbbbFbbbp9oaopxbbbFbbbFbbbFbbbFp9op9qarawp;Meaqp;Kecwp:RepxbFbbbFbbbFbbbFbbp9op9qaDawp;Meaqp;Keczp:RepxbbFbbbFbbbFbbbFbp9op9qpklbkadaiav;8qbbskdnalTmbcbhvabhdinadczfgxaxpbbbgopxbbbbbbFFbbbbbbFFgkp9oadpbbbgDaopmbediwDqkzHOAKY8AEgwczp:Reczp:Sep;6egraDaopmlvorxmPsCXQL358E8FpxFubbFubbFubbFubbp9op;6eawczp:Sep;6egwp;Gearp;Gep;Kep;Legopxbbbbbbbbbbbbbbbbp:2egqarpxbbbjbbbjbbbjbbbjgmp9op9rp;Kegrpxb;:FSb;:FSb;:FSb;:FSararp;Meaoaop;Meawaqawamp9op9rp;Kegrarp;Mep;Kep;Kep;Jep;Negwp;Mepxbbn0bbn0bbn0bbn0gqp;KepxFFbbFFbbFFbbFFbbp9oaoawp;Meaqp;Keczp:Rep9qgoarawp;Meaqp;KepxFFbbFFbbFFbbFFbbp9ogrpmwDKYqk8AExm35Ps8E8Fp9qpkbbadaDakp9oaoarpmbezHdiOAlvCXorQLp9qpkbbadcafhdavclfgval6mbkkalaeSmbaiaeciGgvcitgdfcbcaad9R;8kbaiabalcitfglad;8qbbdnavTmbaiaipblzgopxbbbbbbFFbbbbbbFFgkp9oaipblbgDaopmbediwDqkzHOAKY8AEgwczp:Reczp:Sep;6egraDaopmlvorxmPsCXQL358E8FpxFubbFubbFubbFubbp9op;6eawczp:Sep;6egwp;Gearp;Gep;Kep;Legopxbbbbbbbbbbbbbbbbp:2egqarpxbbbjbbbjbbbjbbbjgmp9op9rp;Kegrpxb;:FSb;:FSb;:FSb;:FSararp;Meaoaop;Meawaqawamp9op9rp;Kegrarp;Mep;Kep;Kep;Jep;Negwp;Mepxbbn0bbn0bbn0bbn0gqp;KepxFFbbFFbbFFbbFFbbp9oaoawp;Meaqp;Keczp:Rep9qgoarawp;Meaqp;KepxFFbbFFbbFFbbFFbbp9ogrpmwDKYqk8AExm35Ps8E8Fp9qpklzaiaDakp9oaoarpmbezHdiOAlvCXorQLp9qpklbkalaiad;8qbbkk;4wllue97euv978Jjjjjbc8W9Rhidnaec98GglTmbcbhvabhoinaiaopbbbgraoczfgwpbbbgDpmlvorxmPsCXQL358E8Fgqczp:Segkclp:RepklbaopxbbjZbbjZbbjZbbjZpx;Zl81Z;Zl81Z;Zl81Z;Zl81Zakpxibbbibbbibbbibbbp9qp;6ep;NegkaraDpmbediwDqkzHOAKY8AEgrczp:Reczp:Sep;6ep;MegDaDp;Meakarczp:Sep;6ep;Megxaxp;Meakaqczp:Reczp:Sep;6ep;Megqaqp;Mep;Kep;Kep;Lepxbbbbbbbbbbbbbbbbp:4ep;Jepxb;:FSb;:FSb;:FSb;:FSgkp;Mepxbbn0bbn0bbn0bbn0grp;KepxFFbbFFbbFFbbFFbbgmp9oaxakp;Mearp;Keczp:Rep9qgxaDakp;Mearp;Keamp9oaqakp;Mearp;Keczp:Rep9qgkpmbezHdiOAlvCXorQLgrp5baipblbpEb:T:j83ibaocwfarp5eaipblbpEe:T:j83ibawaxakpmwDKYqk8AExm35Ps8E8Fgkp5baipblbpEd:T:j83ibaocKfakp5eaipblbpEi:T:j83ibaocafhoavclfgval6mbkkdnalaeSmbaiaeciGgvcitgofcbcaao9R;8kbaiabalcitfgwao;8qbbdnavTmbaiaipblbgraipblzgDpmlvorxmPsCXQL358E8Fgqczp:Segkclp:RepklaaipxbbjZbbjZbbjZbbjZpx;Zl81Z;Zl81Z;Zl81Z;Zl81Zakpxibbbibbbibbbibbbp9qp;6ep;NegkaraDpmbediwDqkzHOAKY8AEgrczp:Reczp:Sep;6ep;MegDaDp;Meakarczp:Sep;6ep;Megxaxp;Meakaqczp:Reczp:Sep;6ep;Megqaqp;Mep;Kep;Kep;Lepxbbbbbbbbbbbbbbbbp:4ep;Jepxb;:FSb;:FSb;:FSb;:FSgkp;Mepxbbn0bbn0bbn0bbn0grp;KepxFFbbFFbbFFbbFFbbgmp9oaxakp;Mearp;Keczp:Rep9qgxaDakp;Mearp;Keamp9oaqakp;Mearp;Keczp:Rep9qgkpmbezHdiOAlvCXorQLgrp5baipblapEb:T:j83ibaiarp5eaipblapEe:T:j83iwaiaxakpmwDKYqk8AExm35Ps8E8Fgkp5baipblapEd:T:j83izaiakp5eaipblapEi:T:j83iKkawaiao;8qbbkk:Pddiue978Jjjjjbc;ab9Rhidnadcd4ae2glc98GgvTmbcbheabhdinadadpbbbgocwp:Recwp:Sep;6eaocep:SepxbbjFbbjFbbjFbbjFp9opxbbjZbbjZbbjZbbjZp:Uep;Mepkbbadczfhdaeclfgeav6mbkkdnavalSmbaialciGgecdtgdVcbc;abad9R;8kbaiabavcdtfgvad;8qbbdnaeTmbaiaipblbgocwp:Recwp:Sep;6eaocep:SepxbbjFbbjFbbjFbbjFp9opxbbjZbbjZbbjZbbjZp:Uep;Mepklbkavaiad;8qbbkk9teiucbcbydj1jjbgeabcifc98GfgbBdj1jjbdndnabZbcztgd9nmbcuhiabad9RcFFifcz4nbcuSmekaehikaikkkebcjwklz:Dbb", n = new Uint8Array([
 		0,
 		97,
@@ -24314,158 +24334,374 @@ var fh = class {
 			});
 		}
 	};
-})(), Th = 3, Eh = {
-	1: "hesco",
-	2: "block",
-	3: "crates"
-}, Dh = [
-	["metal_jerrycan", .35],
-	["metal_jerrycan_green", .35],
-	["plastic_jerrycan", .35],
-	["ammo_box", .3],
-	["Barrel_01", .6],
-	["barrel_03", .6],
-	["old_tyre", .6],
-	["cardboard_box_01", .45],
-	["plastic_crate_03", .5],
-	["old_military_crate", .55]
-], Oh = class {
-	constructor(e, t, n) {
-		this.r = e, this.asset = t, this.version = n, this.ready = !1, this.loading = null, this.instances = [];
+})(), Eh = 3, Dh = {
+	outpost: {
+		kit: "arena-dust-kit-v1",
+		props: "arena-dust-props-v1",
+		pieces: {
+			1: "hesco",
+			2: "block",
+			3: "crates"
+		},
+		materials: {
+			fabric: {
+				set: "hesco",
+				color: "#fff3df",
+				normalScale: .9
+			},
+			sandtop: {
+				set: "desert-sand",
+				color: "#d9c39a"
+			},
+			steel: {
+				color: "#b4b8b2",
+				metalness: .55,
+				roughness: .4
+			},
+			concrete: {
+				set: "blast-concrete",
+				color: "#fff4e2",
+				normalScale: .8
+			},
+			wood: {
+				set: "crate-wood",
+				color: "#b49a74"
+			},
+			bracket: {
+				color: "#3c4236",
+				metalness: .5,
+				roughness: .55
+			}
+		},
+		ground: {
+			set: "desert-ground",
+			tile: 2.5,
+			color: "#efe3cb"
+		},
+		walls: {},
+		dressing: [
+			["metal_jerrycan", .35],
+			["metal_jerrycan_green", .35],
+			["plastic_jerrycan", .35],
+			["ammo_box", .3],
+			["Barrel_01", .6],
+			["barrel_03", .6],
+			["old_tyre", .6],
+			["cardboard_box_01", .45],
+			["plastic_crate_03", .5],
+			["old_military_crate", .55]
+		]
+	},
+	estate: {
+		kit: "arena-estate-kit-v1",
+		props: "arena-estate-props-v1",
+		pieces: {
+			2: "hedge",
+			3: "planter"
+		},
+		materials: {
+			leaves: {
+				set: "hedge",
+				color: "#d9e6cc",
+				normalScale: 1
+			},
+			stone: {
+				set: "estate-stone",
+				color: "#fff8ee",
+				normalScale: .7
+			},
+			soil: {
+				color: "#4a3a2c",
+				roughness: 1
+			}
+		},
+		ground: {
+			set: "estate-paving",
+			tile: 3,
+			color: "#f4ece0"
+		},
+		walls: {
+			1: {
+				set: "villa-plaster",
+				color: "#f4e6d0",
+				repeat: [1, 1]
+			},
+			4: {
+				set: "villa-plaster",
+				color: "#f3d9bb",
+				repeat: [1, 1]
+			},
+			5: {
+				set: "villa-plaster",
+				color: "#fffaf2",
+				repeat: [1, 1]
+			}
+		},
+		dressing: [
+			["planter_box_01", .42],
+			["planter_box_02", .48],
+			["planter_box_03", .66],
+			["painted_wooden_bench", .5],
+			[
+				"ceramic_vase_01",
+				.44,
+				2.2
+			],
+			[
+				"planter_pot_clay",
+				.5,
+				2
+			],
+			[
+				"concrete_cat_statue",
+				.4,
+				1.6
+			]
+		]
+	},
+	skyport: {
+		kit: "arena-skyport-kit-v1",
+		props: "arena-skyport-props-v1",
+		pieces: {
+			2: "uld",
+			3: "pallets"
+		},
+		materials: {
+			aluminium: {
+				set: "aluminium",
+				color: "#ffffff",
+				metalness: .75,
+				normalScale: .6
+			},
+			rail: {
+				color: "#5d6266",
+				metalness: .6,
+				roughness: .5
+			},
+			curtain: {
+				color: "#2a5c96",
+				roughness: .85
+			},
+			strap: {
+				color: "#e8b13a",
+				roughness: .7
+			},
+			cardboard: {
+				set: "cardboard",
+				color: "#ffffff"
+			},
+			wood: {
+				set: "crate-wood",
+				color: "#c9b089"
+			},
+			cone: {
+				color: "#ff5a14",
+				roughness: .55
+			},
+			reflect: {
+				color: "#f2f2f2",
+				roughness: .35
+			},
+			rubber: {
+				color: "#1b1b1b",
+				roughness: .9
+			}
+		},
+		ground: {
+			set: "apron-concrete",
+			tile: 6,
+			color: "#f2f2ee"
+		},
+		walls: {
+			1: {
+				set: "apron-concrete",
+				color: "#eceae4",
+				repeat: [1, 1]
+			},
+			5: {
+				set: "terminal-panel",
+				color: "#ffffff",
+				repeat: [1, 1]
+			}
+		},
+		dressing: [
+			["prop-cone", .42],
+			["prop-cone", .42],
+			["vintage_suitcase", .3],
+			["WetFloorSign_01", .36],
+			["metal_trash_can", .56],
+			["utility_box_01", .45],
+			["plastic_crate_02", .42],
+			["cardboard_box_01", .5],
+			["concrete_road_barrier", .64]
+		]
 	}
-	applies(e) {
-		return e === "outpost" && this.r.g.mode !== "training";
-	}
-	owns(e, t) {
-		return this.ready && this.applies(e) && !!Eh[t];
+}, Oh = class {
+	constructor(e, t, n, r) {
+		this.r = e, this.id = t, this.config = Dh[t], this.asset = n, this.version = r, this.ready = !1, this.failed = !1, this.loading = null, this.sets = /* @__PURE__ */ new Map();
 	}
 	load() {
 		if (this.loading) return this.loading;
-		let t = this.r, n = t.g.academy?.preset === "high", r = (e) => `${this.asset}${e}?assetVersion=${this.version}`, i = new Au().setMeshoptDecoder(wh), a = new Io(), o = async (i, o = !1, s = 1) => {
-			let c = await a.loadAsync(r(`textures/arena/${n ? "hd/" : ""}${i}.jpg`));
-			return c.wrapS = c.wrapT = e, c.repeat.set(s, s), c.anisotropy = t.renderer.capabilities.getMaxAnisotropy(), c.colorSpace = o ? E : "", t.textures.add(c), t.worldTextures.add(c), c;
-		}, s = async (e, t) => ({
-			map: await o(`${e}-color`, !0, t),
-			normalMap: await o(`${e}-normal`, !1, t),
-			roughnessMap: await o(`${e}-roughness`, !1, t)
-		});
+		let t = this.r, n = this.config, r = t.g.academy?.preset === "high", i = (e) => `${this.asset}${e}?assetVersion=${this.version}`, a = new Au().setMeshoptDecoder(Th), o = new Io(), s = async (n, a) => {
+			let s = await o.loadAsync(i(`textures/arena/${r ? "hd/" : ""}${n}.jpg`));
+			return s.wrapS = s.wrapT = e, s.anisotropy = t.renderer.capabilities.getMaxAnisotropy(), s.colorSpace = a ? E : "", s.userData.sharedSource = !0, t.textures.add(s), s;
+		}, c = async (e) => (this.sets.has(e) || this.sets.set(e, Promise.all([
+			s(`${e}-color`, !0),
+			s(`${e}-normal`),
+			s(`${e}-roughness`)
+		]).then(([e, t, n]) => ({
+			map: e,
+			normalMap: t,
+			roughnessMap: n
+		}))), this.sets.get(e)), l = new Set([
+			...Object.values(n.materials),
+			...Object.values(n.walls),
+			n.ground
+		].map((e) => e.set).filter(Boolean));
 		return this.loading = (async () => {
-			let [e, n, a, o, c, l] = await Promise.all([
-				i.loadAsync(r("models/arena-dust-kit-v1.glb")),
-				i.loadAsync(r("models/arena-dust-props-v1.glb")),
-				s("hesco", 1),
-				s("blast-concrete", 1),
-				s("crate-wood", 1),
-				s("desert-ground", 1)
-			]), u = (e) => {
+			let [e, o] = await Promise.all([
+				a.loadAsync(i(`models/${n.kit}.glb`)),
+				a.loadAsync(i(`models/${n.props}.glb`)),
+				...[...l].map(c)
+			]), s = (e) => {
 				let n = new Qa({
 					vertexColors: !0,
-					metalness: 0,
-					...e
+					metalness: e.metalness ?? 0,
+					roughness: e.roughness ?? 1,
+					color: e.color
 				});
-				return n.userData.world = !0, t.materials.add(n), n;
-			}, d = await s("desert-sand", 1);
-			this.materials = {
-				fabric: u({
-					...a,
-					color: "#fff3df",
-					normalScale: new H(.9, .9)
-				}),
-				sandtop: u({
-					...d,
-					color: "#d9c39a"
-				}),
-				steel: u({
-					color: "#b4b8b2",
-					metalness: .55,
-					roughness: .4
-				}),
-				concrete: u({
-					...o,
-					color: "#fff4e2",
-					normalScale: new H(.8, .8)
-				}),
-				wood: u({
-					...c,
-					color: "#b49a74"
-				}),
-				bracket: u({
-					color: "#3c4236",
-					metalness: .5,
-					roughness: .55
-				})
-			}, this.pieces = {}, e.scene.updateMatrixWorld(!0), e.scene.traverse((t) => {
+				return e.normalScale != null && n.normalScale.set(e.normalScale, e.normalScale), n.userData.world = !0, t.materials.add(n), n;
+			};
+			this.materials = {};
+			for (let [e, t] of Object.entries(n.materials)) {
+				let n = s(t);
+				t.set && Object.assign(n, await c(t.set)), this.materials[e] = n;
+			}
+			this.pieces = {}, this.props = /* @__PURE__ */ new Map(), e.scene.updateMatrixWorld(!0), e.scene.traverse((t) => {
 				if (!t.isMesh) return;
 				let n = t;
 				for (; n.parent && n.parent !== e.scene;) n = n.parent;
-				let r = n.name, i = t.geometry.clone().applyMatrix4(t.matrixWorld), a = i.getAttribute("color");
+				let i = t.geometry.clone().applyMatrix4(t.matrixWorld), a = i.getAttribute("color");
 				if (a) for (let e = 0; e < a.count; e++) {
 					let t = .55 + .45 * a.getX(e);
 					a.setXYZ(e, t, t, t);
 				}
-				(this.pieces[r] ||= []).push({
+				let o = {
 					geometry: i,
-					material: this.materials[t.material.name] || this.materials.steel
-				});
-			}), this.props = /* @__PURE__ */ new Map();
-			for (let e of n.scene.children) {
+					material: this.materials[t.material.name] || this.materials[Object.keys(this.materials)[0]]
+				};
+				if (n.name.startsWith("prop-")) {
+					this.props.has(n.name) || this.props.set(n.name, new X());
+					let e = new Y(i, o.material);
+					e.castShadow = r, this.props.get(n.name).add(e);
+				} else (this.pieces[n.name] ||= []).push(o);
+			}), o.scene.traverse((e) => {
+				e.isMesh && (e.castShadow = r, e.receiveShadow = !0, e.material.userData.world = !0);
+			});
+			for (let e of o.scene.children) {
 				let t = e.name.split("/")[0];
 				this.props.has(t) || this.props.set(t, new X()), this.props.get(t).add(e.clone());
 			}
-			n.scene.traverse((e) => {
-				e.isMesh && (e.castShadow = !0, e.receiveShadow = !0, e.material.userData.world = !0);
-			}), this.groundSet = l, this.ready = !0;
+			this.wallMaterials = {};
+			for (let [e, r] of Object.entries(n.walls)) {
+				let n = new Qa({
+					color: r.color,
+					roughness: 1,
+					metalness: 0
+				}), i = await c(r.set);
+				for (let e of [
+					"map",
+					"normalMap",
+					"roughnessMap"
+				]) {
+					let a = i[e].clone();
+					a.repeat.set(...r.repeat), a.userData.sharedSource = !0, a.needsUpdate = !0, t.textures.add(a), n[e] = a;
+				}
+				n.userData.world = !0, n.userData.realismSurface = !0, t.materials.add(n), this.wallMaterials[e] = n;
+			}
+			this.groundSet = await c(n.ground.set), this.ready = !0;
 		})().catch((e) => {
-			console.warn("Dust Outpost art unavailable", e), this.failed = !0;
+			console.warn(`Arena art unavailable (${this.id})`, e), this.failed = !0;
 		}), this.loading;
 	}
-	walls(e, t) {
-		let n = this.pieces?.[Eh[e]];
-		if (!n) return [];
-		let r = new Kt();
-		return n.map(({ geometry: e, material: n }) => {
-			let i = new Ur(e, n, t.length);
-			return t.forEach(([e, t], n) => {
-				r.position.set((e + .5) * Th, 0, (t + .5) * Th), r.rotation.set(0, (e * 7 + t * 13) % 4 * Math.PI / 2, 0), r.updateMatrix(), i.setMatrixAt(n, r.matrix);
-			}), i.castShadow = !0, i.receiveShadow = !0, i.userData.tiles = t, i.userData.noRoomCull = !0, i;
+}, kh = class {
+	constructor(e, t, n) {
+		this.r = e, this.styles = new Map(Object.keys(Dh).map((r) => [r, new Oh(e, r, t, n)]));
+	}
+	of(e) {
+		return this.r.g.mode === "training" ? null : this.styles.get(e) || null;
+	}
+	readyFor(e) {
+		return !!this.of(e)?.ready;
+	}
+	load(e) {
+		return this.styles.get(e)?.load();
+	}
+	owns(e, t) {
+		let n = this.of(e);
+		return !!(n?.ready && n.config.pieces[t]);
+	}
+	wallMaterial(e, t) {
+		let n = this.of(e), r = n?.ready && n.wallMaterials[t] || null;
+		return r && this.r.materials.add(r), r;
+	}
+	walls(e, t, n) {
+		let r = this.of(e), i = r?.pieces?.[r.config.pieces[t]];
+		if (!i) return [];
+		let a = new Kt();
+		return i.map(({ geometry: e, material: t }) => {
+			this.r.materials.add(t);
+			let r = new Ur(e, t, n.length);
+			return n.forEach(([e, t], n) => {
+				a.position.set((e + .5) * Eh, 0, (t + .5) * Eh), a.rotation.set(0, (e * 7 + t * 13) % 4 * Math.PI / 2, 0), a.updateMatrix(), r.setMatrixAt(n, a.matrix);
+			}), r.castShadow = !0, r.receiveShadow = !0, r.userData.tiles = n, r.userData.noRoomCull = !0, r;
 		});
 	}
-	ground(e, t) {
-		if (!this.groundSet) return;
-		let n = t * Th / 2.5;
-		for (let t of [
+	ground(e, t, n) {
+		let r = this.of(e);
+		if (!r?.groundSet) return;
+		let { tile: i, color: a } = r.config.ground, o = n * Eh / i;
+		r.groundTiles ||= Object.fromEntries([
 			"map",
 			"normalMap",
 			"roughnessMap"
-		]) {
-			let r = this.groundSet[t].clone();
-			r.repeat.set(n, n), r.needsUpdate = !0, this.r.textures.add(r), this.r.worldTextures.add(r), e[t] = r;
-		}
-		e.color.set("#efe3cb"), e.normalScale.set(1, 1), e.needsUpdate = !0;
+		].map((e) => {
+			let t = r.groundSet[e].clone();
+			return t.repeat.set(o, o), t.userData.sharedSource = !0, t.needsUpdate = !0, this.r.textures.add(t), [e, t];
+		}));
+		for (let e of [
+			"map",
+			"normalMap",
+			"roughnessMap"
+		]) t[e] = r.groundTiles[e];
+		t.color.set(a), t.normalScale.set(1, 1), t.needsUpdate = !0;
 	}
-	dress(e, t) {
-		if (!this.props?.size) return;
-		let n = t.length, r = (e, n) => t[n]?.[e] === 0, i = 1234, a = () => (i = i * 16807 % 2147483647) / 2147483647, o = new X();
-		o.name = "Dust Outpost props";
-		for (let e = 1; e < n - 1; e++) for (let t = 1; t < n - 1; t++) {
-			if (!r(t, e) || a() > .16) continue;
+	dress(e, t, n) {
+		let r = this.of(e);
+		if (!r?.props?.size) return;
+		let i = r.config.dressing, a = n.length, o = (e, t) => n[t]?.[e] === 0, s = 1234, c = () => (s = s * 16807 % 2147483647) / 2147483647, l = new X();
+		l.name = "Arena props";
+		for (let e = 1; e < a - 1; e++) for (let t = 1; t < a - 1; t++) {
+			if (!o(t, e) || c() > .13) continue;
 			let n = [
 				[0, -1],
 				[1, 0],
 				[0, 1],
 				[-1, 0]
-			].filter(([n, i]) => !r(t + n, e + i));
+			].filter(([n, r]) => !o(t + n, e + r));
 			if (n.length !== 1) continue;
-			let [i, s] = n[0];
-			if (!r(t - i, e - s)) continue;
-			let [c, l] = Dh[Math.floor(a() * Dh.length)], u = this.props.get(c);
-			if (!u) continue;
-			let d = u.clone(), f = (a() - .5) * .6, p = t + .5 + i * (.5 - l / Th / 2 - .02) + (s ? f : 0), m = e + .5 + s * (.5 - l / Th / 2 - .02) + (i ? f : 0);
-			d.position.set(p * Th, 0, m * Th), d.rotation.y = Math.atan2(i, s) + (a() - .5) * .6, o.add(d);
+			let [a, s] = n[0];
+			if (!o(t - a, e - s)) continue;
+			let [u, d, f = 1] = i[Math.floor(c() * i.length)], p = r.props.get(u);
+			if (!p) continue;
+			let m = p.clone();
+			m.scale.setScalar(f);
+			let h = (c() - .5) * .6, g = t + .5 + a * (.5 - d / Eh / 2 - .02) + (s ? h : 0), _ = e + .5 + s * (.5 - d / Eh / 2 - .02) + (a ? h : 0);
+			m.position.set(g * Eh, 0, _ * Eh), m.rotation.y = Math.atan2(a, s) + (c() - .5) * .6, l.add(m);
 		}
-		return e.add(o), o;
+		return t.add(l), Ef(l), l;
 	}
-}, kh = 3, Ah = class {
+}, Ah = 3, jh = class {
 	constructor(e) {
 		this.r = e, this.root = new X(), this.root.name = "match-events", e.scene.add(this.root), this.items = /* @__PURE__ */ new Map(), this.materials = [], this.geometries = [], this.fireLight = new Yo("#ff8a3c", 0, 9, 2), this.fireLight.visible = !0, e.scene.add(this.fireLight);
 	}
@@ -24525,7 +24761,7 @@ var fh = class {
 	}
 	build(e) {
 		let t = this.shared(), n = new X();
-		n.position.set(e.x * kh, 0, e.y * kh);
+		n.position.set(e.x * Ah, 0, e.y * Ah);
 		let r = (e, t, r, i = [
 			1,
 			1,
@@ -24646,13 +24882,13 @@ var fh = class {
 			}), e.kind === "fire" && (i = e);
 		}
 		for (let [e, t] of this.items) r.has(e) || (this.root.remove(t.group), this.items.delete(e));
-		this.fireLight.intensity = i ? 26 + Math.sin(t * 17) * 5 + Math.sin(t * 41) * 3 : 0, i && this.fireLight.position.set(i.x * kh, 1.3, i.y * kh);
+		this.fireLight.intensity = i ? 26 + Math.sin(t * 17) * 5 + Math.sin(t * 41) * 3 : 0, i && this.fireLight.position.set(i.x * Ah, 1.3, i.y * Ah);
 	}
 	dispose() {
 		this.r.scene.remove(this.root, this.fireLight);
 		for (let e of [...this.materials, ...this.geometries]) e.dispose();
 	}
-}, jh = 3, Mh = {
+}, Mh = 3, Nh = {
 	crate: /^old_military_crate(_lid)?_a$/,
 	crateOpen: /^old_military_crate(_lid|_cloth)?_b$/,
 	jerrycan: /^metal_jerrycan_green_(body|cap)$/,
@@ -24663,12 +24899,12 @@ var fh = class {
 	shelf: /^steel_frame_shelves_01$/,
 	ammo: /^ammo_box$/,
 	cabinet: /^utility_box_01/
-}, Nh = { shelf: .1 };
-function Ph(e) {
+}, Ph = { shelf: .1 };
+function Fh(e) {
 	let t = e.scene;
 	t.updateMatrixWorld(!0);
 	let n = {};
-	for (let [e, r] of Object.entries(Mh)) {
+	for (let [e, r] of Object.entries(Nh)) {
 		let i = [];
 		if (t.traverse((e) => {
 			e.isMesh && r.test(e.name) && i.push(e);
@@ -24677,7 +24913,7 @@ function Ph(e) {
 			,
 			,
 			,
-		].fill(Nh[e] || 1)), o = new qe();
+		].fill(Ph[e] || 1)), o = new qe();
 		for (let e of i) e.geometry.computeBoundingBox(), o.union(e.geometry.boundingBox.clone().applyMatrix4(a.clone().multiply(e.matrixWorld)));
 		let s = o.getCenter(new W()), c = new K().makeTranslation(-s.x, -o.min.y, -s.z);
 		n[e] = {
@@ -24691,11 +24927,11 @@ function Ph(e) {
 	}
 	return n;
 }
-function Fh(e, t) {
+function Ih(e, t) {
 	let n = e * 73856093 ^ t * 19349663 ^ 1540483477;
 	return () => (n = Math.imul(n ^ n >>> 15, 2246822507) + 2654435769 | 0, (n >>> 0) % 1e4 / 1e4);
 }
-function Ih(e, t, n, r) {
+function Lh(e, t, n, r) {
 	let i = e.propKit;
 	if (!i) return 0;
 	let a = e.protocolMaterial({
@@ -24726,7 +24962,7 @@ function Ih(e, t, n, r) {
 	for (let e = 0; e < n.length; e++) for (let t = 0; t < n[e].length; t++) {
 		if (!r(t, e)) continue;
 		f++;
-		let i = n[e][t], c = Fh(t, e), l = (t + .5) * jh, p = (e + .5) * jh, m = (r, i) => n[e + i]?.[t + r] === 0, h = (e, t) => m(e, t) ? .95 : 1.5, g = l - h(-1, 0), _ = l + h(1, 0), v = p - h(0, -1), y = p + h(0, 1);
+		let i = n[e][t], c = Ih(t, e), l = (t + .5) * Mh, p = (e + .5) * Mh, m = (r, i) => n[e + i]?.[t + r] === 0, h = (e, t) => m(e, t) ? .95 : 1.5, g = l - h(-1, 0), _ = l + h(1, 0), v = p - h(0, -1), y = p + h(0, 1);
 		d(s, (g + _) / 2, 0, (v + y) / 2, _ - g, .14, y - v), d(a, (g + _) / 2, .14, (v + y) / 2, _ - g - .04, 2.15, y - v - .04);
 		for (let e of [-.45, .45]) d(o, (g + _) / 2 + e * (_ - g) * .6, .14, (v + y) / 2, .06, 2.17, y - v);
 		for (let [e, t] of [
@@ -24773,7 +25009,7 @@ function Ih(e, t, n, r) {
 }
 //#endregion
 //#region public/games/outpost-battle-presentation.js
-function Lh(e, t) {
+function Rh(e, t) {
 	let n = e?.protocol?.combat;
 	if (e?.state !== "playing" || e.protocol.phase !== "combat" || !n || e.time >= n.startsAt) return null;
 	let r = e.entities.filter((e) => n.participants.includes(e.id) && e.hp > 0 && !e.departed), i = r.find((e) => e.id === t), a = r.find((e) => e.id === n.targetId), o = r.filter((e) => e.id !== n.targetId);
@@ -24788,14 +25024,14 @@ function Lh(e, t) {
 }
 //#endregion
 //#region scripts/outpost-military/battle-preparation.js
-var Rh = (e) => (e = V.clamp(e, 0, 1), e * e * (3 - 2 * e));
-function zh(e, t, n, r) {
+var zh = (e) => (e = V.clamp(e, 0, 1), e * e * (3 - 2 * e));
+function Bh(e, t, n, r) {
 	if (!t || !r) return;
 	e.root.updateMatrixWorld(!0);
 	let i = n.clone().applyQuaternion(e.root.getWorldQuaternion(new U())), a = t.getWorldQuaternion(new U()).premultiply(new U().setFromAxisAngle(i, r));
 	t.quaternion.copy(t.parent.getWorldQuaternion(new U()).invert()).multiply(a), e.root.updateMatrixWorld(!0);
 }
-var Bh = class {
+var Vh = class {
 	constructor(e) {
 		this.r = e, this.scene = new gr(), this.scene.background = new q("#10191e"), this.camera = new sr(45, 1, .1, 30), this.scene.add(new Ro("#c8d8de", "#514a3c", .9));
 		let t = new Qo("#ffedcf", 3.2);
@@ -24848,7 +25084,7 @@ var Bh = class {
 		this.actors = [];
 	}
 	update(e) {
-		let t = this.r, n = Lh(e, t.g.selfId);
+		let t = this.r, n = Rh(e, t.g.selfId);
 		if (this.active = !!n && t.g.protocolUI?.visibleGameplay() && !t.g.protocolUI.hasDialogOpen() && !t.g.deathSequence, !this.active || !t.soldier) return !1;
 		let r = `${e.roundId}:${n.id}:${n.target.id}:${n.patrol.id}`;
 		this.id !== r && (this.clearActors(), this.id = r, this.lastSample = null, this.actors = [this.makeOperator(n.target, 0), this.makeOperator(n.patrol, 1)]), this.scene.environment = t.scene.environment, this.scene.environmentIntensity = .3;
@@ -24858,8 +25094,8 @@ var Bh = class {
 		return s === this.lastSample || (this.lastSample = s, this.actors.forEach((e, n) => {
 			let r = Math.max(0, o - n * .15), i = e.actions.Idle;
 			i.play().setEffectiveWeight(1).setEffectiveTimeScale(0), i.time = t.motion.matches ? 0 : r % i.getClip().duration, e.mixer.update(0), e.model.position.y = e.baseY, e.root.updateMatrixWorld(!0);
-			let a = Rh((r - .35) / 3.55), s = t.motion.matches ? 0 : Math.sin(Math.PI * Rh(r / 3.9));
-			zh(e, e.readyBones.RightArm, new W(1, 0, 0), t.motion.matches ? 0 : -.32 * (1 - a)), zh(e, e.readyBones.RightForeArm, new W(0, 0, 1), s * .055), zh(e, e.readyBones.Head, new W(1, 0, 0), -s * .1), dm(e, 0, !1), am(e.equipment.userData.carbine, 0, 0);
+			let a = zh((r - .35) / 3.55), s = t.motion.matches ? 0 : Math.sin(Math.PI * zh(r / 3.9));
+			Bh(e, e.readyBones.RightArm, new W(1, 0, 0), t.motion.matches ? 0 : -.32 * (1 - a)), Bh(e, e.readyBones.RightForeArm, new W(0, 0, 1), s * .055), Bh(e, e.readyBones.Head, new W(1, 0, 0), -s * .1), dm(e, 0, !1), am(e.equipment.userData.carbine, 0, 0);
 			let c = e.equipment.localToWorld(new W(-.035, -.056, -.312));
 			fm(e, c, e.equipment.getWorldQuaternion(new U()).multiply(e.supportGrip)), e.supportTarget = c;
 		}), !0);
@@ -24867,7 +25103,7 @@ var Bh = class {
 	dispose() {
 		this.clearActors(), this.floorMaterial.dispose(), this.floorGeometry.dispose(), this.scene.clear();
 	}
-}, $ = 3, Vh = "/games/military/", Hh = Math.PI * 2, Uh = {
+}, $ = 3, Hh = "/games/military/", Uh = Math.PI * 2, Wh = {
 	outpost: {
 		floor: "#a69980",
 		fog: "#d4c8ad",
@@ -24903,7 +25139,7 @@ var Bh = class {
 		fog: "#b8c9d0",
 		metal: "#92a1a3"
 	}
-}, Wh = class {
+}, Gh = class {
 	constructor(e, t = () => {}, { safeMode: n = !1 } = {}) {
 		this.g = e, this.onProgress = t, this.disposed = !1, this.actors = /* @__PURE__ */ new Map(), this.crates = /* @__PURE__ */ new Map(), this.cores = /* @__PURE__ */ new Map(), this.projectiles = /* @__PURE__ */ new Map(), this.fields = /* @__PURE__ */ new Map(), this.protocolCharges = /* @__PURE__ */ new Map(), this.protocolBodies = /* @__PURE__ */ new Map(), this.protocolFixtures = [], this.interactableInstances = [], this.protocolScreens = /* @__PURE__ */ new Map(), this.protocolLights = [], this.protocolLightMaterials = [], this.protocolPowerOut = !1, this.medicalStocks = /* @__PURE__ */ new Map(), this.transportCargo = [], this.transportTerrain = null, this.transportInstrument = null, this.transportInstrumentKey = "", this.transportAlarm = null, this.medevacRotor = null, this.arrivalClinic = null, this.arrivalPatients = /* @__PURE__ */ new Map(), this.materials = /* @__PURE__ */ new Set(), this.geometries = /* @__PURE__ */ new Map(), this.textures = /* @__PURE__ */ new Set(), this.worldTextures = /* @__PURE__ */ new Set(), this.weaponTextures = /* @__PURE__ */ new Set(), this.lastTime = 0, this.lastPose = -1, this.mapKey = "", this.wallKeys = "", this.seenShots = /* @__PURE__ */ new Map(), this.tracers = [], this.lastPreset = "", this.assetErrors = [], this.motion = matchMedia("(prefers-reduced-motion: reduce)"), this.mobileDevice = matchMedia("(pointer: coarse)").matches;
 		let r = mf(navigator), i, a;
@@ -24973,12 +25209,15 @@ var Bh = class {
 				fragmentShader: "uniform sampler2D tDiffuse; uniform vec3 highlight; uniform vec3 shadow; uniform float saturation; uniform float vignette; uniform float grain; uniform float time; varying vec2 vUv;\n          float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)) + time) * 43758.5453); }\n          void main(){\n            vec4 source = texture2D(tDiffuse, vUv);\n            vec3 c = source.rgb;\n            float l = dot(c, vec3(.2126,.7152,.0722));\n            float lift = smoothstep(0.0, 0.6, l);\n            c *= mix(shadow, highlight, lift);\n            c = mix(vec3(l), c, saturation);\n            vec2 d = vUv - .5;\n            c *= 1.0 - vignette * smoothstep(.25, .85, dot(d, d) * 2.2);\n            c += (hash(vUv * 731.0) - .5) * grain * (0.15 + sqrt(max(l, 0.0)));\n            gl_FragColor = vec4(max(c, 0.0), source.a);\n          }"
 			}), this.composer.addPass(this.grade), this.composer.addPass(new $d());
 		}
-		this.arenaStyle = new Oh(this, Vh, rf), this.ready = Promise.all([
+		this.arenaStyle = new kh(this, Hh, rf), this.ready = Promise.all([
 			this.loadAssets(),
 			Df(this),
-			this.arenaStyle.load()
+			this.arenaStyle.load("outpost")
 		]).then(() => {
-			this.disposed || (this.mapKey = "", this.updateWeapon());
+			if (!this.disposed) {
+				this.mapKey = "", this.updateWeapon();
+				for (let e of ["estate", "skyport"]) this.loadArenaStyle(e);
+			}
 		}), this.configure(), this.resize();
 	}
 	geo(e, t) {
@@ -25014,7 +25253,7 @@ var Bh = class {
 	async loadAssets() {
 		let t = 0, n = () => this.onProgress(++t, 14), r = new Io(), i = async (t) => {
 			try {
-				let n = await r.loadAsync(Vh + t + "?assetVersion=" + rf);
+				let n = await r.loadAsync(Hh + t + "?assetVersion=" + rf);
 				return this.disposed ? (n.dispose(), null) : (n.wrapS = n.wrapT = e, n.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy()), this.textures.add(n), n);
 			} catch {
 				return this.assetErrors.push(t), null;
@@ -25040,7 +25279,7 @@ var Bh = class {
 			kp(this),
 			(async () => {
 				try {
-					let e = await new Au().loadAsync(Vh + "models/medevac-v1.glb?assetVersion=" + rf);
+					let e = await new Au().loadAsync(Hh + "models/medevac-v1.glb?assetVersion=" + rf);
 					if (this.disposed) return;
 					this.medevacKit = ah(e);
 					for (let e of this.medevacKit.parts) this.geometries.set(`medevac:${e.geometry.uuid}`, e.geometry);
@@ -25051,7 +25290,7 @@ var Bh = class {
 			})(),
 			(async () => {
 				try {
-					let e = await new Au().loadAsync(Vh + "models/props-v1.glb?assetVersion=" + rf);
+					let e = await new Au().loadAsync(Hh + "models/props-v1.glb?assetVersion=" + rf);
 					if (this.disposed) {
 						this.disposeObject(e.scene);
 						return;
@@ -25068,14 +25307,14 @@ var Bh = class {
 							]) e.material[t] && this.textures.add(e.material[t]);
 							this.materials.add(e.material);
 						}
-					}), this.propKit = Ph(e), this.wallKeys = null;
+					}), this.propKit = Fh(e), this.wallKeys = null;
 				} catch {
 					this.assetErrors.push("props");
 				}
 			})(),
 			(async () => {
 				try {
-					let e = await new Au().loadAsync(Vh + "models/operator-v1.glb?assetVersion=" + rf);
+					let e = await new Au().loadAsync(Hh + "models/operator-v1.glb?assetVersion=" + rf);
 					if (this.disposed) {
 						this.disposeObject(e.scene);
 						return;
@@ -25092,7 +25331,7 @@ var Bh = class {
 			(async () => {
 				try {
 					if (!this.profile.halfFloat) return;
-					let e = await new Ad().loadAsync(Vh + "sky.hdr?assetVersion=" + rf);
+					let e = await new Ad().loadAsync(Hh + "sky.hdr?assetVersion=" + rf);
 					if (this.disposed) {
 						e.dispose();
 						return;
@@ -25149,9 +25388,15 @@ var Bh = class {
 		for (let e of this.protocolLights) e.intensity = 0, e.visible = !1;
 		this.protocolTorch.intensity = 0, this.protocolTorch.visible = !1;
 	}
+	loadArenaStyle(e) {
+		let t = this.arenaStyle.of(e);
+		!t || t.ready || t.failed || t.load().then(() => {
+			!this.disposed && t.ready && this.g.arena.mapId === e && (this.mapKey = "");
+		});
+	}
 	buildWorld() {
 		this.lastShadowAt = 0;
-		let e = this.g, t = e.arena.mapId, n = Uh[t] || Uh.outpost, r = e.level.length;
+		let e = this.g, t = e.arena.mapId, n = Wh[t] || Wh.outpost, r = e.level.length;
 		this.clearWorld(), this.buildingWorld = !0, this.mapKey = t, this.wallKeys = "", this.scene.fog.color.set(n.fog), this.scene.fog.density = t === "freight" ? .021 : .012;
 		let i = this.material({
 			color: "#d7d4cd",
@@ -25173,11 +25418,11 @@ var Bh = class {
 			1
 		]);
 		a.rotation.x = -Math.PI / 2, a.castShadow = !1, a.visible = t !== "medevac";
-		let o = this.arenaStyle;
-		o.applies(t) && (o.ready ? o.ground(i, r) : o.failed || o.load().then(() => {
-			!this.disposed && o.ready && o.applies(this.g.arena.mapId) && (this.mapKey = "");
-		})), this.wallMaterials = Array.from({ length: 7 }, (e, r) => {
-			let i = t === "breakwater" ? [
+		let o = this.arenaStyle.readyFor(t);
+		o ? this.arenaStyle.ground(t, i, r) : this.loadArenaStyle(t), this.wallMaterials = Array.from({ length: 7 }, (e, r) => {
+			let i = this.arenaStyle.wallMaterial(t, r);
+			if (i) return i;
+			let a = t === "breakwater" ? [
 				"#b7b4a8",
 				"#a29882",
 				"#7c9094",
@@ -25201,7 +25446,7 @@ var Bh = class {
 				"#84776b",
 				"#909a9d",
 				"#bcc2bd"
-			], a = (t === "freight" || t === "medevac" ? [
+			], o = (t === "freight" || t === "medevac" ? [
 				"concrete",
 				"metal",
 				"metal",
@@ -25233,22 +25478,22 @@ var Bh = class {
 				"brick",
 				"plaster",
 				"metal"
-			])[r], o = a === "metal" ? this.material({
-				color: i[r],
+			])[r], s = o === "metal" ? this.material({
+				color: a[r],
 				map: this.metalColor,
 				normalMap: this.metalNormal,
 				roughnessMap: this.metalRough,
 				roughness: .9,
 				metalness: .06,
 				normalScale: new H(.45, .45)
-			}) : lf(this, a, {
-				color: i[r],
+			}) : lf(this, o, {
+				color: a[r],
 				repeat: [1.5, 1.75],
-				roughness: a === "plaster" ? .93 : .9,
+				roughness: o === "plaster" ? .93 : .9,
 				metalness: 0,
-				normalStrength: a === "brick" ? .55 : .3
+				normalStrength: o === "brick" ? .55 : .3
 			});
-			return o.userData.world = !0, o;
+			return s.userData.world = !0, s;
 		}), this.rebuildWalls();
 		let s = this.material({
 			color: "#555c58",
@@ -25285,7 +25530,7 @@ var Bh = class {
 				.2
 			]);
 		}
-		Ef(c), ["breakwater", "medevac"].includes(t) && this.protocolMetadata() ? this.buildProtocolBase(this.protocolMetadata()) : this.addLandmarks(t, r, s), o.ready && o.applies(t) && o.dress(this.world, e.level), t !== "medevac" && !(o.ready && o.applies(t)) && this.makePuddles(t, r);
+		Ef(c), ["breakwater", "medevac"].includes(t) && this.protocolMetadata() ? this.buildProtocolBase(this.protocolMetadata()) : this.addLandmarks(t, r, s), o && this.arenaStyle.dress(t, this.world, e.level), t !== "medevac" && !o && this.makePuddles(t, r);
 		let l = {
 			outpost: [[1.5, 4.5], [14.5, 10.5]],
 			testblock: [[2.5, 7.5], [13.5, 7.5]],
@@ -25293,13 +25538,13 @@ var Bh = class {
 			freight: [[1.5, 3.5], [10.5, 1.5]],
 			estate: [[5.5, 4.5], [15.5, 16.5]]
 		}[t] || [];
-		for (let [e, n] of o.ready && o.applies(t) ? [] : l) {
-			let t = this.cylinder(this.world, s, [
+		for (let [e, t] of o ? [] : l) {
+			let n = this.cylinder(this.world, s, [
 				e * $,
 				.5,
-				n * $
+				t * $
 			], .32, 1, "y", 32);
-			for (let e of [.2, .8]) this.cylinder(t, s, [
+			for (let e of [.2, .8]) this.cylinder(n, s, [
 				0,
 				e - .5,
 				0
@@ -25326,7 +25571,7 @@ var Bh = class {
 			for (let n = 0; n < e.level.length; n++) for (let i = 0; i < e.level[n].length; i++) e.level[n][i] === t && !this.protocolPropTile(i, n) && !this.transportWindowTile(i, n) && !this.transportHiddenWall(i, n) && r.push([i, n]);
 			if (!r.length) continue;
 			if (this.arenaStyle?.owns(e.arena.mapId, t)) {
-				for (let e of this.arenaStyle.walls(t, r)) this.world.add(e), this.wallMeshes.push(e);
+				for (let n of this.arenaStyle.walls(e.arena.mapId, t, r)) this.world.add(n), this.wallMeshes.push(n);
 				continue;
 			}
 			let i = /* @__PURE__ */ new Map();
@@ -25356,7 +25601,7 @@ var Bh = class {
 		});
 		e.userData.world = !0, this.fittingMaterial = e;
 		let t = [], n = [], r = this.g.level;
-		for (let e = 0; e < r.length; e++) for (let i = 0; i < r[e].length; i++) if (!(!r[e][i] || this.wallMaterials[r[e][i]]?.userData.realismSurface || this.protocolPropTile(i, e) || this.transportWindowTile(i, e) || this.transportHiddenWall(i, e))) for (let [a, o] of [
+		for (let e = 0; e < r.length; e++) for (let i = 0; i < r[e].length; i++) if (!(!r[e][i] || this.wallMaterials[r[e][i]]?.userData.realismSurface || this.arenaStyle?.owns(this.g.arena.mapId, r[e][i]) || this.protocolPropTile(i, e) || this.transportWindowTile(i, e) || this.transportHiddenWall(i, e))) for (let [a, o] of [
 			[0, 1],
 			[0, -1],
 			[1, 0],
@@ -25856,7 +26101,7 @@ var Bh = class {
 				.11,
 				.11
 			]);
-			let o = this.mesh(t, this.geo("radar-dish", () => new Ya(1.25, 24, 12, 0, Hh, 0, Math.PI / 2)), r, [
+			let o = this.mesh(t, this.geo("radar-dish", () => new Ya(1.25, 24, 12, 0, Uh, 0, Math.PI / 2)), r, [
 				e,
 				8.8,
 				i
@@ -25873,7 +26118,7 @@ var Bh = class {
 			rubber: i,
 			amber: a,
 			lamp: o
-		}), e.id === "breakwater" && Ih(this, t, this.g.level, (e, t) => this.furnitureTile(e, t) && !Bf(e, t) && !Yf(e, t) && !$f(e, t)), e.id === "medevac" && this.buildTransportInterior(e, t, {
+		}), e.id === "breakwater" && Lh(this, t, this.g.level, (e, t) => this.furnitureTile(e, t) && !Bf(e, t) && !Yf(e, t) && !$f(e, t)), e.id === "medevac" && this.buildTransportInterior(e, t, {
 			steel: n,
 			paint: r,
 			rubber: i,
@@ -26429,7 +26674,7 @@ var Bh = class {
 		});
 		o.userData.world = !0;
 		let s = [];
-		for (let e = 1; e < t - 1; e++) for (let n = 1; n < t - 1; n++) this.g.level[e][n] && !this.g.level[e + 1]?.[n] && s.length < 18 && s.push([n, e]);
+		for (let n = 1; n < t - 1; n++) for (let r = 1; r < t - 1; r++) this.g.level[n][r] && !this.g.level[n + 1]?.[r] && !this.arenaStyle?.owns(e, this.g.level[n][r]) && s.length < 18 && s.push([r, n]);
 		for (let [e, t] of s) {
 			let n = this.mesh(this.world, this.geo("sign", () => new Ga(1.5, .75)), o, [
 				(e + .5) * $,
@@ -26845,7 +27090,7 @@ var Bh = class {
 				.04
 			]);
 		} else {
-			this.mesh(m, this.geo("combatHelmet", () => new Ya(1, 24, 16, 0, Hh, 0, Math.PI * .6)), i, [
+			this.mesh(m, this.geo("combatHelmet", () => new Ya(1, 24, 16, 0, Uh, 0, Math.PI * .6)), i, [
 				0,
 				2.09,
 				.025
@@ -27695,7 +27940,7 @@ var Bh = class {
 			if (e.hp <= 0) continue;
 			n.add(e.id);
 			let t = this.crates.get(e.id);
-			t || (t = new X(), this.dynamic.add(t), e.kind ? dh(this, t, e.kind) : _p(this, t), this.crates.set(e.id, t)), t.position.set(e.x * $, 0, e.y * $);
+			t || (t = new X(), this.dynamic.add(t), e.kind ? fh(this, t, e.kind) : _p(this, t), this.crates.set(e.id, t)), t.position.set(e.x * $, 0, e.y * $);
 		}
 		for (let [e, t] of this.crates) n.has(e) || (this.dynamic.remove(t), this.crates.delete(e));
 		let r = /* @__PURE__ */ new Set();
@@ -27998,10 +28243,10 @@ var Bh = class {
 		let i = e.camera(), a = e.cameraPitch, o = this.frameProtocolView, s = e.arena.mapId === "medevac" && o?.protocol?.mission?.vehicle?.pilotId === i.id, c = performance.now(), l = Math.min(.1, (c - (this.lastRenderAt || c)) / 1e3), u = i.slideUntil > e.time ? .7 : i.crouching ? 1.17 : 1.65;
 		this.lastRenderAt = c, this.eyeHeight ??= 1.65, this.eyeHeight += (u - this.eyeHeight) * (1 - Math.exp(-l * 18));
 		let d = this.motion.matches ? 0 : (e.deathProgress || 0) ** 2;
-		this.camera.position.set(i.x * $, e.deathSequence ? 1.65 - d * 1.4 : this.eyeHeight, i.y * $ + (s ? .85 : 0)), this.camera.rotation.set(a - d * .25, -i.a - Math.PI / 2, d * .5, "YXZ"), (this.hazards ||= new fh(this)).shake(this.camera, t), this.updateProtocol(o, i), this.updateMedicalMission(o?.protocol?.mission, t);
+		this.camera.position.set(i.x * $, e.deathSequence ? 1.65 - d * 1.4 : this.eyeHeight, i.y * $ + (s ? .85 : 0)), this.camera.rotation.set(a - d * .25, -i.a - Math.PI / 2, d * .5, "YXZ"), (this.hazards ||= new ph(this)).shake(this.camera, t), this.updateProtocol(o, i), this.updateMedicalMission(o?.protocol?.mission, t);
 		let f = (this.night ||= new nh(this)).update(o, e.arena.mapId, t);
-		this.updateCinematic(f, t), e.mode === "protocol" && (this.events ||= new Ah(this)).update(o, t), Sf(this, o, i, l);
-		let p = e.mode !== "protocol" && (this.hazards ||= new fh(this)).dim();
+		this.updateCinematic(f, t), e.mode === "protocol" && (this.events ||= new jh(this)).update(o, t), Sf(this, o, i, l);
+		let p = e.mode !== "protocol" && (this.hazards ||= new ph(this)).dim();
 		if (e.arena.mapId === "medevac" && !this.motion.matches) {
 			let e = Number(o?.protocol?.mission?.vehicle?.heading) || 0;
 			this.camera.rotation.z = V.clamp(-e * .055, -.085, .085);
@@ -28018,7 +28263,7 @@ var Bh = class {
 			}
 			h.hidden = !t || this.identification?.root.hidden === !1 && this.identification.labels.get(_?.id)?.hidden === !1;
 		}
-		if (this.updatePickups(t), this.updateFields(), (this.hazards ||= new fh(this)).update(t), t < this.lastTime) {
+		if (this.updatePickups(t), this.updateFields(), (this.hazards ||= new ph(this)).update(t), t < this.lastTime) {
 			this.seenShots.clear();
 			for (let e of this.tracers) this.dynamic.remove(e.mesh);
 			this.tracers = [];
@@ -28026,14 +28271,14 @@ var Bh = class {
 		this.updateProjectiles(t), this.updateWeapon();
 		let v = o?.protocol?.phase === "combat", y = e.mode === "protocol" && !v ? 0 : Math.max(0, 1 - (t - i.shotAt) / .16), b = Math.max(0, Math.min(1, (i.reloadUntil - t) / 1.4));
 		this.rig.position.y = -.2 * Math.max(1, this.g.h / this.g.w) - (e.mode === "protocol" && !v ? .075 : 0) - (b > 0 ? Math.sin(b * Math.PI) * .25 : 0) + (this.motion.matches ? 0 : Math.sin(e.step) * .005), this.rig.position.y -= d * .65, this.rig.position.z = y * .04, this.rig.rotation.x = .02 - y * .075, this.rig.rotation.z = -.025 + Math.sin(b * Math.PI) * .3, this.flash.intensity = y > .65 ? 3 : 0, am(this.rig.userData.carbine, b, y), this.rig.visible = (i.hp > 0 || !!e.deathSequence && e.deathProgress < .65) && !s && !m;
-		let x = !["training", "protocol"].includes(e.mode) && e.time > e.zone.delay && (Math.abs(i.x - e.zone.cx) > e.zone.half || Math.abs(i.y - e.zone.cy) > e.zone.half), S = e.mode === "protocol" && (o?.protocol?.events || []).some((e) => e.kind === "sandstorm"), C = e.mode !== "protocol" && (this.hazards ||= new fh(this)).weather();
-		if (this.scene.fog.color.set(S ? this.night?.active ? "#4a3f30" : "#b39a72" : this.night?.active ? "#121d2e" : x ? "#9a2a22" : e.mode === "protocol" && e.arena.mapId === "breakwater" ? "#cdbb9c" : (Uh[e.arena.mapId] || Uh.outpost).fog), this.scene.fog.density = S ? this.naturalLighting?.inside ? .05 : .09 : this.night?.active ? this.naturalLighting?.inside ? .01 : .026 : x ? .075 : e.arena.mapId === "medevac" && !o?.protocol?.mission?.vehicle?.arrived ? .002 : .009, C) {
+		let x = !["training", "protocol"].includes(e.mode) && e.time > e.zone.delay && (Math.abs(i.x - e.zone.cx) > e.zone.half || Math.abs(i.y - e.zone.cy) > e.zone.half), S = e.mode === "protocol" && (o?.protocol?.events || []).some((e) => e.kind === "sandstorm"), C = e.mode !== "protocol" && (this.hazards ||= new ph(this)).weather();
+		if (this.scene.fog.color.set(S ? this.night?.active ? "#4a3f30" : "#b39a72" : this.night?.active ? "#121d2e" : x ? "#9a2a22" : e.mode === "protocol" && e.arena.mapId === "breakwater" ? "#cdbb9c" : (Wh[e.arena.mapId] || Wh.outpost).fog), this.scene.fog.density = S ? this.naturalLighting?.inside ? .05 : .09 : this.night?.active ? this.naturalLighting?.inside ? .01 : .026 : x ? .075 : e.arena.mapId === "medevac" && !o?.protocol?.mission?.vehicle?.arrived ? .002 : .009, C) {
 			this.scene.fog.color.lerp((this.weatherFog ||= new q()).set(C.fog), C.k);
 			let e = this.naturalLighting?.inside ? C.density * .55 : C.density;
 			this.scene.fog.density += (e - this.scene.fog.density) * C.k;
 		}
 		S && (this.scene.background = (this.sandSky ||= new q()).copy(this.scene.fog.color)), this.renderer.shadowMap.enabled && (!this.lastShadowAt || c - this.lastShadowAt >= 1e3 / 30) && (this.renderer.shadowMap.needsUpdate = !0, this.lastShadowAt = c), this.renderer.info.reset(), (this.telemetry ||= new zm(this.renderer)).begin();
-		let w = o?.protocol?.phase === "combat" && o.time < o.protocol.combat?.startsAt, T = w && (this.battlePreparation ||= new Bh(this)).update(o);
+		let w = o?.protocol?.phase === "combat" && o.time < o.protocol.combat?.startsAt, T = w && (this.battlePreparation ||= new Vh(this)).update(o);
 		return !w && this.battlePreparation && (this.battlePreparation.active = !1), T ? (this.identification.root.hidden = !0, this.renderer.autoClear = !0, this.renderer.render(this.battlePreparation.scene, this.battlePreparation.camera)) : !this.composer || e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), p && p(), this.telemetry.end(), this.metrics = {
 			gpuMs: this.telemetry.gpuMs,
 			drawCalls: this.renderer.info.render.calls,
@@ -28067,4 +28312,4 @@ var Bh = class {
 	}
 };
 //#endregion
-export { Wh as MilitaryRenderer };
+export { Gh as MilitaryRenderer };

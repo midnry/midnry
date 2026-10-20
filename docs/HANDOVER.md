@@ -357,3 +357,26 @@ store submission). `public/games/loading/{bp-key,ls-outpost,ls-estate}-{wide,tal
 the screen's own brand line (the art has the logo painted in), lightens the top shade and
 shadows the captions. `node scripts/qa/loading-art.mjs` screenshots laptop + phone;
 `scripts/check-outpost-loading.mjs` follows the 8-slide order.
+
+## Wreck Estate + Skyport art pass (on `game-look`, not deployed)
+
+- `scripts/outpost-military/arena-style.js` replaces `arena-dust.js`: `ARENAS` holds one config per
+  Last Signal arena (kit pieces per wall type, box-wall surfaces per wall type, ground, prop
+  dressing); `ArenaStyles` is `renderer.arenaStyle` (`of(id)`, `readyFor(id)`, `owns(id,type)`,
+  `wallMaterial`, `walls`, `ground`, `dress`). Dust loads behind the opening loading screen;
+  Estate and Skyport load in the background right after (`renderer.loadArenaStyle`). Arena
+  textures are `sharedSource` (stay on the GPU across rebuilds). Props cast shadows only on High.
+- Wreck Estate: hedges (type 2) and stone planters (3) as kit pieces; types 1/4/5 lime render
+  (`villa-plaster`, tinted); travertine paving ground. Skyport: air-cargo containers (2) and
+  cargo pallets (3); type 1 poured concrete, type 5 terminal cladding; concrete slab apron; cones.
+- Kit-owned tiles get no steel panel fittings, door frames or wall signs.
+- Sandbag barriers (all arenas) are now one merged emplacement filling the 2.5 m footprint
+  (`sandbagEmplacement` in `realism-hazards.js`) instead of spaced, floating-looking bags.
+- Pipeline: `python3 scripts/assets/arena-textures.py`, `python3 scripts/assets/procedural-textures.py`,
+  Blender `scripts/assets/kit-estate.py` / `kit-skyport.py` (shared `kit_common.py`), props with
+  `PACK_RATIO=0.05 PACK_ERROR=0.006 node <tools>/pack-props.mjs …`, then `node scripts/build-outpost-cache.mjs`.
+- Budget (`node scripts/qa/arena-look.mjs <tag> estate|skyport 1280|390`, views include close-ups
+  `hedge`, `uld`, `cargo`): laptop ≤ ~360k tris / ~290 calls, phone ≤ ~300k (a frame that also
+  refreshes shadows can read ~2× higher).
+- **Remind the owner about Steam** after this release: they need a Steamworks account ($100 app
+  fee) and to send the App ID; then achievements, cloud saves, Steam Deck checks.

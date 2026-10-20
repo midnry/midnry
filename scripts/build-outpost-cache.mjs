@@ -11,8 +11,9 @@ const names = [
     .filter((x) => x.endsWith(".jpg") && !x.includes("-source"))
     .map((x) => "textures/" + x),
   // Arena art passes: standard textures, and the HD set used on High.
-  "models/arena-dust-kit-v1.glb",
-  "models/arena-dust-props-v1.glb",
+  ...readdirSync("public/games/military/models")
+    .filter((x) => x.startsWith("arena-") && x.endsWith(".glb"))
+    .map((x) => "models/" + x),
   ...readdirSync("public/games/military/textures/arena")
     .filter((x) => x.endsWith(".jpg"))
     .map((x) => "textures/arena/" + x),
