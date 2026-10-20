@@ -1,6 +1,7 @@
 // Lightning after-shock (arcs on a rival, blue edge on you) and the network
 // meter in an online room (badge + panel), on a phone-sized screen.
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 import { mkdirSync } from "node:fs";
 mkdirSync("screenshots/qa/shock", { recursive: true });
 const b = await chromium.launch({
@@ -33,7 +34,7 @@ const page = async () => {
   return p;
 };
 let p = await page();
-await p.click(".mf-gamepick [data-mode=signal]");
+await pickGame(p, "signal");
 await p.waitForTimeout(800);
 await p.evaluate(() => {
   const g = document.querySelector("midnry-fps").engine,

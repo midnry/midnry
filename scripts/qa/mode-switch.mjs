@@ -2,6 +2,7 @@
 // GPU memory (geometries, textures), JS heap and page errors must stay flat.
 //   node scripts/qa/mode-switch.mjs [width=1280] [switches=24]
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 const W = Number(process.argv[2] || 1280), M = W < 500, N = Number(process.argv[3] || 24);
 const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist", "--enable-precise-memory-info"] });
 const p = await (await b.newContext({ viewport: { width: W, height: M ? 844 : 720 }, isMobile: M, hasTouch: M })).newPage();
@@ -21,7 +22,7 @@ const log = [await sample()];
 for (let i = 0; i < N; i++) {
   const mode = i % 2 ? "protocol" : "signal";
   const t0 = Date.now();
-  await p.click(`.mf-gamepick [data-mode=${mode}]`, { timeout: 60000 });
+  await pickGame(p, mode, { timeout: 60000 });
   await p.waitForTimeout(1500);
   const s = await sample();
   s.ms = Date.now() - t0;

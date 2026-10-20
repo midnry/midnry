@@ -137,7 +137,7 @@ try {
       g.lockMouse = () => {};
       g.resize();
     });
-    await page.locator(".mf-start").click();
+    await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
     assert.equal(await page.locator(".mf-top").evaluate((e) => e.inert), false);
     assert.match(await page.locator(".mf-accessannounce").textContent(), /Match active/);
     const positions = await page.evaluate(() => {

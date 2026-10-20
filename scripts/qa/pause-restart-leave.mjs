@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 const W = Number(process.argv[2] ?? 390), M = W < 500, H = M ? 844 : 720, MODE = process.argv[3] || "signal";
 const S = "screenshots/qa/signal";
 const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
@@ -9,9 +10,9 @@ await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domc
 await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
 const bar = () => p.evaluate(() => { const m = document.querySelector(".mf-matchbar"); return m && !m.hidden && m.offsetParent ? [...m.querySelectorAll("button")].filter(b => !b.hidden).map(b => b.textContent.trim()).join(" + ") : "hidden"; });
 console.log("home before playing, bar:", await bar());
-if (MODE === "signal") await p.click(".mf-gamepick [data-mode=signal]", { timeout: 60000 });
+if (MODE === "signal") await pickGame(p, "signal", { timeout: 60000 });
 await p.waitForTimeout(800);
-await p.click(".mf-start", { timeout: 60000 }); await p.waitForTimeout(5000);
+await play(p, { timeout: 60000 }); await p.waitForTimeout(5000);
 await p.evaluate(() => [...document.querySelectorAll("button")].find((x) => /Understood/.test(x.textContent))?.click());
 await p.waitForTimeout(3000);
 const pause = async () => { await p.keyboard.press("Escape").catch(()=>{}); await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine; if (g.running) g.pause(); }); await p.waitForTimeout(1200); };
@@ -34,7 +35,7 @@ await p.click(".mf-confirmapply", { timeout: 60000 }); await p.waitForTimeout(25
 console.log("after leave:", await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine; return JSON.stringify({ mode: g.mode, state: g.state, running: g.running, home: document.querySelector(".mf-modal").classList.contains("mf-home") && !document.querySelector(".mf-modal").hidden, summary: document.querySelector(".mf-playsummary")?.innerText, start: document.querySelector(".mf-start").innerText }); }), "bar:", await bar());
 await p.screenshot({ path: `${S}/matchbar-left-${MODE}-${W}.png` });
 // Can play again after leaving
-await p.click(".mf-start", { timeout: 60000 }); await p.waitForTimeout(5000);
+await play(p, { timeout: 60000 }); await p.waitForTimeout(5000);
 await p.evaluate(() => [...document.querySelectorAll("button")].find((x) => /Understood/.test(x.textContent))?.click());
 console.log("play after leave:", await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine; return g.mode + " " + g.state + " running=" + g.running; }));
 console.log("errors", errs);

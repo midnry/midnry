@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 const W = Number(process.argv[2] ?? 1280), M = W < 500, H = M ? 844 : 720;
 const S = "screenshots/qa/signal";
 const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
@@ -8,8 +9,8 @@ p.on("crash", () => errs.push("TAB CRASHED"));
 await p.addInitScript(() => localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 5 })));
 await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
 await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
-await p.click(".mf-gamepick [data-mode=signal]", { timeout: 60000 }); await p.waitForTimeout(1500);
-await p.click(".mf-start", { timeout: 60000 });
+await pickGame(p, "signal", { timeout: 60000 }); await p.waitForTimeout(1500);
+await play(p, { timeout: 60000 });
 for (let round = 1; round <= 3; round++) {
   await p.waitForTimeout(5000);
   const info = () => p.evaluate(() => { const g = document.querySelector("midnry-fps").engine; return { mode: g.mode, map: g.arena?.mapId, state: g.state, running: g.running, alive: g.arena?.entities.filter(e => e.hp > 0).length, hp: Math.round(g.player?.hp), t: +(g.arena?.time||0).toFixed(1), frame: g.frameCount ?? g.frames ?? null, err: document.querySelector(".mf-loaderr, .mf-error, [class*=crash]")?.innerText?.slice(0,120) || null }; });

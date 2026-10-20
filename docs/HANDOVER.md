@@ -467,3 +467,27 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   "PLAY LAST SIGNAL →" / "PLAY BLACKOUT PROTOCOL →" (`playLabel()`, also used by
   `outpost-ui.js`). QA: `node scripts/qa/play-choice.mjs [width]`. Older QA that clicks
   `.mf-start` directly must set `localStorage["midnry-outpost-mode"]` first.
+
+## Lobby home screen (built 2026-10-20, not deployed yet)
+
+- Owner asked for a Fortnite-style lobby in our own style (no Fortnite trade dress, no premium
+  currency). The home menu is now a lobby whenever the 3D renderer is up (`mf-lobby` on the
+  modal; safe mode keeps the classic menu).
+- 3D: `scripts/outpost-military/lobby-stage.js` (`LobbyStage`, own small scene: dusk sky,
+  platform plus two squad pads, spot/rim/fill light, dust). `renderer.renderLobby(now)` is called
+  by the game loop while the home menu covers the scene (30 Hz on phones); the arena is never
+  built for it. The operator wears the Locker outfit (`r.lobbyDressing` makes `soldierLook()`
+  false) and holds the carbine in the Locker finish (`r.thirdPersonFinish`, read in
+  `realism-carbine.js`). Gear and rifle follow the Idle pose (`updateSkinParts`,
+  `updateWeaponGrip`). Drag sideways to turn the operator. Portrait camera keeps the operator in
+  the top ~45% of a phone.
+- Menu (`outpost-menu.js`): operator level and daily challenges on the left (`.mf-homeleft`),
+  Today's case card top right, mode card bottom right (`.mf-modecard`: Bots/Friends toggle,
+  game title, Change, big Play). The game picker is a sheet (`.mf-picking`, Done closes;
+  picking a variant closes it). Squad "+" pads (`.mf-squad`) are pinned over the 3D pads by
+  `LobbyStage.placeSquad` and open Friends (online). Match HUD bits are hidden behind the lobby.
+- QA: `node scripts/qa/lobby-look.mjs [width]` (screenshots in `screenshots/qa/lobby/`).
+  The old `.mf-start` button is hidden in the lobby; QA scripts use
+  `scripts/qa/lobby-helpers.mjs` (`pickGame(p, mode)`, `play(p)`), and check scripts click
+  `.mf-start:visible, .mf-modeplay:visible`.
+- Pass 2 (later): real online friends in the squad slots, a rotating featured card.

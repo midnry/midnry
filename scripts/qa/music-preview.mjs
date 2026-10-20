@@ -2,6 +2,7 @@
 // stalk, hunt, fight) to screenshots/qa/music-preview.wav and prints the
 // loudness of each part. Then checks it plays in a real round.
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 import { writeFileSync, mkdirSync } from "node:fs";
 mkdirSync("screenshots/qa", { recursive: true });
 const b = await chromium.launch({
@@ -86,9 +87,9 @@ await p.waitForFunction(
   null,
   { timeout: 180000 },
 );
-await p.click(".mf-gamepick [data-mode=signal]");
+await pickGame(p, "signal");
 await p.waitForTimeout(800);
-await p.click(".mf-start");
+await play(p);
 await p.waitForTimeout(8000);
 const live = await p.evaluate(async () => {
   const g = document.querySelector("midnry-fps").engine,

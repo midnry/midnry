@@ -53,6 +53,7 @@ import { prepareMedevac, buildMedevac } from "./realism-medevac.js";
 import { HazardDressing, buildHazard } from "./realism-hazards.js";
 import { ArenaStyles } from "./arena-style.js";
 import { SkyClouds } from "./sky-clouds.js";
+import { LobbyStage } from "./lobby-stage.js";
 import { EventDressing } from "./realism-events.js";
 import { preparePropKit, buildFurniture } from "./realism-props.js";
 import { BattlePreparation } from "./battle-preparation.js";
@@ -2080,6 +2081,8 @@ export class MilitaryRenderer {
    */
   /** Lifeline Run and Last Signal both use the plain soldier uniform. */
   soldierLook() {
+    // The home lobby shows your Locker outfit, not the match uniform.
+    if (this.lobbyDressing) return false;
     return this.g.mode === "protocol" || this.g.mode === "signal";
   }
   dyeUniform(model, color) {
@@ -3513,7 +3516,13 @@ export class MilitaryRenderer {
       }
     });
   }
+  /** The home lobby (its own small scene) while the home menu is open. */
+  renderLobby(now) {
+    if (this.disposed || this.contextUnavailable || !this.soldier) return false;
+    return (this.lobby ||= new LobbyStage(this)).render(now);
+  }
   dispose() {
+    this.lobby?.dispose();
     this.clouds?.dispose();
     if (this.disposed) return;
     this.disposed = true;

@@ -101,7 +101,7 @@ try {
       cancelAnimationFrame(g.frame);
       g.frame = 0;
     });
-    const start = page.locator(".mf-start");
+    const start = page.locator(".mf-start:visible, .mf-modeplay:visible").first();
     await start.evaluate((e) => e.scrollIntoView({ block: "center", behavior: "instant" }));
     const r = await start.boundingBox();
     if (mobile) await page.touchscreen.tap(r.x + r.width / 2, r.y + r.height / 2);

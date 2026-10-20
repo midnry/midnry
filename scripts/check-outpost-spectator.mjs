@@ -155,7 +155,7 @@ try {
     await refresh(page);
     await page.locator(".mf-pause").click();
     assert.equal(await page.locator(".mf-spectator").isVisible(), false);
-    await page.locator(".mf-start").click();
+    await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
     await refresh(page);
     assert.equal(await page.locator(".mf-spectator").isVisible(), true);
     // A recipient-safe online snapshot uses the production applyRoom path.

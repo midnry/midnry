@@ -28,7 +28,7 @@ try {
     ]) {
       await page.locator(".mf-mapselect").selectOption(mapId);
       await page.locator(".mf-weaponselect").selectOption(weapon);
-      await page.locator(".mf-start").click();
+      await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
       const data = await page.evaluate(() => {
         const g = document.querySelector("midnry-fps").engine;
         return { mapId: g.arena.mapId, weapon: g.player.weapon, n: g.level.length, mag: g.ammo };
@@ -65,7 +65,7 @@ try {
       "demo",
     ]) {
       await page.locator(".mf-weaponselect").selectOption(weapon);
-      await page.locator(".mf-start").click();
+      await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
       await page.evaluate(() => {
         const g = document.querySelector("midnry-fps").engine;
         g.arena.updateRival = () => {};
@@ -81,7 +81,7 @@ try {
       await page.evaluate(() => document.querySelector("midnry-fps").engine.pause());
     }
     await page.locator(".mf-weaponselect").selectOption("shard");
-    await page.locator(".mf-start").click();
+    await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
     await page.evaluate(() => {
       const g = document.querySelector("midnry-fps").engine;
       g.arena.updateRival = () => {};
@@ -101,7 +101,7 @@ try {
       "offline pause freezes effects",
     );
     await page.locator(".mf-weaponselect").selectOption("brawler");
-    await page.locator(".mf-start").click();
+    await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
     await page.evaluate(() => {
       const g = document.querySelector("midnry-fps").engine;
       g.arena.updateRival = () => {};

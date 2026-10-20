@@ -2,6 +2,7 @@
 // (near and far), from outside it, and a sandstorm / storm half rolled in.
 //   node scripts/qa/signal-haze.mjs [width]   (390 = phone)
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 import { mkdirSync } from "node:fs";
 const W = Number(process.argv[2] ?? 1280),
   M = W < 500,
@@ -38,7 +39,7 @@ await p.waitForFunction(
   null,
   { timeout: 180000 },
 );
-await p.click(".mf-gamepick [data-mode=signal]");
+await pickGame(p, "signal");
 await p.waitForTimeout(800);
 const shot = async (name, pick, setup) => {
   const info = await p.evaluate(
@@ -69,7 +70,7 @@ const shot = async (name, pick, setup) => {
   await p.screenshot({ path: `${OUT}/${name}-${W}.png` });
   console.log(name, JSON.stringify(info));
 };
-await p.click(".mf-start", { timeout: 60000 });
+await play(p, { timeout: 60000 });
 await p.waitForFunction(() => document.querySelector("midnry-fps")?.engine?.militaryLoaded, null, {
   timeout: 180000,
 });

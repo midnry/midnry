@@ -2,6 +2,7 @@
 // Photos of both games' options at the given width, plus a series flow check.
 //   node scripts/qa/mode-menu.mjs [width]   (390 = phone)
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 import { mkdirSync } from "node:fs";
 const W = Number(process.argv[2] ?? 1280),
   M = W < 500,
@@ -52,12 +53,12 @@ const shot = async (name) => {
   await p.waitForTimeout(800);
   await p.screenshot({ path: `${OUT}/${name}-${W}.png`, fullPage: false });
 };
-await p.click(".mf-gamepick [data-mode=protocol]", { timeout: 60000 });
+await pickGame(p, "protocol", { timeout: 60000 });
 console.log("protocol", JSON.stringify(await state()));
 await shot("protocol");
 await p.click(".mf-variants [data-variant=quick]", { timeout: 60000 });
 console.log("quick", JSON.stringify(await state()));
-await p.click(".mf-gamepick [data-mode=signal]", { timeout: 60000 });
+await pickGame(p, "signal", { timeout: 60000 });
 console.log("signal", JSON.stringify(await state()));
 await p.click(".mf-variants [data-variant=series]", { timeout: 60000 });
 console.log("series", JSON.stringify(await state()));
@@ -70,12 +71,12 @@ const playNext = await p.evaluate(
   () => getComputedStyle(document.querySelector(".mf-playnext")).display,
 );
 console.log("step-3 play button", playNext);
-await p.click(".mf-gamepick [data-mode=protocol]", { timeout: 60000 });
+await pickGame(p, "protocol", { timeout: 60000 });
 console.log("back to protocol keeps quick", JSON.stringify(await state()));
-await p.click(".mf-gamepick [data-mode=signal]", { timeout: 60000 });
+await pickGame(p, "signal", { timeout: 60000 });
 console.log("back to signal keeps series", JSON.stringify(await state()));
 // Play two series rounds: the player is knocked out, the round is played out unseen.
-await p.click(M ? ".mf-playnext" : ".mf-start", { timeout: 60000 });
+await play(p, { timeout: 60000 });
 await p.waitForFunction(() => document.querySelector("midnry-fps")?.engine?.militaryLoaded, null, {
   timeout: 180000,
 });

@@ -1,6 +1,7 @@
 // Close-up of a supply crate on a phone-sized screen at a few angles, to
 // catch shimmering stripes (shadow acne / z-fighting) on its faces.
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 import { mkdirSync } from "node:fs";
 mkdirSync("screenshots/qa/crate", { recursive: true });
 const tag = process.argv[2] || "now";
@@ -33,7 +34,7 @@ await p.waitForFunction(
   null,
   { timeout: 180000 },
 );
-await p.click(".mf-gamepick [data-mode=signal]");
+await pickGame(p, "signal");
 await p.waitForTimeout(800);
 await p.evaluate(() => {
   const g = document.querySelector("midnry-fps").engine,

@@ -111,7 +111,9 @@ function kitMaterials(r, m, hands) {
   cerakote.map = null;
   cerakote.color.set("#222624");
   cerakote.roughness = 0.75;
-  if (hands) applyFinish(r, cerakote, r.weaponFinish || "standard");
+  // Your own gun: first person, or held by your operator in the lobby.
+  const finish = hands ? r.weaponFinish : r.thirdPersonFinish;
+  if (finish) applyFinish(r, cerakote, finish);
   cerakote.needsUpdate = true;
   return {
     cerakote,

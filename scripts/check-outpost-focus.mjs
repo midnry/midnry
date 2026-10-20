@@ -18,7 +18,7 @@ try {
     assert.equal(await frame.locator(".mf-offlinechoice").getAttribute("aria-pressed"),"true");
     assert.equal(await frame.locator(".mf-network").isVisible(),false);
     await page.screenshot({path:`/workspace/screenshots/outpost-focus-menu-${name}.png`});
-    await frame.locator(".mf-start").click();
+    await frame.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
     await frame.locator(".mf-protocol-begin").click();
     await frame.evaluate(() => { const g=document.querySelector("midnry-fps").engine;g.protocolUI.update(true);g.render(); });
     await page.waitForFunction(() => getComputedStyle(document.querySelector('nav[aria-label="Game navigation"]')).display==="none");

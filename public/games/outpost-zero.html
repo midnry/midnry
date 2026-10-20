@@ -4898,7 +4898,15 @@
             // freezes phones. The arena is built when Play starts.
             const homeCovers =
               !this.running && !this.online && this.$(".mf-modal.mf-home:not([hidden])") !== null;
-            if (!homeCovers && (!quietProtocol || now - (this.lastSceneRenderAt || 0) >= quietInterval)) {
+            if (homeCovers) {
+              // The lobby: your operator on its platform (its own small scene),
+              // at most 30 frames a second on phones.
+              if (!this.military?.mobileDevice || now - (this.lastLobbyAt || 0) >= 1000 / 30) {
+                this.lastLobbyAt = now;
+                this.ctx.clearRect(0, 0, this.w, this.h);
+                this.military?.renderLobby?.(now);
+              }
+            } else if (!quietProtocol || now - (this.lastSceneRenderAt || 0) >= quietInterval) {
               this.render();
               this.lastSceneRenderAt = now;
             }

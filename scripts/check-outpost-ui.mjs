@@ -25,9 +25,9 @@ try {
     assert.equal(await page.locator(".mf-network").isVisible(), false);
     // Larger accessible text may require scrolling in compact windows.
     // The primary action must remain reachable without horizontal scrolling.
-    await page.locator(".mf-start").scrollIntoViewIfNeeded();
+    await page.locator(".mf-start:visible, .mf-modeplay:visible").first().scrollIntoViewIfNeeded();
     assert.ok(
-      await page.locator(".mf-start").evaluate((e) => {
+      await page.locator(".mf-start:visible, .mf-modeplay:visible").first().evaluate((e) => {
         const r = e.getBoundingClientRect();
         return r.top >= 0 && r.bottom <= innerHeight;
       }),
@@ -88,14 +88,14 @@ try {
     await page.evaluate(() => {
       document.querySelector("midnry-fps").engine.lockMouse = () => {};
     });
-    await page.locator(".mf-start").click();
+    await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
     await page.keyboard.press("p");
     await page.getByRole("button", { name: "Settings", exact: true }).click();
     const time = await page.evaluate(() => document.querySelector("midnry-fps").engine.time);
     await page.waitForTimeout(200);
     assert.equal(await page.evaluate(() => document.querySelector("midnry-fps").engine.time), time);
     await page.keyboard.press("Escape");
-    await page.locator(".mf-start").click();
+    await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
     assert.equal(
       await page.evaluate(() => document.querySelector("midnry-fps").engine.running),
       true,

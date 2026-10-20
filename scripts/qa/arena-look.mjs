@@ -1,6 +1,7 @@
 // Fixed "look" views of a Last Signal arena for before/after graphics work.
 //   node scripts/qa/arena-look.mjs <tag> [mapId=outpost] [width=1280] [preset=balanced]
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 import { mkdirSync } from "node:fs";
 const [tag = "now", mapId = "outpost", width = "1280", preset = "balanced"] = process.argv.slice(2);
 const W = Number(width), M = W < 500, H = M ? 844 : 720;
@@ -16,7 +17,7 @@ await p.addInitScript((preset) => {
 }, preset);
 await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
 await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
-await p.click(".mf-gamepick [data-mode=signal]");
+await pickGame(p, "signal");
 await p.waitForTimeout(800);
 const pick = { outpost: 0.1, skyport: 0.5, estate: 0.9 }[mapId];
 await p.evaluate((pick) => { const g = document.querySelector("midnry-fps").engine, r = Math.random; Math.random = () => pick; g.reset(); Math.random = r; document.querySelector(".mf-start").click(); }, pick);

@@ -2,6 +2,7 @@
 // with all 8 fighters in view, plus renderer draw calls. Usage:
 //   node scripts/qa/signal-arena-views.mjs [width]   (390 = phone)
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 import { mkdirSync } from "node:fs";
 const W = Number(process.argv[2] ?? 1280), M = W < 500, H = M ? 844 : 720;
 const OUT = "screenshots/qa/arenas";
@@ -17,9 +18,9 @@ await p.addInitScript(() => {
 });
 await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
 await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
-await p.click(".mf-gamepick [data-mode=signal]", { timeout: 60000 });
+await pickGame(p, "signal", { timeout: 60000 });
 await p.waitForTimeout(1500);
-await p.click(".mf-start", { timeout: 60000 });
+await play(p, { timeout: 60000 });
 await p.waitForFunction(() => document.querySelector("midnry-fps")?.engine?.militaryLoaded, null, { timeout: 180000 });
 await p.waitForTimeout(4000);
 // Views: [name, player x, y, angle, fighters placed along the view].

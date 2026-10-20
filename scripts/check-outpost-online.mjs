@@ -100,7 +100,7 @@ try {
     ),
   );
   console.log("Both players joined");
-  await desktop.locator(".mf-start").click();
+  await desktop.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
   for (const p of [desktop, mobile])
     await p.waitForFunction(
       () => document.querySelector("midnry-fps").engine.online?.phase === "playing",
