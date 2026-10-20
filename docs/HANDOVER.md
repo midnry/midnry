@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=play-button-20261020` (key art, Estate/Skyport art, sandbags, drifting sky, Play button deployed 2026-10-20).
+  Current live value: `v=weapons-20261020` (modelled first-person weapons deployed 2026-10-20).
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -396,7 +396,7 @@ shadows the captions. `node scripts/qa/loading-art.mjs` screenshots laptop + pho
   print finish (edge-preserving smoothing, ink lines, halftone, grade, paper grain) and writes
   `public/games/loading/*.webp`. It cannot redraw bad hands/guns — that needs an illustrator.
 
-## Modelled first-person weapons (on `game-look`, not deployed)
+## Modelled first-person weapons (deployed 2026-10-20)
 
 - `scripts/assets/kit-weapons.py` (Blender, shared `kit_common.py`) builds
   `public/games/military/models/weapons-v2.glb`: carbine (body, magazine, bolt, handle, glass),
