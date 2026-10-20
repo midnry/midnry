@@ -491,3 +491,15 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   `scripts/qa/lobby-helpers.mjs` (`pickGame(p, mode)`, `play(p)`), and check scripts click
   `.mf-start:visible, .mf-modeplay:visible`.
 - Pass 2 (later): real online friends in the squad slots, a rotating featured card.
+
+## Last Signal: "Life lost" screen (owner report, 2026-10-20, not deployed yet)
+
+- Owner: losing a spare life just teleported the player. Now `signalIntensity()` in
+  `outpost-zero.html` spots the player's `lives` dropping and calls `lifeLost(p)`: the round
+  holds still (Last Signal is offline only) for 1.8 s behind a red flash and a `.mf-lifelost`
+  card: lives left, "Life lost", "Taken down by <name>" (`downedBy`, set in `outpost-sim.js`;
+  none for haze/disasters: "You went down"), three life diamonds (the lost one breaks), and a
+  redeploy bar; last life says so in red plus "adrenaline rush". A low tone and a short
+  vibration on phones. The timer counts frame time capped at 100 ms per frame
+  (`lifeLostLeft`), so a hitch drawing the new spot can't swallow it. Blur, hidden tab or lost
+  pointer lock during it pause the game as usual. QA: `node scripts/qa/signal-life-lost.mjs [width]`.

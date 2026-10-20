@@ -1024,6 +1024,129 @@
       midnry-fps .mf-dying :is(.mf-touch, .mf-super, .mf-cross, .mf-movement) {
         visibility: hidden;
       }
+      /* Last Signal: a life is lost. The round freezes for a moment on a
+         red flash, who took it, the lives left, and a redeploy bar. */
+      midnry-fps .mf-lifelost {
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        display: grid;
+        place-items: center;
+        pointer-events: none;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.35s ease, visibility 0s linear 0.35s;
+        background: radial-gradient(ellipse at center, #2a0808d9 0%, #0a0404f5 72%);
+      }
+      midnry-fps .mf-lifelost.mf-on {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.1s ease;
+      }
+      midnry-fps .mf-lifelost.mf-on::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: #d42a1f;
+        animation: mf-lifeflash 0.55s ease-out forwards;
+      }
+      midnry-fps .mf-lifelost > div {
+        position: relative;
+        display: grid;
+        justify-items: center;
+        gap: 10px;
+        padding: 0 24px;
+        text-align: center;
+        color: #f1f4ef;
+      }
+      midnry-fps .mf-lifelost small {
+        font: 600 13px var(--mf-display, sans-serif);
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: #ffb3a6;
+      }
+      midnry-fps .mf-lifelost strong {
+        font: 800 clamp(48px, 10vw, 96px) / 0.9 var(--mf-display, sans-serif);
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        text-shadow: 0 6px 30px #000c;
+        animation: mf-lifein 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+      }
+      midnry-fps .mf-lifelost.mf-last strong {
+        color: #ff5b48;
+      }
+      midnry-fps .mf-lifelost span {
+        font: 500 16px var(--mf-body, sans-serif);
+        color: #d8dfda;
+      }
+      midnry-fps .mf-lifepips {
+        display: flex;
+        gap: 14px;
+        margin: 6px 0 4px;
+      }
+      midnry-fps .mf-lifepips i {
+        width: 18px;
+        height: 18px;
+        transform: rotate(45deg);
+        border: 2px solid #ffc857;
+        background: #ffc857;
+        box-shadow: 0 0 14px #ffc85766;
+      }
+      midnry-fps .mf-lifepips i.mf-gone {
+        background: transparent;
+        border-color: #ffffff3d;
+        box-shadow: none;
+      }
+      midnry-fps .mf-lifepips i.mf-lost {
+        animation: mf-pipbreak 0.8s 0.3s ease-in both;
+      }
+      midnry-fps .mf-lifelost em {
+        font: 600 13px var(--mf-display, sans-serif);
+        font-style: normal;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: #c3ccc6;
+      }
+      midnry-fps .mf-lifelost b {
+        display: block;
+        width: min(220px, 60vw);
+        height: 3px;
+        background: #ffffff24;
+      }
+      midnry-fps .mf-lifelost b i {
+        display: block;
+        height: 100%;
+        background: #ffc857;
+        animation: mf-lifebar var(--mf-lifewait, 1.8s) linear forwards;
+      }
+      midnry-fps .mf-lifelosing :is(.mf-touch, .mf-super, .mf-cross, .mf-movement, .mf-toast) {
+        visibility: hidden;
+      }
+      @keyframes mf-lifeflash {
+        from { opacity: 0.7; }
+        to { opacity: 0; }
+      }
+      @keyframes mf-lifein {
+        from { opacity: 0; transform: scale(1.35); letter-spacing: 0.2em; }
+        to { opacity: 1; transform: none; }
+      }
+      @keyframes mf-pipbreak {
+        0% { background: #ff5b48; border-color: #ff5b48; transform: rotate(45deg) scale(1.3); }
+        100% { background: transparent; border-color: #ffffff3d; box-shadow: none; transform: rotate(45deg) scale(0.85); }
+      }
+      @keyframes mf-lifebar {
+        from { width: 0; }
+        to { width: 100%; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        midnry-fps .mf-lifelost.mf-on::before,
+        midnry-fps .mf-lifelost strong,
+        midnry-fps .mf-lifelost b i {
+          animation: none;
+        }
+        midnry-fps .mf-lifelost b i { width: 100%; }
+        midnry-fps .mf-lifepips i.mf-lost { animation-duration: 0.01s; animation-delay: 0s; }
+      }
       midnry-fps .mf-death {
         position: absolute;
         inset: 0;
@@ -2821,7 +2944,7 @@
         <div class="mf-match" hidden><b class="mf-cores">CHARGE CORES 0</b><div class="mf-teamstat"></div><div class="mf-zone"></div></div><div class="mf-cross"></div><div class="mf-toast" role="status" aria-live="polite"></div>
         <div class="mf-damage" role="status" aria-live="polite"></div><div class="mf-hitmark" aria-hidden="true"></div><button class="mf-super" aria-label="Use charged ability">Q · SUPER <b>0%</b></button>
         <div class="mf-bottom"><div class="mf-stat">VITALS<strong class="mf-hp">100</strong><div class="mf-health"><i></i></div></div><div class="mf-stat mf-ammo">VX–7 / AUTO CARBINE<strong class="mf-rounds">24 <span>/ ∞</span></strong></div></div>
-        <div class="mf-movement" hidden role="status" aria-live="polite"></div><div class="mf-death" hidden role="status" aria-live="polite">SIGNAL LOST</div><div class="mf-touch"><button class="mf-sprint" aria-label="Toggle sprint" aria-pressed="false">SPRINT</button><button class="mf-slide" aria-label="Slide while sprinting">SLIDE</button><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
+        <div class="mf-movement" hidden role="status" aria-live="polite"></div><div class="mf-death" hidden role="status" aria-live="polite">SIGNAL LOST</div><div class="mf-lifelost" role="status" aria-live="assertive"></div><div class="mf-touch"><button class="mf-sprint" aria-label="Toggle sprint" aria-pressed="false">SPRINT</button><button class="mf-slide" aria-label="Slide while sprinting">SLIDE</button><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
         <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">Field operations in a weathered compound. Choose a loadout and deploy.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="protocol" aria-pressed="true">BLACKOUT PROTOCOL</button></div><div class="mf-kit"><label>Arena<select class="mf-mapselect" aria-label="Choose arena"></select></label><label>Loadout<select class="mf-weaponselect" aria-label="Choose loadout"></select></label><label class="mf-outfitlabel"><span>Outfit<select class="mf-outfitselect" aria-label="Choose outfit"></select></span><img class="mf-outfitpreview" alt="Selected outfit" width="120" height="150"></label></div><p class="mf-mapinfo"></p><p class="mf-weaponinfo"></p><p class="mf-kitnote">Choose before deploying. Offline changes start a fresh round; online, the host chooses the arena.</p><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><button class="mf-quick">QUICK MATCH →</button><p class="mf-quicknote">Join an open public game, or start one that others can join. Bots fill empty seats.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><label class="mf-publiclabel"><input class="mf-public" type="checkbox"> Listed for Quick match</label><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Hold E · interact &nbsp; / &nbsp; Esc or P · pause<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
       </div>`;
             this.engine = new Game(this);
@@ -3586,6 +3709,69 @@
             } else this.pause();
             this.updateHUD();
           }
+          /** Last Signal: the player lost a spare life and was redeployed.
+           * Offline only, so the round holds still for a moment behind a red
+           * flash: who took the life, the lives left, then the new spot. */
+          lifeLost(p) {
+            const left = p.lives + 1,
+              last = p.lives === 0,
+              reduced = matchMedia("(prefers-reduced-motion: reduce)").matches,
+              wait = reduced ? 1400 : 1800,
+              el = this.$(".mf-lifelost"),
+              card = document.createElement("div"),
+              line = (tag, text, cls) => {
+                const node = document.createElement(tag);
+                if (text) node.textContent = text;
+                if (cls) node.className = cls;
+                card.append(node);
+                return node;
+              };
+            line("small", last ? "Last life" : `${left} lives left`);
+            line("strong", "Life lost");
+            line("span", p.downedBy ? `Taken down by ${p.downedBy}` : "You went down");
+            const pips = line("p", "", "mf-lifepips");
+            for (let i = 0; i < SIGNAL.lives; i++)
+              pips.append(Object.assign(document.createElement("i"), { className: i < left ? "" : i === left ? "mf-lost" : "mf-gone" }));
+            line("em", last ? "Redeploying · adrenaline rush" : "Redeploying");
+            line("b").append(document.createElement("i"));
+            el.replaceChildren(card);
+            el.style.setProperty("--mf-lifewait", `${wait}ms`);
+            el.classList.toggle("mf-last", last);
+            el.classList.remove("mf-on");
+            void el.offsetWidth;
+            el.classList.add("mf-on");
+            this.shell.classList.add("mf-lifelosing");
+            this.retention?.audio.tone(140, 0.5, 0.2, 0, "sawtooth", 40);
+            navigator.vibrate?.(reduced ? 0 : [60, 40, 120]);
+            // Hold the round still and drop held input, as a death does.
+            // Counted in frame time (each frame at most 100 ms), so a hitch while
+            // the new spot draws can't swallow the screen.
+            this.lifeLostLeft = wait;
+            this.lifeLostAt = performance.now();
+            this.running = false;
+            this.keys.clear();
+            this.firing = false;
+            this.pendingShot = 0;
+            this.pendingReload = this.pendingSuper = false;
+            this.pendingSlide = false;
+            this.touch = { x: 0, y: 0 };
+            this.look = null;
+            this.stickId = null;
+            this.$(".mf-stick i").style.transform = "";
+          }
+          updateLifeLost(now) {
+            if (!this.lifeLostLeft) return;
+            this.lifeLostLeft = Math.max(0, this.lifeLostLeft - Math.min(100, Math.max(0, now - this.lifeLostAt)));
+            this.lifeLostAt = now;
+            if (this.lifeLostLeft) return;
+            this.$(".mf-lifelost").classList.remove("mf-on");
+            this.shell.classList.remove("mf-lifelosing");
+            // Resume unless the player paused or left meanwhile.
+            if (this.state === "playing" && !this.deathSequence && this.$(".mf-modal").hidden) {
+              this.running = true;
+              this.shell.focus({ preventScroll: true });
+            }
+          }
           skipTakedown() {
             if (this.deathStage !== "takedown" || !this.deathSequence) return;
             this.deathSequence.at = performance.now() - this.deathSequence.takedownDuration;
@@ -4212,16 +4398,16 @@
             });
             this.on(this.shell, "keyup", (e) => this.keys.delete(e.key.toLowerCase()));
             this.on(window, "blur", () => {
-              if (this.running) this.pause();
+              if (this.running || this.lifeLostLeft) this.pause();
             });
             this.on(document, "visibilitychange", () => {
-              if (document.hidden && this.running) this.pause();
+              if (document.hidden && (this.running || this.lifeLostLeft)) this.pause();
             });
             this.on(document, "pointerlockchange", () => {
               if (document.pointerLockElement === this.canvas) this.hadLock = true;
               else if (
                 this.hadLock &&
-                this.running &&
+                (this.running || this.lifeLostLeft) &&
                 !(
                   this.mode === "protocol" &&
                   (this.arena.protocol?.phase !== "roam" || this.protocolUI?.hasDialogOpen?.())
@@ -4630,6 +4816,16 @@
           /** Last Signal tension: the life overlay, and a call-out when the
            * field is down to three fighters and then to the final duel. */
           signalIntensity(p) {
+            if (this.mode === "signal") {
+              // A spare life was spent: show it, rather than a silent teleport.
+              if (this.livesRound !== this.arena.roundId || !(p.lives <= this.livesSeen)) {
+                this.livesRound = this.arena.roundId;
+                this.livesSeen = p.lives;
+              } else if (p.lives < this.livesSeen) {
+                this.livesSeen = p.lives;
+                this.lifeLost(p);
+              }
+            }
             const fx = this.$(".mf-lifefx"),
               signal = this.mode === "signal" && p.hp > 0,
               last = signal && p.lives === 0;
@@ -4883,6 +5079,7 @@
             this.last = now;
             if (this.running || this.online) this.update(dt);
             this.updateDeath(now);
+            this.updateLifeLost(now);
             if (this.time > this.toastUntil) this.$(".mf-toast").textContent = "";
             this.visualTime = this.online
               ? Math.min(this.time + 0.15, Math.max(this.time, (this.visualTime ?? this.time) + dt))
