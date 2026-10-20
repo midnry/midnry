@@ -38,6 +38,12 @@ export class OutpostStore {
     }
   }
   apply(state) {
+    if (state.signedIn === false) {
+      // Keep the device cache: the account may sign back in on this device.
+      this.signedIn = false;
+      this.onChange?.();
+      return;
+    }
     this.owned = new Set(state.owned || []);
     this.pass = state.pass === true;
     this.ready = state.ready === true;

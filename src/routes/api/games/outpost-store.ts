@@ -39,6 +39,9 @@ export const Route = createFileRoute("/api/games/outpost-store")({
           const { requireUserId } = await import("@/lib/auth/verify.server");
           userId = await requireUserId();
         } catch {
+          // Signed out is a normal state for the Locker, not an error.
+          if (body.op === "state")
+            return Response.json({ signedIn: false, owned: [], pass: false, ready: false }, { headers });
           return Response.json({ error: "Sign in to use the store." }, { status: 401, headers });
         }
         const store = await import("@/games/outpost/store.server");
