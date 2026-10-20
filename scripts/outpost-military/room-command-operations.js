@@ -10,7 +10,7 @@ import {batchStaticByMaterial} from './static-batches.js';
 import {drawAtlasText,signMaterial,textTexture} from './world-text.js';
 
 export const commandStorage = (x,y) => (y === 4 && (x === 5 || x === 6)) || (x === 4 && y === 7);
-const LABELS = [['RESCUE COORDINATION',4.7,.32],['OPERATIONS ARCHIVE',2.4,.32]];
+const LABELS = [['RESCUE COORDINATION',1.65,.55],['OPERATIONS ARCHIVE',2.4,.32]];
 
 function artwork(r) {
   if(r.commandOperationsAtlas) return r.commandOperationsAtlas;
@@ -19,7 +19,13 @@ function artwork(r) {
   LABELS.forEach(([text,w,h],i)=>{
     c.fillStyle='#233032';c.fillRect(0,i*64,1024,64);
     c.fillStyle='#a4b5af';c.fillRect(0,i*64,10,64);
-    c.fillStyle='#e1e5dc';drawAtlasText(r,c,text,{y:i*64,aspect:w/h});
+    c.fillStyle='#e1e5dc';
+    if(i===0) {
+      // Two equally sized lines on the left of the board, below the meeting
+      // console's sightline. No tiny subtitle or change to the console mount.
+      for(const [line,word] of ['RESCUE','COORDINATION'].entries())
+        drawAtlasText(r,c,word,{y:line*32,height:32,aspect:w/(h/2),margin:48});
+    } else drawAtlasText(r,c,text,{y:i*64,aspect:w/h});
   });
   // A printed route-planning diagram: no tiny dummy type, status LEDs or
   // interactive-screen treatment. The actual task terminals stay recognisable.
@@ -96,8 +102,8 @@ export function decorateCommandOperations(r,id,ctx) {
   // Large paper planning board on the joined north storage block. A dark
   // surround and matte diagram keep it distinct from the powered terminals.
   put(box,darkSteel,[18,1.34,14.916],[5.55,1.82,.028],null,'solid');
-  plate(0,[18,2.04,14.955],LABELS[0].slice(1));
-  plate(2,[18,1.18,14.958],[5.4,.95],paper);
+  plate(0,[16.25,1.34,14.955],LABELS[0].slice(1));
+  plate(2,[18.99,1.34,14.958],[3.4,1.3],paper);
   for(const x of [15.31,20.69])for(const y of [.54,2.14])
     put(box,steel,[x,y,14.95],[.035,.035,.018],null,'solid');
 

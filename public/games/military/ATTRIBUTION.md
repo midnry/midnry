@@ -92,6 +92,18 @@ Modifications: rest-pose-aware retargeting to the Swat skeleton at 30 Hz, remova
 
 The retained **legacy** head source is **Infinite, 3D Head Scan by Lee Perry-Smith**, based on work at **www.triplegangers.com**, licensed **Creative Commons Attribution 3.0 Unported**. Source: https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf/LeePerrySmith . Original permission text: [HEAD-SCAN-LICENSE.txt](HEAD-SCAN-LICENSE.txt). Its earlier adaptation cropped the shoulder bust, rescaled/reoriented the head and derived roughness from the specular map. `models/head-source.glb` and the legacy face textures retain this provenance but are not loaded by the current game. CC BY 3.0: https://creativecommons.org/licenses/by/3.0/ . The face scan is not an endorsement by its creator.
 
+## Communications / Radar and Command follow-up (2026-10-19)
+
+`scripts/outpost-military/room-communications-radar.js` adds original authored
+equipment-rack geometry, service fittings and a runtime 2048×256 identification
+atlas. The Command planning-title relocation reuses its existing atlas. These
+are procedural game fittings, not scanned or production-model assets. No new
+third-party model, photograph or font is downloaded. The room reuses the
+existing Poly Haven CC0 plaster, brushed concrete and metal normal/roughness
+maps listed in REALISM-ASSETS.md, and Barlow Condensed (SIL OFL 1.1, above).
+The approved Supply Atrium and Command room fittings likewise use original
+authored geometry and artwork with these same existing licensed substrates.
+
 ## Renderer
 
 The Central Passage pass reuses the existing Poly Haven CC0 concrete and metal
