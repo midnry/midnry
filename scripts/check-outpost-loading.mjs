@@ -1,11 +1,11 @@
-/** Blackout-only loading art, native carousel controls and optional-art failure. */
+/** Loading art (Blackout + Last Signal key art), native carousel controls and optional-art failure. */
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 const base = process.argv[2] || "http://127.0.0.1:8080";
 mkdirSync("/workspace/screenshots", { recursive: true });
 const browser = await chromium.launch({
-  executablePath: "/usr/bin/chromium",
+  executablePath: existsSync("/usr/bin/chromium") ? "/usr/bin/chromium" : "/opt/pw-browsers/chromium",
   args: ["--no-sandbox", "--enable-unsafe-swiftshader"],
 });
 try {
@@ -44,7 +44,7 @@ try {
     );
     assert.doesNotMatch(
       await page.locator(".mf-loading").textContent(),
-      /Dust Outpost|Last Signal|Flare Launcher|Freight Rush|In Duo/,
+      /Flare Launcher|Freight Rush|In Duo/,
     );
     assert.equal(
       await page
@@ -54,13 +54,17 @@ try {
     );
     await page.screenshot({ path: `/workspace/screenshots/outpost-loading-current-${name}.png` });
     // Main's current briefing artwork/sequence (the screen itself is unchanged).
+    // Key art (logo painted in) comes in wide and tall cuts.
+    const cut = mobile ? "tall" : "wide";
     for (const [title, image] of [
+      ["Last one standing", `ls-outpost-${cut}`],
+      ["The ground fights too", `ls-estate-${cut}`],
       ["Watch the patrol", "lz-patrol"],
       ["The base fights back", "lz-fire"],
       ["Lifeline Medevac", "lz-hangar"],
       ["After dark", "lz-night"],
       ["Every patrol matters", "lz-medevac"],
-      ["Lifeline Run", "lz-keyart"],
+      ["Lifeline Run", `bp-key-${cut}`],
     ]) {
       await page.getByRole("button", { name: "Next loading slide", exact: true }).click();
       await page.waitForFunction(
@@ -105,7 +109,7 @@ try {
       JSON.stringify({
         name,
         loadingArt: "current main briefing assets",
-        carousel: "six medical/role/emergency/night briefings",
+        carousel: "eight briefings: Blackout key art, two Last Signal arenas, roles, emergencies, night",
         reducedMotion: "paused",
         deployment: "passed",
         errors,
@@ -120,7 +124,7 @@ try {
     await held;
     await route.continue();
   });
-  await page.route("**/loading/lz-patrol.webp", (route) => route.abort());
+  await page.route("**/loading/ls-outpost-*.webp", (route) => route.abort());
   await page.goto(base + "/games/outpost-zero.html");
   await page.waitForFunction(
     () => document.querySelector(".mf-loadimage.is-active").naturalWidth > 0,

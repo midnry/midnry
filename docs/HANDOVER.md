@@ -347,3 +347,13 @@ allowed **one free match** first.
   and `xvfb-run -a node scripts/qa/desktop-app.mjs` (includes in-app sign-in).
 - `scripts/check-auth-invariant.test.mjs` / `migration-plan.test.mjs` each have one
   template test that already failed before this change (not related).
+
+## Key art on the loading screen (on `game-look`, not deployed)
+
+Owner supplied painted key art (AI-assisted; Steam requires an AI-content disclosure on the
+store submission). `public/games/loading/{bp-key,ls-outpost,ls-estate}-{wide,tall}.webp`
+(1672×941 / 941×1672). Slides 1–3 of the loading slideshow in `outpost-zero.html`; the
+`KEY_ART` set picks the tall cut on `max-aspect-ratio: 4/5` screens, and `.mf-logoart` hides
+the screen's own brand line (the art has the logo painted in), lightens the top shade and
+shadows the captions. `node scripts/qa/loading-art.mjs` screenshots laptop + phone;
+`scripts/check-outpost-loading.mjs` follows the 8-slide order.

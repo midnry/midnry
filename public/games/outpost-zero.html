@@ -85,6 +85,21 @@
         pointer-events: none;
         background: linear-gradient(180deg, #0a100dcc, #0a100d08 30%, #0a100d66 52%, #0a100df5 82%);
       }
+      /* Key art carries the logo: keep its top clear and unshaded. */
+      .mf-loading.mf-logoart .mf-loadheader {
+        visibility: hidden;
+      }
+      .mf-loading.mf-logoart::after {
+        background: linear-gradient(180deg, #0a100d00, #0a100d00 40%, #0a100d8c 58%, #0a100df5 84%);
+      }
+      /* Narrow phones crop the sides: keep the painted logo in frame. */
+      .mf-loading.mf-logoart .mf-loadimage {
+        object-position: 25% top;
+      }
+      /* The captions sit on busy painted art: a soft shadow keeps them legible. */
+      .mf-loading.mf-logoart .mf-loadbody {
+        text-shadow: 0 1px 2px #000, 0 2px 14px #000c;
+      }
       .mf-loadheader,
       .mf-loadbody,
       .mf-loadfooter {
@@ -2416,14 +2431,15 @@
   </head>
   <!-- For inline integration copy the style, element and script. Set a height on the host. -->
   <body style="margin: 0; background: #101419">
-    <div class="mf-loading" role="region" aria-label="Loading Outpost Zero">
-      <img
-        class="mf-loadimage is-active"
-        src="./loading/lz-keyart.webp"
-        alt="Operators and the medevac at Breakwater base at sunset"
-        fetchpriority="high"
-        decoding="async"
-      />
+    <div class="mf-loading mf-logoart" role="region" aria-label="Loading Outpost Zero">
+      <picture
+        ><source media="(max-aspect-ratio: 4/5)" srcset="./loading/bp-key-tall.webp" /><img
+          class="mf-loadimage is-active"
+          src="./loading/bp-key-wide.webp"
+          alt="Two operators unloading a medical case from the medevac at Breakwater base"
+          fetchpriority="high"
+          decoding="async"
+      /></picture>
       <img class="mf-loadimage" alt="" decoding="async" />
       <header class="mf-loadheader">
         <div class="mf-loadbrand">OUTPOST ZERO<small>BLACKOUT PROTOCOL</small></div>
@@ -2435,7 +2451,7 @@
         <p class="mf-loaddescription">Gather medical supplies. Protect the medevac. Save the wounded patrol.</p>
         <div class="mf-loadcontrols" role="group" aria-label="Loading slideshow controls">
           <button class="mf-loadprev" aria-label="Previous loading slide">←</button
-          ><span class="mf-loadcount">01 / 06</span
+          ><span class="mf-loadcount">01 / 08</span
           ><button class="mf-loadnext" aria-label="Next loading slide">→</button
           ><button class="mf-loadpause" aria-label="Pause loading slideshow" aria-pressed="false">
             Ⅱ
@@ -2460,9 +2476,15 @@
       (() => {
         const screen = document.querySelector(".mf-loading");
         const slides = [
-          ["lz-keyart", "MISSION BRIEFING / BASE", "Lifeline Run",
+          ["bp-key", "MISSION BRIEFING / BASE", "Lifeline Run",
             "Gather medical supplies at Breakwater, load the medevac and fly aid to the wounded patrol.",
             "Start with Practice to learn collecting, loading, defusing, reporting, voting and flying."],
+          ["ls-outpost", "LAST SIGNAL / DUST OUTPOST", "Last one standing",
+            "Eight fighters, three lives each, and the Red Haze closing in. Win three rounds to take the series.",
+            "Shoot a red canister near a crowd, then slide away. Blue canisters heal whoever stands close."],
+          ["ls-estate", "LAST SIGNAL / WRECK ESTATE", "The ground fights too",
+            "Sandstorms, lightning and earthquakes hit mid-round. Watch for the warning and move before it lands.",
+            "On your last life the adrenaline kicks in. Use it: push while the others are still careful."],
           ["lz-patrol", "OPERATORS / TRUST", "Watch the patrol",
             "Operators and infiltrators wear the same uniforms. Evidence matters more than appearances.",
             "Report a fallen patrol with F. Footprints, paint smudges and the security log go on your case board."],
@@ -2480,6 +2502,12 @@
             "After elimination, follow survivors and use Remote support to help the wounded from afar."],
         ];
         const images = [...screen.querySelectorAll(".mf-loadimage")];
+        // Key art with the logo painted in: wide and tall cuts, and the
+        // screen's own brand line steps aside while it shows.
+        const KEY_ART = new Set(["bp-key", "ls-outpost", "ls-estate"]);
+        const tall = matchMedia("(max-aspect-ratio: 4/5)");
+        const art = (asset) =>
+          KEY_ART.has(asset) ? `${asset}-${tall.matches ? "tall" : "wide"}` : asset;
         const motion = matchMedia("(prefers-reduced-motion: reduce)");
         let index = 0,
           active = 0,
@@ -2505,7 +2533,8 @@
             screen.querySelector(".mf-loaddescription").textContent = description;
             screen.querySelector(".mf-loadtip p").textContent = tip;
             screen.querySelector(".mf-loadcount").textContent =
-              `${String(index + 1).padStart(2, "0")} / 06`;
+              `${String(index + 1).padStart(2, "0")} / ${String(slides.length).padStart(2, "0")}`;
+            screen.classList.toggle("mf-logoart", KEY_ART.has(asset));
           };
           const image = images[1 - active],
             token = ++request;
@@ -2521,7 +2550,9 @@
           image.onerror = () => {
             /* Keep the last successful still if a showcase image fails. */
           };
-          image.src = `./loading/${asset}.webp`;
+          // The first still is a <picture>; drop its source so src decides.
+          if (image.parentElement.tagName === "PICTURE") image.parentElement.querySelector("source")?.remove();
+          image.src = `./loading/${art(asset)}.webp`;
         };
         const syncPause = () => {
           pauseButton.setAttribute("aria-pressed", String(paused));
