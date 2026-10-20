@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=signal-haze-aura-20261020` (`game-look` carries `v=signal-fixes-20261020`, not yet deployed).
+  Current live value: `v=signal-fixes-20261020`.
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -248,7 +248,7 @@ makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to
   drifting red embers around the camera (`updateEmbers()`), and a pulsing red screen-edge
   aura (`.mf-hazefx`, toggled in `signalIntensity()`).
 
-## Owner's phone test fixes (on `game-look`, awaiting "deploy")
+## Owner's phone test fixes (deployed 2026-10-20)
 
 - Canisters blocked a lane: crate-like objects now have per-kind footprints (`footprint()` in
   `outpost-sim.js`: supply 0.32, canister 0.14, barrier/foam 0.42 tiles); pathing ignores
