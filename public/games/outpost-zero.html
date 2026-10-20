@@ -325,6 +325,83 @@
         border-radius: 8px;
         background: #25312d;
       }
+      /* Characters in the Locker: numbered portrait cards. */
+      midnry-fps .mf-locker .mf-chargrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+        gap: 10px;
+        margin: 12px 0 20px;
+      }
+      midnry-fps .mf-locker .mf-charcard {
+        position: relative;
+        display: block;
+        aspect-ratio: 3 / 4;
+        margin: 0;
+        padding: 0;
+        min-width: 0;
+        overflow: hidden;
+        border: 2px solid #ffffff1f;
+        border-radius: 6px;
+        background:
+          radial-gradient(120% 80% at 50% 30%, color-mix(in srgb, var(--mf-char) 55%, transparent), transparent 70%),
+          linear-gradient(160deg, #1d2a33, #0b1014);
+        color: #f2f5f0;
+        text-align: left;
+        cursor: pointer;
+      }
+      midnry-fps .mf-locker .mf-charcard img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 50% 12%;
+        transition: transform 0.25s ease;
+      }
+      midnry-fps .mf-locker .mf-charcard::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, #050708f0 0%, #05070800 42%);
+      }
+      midnry-fps .mf-locker .mf-charcard:hover img {
+        transform: scale(1.04);
+      }
+      midnry-fps .mf-locker .mf-charcard i {
+        position: absolute;
+        top: 6px;
+        right: 8px;
+        z-index: 1;
+        font: italic 800 26px/1 var(--mf-display);
+        color: #ffffff3d;
+      }
+      midnry-fps .mf-locker .mf-charcard strong,
+      midnry-fps .mf-locker .mf-charcard small {
+        position: absolute;
+        left: 10px;
+        right: 8px;
+        z-index: 1;
+      }
+      midnry-fps .mf-locker .mf-charcard strong {
+        bottom: 26px;
+        font: 800 20px/1 var(--mf-display);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      midnry-fps .mf-locker .mf-charcard small {
+        bottom: 9px;
+        font: 600 11px/1.1 var(--mf-display);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #c8d0ca;
+      }
+      midnry-fps .mf-locker .mf-charcard.is-on {
+        border-color: var(--mf-accent, #f2c45a);
+        box-shadow: 0 0 0 2px #f2c45a40, 0 10px 30px #00000080;
+      }
+      midnry-fps .mf-locker .mf-charcard.is-on small {
+        color: var(--mf-accent, #f2c45a);
+      }
       /* Weapon finishes in the Locker: swatch, name, one line, state. */
       midnry-fps .mf-locker .mf-finishgrid {
         display: grid;
@@ -2873,6 +2950,7 @@
     </script>
     <script type="module">
       import { MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf, clamp, SIGNAL } from "./outpost-sim.js";
+      import { characterOf } from "./outpost-characters.js";
       import { createArena, restoreArena, protocolView, PLAYER_COLORS } from "./outpost-protocol.js";
       import { dailyKey, dailyRandom, shiftChoice } from "./outpost-shifts.js";
       import { PROTOCOL_MAP, TRANSPORT_MAP } from "./outpost-protocol-map.js";
@@ -2989,6 +3067,11 @@
               this.outfit = outfitOf(localStorage.getItem("midnry-outpost-outfit")).id;
             } catch {
               this.outfit = "ranger";
+            }
+            try {
+              this.character = characterOf(localStorage.getItem("midnry-outpost-character")).id;
+            } catch {
+              this.character = "operator";
             }
             for (const outfit of Object.values(OUTFITS)) {
               const option = document.createElement("option");
@@ -3777,6 +3860,17 @@
             this.deathSequence.at = performance.now() - this.deathSequence.takedownDuration;
             this.updateDeath(performance.now());
             this.shell.focus({ preventScroll: true });
+          }
+          /** Locker character: shown in the lobby; worn in Last Signal. */
+          chooseCharacter(id) {
+            const character = characterOf(id);
+            if (character.id !== id) return;
+            this.character = id;
+            try {
+              localStorage.setItem("midnry-outpost-character", id);
+            } catch {}
+            this.military?.loadCharacter?.(id);
+            this.homeMenu?.refresh?.();
           }
           chooseOutfit(id) {
             if (this.mode === "protocol") return;

@@ -503,3 +503,30 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   vibration on phones. The timer counts frame time capped at 100 ms per frame
   (`lifeLostLeft`), so a hitch drawing the new spot can't swallow it. Blur, hidden tab or lost
   pointer lock during it pause the game as usual. QA: `node scripts/qa/signal-life-lost.mjs [width]`.
+
+## Locker characters (owner, 2026-10-20, not deployed yet)
+
+- Owner wanted complete characters (Fortnite-locker style) instead of the boxy dressed
+  operator. 12 characters, all free, looks only: Operator (the original Swat sculpt, now shown
+  without the box gear and camo shader), Smoke, Ironside, Wraith, Raven, Ronin, Ember, Phantom,
+  Shade, Redline, Warlord, Scav. Catalog: `public/games/outpost-characters.js`.
+- Sources: Mixamo characters (game use allowed), listed with URL + sha256 in
+  `scripts/assets/outpost-characters/sources.json`; fetched into `assets-src/characters/`
+  (gitignored). Build: `node scripts/build-outpost-characters.mjs [id]` (retargets the
+  operator's clips: Idle, Walk, Run, BackWalk, Crouch, Reload, Hit, Death; trims to ≤16k
+  triangles; keeps colour/normal/glow maps) then pack with glTF-Transform:
+  `scripts/assets/pack-characters.mjs` (1024 px WebP, meshopt) →
+  `public/games/military/models/characters/<id>.glb` (0.6–1.6 MB each). Then
+  `node scripts/build-outpost-cache.mjs` (characters have their own `CHARACTER_CACHE` key and
+  are not precached).
+- Runtime: `renderer.loadCharacter(id)` (on demand), `characterFor(e)`; `makeActor` uses the
+  character's sculpt and clips, no dye or added gear (`prepareLockerCharacter` in
+  `realism-characters.js`). Last Signal: you wear yours, bots get the others in a per-session
+  shuffle (`botCharacter`). Blackout Protocol keeps dyed team uniforms (colour identity
+  matters there). The lobby preloads all characters while Last Signal is selected; an actor
+  built before its character arrives is swapped when it loads.
+- Locker: numbered portrait cards at the top (`characterGrid()` in `outpost-retention.js`);
+  card art from `node scripts/capture-outpost-characters.mjs` + `scripts/assets/pack-character-cards.mjs`
+  → `public/games/menu/characters/<id>.webp`. Lobby operator card shows the character with Change.
+  Choice saved in `midnry-outpost-character`. QA: `node scripts/qa/characters-look.mjs [width]`.
+- Ideas: premium or XP-unlocked characters later (store already supports one-time items).

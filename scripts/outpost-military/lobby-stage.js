@@ -1,4 +1,4 @@
-/** Home lobby: your operator on a lit platform, in your Locker outfit, with
+/** Home lobby: your Locker character on a lit platform, holding
  * your carbine in its Locker finish. A small scene of its own (one actor,
  * a platform and an atmospheric backdrop), drawn by the shared renderer only
  * while the home menu is open; the arena is never built for it.
@@ -6,6 +6,7 @@
  * Drag sideways to turn the operator; it eases back to a three-quarter view. */
 import * as THREE from "three";
 import { updateWeaponGrip } from "./realism-grips.js";
+import { CHARACTERS } from "../../public/games/outpost-characters.js";
 
 const sky = /* glsl */ `
 varying vec3 vDir;
@@ -112,20 +113,23 @@ export class LobbyStage {
     this.spin = 0;
     this.key = "";
   }
-  /** (Re)build the operator when the outfit, gun or finish changes. */
+  /** (Re)build the operator when the character, gun or finish changes. */
   operator() {
     const r = this.r,
       g = r.g,
       finish = g.retention?.weaponFinish?.() || "standard",
-      key = `${g.outfit}:${finish}:${!!r.weaponKit}`;
+      id = g.character || "operator",
+      ready = id === "operator" || !!r.characterAssets?.get(id),
+      key = `${id}:${ready}:${finish}:${!!r.weaponKit}`;
+    if (!ready) r.loadCharacter(id);
     if (!r.soldier || key === this.key) return;
+    // Keep the current figure on stage until the chosen character arrives.
+    if (!ready && this.actor) return;
     this.key = key;
     this.clearActor();
-    // Dress in the Locker outfit (not the match uniform) and paint the gun.
-    r.lobbyDressing = true;
+    // Your Locker character, holding the gun in its Locker finish.
     r.thirdPersonFinish = finish;
-    const actor = r.makeActor({ id: "lobby-operator", outfit: g.outfit, weapon: "carbine", team: 0, x: 0, y: 0 });
-    r.lobbyDressing = false;
+    const actor = r.makeActor({ id: "lobby-operator", character: id, outfit: g.outfit, weapon: "carbine", team: 0, x: 0, y: 0 });
     r.thirdPersonFinish = null;
     r.actors.delete("lobby-operator");
     actor.root.removeFromParent();
@@ -160,6 +164,11 @@ export class LobbyStage {
       t = now / 1000,
       still = r.motion.matches;
     this.operator();
+    // Last Signal dresses the bots as the other characters: fetch them now.
+    if (r.g.mode === "signal" && !this.fetched) {
+      this.fetched = true;
+      for (const c of CHARACTERS) r.loadCharacter(c.id);
+    }
     const w = r.renderer.domElement.clientWidth || 1,
       h = r.renderer.domElement.clientHeight || 1,
       aspect = w / h,
@@ -170,6 +179,12 @@ export class LobbyStage {
     this.camera.fov = portrait ? 40 : 30;
     this.camera.position.set(0, portrait ? 1.6 : 1.5, portrait ? 10 : 9);
     this.camera.lookAt(0, portrait ? -0.35 : 1.15, 0);
+    // Locker card art (scripts/capture-outpost-characters.mjs): head to knees.
+    if (this.cardShot) {
+      this.camera.fov = 30;
+      this.camera.position.set(0, 1.3, 4.6);
+      this.camera.lookAt(0, 1.02, 0);
+    }
     this.camera.updateProjectionMatrix();
     this.skyMaterial.uniforms.time.value = still ? 0 : t;
     if (this.actor) {
@@ -180,7 +195,8 @@ export class LobbyStage {
         idle.time = still ? 0 : t % idle.getClip().duration;
         this.actor.mixer.update(0);
       }
-      this.actor.root.rotation.y = Math.PI - 0.45 + this.spin + (still ? 0 : Math.sin(t * 0.35) * 0.06);
+      // A three-quarter view, chest towards you (the aiming idle turns the body).
+      this.actor.root.rotation.y = Math.PI + (this.cardShot ? 0.4 : 0.25) + this.spin + (still || this.cardShot ? 0 : Math.sin(t * 0.35) * 0.06);
       // Gear and the rifle follow the pose, as in a match.
       r.updateSkinParts(this.actor);
       if (this.actor.equipment && !updateWeaponGrip(this.actor, 0) && this.actor.weaponAnchor) {

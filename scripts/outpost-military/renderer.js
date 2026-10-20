@@ -22,6 +22,7 @@ import { commandStorage } from './room-command-operations.js';
 import { communicationsStorage } from './room-communications-radar.js';
 import {
   prepareCharacterAsset,
+  prepareLockerCharacter,
   loadOperatorResponse,
   finishActor,
   updateActorPresentation,
@@ -39,7 +40,9 @@ import {bindWeaponGrip,updateWeaponGrip} from './realism-grips.js';
 import { outfitOf, weaponOf } from "../../public/games/outpost-content.js";
 import { skinPattern } from "../../public/games/outpost-skins.js";
 import { VictimTakedown } from "./takedowns.js";
-import { ASSET_CACHE } from "../../public/games/outpost-asset-manifest.js";
+import { ASSET_CACHE, CHARACTER_CACHE } from "../../public/games/outpost-asset-manifest.js";
+import { CHARACTERS, botCharacter } from "../../public/games/outpost-characters.js";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { sightRange } from "../../public/games/outpost-variety.js";
 import { isAppleTouchDevice, graphicsProfile, cinematicRenderSize } from "./compatibility.js";
 import { RenderTelemetry, actorInView } from "./telemetry.js";
@@ -1889,6 +1892,49 @@ export class MilitaryRenderer {
       draw(...args);
     };
   }
+  /** Locker characters load on demand; "operator" is this.soldier. */
+  loadCharacter(id) {
+    if (!id || id === "operator" || !CHARACTERS.some((c) => c.id === id)) return Promise.resolve(null);
+    this.characterAssets ||= new Map();
+    this.characterLoads ||= new Map();
+    if (this.characterAssets.has(id)) return Promise.resolve(this.characterAssets.get(id));
+    if (!this.characterLoads.has(id))
+      this.characterLoads.set(
+        id,
+        new GLTFLoader()
+          .setMeshoptDecoder(MeshoptDecoder)
+          .loadAsync(`${ASSET}models/characters/${id}.glb?v=${CHARACTER_CACHE}`)
+          .then((gltf) => {
+            if (this.disposed) {
+              this.disposeObject(gltf.scene);
+              return null;
+            }
+            prepareLockerCharacter(this, gltf);
+            this.characterAssets.set(id, gltf);
+            return gltf;
+          })
+          .catch((error) => {
+            // Optional: the fighter keeps the operator sculpt.
+            console.warn("[Outpost] Character unavailable:", id, error);
+            return null;
+          }),
+      );
+    return this.characterLoads.get(id);
+  }
+  /** Which Locker character an entity wears (null: the operator). In Last
+   * Signal you wear yours and each bot a stable pick of the others. */
+  characterFor(e) {
+    let id = e.character;
+    if (!id && this.g.mode === "signal") {
+      const mine = this.g.character || "operator";
+      this.characterSalt ??= Math.random().toString(36).slice(2, 8);
+      id =
+        e.id === this.g.selfId
+          ? mine
+          : botCharacter(this.characterSalt, this.g.arena.entities.filter((x) => x.id !== this.g.selfId).indexOf(e), mine);
+    }
+    return id && id !== "operator" ? id : null;
+  }
   makeActor(e) {
     const before = new Set(this.materials);
     const root = new THREE.Group();
@@ -1896,11 +1942,15 @@ export class MilitaryRenderer {
     let model,
       mixer = null,
       actions = {};
-    if (this.soldier) {
-      model = cloneSkeleton(this.soldier.scene);
+    const wanted = this.characterFor(e),
+      character = wanted ? this.characterAssets?.get(wanted) : null;
+    if (wanted && !character) this.loadCharacter(wanted);
+    const source = character || this.soldier;
+    if (source) {
+      model = cloneSkeleton(source.scene);
       mixer = new THREE.AnimationMixer(model);
-      const idleClip=this.soldier.animations.find(c=>c.name==="Idle");
-      for (const clip of this.soldier.animations) {
+      const idleClip=source.animations.find(c=>c.name==="Idle");
+      for (const clip of source.animations) {
         if (clip.name === "TPose") continue;
         if (["Reload","Hit"].includes(clip.name) && idleClip) {
           const layer=clip.clone();layer.tracks=layer.tracks.filter(t=>/Spine|Neck|Head|Arm|Hand/.test(t.name));
@@ -1923,7 +1973,7 @@ export class MilitaryRenderer {
       model.scale.multiplyScalar(factor);
       model.position.y -= bounds.min.y * factor;
       finishActor(this, model, e);
-      if (!this.soldierLook()) {
+      if (!character && !this.soldierLook()) {
         model.traverse((o) => {
           // Parts of one actor can share a material: patch each material once,
           // or the fabric shader declares its varyings twice and fails.
@@ -2032,9 +2082,13 @@ export class MilitaryRenderer {
       lastSample: null,
       deadAt: null,
     };
-    if (!this.soldierLook()) this.dressActor(actor, e);
+    // A Locker character is complete as modelled: no added gear or dye.
+    if (character);
+    else if (!this.soldierLook()) this.dressActor(actor, e);
     else this.dyeUniform(model, e.color);
     actor.dye = e.color || null;
+    actor.wantedCharacter = wanted;
+    actor.character = character ? wanted : null;
     this.equipActor(actor, e);
     actor.ownedMaterials = [...this.materials].filter((m) => !before.has(m));
     this.actors.set(e.id, actor);
@@ -2081,8 +2135,6 @@ export class MilitaryRenderer {
    */
   /** Lifeline Run and Last Signal both use the plain soldier uniform. */
   soldierLook() {
-    // The home lobby shows your Locker outfit, not the match uniform.
-    if (this.lobbyDressing) return false;
     return this.g.mode === "protocol" || this.g.mode === "signal";
   }
   dyeUniform(model, color) {
@@ -2449,11 +2501,15 @@ export class MilitaryRenderer {
         continue;
       }
       let a = this.actors.get(e.id);
+      const wanted = this.characterFor(e);
       if (
         a &&
         (a.outfit !== outfitOf(e.outfit).id ||
           a.weapon !== e.weapon ||
-          (this.soldierLook() && a.dye !== (e.color || null)))
+          a.wantedCharacter !== wanted ||
+          // The character finished loading: swap the stand-in sculpt.
+          (wanted && !a.character && this.characterAssets?.has(wanted)) ||
+          (this.soldierLook() && !a.character && a.dye !== (e.color || null)))
       ) {
         this.disposeActor(a);
         this.actors.delete(e.id);

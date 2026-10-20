@@ -9,6 +9,7 @@ import { fetchBoard, cachedBoard } from "./outpost-daily-board.js";
 import { dailyKey, shiftChoice } from "./outpost-shifts.js";
 import { modifierChoice } from "./outpost-variety.js";
 import { SERIES_KINDS, seriesKindOf } from "./outpost-series.js";
+import { characterOf } from "./outpost-characters.js";
 
 // Step 1 picks the game; step 2 shows only that game's ways to play.
 const GAMES = [
@@ -220,6 +221,10 @@ midnry-fps .mf-modal.mf-home.mf-lobby { background:
 midnry-fps .mf-modal.mf-lobby .mf-hero { display: none; }
 midnry-fps .mf-modal.mf-lobby > .mf-panel :is(.mf-modes, .mf-start, .mf-playsummary) { display: none !important; }
 midnry-fps .mf-homeleft { display: grid; gap: 12px; margin-top: 4px; }
+midnry-fps .mf-opchar { all: unset; cursor: pointer; box-sizing: border-box; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 8px 10px; border: 1px solid #ffffff24; border-radius: 3px; font: 700 12px var(--mf-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--mf-accent); }
+midnry-fps .mf-opchar span { color: #dfe5e0; letter-spacing: 0.06em; }
+midnry-fps .mf-opchar:hover { border-color: #ffffff66; }
+midnry-fps .mf-opchar:focus-visible { outline: 2px solid var(--mf-accent); outline-offset: 2px; }
 midnry-fps .mf-modal:not(.mf-home) :is(.mf-homeleft, .mf-modecard, .mf-squad) { display: none !important; }
 midnry-fps .mf-modal.mf-home:not(.mf-lobby) :is(.mf-modecard, .mf-squad) { display: none !important; }
 midnry-fps .mf-modecard { position: absolute; right: 32px; bottom: 24px; width: 340px; display: grid; gap: 4px; padding: 16px 18px 18px; border: 1px solid #ffffff24; border-radius: 4px; background: #0a0f0de0; backdrop-filter: blur(8px); color: #eef2ee; z-index: 2; }
@@ -434,7 +439,7 @@ export class OutpostMenu {
     this.side = el(
       "aside",
       "mf-homeside",
-      `<section class="mf-card mf-opcard"><h3>Operator</h3><strong class="mf-opname"></strong><p class="mf-oplevel"></p><span class="mf-xpbar"><i></i></span></section><section class="mf-card mf-challenges"><header><h3>Daily challenges<b class="mf-chcount"></b></h3></header><ul></ul></section><button type="button" class="mf-casecard" data-mode="daily"><img src="menu/card-daily.webp" alt=""><span><small>Today's case</small><em class="mf-casenote"></em><strong class="mf-casescore"></strong></span>${icon("chevron")}</button>`,
+      `<section class="mf-card mf-opcard"><h3>Operator</h3><strong class="mf-opname"></strong><p class="mf-oplevel"></p><span class="mf-xpbar"><i></i></span><button type="button" class="mf-opchar" data-go="locker"><span></span>Change</button></section><section class="mf-card mf-challenges"><header><h3>Daily challenges<b class="mf-chcount"></b></h3></header><ul></ul></section><button type="button" class="mf-casecard" data-mode="daily"><img src="menu/card-daily.webp" alt=""><span><small>Today's case</small><em class="mf-casenote"></em><strong class="mf-casescore"></strong></span>${icon("chevron")}</button>`,
     );
     this.modal.append(this.side);
     // Lobby: your level and challenges sit on the left, under the logo.
@@ -512,7 +517,7 @@ export class OutpostMenu {
       const mode = event.target.closest("[data-mode], [data-variant]");
       if (mode && !mode.disabled) this.pick(mode.dataset.mode || mode.dataset.variant);
     };
-    for (const node of [this.top, this.actions, this.foot, this.side, this.cards, this.welcome]) g.on(node, "click", go);
+    for (const node of [this.top, this.actions, this.foot, this.side, this.cards, this.welcome, this.leftCards]) g.on(node, "click", go);
   }
 
   /** Split the settings dialog into sections with a sidebar. The controls
@@ -775,6 +780,8 @@ export class OutpostMenu {
     for (const node of this.modal.querySelectorAll(".mf-chipname, .mf-opname")) node.textContent = name;
     this.modal.querySelector(".mf-chiplevel").textContent = `LV ${level}`;
     this.modal.querySelector(".mf-oplevel").textContent = `Level ${level} · ${xp.toLocaleString()} XP`;
+    const hero = characterOf(g.character);
+    this.modal.querySelector(".mf-opchar span").textContent = `${hero.name} · ${hero.role}`;
     for (const bar of this.modal.querySelectorAll(".mf-xpbar i")) bar.style.width = progress;
     // Daily challenges.
     let daily = [];

@@ -1,0 +1,105 @@
+{
+  "license": "Adobe Mixamo characters: embedded video-game use",
+  "terms": "https://helpx.adobe.com/creative-cloud/faq/mixamo-faq.html",
+  "characters": [
+    {
+      "id": "smoke",
+      "name": "Smoke",
+      "role": "Gas-masked breacher",
+      "file": "Gas_Mask.glb",
+      "source": "https://huggingface.co/datasets/tanish434/Mixamo-Animations-Characters/resolve/main/character_refined_glb/Gas_Mask.glb",
+      "bytes": 145485320,
+      "sha256": "1f8a03d80d984401b45997508530408283091fc5a1dfca9a6f75fc8c17157f35"
+    },
+    {
+      "id": "ironside",
+      "name": "Ironside",
+      "role": "Armoured vanguard",
+      "file": "Vanguard_By_T._Choonyung.glb",
+      "source": "https://huggingface.co/datasets/tanish434/Mixamo-Animations-Characters/resolve/main/character_refined_glb/Vanguard_By_T._Choonyung.glb",
+      "bytes": 3419836,
+      "sha256": "a76bc6bd558c1e16dc326bb1a150dedee9c7d6258ac8d6f7eba76786b04df2ba"
+    },
+    {
+      "id": "wraith",
+      "name": "Wraith",
+      "role": "Hooded assassin",
+      "file": "Akai_E_Espiritu.glb",
+      "source": "https://huggingface.co/datasets/tanish434/Mixamo-Animations-Characters/resolve/main/character_refined_glb/Akai_E_Espiritu.glb",
+      "bytes": 3889140,
+      "sha256": "04e762af5d7bd276e928d398defc59d0040ea760e65feefe0efe5f733009d3bd"
+    },
+    {
+      "id": "raven",
+      "name": "Raven",
+      "role": "Cloaked scout",
+      "file": "Arissa.glb",
+      "source": "https://huggingface.co/datasets/tanish434/Mixamo-Animations-Characters/resolve/main/character_refined_glb/Arissa.glb",
+      "bytes": 3482492,
+      "sha256": "92c078eefc3bfdc6c068d038bafb0896e37fb9e90140967d63cd1d250cbcf6de"
+    },
+    {
+      "id": "ronin",
+      "name": "Ronin",
+      "role": "Wandering blade",
+      "file": "Kachujin_G_Rosales.glb",
+      "source": "https://huggingface.co/datasets/tanish434/Mixamo-Animations-Characters/resolve/main/character_refined_glb/Kachujin_G_Rosales.glb",
+      "bytes": 17484600,
+      "sha256": "3c6f76ec17bcd24f09958f863fec0feadbc6531885b677cd930d5f7fb959073a"
+    },
+    {
+      "id": "ember",
+      "name": "Ember",
+      "role": "Exosuit pilot",
+      "file": "Exo_Red.glb",
+      "source": "https://huggingface.co/datasets/tanish434/Mixamo-Animations-Characters/resolve/main/character_refined_glb/Exo_Red.glb",
+      "bytes": 29591880,
+      "sha256": "559e364f94b7a9001b10dbd1d890a73741c9fe6ae753caef2e69d9541fabb87c"
+    },
+    {
+      "id": "phantom",
+      "name": "Phantom",
+      "role": "Stealth suit",
+      "file": "Alien_Soldier.glb",
+      "source": "https://huggingface.co/datasets/tanish434/Mixamo-Animations-Characters/resolve/main/character_refined_glb/Alien_Soldier.glb",
+      "bytes": 99194424,
+      "sha256": "b7e6cea30f4da70d8722d726a23c42cb11e5d7ffc49eb600b657815ee4b9de31"
+    },
+    {
+      "id": "shade",
+      "name": "Shade",
+      "role": "Night operative",
+      "file": "Ninja.glb",
+      "source": "https://huggingface.co/datasets/tanish434/Mixamo-Animations-Characters/resolve/main/character_refined_glb/Ninja.glb",
+      "bytes": 57307516,
+      "sha256": "e63884f9f3a4942acf996f7ecbe4230ffd024fe4d0ea0cb81362708d904f2954"
+    },
+    {
+      "id": "redline",
+      "name": "Redline",
+      "role": "Getaway driver",
+      "file": "Racer.glb",
+      "source": "https://huggingface.co/datasets/tanish434/Mixamo-Animations-Characters/resolve/main/character_refined_glb/Racer.glb",
+      "bytes": 55648116,
+      "sha256": "d25197ce7154cf815d4cb4cb5b7fe32567241cfce2a85a3e634bdf733077f2b6"
+    },
+    {
+      "id": "warlord",
+      "name": "Warlord",
+      "role": "Horned brute",
+      "file": "Warrok_W_Kurniawan.glb",
+      "source": "https://huggingface.co/datasets/tanish434/Mixamo-Animations-Characters/resolve/main/character_refined_glb/Warrok_W_Kurniawan.glb",
+      "bytes": 8695836,
+      "sha256": "50b9c0e58234b7d70cbd9a41a6062e33b3bbc7e2c7d733cb9c4231efb9a33b4d"
+    },
+    {
+      "id": "scav",
+      "name": "Scav",
+      "role": "Wasteland survivor",
+      "file": "Survivor_A_Lusth.glb",
+      "source": "https://huggingface.co/datasets/tanish434/Mixamo-Animations-Characters/resolve/main/character_refined_glb/Survivor_A_Lusth.glb",
+      "bytes": 15268176,
+      "sha256": "afa7cac0cbec986ddab044a0da589c6bcbff9f19f2c941b060c6ac3a4507e255"
+    }
+  ]
+}

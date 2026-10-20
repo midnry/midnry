@@ -66,7 +66,7 @@ function OutpostZeroPage() {
           iframe tears down the game, and its scripts never run during SSR. */}
       <iframe
         ref={frame}
-        src={`/games/outpost-zero.html?renderer=military&v=lifelost-20261020${room ? `&room=${encodeURIComponent(room)}` : ""}${purchase ? `&purchase=${purchase}` : ""}`}
+        src={`/games/outpost-zero.html?renderer=military&v=characters-20261020${room ? `&room=${encodeURIComponent(room)}` : ""}${purchase ? `&purchase=${purchase}` : ""}`}
         title="Outpost Zero first-person shooter"
         className="block min-h-0 w-full flex-1 border-0"
         allow="fullscreen; microphone; web-share; clipboard-write"
