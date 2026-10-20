@@ -22,6 +22,14 @@ export const SIGNAL = Object.freeze({
   lastRegenDelay: 3,
 });
 export { LEVEL, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf };
+import {
+  CANISTERS,
+  placeHazards,
+  scheduleDisaster,
+  burstCanister,
+  updateDisaster,
+  disasterActive,
+} from "./outpost-hazards.js";
 const SPAWNS = [
   [2.5, 2.5],
   [8.5, 2.5],
@@ -226,6 +234,13 @@ export class Arena {
             !this.wall(x, y) && !this.entities.some((e) => Math.hypot(e.x - x, e.y - y) < 1),
         )
         .map(([x, y], i) => ({ id: "crate" + i, x, y, hp: 80, maxHp: 80, hit: -10 }));
+    // Last Signal and Pair Ops: shootable canisters and sandbag barriers;
+    // Last Signal also gets one natural disaster per round.
+    this.disaster = null;
+    if (mode === "signal" || mode === "duo") {
+      this.crates.push(...placeHazards(this.level, this.mapId, spawns, this.crates));
+      if (mode === "signal") this.disaster = scheduleDisaster(this.mapId, random);
+    }
     if (!classic)
       for (const e of this.entities) {
         const point = this.pathTo(e, { x: this.zone.cx, y: this.zone.cy })[0];
@@ -245,6 +260,7 @@ export class Arena {
     arena.difficulty = difficultyOf(arena.difficulty);
     arena.countdown ??= 0;
     arena.roundId ??= `legacy-${arena.mapId}-${arena.entities.map((e) => e.id).join("-")}-${arena.time}`;
+    arena.disaster ??= null;
     arena.zone.cx ??= arena.level.length / 2;
     arena.zone.cy ??= arena.level.length / 2;
     arena.zone.initialHalf ??= arena.level.length / 2 - 1;
@@ -283,6 +299,7 @@ export class Arena {
       entities: this.entities,
       crates: this.crates,
       cores: this.cores,
+      disaster: this.disaster,
     };
   }
   emit(id, text) {
@@ -423,6 +440,11 @@ export class Arena {
     target.hit = this.time;
     if (target.hp > 0) return;
     if (target.id.startsWith("crate")) {
+      if (target.kind) {
+        if (CANISTERS[target.kind]) burstCanister(this, target, source);
+        else this.effect(target.x, target.y, "debris", 0.8, 0.6);
+        return;
+      }
       this.cores.push({ x: target.x, y: target.y });
       if (source) this.emit(source.id, "SUPPLY CRATE OPEN / COLLECT THE CORE");
       return;
@@ -481,6 +503,10 @@ export class Arena {
         this.emit(e.id, "+1 CHARGE CORE / HEALTH +25 · DAMAGE +8");
       }
     }
+  }
+  /** Movement multiplier from the weather: sandstorms slow everyone. */
+  weather() {
+    return disasterActive(this, "sandstorm") ? 0.85 : 1;
   }
   /** Last Signal bots under fire sometimes slide sideways out of the line of
    * fire, like a player would (same slide speed, longer cooldown). */
@@ -650,8 +676,8 @@ export class Arena {
     e.poisonSource = source.id;
     e.poisonDamage = (6 * source.damage) / 40;
   }
-  effect(x, y, kind, radius = 1) {
-    this.fx.push({ id: ++this.nextEffect, x, y, kind, radius, until: this.time + 0.45 });
+  effect(x, y, kind, radius = 1, duration = 0.45) {
+    this.fx.push({ id: ++this.nextEffect, x, y, kind, radius, until: this.time + duration });
     if (this.fx.length > 40) this.fx.shift();
   }
   // Perimeter walls stay sealed. Only interior cover within the blast is removed.
@@ -1034,18 +1060,19 @@ export class Arena {
     }
     for (const field of this.fields)
       if (field.until > this.time) {
-        const source = this.entities.find((e) => e.id === field.owner);
-        if (!source) continue;
+        // Canister gas (`all`) hurts everyone inside, its shooter included.
+        const source = this.entities.find((e) => e.id === field.owner) || null;
+        if (!source && !field.all) continue;
         for (const e of this.entities)
           if (
-            e !== source &&
+            (field.all || e !== source) &&
             e.hp > 0 &&
-            !(this.mode === "duo" && e.team === source.team) &&
+            !(this.mode === "duo" && source && !field.all && e.team === source.team) &&
             Math.hypot(e.x - field.x, e.y - field.y) < field.radius &&
             this.visible(field, e)
           ) {
             e.slowUntil = this.time + 0.15;
-            this.damage(e, field.damage * dt, source);
+            this.damage(e, field.damage * dt, source === e ? null : source);
           }
       }
     this.fields = this.fields.filter((f) => f.until > this.time);
@@ -1087,7 +1114,10 @@ export class Arena {
       ty = Math.floor(target.y),
       key = (x, y) => y * this.level[0].length + x;
     const queue = [[sx, sy]],
-      parents = new Map([[key(sx, sy), null]]);
+      parents = new Map([[key(sx, sy), null]]),
+      blocked = new Set(
+        this.crates.filter((c) => c.hp > 0).map((c) => key(Math.floor(c.x), Math.floor(c.y))),
+      );
     let end = null;
     for (let i = 0; i < queue.length; i++) {
       const [x, y] = queue[i];
@@ -1113,11 +1143,7 @@ export class Arena {
           this.wall(nx + 0.5, ny + 0.5)
         )
           continue;
-        if (
-          this.crates.some((c) => c.hp > 0 && Math.floor(c.x) === nx && Math.floor(c.y) === ny) &&
-          !(nx === tx && ny === ty)
-        )
-          continue;
+        if (blocked.has(k) && !(nx === tx && ny === ty)) continue;
         parents.set(k, [x, y]);
         queue.push([nx, ny]);
       }
@@ -1160,8 +1186,10 @@ export class Arena {
       ),
       dist = (e) => Math.hypot(e.x - bot.x, e.y - bot.y),
       nearest = (list) => [...list].sort((a, b) => dist(a) - dist(b))[0];
-    const foe = nearest(rivals.filter((e) => dist(e) < skill.awareness && this.visible(bot, e))),
-      box = nearest(this.crates.filter((c) => c.hp > 0 && !this.outsideSafe(c))),
+    // A sandstorm cuts how far bots can spot rivals.
+    const awareness = disasterActive(this, "sandstorm") ? Math.min(skill.awareness, 3.5) : skill.awareness;
+    const foe = nearest(rivals.filter((e) => dist(e) < awareness && this.visible(bot, e))),
+      box = nearest(this.crates.filter((c) => c.hp > 0 && !c.kind && !this.outsideSafe(c))),
       core = nearest(this.cores.filter((c) => !this.outsideSafe(c)));
     let goal;
     // Last Signal bots back off when badly hurt and come back once healed.
@@ -1171,8 +1199,17 @@ export class Arena {
     }
     const threat = bot.retreating && nearest(rivals.filter((e) => dist(e) < 6 && this.visible(bot, e)));
     if (this.mode === "signal") this.dodge(bot, skill);
+    const strike = this.disaster?.strikes.find((s) => Math.hypot(s.x - bot.x, s.y - bot.y) < 1.7);
     if (this.outsideSafe(bot)) goal = { x: this.zone.cx, y: this.zone.cy };
-    else if (threat) {
+    else if (strike) {
+      // Marked ground: step out of the strike.
+      const n = this.level.length,
+        d = Math.hypot(bot.x - strike.x, bot.y - strike.y) || 1;
+      goal = {
+        x: clamp(bot.x + ((bot.x - strike.x) / d) * 2.5, 1.5, n - 1.5),
+        y: clamp(bot.y + ((bot.y - strike.y) / d) * 2.5, 1.5, n - 1.5),
+      };
+    } else if (threat) {
       const n = this.level.length;
       const threats = rivals.filter((e) => dist(e) < 8 && this.visible(e, bot));
       goal = this.coverFrom(bot, threat, threats) || {
@@ -1210,7 +1247,7 @@ export class Arena {
         const dx = point.x - bot.x,
           dy = point.y - bot.y,
           d = Math.hypot(dx, dy);
-        const boost = bot.speedUntil > this.time ? 1.4 : 1;
+        const boost = (bot.speedUntil > this.time ? 1.4 : 1) * this.weather();
         if (d > 0.01)
           this.move(
             bot,
@@ -1219,7 +1256,21 @@ export class Arena {
           );
       }
     }
-    const target = (bot.retreating && foe && dist(foe) > 2.2 ? null : foe) || (box && dist(box) < 3 && this.visible(bot, box) ? box : null);
+    // An explosive or toxic canister next to a rival is worth shooting instead.
+    const trap =
+      foe &&
+      this.crates.find(
+        (c) =>
+          c.hp > 0 &&
+          (c.kind === "red" || c.kind === "green") &&
+          Math.hypot(c.x - foe.x, c.y - foe.y) < 1.5 &&
+          Math.hypot(c.x - bot.x, c.y - bot.y) > 2.4 &&
+          this.visible(bot, c),
+      );
+    const target =
+      trap ||
+      (bot.retreating && foe && dist(foe) > 2.2 ? null : foe) ||
+      (box && dist(box) < 3 && this.visible(bot, box) ? box : null);
     if (target && dist(target) < weaponOf(bot.weapon).range && this.time >= bot.attack) {
       bot.attack = this.time + Math.max(0.5, weaponOf(bot.weapon).cooldown) * skill.reaction;
       bot.a =
@@ -1274,7 +1325,8 @@ export class Arena {
       const speed =
         (sliding ? 3 + 3 * ((e.slideUntil - this.time) / 0.65) : input.sprint ? 4 : 2.6) *
         (e.speedUntil > this.time ? 1.4 : 1) *
-        (e.slowUntil > this.time ? 0.45 : 1);
+        (e.slowUntil > this.time ? 0.45 : 1) *
+        this.weather();
       this.move(
         e,
         (sliding ? e.slideDx : ca * f - sa * s) * speed * dt,
@@ -1286,6 +1338,9 @@ export class Arena {
     }
     if (this.state === "ended") return;
     this.updateEffects(dt);
+    if (this.crates.some((c) => c.until <= this.time))
+      this.crates = this.crates.filter((c) => !(c.until <= this.time));
+    if (this.disaster) updateDisaster(this, dt);
     if (this.mode !== "training") this.updateZone();
     for (const e of this.entities) {
       if (e.bot) this.updateRival(e, dt);

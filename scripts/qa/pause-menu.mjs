@@ -7,7 +7,7 @@ const errs = []; p.on("pageerror", (e) => errs.push(e.message)); p.on("console",
 await p.addInitScript(() => localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 5 })));
 await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
 await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
-if (MODE === "signal") await p.click(".mf-playlists [data-mode=signal]", { timeout: 60000 });
+if (MODE === "signal") await p.click(".mf-gamepick [data-mode=signal]", { timeout: 60000 });
 await p.waitForTimeout(1000);
 await p.click(".mf-start", { timeout: 60000 }); await p.waitForTimeout(5000);
 await p.evaluate(() => [...document.querySelectorAll("button")].find((x) => /Understood/.test(x.textContent))?.click());

@@ -8,7 +8,7 @@ const errs = []; p.on("pageerror", (e) => errs.push(e.message)); p.on("console",
 await p.addInitScript(() => localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 5 })));
 await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
 await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
-await p.click(".mf-playlists [data-mode=signal]"); await p.waitForTimeout(1500);
+await p.click(".mf-gamepick [data-mode=signal]"); await p.waitForTimeout(1500);
 await p.click(".mf-start"); await p.waitForTimeout(4000);
 // Keep bots away and the player alive so movement is measured cleanly.
 await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine; window.__g = g; for (const e of g.arena.entities) if (e.id !== g.selfId) e.hp = 1e6; setInterval(()=>{ for (const e of g.arena.entities) if (e.id!==g.selfId){ e.x=1.5; e.y=1.5; } g.player.hp=Math.max(g.player.hp,50); },50); });

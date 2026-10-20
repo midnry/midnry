@@ -92,9 +92,10 @@ test("Last Signal arenas are large, spread their spawns and scale supply crates 
       assert.ok(Math.min(e.x, e.y, size - e.x, size - e.y) < 3, mapId + " spawn on the edge");
     }
     // Every listed crate is placed (none dropped onto a wall or a spawn).
-    assert.equal(a.crates.length, MAPS[mapId].crates.length, mapId + " crates");
+    const supplies = a.crates.filter((c) => !c.kind);
+    assert.equal(supplies.length, MAPS[mapId].crates.length, mapId + " crates");
     // Before the enlargement the sparsest arena (Skyport) had one crate per ~40 open tiles.
-    assert.ok(a.crates.length >= open / 40, mapId + " crate density");
+    assert.ok(supplies.length >= open / 40, mapId + " crate density");
     for (const t of [0, 60, 120, 160]) {
       a.time = t;
       a.updateZone();

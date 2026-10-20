@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=signal-arenas-20261019` (`game-look` carries `v=signal-series-20261020`, not yet deployed).
+  Current live value: `v=signal-arenas-20261019` (`game-look` carries `v=signal-hazards-20261020`, not yet deployed).
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -52,6 +52,7 @@ hash is stored: `e4ecd2762674dd4bb706fe3aa4fd2d8fc49e1124691d66437d26f8194c9106d
 | `signal-arena-views.mjs [width]` | Photos of each Last Signal arena with 8 fighters in view + draw calls → `screenshots/qa/arenas`. |
 | `signal-last-life.mjs [width]` | Screen look at 3 lives, 2 lives, last life + rush, last life low health; FINAL THREE / DUEL call-outs → `screenshots/qa/lastlife`. |
 | `mode-menu.mjs [width]` | Home: choose a game, then how to play; plays two series rounds and photographs the standings → `screenshots/qa/menu`. |
+| `signal-hazards.mjs [width]` | Canister in view, a red canister exploding, each arena's disaster warning and disaster → `screenshots/qa/hazards`. |
 | `signal-rounds.mjs [width]` | Plays 3 Last Signal rounds watching for page errors (caught the Charge Core crash). |
 | `signal-lives.mjs` | Start shield, losing a life, last life ends the round. |
 | `signal-regen.mjs` | Health recovery after 5 s without damage. |
@@ -188,3 +189,25 @@ makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to
   step 2 "Choose how to play" shows only that game's options (Lifeline Run, Quick, Night,
   Daily case — or Single, Series, Marathon). Phones get a step-3 Play button under them.
   Each game remembers its own last option.
+
+## Canisters, barriers and natural disasters (on `game-look`, awaiting owner's "deploy")
+
+- Rules: `public/games/outpost-hazards.js` (tests `scripts/outpost-hazards.test.mjs`).
+  Canisters / sandbag barriers / foam live in `arena.crates` with a `kind` and ids starting
+  `crate-`, so collision, bullets, blasts and line of sight treat them like crates. Layout is
+  fixed per arena (seeded from the map id): canisters against walls, barriers in open
+  ground, never in corridors, near spawns or the centre; a test checks every tile stays
+  reachable. Red = blast 2.2 tiles + breaks cover, green = 7 s gas (hurts everyone), pink =
+  foam blocks for 15 s, blue = heal 45. Signal and Pair Ops get them; training doesn't.
+- Bots ignore canisters as loot, shoot a red/green one beside a rival, and step off marked
+  ground.
+- One disaster per Last Signal round, starting 30–55 s in, warned 10 s ahead: sandstorm
+  (Dust Outpost: fog, ×0.85 speed, bots spot rivals at ≤3.5 tiles), lightning storm
+  (Skyport: marked ground 1.6 s before each strike), earthquake (Wreck Estate: marked ground
+  1.4 s before cover collapses). `arena.disaster` is in the snapshot.
+- Presentation: `scripts/outpost-military/realism-hazards.js` (models, effects incl. the
+  first renderer for `arena.fx`, strike markers, weather fog, quake camera shake);
+  banner / sand overlay / lightning flash in `disasterHUD()`; sounds in
+  `hazardSounds()` (`outpost-retention.js`); minimap shows canister colours and strikes.
+- Simulated: rounds avg 83 s; ~5–6 canisters and 1–2 barriers broken per round; disasters
+  cost about one life per round; quakes knock down ~17 wall tiles on Wreck Estate.

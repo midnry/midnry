@@ -243,6 +243,8 @@ export class Retention {
     this.clock = -1;
     this.stepDistance = 0;
     this.countBeat = 0;
+    this.fxHeard = null;
+    this.disasterStage = 0;
     this.summary = null;
     if (this.g.$(".mf-results")) this.g.$(".mf-results").hidden = true;
     this.g.$(".mf-panel")?.classList.remove("mf-debrief");
@@ -536,6 +538,47 @@ export class Retention {
       }
     }
     this.lastStand(g, audible);
+    this.hazardSounds(g, audible);
+  }
+  /** Disaster siren and weather, explosions near you, thunder. Game-time
+   * events are keyed by id so each plays once. */
+  hazardSounds(g, audible) {
+    const a = g.arena,
+      d = a?.disaster,
+      p = g.camera();
+    if (!audible || g.mode !== "signal" || !a) return;
+    if (d) {
+      const t = a.time,
+        stage = t >= d.endAt ? 3 : t >= d.startAt ? 2 : t >= d.warnAt ? 1 : 0;
+      if (stage !== this.disasterStage) {
+        if (stage === 1 || stage === 2)
+          for (let i = 0; i < 3; i++)
+            setTimeout(() => this.audio.tone(i % 2 ? 520 : 760, 0.32, 0.12, 0, "square", i % 2 ? 760 : 520), i * 340);
+        this.disasterStage = stage;
+      }
+      const now = performance.now();
+      if (stage === 2 && now - (this.weatherAt || 0) > (d.kind === "quake" ? 450 : 800)) {
+        this.weatherAt = now;
+        if (d.kind === "sandstorm") this.audio.hiss(0.9, 0.08, 900);
+        if (d.kind === "quake") this.audio.tone(46, 0.5, 0.2, 0, "sawtooth", 32);
+      }
+    }
+    this.fxHeard ||= new Set();
+    for (const f of a.fx) {
+      if (this.fxHeard.has(f.id)) continue;
+      this.fxHeard.add(f.id);
+      const dist = Math.hypot(f.x - p.x, f.y - p.y);
+      if (f.kind === "lightning") {
+        this.audio.hiss(0.7, 0.22, 500);
+        this.audio.tone(70, 0.7, 0.2, 0, "sawtooth", 30);
+      } else if (dist < 14 && (f.kind === "blast" || f.kind === "debris")) {
+        const v = Math.max(0.15, 1 - dist / 14);
+        this.audio.hiss(0.45, 0.2 * v, f.kind === "blast" ? 1200 : 600);
+        this.audio.tone(80, 0.35, 0.18 * v, 0, "sawtooth", 35);
+      } else if (dist < 10 && f.kind === "heal") this.audio.tone(520, 0.3, 0.08, 0, "sine", 880);
+      else if (dist < 10 && f.kind === "toxic") this.audio.hiss(0.6, 0.1, 2600);
+    }
+    if (this.fxHeard.size > 400) this.fxHeard = new Set(a.fx.map((f) => f.id));
   }
   /** Last Signal last life: a heartbeat (faster below 30% health) and a
    * rising rush when the adrenaline kicks in. Real time, so it keeps its

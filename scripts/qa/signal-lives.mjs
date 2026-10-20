@@ -6,7 +6,7 @@ const errs = []; p.on("pageerror", (e) => errs.push(e.message)); p.on("console",
 await p.addInitScript(() => localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 5 })));
 await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
 await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
-await p.click(".mf-playlists [data-mode=signal]", { timeout: 60000 }); await p.waitForTimeout(800);
+await p.click(".mf-gamepick [data-mode=signal]", { timeout: 60000 }); await p.waitForTimeout(800);
 await p.click(".mf-start", { timeout: 60000 }); await p.waitForTimeout(3000);
 const hud = () => p.evaluate(() => { const g = document.querySelector("midnry-fps").engine, me = g.arena.entities.find(e => e.id === g.selfId); return JSON.stringify({ t: +g.arena.time.toFixed(1), hp: Math.round(me.hp), lives: me.lives, pos: [+me.x.toFixed(1), +me.y.toFixed(1)], team: document.querySelector(".mf-teamstat").textContent, cores: document.querySelector(".mf-cores").textContent, toast: document.querySelector(".mf-toast")?.textContent?.slice(0, 40), death: !!g.deathSequence, state: g.state }); });
 console.log("start  ", await hud());

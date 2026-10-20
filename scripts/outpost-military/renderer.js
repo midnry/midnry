@@ -49,6 +49,7 @@ import { GroundTrail } from "./ground-trail.js";
 import { NightDressing } from "./realism-night.js";
 import { prepareWorldTypography, makeProtocolSign } from './world-text.js';
 import { prepareMedevac, buildMedevac } from "./realism-medevac.js";
+import { HazardDressing, buildHazard } from "./realism-hazards.js";
 import { EventDressing } from "./realism-events.js";
 import { preparePropKit, buildFurniture } from "./realism-props.js";
 import { BattlePreparation } from "./battle-preparation.js";
@@ -2776,7 +2777,8 @@ export class MilitaryRenderer {
       if (!root) {
         root = new THREE.Group();
         this.dynamic.add(root);
-        buildSupplyBox(this,root);
+        if (e.kind) buildHazard(this, root, e.kind);
+        else buildSupplyBox(this,root);
         this.crates.set(e.id, root);
       }
       root.position.set(e.x * SCALE, 0, e.y * SCALE);
@@ -3269,6 +3271,7 @@ export class MilitaryRenderer {
       p.y * SCALE + (seatedPilot ? 0.85 : 0),
     );
     this.camera.rotation.set(pitch - fall * 0.25, -p.a - Math.PI / 2, fall * 0.5, "YXZ");
+    (this.hazards ||= new HazardDressing(this)).shake(this.camera, t);
     this.updateProtocol(protocolView, p);
     this.updateMedicalMission(protocolView?.protocol?.mission, t);
     const night = (this.night ||= new NightDressing(this)).update(protocolView, g.arena.mapId, t);
@@ -3316,6 +3319,7 @@ export class MilitaryRenderer {
     }
     this.updatePickups(t);
     this.updateFields();
+    (this.hazards ||= new HazardDressing(this)).update(t);
     if (t < this.lastTime) {
       this.seenShots.clear();
       for (const tracer of this.tracers) {
@@ -3346,8 +3350,12 @@ export class MilitaryRenderer {
       g.time > g.zone.delay &&
       (Math.abs(p.x - g.zone.cx) > g.zone.half || Math.abs(p.y - g.zone.cy) > g.zone.half);
     const sandstorm = g.mode === "protocol" && (protocolView?.protocol?.events || []).some((ev) => ev.kind === "sandstorm");
+    // Last Signal disasters: sandstorm haze, or a dark storm lit by lightning.
+    const weather = g.mode !== "protocol" && (this.hazards ||= new HazardDressing(this)).weather();
     this.scene.fog.color.set(
-      sandstorm
+      weather
+        ? weather.fog
+        : sandstorm
         ? this.night?.active ? "#4a3f30" : "#b39a72"
         : this.night?.active
         ? "#121d2e"
@@ -3359,7 +3367,9 @@ export class MilitaryRenderer {
     );
     // Electrical sabotage cannot change the weather or fill open air with
     // black fog. Interior darkness comes from unpowered fixtures and shelter.
-    this.scene.fog.density = sandstorm
+    this.scene.fog.density = weather
+      ? this.naturalLighting?.inside ? weather.density * 0.55 : weather.density
+      : sandstorm
       ? this.naturalLighting?.inside ? 0.05 : 0.09
       : this.night?.active
       ? this.naturalLighting?.inside ? 0.01 : 0.026
@@ -3369,7 +3379,7 @@ export class MilitaryRenderer {
           ? 0.002
           : 0.009;
     // Blowing sand hides the sky too; the day sky returns next frame.
-    if (sandstorm) this.scene.background = (this.sandSky ||= new THREE.Color()).copy(this.scene.fog.color);
+    if (sandstorm || weather?.sky) this.scene.background = (this.sandSky ||= new THREE.Color()).copy(this.scene.fog.color);
     // A 30Hz shadow refresh matches visible skeletal animation. Reusing the
     // shadow texture between samples avoids a second full geometry pass at
     // 120Hz; camera and player movement continue on every animation frame.

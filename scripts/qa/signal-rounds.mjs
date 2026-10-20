@@ -8,7 +8,7 @@ p.on("crash", () => errs.push("TAB CRASHED"));
 await p.addInitScript(() => localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 5 })));
 await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
 await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
-await p.click(".mf-playlists [data-mode=signal]", { timeout: 60000 }); await p.waitForTimeout(1500);
+await p.click(".mf-gamepick [data-mode=signal]", { timeout: 60000 }); await p.waitForTimeout(1500);
 await p.click(".mf-start", { timeout: 60000 });
 for (let round = 1; round <= 3; round++) {
   await p.waitForTimeout(5000);

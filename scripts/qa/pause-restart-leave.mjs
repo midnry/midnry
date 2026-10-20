@@ -9,7 +9,7 @@ await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domc
 await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
 const bar = () => p.evaluate(() => { const m = document.querySelector(".mf-matchbar"); return m && !m.hidden && m.offsetParent ? [...m.querySelectorAll("button")].filter(b => !b.hidden).map(b => b.textContent.trim()).join(" + ") : "hidden"; });
 console.log("home before playing, bar:", await bar());
-if (MODE === "signal") await p.click(".mf-playlists [data-mode=signal]", { timeout: 60000 });
+if (MODE === "signal") await p.click(".mf-gamepick [data-mode=signal]", { timeout: 60000 });
 await p.waitForTimeout(800);
 await p.click(".mf-start", { timeout: 60000 }); await p.waitForTimeout(5000);
 await p.evaluate(() => [...document.querySelectorAll("button")].find((x) => /Understood/.test(x.textContent))?.click());
