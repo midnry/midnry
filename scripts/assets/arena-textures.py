@@ -24,7 +24,6 @@ SETS = {
     "estate-paving": ("Tiles143", 1.0, (1, 1, 1), 0.6),
     "estate-stone": ("Tiles139", 1.0, (1, 0.98, 0.95), 0.55),
     "villa-plaster": ("Plaster007", 1.0, (1, 0.96, 0.88), 0.6),
-    "shed-plaster": ("PaintedPlaster017", 1.0, (1, 0.86, 0.66), 0.6),
     # Skyport
     "apron-concrete": ("Concrete031", 1.15, (1, 1, 1), 0.6),
     "terminal-panel": ("Concrete034", 1.0, (0.97, 0.99, 1.0), 0.5),
