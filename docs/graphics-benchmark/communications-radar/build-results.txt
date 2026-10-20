@@ -1,0 +1,623 @@
+
+> prebuild:render
+> npm run build:outpost-operator && npm run build:outpost-cache && npm run build:outpost-military
+
+
+> build:outpost-operator
+> node scripts/build-outpost-operator.mjs
+
+{"operatorBytes":7036524,"fullTriangles":19450,"farTriangles":9168,"clips":["Idle","Walk","Run","BackWalk","Crouch","Reload","Hit","Death","Struggle","Stealth","Grapple","Stab"],"geometry":"Mixamo Swat sculpt","maps":"original photographed colour and normal maps","animationFPS":30}
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+
+> build:outpost-cache
+> node scripts/build-outpost-cache.mjs
+
+{"cachedAssets":39,"bytes":32936013,"version":"7251c21d3c42afb4"}
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+
+> build:outpost-military
+> node scripts/build-outpost-military.mjs
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+
+> build:render
+> node scripts/with-app-env.mjs vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+[plugin rolldown:vite-resolve] Module "util" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg/lib/client.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "events" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg/lib/client.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "util/types" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg/lib/utils.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "net" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg/lib/connection.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "events" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg/lib/connection.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "events" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg-pool/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "path" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pgpass/lib/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "fs" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pgpass/lib/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "dns" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg/lib/connection-parameters.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "crypto" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg/lib/crypto/utils.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "events" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg/lib/query.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "util" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg/lib/native/client.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "events" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg/lib/native/client.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "net" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg/lib/stream.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "tls" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg/lib/stream.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "path" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pgpass/lib/helper.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "stream" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pgpass/lib/helper.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "util" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pgpass/lib/helper.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "fs" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg-connection-string/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "util" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg/lib/native/query.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "events" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/pg/lib/native/query.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "stream" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/split2/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+[plugin rolldown:vite-resolve] Module "string_decoder" has been externalized for browser compatibility, imported by "/workspace/midnry/node_modules/split2/index.js". See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.
+✓ 2857 modules transformed.
+rendering chunks...
+computing gzip size...
+.output/public/assets/nunito-latin-700-normal-Dort48En.woff2      16.22 kB
+.output/public/assets/nunito-latin-800-normal-Dz8SOQK_.woff2      16.52 kB
+.output/public/assets/nunito-latin-600-normal-Br8yIETf.woff2      16.55 kB
+.output/public/assets/nunito-latin-900-normal-BVB1fGs6.woff2      16.67 kB
+.output/public/assets/nunito-latin-700-normal-OcDqTBcA.woff       19.98 kB
+.output/public/assets/nunito-latin-800-normal-D-J0wlBY.woff       20.36 kB
+.output/public/assets/nunito-latin-900-normal-CVn49sIn.woff       20.46 kB
+.output/public/assets/nunito-latin-600-normal-Cd0eNu1l.woff       20.49 kB
+.output/public/assets/initdb-DwLcS450.wasm                       395.24 kB │ gzip:   148.17 kB
+.output/public/assets/pglite-n8RDJ3Sw.data                     6,295.31 kB
+.output/public/assets/pglite-DgipwPsY.wasm                    10,088.16 kB │ gzip: 3,471.85 kB
+.output/public/assets/AbujaHustle-C5J6wV72.css                     0.43 kB │ gzip:     0.19 kB
+.output/public/assets/index-RojuppIn.css                           8.74 kB │ gzip:     2.61 kB
+.output/public/assets/styles-D8WOiGE-.css                        139.92 kB │ gzip:    21.69 kB
+.output/public/assets/revenue-BvtlPMsw.js                          0.02 kB │ gzip:     0.04 kB
+.output/public/assets/__vite-browser-external-5eBdwsFd.js          0.09 kB │ gzip:     0.10 kB
+.output/public/assets/app-frame-DQFZueFt.js                        0.29 kB │ gzip:     0.23 kB
+.output/public/assets/admin.functions-PQvn8Ne2.js                  0.36 kB │ gzip:     0.26 kB
+.output/public/assets/_slug-DlyEVvub.js                            0.37 kB │ gzip:     0.25 kB
+.output/public/assets/jsx-runtime-DREnUpxT.js                      0.43 kB │ gzip:     0.30 kB
+.output/public/assets/invariant-CgFvOqN2.js                        0.45 kB │ gzip:     0.28 kB
+.output/public/assets/_audience-D5HUUT66.js                        0.84 kB │ gzip:     0.46 kB
+.output/public/assets/audience-picker-Cry5wjrf.js                  0.92 kB │ gzip:     0.55 kB
+.output/public/assets/everyday-Ch6HeDRu.js                         0.93 kB │ gzip:     0.52 kB
+.output/public/assets/play.functions-hcsmYuQI.js                   0.93 kB │ gzip:     0.58 kB
+.output/public/assets/pitches-DLei0D0S.js                          1.00 kB │ gzip:     0.63 kB
+.output/public/assets/login-B8B4vabH.js                            1.01 kB │ gzip:     0.59 kB
+.output/public/assets/middleware-CXrR3Mqs.js                       1.02 kB │ gzip:     0.57 kB
+.output/public/assets/rolldown-runtime-Dd_uD5pT.js                 1.10 kB │ gzip:     0.62 kB
+.output/public/assets/_genre-CdZBsY3N.js                           1.17 kB │ gzip:     0.58 kB
+.output/public/assets/preload-helper-BZ1Pz5am.js                   1.21 kB │ gzip:     0.69 kB
+.output/public/assets/format-CrMQtxm4.js                           1.42 kB │ gzip:     0.70 kB
+.output/public/assets/_audience-CvSjqMHz.js                        1.51 kB │ gzip:     0.74 kB
+.output/public/assets/outpost-zero-BChSaslx.js                     1.77 kB │ gzip:     0.93 kB
+.output/public/assets/pdf-Do4IpNuh.js                              1.92 kB │ gzip:     1.09 kB
+.output/public/assets/earnings-BmGP4L-G.js                         2.40 kB │ gzip:     1.11 kB
+.output/public/assets/abuja-hustle-4Bh5MyVD.js                     2.88 kB │ gzip:     1.33 kB
+.output/public/assets/pricing-BLyKQQZB.js                          3.37 kB │ gzip:     1.16 kB
+.output/public/assets/lazyRouteComponent-DWYiAALu.js               3.63 kB │ gzip:     1.31 kB
+.output/public/assets/community-app-BDzIBr5I.js                    4.83 kB │ gzip:     1.78 kB
+.output/public/assets/outpost-zero-TXMpvIN9.js                     5.01 kB │ gzip:     1.84 kB
+.output/public/assets/submit-BGSps5Xn.js                           5.20 kB │ gzip:     2.12 kB
+.output/public/assets/login-Dt5NvdoD.js                            6.20 kB │ gzip:     2.28 kB
+.output/public/assets/calendar-DQIc-bMu.js                         6.90 kB │ gzip:     2.36 kB
+.output/public/assets/react-CQOZoUwg.js                            7.87 kB │ gzip:     3.00 kB
+.output/public/assets/billing-DON2H7lf.js                          8.20 kB │ gzip:     3.10 kB
+.output/public/assets/review-gPq8lzjw.js                           8.79 kB │ gzip:     3.11 kB
+.output/public/assets/routes-DoWEuqzZ.js                           9.04 kB │ gzip:     2.67 kB
+.output/public/assets/showcase-BbCbf_z2.js                         9.36 kB │ gzip:     2.92 kB
+.output/public/assets/abuja-hustle-BYP1G9QM.js                    10.63 kB │ gzip:     4.37 kB
+.output/public/assets/link-9WaXnQvO.js                            12.11 kB │ gzip:     5.31 kB
+.output/public/assets/stats-Do0Lv01m.js                           12.83 kB │ gzip:     4.02 kB
+.output/public/assets/account-Du4D5fLV.js                         14.68 kB │ gzip:     4.89 kB
+.output/public/assets/apps-4sQ0DXKR.js                            15.35 kB │ gzip:     5.28 kB
+.output/public/assets/sound-BBtPi4e5.js                           15.65 kB │ gzip:     5.77 kB
+.output/public/assets/browser-Y6JmdrFY.js                         23.47 kB │ gzip:     8.86 kB
+.output/public/assets/AbujaHustle-Dx2J1tVx.js                     24.95 kB │ gzip:     8.65 kB
+.output/public/assets/client-CpAYqpc1.js                          34.01 kB │ gzip:    12.79 kB
+.output/public/assets/createMiddleware-yi4slWX1.js                36.77 kB │ gzip:    11.87 kB
+.output/public/assets/citizens-trpGARAr.js                        56.04 kB │ gzip:    19.95 kB
+.output/public/assets/shell-CHo7WaBW.js                          149.85 kB │ gzip:    46.16 kB
+.output/public/assets/_slug-Dyp-z1Jx.js                          273.81 kB │ gzip:    86.17 kB
+.output/public/assets/mediabunny-mp3-encoder-CgbaanU5.js         311.57 kB │ gzip:   133.45 kB
+.output/public/assets/index-NU8Gwq68.js                          386.09 kB │ gzip:   121.22 kB
+.output/public/assets/World-D8nc38Qr.js                          386.35 kB │ gzip:   100.69 kB
+.output/public/assets/es-OxQwlwpW.js                             419.96 kB │ gzip:   175.57 kB
+.output/public/assets/src-CXmLIfQv.js                            693.35 kB │ gzip:   174.48 kB
+.output/public/assets/engine-D70R-Pxg.js                         877.38 kB │ gzip:   281.37 kB
+.output/public/assets/WorldScene-Bgv95CM8.js                   1,376.66 kB │ gzip:   380.45 kB
+
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[EVAL] Use of direct `eval` function is strongly discouraged as it poses security risks and may cause issues with minification.
+ - Use of direct `eval` here. in node_modules/@electric-sql/pglite/dist/index.js at 88718..88722
+  │
+  │ Help: Consider using indirect eval. For more information, check the documentation: https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+
+[EVAL] Use of direct `eval` function is strongly discouraged as it poses security risks and may cause issues with minification.
+ - Use of direct `eval` here. in node_modules/@electric-sql/pglite/dist/index.js at 89196..89200
+  │
+  │ Help: Consider using indirect eval. For more information, check the documentation: https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+
+[EVAL] Use of direct `eval` function is strongly discouraged as it poses security risks and may cause issues with minification.
+ - Use of direct `eval` here. in node_modules/@electric-sql/pglite/dist/chunk-DDJLRBDX.js at 26324..26328
+  │
+  │ Help: Consider using indirect eval. For more information, check the documentation: https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+
+[EVAL] Use of direct `eval` function is strongly discouraged as it poses security risks and may cause issues with minification.
+ - Use of direct `eval` here. in node_modules/@electric-sql/pglite/dist/chunk-DDJLRBDX.js at 26802..26806
+  │
+  │ Help: Consider using indirect eval. For more information, check the documentation: https://rolldown.rs/guide/troubleshooting#avoiding-direct-eval
+
+✓ built in 22.50s
+vite v8.3.1 building ssr environment for production...
+transforming...
+✓ 635 modules transformed.
+rendering chunks...
+computing gzip size...
+node_modules/.nitro/vite/services/ssr/assets/nunito-latin-700-normal-Dort48En.woff2     16.22 kB
+node_modules/.nitro/vite/services/ssr/assets/nunito-latin-800-normal-Dz8SOQK_.woff2     16.52 kB
+node_modules/.nitro/vite/services/ssr/assets/nunito-latin-600-normal-Br8yIETf.woff2     16.55 kB
+node_modules/.nitro/vite/services/ssr/assets/nunito-latin-900-normal-BVB1fGs6.woff2     16.67 kB
+node_modules/.nitro/vite/services/ssr/assets/nunito-latin-700-normal-OcDqTBcA.woff      19.98 kB
+node_modules/.nitro/vite/services/ssr/assets/nunito-latin-800-normal-D-J0wlBY.woff      20.36 kB
+node_modules/.nitro/vite/services/ssr/assets/nunito-latin-900-normal-CVn49sIn.woff      20.46 kB
+node_modules/.nitro/vite/services/ssr/assets/nunito-latin-600-normal-Cd0eNu1l.woff      20.49 kB
+node_modules/.nitro/vite/services/ssr/assets/AbujaHustle-C5J6wV72.css                    0.43 kB │ gzip:   0.19 kB
+node_modules/.nitro/vite/services/ssr/assets/router-BXykVeRV.css                         8.74 kB │ gzip:   2.59 kB
+node_modules/.nitro/vite/services/ssr/assets/styles-D8WOiGE-.css                       139.92 kB │ gzip:  21.69 kB
+node_modules/.nitro/vite/services/ssr/assets/kysely-adapter-Cj_QZw5p.js                  0.05 kB │ gzip:   0.07 kB
+node_modules/.nitro/vite/services/ssr/assets/start-5Z2QO8AU.js                           0.14 kB │ gzip:   0.13 kB
+node_modules/.nitro/vite/services/ssr/assets/empty-plugin-adapters-D9UWiqvJ.js           0.22 kB │ gzip:   0.16 kB
+node_modules/.nitro/vite/services/ssr/assets/rolldown-runtime-D7D4PA-g.js                0.36 kB │ gzip:   0.25 kB
+node_modules/.nitro/vite/services/ssr/assets/app-frame-BjJLj8hE.js                       0.38 kB │ gzip:   0.28 kB
+node_modules/.nitro/vite/services/ssr/assets/createServerRpc-CcvdN_gc.js                 0.38 kB │ gzip:   0.26 kB
+node_modules/.nitro/vite/services/ssr/assets/revenue-RB-2bFVL.js                         0.42 kB │ gzip:   0.25 kB
+node_modules/.nitro/vite/services/ssr/assets/access-Bxybicto.js                          0.55 kB │ gzip:   0.32 kB
+node_modules/.nitro/vite/services/ssr/assets/_slug-1gKFB5Mw.js                           0.64 kB │ gzip:   0.36 kB
+node_modules/.nitro/vite/services/ssr/assets/sign-in-options.functions-DPXqp-mS.js       0.83 kB │ gzip:   0.45 kB
+node_modules/.nitro/vite/services/ssr/assets/admin.functions-BDhu2COc.js                 0.93 kB │ gzip:   0.56 kB
+node_modules/.nitro/vite/services/ssr/assets/account.server-C3RU_w0W.js                  1.10 kB │ gzip:   0.53 kB
+node_modules/.nitro/vite/services/ssr/assets/pitches-C1loF415.js                         1.23 kB │ gzip:   0.75 kB
+node_modules/.nitro/vite/services/ssr/assets/_audience-BdFkzQc2.js                       1.30 kB │ gzip:   0.62 kB
+node_modules/.nitro/vite/services/ssr/assets/everyday-trL8GhVn.js                        1.35 kB │ gzip:   0.66 kB
+node_modules/.nitro/vite/services/ssr/assets/audience-picker-Bdsu6-E6.js                 1.41 kB │ gzip:   0.71 kB
+node_modules/.nitro/vite/services/ssr/assets/_genre-TJegVzUL.js                          1.79 kB │ gzip:   0.77 kB
+node_modules/.nitro/vite/services/ssr/assets/apply.functions-W4I-IZqd.js                 1.79 kB │ gzip:   0.88 kB
+node_modules/.nitro/vite/services/ssr/assets/middleware-By-5KMiy.js                      1.91 kB │ gzip:   0.98 kB
+node_modules/.nitro/vite/services/ssr/assets/isolation.server-CGNg1r0B.js                2.01 kB │ gzip:   1.05 kB
+node_modules/.nitro/vite/services/ssr/assets/use-current-user-DaGkh3Xr.js                2.20 kB │ gzip:   1.02 kB
+node_modules/.nitro/vite/services/ssr/assets/collect.server-BH42u4kU.js                  2.21 kB │ gzip:   0.96 kB
+node_modules/.nitro/vite/services/ssr/assets/format-BVP-sUwb.js                          2.22 kB │ gzip:   0.94 kB
+node_modules/.nitro/vite/services/ssr/assets/outpost-zero-Cmz-7olh.js                    2.25 kB │ gzip:   1.05 kB
+node_modules/.nitro/vite/services/ssr/assets/_audience-zdcO0NN5.js                       2.39 kB │ gzip:   0.96 kB
+node_modules/.nitro/vite/services/ssr/assets/play.functions-CdBRmFGe.js                  2.51 kB │ gzip:   1.26 kB
+node_modules/.nitro/vite/services/ssr/assets/profile.functions-DPDlqazj.js               2.54 kB │ gzip:   1.11 kB
+node_modules/.nitro/vite/services/ssr/assets/calendar.server-DJm0VcUc.js                 2.70 kB │ gzip:   1.33 kB
+node_modules/.nitro/vite/services/ssr/assets/save.functions-BlEnH9ge.js                  2.76 kB │ gzip:   1.16 kB
+node_modules/.nitro/vite/services/ssr/assets/ai-write.functions-Cj-RvPKA.js              2.99 kB │ gzip:   1.40 kB
+node_modules/.nitro/vite/services/ssr/assets/email.server-K8AtiMyj.js                    3.12 kB │ gzip:   1.40 kB
+node_modules/.nitro/vite/services/ssr/assets/pdf-Cjg6SR4V.js                             3.42 kB │ gzip:   1.49 kB
+node_modules/.nitro/vite/services/ssr/assets/verify.server-BDyf150K.js                   3.50 kB │ gzip:   1.55 kB
+node_modules/.nitro/vite/services/ssr/assets/earnings-CFqFkgJF.js                        3.59 kB │ gzip:   1.38 kB
+node_modules/.nitro/vite/services/ssr/assets/cove.functions-DZp8Wso9.js                  3.61 kB │ gzip:   1.32 kB
+node_modules/.nitro/vite/services/ssr/assets/abuja-hustle-FOxVQYxi.js                    3.63 kB │ gzip:   1.36 kB
+node_modules/.nitro/vite/services/ssr/assets/daily.server--Z_vaSXA.js                    3.91 kB │ gzip:   1.61 kB
+node_modules/.nitro/vite/services/ssr/assets/fame.functions-CKBXps_G.js                  3.96 kB │ gzip:   1.50 kB
+node_modules/.nitro/vite/services/ssr/assets/billing.functions-CipeSphg.js               4.00 kB │ gzip:   1.09 kB
+node_modules/.nitro/vite/services/ssr/assets/spotlight.functions-JCZxhpZH.js             4.03 kB │ gzip:   1.43 kB
+node_modules/.nitro/vite/services/ssr/assets/pricing-CdDEy2C0.js                         5.12 kB │ gzip:   1.45 kB
+node_modules/.nitro/vite/services/ssr/assets/admin.functions-DM4D-t20.js                 5.29 kB │ gzip:   2.04 kB
+node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-B2ksrnq8.js      5.70 kB │ gzip:   1.35 kB
+node_modules/.nitro/vite/services/ssr/assets/sections-CKSFyxio.js                        5.82 kB │ gzip:   1.83 kB
+node_modules/.nitro/vite/services/ssr/assets/outpost-zero-DRT5nMgZ.js                    6.14 kB │ gzip:   2.03 kB
+node_modules/.nitro/vite/services/ssr/assets/play.functions-Drg4Xpt1.js                  6.48 kB │ gzip:   2.24 kB
+node_modules/.nitro/vite/services/ssr/assets/community.functions-DivH-NbB.js             7.09 kB │ gzip:   2.65 kB
+node_modules/.nitro/vite/services/ssr/assets/community-app-DPY8Hv3a.js                   7.53 kB │ gzip:   2.23 kB
+node_modules/.nitro/vite/services/ssr/assets/submit-Chf7bR88.js                          8.83 kB │ gzip:   2.73 kB
+node_modules/.nitro/vite/services/ssr/assets/email.server-Dv7Ublz_.js                    9.97 kB │ gzip:   3.60 kB
+node_modules/.nitro/vite/services/ssr/assets/login-wN3u5F0L.js                          10.03 kB │ gzip:   2.90 kB
+node_modules/.nitro/vite/services/ssr/assets/routes-D587sVLp.js                         12.79 kB │ gzip:   3.32 kB
+node_modules/.nitro/vite/services/ssr/assets/billing-D-_2C7JE.js                        13.00 kB │ gzip:   3.92 kB
+node_modules/.nitro/vite/services/ssr/assets/abuja-hustle-UQuL0sj5.js                   13.25 kB │ gzip:   4.90 kB
+node_modules/.nitro/vite/services/ssr/assets/ai-write.server-B5tS3tqi.js                13.46 kB │ gzip:   5.52 kB
+node_modules/.nitro/vite/services/ssr/assets/showcase-CZmWT0et.js                       14.18 kB │ gzip:   3.96 kB
+node_modules/.nitro/vite/services/ssr/assets/review-x-E_oyNy.js                         14.58 kB │ gzip:   3.99 kB
+node_modules/.nitro/vite/services/ssr/assets/paystack.server-DFJ4NiQQ.js                15.32 kB │ gzip:   4.18 kB
+node_modules/.nitro/vite/services/ssr/assets/error-code-S9ghPtI_.js                     16.56 kB │ gzip:   5.23 kB
+node_modules/.nitro/vite/services/ssr/assets/model-CLoxFvRs.js                          17.83 kB │ gzip:   5.52 kB
+node_modules/.nitro/vite/services/ssr/assets/stats-BXK50ZYt.js                          19.47 kB │ gzip:   5.09 kB
+node_modules/.nitro/vite/services/ssr/assets/community.functions-DxNI7UT8.js            21.78 kB │ gzip:   5.37 kB
+node_modules/.nitro/vite/services/ssr/assets/apps-opIDDt7C.js                           22.49 kB │ gzip:   6.46 kB
+node_modules/.nitro/vite/services/ssr/assets/account-BtiO1Zml.js                        23.80 kB │ gzip:   6.60 kB
+node_modules/.nitro/vite/services/ssr/assets/db-BHRc9i7d.js                             25.57 kB │ gzip:   7.10 kB
+node_modules/.nitro/vite/services/ssr/assets/remind.functions-D9VFQnr8.js               30.42 kB │ gzip:   7.34 kB
+node_modules/.nitro/vite/services/ssr/assets/client-B0IqnPIK.js                         39.22 kB │ gzip:  11.96 kB
+node_modules/.nitro/vite/services/ssr/assets/catalog-D5CmtbY8.js                        55.61 kB │ gzip:  16.63 kB
+node_modules/.nitro/vite/services/ssr/assets/writers-CWwfdNoK.js                        61.52 kB │ gzip:  21.66 kB
+node_modules/.nitro/vite/services/ssr/assets/AbujaHustle-D_YfjCdO.js                    63.47 kB │ gzip:  18.16 kB
+node_modules/.nitro/vite/services/ssr/assets/citizens-CDOwY48V.js                       87.31 kB │ gzip:  24.85 kB
+node_modules/.nitro/vite/services/ssr/index.js                                          87.63 kB │ gzip:  23.31 kB
+node_modules/.nitro/vite/services/ssr/assets/router-Bxpr9nb7.js                        101.88 kB │ gzip:  26.17 kB
+node_modules/.nitro/vite/services/ssr/assets/rooms.server-DUbgh2E7.js                  222.76 kB │ gzip:  62.02 kB
+node_modules/.nitro/vite/services/ssr/assets/WorldScene-BKvXm_dX.js                    288.83 kB │ gzip:  84.06 kB
+node_modules/.nitro/vite/services/ssr/assets/_slug-Blp1gr2s.js                         343.08 kB │ gzip:  83.57 kB
+node_modules/.nitro/vite/services/ssr/assets/server-GDwUgLIO.js                        395.32 kB │ gzip:  89.99 kB
+node_modules/.nitro/vite/services/ssr/assets/World-Bmp1lDO2.js                         581.72 kB │ gzip: 132.49 kB
+node_modules/.nitro/vite/services/ssr/assets/engine-OhTWGaQ5.js                      1,231.08 kB │ gzip: 335.52 kB
+
+✓ built in 15.33s
+[PLUGIN_TIMINGS] JavaScript callbacks ran for 13.8s of this 15.3s build (90%).
+The slowest callbacks, timed inside each callback (the wait before a callback starts is excluded, the time it awaits is included):
+  - plugin @tailwindcss/vite:generate:build transform (64%, 9.7s, 7 calls)
+  - plugin tanstack-router:code-splitter:compile-reference-file transform (8%, 1.2s, 33 calls)
+Additional callback time came from the callbacks below and from callbacks under 1s.
+4 callbacks are listed without a time. Their calls overlapped, so the time inside one call includes work from other calls. To find their cost, profile the build with `node --cpu-prof`:
+  - plugin tanstack-start-core:import-protection resolveId (2589 calls)
+  - plugin vite:asset load (17 calls)
+  - plugin vite:css transform (7 calls)
+  … and 1 more
+See https://rolldown.rs/reference/InputOptions.checks#bundlertimings for more details.
+
+
+[nitro] ◐ Building [Nitro] (preset: render-com, compatibility: 2026-10-19)
+[nitro] ✔ Generated public .output/public
+vite v8.3.1 building nitro environment for production...
+`output.codeSplitting.groups[0].name` is a function. Set `output.codeSplitting.groups[0].debugName` so the bundler timing report can identify this group.
+transforming...
+✓ 3335 modules transformed.
+ℹ Tracing dependencies:
+- tslib (1.14.1)
+✔ Traced 1 dependencies (4 files) in 214ms.
+ℹ Ensure your production environment matches the builder OS and architecture (linux-x64) to avoid native module issues.
+rendering chunks...
+computing gzip size...
+.output/server/_ssr/start-5Z2QO8AU.mjs                          0.14 kB │ gzip:     0.13 kB
+.output/server/_ssr/kysely-adapter-Cj_QZw5p.mjs                 0.15 kB │ gzip:     0.12 kB
+.output/server/_ssr/empty-plugin-adapters-D9UWiqvJ.mjs          0.23 kB │ gzip:     0.16 kB
+.output/server/_chunks/core.mjs                                 0.25 kB │ gzip:     0.18 kB
+.output/server/_libs/zod.mjs                                    0.36 kB │ gzip:     0.22 kB
+.output/server/_ssr/createServerRpc-CcvdN_gc.mjs                0.38 kB │ gzip:     0.26 kB
+.output/server/_ssr/rolldown-runtime-D7D4PA-g.mjs               0.41 kB │ gzip:     0.29 kB
+.output/server/_ssr/app-frame-BjJLj8hE.mjs                      0.53 kB │ gzip:     0.37 kB
+.output/server/_ssr/access-Bxybicto.mjs                         0.62 kB │ gzip:     0.36 kB
+.output/server/_slug-1gKFB5Mw.mjs                               0.84 kB │ gzip:     0.44 kB
+.output/server/_ssr/sign-in-options.functions-DPXqp-mS.mjs      0.85 kB │ gzip:     0.48 kB
+.output/server/_chunks/ssr-renderer.mjs                         0.96 kB │ gzip:     0.49 kB
+.output/server/_ssr/admin.functions-BDhu2COc.mjs                0.97 kB │ gzip:     0.59 kB
+.output/server/_ssr/account.server-C3RU_w0W.mjs                 1.14 kB │ gzip:     0.56 kB
+.output/server/_libs/defu.mjs                                   1.41 kB │ gzip:     0.58 kB
+.output/server/_audience-BdFkzQc2.mjs                           1.59 kB │ gzip:     0.67 kB
+.output/server/_ssr/everyday-trL8GhVn.mjs                       1.62 kB │ gzip:     0.72 kB
+.output/server/_ssr/audience-picker-Bdsu6-E6.mjs                1.70 kB │ gzip:     0.79 kB
+.output/server/_ssr/apply.functions-W4I-IZqd.mjs                1.85 kB │ gzip:     0.93 kB
+.output/server/_runtime.mjs                                     1.92 kB │ gzip:     0.87 kB
+.output/server/_ssr/middleware-By-5KMiy.mjs                     1.95 kB │ gzip:     1.01 kB
+.output/server/_ssr/isolation.server-CGNg1r0B.mjs               2.05 kB │ gzip:     1.08 kB
+.output/server/_genre-TJegVzUL.mjs                              2.14 kB │ gzip:     0.83 kB
+.output/server/_libs/ufo.mjs                                    2.21 kB │ gzip:     0.72 kB
+.output/server/_ssr/collect.server-BH42u4kU.mjs                 2.25 kB │ gzip:     0.99 kB
+.output/server/_ssr/format-BVP-sUwb.mjs                         2.26 kB │ gzip:     0.97 kB
+.output/server/_ssr/play.functions-CdBRmFGe.mjs                 2.55 kB │ gzip:     1.28 kB
+.output/server/_ssr/profile.functions-DPDlqazj.mjs              2.56 kB │ gzip:     1.14 kB
+.output/server/_ssr/outpost-zero-Cmz-7olh.mjs                   2.57 kB │ gzip:     1.15 kB
+.output/server/_ssr/calendar.server-DJm0VcUc.mjs                2.74 kB │ gzip:     1.36 kB
+.output/server/_ssr/save.functions-BlEnH9ge.mjs                 2.78 kB │ gzip:     1.19 kB
+.output/server/_audience-zdcO0NN5.mjs                           2.79 kB │ gzip:     1.03 kB
+.output/server/_ssr/ai-write.functions-Cj-RvPKA.mjs             3.02 kB │ gzip:     1.43 kB
+.output/server/_ssr/email.server-K8AtiMyj.mjs                   3.16 kB │ gzip:     1.43 kB
+.output/server/_libs/class-variance-authority+clsx.mjs          3.17 kB │ gzip:     1.24 kB
+.output/server/_ssr/pdf-Cjg6SR4V.mjs                            3.49 kB │ gzip:     1.53 kB
+.output/server/_ssr/verify.server-BDyf150K.mjs                  3.54 kB │ gzip:     1.58 kB
+.output/server/_ssr/cove.functions-DZp8Wso9.mjs                 3.64 kB │ gzip:     1.35 kB
+.output/server/_libs/dijkstrajs.mjs                             3.70 kB │ gzip:     1.54 kB
+.output/server/_ssr/daily.server--Z_vaSXA.mjs                   3.94 kB │ gzip:     1.64 kB
+.output/server/_ssr/fame.functions-CKBXps_G.mjs                 3.98 kB │ gzip:     1.53 kB
+.output/server/_ssr/billing.functions-CipeSphg.mjs              4.04 kB │ gzip:     1.12 kB
+.output/server/_ssr/spotlight.functions-JCZxhpZH.mjs            4.06 kB │ gzip:     1.46 kB
+.output/server/_ssr/abuja-hustle-FOxVQYxi.mjs                   4.18 kB │ gzip:     1.44 kB
+.output/server/_ssr/earnings-CFqFkgJF.mjs                       4.22 kB │ gzip:     1.46 kB
+.output/server/_ssr/admin.functions-DM4D-t20.mjs                5.32 kB │ gzip:     2.07 kB
+.output/server/_libs/nanostores.mjs                             5.50 kB │ gzip:     1.81 kB
+.output/server/_tanstack-start-manifest_v-B2ksrnq8.mjs          5.76 kB │ gzip:     1.39 kB
+.output/server/_ssr/sections-CKSFyxio.mjs                       5.87 kB │ gzip:     1.87 kB
+.output/server/_ssr/pricing-CdDEy2C0.mjs                        5.93 kB │ gzip:     1.49 kB
+.output/server/_ssr/play.functions-Drg4Xpt1.mjs                 6.50 kB │ gzip:     2.26 kB
+.output/server/_ssr/outpost-zero-DRT5nMgZ.mjs                   6.94 kB │ gzip:     2.10 kB
+.output/server/_ssr/community.functions-DivH-NbB.mjs            7.02 kB │ gzip:     2.62 kB
+.output/server/_libs/better-auth__utils.mjs                     8.59 kB │ gzip:     2.77 kB
+.output/server/_ssr/community-app-DPY8Hv3a.mjs                  8.80 kB │ gzip:     2.33 kB
+.output/server/_ssr/email.server-Dv7Ublz_.mjs                  10.01 kB │ gzip:     3.63 kB
+.output/server/_ssr/submit-Chf7bR88.mjs                        10.14 kB │ gzip:     2.82 kB
+.output/server/_ssr/login-wN3u5F0L.mjs                         11.11 kB │ gzip:     3.00 kB
+.output/server/_libs/tanstack__history.mjs                     12.50 kB │ gzip:     3.70 kB
+.output/server/_ssr/ai-write.server-B5tS3tqi.mjs               13.53 kB │ gzip:     5.57 kB
+.output/server/_ssr/abuja-hustle-UQuL0sj5.mjs                  14.42 kB │ gzip:     4.97 kB
+.output/server/_ssr/billing-D-_2C7JE.mjs                       14.43 kB │ gzip:     4.00 kB
+.output/server/_ssr/routes-D587sVLp.mjs                        14.68 kB │ gzip:     3.36 kB
+.output/server/_libs/better-auth__memory-adapter.mjs           14.71 kB │ gzip:     4.12 kB
+.output/server/_ssr/paystack.server-DFJ4NiQQ.mjs               15.37 kB │ gzip:     4.21 kB
+.output/server/_ssr/error-code-S9ghPtI_.mjs                    16.20 kB │ gzip:     5.22 kB
+.output/server/_ssr/showcase-CZmWT0et.mjs                      16.42 kB │ gzip:     4.03 kB
+.output/server/_ssr/review-x-E_oyNy.mjs                        16.76 kB │ gzip:     4.10 kB
+.output/server/_libs/@better-auth/telemetry+[...].mjs          17.53 kB │ gzip:     4.90 kB
+.output/server/_libs/h3-v2+rou3.mjs                            17.58 kB │ gzip:     5.16 kB
+.output/server/_ssr/model-CLoxFvRs.mjs                         17.78 kB │ gzip:     5.55 kB
+.output/server/_libs/lucide-react.mjs                          21.44 kB │ gzip:     4.94 kB
+.output/server/_ssr/community.functions-DxNI7UT8.mjs           22.15 kB │ gzip:     5.48 kB
+.output/server/_ssr/stats-BXK50ZYt.mjs                         22.61 kB │ gzip:     5.21 kB
+.output/server/_libs/noble__hashes.mjs                         23.93 kB │ gzip:     7.95 kB
+.output/server/_ssr/apps-opIDDt7C.mjs                          24.68 kB │ gzip:     6.56 kB
+.output/server/_ssr/db-BHRc9i7d.mjs                            24.87 kB │ gzip:     7.11 kB
+.output/server/_ssr/account-BtiO1Zml.mjs                       26.49 kB │ gzip:     6.68 kB
+.output/server/_libs/@tanstack/router-core+[...].mjs           29.60 kB │ gzip:     7.98 kB
+.output/server/_ssr/remind.functions-D9VFQnr8.mjs              30.45 kB │ gzip:     7.36 kB
+.output/server/_ssr/client-B0IqnPIK.mjs                        38.27 kB │ gzip:    11.93 kB
+.output/server/_libs/jose.mjs                                  38.65 kB │ gzip:     8.59 kB
+.output/server/_libs/pdf-lib__upng.mjs                         45.33 kB │ gzip:    12.02 kB
+.output/server/_libs/h3+rou3+srvx.mjs                          46.33 kB │ gzip:    12.45 kB
+.output/server/_libs/noble__ciphers.mjs                        47.40 kB │ gzip:    14.67 kB
+.output/server/_libs/sonner.mjs                                53.63 kB │ gzip:    12.11 kB
+.output/server/_ssr/catalog-D5CmtbY8.mjs                       55.57 kB │ gzip:    16.63 kB
+.output/server/_libs/pngjs.mjs                                 56.28 kB │ gzip:    11.68 kB
+.output/server/_ssr/writers-CWwfdNoK.mjs                       61.37 kB │ gzip:    21.67 kB
+.output/server/_ssr/AbujaHustle-D_YfjCdO.mjs                   68.11 kB │ gzip:    18.27 kB
+.output/server/_libs/qrcode.mjs                                78.38 kB │ gzip:    18.91 kB
+.output/server/_libs/date-fns.mjs                              78.99 kB │ gzip:    15.07 kB
+.output/server/_libs/crossws.mjs                               79.29 kB │ gzip:    20.25 kB
+.output/server/_ssr/ssr.mjs                                    85.51 kB │ gzip:    23.22 kB
+.output/server/_ssr/citizens-CDOwY48V.mjs                      87.07 kB │ gzip:    24.81 kB
+.output/server/_libs/tailwind-merge.mjs                        88.92 kB │ gzip:    15.71 kB
+.output/server/_ssr/router-Bxpr9nb7.mjs                       111.31 kB │ gzip:    27.33 kB
+.output/server/_libs/pg.mjs                                   148.64 kB │ gzip:    34.40 kB
+.output/server/_ssr/rooms.server-DUbgh2E7.mjs                 222.10 kB │ gzip:    61.90 kB
+.output/server/_libs/pako+pdf-lib__standard-fonts.mjs         241.85 kB │ gzip:   122.20 kB
+.output/server/_ssr/WorldScene-BKvXm_dX.mjs                   288.92 kB │ gzip:    84.01 kB
+.output/server/_slug-Blp1gr2s.mjs                             373.98 kB │ gzip:    84.47 kB
+.output/server/_ssr/server-GDwUgLIO.mjs                       388.72 kB │ gzip:    89.28 kB
+.output/server/_libs/@better-auth/kysely-adapter+[...].mjs    473.01 kB │ gzip:    78.51 kB
+.output/server/_libs/pdf-lib.mjs                              614.65 kB │ gzip:   116.52 kB
+.output/server/_ssr/World-Bmp1lDO2.mjs                        653.65 kB │ gzip:   134.46 kB
+.output/server/_libs/@anthropic-ai/sdk+[...].mjs              728.89 kB │ gzip:   151.14 kB
+.output/server/_libs/electric-sql__pglite.mjs                 751.95 kB │ gzip:   153.28 kB
+.output/server/index.mjs                                      808.98 kB │ gzip:   169.19 kB
+.output/server/_libs/@better-auth/core+[...].mjs              809.78 kB │ gzip:   160.24 kB
+.output/server/_libs/@tanstack/react-router+[...].mjs         813.10 kB │ gzip:   171.24 kB
+.output/server/_ssr/engine-OhTWGaQ5.mjs                     1,228.05 kB │ gzip:   334.49 kB
+.output/server/_libs/@mediabunny/mp3-encoder+[...].mjs      1,473.18 kB │ gzip:   368.66 kB
+.output/server/_libs/unpdf.mjs                              2,098.36 kB │ gzip:   549.46 kB
+.output/server/_libs/phaser.mjs                             6,412.67 kB │ gzip: 1,072.84 kB
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/index.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/index.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/useRouter.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/useRouter.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/CatchBoundary.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/CatchBoundary.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/ClientOnly.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/ClientOnly.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/link.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/link.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/utils.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/utils.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/useNavigate.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/useNavigate.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/useMatch.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/useMatch.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/sonner/dist/index.mjs" may not be preserved when bundling.
+   ╭─[ node_modules/sonner/dist/index.mjs:1:1 ]
+   │
+ 1 │ 'use client';
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/RouterProvider.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/RouterProvider.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/useBlocker.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/useBlocker.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/HeadContent.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/HeadContent.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/Match.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/Match.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/routerContext.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/routerContext.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/Matches.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/Matches.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/useLocation.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/useLocation.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/Asset.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/Asset.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/matchContext.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/matchContext.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/nonRouteComponentContext.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/nonRouteComponentContext.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/useRouterState.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/useRouterState.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+[MODULE_LEVEL_DIRECTIVE] The semantics of the module level directive "use client" in "node_modules/@tanstack/react-router/dist/esm/Transitioner.js" may not be preserved when bundling.
+   ╭─[ node_modules/@tanstack/react-router/dist/esm/Transitioner.js:1:1 ]
+   │
+ 1 │ "use client";
+   │ ──────┬──────
+   │       ╰──────── module level directive may not be preserved
+   │
+   │ Help: For more information, see https://rolldown.rs/in-depth/directives#other-directives
+───╯
+
+✓ built in 9.13s
+ℹ Generated .output/nitro.json
+
+[nitro] ✔ You can preview this build using npx vite preview
+
+> postbuild:render
+> node scripts/check-outpost-release-files.mjs .output/public
+
+{"releaseFiles":"passed","checked":126,"operatorSources":13,"builtFiles":"matched source","photographicTextures":18,"mergeMarkers":"absent"}
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice

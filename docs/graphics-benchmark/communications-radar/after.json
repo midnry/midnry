@@ -1,0 +1,2629 @@
+{
+  "phase": "after",
+  "seed": "outpost-corridor-20261019",
+  "rendererSHA256": "b122b4248d00d7a02bfe4bd067581276d313cc5b33fb8fbb869be57d96fdcbfb",
+  "timingLimit": "Chromium SwiftShader software rendering; no device FPS or hardware GPU time claim",
+  "memoryScope": "Estimated unique uploaded managed source textures, RGBA plus mipmaps; excludes render targets, PMREM internals, depth/MSAA and driver allocations. Not total VRAM.",
+  "rows": [
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-communications-west-day.png",
+      "id": "communications-west-day",
+      "camera": {
+        "x": 20.5,
+        "y": 6.5,
+        "a": -0.32,
+        "pitch": 0.025
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 54,
+          "calls": 229,
+          "triangles": 326389,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 58,
+          "calls": 229,
+          "triangles": 326389,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 62,
+          "calls": 229,
+          "triangles": 326389,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 229,
+      "triangles": 326389,
+      "textureObjects": 67,
+      "sourceTextureBytesEstimate": 292793003,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-communications-south-day.png",
+      "id": "communications-south-day",
+      "camera": {
+        "x": 23.2,
+        "y": 8.3,
+        "a": -1.85,
+        "pitch": 0.025
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 66,
+          "calls": 247,
+          "triangles": 342979,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 70,
+          "calls": 247,
+          "triangles": 342979,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 74,
+          "calls": 247,
+          "triangles": 342979,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 247,
+      "triangles": 342979,
+      "textureObjects": 67,
+      "sourceTextureBytesEstimate": 292793003,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-communications-west-night.png",
+      "id": "communications-west-night",
+      "camera": {
+        "x": 20.5,
+        "y": 6.5,
+        "a": -0.32,
+        "pitch": 0.025
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 84,
+          "calls": 235,
+          "triangles": 326461,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 88,
+          "calls": 229,
+          "triangles": 326389,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 92,
+          "calls": 229,
+          "triangles": 326389,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 235,
+      "triangles": 326461,
+      "textureObjects": 69,
+      "sourceTextureBytesEstimate": 292793003,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-communications-south-night.png",
+      "id": "communications-south-night",
+      "camera": {
+        "x": 23.2,
+        "y": 8.3,
+        "a": -1.85,
+        "pitch": 0.025
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 96,
+          "calls": 247,
+          "triangles": 342979,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 100,
+          "calls": 247,
+          "triangles": 342979,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 104,
+          "calls": 247,
+          "triangles": 342979,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 247,
+      "triangles": 342979,
+      "textureObjects": 69,
+      "sourceTextureBytesEstimate": 292793003,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-command-south-day.png",
+      "id": "command-south-day",
+      "camera": {
+        "x": 7.2,
+        "y": 8.25,
+        "a": -2.02,
+        "pitch": 0.035
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 108,
+          "calls": 266,
+          "triangles": 432373,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 112,
+          "calls": 266,
+          "triangles": 432373,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 116,
+          "calls": 266,
+          "triangles": 432373,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 266,
+      "triangles": 432373,
+      "textureObjects": 71,
+      "sourceTextureBytesEstimate": 299783509,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-command-south-night.png",
+      "id": "command-south-night",
+      "camera": {
+        "x": 7.2,
+        "y": 8.25,
+        "a": -2.02,
+        "pitch": 0.035
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 120,
+          "calls": 266,
+          "triangles": 432373,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 124,
+          "calls": 266,
+          "triangles": 432373,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 128,
+          "calls": 266,
+          "triangles": 432373,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 266,
+      "triangles": 432373,
+      "textureObjects": 71,
+      "sourceTextureBytesEstimate": 299783509,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-command-south-entrance.png",
+      "id": "command-south-entrance",
+      "camera": {
+        "x": 6.5,
+        "y": 9.5,
+        "a": -1.75,
+        "pitch": 0.02
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 132,
+          "calls": 271,
+          "triangles": 432517,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 136,
+          "calls": 271,
+          "triangles": 432517,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 140,
+          "calls": 271,
+          "triangles": 432517,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 271,
+      "triangles": 432517,
+      "textureObjects": 71,
+      "sourceTextureBytesEstimate": 299783509,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-command-west-approach.png",
+      "id": "command-west-approach",
+      "camera": {
+        "x": 3.5,
+        "y": 5.5,
+        "a": 0,
+        "pitch": 0.025
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 144,
+          "calls": 416,
+          "triangles": 587519,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 148,
+          "calls": 416,
+          "triangles": 587519,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 152,
+          "calls": 416,
+          "triangles": 587519,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 416,
+      "triangles": 587519,
+      "textureObjects": 90,
+      "sourceTextureBytesEstimate": 343643477,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-rations-approach.png",
+      "id": "rations-approach",
+      "camera": {
+        "x": 9.7,
+        "y": 16.4,
+        "a": 1.5707963267948966,
+        "pitch": -0.035
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 156,
+          "calls": 295,
+          "triangles": 462171,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 160,
+          "calls": 295,
+          "triangles": 462171,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 164,
+          "calls": 295,
+          "triangles": 462171,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 295,
+      "triangles": 462171,
+      "textureObjects": 95,
+      "sourceTextureBytesEstimate": 363869525,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-cold-storage-junction.png",
+      "id": "cold-storage-junction",
+      "camera": {
+        "x": 9.7,
+        "y": 22.4,
+        "a": -1.5707963267948966,
+        "pitch": -0.035
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 168,
+          "calls": 299,
+          "triangles": 329110,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 172,
+          "calls": 299,
+          "triangles": 329110,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 176,
+          "calls": 299,
+          "triangles": 329110,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 299,
+      "triangles": 329110,
+      "textureObjects": 96,
+      "sourceTextureBytesEstimate": 366665728,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-cold-storage-terminal.png",
+      "id": "cold-storage-terminal",
+      "camera": {
+        "x": 6.45,
+        "y": 23.5,
+        "a": 0,
+        "pitch": -0.04
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 180,
+          "calls": 264,
+          "triangles": 313460,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 184,
+          "calls": 264,
+          "triangles": 313460,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 188,
+          "calls": 264,
+          "triangles": 313460,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 264,
+      "triangles": 313460,
+      "textureObjects": 96,
+      "sourceTextureBytesEstimate": 366665728,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-soldier.png",
+      "id": "soldier",
+      "camera": {
+        "x": 9.7,
+        "y": 18.2,
+        "a": 1.5707963267948966,
+        "pitch": -0.11
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 192,
+          "calls": 276,
+          "triangles": 430040,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 196,
+          "calls": 276,
+          "triangles": 430040,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 200,
+          "calls": 276,
+          "triangles": 430040,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 276,
+      "triangles": 430040,
+      "textureObjects": 96,
+      "sourceTextureBytesEstimate": 366665728,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "laptop",
+      "preset": "balanced",
+      "dpr": 1,
+      "image": "after-laptop-balanced-patrol.png",
+      "id": "patrol",
+      "camera": {
+        "x": 3.5,
+        "y": 5.5,
+        "a": 0,
+        "pitch": 0
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 204,
+          "calls": 416,
+          "triangles": 587519,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 208,
+          "calls": 416,
+          "triangles": 587519,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 212,
+          "calls": 416,
+          "triangles": 587519,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 416,
+      "triangles": 587519,
+      "textureObjects": 96,
+      "sourceTextureBytesEstimate": 366665728,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "phone",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-phone-balanced-communications-west-day.png",
+      "id": "communications-west-day",
+      "camera": {
+        "x": 20.5,
+        "y": 6.5,
+        "a": -0.32,
+        "pitch": 0.025
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 54,
+          "calls": 225,
+          "triangles": 323149,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 58,
+          "calls": 225,
+          "triangles": 323149,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 62,
+          "calls": 225,
+          "triangles": 323149,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 225,
+      "triangles": 323149,
+      "textureObjects": 56,
+      "sourceTextureBytesEstimate": 245806421,
+      "drawingBuffer": [
+        390,
+        844
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "phone",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-phone-balanced-communications-south-day.png",
+      "id": "communications-south-day",
+      "camera": {
+        "x": 23.2,
+        "y": 8.3,
+        "a": -1.85,
+        "pitch": 0.025
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 66,
+          "calls": 232,
+          "triangles": 325733,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 70,
+          "calls": 232,
+          "triangles": 325733,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 74,
+          "calls": 232,
+          "triangles": 325733,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 232,
+      "triangles": 325733,
+      "textureObjects": 56,
+      "sourceTextureBytesEstimate": 245806421,
+      "drawingBuffer": [
+        390,
+        844
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "phone",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-phone-balanced-communications-west-night.png",
+      "id": "communications-west-night",
+      "camera": {
+        "x": 20.5,
+        "y": 6.5,
+        "a": -0.32,
+        "pitch": 0.025
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 84,
+          "calls": 231,
+          "triangles": 323221,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 88,
+          "calls": 225,
+          "triangles": 323149,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 92,
+          "calls": 225,
+          "triangles": 323149,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 231,
+      "triangles": 323221,
+      "textureObjects": 58,
+      "sourceTextureBytesEstimate": 245806421,
+      "drawingBuffer": [
+        390,
+        844
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "phone",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-phone-balanced-communications-south-night.png",
+      "id": "communications-south-night",
+      "camera": {
+        "x": 23.2,
+        "y": 8.3,
+        "a": -1.85,
+        "pitch": 0.025
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 96,
+          "calls": 232,
+          "triangles": 325733,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 100,
+          "calls": 232,
+          "triangles": 325733,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 104,
+          "calls": 232,
+          "triangles": 325733,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 232,
+      "triangles": 325733,
+      "textureObjects": 58,
+      "sourceTextureBytesEstimate": 245806421,
+      "drawingBuffer": [
+        390,
+        844
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "phone",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-phone-balanced-command-south-day.png",
+      "id": "command-south-day",
+      "camera": {
+        "x": 7.2,
+        "y": 8.25,
+        "a": -2.02,
+        "pitch": 0.035
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 108,
+          "calls": 265,
+          "triangles": 422533,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 112,
+          "calls": 265,
+          "triangles": 422533,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 116,
+          "calls": 265,
+          "triangles": 422533,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 265,
+      "triangles": 422533,
+      "textureObjects": 60,
+      "sourceTextureBytesEstimate": 252796928,
+      "drawingBuffer": [
+        390,
+        844
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "phone",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-phone-balanced-command-south-night.png",
+      "id": "command-south-night",
+      "camera": {
+        "x": 7.2,
+        "y": 8.25,
+        "a": -2.02,
+        "pitch": 0.035
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 120,
+          "calls": 265,
+          "triangles": 422533,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 124,
+          "calls": 265,
+          "triangles": 422533,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 128,
+          "calls": 265,
+          "triangles": 422533,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 265,
+      "triangles": 422533,
+      "textureObjects": 60,
+      "sourceTextureBytesEstimate": 252796928,
+      "drawingBuffer": [
+        390,
+        844
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "phone",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-phone-balanced-command-south-entrance.png",
+      "id": "command-south-entrance",
+      "camera": {
+        "x": 6.5,
+        "y": 9.5,
+        "a": -1.75,
+        "pitch": 0.02
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 132,
+          "calls": 271,
+          "triangles": 429541,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 136,
+          "calls": 271,
+          "triangles": 429541,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 140,
+          "calls": 271,
+          "triangles": 429541,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 271,
+      "triangles": 429541,
+      "textureObjects": 60,
+      "sourceTextureBytesEstimate": 252796928,
+      "drawingBuffer": [
+        390,
+        844
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "phone",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-phone-balanced-command-west-approach.png",
+      "id": "command-west-approach",
+      "camera": {
+        "x": 3.5,
+        "y": 5.5,
+        "a": 0,
+        "pitch": 0.025
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 144,
+          "calls": 378,
+          "triangles": 577427,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 148,
+          "calls": 378,
+          "triangles": 577427,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 152,
+          "calls": 378,
+          "triangles": 577427,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 378,
+      "triangles": 577427,
+      "textureObjects": 77,
+      "sourceTextureBytesEstimate": 290346325,
+      "drawingBuffer": [
+        390,
+        844
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "ipad",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-ipad-balanced-communications-west-day.png",
+      "id": "communications-west-day",
+      "camera": {
+        "x": 20.5,
+        "y": 6.5,
+        "a": -0.32,
+        "pitch": 0.025
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 54,
+          "calls": 231,
+          "triangles": 326989,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 58,
+          "calls": 231,
+          "triangles": 326989,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 62,
+          "calls": 231,
+          "triangles": 326989,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 231,
+      "triangles": 326989,
+      "textureObjects": 62,
+      "sourceTextureBytesEstimate": 271092395,
+      "drawingBuffer": [
+        1154,
+        866
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "ipad",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-ipad-balanced-communications-west-night.png",
+      "id": "communications-west-night",
+      "camera": {
+        "x": 20.5,
+        "y": 6.5,
+        "a": -0.32,
+        "pitch": 0.025
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 72,
+          "calls": 237,
+          "triangles": 327061,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 76,
+          "calls": 231,
+          "triangles": 326989,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 80,
+          "calls": 231,
+          "triangles": 326989,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 237,
+      "triangles": 327061,
+      "textureObjects": 64,
+      "sourceTextureBytesEstimate": 271092395,
+      "drawingBuffer": [
+        1154,
+        866
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "ipad",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-ipad-balanced-patrol.png",
+      "id": "patrol",
+      "camera": {
+        "x": 3.5,
+        "y": 5.5,
+        "a": 0,
+        "pitch": 0
+      },
+      "clip": null,
+      "distanceMetres": null,
+      "text": null,
+      "samples": [
+        {
+          "frame": 84,
+          "calls": 416,
+          "triangles": 587519,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 88,
+          "calls": 416,
+          "triangles": 587519,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 92,
+          "calls": 416,
+          "triangles": 587519,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 416,
+      "triangles": 587519,
+      "textureObjects": 93,
+      "sourceTextureBytesEstimate": 348039851,
+      "drawingBuffer": [
+        1154,
+        866
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-sign-communications-room-2.5m.png",
+      "id": "sign-communications-room-2.5m",
+      "camera": {
+        "x": 22.5,
+        "y": 3.858333333333333,
+        "a": -1.5707963267948966,
+        "pitch": 0.3631470099461763
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": {
+        "title": "Communications / Radar",
+        "subtitle": "AUTHORIZED PERSONNEL",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 146.57999999999998,
+        "titleWidth": 1383.403564453125,
+        "availableWidth": 1397.76,
+        "subtitlePx": 88,
+        "worldSize": [
+          2.5,
+          0.73
+        ]
+      },
+      "samples": [
+        {
+          "frame": 60,
+          "calls": 190,
+          "triangles": 250411,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 64,
+          "calls": 184,
+          "triangles": 250339,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 68,
+          "calls": 184,
+          "triangles": 250339,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 190,
+      "triangles": 250411,
+      "textureObjects": 64,
+      "sourceTextureBytesEstimate": 275349504,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-radio-link-label-2.5m.png",
+      "id": "radio-link-label-2.5m",
+      "camera": {
+        "x": 22.5,
+        "y": 3.865,
+        "a": -1.5707963267948966,
+        "pitch": 0.15084536162093987
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": {
+        "title": "Restore the radio uplink",
+        "subtitle": "",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 140.66000000000003,
+        "titleWidth": 1392.07470703125,
+        "availableWidth": 1397.76,
+        "subtitlePx": 0,
+        "worldSize": [
+          1.18,
+          0.34
+        ]
+      },
+      "samples": [
+        {
+          "frame": 72,
+          "calls": 185,
+          "triangles": 245979,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 76,
+          "calls": 185,
+          "triangles": 245979,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 80,
+          "calls": 185,
+          "triangles": 245979,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 185,
+      "triangles": 245979,
+      "textureObjects": 64,
+      "sourceTextureBytesEstimate": 275349504,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-radio-link-screen-2.5m.png",
+      "id": "radio-link-screen-2.5m",
+      "camera": {
+        "x": 22.5,
+        "y": 3.905,
+        "a": -1.5707963267948966,
+        "pitch": -0.09966865249116194
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": {
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "screenAspect": 1.5192307692307692,
+        "linearScale": 2
+      },
+      "samples": [
+        {
+          "frame": 84,
+          "calls": 184,
+          "triangles": 245859,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 88,
+          "calls": 184,
+          "triangles": 245859,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 92,
+          "calls": 184,
+          "triangles": 245859,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 184,
+      "triangles": 245859,
+      "textureObjects": 64,
+      "sourceTextureBytesEstimate": 275349504,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-radar-calibration-label-2.5m.png",
+      "id": "radar-calibration-label-2.5m",
+      "camera": {
+        "x": 24.135,
+        "y": 6.5,
+        "a": -2.220446049250313e-16,
+        "pitch": 0.15084536162093987
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": {
+        "title": "Calibrate coastal radar",
+        "subtitle": "",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 142.66000000000003,
+        "titleWidth": 1394.750244140625,
+        "availableWidth": 1397.76,
+        "subtitlePx": 0,
+        "worldSize": [
+          1.18,
+          0.34
+        ]
+      },
+      "samples": [
+        {
+          "frame": 96,
+          "calls": 184,
+          "triangles": 249983,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 100,
+          "calls": 184,
+          "triangles": 249983,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 104,
+          "calls": 184,
+          "triangles": 249983,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 184,
+      "triangles": 249983,
+      "textureObjects": 65,
+      "sourceTextureBytesEstimate": 278978560,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-radar-calibration-screen-2.5m.png",
+      "id": "radar-calibration-screen-2.5m",
+      "camera": {
+        "x": 24.095,
+        "y": 6.5,
+        "a": -2.220446049250313e-16,
+        "pitch": -0.09966865249116194
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": {
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "screenAspect": 1.5192307692307692,
+        "linearScale": 2
+      },
+      "samples": [
+        {
+          "frame": 108,
+          "calls": 185,
+          "triangles": 250295,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 112,
+          "calls": 185,
+          "triangles": 250295,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 116,
+          "calls": 185,
+          "triangles": 250295,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 185,
+      "triangles": 250295,
+      "textureObjects": 65,
+      "sourceTextureBytesEstimate": 278978560,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-radio-room-cabinet-2.5m.png",
+      "id": "radio-room-cabinet-2.5m",
+      "camera": {
+        "x": 22.5,
+        "y": 3.9166666666666665,
+        "a": -1.5707963267948966,
+        "pitch": -0.21502365852765667
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": {
+        "title": "Radio-room cabinet",
+        "subtitle": "",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 73.16,
+        "titleWidth": 562.1334228515625,
+        "availableWidth": 1397.76,
+        "subtitlePx": 0,
+        "worldSize": [
+          1.04,
+          0.08
+        ]
+      },
+      "samples": [
+        {
+          "frame": 120,
+          "calls": 183,
+          "triangles": 244239,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 124,
+          "calls": 183,
+          "triangles": 244239,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 128,
+          "calls": 183,
+          "triangles": 244239,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 183,
+      "triangles": 244239,
+      "textureObjects": 65,
+      "sourceTextureBytesEstimate": 278978560,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-command-emergency-2.5m.png",
+      "id": "command-emergency-2.5m",
+      "camera": {
+        "x": 6.5,
+        "y": 7.346666666666667,
+        "a": -1.5707963267948966,
+        "pitch": 0.14693338583302495
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": {
+        "title": "RADIO ASSEMBLY",
+        "subtitle": "",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 232.66000000000003,
+        "titleWidth": 1396.169921875,
+        "availableWidth": 1397.76,
+        "subtitlePx": 0,
+        "worldSize": [
+          1.18,
+          0.34
+        ]
+      },
+      "samples": [
+        {
+          "frame": 132,
+          "calls": 266,
+          "triangles": 422321,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 136,
+          "calls": 266,
+          "triangles": 422321,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 140,
+          "calls": 266,
+          "triangles": 422321,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 266,
+      "triangles": 422321,
+      "textureObjects": 72,
+      "sourceTextureBytesEstimate": 305228459,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-command-planning-2.5m.png",
+      "id": "command-planning-2.5m",
+      "camera": {
+        "x": 6,
+        "y": 5.8183333333333325,
+        "a": -1.5707963267948966,
+        "pitch": 0.1547526906780237
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": null,
+      "samples": [
+        {
+          "frame": 144,
+          "calls": 251,
+          "triangles": 397003,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 148,
+          "calls": 251,
+          "triangles": 397003,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 152,
+          "calls": 251,
+          "triangles": 397003,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 251,
+      "triangles": 397003,
+      "textureObjects": 72,
+      "sourceTextureBytesEstimate": 305228459,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-command-title-2.5m.png",
+      "id": "command-title-2.5m",
+      "camera": {
+        "x": 5.416666666666667,
+        "y": 5.8183333333333325,
+        "a": -1.5707963267948966,
+        "pitch": -0.12337025828209883
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": null,
+      "samples": [
+        {
+          "frame": 156,
+          "calls": 246,
+          "triangles": 401947,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 160,
+          "calls": 246,
+          "triangles": 401947,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 164,
+          "calls": 246,
+          "triangles": 401947,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 246,
+      "triangles": 401947,
+      "textureObjects": 72,
+      "sourceTextureBytesEstimate": 305228459,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-sign-radar-rack-2.5m.png",
+      "id": "sign-radar-rack-2.5m",
+      "camera": {
+        "x": 23,
+        "y": 6.8183333333333325,
+        "a": -1.5707963267948966,
+        "pitch": 0.15865526218640139
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": null,
+      "samples": [
+        {
+          "frame": 168,
+          "calls": 219,
+          "triangles": 316547,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 172,
+          "calls": 219,
+          "triangles": 316547,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 176,
+          "calls": 219,
+          "triangles": 316547,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 219,
+      "triangles": 316547,
+      "textureObjects": 74,
+      "sourceTextureBytesEstimate": 311702869,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "balanced",
+      "dpr": 2,
+      "image": "after-retina-balanced-sign-uplink-rack-2.5m.png",
+      "id": "sign-uplink-rack-2.5m",
+      "camera": {
+        "x": 23,
+        "y": 4.181666666666667,
+        "a": 1.5707963267948966,
+        "pitch": 0.15865526218640139
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": null,
+      "samples": [
+        {
+          "frame": 180,
+          "calls": 323,
+          "triangles": 342024,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 184,
+          "calls": 323,
+          "triangles": 342024,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 188,
+          "calls": 323,
+          "triangles": 342024,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 323,
+      "triangles": 342024,
+      "textureObjects": 89,
+      "sourceTextureBytesEstimate": 346409643,
+      "drawingBuffer": [
+        1280,
+        720
+      ],
+      "bloom": false,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-sign-communications-room-2.5m.png",
+      "id": "sign-communications-room-2.5m",
+      "camera": {
+        "x": 22.5,
+        "y": 3.858333333333333,
+        "a": -1.5707963267948966,
+        "pitch": 0.3631470099461763
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": {
+        "title": "Communications / Radar",
+        "subtitle": "AUTHORIZED PERSONNEL",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 146.57999999999998,
+        "titleWidth": 1383.403564453125,
+        "availableWidth": 1397.76,
+        "subtitlePx": 88,
+        "worldSize": [
+          2.5,
+          0.73
+        ]
+      },
+      "samples": [
+        {
+          "frame": 200,
+          "calls": 277,
+          "triangles": 330163,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 222,
+          "calls": 327,
+          "triangles": 397407,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 243,
+          "calls": 271,
+          "triangles": 330091,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 327,
+      "triangles": 397407,
+      "textureObjects": 104,
+      "sourceTextureBytesEstimate": 320457387,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-radio-link-label-2.5m.png",
+      "id": "radio-link-label-2.5m",
+      "camera": {
+        "x": 22.5,
+        "y": 3.865,
+        "a": -1.5707963267948966,
+        "pitch": 0.15084536162093987
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": {
+        "title": "Restore the radio uplink",
+        "subtitle": "",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 140.66000000000003,
+        "titleWidth": 1392.07470703125,
+        "availableWidth": 1397.76,
+        "subtitlePx": 0,
+        "worldSize": [
+          1.18,
+          0.34
+        ]
+      },
+      "samples": [
+        {
+          "frame": 265,
+          "calls": 332,
+          "triangles": 392659,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 286,
+          "calls": 273,
+          "triangles": 321371,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 308,
+          "calls": 332,
+          "triangles": 392659,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 332,
+      "triangles": 392659,
+      "textureObjects": 104,
+      "sourceTextureBytesEstimate": 320457387,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-radio-link-screen-2.5m.png",
+      "id": "radio-link-screen-2.5m",
+      "camera": {
+        "x": 22.5,
+        "y": 3.905,
+        "a": -1.5707963267948966,
+        "pitch": -0.09966865249116194
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": {
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "screenAspect": 1.5192307692307692,
+        "linearScale": 2
+      },
+      "samples": [
+        {
+          "frame": 329,
+          "calls": 270,
+          "triangles": 320947,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 351,
+          "calls": 333,
+          "triangles": 394675,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 372,
+          "calls": 270,
+          "triangles": 320947,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 333,
+      "triangles": 394675,
+      "textureObjects": 104,
+      "sourceTextureBytesEstimate": 320457387,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-radar-calibration-label-2.5m.png",
+      "id": "radar-calibration-label-2.5m",
+      "camera": {
+        "x": 24.135,
+        "y": 6.5,
+        "a": -2.220446049250313e-16,
+        "pitch": 0.15084536162093987
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": {
+        "title": "Calibrate coastal radar",
+        "subtitle": "",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 142.66000000000003,
+        "titleWidth": 1394.750244140625,
+        "availableWidth": 1397.76,
+        "subtitlePx": 0,
+        "worldSize": [
+          1.18,
+          0.34
+        ]
+      },
+      "samples": [
+        {
+          "frame": 394,
+          "calls": 328,
+          "triangles": 405679,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 415,
+          "calls": 268,
+          "triangles": 329047,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 437,
+          "calls": 328,
+          "triangles": 405679,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 328,
+      "triangles": 405679,
+      "textureObjects": 104,
+      "sourceTextureBytesEstimate": 320457387,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-radar-calibration-screen-2.5m.png",
+      "id": "radar-calibration-screen-2.5m",
+      "camera": {
+        "x": 24.095,
+        "y": 6.5,
+        "a": -2.220446049250313e-16,
+        "pitch": -0.09966865249116194
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": {
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "screenAspect": 1.5192307692307692,
+        "linearScale": 2
+      },
+      "samples": [
+        {
+          "frame": 458,
+          "calls": 270,
+          "triangles": 329671,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 480,
+          "calls": 335,
+          "triangles": 408063,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 501,
+          "calls": 270,
+          "triangles": 329671,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 335,
+      "triangles": 408063,
+      "textureObjects": 104,
+      "sourceTextureBytesEstimate": 320457387,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-radio-room-cabinet-2.5m.png",
+      "id": "radio-room-cabinet-2.5m",
+      "camera": {
+        "x": 22.5,
+        "y": 3.9166666666666665,
+        "a": -1.5707963267948966,
+        "pitch": -0.21502365852765667
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": {
+        "title": "Radio-room cabinet",
+        "subtitle": "",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 73.16,
+        "titleWidth": 562.1334228515625,
+        "availableWidth": 1397.76,
+        "subtitlePx": 0,
+        "worldSize": [
+          1.04,
+          0.08
+        ]
+      },
+      "samples": [
+        {
+          "frame": 523,
+          "calls": 337,
+          "triangles": 398497,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 544,
+          "calls": 268,
+          "triangles": 317707,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 566,
+          "calls": 337,
+          "triangles": 398497,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 337,
+      "triangles": 398497,
+      "textureObjects": 104,
+      "sourceTextureBytesEstimate": 320457387,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-command-emergency-2.5m.png",
+      "id": "command-emergency-2.5m",
+      "camera": {
+        "x": 6.5,
+        "y": 7.346666666666667,
+        "a": -1.5707963267948966,
+        "pitch": 0.14693338583302495
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": {
+        "title": "RADIO ASSEMBLY",
+        "subtitle": "",
+        "font": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "titlePx": 232.66000000000003,
+        "titleWidth": 1396.169921875,
+        "availableWidth": 1397.76,
+        "subtitlePx": 0,
+        "worldSize": [
+          1.18,
+          0.34
+        ]
+      },
+      "samples": [
+        {
+          "frame": 587,
+          "calls": 372,
+          "triangles": 515491,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 609,
+          "calls": 459,
+          "triangles": 608639,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 630,
+          "calls": 372,
+          "triangles": 515491,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 459,
+      "triangles": 608639,
+      "textureObjects": 108,
+      "sourceTextureBytesEstimate": 336087723,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-command-planning-2.5m.png",
+      "id": "command-planning-2.5m",
+      "camera": {
+        "x": 6,
+        "y": 5.8183333333333325,
+        "a": -1.5707963267948966,
+        "pitch": 0.1547526906780237
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": null,
+      "samples": [
+        {
+          "frame": 652,
+          "calls": 420,
+          "triangles": 566539,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 673,
+          "calls": 347,
+          "triangles": 484559,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 695,
+          "calls": 420,
+          "triangles": 566539,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 420,
+      "triangles": 566539,
+      "textureObjects": 108,
+      "sourceTextureBytesEstimate": 336087723,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-command-title-2.5m.png",
+      "id": "command-title-2.5m",
+      "camera": {
+        "x": 5.416666666666667,
+        "y": 5.8183333333333325,
+        "a": -1.5707963267948966,
+        "pitch": -0.12337025828209883
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": null,
+      "samples": [
+        {
+          "frame": 716,
+          "calls": 339,
+          "triangles": 483575,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 738,
+          "calls": 415,
+          "triangles": 566359,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 759,
+          "calls": 339,
+          "triangles": 483575,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 415,
+      "triangles": 566359,
+      "textureObjects": 108,
+      "sourceTextureBytesEstimate": 336087723,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-sign-radar-rack-2.5m.png",
+      "id": "sign-radar-rack-2.5m",
+      "camera": {
+        "x": 23,
+        "y": 6.8183333333333325,
+        "a": -1.5707963267948966,
+        "pitch": 0.15865526218640139
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": null,
+      "samples": [
+        {
+          "frame": 781,
+          "calls": 411,
+          "triangles": 513547,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 802,
+          "calls": 324,
+          "triangles": 415057,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 824,
+          "calls": 411,
+          "triangles": 513547,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 411,
+      "triangles": 513547,
+      "textureObjects": 109,
+      "sourceTextureBytesEstimate": 338883925,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    },
+    {
+      "device": "retina",
+      "preset": "high",
+      "dpr": 2,
+      "image": "after-retina-high-sign-uplink-rack-2.5m.png",
+      "id": "sign-uplink-rack-2.5m",
+      "camera": {
+        "x": 23,
+        "y": 4.181666666666667,
+        "a": 1.5707963267948966,
+        "pitch": 0.15865526218640139
+      },
+      "clip": null,
+      "distanceMetres": 2.5,
+      "text": null,
+      "samples": [
+        {
+          "frame": 845,
+          "calls": 551,
+          "triangles": 514557,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 867,
+          "calls": 755,
+          "triangles": 684322,
+          "points": 0,
+          "lines": 0
+        },
+        {
+          "frame": 888,
+          "calls": 551,
+          "triangles": 514557,
+          "points": 0,
+          "lines": 0
+        }
+      ],
+      "calls": 755,
+      "triangles": 684322,
+      "textureObjects": 120,
+      "sourceTextureBytesEstimate": 363438080,
+      "drawingBuffer": [
+        1920,
+        1080
+      ],
+      "bloom": true,
+      "font": {
+        "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+        "loaded": true
+      },
+      "assetErrors": [],
+      "roomRecords": 373
+    }
+  ]
+}

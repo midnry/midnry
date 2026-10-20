@@ -5,12 +5,16 @@ stop for review each time. Do not merge to main or deploy from this branch.
 
 ## Blackout Protocol
 
-1. Command / Operations — current review.
-2. Communications / Radar.
-3. Armory and Armory stores.
-4. Barracks / Mess Hall.
-5. Flight Deck / hangar.
-6. East Service Corridor and the remaining passages.
+1. Communications / Radar — current review, including the Command title follow-up.
+2. Armory and Armory stores.
+3. Barracks / Mess Hall.
+4. Vehicle Hangar / Flight Deck.
+5. Generators / Power.
+6. Maintenance Tunnels.
+7. East Service Corridor and the remaining passages.
+
+Command / Operations and the Supply Atrium follow-ups are approved. Do not
+start the next room until the Communications / Radar review is complete.
 
 Continue the established material/light standard, the fixed-view Balanced
 draw-call budget (patrol at or below approximately 520), unchanged phone
@@ -51,4 +55,4 @@ For **each arena**, independently:
   stop for review before the next arena.
 
 These arena passes are queued work, **not implemented or validated by the
-Command / Operations commit**.
+Communications / Radar commit**.

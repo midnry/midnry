@@ -1,0 +1,42 @@
+{
+  "public/games/outpost-navigation.js": {
+    "sha256": "8dce6f85bc942b5f87967fb21a7037f4351db560543b28103c6abfa8f4a685df",
+    "approvedBaseline": "afe7f01",
+    "unchanged": true
+  },
+  "public/games/outpost-hud.js": {
+    "sha256": "4b9c71bab19daa128cb31a146078dd4f6294525ac356ddcdf1056d4b0dffb007",
+    "approvedBaseline": "afe7f01",
+    "unchanged": true
+  },
+  "scripts/outpost-military/ground-trail.js": {
+    "sha256": "7339db008cbfb38e9739234ff559249b0520fc65079949ae6c6434a89e4fbfe1",
+    "approvedBaseline": "afe7f01",
+    "unchanged": true
+  },
+  "public/games/outpost-protocol-map.js": {
+    "sha256": "19f9068cbb50de557c8b961dc91ad9c6cedbcbec444db3fd13852edbebf5612f",
+    "approvedBaseline": "afe7f01",
+    "unchanged": true
+  },
+  "public/games/outpost-zero.html": {
+    "sha256": "c5413229e00a1f5dc20323ead1d2646fe2548d33d2b21e51681c4ae61e553040",
+    "approvedBaseline": "afe7f01",
+    "unchanged": true
+  },
+  "public/games/outpost-protocol-focus.js": {
+    "sha256": "7bea6d67744f426d74847349228810f83b89f2368a01ec84bdf213dac3374a3d",
+    "approvedBaseline": "afe7f01",
+    "unchanged": true
+  },
+  "public/games/outpost-academy.js": {
+    "sha256": "573593a7ce25746b4f45026e356a7dc2de1269d4e321775d37b513b5509062b3",
+    "approvedBaseline": "afe7f01",
+    "unchanged": true
+  },
+  "public/games/outpost-protocol-ui.js": {
+    "sha256": "4a1a19ea18083f749c262004f4922ab918f7d1dafd5d7d9d4ae39e04b7d42d5f",
+    "approvedBaseline": "afe7f01",
+    "unchanged": true
+  }
+}
