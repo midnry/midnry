@@ -14,6 +14,7 @@ import { weaponOf, OUTFITS, mapOf } from "./outpost-sim.js";
 import { standingsHTML } from "./outpost-series.js";
 import { BattleMusic, battleIntensity } from "./outpost-music.js";
 import { spatialSound } from "./outpost-spatial-audio.js";
+import { recordMatch } from "./outpost-account.js";
 const read = (key) => {
   try {
     return JSON.parse(localStorage.getItem(key));
@@ -348,6 +349,18 @@ export class Retention {
       summary.rescued = missionView.mission?.patients.filter(p => p.rescued).length || 0;
       summary.correctVotes = missionView.self.correctVotes || 0;
     }
+    recordMatch({
+      id: summary.id,
+      mode: g.mode,
+      map: g.arena.mapId,
+      online: !!g.online,
+      won: !!won,
+      kills: summary.kills,
+      damage: summary.damage,
+      seconds: summary.seconds,
+      placement: summary.placement,
+      role: summary.role ?? null,
+    });
     const earned = awardMatch(this.profile, summary);
     this.profile = earned.profile;
     write("midnry-outpost-profile", this.profile);

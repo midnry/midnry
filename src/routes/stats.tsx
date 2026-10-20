@@ -7,6 +7,7 @@ import { useRole } from "@/components/role";
 import { adminStats, type AdminApp, type AdminStats } from "@/lib/admin.functions";
 import { Button, Skeleton, TextInput, cn } from "@/components/ui";
 import { gameStats, type GameStats } from "@/games/abuja/play.functions";
+import { outpostAdminStats, type OutpostStats } from "@/games/outpost/stats.functions";
 
 export const Route = createFileRoute("/stats")({
   head: () => ({ meta: [{ title: "Stats — Midnry" }, { name: "robots", content: "noindex" }] }),
@@ -66,6 +67,7 @@ function StatsPage() {
           <Signups data={stats.signups} />
           <TopApps last30={stats.apps30} all={stats.appsAll} />
           <Users stats={stats} />
+          <OutpostSection />
           <GameSection />
         </>
       ) : null}
@@ -246,6 +248,143 @@ function prettyDay(day: string): string {
 
 const CHAPTER_NAMES: Record<string, string> = { primary: "Primary school", secondary: "Secondary school", university: "University", nysc: "NYSC", adult: "Adult life" };
 const ENDING_NAMES: Record<string, string> = { freedom: "Financial Freedom", grass: "Grass to Grace", jail: "Jailed", ninefive: "Stuck in a 9-5", broke: "Broke", japa: "Japa", cut: "Life Cut Short" };
+
+const MODE_NAMES: Record<string, string> = { protocol: "Blackout Protocol", signal: "Last Signal", duo: "Duo" };
+const count = (n: number, one: string, many = `${one}s`) => `${n.toLocaleString("en")} ${n === 1 ? one : many}`;
+
+/** Outpost Zero: signed-in players, matches per day, modes, devices and each player's record. */
+function OutpostSection() {
+  const [data, setData] = useState<OutpostStats | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [hover, setHover] = useState<number | null>(null);
+  useEffect(() => {
+    let cancel = false;
+    outpostAdminStats()
+      .then((next) => !cancel && setData(next))
+      .catch((caught: unknown) => !cancel && setError(caught instanceof Error ? caught.message : "Could not load Outpost Zero stats."));
+    return () => {
+      cancel = true;
+    };
+  }, []);
+  if (error) return <p className="mt-10 text-fail">{error}</p>;
+  if (!data) return <Skeleton className="mt-10 h-64 w-full" />;
+  const max = Math.max(1, ...data.daily.map((d) => d.matches));
+  const shown = hover != null ? data.daily[hover] : null;
+  return (
+    <section className="mt-10" aria-labelledby="outpost-stats">
+      <h2 id="outpost-stats" className="font-display text-3xl tracking-tight">
+        Outpost Zero
+      </h2>
+      <p className="mt-1 text-sm text-muted">Signed-in players, last 30 days. Training and practice rounds are not counted.</p>
+      <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <Tile label="Players, 7 days" value={data.players7} />
+        <Tile label="Players, 30 days" value={data.players30} />
+        <Tile label="Matches, 7 days" value={data.matches7} />
+        <Tile label="Matches, 30 days" value={data.matches30} />
+        <Tile label="Hours played, 30 days" value={data.hours30} />
+      </dl>
+      <div className="mt-6 rounded-2xl bg-card p-5 shadow-line">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="font-display text-2xl">Matches per day</h3>
+          <p className="text-sm text-muted tabular-nums">
+            {shown ? `${prettyDay(shown.day)}: ${count(shown.matches, "match", "matches")} · ${count(shown.players, "player")}` : `${data.matches30} in the last 30 days`}
+          </p>
+        </div>
+        <div className="mt-4 flex h-32 items-end gap-[2px] border-b border-line" role="img" aria-label={`Outpost Zero matches per day, ${data.matches30} in 30 days`}>
+          {data.daily.map((d, index) => (
+            <div
+              key={d.day}
+              className="flex h-full flex-1 items-end"
+              onMouseEnter={() => setHover(index)}
+              onMouseLeave={() => setHover(null)}
+              onFocus={() => setHover(index)}
+              onBlur={() => setHover(null)}
+              tabIndex={0}
+              aria-label={`${prettyDay(d.day)}: ${d.matches} matches`}
+            >
+              <div
+                className={cn("w-full rounded-t-[4px] bg-pine transition-opacity", hover != null && hover !== index && "opacity-40")}
+                style={{ height: d.matches ? `${Math.max(4, (d.matches / max) * 100)}%` : "2px", opacity: d.matches ? undefined : 0.25 }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl bg-card p-5 shadow-line">
+          <h3 className="font-display text-2xl">Modes</h3>
+          {data.modes.length ? (
+            <ul className="mt-3 divide-y divide-line">
+              {data.modes.map((m) => (
+                <li key={m.mode} className="flex justify-between gap-3 py-2 text-sm">
+                  <span>{MODE_NAMES[m.mode] ?? m.mode}</span>
+                  <span className="text-muted tabular-nums">
+                    {count(m.matches, "match", "matches")} · {count(m.players, "player")} · {m.winRate}% won
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-muted">No matches yet.</p>
+          )}
+        </div>
+        <div className="rounded-2xl bg-card p-5 shadow-line">
+          <h3 className="font-display text-2xl">Played on</h3>
+          {data.platforms.length ? (
+            <ul className="mt-3 divide-y divide-line">
+              {data.platforms.map((p) => (
+                <li key={p.platform} className="flex justify-between gap-3 py-2 text-sm">
+                  <span>{p.platform === "desktop" ? "Desktop app" : "Website"}</span>
+                  <span className="text-muted tabular-nums">
+                    {count(p.matches, "match", "matches")} · {count(p.players, "player")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-muted">No matches yet.</p>
+          )}
+        </div>
+      </div>
+      <div className="mt-6 rounded-2xl bg-card p-5 shadow-line">
+        <h3 className="font-display text-2xl">Players</h3>
+        {data.players.length ? (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-[36rem] text-left text-sm">
+              <thead className="text-muted">
+                <tr>
+                  <th className="py-2 font-normal">Player</th>
+                  <th className="py-2 text-right font-normal">Matches</th>
+                  <th className="py-2 text-right font-normal">Wins</th>
+                  <th className="py-2 text-right font-normal">Kills</th>
+                  <th className="py-2 text-right font-normal">Hours</th>
+                  <th className="py-2 text-right font-normal">Last played</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {data.players.map((p) => (
+                  <tr key={p.email}>
+                    <td className="py-2">
+                      <span className="block">{p.name}</span>
+                      <span className="block text-xs text-muted">{p.email}</span>
+                    </td>
+                    <td className="py-2 text-right tabular-nums">{p.matches}</td>
+                    <td className="py-2 text-right tabular-nums">{p.wins}</td>
+                    <td className="py-2 text-right tabular-nums">{p.kills}</td>
+                    <td className="py-2 text-right tabular-nums">{p.hours}</td>
+                    <td className="py-2 text-right tabular-nums">{p.last ? prettyDay(p.last.slice(0, 10)) : "–"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mt-3 text-sm text-muted">No signed-in players yet.</p>
+        )}
+      </div>
+    </section>
+  );
+}
 
 /** Abuja Hustle: how far lives get, endings, loading time, and what players tell us. */
 function GameSection() {

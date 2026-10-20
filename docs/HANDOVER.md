@@ -315,3 +315,29 @@ HD pack ← this, (2) first desktop build, (3) Steam features, (4) phone apps.
   Developer ID ($99/yr, notarization) and ideally a Windows code-signing certificate.
 - Next (step 3): Steamworks (owner needs a Steamworks account + $100 app fee): steamworks.js
   achievements/overlay/cloud saves, offline bundling of game files, Steam Deck controls check.
+
+## Sign-in required + player stats (on `game-look`, not deployed)
+
+Owner asked (2026-10-20) that Outpost Zero require sign-in so they can track stats.
+- `public/games/outpost-account.js`: `requireSignIn()` (called at the end of
+  `outpost-zero.html`) asks `POST /api/games/outpost-stats {op:"me"}`; on 401 it covers the
+  game with "Sign in to play" (Sign in / Create account → `/login?next=/games/outpost-zero[?room=…]`,
+  top-level navigation) and makes `<midnry-fps>` inert. `recordMatch()` is called from
+  `Retention.finish()` (so training/practice never count).
+- Server: `src/routes/api/games/outpost-stats.ts` (`requireUserId`, never a client id) →
+  `src/games/outpost/stats.server.ts` (validated/capped, 300 matches/user/day, dedupe on
+  round id). Table `outpost_match` (`migrations/0018_outpost_matches.sql`).
+- Owner view: "Outpost Zero" section on `/stats` (admin only, `outpostAdminStats` in
+  `src/games/outpost/stats.functions.ts`): players/matches 7/30 d, hours, matches per day,
+  modes (win %), website vs desktop app, per-player table.
+- Desktop app: login pages (`/login`, `/api/auth/*`) and the provider's pages open in the app
+  window; afterwards any site page sends the window back to the game. The user agent drops
+  the Electron token so Google accepts it (email/password always works).
+- **QA:** `scripts/qa/dev-up.sh` sets `OUTPOST_QA_PLAYER=1` (signed-out test browsers play as
+  a stand-in whose matches are not stored; ignored when `RENDER` is set) and
+  `ADMIN_EMAIL=qa-admin@example.test` (local only). A dev server started any other way shows
+  the sign-in screen to every QA script. The cookie `outpost-qa-signed-out=1` gets the real
+  answer: `node scripts/qa/outpost-signin.mjs` (gate laptop+phone → register → match → /stats)
+  and `xvfb-run -a node scripts/qa/desktop-app.mjs` (includes in-app sign-in).
+- `scripts/check-auth-invariant.test.mjs` / `migration-plan.test.mjs` each have one
+  template test that already failed before this change (not related).

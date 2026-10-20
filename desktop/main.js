@@ -20,6 +20,9 @@ const GAME_PATH = GAME.pathname;
 app.commandLine.appendSwitch("force_high_performance_gpu");
 app.commandLine.appendSwitch("ignore-gpu-blocklist");
 app.setAppUserModelId("com.midnry.outpostzero");
+// Sign-in providers such as Google refuse pages that announce an embedded
+// app, so the window presents itself as the Chrome it is built on.
+app.userAgentFallback = app.userAgentFallback.replace(/ (Electron|outpost-zero-desktop|Outpost Zero)\/\S+/g, "");
 
 if (!app.requestSingleInstanceLock()) app.quit();
 
@@ -50,6 +53,15 @@ const isGame = (url) => {
   }
 };
 const isLocal = (url) => url.startsWith("file:");
+/** Pages of the site's sign-in flow, which the game sends players through. */
+const isSignIn = (url) => {
+  try {
+    const u = new URL(url);
+    return u.origin === SITE.origin && (u.pathname === "/login" || u.pathname.startsWith("/api/auth/"));
+  } catch {
+    return false;
+  }
+};
 
 let win = null;
 
@@ -80,14 +92,28 @@ function createWindow() {
   win.on("page-title-updated", (event) => event.preventDefault());
 
   const contents = win.webContents;
-  // The game's Exit button sends the page to the site's home: close instead.
+  // Sign-in happens in this window: the site's login page and, from there,
+  // the sign-in provider's pages. Once back on the site, anything but the
+  // game returns to the game. From the game itself, Exit (the site's home)
+  // closes the app and other links open in the browser.
   contents.on("will-navigate", (event, url) => {
-    if (isGame(url) || isLocal(url)) return;
-    event.preventDefault();
+    if (isGame(url) || isLocal(url) || isSignIn(url)) return;
     const u = new URL(url);
-    if (u.origin === SITE.origin && u.pathname === "/") app.quit();
+    const fromGame = isGame(contents.getURL());
+    if (u.origin !== SITE.origin && !fromGame && /^https:$/.test(u.protocol)) return;
+    event.preventDefault();
+    if (u.origin === SITE.origin && !fromGame) win.loadURL(GAME.href);
+    else if (u.origin === SITE.origin && u.pathname === "/") app.quit();
     else if (/^https?:$/.test(u.protocol)) shell.openExternal(url);
   });
+  // After signing in the site shows its own game page (or app list): this
+  // window plays the game directly instead.
+  const backToGame = (_event, url) => {
+    const u = new URL(url);
+    if (u.origin === SITE.origin && !isGame(url) && !isSignIn(url)) win.loadURL(GAME.href);
+  };
+  contents.on("did-navigate", backToGame);
+  contents.on("did-navigate-in-page", backToGame);
   contents.setWindowOpenHandler(({ url }) => {
     if (/^https?:/.test(url)) shell.openExternal(url);
     return { action: "deny" };

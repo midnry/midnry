@@ -1,5 +1,6 @@
 // Desktop app (Electron) check: the game menu loads full-window, "Exit Game"
-// closes the app, and a dead connection shows the offline screen.
+// closes the app, signing in happens in the window and returns to the game,
+// and a dead connection shows the offline screen.
 //   node scripts/qa/desktop-app.mjs [siteUrl=http://127.0.0.1:8080]
 // Needs desktop/node_modules (cd desktop && npm install) and an X display
 // (xvfb-run -a node scripts/qa/desktop-app.mjs).
@@ -37,7 +38,29 @@ result.exitQuits = await Promise.race([closed, new Promise((r) => setTimeout(() 
 if (!result.exitQuits) await app.close();
 result.errors = errors;
 
-// 2. Unreachable site: the offline screen with a retry button.
+// 2. Signed out: the sign-in screen, the site's login page inside the app
+// window, and straight back to the game (not the website's game page).
+app = await launch(site);
+await app.context().addCookies([{ name: "outpost-qa-signed-out", value: "1", url: site }]);
+page = await app.firstWindow();
+await page.reload();
+await page.getByRole("heading", { name: "Sign in to play" }).waitFor({ timeout: 120000 });
+await page.getByRole("button", { name: "Create account" }).click({ noWaitAfter: true });
+await page.waitForURL(/\/login\?/, { timeout: 180000 });
+const stamp = Date.now().toString(36);
+await page.getByLabel("Name").fill(`Desk ${stamp}`);
+await page.getByLabel("Email").fill(`desk-${stamp}@example.test`);
+await page.getByLabel("Password").fill("outpost-zero-qa-1");
+await page.locator("form button[type=submit]").first().click({ noWaitAfter: true });
+await page.waitForURL(/outpost-zero\.html/, { timeout: 180000 });
+await page.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 240000 });
+result.signIn = await page.evaluate(() => ({
+  url: location.pathname,
+  gate: !!document.querySelector(".oz-gate:not([hidden])"),
+}));
+await app.close();
+
+// 3. Unreachable site: the offline screen with a retry button.
 app = await launch("http://127.0.0.1:9");
 page = await app.firstWindow();
 await page.waitForSelector("#retry", { timeout: 30000 }).catch(() => {});
@@ -47,3 +70,4 @@ await app.close();
 
 console.log(JSON.stringify(result, null, 1));
 if (!result.menu.graphics || !result.exitQuits || errors.length || result.offline !== "No connection") process.exit(1);
+if (result.signIn.url !== "/games/outpost-zero.html" || result.signIn.gate) process.exit(1);

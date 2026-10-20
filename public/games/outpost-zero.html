@@ -2661,6 +2661,7 @@
         requestAimLock,
       } from "./outpost-look.js";
       import { MenuUI } from "./outpost-ui.js";
+      import { requireSignIn } from "./outpost-account.js";
       (() => {
         "use strict";
         // A custom element keeps state private and supports multiple independent instances.
@@ -4822,6 +4823,8 @@
         }
         customElements.define("midnry-fps", MidnryFPS);
       })();
+      // Playing needs a Midnry account; the game loads behind the sign-in screen.
+      requireSignIn(document.querySelector("midnry-fps"));
     </script>
   </body>
 </html>
