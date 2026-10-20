@@ -52,6 +52,7 @@ import { prepareWorldTypography, makeProtocolSign } from './world-text.js';
 import { prepareMedevac, buildMedevac } from "./realism-medevac.js";
 import { HazardDressing, buildHazard } from "./realism-hazards.js";
 import { ArenaStyles } from "./arena-style.js";
+import { SkyClouds } from "./sky-clouds.js";
 import { EventDressing } from "./realism-events.js";
 import { preparePropKit, buildFurniture } from "./realism-props.js";
 import { BattlePreparation } from "./battle-preparation.js";
@@ -172,6 +173,7 @@ export class MilitaryRenderer {
     this.scene.add(this.hemisphere);
     this.sun = new THREE.DirectionalLight("#ffddb0", 4.2);
     this.sun.position.set(-25, 38, -22);
+    this.clouds = new SkyClouds(this, { mobile: this.mobileDevice });
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(1024, 1024);
     Object.assign(this.sun.shadow.camera, {
@@ -3317,6 +3319,7 @@ export class MilitaryRenderer {
     this.updateMedicalMission(protocolView?.protocol?.mission, t);
     const night = (this.night ||= new NightDressing(this)).update(protocolView, g.arena.mapId, t);
     this.updateCinematic(night, t);
+    this.clouds.update(t, night, this.motion.matches);
     if (g.mode === "protocol") (this.events ||= new EventDressing(this)).update(protocolView, t);
     updateNaturalLighting(this, protocolView, p, dt);
     const undim = g.mode !== "protocol" && (this.hazards ||= new HazardDressing(this)).dim();
@@ -3468,6 +3471,7 @@ export class MilitaryRenderer {
     });
   }
   dispose() {
+    this.clouds?.dispose();
     if (this.disposed) return;
     this.disposed = true;
     this.telemetry?.dispose();

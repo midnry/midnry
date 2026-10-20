@@ -382,3 +382,16 @@ shadows the captions. `node scripts/qa/loading-art.mjs` screenshots laptop + pho
   refreshes shadows can read ~2× higher).
 - **Remind the owner about Steam** after this release: they need a Steamworks account ($100 app
   fee) and to send the App ID; then achievements, cloud saves, Steam Deck checks.
+
+## Drifting sky + key-art finish (on `game-look`, not deployed)
+
+- `scripts/outpost-military/sky-clouds.js` (`renderer.clouds`): a shader cloud layer (upper
+  hemisphere, radius 240 inside the 260 m far plane, follows the camera, renderOrder -2 so storm
+  skies draw over it) with wind drift, sun-side rims and self-shadow; the sky photograph also
+  turns slowly (`scene.backgroundRotation`, environment lighting fixed). Driven by round time;
+  still under reduced motion; dim at night; 4 noise octaves on phones. QA:
+  `node scripts/qa/sky-clouds.mjs [width]` (off / on / two minutes later).
+- Key art: owner's originals are kept in gitignored `assets-src/key-art/*.png`;
+  `scripts/assets/key-art-finish.py` (needs OpenCV: a venv with opencv-python-headless) applies a
+  print finish (edge-preserving smoothing, ink lines, halftone, grade, paper grain) and writes
+  `public/games/loading/*.webp`. It cannot redraw bad hands/guns — that needs an illustrator.
