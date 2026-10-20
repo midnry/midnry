@@ -17,13 +17,16 @@ import numpy as np
 from PIL import Image
 
 src, out = sys.argv[1], sys.argv[2]
+# Optional strength: 1 (default) or higher for crunchier source art.
+strength = float(sys.argv[3]) if len(sys.argv) > 3 else 1.0
 rgb = np.asarray(Image.open(src).convert("RGB"))
 h, w = rgb.shape[:2]
 img = rgb.astype(np.float32) / 255
 
 # 1. Flatten micro-detail, keep edges; mix back some original texture.
-smooth = cv2.edgePreservingFilter(rgb, flags=cv2.RECURS_FILTER, sigma_s=24, sigma_r=0.22).astype(np.float32) / 255
-base = smooth * 0.65 + img * 0.35
+smooth = cv2.edgePreservingFilter(rgb, flags=cv2.RECURS_FILTER, sigma_s=24 * strength, sigma_r=min(0.4, 0.22 * strength)).astype(np.float32) / 255
+keep = 0.35 / strength
+base = smooth * (1 - keep) + img * keep
 
 # 2. Ink: strong luminance edges of the smoothed image, slightly thickened.
 lum = cv2.cvtColor((smooth * 255).astype(np.uint8), cv2.COLOR_RGB2GRAY)
@@ -44,7 +47,7 @@ base *= (1 - 0.16 * dots)[..., None]
 
 # 4. Grade: calmer saturation, warm ink blacks, rolled-off highlights.
 grey = (0.299 * base[..., 0] + 0.587 * base[..., 1] + 0.114 * base[..., 2])[..., None]
-base = grey + (base - grey) * 0.94
+base = grey + (base - grey) * (0.94 if strength <= 1 else 0.86)
 ink = np.array([0.06, 0.05, 0.04])
 base = ink + (1 - ink) * base
 base = base / (1 + 0.1 * base) * 1.1

@@ -5,9 +5,8 @@
  * the build happens behind it, and it fades once a few frames have rendered. */
 import { mapOf } from "./outpost-sim.js";
 
-// Last Signal key art (wide and tall cuts): Wreck Estate has its own,
-// the other arenas use the Dust Outpost painting.
-const SIGNAL_ART = { estate: "ls-estate" };
+// Last Signal round painting (portrait; the wide cut sets it on the right
+// over a blurred enlargement of itself, leaving the left for the text).
 const tall = () => matchMedia("(max-aspect-ratio: 4/5)").matches;
 const SCENES = {
   transport: {
@@ -28,7 +27,8 @@ const CSS = `
 midnry-fps .mf-shell:has(.mf-transition:not([hidden]):not(.mf-out)) > :not(.mf-transition, canvas, style) { visibility: hidden !important; }
 midnry-fps .mf-transition { position: absolute; inset: 0; z-index: 1000; display: grid; align-content: end; padding: 0 clamp(20px, 5vw, 64px) clamp(28px, 7vh, 72px); color: #f1f4ef; background: #070a09 center / cover no-repeat; opacity: 1; transition: opacity 0.35s ease; pointer-events: auto; }
 midnry-fps .mf-transition[hidden] { display: none; }
-midnry-fps .mf-transition.mf-art { background-position: 25% top; }
+midnry-fps .mf-transition.mf-art { background-position: right center; }
+@media (max-aspect-ratio: 4/5) { midnry-fps .mf-transition.mf-art { background-position: center top; } }
 midnry-fps .mf-transition.mf-art::before { background: linear-gradient(0deg, #050706f2 0%, #050706aa 30%, #05070600 58%); }
 midnry-fps .mf-transition.mf-out { opacity: 0; pointer-events: none; }
 midnry-fps .mf-transition::before { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, #050706f2 0%, #05070699 38%, #05070622 70%), linear-gradient(90deg, #050706cc, #05070600 60%); }
@@ -57,7 +57,7 @@ export class SceneTransition {
     g.shell.append(this.style, this.el);
     // Warm the images so the screen never appears empty.
     for (const scene of Object.values(SCENES)) new Image().src = scene.image;
-    for (const art of ["ls-outpost", "ls-estate"]) new Image().src = `loading/${art}-${tall() ? "tall" : "wide"}.webp`;
+    new Image().src = `loading/ls-round-${tall() ? "tall" : "wide"}.webp`;
     this.lastMap = null;
     this.lastRound = null;
     this.pending = null;
@@ -105,10 +105,9 @@ export class SceneTransition {
   }
 
   showSignal(mapId) {
-    const art = SIGNAL_ART[mapId] || "ls-outpost",
-      series = this.g.series?.rounds?.length ? `Round ${this.g.series.round} · ` : "";
+    const series = this.g.series?.rounds?.length ? `Round ${this.g.series.round} · ` : "";
     this.present({
-      image: `loading/${art}-${tall() ? "tall" : "wide"}.webp`,
+      image: `loading/ls-round-${tall() ? "tall" : "wide"}.webp`,
       kicker: `Last Signal · ${series}${mapOf(mapId).name}`,
       title: "Last one standing",
       copy: "Three lives each. Watch for disaster warnings, and stay ahead of the Red Haze.",

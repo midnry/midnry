@@ -445,9 +445,12 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
 
 - Opening loading screen: one painting only (`bp-key`, wide/tall); the briefings and tips still
   rotate over it (`outpost-zero.html` slideshow; `check-outpost-loading.mjs`).
-- Last Signal: every new round opens on its arena's painting (`SceneTransition.showSignal` in
-  `outpost-transition.js`): Wreck Estate → `ls-estate`, Dust Outpost and Skyport → `ls-outpost`;
-  painted screens stay at least 1.6 s. Blackout Protocol keeps its base/medevac screens.
+- Last Signal: every new round opens on the owner's round painting (`SceneTransition.showSignal`
+  in `outpost-transition.js`): `loading/ls-round-tall.webp` (phones) and `ls-round-wide.webp`
+  (portrait art on the right over a blurred enlargement, `scripts/assets/key-art-wide.py`);
+  source `assets-src/key-art/ls-round.png`, finished with `key-art-finish.py … 1.4` (stronger
+  smoothing). The older `ls-outpost`/`ls-estate` paintings were removed. Painted screens stay
+  at least 1.6 s. Blackout Protocol keeps its base/medevac screens.
   QA: `node scripts/qa/signal-loading.mjs [width] [pick]` (`HOLD=1` keeps it open for a photo).
 
 ## Menu fixes: mode-switch crash, Play chooses nothing (owner report, 2026-10-20)
