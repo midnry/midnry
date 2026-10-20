@@ -1,11 +1,7 @@
 /** Device-local cosmetic progression. No combat stats or account data. */
 import { contributionsOf } from "./outpost-mission-progress.js";
-export const FINISHES = [
-  { id: "standard", name: "Field Issue", xp: 0, color: null },
-  { id: "copper", name: "Copper Signal", xp: 200, color: "#cb8750" },
-  { id: "glacier", name: "Glacier Ink", xp: 600, color: "#72bbd0" },
-  { id: "nightfall", name: "Nightfall", xp: 1200, color: "#a78bce" },
-];
+import { FINISHES } from "./outpost-finishes.js";
+export { FINISHES };
 /**
  * Daily and weekly challenges. Each counts progress from a finished round
  * (`gain` returns how much this round adds); progress resets each day or
@@ -70,7 +66,10 @@ const bounded = (value, max) =>
   Number.isFinite(value) ? Math.max(0, Math.min(max, Math.floor(value))) : 0;
 export function profileOf(data = {}) {
   const xp = bounded(data?.xp, 10000000);
-  const skin = FINISHES.find((f) => f.id === data?.skin && f.xp <= xp)?.id || "standard";
+  // XP finishes must be earned here; bought and Pass finishes are checked
+  // against the account when the gun is painted.
+  const skin =
+    FINISHES.find((f) => f.id === data?.skin && (f.kind !== "xp" || f.xp <= xp))?.id || "standard";
   return {
     version: 2,
     xp,

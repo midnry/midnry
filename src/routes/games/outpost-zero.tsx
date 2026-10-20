@@ -2,9 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/games/outpost-zero")({
-  validateSearch: (search: Record<string, unknown>): { room?: string } => {
+  validateSearch: (search: Record<string, unknown>): { room?: string; purchase?: string } => {
     const room = typeof search.room === "string" ? search.room.toUpperCase() : "";
-    return /^[A-Z2-9]{6}$/.test(room) ? { room } : {};
+    // Back from a store checkout: the game confirms this payment reference.
+    const purchase = typeof search.purchase === "string" ? search.purchase : "";
+    return {
+      ...(/^[A-Z2-9]{6}$/.test(room) ? { room } : {}),
+      ...(/^oz[a-f0-9]{24}$/.test(purchase) ? { purchase } : {}),
+    };
   },
   head: () => ({
     meta: [
@@ -20,7 +25,7 @@ export const Route = createFileRoute("/games/outpost-zero")({
 });
 
 function OutpostZeroPage() {
-  const { room } = Route.useSearch();
+  const { room, purchase } = Route.useSearch();
   const frame = useRef<HTMLIFrameElement>(null);
   const [playing, setPlaying] = useState(false);
   useEffect(() => {
@@ -61,7 +66,7 @@ function OutpostZeroPage() {
           iframe tears down the game, and its scripts never run during SSR. */}
       <iframe
         ref={frame}
-        src={`/games/outpost-zero.html?renderer=military&v=weapons-20261020${room ? `&room=${encodeURIComponent(room)}` : ""}`}
+        src={`/games/outpost-zero.html?renderer=military&v=store-20261020${room ? `&room=${encodeURIComponent(room)}` : ""}${purchase ? `&purchase=${purchase}` : ""}`}
         title="Outpost Zero first-person shooter"
         className="block min-h-0 w-full flex-1 border-0"
         allow="fullscreen; microphone; web-share; clipboard-write"

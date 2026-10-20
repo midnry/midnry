@@ -412,3 +412,29 @@ shadows the captions. `node scripts/qa/loading-art.mjs` screenshots laptop + pho
   the gun towards the camera instead of dropping it out of frame; Twinwire is lifted 0.06.
 - Not modelled yet: launcher, fusecaster/shardpod, blades/scythe, knuckles (still procedural).
 - QA: `node scripts/qa/weapon-look.mjs <tag> [width] [weapons]` (rest + mid-reload shots).
+
+## Store: weapon finishes (on `game-look`, not deployed)
+
+Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack, Pass perk).
+- Why finishes, not outfits: in Protocol/Signal every soldier wears the plain uniform dyed by
+  seat colour (`soldierLook()`), so premium outfits would be invisible; the old XP weapon
+  finishes were selectable but never rendered (`paint()` had no callers). Finishes now render on
+  your own first-person gun (`applyFinish` in `realism-carbine.js`; not on spectated players).
+- Catalog: `public/games/outpost-finishes.js` (+ `.d.ts`), shared by Locker, renderer and server:
+  4 XP finishes (free), 5 premium (Tiger ₦1,500, Desert Pixel ₦1,500, Carbon ₦2,000, Damascus
+  ₦2,500, Red Haze ₦3,000, glowing), 1 Pass finish (Midnry Signal). `drawFinish()` paints swatches.
+- Server: `migrations/0019_outpost_store.sql` (`outpost_purchase`), `src/games/outpost/store.server.ts`
+  (`storeState`, `beginPurchase` → Paystack initialize in **NGN** with metadata purpose
+  `outpost_item`, `confirmPurchase` → verify; `settle` checks reference/user/item/amount/currency),
+  `POST /api/games/outpost-store` {state|buy|confirm}; webhook `charge.success` with purpose
+  `outpost_item` → `applyItemCharge` (`src/lib/paystack.server.ts` dispatch). Callback returns to
+  `/games/outpost-zero?purchase=<ref>` (route passes it to the game; desktop app keeps it).
+- Game: `public/games/outpost-store.js` (ownership cache `midnry-outpost-store`), Locker grid in
+  `outpost-retention.js` (`finishGrid`, `finishUsable`, `weaponFinish`). Stats page: Store section.
+- **The live Paystack account is set up in USD for Midnry Pass.** NGN must be enabled on the
+  account (Paystack dashboard) or checkout returns Paystack's error message in the Locker.
+- QA: `scripts/qa/mock-paystack.mjs` (stand-in Paystack on :8099; `dev-up.sh` points the local
+  server at it via `OUTPOST_QA_PAYSTACK_URL`, ignored when `RENDER` is set) and
+  `node scripts/qa/outpost-store.mjs` (buy round trip, webhook-only, tampering, phone, admin);
+  `node scripts/qa/finish-look.mjs` (every finish on the gun). Store API calls in Playwright must
+  run inside a page: the `__Host-` session cookie is Secure.

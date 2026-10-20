@@ -2,6 +2,7 @@
 import * as THREE from "three";
 import {updateRiggedHand} from './realism-hands.js';
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { finishOf, drawFinish } from "../../public/games/outpost-finishes.js";
 const smooth = (x) => {
   x = THREE.MathUtils.clamp(x, 0, 1);
   return x * x * (3 - 2 * x);
@@ -32,8 +33,58 @@ export function prepareWeaponKit(gltf) {
   return kit;
 }
 
+/** The player's chosen finish (Locker) on their own first-person gun. Solid
+ * finishes recolour the coating; patterned ones paint it with the swatch
+ * from outpost-finishes.js, kept for the renderer's lifetime. */
+function applyFinish(r, material, id) {
+  const finish = finishOf(id);
+  if (finish.id === "standard") return;
+  if (finish.pattern === "solid") {
+    material.color.set(finish.colors[0]);
+    material.roughness = 0.6;
+    return;
+  }
+  const texture = (layer) => {
+    const key = `${finish.id}:${layer}`;
+    r.finishTextures ||= new Map();
+    if (!r.finishTextures.has(key)) {
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 512;
+      drawFinish(canvas.getContext("2d"), 512, finish, layer);
+      const t = new THREE.CanvasTexture(canvas);
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.anisotropy = r.renderer.capabilities.getMaxAnisotropy();
+      r.textures.add(t);
+      r.finishTextures.set(key, t);
+    }
+    return r.finishTextures.get(key);
+  };
+  // Swatch repeats per 25 cm of gun (model UVs): a pattern scaled to a rifle.
+  const repeat = { tiger: 2.2, pixel: 2.5, carbon: 7, damascus: 2.5, haze: 1.6, signal: 3 }[finish.pattern] || 2;
+  material.map = texture("base");
+  material.map.repeat.set(repeat, repeat);
+  material.color.set("#ffffff");
+  // Patterns are coatings over the same machined parts.
+  if (finish.pattern === "carbon") {
+    material.roughness = 0.35;
+    material.metalness = 0.1;
+  } else if (finish.pattern === "damascus") {
+    material.roughness = 0.35;
+    material.metalness = 0.85;
+  } else material.roughness = 0.7;
+  if (finish.glow) {
+    material.emissiveMap = texture("glow");
+    material.emissiveMap.repeat.set(repeat, repeat);
+    material.emissive.set("#ffffff");
+    material.emissiveIntensity = 1.6;
+  }
+  material.needsUpdate = true;
+}
+
 /** Weapon finishes for modelled parts: the shared weapon materials, with
- * the model's baked occlusion. */
+ * the model's baked occlusion. The first-person gun (hands) wears the
+ * player's chosen finish on its coated parts. */
 function kitMaterials(r, m, hands) {
   const withAO = (base) => {
     const c = base.clone();
@@ -60,6 +111,7 @@ function kitMaterials(r, m, hands) {
   cerakote.map = null;
   cerakote.color.set("#222624");
   cerakote.roughness = 0.75;
+  if (hands) applyFinish(r, cerakote, r.weaponFinish || "standard");
   cerakote.needsUpdate = true;
   return {
     cerakote,

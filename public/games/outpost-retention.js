@@ -15,6 +15,8 @@ import { standingsHTML } from "./outpost-series.js";
 import { BattleMusic, battleIntensity } from "./outpost-music.js";
 import { spatialSound } from "./outpost-spatial-audio.js";
 import { recordMatch } from "./outpost-account.js";
+import { finishOf, naira, drawFinish } from "./outpost-finishes.js";
+import { OutpostStore } from "./outpost-store.js";
 const read = (key) => {
   try {
     return JSON.parse(localStorage.getItem(key));
@@ -145,6 +147,15 @@ export class Retention {
   constructor(g) {
     this.g = g;
     this.profile = profileOf(read("midnry-outpost-profile"));
+    // Premium finishes: owned per account. Refresh the Locker and the held
+    // gun whenever the answer changes.
+    this.store = new OutpostStore(() => {
+      if (g.$(".mf-locker")?.open) this.lockerContents();
+    });
+    this.store.refresh();
+    this.store.confirmFromUrl().then(() => {
+      if (this.store.justBought) this.locker();
+    });
     this.audio = new FieldAudio();
     this.seen = new Map();
     this.reset();
@@ -251,6 +262,18 @@ export class Retention {
       }
     });
     g.on(g.$(".mf-lockerbody"), "click", (e) => {
+      const tile = e.target.closest("[data-finish]");
+      if (tile) {
+        const finish = finishOf(tile.dataset.finish);
+        if (this.finishUsable(finish)) {
+          this.profile.skin = finish.id;
+          write("midnry-outpost-profile", this.profile);
+          this.lockerContents();
+          this.g.$(`[data-finish="${finish.id}"]`)?.focus({ preventScroll: true });
+        } else if (finish.kind === "premium") this.store.buy(finish.id);
+        else if (finish.kind === "pass") (window.top || window).location.assign("/pricing");
+        return;
+      }
       const card = e.target.closest("[data-outfit]");
       if (card && !card.disabled) {
         g.chooseOutfit(card.dataset.outfit);
@@ -439,9 +462,9 @@ export class Retention {
   lockerContents() {
     const focused = document.activeElement?.dataset?.outfit;
     const p = this.profile,
-      next = FINISHES.find((f) => f.xp > p.xp);
+      next = FINISHES.find((f) => f.kind === "xp" && f.xp > p.xp);
     this.g.$(".mf-lockerbody").innerHTML =
-      `<h2>Level ${levelOf(p)} / ${p.xp} XP</h2><p>${p.matches} completed rounds · ${p.wins} victories</p><progress max="150" value="${p.xp % 150}" aria-label="Progress to next level"></progress><p>${150 - (p.xp % 150)} XP to the next level. ${next ? `${Math.max(0, next.xp - p.xp)} XP to ${next.name}.` : "All weapon finishes unlocked."}</p><label>Weapon finish<select class="mf-finish" aria-label="Weapon finish">${FINISHES.map((f) => `<option value="${f.id}" ${f.id === p.skin ? "selected" : ""} ${f.xp > p.xp ? "disabled" : ""}>${f.name}${f.xp > p.xp ? ` · ${f.xp} XP` : ""}</option>`).join("")}</select></label><div class="mf-finishpreview" style="--finish:${this.finishColor() || "#4a6873"}">${FINISHES.find((f) => f.id === p.skin).name}</div><h3>Today's challenges · +${DAILY_XP} XP each</h3>${this.challengeStatus()
+      `<h2>Level ${levelOf(p)} / ${p.xp} XP</h2><p>${p.matches} completed rounds · ${p.wins} victories</p><progress max="150" value="${p.xp % 150}" aria-label="Progress to next level"></progress><p>${150 - (p.xp % 150)} XP to the next level. ${next ? `${Math.max(0, next.xp - p.xp)} XP to ${next.name}.` : "All XP finishes unlocked."}</p>${this.finishGrid()}<h3>Today's challenges · +${DAILY_XP} XP each</h3>${this.challengeStatus()
           .daily.map(
             (c) =>
               `<p>${c.done ? "✓ " : ""}${c.text} · ${c.progress}/${c.goal}</p><progress max="${c.goal}" value="${c.progress}" aria-label="${c.text}"></progress>`,
@@ -449,8 +472,58 @@ export class Retention {
           .join("")}<h3>This week · +${WEEKLY_XP} XP</h3>${(() => {
           const w = this.challengeStatus().weekly;
           return `<p>${w.done ? "✓ " : ""}${w.text} · ${w.progress}/${w.goal}</p><progress max="${w.goal}" value="${w.progress}" aria-label="${w.text}"></progress>`;
-        })()}<h3>Your record</h3><p>Operator: ${p.record.operator.won} wins in ${p.record.operator.played} rounds · Infiltrator: ${p.record.infiltrator.won} wins in ${p.record.infiltrator.played} rounds</p><h3>Milestones</h3><p>Play both sides (operator and infiltrator): ${p.roles.length}/2 · ${p.milestones.includes("explorer") ? "Reward earned" : "50 bonus XP"}</p><p>Complete three rounds: ${Math.min(3, p.matches)}/3 · ${p.milestones.includes("first-three") ? "Reward earned" : "50 bonus XP"}</p><p>Load 13 medical supplies: ${Math.min(13,p.career.supplies)}/13 · ${p.milestones.includes("supply-detail") ? "Reward earned" : "50 bonus XP"}</p><p>Complete three aircraft checks: ${Math.min(3,p.career.checks)}/3 · ${p.milestones.includes("flight-ready") ? "Reward earned" : "50 bonus XP"}</p><p>Deliver aid to four patients: ${Math.min(4,p.career.patients)}/4 · ${p.milestones.includes("lifeline") ? "Reward earned" : "50 bonus XP"}</p><p>XP rewards completed missions, supplies loaded, equipment checks, repairs, defuses, safe piloting and rescues. Infiltrators earn mission credit for validated sabotage, charges and cover checks. Repeated collection without loading and idle time do not earn contribution XP. Losses under 15 seconds do not earn XP. All rewards change appearance only. There are no streak penalties or purchases.</p><p>Progress is saved on this browser and device. Clearing browser data removes it; it does not sync between devices.</p>`;
+        })()}<h3>Your record</h3><p>Operator: ${p.record.operator.won} wins in ${p.record.operator.played} rounds · Infiltrator: ${p.record.infiltrator.won} wins in ${p.record.infiltrator.played} rounds</p><h3>Milestones</h3><p>Play both sides (operator and infiltrator): ${p.roles.length}/2 · ${p.milestones.includes("explorer") ? "Reward earned" : "50 bonus XP"}</p><p>Complete three rounds: ${Math.min(3, p.matches)}/3 · ${p.milestones.includes("first-three") ? "Reward earned" : "50 bonus XP"}</p><p>Load 13 medical supplies: ${Math.min(13,p.career.supplies)}/13 · ${p.milestones.includes("supply-detail") ? "Reward earned" : "50 bonus XP"}</p><p>Complete three aircraft checks: ${Math.min(3,p.career.checks)}/3 · ${p.milestones.includes("flight-ready") ? "Reward earned" : "50 bonus XP"}</p><p>Deliver aid to four patients: ${Math.min(4,p.career.patients)}/4 · ${p.milestones.includes("lifeline") ? "Reward earned" : "50 bonus XP"}</p><p>XP rewards completed missions, supplies loaded, equipment checks, repairs, defuses, safe piloting and rescues. Infiltrators earn mission credit for validated sabotage, charges and cover checks. Repeated collection without loading and idle time do not earn contribution XP. Losses under 15 seconds do not earn XP. All rewards and store finishes change appearance only. There are no streak penalties and nothing that helps you win is sold.</p><p>Progress is saved on this browser and device. Clearing browser data removes it; it does not sync between devices.</p>`;
     if (focused) this.g.$(`[data-outfit="${focused}"]`)?.focus({ preventScroll: true });
+    this.paintSwatches();
+  }
+  /** XP finishes are earned on this device; store finishes per account. */
+  finishUsable(finish) {
+    return finish.kind === "xp" ? finish.xp <= this.profile.xp : this.store.owns(finish);
+  }
+  /** The finish the held gun wears (falls back when it is not usable). */
+  weaponFinish() {
+    const finish = finishOf(this.profile.skin);
+    return this.finishUsable(finish) ? finish.id : "standard";
+  }
+  finishGrid() {
+    const p = this.profile,
+      store = this.store,
+      equipped = this.weaponFinish();
+    const tiles = FINISHES.map((f) => {
+      const usable = this.finishUsable(f),
+        on = f.id === equipped;
+      const state = on
+        ? "Equipped"
+        : usable
+          ? "Equip"
+          : f.kind === "xp"
+            ? `Unlocks at ${f.xp} XP`
+            : f.kind === "pass"
+              ? "With Midnry Pass"
+              : store.signedIn === false
+                ? "Sign in to buy"
+                : `Buy · ${naira(f.price)}`;
+      const locked = !usable && f.kind === "xp";
+      return `<button type="button" class="mf-finishtile${on ? " is-on" : ""}${usable ? "" : " is-locked"}" data-finish="${f.id}" aria-pressed="${on}" ${locked ? "disabled" : ""}><canvas width="96" height="96" aria-hidden="true"></canvas><strong>${escapeText(f.name)}</strong><small>${escapeText(f.blurb || (f.kind === "xp" ? "Earned with XP." : ""))}</small><span class="mf-finishstate">${state}</span></button>`;
+    }).join("");
+    return `<h3>Weapon finishes</h3><p>Your gun in first person. Looks only, never stats.</p><div class="mf-finishgrid">${tiles}</div><p class="mf-storestatus" role="status" aria-live="polite">${escapeText(store.message || (store.ready || store.signedIn === null ? "" : store.signedIn === false ? "Sign in with your Midnry account to buy finishes." : "The store is opening soon."))}</p>`;
+  }
+  paintSwatches() {
+    for (const tile of this.g.root.querySelectorAll(".mf-finishtile")) {
+      const canvas = tile.querySelector("canvas"),
+        ctx = canvas.getContext("2d"),
+        finish = finishOf(tile.dataset.finish);
+      drawFinish(ctx, canvas.width, finish);
+      if (finish.glow) {
+        // Show the glow over the base, as it reads in game.
+        const glow = document.createElement("canvas");
+        glow.width = glow.height = canvas.width;
+        drawFinish(glow.getContext("2d"), canvas.width, finish, "glow");
+        ctx.globalCompositeOperation = "lighter";
+        ctx.drawImage(glow, 0, 0);
+        ctx.globalCompositeOperation = "source-over";
+      }
+    }
   }
   /** Today's and this week's challenges with progress. */
   challengeStatus() {
@@ -477,11 +550,13 @@ export class Retention {
   }
   locker() {
     if (this.g.running) this.g.pause();
+    this.store.refresh();
     this.lockerContents();
     this.g.$(".mf-locker").showModal();
   }
   finishColor() {
-    return FINISHES.find((f) => f.id === this.profile.skin && f.xp <= this.profile.xp)?.color;
+    const finish = finishOf(this.weaponFinish());
+    return finish.id === "standard" ? null : finish.colors[0];
   }
   paint(color) {
     return this.finishColor() &&

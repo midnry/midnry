@@ -113,7 +113,7 @@ try {
           before = JSON.stringify(g.arena.snapshot());
         g.render();
         return (
-          g.retention.finishColor() === "#cb8750" && before === JSON.stringify(g.arena.snapshot())
+          g.retention.finishColor() === "#a8683a" && before === JSON.stringify(g.arena.snapshot())
         );
       }),
     );

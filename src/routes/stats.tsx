@@ -7,7 +7,8 @@ import { useRole } from "@/components/role";
 import { adminStats, type AdminApp, type AdminStats } from "@/lib/admin.functions";
 import { Button, Skeleton, TextInput, cn } from "@/components/ui";
 import { gameStats, type GameStats } from "@/games/abuja/play.functions";
-import { outpostAdminStats, type OutpostStats } from "@/games/outpost/stats.functions";
+import { outpostAdminStats, outpostAdminSales, type OutpostStats, type StoreSales } from "@/games/outpost/stats.functions";
+import { finishOf, naira } from "../../public/games/outpost-finishes.js";
 
 export const Route = createFileRoute("/stats")({
   head: () => ({ meta: [{ title: "Stats — Midnry" }, { name: "robots", content: "noindex" }] }),
@@ -257,8 +258,12 @@ function OutpostSection() {
   const [data, setData] = useState<OutpostStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hover, setHover] = useState<number | null>(null);
+  const [sales, setSales] = useState<StoreSales | null>(null);
   useEffect(() => {
     let cancel = false;
+    outpostAdminSales()
+      .then((next) => !cancel && setSales(next))
+      .catch(() => {});
     outpostAdminStats()
       .then((next) => !cancel && setData(next))
       .catch((caught: unknown) => !cancel && setError(caught instanceof Error ? caught.message : "Could not load Outpost Zero stats."));
@@ -346,6 +351,28 @@ function OutpostSection() {
           )}
         </div>
       </div>
+      {sales ? (
+        <div className="mt-6 rounded-2xl bg-card p-5 shadow-line">
+          <h3 className="font-display text-2xl">Store</h3>
+          <p className="mt-1 text-sm text-muted tabular-nums">
+            Last 30 days: {naira(sales.revenue30)} from {count(sales.sales30, "sale")} to {count(sales.buyers30, "buyer")} (before Paystack fees).
+          </p>
+          {sales.items.length ? (
+            <ul className="mt-3 divide-y divide-line">
+              {sales.items.map((i) => (
+                <li key={i.item} className="flex justify-between gap-3 py-2 text-sm">
+                  <span>{finishOf(i.item).name}</span>
+                  <span className="text-muted tabular-nums">
+                    {count(i.sales, "sale")} · {naira(i.revenue)} all time
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-muted">No sales yet.</p>
+          )}
+        </div>
+      ) : null}
       <div className="mt-6 rounded-2xl bg-card p-5 shadow-line">
         <h3 className="font-display text-2xl">Players</h3>
         {data.players.length ? (

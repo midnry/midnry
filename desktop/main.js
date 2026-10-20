@@ -53,6 +53,15 @@ const isGame = (url) => {
   }
 };
 const isLocal = (url) => url.startsWith("file:");
+/** Paystack's checkout pages (store purchases happen in this window). */
+const isCheckout = (url) => {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && (u.hostname === "checkout.paystack.com" || u.hostname.endsWith(".paystack.com"));
+  } catch {
+    return false;
+  }
+};
 /** Pages of the site's sign-in flow, which the game sends players through. */
 const isSignIn = (url) => {
   try {
@@ -97,7 +106,7 @@ function createWindow() {
   // game returns to the game. From the game itself, Exit (the site's home)
   // closes the app and other links open in the browser.
   contents.on("will-navigate", (event, url) => {
-    if (isGame(url) || isLocal(url) || isSignIn(url)) return;
+    if (isGame(url) || isLocal(url) || isSignIn(url) || isCheckout(url)) return;
     const u = new URL(url);
     const fromGame = isGame(contents.getURL());
     if (u.origin !== SITE.origin && !fromGame && /^https:$/.test(u.protocol)) return;
@@ -110,7 +119,12 @@ function createWindow() {
   // window plays the game directly instead.
   const backToGame = (_event, url) => {
     const u = new URL(url);
-    if (u.origin === SITE.origin && !isGame(url) && !isSignIn(url)) win.loadURL(GAME.href);
+    if (u.origin !== SITE.origin || isGame(url) || isSignIn(url)) return;
+    // Back from the store checkout: the game confirms the payment reference.
+    const purchase = u.searchParams.get("purchase");
+    const game = new URL(GAME);
+    if (purchase && /^oz[a-f0-9]{24}$/.test(purchase)) game.searchParams.set("purchase", purchase);
+    win.loadURL(game.href);
   };
   contents.on("did-navigate", backToGame);
   contents.on("did-navigate-in-page", backToGame);

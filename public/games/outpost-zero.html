@@ -325,6 +325,71 @@
         border-radius: 8px;
         background: #25312d;
       }
+      /* Weapon finishes in the Locker: swatch, name, one line, state. */
+      midnry-fps .mf-locker .mf-finishgrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 12px;
+        margin: 12px 0 8px;
+      }
+      midnry-fps .mf-locker .mf-finishtile {
+        display: grid;
+        grid-template-columns: 56px 1fr;
+        grid-template-rows: auto 1fr auto;
+        column-gap: 10px;
+        align-items: start;
+        margin: 0;
+        padding: 10px;
+        min-width: 0;
+        min-height: 92px;
+        border: 2px solid #3d4a43;
+        border-radius: 10px;
+        background: #1a2420;
+        color: #edf2e9;
+        text-align: left;
+        font: 14px/1.35 var(--mf-body);
+        cursor: pointer;
+      }
+      midnry-fps .mf-locker .mf-finishtile canvas {
+        grid-row: 1 / 4;
+        width: 56px;
+        height: 56px;
+        border-radius: 6px;
+        box-shadow: inset 0 0 0 1px #ffffff22;
+      }
+      midnry-fps .mf-locker .mf-finishtile strong {
+        font: 700 16px/1.1 var(--mf-display);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      midnry-fps .mf-locker .mf-finishtile small {
+        font-size: 12px;
+        color: #b9c6bd;
+      }
+      midnry-fps .mf-locker .mf-finishtile .mf-finishstate {
+        margin-top: 6px;
+        font: 700 13px/1 var(--mf-display);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--mf-accent, #f2c45a);
+      }
+      midnry-fps .mf-locker .mf-finishtile.is-on {
+        border-color: var(--mf-accent, #f2c45a);
+        box-shadow: 0 0 0 2px #f2c45a33;
+      }
+      midnry-fps .mf-locker .mf-finishtile.is-on .mf-finishstate {
+        color: #c4e8b5;
+      }
+      midnry-fps .mf-locker .mf-finishtile:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+      midnry-fps .mf-locker .mf-finishtile:disabled .mf-finishstate {
+        color: #b9c6bd;
+      }
+      midnry-fps .mf-locker .mf-storestatus:empty {
+        display: none;
+      }
       midnry-fps .mf-outfitgrid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

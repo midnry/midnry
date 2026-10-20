@@ -2601,7 +2601,12 @@ export class MilitaryRenderer {
     return gun;
   }
   updateWeapon(id = this.g.camera().weapon) {
-    if (id === this.weaponId && this.weaponOutfit === this.g.camera().outfit) return;
+    // Only your own gun wears your Locker finish (not one you spectate).
+    const finish =
+      this.g.camera() === this.g.player ? this.g.retention?.weaponFinish?.() || "standard" : "standard";
+    if (id === this.weaponId && this.weaponOutfit === this.g.camera().outfit && finish === this.weaponFinish)
+      return;
+    this.weaponFinish = finish;
     disposeRiggedHands(this.rig);
     this.rig.traverse((o) => {
       if (o.isMesh) {

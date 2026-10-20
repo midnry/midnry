@@ -4,7 +4,11 @@ import { getSql } from "@/lib/db";
 import { readAccount } from "@/lib/account.server";
 import { PASS_PRICE_CENTS, type AccountState } from "@/lib/access";
 
-const PAYSTACK_API = "https://api.paystack.co";
+// Local QA only (scripts/qa/outpost-store.mjs): a stand-in Paystack. Never on Render.
+const PAYSTACK_API =
+  process.env.OUTPOST_QA_PAYSTACK_URL && !process.env.RENDER
+    ? process.env.OUTPOST_QA_PAYSTACK_URL
+    : "https://api.paystack.co";
 const CURRENCY = "USD";
 
 export type CheckoutStart =
@@ -36,13 +40,13 @@ type PaystackSub = {
   plan?: PaystackPlan | string;
 };
 
-type PaystackCharge = {
+export type PaystackCharge = {
   status?: string;
   reference?: string;
   amount?: number | string;
   currency?: string;
   paid_at?: string | null;
-  metadata?: { user_id?: string; purpose?: string } | null;
+  metadata?: { user_id?: string; purpose?: string; item?: string } | null;
   customer?: PaystackCustomer;
   plan?: PaystackPlan | string | null;
 };
@@ -67,7 +71,7 @@ function safeMessage(message: unknown, fallback: string): string {
   return text;
 }
 
-async function paystack<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
+export async function paystack<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
   const response = await fetch(`${PAYSTACK_API}${path}`, {
     method: init?.method ?? "GET",
     headers: {
@@ -87,7 +91,7 @@ async function paystack<T>(path: string, init?: { method?: string; body?: unknow
   return json.data as T;
 }
 
-function requestOrigin(): string {
+export function requestOrigin(): string {
   const request = getRequest();
   if (!request) throw new Error("Missing request.");
   const url = new URL(request.url);
@@ -321,7 +325,7 @@ async function findSubscription(customerId: number | undefined, planCode: string
   );
 }
 
-async function accountEmail(userId: string): Promise<string> {
+export async function accountEmail(userId: string): Promise<string> {
   const sql = await getSql();
   const rows = await sql<{ email: string }>`select email from "user" where id = ${userId}`;
   const email = rows[0]?.email?.trim();
@@ -514,6 +518,12 @@ async function dispatch(name: string, data: unknown): Promise<void> {
   if (!data || typeof data !== "object") return;
   if (name === "charge.success") {
     const charge = data as PaystackCharge;
+    // Outpost Zero store items are one-time charges, handled by the store.
+    if (charge.metadata?.purpose === "outpost_item") {
+      const { applyItemCharge } = await import("@/games/outpost/store.server");
+      await applyItemCharge(charge);
+      return;
+    }
     const userId =
       charge.metadata?.user_id ||
       (await userIdForCustomer(charge.customer?.customer_code ?? null, charge.customer?.email ?? null));
