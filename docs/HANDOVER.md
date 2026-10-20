@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=dust-outpost-20261020` (Comms/Radar + Dust Outpost deployed 2026-10-20).
+  Current live value: `v=free-match-20261020` (Dust preload, desktop wording, free match + sign-in + stats deployed 2026-10-20).
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -295,7 +295,7 @@ HD pack ← this, (2) first desktop build, (3) Steam features, (4) phone apps.
   first match frame is already dressed. A failed kit load is non-fatal (classic look).
 - Next: other arenas + Blackout base in the same style, KTX2 textures, maybe WebGPU.
 
-## Desktop app (step 2, on `game-look`)
+## Desktop app (step 2)
 
 - `desktop/`: Electron shell (own `package.json`, not part of the website build).
   It opens the live game (`https://www.midnry.com/games/outpost-zero.html?renderer=military&desktop=1`)
@@ -316,7 +316,7 @@ HD pack ← this, (2) first desktop build, (3) Steam features, (4) phone apps.
 - Next (step 3): Steamworks (owner needs a Steamworks account + $100 app fee): steamworks.js
   achievements/overlay/cloud saves, offline bundling of game files, Steam Deck controls check.
 
-## Sign-in required + player stats (on `game-look`, not deployed)
+## Sign-in required + player stats (deployed 2026-10-20)
 
 Owner asked (2026-10-20) that Outpost Zero require sign-in so they can track stats, then
 allowed **one free match** first.
