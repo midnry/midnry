@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=signal-weather-2-20261020` (`game-look` carries `v=signal-music-20261020`, not yet deployed).
+  Current live value: `v=signal-haze-aura-20261020`.
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -229,7 +229,7 @@ makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to
   banner one line under the status in the top-left; Overdrive lifted off the health box.
   `phone-hud.mjs`: no overlaps, ~16 % of the screen covered.
 
-## Fades, visible Red Haze, battle music (on `game-look`, awaiting owner's "deploy")
+## Fades, visible Red Haze, battle music (deployed 2026-10-20)
 
 - Disaster weather fades: `HazardDressing.fade()` builds over the last 2 s of the warning
   + first 1 s, clears over the last 3 s; fog colour/density blend from the arena's fog,
@@ -242,3 +242,6 @@ makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to
   `Retention.battleMusic()` in Last Signal while you are alive and the game runs.
   "Music volume" slider (Player experience), stored in `midnry-outpost-audio.music`.
   Blackout Protocol has no music yet (voice chat / meetings) — owner can ask.
+- Inside the Red Haze (owner: "it just looks like a line"): red fog (#9a2a22, 0.075),
+  drifting red embers around the camera (`updateEmbers()`), and a pulsing red screen-edge
+  aura (`.mf-hazefx`, toggled in `signalIntensity()`).

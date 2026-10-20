@@ -1181,6 +1181,30 @@
           border-color: #ff675c;
         }
       }
+      /* Inside the Red Haze: a pulsing red aura at the screen edges. */
+      midnry-fps .mf-hazefx {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+        background:
+          radial-gradient(ellipse at center, #ff2a1a00 35%, #c4140c66 75%, #6a0000c0 100%),
+          linear-gradient(#a0141010, #a0141030);
+      }
+      midnry-fps .mf-hazefx.mf-on {
+        opacity: 1;
+        animation: mf-hazepulse 1.6s ease-in-out infinite;
+      }
+      @keyframes mf-hazepulse {
+        50% {
+          opacity: 0.7;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        midnry-fps .mf-hazefx.mf-on {
+          animation: none;
+        }
+      }
       midnry-fps .mf-weatherfx {
         position: absolute;
         inset: 0;
@@ -2636,7 +2660,7 @@
           connectedCallback() {
             if (this.engine) return;
             this.innerHTML = `<div class="mf-shell mf-military" tabindex="0">
-        <canvas aria-label="Game viewport"></canvas><div class="mf-weatherfx" aria-hidden="true"></div><div class="mf-lifefx" aria-hidden="true"></div><div class="mf-disaster" role="status" aria-live="polite" hidden></div>
+        <canvas aria-label="Game viewport"></canvas><div class="mf-hazefx" aria-hidden="true"></div><div class="mf-weatherfx" aria-hidden="true"></div><div class="mf-lifefx" aria-hidden="true"></div><div class="mf-disaster" role="status" aria-live="polite" hidden></div>
         <div class="mf-top"><div class="mf-brand">MIDNRY<small>OUTPOST ZERO / FIELD OPS</small></div><div class="mf-topright"><span class="mf-tag">TACTICAL 3D / LOADING</span><button class="mf-pause" aria-label="Open game menu">II</button></div></div>
         <div class="mf-objective">BLACKOUT PROTOCOL<b class="mf-mission">Lifeline Run</b></div>
         <div class="mf-match" hidden><b class="mf-cores">CHARGE CORES 0</b><div class="mf-teamstat"></div><div class="mf-zone"></div></div><div class="mf-cross"></div><div class="mf-toast" role="status" aria-live="polite"></div>
@@ -4458,6 +4482,13 @@
             fx.classList.toggle("mf-lowhp", last && p.hp / p.maxHp < 0.3);
             fx.classList.toggle("mf-rush", last && p.adrenalineUntil > this.time);
             this.$(".mf-teamstat").classList.toggle("mf-lastlife", last);
+            const hazed =
+              ["signal", "duo"].includes(this.mode) &&
+              p.hp > 0 &&
+              this.state === "playing" &&
+              this.time > this.zone.delay &&
+              this.outsideSafe(p);
+            this.$(".mf-hazefx").classList.toggle("mf-on", hazed);
             if (this.mode !== "signal") return;
             if (this.finalRound !== this.arena.roundId) {
               this.finalRound = this.arena.roundId;

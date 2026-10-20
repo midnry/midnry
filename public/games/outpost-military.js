@@ -23390,9 +23390,10 @@ var ch = class {
 	updateHaze(e) {
 		let t = this.r, n = t.g, r = n.arena, i = r.zone;
 		if (!(!["training", "protocol"].includes(n.mode) && i && r.time > i.delay - 3)) {
-			this.haze && (this.haze.visible = !1);
+			this.haze && (this.haze.visible = !1), this.embers && (this.embers.visible = !1);
 			return;
 		}
+		this.updateEmbers(e, i, r);
 		let a = this.haze ||= this.makeHaze(), o = n.camera(), s = Math.max(.05, i.half), c = s * 2 * ih, l = s - Math.max(Math.abs(o.x - i.cx), Math.abs(o.y - i.cy)), u = Math.max(0, 1 - Math.abs(l) / 4), d = Math.min(1, (r.time - (i.delay - 3)) / 3), f = t.motion.matches ? 0 : Math.sin(e * 3) * .06;
 		a.visible = !0, a.children.forEach((n, r) => {
 			let a = [
@@ -23403,6 +23404,42 @@ var ch = class {
 			][r];
 			n.position.set((i.cx + a[0] * s) * ih, 0, (i.cy + a[1] * s) * ih), n.scale.x = c, n.material.map.repeat.x = c / 9, n.material.map.offset.x = t.motion.matches ? 0 : e * .03 * (r % 2 ? 1 : -1) % 1, n.material.opacity = (.4 + .5 * u + f) * d;
 		});
+	}
+	updateEmbers(e, t, n) {
+		let r = this.r, i = r.g.camera(), a = n.time > t.delay && Math.max(Math.abs(i.x - t.cx), Math.abs(i.y - t.cy)) > t.half;
+		if (this.hazeIn = Math.max(0, Math.min(1, (this.hazeIn || 0) + (a ? .04 : -.06))), !this.hazeIn) {
+			this.embers && (this.embers.visible = !1);
+			return;
+		}
+		if (!this.embers) {
+			let e = /* @__PURE__ */ new Float32Array(780);
+			for (let t = 0; t < 260; t++) e.set([
+				(Math.random() - .5) * 24,
+				Math.random() * 6,
+				(Math.random() - .5) * 24
+			], t * 3);
+			let t = new Pn();
+			t.setAttribute("position", new wn(e, 3)), this.embers = new vi(t, new pi({
+				color: "#ff5a3a",
+				map: vh(),
+				alphaTest: .01,
+				size: .12,
+				transparent: !0,
+				depthWrite: !1,
+				blending: 2,
+				fog: !1,
+				toneMapped: !1
+			})), this.embers.frustumCulled = !1, r.scene.add(this.embers);
+		}
+		let o = this.embers;
+		if (o.visible = !0, o.position.set(i.x * ih, 0, i.y * ih), o.material.opacity = .85 * this.hazeIn, !r.motion.matches) {
+			let t = o.geometry.attributes.position;
+			for (let n = 0; n < t.count; n++) {
+				let r = t.getY(n) + .012 + Math.sin(e * 2 + n) * .004;
+				r > 6 && (r -= 6), t.setY(n, r), t.setX(n, t.getX(n) + Math.sin(e * .7 + n * 1.3) * .006);
+			}
+			t.needsUpdate = !0;
+		}
 	}
 	makeHaze() {
 		let e = this.r, t = new Y(), n = new Ka(1, 8);
@@ -23670,7 +23707,10 @@ var ch = class {
 		e.globalCompositeOperation = "source-over", e.fillStyle = "#ffffff", e.fillRect(0, n - 3, t, 3);
 	});
 	return t.wrapS = t.wrapT = e, t;
-}), vh = 3, yh = class {
+}), vh = uh(() => lh(64, 64, (e, t) => {
+	let n = e.createRadialGradient(t / 2, t / 2, 0, t / 2, t / 2, t / 2);
+	n.addColorStop(0, "#ffffffff"), n.addColorStop(.25, "#ffffffaa"), n.addColorStop(1, "#ffffff00"), e.fillStyle = n, e.fillRect(0, 0, t, t);
+})), yh = 3, bh = class {
 	constructor(e) {
 		this.r = e, this.root = new Y(), this.root.name = "match-events", e.scene.add(this.root), this.items = /* @__PURE__ */ new Map(), this.materials = [], this.geometries = [], this.fireLight = new Xo("#ff8a3c", 0, 9, 2), this.fireLight.visible = !0, e.scene.add(this.fireLight);
 	}
@@ -23730,7 +23770,7 @@ var ch = class {
 	}
 	build(e) {
 		let t = this.shared(), n = new Y();
-		n.position.set(e.x * vh, 0, e.y * vh);
+		n.position.set(e.x * yh, 0, e.y * yh);
 		let r = (e, t, r, i = [
 			1,
 			1,
@@ -23851,13 +23891,13 @@ var ch = class {
 			}), e.kind === "fire" && (i = e);
 		}
 		for (let [e, t] of this.items) r.has(e) || (this.root.remove(t.group), this.items.delete(e));
-		this.fireLight.intensity = i ? 26 + Math.sin(t * 17) * 5 + Math.sin(t * 41) * 3 : 0, i && this.fireLight.position.set(i.x * vh, 1.3, i.y * vh);
+		this.fireLight.intensity = i ? 26 + Math.sin(t * 17) * 5 + Math.sin(t * 41) * 3 : 0, i && this.fireLight.position.set(i.x * yh, 1.3, i.y * yh);
 	}
 	dispose() {
 		this.r.scene.remove(this.root, this.fireLight);
 		for (let e of [...this.materials, ...this.geometries]) e.dispose();
 	}
-}, bh = 3, xh = {
+}, xh = 3, Sh = {
 	crate: /^old_military_crate(_lid)?_a$/,
 	crateOpen: /^old_military_crate(_lid|_cloth)?_b$/,
 	jerrycan: /^metal_jerrycan_green_(body|cap)$/,
@@ -23868,12 +23908,12 @@ var ch = class {
 	shelf: /^steel_frame_shelves_01$/,
 	ammo: /^ammo_box$/,
 	cabinet: /^utility_box_01/
-}, Sh = { shelf: .1 };
-function Ch(e) {
+}, Ch = { shelf: .1 };
+function wh(e) {
 	let t = e.scene;
 	t.updateMatrixWorld(!0);
 	let n = {};
-	for (let [e, r] of Object.entries(xh)) {
+	for (let [e, r] of Object.entries(Sh)) {
 		let i = [];
 		if (t.traverse((e) => {
 			e.isMesh && r.test(e.name) && i.push(e);
@@ -23882,7 +23922,7 @@ function Ch(e) {
 			,
 			,
 			,
-		].fill(Sh[e] || 1)), o = new qe();
+		].fill(Ch[e] || 1)), o = new qe();
 		for (let e of i) e.geometry.computeBoundingBox(), o.union(e.geometry.boundingBox.clone().applyMatrix4(a.clone().multiply(e.matrixWorld)));
 		let s = o.getCenter(new W()), c = new K().makeTranslation(-s.x, -o.min.y, -s.z);
 		n[e] = {
@@ -23896,11 +23936,11 @@ function Ch(e) {
 	}
 	return n;
 }
-function wh(e, t) {
+function Th(e, t) {
 	let n = e * 73856093 ^ t * 19349663 ^ 1540483477;
 	return () => (n = Math.imul(n ^ n >>> 15, 2246822507) + 2654435769 | 0, (n >>> 0) % 1e4 / 1e4);
 }
-function Th(e, t, n, r) {
+function Eh(e, t, n, r) {
 	let i = e.propKit;
 	if (!i) return 0;
 	let a = e.protocolMaterial({
@@ -23931,7 +23971,7 @@ function Th(e, t, n, r) {
 	for (let e = 0; e < n.length; e++) for (let t = 0; t < n[e].length; t++) {
 		if (!r(t, e)) continue;
 		f++;
-		let i = n[e][t], c = wh(t, e), l = (t + .5) * bh, p = (e + .5) * bh, m = (r, i) => n[e + i]?.[t + r] === 0, h = (e, t) => m(e, t) ? .95 : 1.5, g = l - h(-1, 0), _ = l + h(1, 0), v = p - h(0, -1), y = p + h(0, 1);
+		let i = n[e][t], c = Th(t, e), l = (t + .5) * xh, p = (e + .5) * xh, m = (r, i) => n[e + i]?.[t + r] === 0, h = (e, t) => m(e, t) ? .95 : 1.5, g = l - h(-1, 0), _ = l + h(1, 0), v = p - h(0, -1), y = p + h(0, 1);
 		d(s, (g + _) / 2, 0, (v + y) / 2, _ - g, .14, y - v), d(a, (g + _) / 2, .14, (v + y) / 2, _ - g - .04, 2.15, y - v - .04);
 		for (let e of [-.45, .45]) d(o, (g + _) / 2 + e * (_ - g) * .6, .14, (v + y) / 2, .06, 2.17, y - v);
 		for (let [e, t] of [
@@ -23978,7 +24018,7 @@ function Th(e, t, n, r) {
 }
 //#endregion
 //#region public/games/outpost-battle-presentation.js
-function Eh(e, t) {
+function Dh(e, t) {
 	let n = e?.protocol?.combat;
 	if (e?.state !== "playing" || e.protocol.phase !== "combat" || !n || e.time >= n.startsAt) return null;
 	let r = e.entities.filter((e) => n.participants.includes(e.id) && e.hp > 0 && !e.departed), i = r.find((e) => e.id === t), a = r.find((e) => e.id === n.targetId), o = r.filter((e) => e.id !== n.targetId);
@@ -23993,14 +24033,14 @@ function Eh(e, t) {
 }
 //#endregion
 //#region scripts/outpost-military/battle-preparation.js
-var Dh = (e) => (e = V.clamp(e, 0, 1), e * e * (3 - 2 * e));
-function Oh(e, t, n, r) {
+var Oh = (e) => (e = V.clamp(e, 0, 1), e * e * (3 - 2 * e));
+function kh(e, t, n, r) {
 	if (!t || !r) return;
 	e.root.updateMatrixWorld(!0);
 	let i = n.clone().applyQuaternion(e.root.getWorldQuaternion(new U())), a = t.getWorldQuaternion(new U()).premultiply(new U().setFromAxisAngle(i, r));
 	t.quaternion.copy(t.parent.getWorldQuaternion(new U()).invert()).multiply(a), e.root.updateMatrixWorld(!0);
 }
-var kh = class {
+var Ah = class {
 	constructor(e) {
 		this.r = e, this.scene = new _r(), this.scene.background = new q("#10191e"), this.camera = new cr(45, 1, .1, 30), this.scene.add(new zo("#c8d8de", "#514a3c", .9));
 		let t = new $o("#ffedcf", 3.2);
@@ -24053,7 +24093,7 @@ var kh = class {
 		this.actors = [];
 	}
 	update(e) {
-		let t = this.r, n = Eh(e, t.g.selfId);
+		let t = this.r, n = Dh(e, t.g.selfId);
 		if (this.active = !!n && t.g.protocolUI?.visibleGameplay() && !t.g.protocolUI.hasDialogOpen() && !t.g.deathSequence, !this.active || !t.soldier) return !1;
 		let r = `${e.roundId}:${n.id}:${n.target.id}:${n.patrol.id}`;
 		this.id !== r && (this.clearActors(), this.id = r, this.lastSample = null, this.actors = [this.makeOperator(n.target, 0), this.makeOperator(n.patrol, 1)]), this.scene.environment = t.scene.environment, this.scene.environmentIntensity = .3;
@@ -24063,8 +24103,8 @@ var kh = class {
 		return s === this.lastSample || (this.lastSample = s, this.actors.forEach((e, n) => {
 			let r = Math.max(0, o - n * .15), i = e.actions.Idle;
 			i.play().setEffectiveWeight(1).setEffectiveTimeScale(0), i.time = t.motion.matches ? 0 : r % i.getClip().duration, e.mixer.update(0), e.model.position.y = e.baseY, e.root.updateMatrixWorld(!0);
-			let a = Dh((r - .35) / 3.55), s = t.motion.matches ? 0 : Math.sin(Math.PI * Dh(r / 3.9));
-			Oh(e, e.readyBones.RightArm, new W(1, 0, 0), t.motion.matches ? 0 : -.32 * (1 - a)), Oh(e, e.readyBones.RightForeArm, new W(0, 0, 1), s * .055), Oh(e, e.readyBones.Head, new W(1, 0, 0), -s * .1), rm(e, 0, !1), Zp(e.equipment.userData.carbine, 0, 0);
+			let a = Oh((r - .35) / 3.55), s = t.motion.matches ? 0 : Math.sin(Math.PI * Oh(r / 3.9));
+			kh(e, e.readyBones.RightArm, new W(1, 0, 0), t.motion.matches ? 0 : -.32 * (1 - a)), kh(e, e.readyBones.RightForeArm, new W(0, 0, 1), s * .055), kh(e, e.readyBones.Head, new W(1, 0, 0), -s * .1), rm(e, 0, !1), Zp(e.equipment.userData.carbine, 0, 0);
 			let c = e.equipment.localToWorld(new W(-.035, -.056, -.312));
 			im(e, c, e.equipment.getWorldQuaternion(new U()).multiply(e.supportGrip)), e.supportTarget = c;
 		}), !0);
@@ -24072,7 +24112,7 @@ var kh = class {
 	dispose() {
 		this.clearActors(), this.floorMaterial.dispose(), this.floorGeometry.dispose(), this.scene.clear();
 	}
-}, $ = 3, Ah = "/games/military/", jh = Math.PI * 2, Mh = {
+}, $ = 3, jh = "/games/military/", Mh = Math.PI * 2, Nh = {
 	outpost: {
 		floor: "#a69980",
 		fog: "#bbc2c3",
@@ -24108,7 +24148,7 @@ var kh = class {
 		fog: "#b8c9d0",
 		metal: "#92a1a3"
 	}
-}, Nh = class {
+}, Ph = class {
 	constructor(e, t = () => {}, { safeMode: n = !1 } = {}) {
 		this.g = e, this.onProgress = t, this.disposed = !1, this.actors = /* @__PURE__ */ new Map(), this.crates = /* @__PURE__ */ new Map(), this.cores = /* @__PURE__ */ new Map(), this.projectiles = /* @__PURE__ */ new Map(), this.fields = /* @__PURE__ */ new Map(), this.protocolCharges = /* @__PURE__ */ new Map(), this.protocolBodies = /* @__PURE__ */ new Map(), this.protocolFixtures = [], this.interactableInstances = [], this.protocolScreens = /* @__PURE__ */ new Map(), this.protocolLights = [], this.protocolLightMaterials = [], this.protocolPowerOut = !1, this.medicalStocks = /* @__PURE__ */ new Map(), this.transportCargo = [], this.transportTerrain = null, this.transportInstrument = null, this.transportInstrumentKey = "", this.transportAlarm = null, this.medevacRotor = null, this.arrivalClinic = null, this.arrivalPatients = /* @__PURE__ */ new Map(), this.materials = /* @__PURE__ */ new Set(), this.geometries = /* @__PURE__ */ new Map(), this.textures = /* @__PURE__ */ new Set(), this.worldTextures = /* @__PURE__ */ new Set(), this.weaponTextures = /* @__PURE__ */ new Set(), this.lastTime = 0, this.lastPose = -1, this.mapKey = "", this.wallKeys = "", this.seenShots = /* @__PURE__ */ new Map(), this.tracers = [], this.lastPreset = "", this.assetErrors = [], this.motion = matchMedia("(prefers-reduced-motion: reduce)"), this.mobileDevice = matchMedia("(pointer: coarse)").matches;
 		let r = jm(navigator), i, a;
@@ -24215,7 +24255,7 @@ var kh = class {
 	async loadAssets() {
 		let t = 0, n = () => this.onProgress(++t, 14), r = new Lo(), i = async (t) => {
 			try {
-				let n = await r.loadAsync(Ah + t + "?assetVersion=" + rf);
+				let n = await r.loadAsync(jh + t + "?assetVersion=" + rf);
 				return this.disposed ? (n.dispose(), null) : (n.wrapS = n.wrapT = e, n.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy()), this.textures.add(n), n);
 			} catch {
 				return this.assetErrors.push(t), null;
@@ -24241,7 +24281,7 @@ var kh = class {
 			xp(this),
 			(async () => {
 				try {
-					let e = await new Au().loadAsync(Ah + "models/medevac-v1.glb?assetVersion=" + rf);
+					let e = await new Au().loadAsync(jh + "models/medevac-v1.glb?assetVersion=" + rf);
 					if (this.disposed) return;
 					this.medevacKit = th(e);
 					for (let e of this.medevacKit.parts) this.geometries.set(`medevac:${e.geometry.uuid}`, e.geometry);
@@ -24252,7 +24292,7 @@ var kh = class {
 			})(),
 			(async () => {
 				try {
-					let e = await new Au().loadAsync(Ah + "models/props-v1.glb?assetVersion=" + rf);
+					let e = await new Au().loadAsync(jh + "models/props-v1.glb?assetVersion=" + rf);
 					if (this.disposed) {
 						this.disposeObject(e.scene);
 						return;
@@ -24269,14 +24309,14 @@ var kh = class {
 							]) e.material[t] && this.textures.add(e.material[t]);
 							this.materials.add(e.material);
 						}
-					}), this.propKit = Ch(e), this.wallKeys = null;
+					}), this.propKit = wh(e), this.wallKeys = null;
 				} catch {
 					this.assetErrors.push("props");
 				}
 			})(),
 			(async () => {
 				try {
-					let e = await new Au().loadAsync(Ah + "models/operator-v1.glb?assetVersion=" + rf);
+					let e = await new Au().loadAsync(jh + "models/operator-v1.glb?assetVersion=" + rf);
 					if (this.disposed) {
 						this.disposeObject(e.scene);
 						return;
@@ -24293,7 +24333,7 @@ var kh = class {
 			(async () => {
 				try {
 					if (!this.profile.halfFloat) return;
-					let e = await new Ad().loadAsync(Ah + "sky.hdr?assetVersion=" + rf);
+					let e = await new Ad().loadAsync(jh + "sky.hdr?assetVersion=" + rf);
 					if (this.disposed) {
 						e.dispose();
 						return;
@@ -24352,7 +24392,7 @@ var kh = class {
 	}
 	buildWorld() {
 		this.lastShadowAt = 0;
-		let e = this.g, t = e.arena.mapId, n = Mh[t] || Mh.outpost, r = e.level.length;
+		let e = this.g, t = e.arena.mapId, n = Nh[t] || Nh.outpost, r = e.level.length;
 		this.clearWorld(), this.buildingWorld = !0, this.mapKey = t, this.wallKeys = "", this.scene.fog.color.set(n.fog), this.scene.fog.density = t === "freight" ? .021 : .012;
 		let i = this.material({
 			color: "#d7d4cd",
@@ -25049,7 +25089,7 @@ var kh = class {
 				.11,
 				.11
 			]);
-			let o = this.mesh(t, this.geo("radar-dish", () => new Xa(1.25, 24, 12, 0, jh, 0, Math.PI / 2)), r, [
+			let o = this.mesh(t, this.geo("radar-dish", () => new Xa(1.25, 24, 12, 0, Mh, 0, Math.PI / 2)), r, [
 				e,
 				8.8,
 				i
@@ -25066,7 +25106,7 @@ var kh = class {
 			rubber: i,
 			amber: a,
 			lamp: o
-		}), e.id === "breakwater" && Th(this, t, this.g.level, (e, t) => this.furnitureTile(e, t) && !If(e, t) && !Gf(e, t)), e.id === "medevac" && this.buildTransportInterior(e, t, {
+		}), e.id === "breakwater" && Eh(this, t, this.g.level, (e, t) => this.furnitureTile(e, t) && !If(e, t) && !Gf(e, t)), e.id === "medevac" && this.buildTransportInterior(e, t, {
 			steel: n,
 			paint: r,
 			rubber: i,
@@ -26038,7 +26078,7 @@ var kh = class {
 				.04
 			]);
 		} else {
-			this.mesh(m, this.geo("combatHelmet", () => new Xa(1, 24, 16, 0, jh, 0, Math.PI * .6)), i, [
+			this.mesh(m, this.geo("combatHelmet", () => new Xa(1, 24, 16, 0, Mh, 0, Math.PI * .6)), i, [
 				0,
 				2.09,
 				.025
@@ -27193,7 +27233,7 @@ var kh = class {
 		let d = this.motion.matches ? 0 : (e.deathProgress || 0) ** 2;
 		this.camera.position.set(i.x * $, e.deathSequence ? 1.65 - d * 1.4 : this.eyeHeight, i.y * $ + (s ? .85 : 0)), this.camera.rotation.set(a - d * .25, -i.a - Math.PI / 2, d * .5, "YXZ"), (this.hazards ||= new ch(this)).shake(this.camera, t), this.updateProtocol(o, i), this.updateMedicalMission(o?.protocol?.mission, t);
 		let f = (this.night ||= new Qm(this)).update(o, e.arena.mapId, t);
-		this.updateCinematic(f, t), e.mode === "protocol" && (this.events ||= new yh(this)).update(o, t), vf(this, o, i, l);
+		this.updateCinematic(f, t), e.mode === "protocol" && (this.events ||= new bh(this)).update(o, t), vf(this, o, i, l);
 		let p = e.mode !== "protocol" && (this.hazards ||= new ch(this)).dim();
 		if (e.arena.mapId === "medevac" && !this.motion.matches) {
 			let e = Number(o?.protocol?.mission?.vehicle?.heading) || 0;
@@ -27220,13 +27260,13 @@ var kh = class {
 		let v = o?.protocol?.phase === "combat", y = e.mode === "protocol" && !v ? 0 : Math.max(0, 1 - (t - i.shotAt) / .16), b = Math.max(0, Math.min(1, (i.reloadUntil - t) / 1.4));
 		this.rig.position.y = -.2 * Math.max(1, this.g.h / this.g.w) - (e.mode === "protocol" && !v ? .075 : 0) - (b > 0 ? Math.sin(b * Math.PI) * .25 : 0) + (this.motion.matches ? 0 : Math.sin(e.step) * .005), this.rig.position.y -= d * .65, this.rig.position.z = y * .04, this.rig.rotation.x = .02 - y * .075, this.rig.rotation.z = -.025 + Math.sin(b * Math.PI) * .3, this.flash.intensity = y > .65 ? 3 : 0, Zp(this.rig.userData.carbine, b, y), this.rig.visible = (i.hp > 0 || !!e.deathSequence && e.deathProgress < .65) && !s && !m;
 		let x = !["training", "protocol"].includes(e.mode) && e.time > e.zone.delay && (Math.abs(i.x - e.zone.cx) > e.zone.half || Math.abs(i.y - e.zone.cy) > e.zone.half), S = e.mode === "protocol" && (o?.protocol?.events || []).some((e) => e.kind === "sandstorm"), C = e.mode !== "protocol" && (this.hazards ||= new ch(this)).weather();
-		if (this.scene.fog.color.set(S ? this.night?.active ? "#4a3f30" : "#b39a72" : this.night?.active ? "#121d2e" : x ? "#827276" : e.mode === "protocol" && e.arena.mapId === "breakwater" ? "#cdbb9c" : (Mh[e.arena.mapId] || Mh.outpost).fog), this.scene.fog.density = S ? this.naturalLighting?.inside ? .05 : .09 : this.night?.active ? this.naturalLighting?.inside ? .01 : .026 : x ? .065 : e.arena.mapId === "medevac" && !o?.protocol?.mission?.vehicle?.arrived ? .002 : .009, C) {
+		if (this.scene.fog.color.set(S ? this.night?.active ? "#4a3f30" : "#b39a72" : this.night?.active ? "#121d2e" : x ? "#9a2a22" : e.mode === "protocol" && e.arena.mapId === "breakwater" ? "#cdbb9c" : (Nh[e.arena.mapId] || Nh.outpost).fog), this.scene.fog.density = S ? this.naturalLighting?.inside ? .05 : .09 : this.night?.active ? this.naturalLighting?.inside ? .01 : .026 : x ? .075 : e.arena.mapId === "medevac" && !o?.protocol?.mission?.vehicle?.arrived ? .002 : .009, C) {
 			this.scene.fog.color.lerp((this.weatherFog ||= new q()).set(C.fog), C.k);
 			let e = this.naturalLighting?.inside ? C.density * .55 : C.density;
 			this.scene.fog.density += (e - this.scene.fog.density) * C.k;
 		}
 		S && (this.scene.background = (this.sandSky ||= new q()).copy(this.scene.fog.color)), this.renderer.shadowMap.enabled && (!this.lastShadowAt || c - this.lastShadowAt >= 1e3 / 30) && (this.renderer.shadowMap.needsUpdate = !0, this.lastShadowAt = c), this.renderer.info.reset(), (this.telemetry ||= new Fm(this.renderer)).begin();
-		let w = o?.protocol?.phase === "combat" && o.time < o.protocol.combat?.startsAt, T = w && (this.battlePreparation ||= new kh(this)).update(o);
+		let w = o?.protocol?.phase === "combat" && o.time < o.protocol.combat?.startsAt, T = w && (this.battlePreparation ||= new Ah(this)).update(o);
 		return !w && this.battlePreparation && (this.battlePreparation.active = !1), T ? (this.identification.root.hidden = !0, this.renderer.autoClear = !0, this.renderer.render(this.battlePreparation.scene, this.battlePreparation.camera)) : !this.composer || e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), p && p(), this.telemetry.end(), this.metrics = {
 			gpuMs: this.telemetry.gpuMs,
 			drawCalls: this.renderer.info.render.calls,
@@ -27260,4 +27300,4 @@ var kh = class {
 	}
 };
 //#endregion
-export { Nh as MilitaryRenderer };
+export { Ph as MilitaryRenderer };

@@ -89,6 +89,11 @@ await shot(
   `a.time=a.zone.delay+60;a.updateZone();const z=a.zone;Object.assign(g.player,{x:z.cx,y:z.cy+z.half+1.5,a:-Math.PI/2});g.viewPitch=0;return {}`,
 );
 await shot(
+  "haze-inside",
+  0.1,
+  `a.time=a.zone.delay+60;a.updateZone();const z=a.zone;Object.assign(g.player,{x:z.cx,y:z.cy+z.half+2.5,a:Math.PI/2});g.viewPitch=0;g.military.hazards.hazeIn=1;return {}`,
+);
+await shot(
   "sand-half",
   0.1,
   `const d=a.disaster;d.warnAt=30;d.startAt=40;d.endAt=65;a.time=d.startAt-0.5;Object.assign(g.player,{x:a.zone.cx,y:a.zone.cy+3,a:Math.PI/2});return {k:g.military.hazards.fade().toFixed(2)}`,

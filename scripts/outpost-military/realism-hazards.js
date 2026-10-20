@@ -298,8 +298,10 @@ export class HazardDressing {
       show = !["training", "protocol"].includes(g.mode) && !!z && a.time > z.delay - 3;
     if (!show) {
       if (this.haze) this.haze.visible = false;
+      if (this.embers) this.embers.visible = false;
       return;
     }
+    this.updateEmbers(t, z, a);
     const walls = (this.haze ||= this.makeHaze()),
       p = g.camera(),
       half = Math.max(0.05, z.half),
@@ -322,6 +324,56 @@ export class HazardDressing {
       wall.material.map.offset.x = r.motion.matches ? 0 : (t * 0.03 * (i % 2 ? 1 : -1)) % 1;
       wall.material.opacity = (0.4 + 0.5 * near + pulse) * rise;
     });
+  }
+  /** Inside the Red Haze: glowing red embers drift around you, so it reads
+   * as a space you are standing in, not a line you crossed. */
+  updateEmbers(t, z, a) {
+    const r = this.r,
+      p = r.g.camera(),
+      outside = a.time > z.delay && Math.max(Math.abs(p.x - z.cx), Math.abs(p.y - z.cy)) > z.half;
+    this.hazeIn = Math.max(0, Math.min(1, (this.hazeIn || 0) + (outside ? 0.04 : -0.06)));
+    if (!this.hazeIn) {
+      if (this.embers) this.embers.visible = false;
+      return;
+    }
+    if (!this.embers) {
+      const count = 260,
+        pos = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++)
+        pos.set([(Math.random() - 0.5) * 24, Math.random() * 6, (Math.random() - 0.5) * 24], i * 3);
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+      this.embers = new THREE.Points(
+        geo,
+        new THREE.PointsMaterial({
+          color: "#ff5a3a",
+          map: emberTexture(),
+          alphaTest: 0.01,
+          size: 0.12,
+          transparent: true,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          fog: false,
+          toneMapped: false,
+        }),
+      );
+      this.embers.frustumCulled = false;
+      r.scene.add(this.embers);
+    }
+    const e = this.embers;
+    e.visible = true;
+    e.position.set(p.x * SCALE, 0, p.y * SCALE);
+    e.material.opacity = 0.85 * this.hazeIn;
+    if (!r.motion.matches) {
+      const pos = e.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        let y = pos.getY(i) + 0.012 + Math.sin(t * 2 + i) * 0.004;
+        if (y > 6) y -= 6;
+        pos.setY(i, y);
+        pos.setX(i, pos.getX(i) + Math.sin(t * 0.7 + i * 1.3) * 0.006);
+      }
+      pos.needsUpdate = true;
+    }
   }
   makeHaze() {
     const r = this.r,
@@ -812,3 +864,14 @@ const hazeTexture = once(() => {
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   return tex;
 });
+// A soft round glow for each Red Haze ember.
+const emberTexture = once(() =>
+  canvasTexture(64, 64, (c, w) => {
+    const g = c.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+    g.addColorStop(0, "#ffffffff");
+    g.addColorStop(0.25, "#ffffffaa");
+    g.addColorStop(1, "#ffffff00");
+    c.fillStyle = g;
+    c.fillRect(0, 0, w, w);
+  }),
+);

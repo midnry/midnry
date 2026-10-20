@@ -3359,7 +3359,7 @@ export class MilitaryRenderer {
         : this.night?.active
         ? "#121d2e"
         : outside
-          ? "#827276"
+          ? "#9a2a22"
           : g.mode === "protocol" && g.arena.mapId === "breakwater"
             ? "#cdbb9c"
             : (PROFILES[g.arena.mapId] || PROFILES.outpost).fog,
@@ -3371,7 +3371,7 @@ export class MilitaryRenderer {
       : this.night?.active
       ? this.naturalLighting?.inside ? 0.01 : 0.026
       : outside
-        ? 0.065
+        ? 0.075
         : g.arena.mapId === "medevac" && !protocolView?.protocol?.mission?.vehicle?.arrived
           ? 0.002
           : 0.009;
