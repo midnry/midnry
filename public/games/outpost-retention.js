@@ -10,7 +10,8 @@ import {
   DAILY_XP,
   WEEKLY_XP,
 } from "./outpost-progression.js";
-import { weaponOf, OUTFITS } from "./outpost-sim.js";
+import { weaponOf, OUTFITS, mapOf } from "./outpost-sim.js";
+import { standingsHTML } from "./outpost-series.js";
 import { spatialSound } from "./outpost-spatial-audio.js";
 const read = (key) => {
   try {
@@ -123,6 +124,8 @@ class FieldAudio {
     if (this.ctx) void this.ctx.close().catch(() => {});
   }
 }
+const escapeText = (text) =>
+  String(text).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 export class Retention {
   constructor(g) {
     this.g = g;
@@ -132,7 +135,7 @@ export class Retention {
     this.reset();
     g.$(".mf-modes").insertAdjacentHTML(
       "beforebegin",
-      `<section class="mf-results" hidden aria-label="Match results"><h2>ROUND DEBRIEF</h2><div class="mf-resultstats"></div><p class="mf-earned" role="status"></p><button class="mf-again">PLAY AGAIN →</button><p class="mf-againnote"></p><button class="mf-tomenu">Main menu</button></section>`,
+      `<section class="mf-results" hidden aria-label="Match results"><h2>ROUND DEBRIEF</h2><div class="mf-resultstats"></div><div class="mf-seriesboard" hidden></div><p class="mf-earned" role="status"></p><button class="mf-again">PLAY AGAIN →</button><p class="mf-againnote"></p><button class="mf-tomenu">Main menu</button></section>`,
     );
     g.$(".mf-network").insertAdjacentHTML(
       "beforebegin",
@@ -277,6 +280,13 @@ export class Retention {
             : mine
               ? "You're in. The rematch starts when the host taps it."
               : `Same room and players. Tap to tell the host you're in${ready ? ` (${ready}/${here.length} ready)` : ""}.`;
+      } else if (g.mode === "signal" && g.series?.rounds.length) {
+        const series = g.series;
+        again.disabled = false;
+        again.textContent = series.done ? "NEW SERIES →" : `NEXT ROUND · ${mapOf(series.mapFor()).name.toUpperCase()} →`;
+        note.textContent = series.done
+          ? `Start a fresh ${series.rule.title.toLowerCase()} with the same loadout and difficulty.`
+          : `Round ${series.round}${Number.isFinite(series.rule.maxRounds) ? ` of up to ${series.rule.maxRounds}` : ""}. A two-second countdown starts it.`;
       } else {
         again.disabled = false;
         again.textContent = "REMATCH →";
@@ -323,6 +333,25 @@ export class Retention {
     g.$(".mf-results").hidden = false;
     g.$(".mf-results").classList.toggle("mf-lost", !won);
     g.$(".mf-results > h2").textContent = won ? "Victory" : "Defeat";
+    // Last Signal series: who leads, and who took first once it is decided.
+    const series = g.mode === "signal" && g.series?.rounds.length ? g.series : null,
+      board = g.$(".mf-seriesboard");
+    board.hidden = !series;
+    if (series) {
+      const champion = series.champion,
+        last = series.rounds.at(-1),
+        winner = last.winner && series.table[last.winner];
+      g.$(".mf-results > h2").textContent = champion
+        ? champion.id === g.selfId
+          ? "Series won"
+          : "Series over"
+        : `Round ${series.rounds.length} · ${won ? "won" : "lost"}`;
+      board.innerHTML = `<p class="mf-serieshead">${
+        champion
+          ? `<b>${champion.id === g.selfId ? "You take first place" : `${escapeText(champion.name)} takes first place`}</b> with ${champion.wins} win${champion.wins === 1 ? "" : "s"}.`
+          : `<b>${winner ? (winner.id === g.selfId ? "You won" : `${escapeText(winner.name)} won`) : "Nobody won"}</b> round ${series.rounds.length} on ${mapOf(last.mapId).name}.`
+      }</p>${standingsHTML(series, g.selfId)}`;
+    }
     // The round's debrief replaces the menu until the player asks for it.
     g.$(".mf-panel").classList.add("mf-debrief");
     const c = summary.contributions || {};

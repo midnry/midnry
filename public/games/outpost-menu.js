@@ -8,14 +8,23 @@ import { readDaily } from "./outpost-protocol-ui.js";
 import { fetchBoard, cachedBoard } from "./outpost-daily-board.js";
 import { dailyKey, shiftChoice } from "./outpost-shifts.js";
 import { modifierChoice } from "./outpost-variety.js";
+import { SERIES_KINDS, seriesKindOf } from "./outpost-series.js";
 
-const MODES = [
-  { id: "lifeline", title: "Lifeline Run", sub: "Full shift · 8 players", art: "card-lifeline.webp" },
-  { id: "quick", title: "Quick shift", sub: "5 players · 4 min", art: "card-quick.webp" },
-  { id: "night", title: "Night shift", sub: "After dark", art: "card-night.webp" },
-  { id: "daily", title: "Daily case", sub: "Same for everyone", art: "card-daily.webp" },
-  { id: "signal", title: "Last Signal", sub: "Solo · 8 fighters", art: "card-signal.webp" },
+// Step 1 picks the game; step 2 shows only that game's ways to play.
+const GAMES = [
+  { id: "protocol", title: "Blackout Protocol", sub: "Rescue mission · find the infiltrator", art: "card-lifeline.webp" },
+  { id: "signal", title: "Last Signal", sub: "Battle royale · 8 fighters", art: "card-signal.webp" },
 ];
+const VARIANTS = {
+  protocol: [
+    { id: "lifeline", title: "Lifeline Run", sub: "Full shift · 8 players" },
+    { id: "quick", title: "Quick shift", sub: "5 players · 4 min" },
+    { id: "night", title: "Night shift", sub: "After dark" },
+    { id: "daily", title: "Daily case", sub: "Same for everyone" },
+  ],
+  signal: Object.values(SERIES_KINDS).map(({ id, title, sub }) => ({ id, title, sub })),
+};
+const MODES = [...VARIANTS.protocol, ...VARIANTS.signal];
 
 const CSS = `
 midnry-fps .mf-modal.mf-home { display: block !important; padding: 0 !important; overflow: hidden; background: #070a09 !important; }
@@ -64,7 +73,6 @@ midnry-fps .mf-newhere button:focus-visible { outline: 2px solid #fff; outline-o
 midnry-fps .mf-newhere .mf-ico { width: 18px; height: 18px; }
 midnry-fps .mf-systemcheck { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 12px; }
 midnry-fps .mf-systemcheck .mf-ico { width: 18px; height: 18px; }
-midnry-fps .mf-playlists button[data-start]::after { content: "Start here"; position: absolute; top: 10px; left: 10px; padding: 3px 8px; border-radius: 2px; background: #8fe3a8; color: #0b1a10; font: 700 11px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; }
 /* Desktop has the top menu bar; the left column copies are only for phones. */
 @media (min-width: 1101px) and (min-height: 641px) { midnry-fps .mf-modal.mf-home .mf-homeactions { display: none !important; } }
 /* Last Signal on touch: lift the health box clear of the movement stick. */
@@ -118,27 +126,39 @@ midnry-fps .mf-casecard strong { font: 800 30px/1.1 var(--mf-display); color: va
 midnry-fps .mf-casecard strong span { font-size: 18px; color: #cfd8d2; font-weight: 600; }
 midnry-fps .mf-casecard .mf-ico { width: 18px; height: 18px; }
 
-/* Bottom mode cards */
-midnry-fps .mf-playlists { position: absolute; left: 424px; right: 32px; bottom: 24px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; z-index: 1; }
-midnry-fps .mf-playlists button { all: unset; cursor: pointer; position: relative; height: 138px; border: 1px solid #ffffff24; border-radius: 4px; overflow: hidden; background: #0b100e center / cover no-repeat; box-shadow: 0 10px 28px #0008; }
-midnry-fps .mf-playlists button::before { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, #050706f2 8%, #05070600 72%); }
-midnry-fps .mf-playlists button > span { position: absolute; left: 14px; right: 34px; bottom: 12px; }
-midnry-fps .mf-playlists b { display: block; font: 800 21px/1 var(--mf-display); letter-spacing: 0.03em; text-transform: uppercase; color: #f1f4ef; }
-midnry-fps .mf-playlists small { display: flex; white-space: nowrap; align-items: center; gap: 8px; margin-top: 6px; font: 400 13px var(--mf-body); color: #c3ccc6; }
-midnry-fps .mf-playlists small::before { content: ""; width: 16px; height: 2px; background: #ffffff66; }
-midnry-fps .mf-playlists .mf-ico { position: absolute; right: 12px; bottom: 16px; width: 18px; height: 18px; color: #e9efe9; }
-midnry-fps .mf-playlists button[aria-pressed="true"] { border: 2px solid var(--mf-accent); }
-midnry-fps .mf-playlists button[aria-pressed="true"] small::before { background: var(--mf-accent); }
-midnry-fps .mf-playlists button:hover:not(:disabled), midnry-fps .mf-playlists button:focus-visible { border-color: #ffffff88; }
-midnry-fps .mf-playlists button[aria-pressed="true"]:is(:hover, :focus-visible) { border-color: var(--mf-accent); }
-midnry-fps .mf-playlists button:disabled { cursor: default; }
-midnry-fps .mf-playlists button:disabled:not([aria-pressed="true"]) { filter: grayscale(0.7) brightness(0.6); }
-midnry-fps .mf-playlists[data-online] button:not([aria-pressed="true"]) { display: none; }
+/* Bottom: 1 · choose a game, 2 · choose how to play it */
+midnry-fps .mf-playlists { position: absolute; left: 424px; right: 32px; bottom: 24px; display: grid; gap: 8px; z-index: 1; }
+midnry-fps .mf-steplabel { margin: 0; font: 600 13px var(--mf-display); letter-spacing: 0.14em; text-transform: uppercase; color: #aeb9b2; }
+midnry-fps .mf-steplabel b { color: var(--mf-accent); margin-right: 6px; }
+midnry-fps .mf-gamepick { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+midnry-fps .mf-gamepick button { all: unset; cursor: pointer; position: relative; height: 104px; border: 1px solid #ffffff24; border-radius: 4px; overflow: hidden; background: #0b100e center / cover no-repeat; box-shadow: 0 10px 28px #0008; }
+midnry-fps .mf-gamepick button::before { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, #050706f2 8%, #05070600 72%); }
+midnry-fps .mf-gamepick button > span { position: absolute; left: 14px; right: 34px; bottom: 12px; }
+midnry-fps .mf-gamepick b { display: block; font: 800 22px/1 var(--mf-display); letter-spacing: 0.03em; text-transform: uppercase; color: #f1f4ef; }
+midnry-fps .mf-gamepick small { display: flex; align-items: center; gap: 8px; margin-top: 6px; font: 400 13px var(--mf-body); color: #c3ccc6; }
+midnry-fps .mf-gamepick small::before { content: ""; flex: none; width: 16px; height: 2px; background: #ffffff66; }
+midnry-fps .mf-gamepick .mf-ico { position: absolute; right: 12px; bottom: 16px; width: 18px; height: 18px; color: #e9efe9; }
+midnry-fps .mf-gamepick button[aria-pressed="true"] { border: 2px solid var(--mf-accent); }
+midnry-fps .mf-gamepick button[aria-pressed="true"] small::before { background: var(--mf-accent); }
+midnry-fps .mf-variants { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+midnry-fps .mf-variants button { all: unset; cursor: pointer; position: relative; display: grid; gap: 3px; align-content: center; min-height: 56px; padding: 8px 12px; border: 1px solid #ffffff24; border-radius: 3px; background: #0c1210e6; color: #eef2ee; }
+midnry-fps .mf-variants b { font: 700 16px/1.05 var(--mf-display); letter-spacing: 0.04em; text-transform: uppercase; }
+midnry-fps .mf-variants small { font: 400 12px/1.25 var(--mf-body); color: #b9c4bd; }
+midnry-fps .mf-variants button[aria-pressed="true"] { background: linear-gradient(90deg, #ffc857, #c99a33); border-color: #ffd98a; color: #1b1405; }
+midnry-fps .mf-variants button[aria-pressed="true"] small { color: #2a1f08; }
+midnry-fps .mf-variants button[aria-pressed="true"] b::before { content: "✓ "; }
+midnry-fps :is(.mf-gamepick, .mf-variants) button:hover:not(:disabled) { border-color: #ffffff88; }
+midnry-fps :is(.mf-gamepick, .mf-variants) button[aria-pressed="true"]:is(:hover, :focus-visible) { border-color: var(--mf-accent); }
+midnry-fps :is(.mf-gamepick, .mf-variants) button:disabled { cursor: default; }
+midnry-fps :is(.mf-gamepick, .mf-variants) button:disabled:not([aria-pressed="true"]) { filter: grayscale(0.7) brightness(0.6); }
+midnry-fps .mf-variants button[data-start]::after { content: "Start here"; position: absolute; top: -9px; right: 8px; padding: 2px 6px; border-radius: 2px; background: #8fe3a8; color: #0b1a10; font: 700 10px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; }
+midnry-fps .mf-playnext { display: none; }
+midnry-fps .mf-playlists[data-online] :is(.mf-gamepick button:not([aria-pressed="true"]), .mf-variants, .mf-steplabel) { display: none; }
 
 /* Apple HIG: visible keyboard focus on every custom control, no motion when
    the system asks for less, and selection never shown by colour alone. */
 midnry-fps :is(.mf-hometop nav button, .mf-playlists button, .mf-casecard, .mf-settingsnav button, .mf-homeactions button, .mf-homefoot button):focus-visible { outline: 2px solid var(--mf-accent) !important; outline-offset: 2px; }
-midnry-fps .mf-playlists button[aria-pressed="true"]::after { content: "Selected"; position: absolute; top: 10px; left: 10px; padding: 3px 8px; border-radius: 2px; background: var(--mf-accent); color: var(--mf-accent-ink); font: 700 12px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; }
+midnry-fps .mf-gamepick button[aria-pressed="true"]::after { content: "Selected"; position: absolute; top: 10px; left: 10px; padding: 3px 8px; border-radius: 2px; background: var(--mf-accent); color: var(--mf-accent-ink); font: 700 12px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; }
 midnry-fps .mf-matchbar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 midnry-fps .mf-matchbar[hidden] { display: none !important; }
 midnry-fps .mf-matchbar button { display: flex !important; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 12px !important; border-radius: 3px !important; border: 1px solid #ffffff3d !important; background: #0c1210e6 !important; color: #f1f4ef !important; font: 600 16px var(--mf-display) !important; letter-spacing: 0.08em !important; text-transform: uppercase; box-shadow: none !important; }
@@ -205,17 +225,24 @@ midnry-fps .mf-settab .mf-retention > :is(p, button) { margin: 12px 0 0; }
   midnry-fps .mf-hometop .mf-wordmark { margin-right: auto; font-size: 13px; }
   midnry-fps .mf-modal.mf-home > .mf-panel { position: relative !important; left: auto; top: auto; bottom: auto; width: auto !important; margin: 96px 16px 0 !important; overflow: visible; }
   midnry-fps .mf-modal.mf-home .mf-panel h1 { font-size: 54px !important; }
-  midnry-fps .mf-playlists { position: relative; left: auto; right: auto; bottom: auto; margin: 16px 16px 0; grid-template-columns: repeat(2, 1fr); }
-  midnry-fps .mf-playlists button { height: 112px; }
+  midnry-fps .mf-playlists { position: relative; left: auto; right: auto; bottom: auto; margin: 16px 16px 0; }
+  midnry-fps .mf-gamepick button { height: 112px; }
+  midnry-fps .mf-playnext:not([hidden]) { all: unset; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; border-radius: 3px; background: var(--mf-accent); color: var(--mf-accent-ink); font: 800 20px var(--mf-display); letter-spacing: 0.04em; text-transform: uppercase; }
+  midnry-fps .mf-playnext b { font-size: 13px; padding: 2px 7px; border: 1px solid currentColor; border-radius: 2px; }
+  midnry-fps .mf-playnext .mf-ico { width: 18px; height: 18px; }
+  midnry-fps .mf-playnext:disabled { opacity: 0.5; cursor: default; }
   midnry-fps .mf-homeside { position: relative; right: auto; top: auto; width: auto; margin: 16px 16px calc(24px + var(--mf-safe-bottom, 0px)); }
   midnry-fps .mf-homefoot { margin-top: 4px; }
 }
 @media (max-width: 640px) {
   midnry-fps .mf-logosub { letter-spacing: 0.2em; font-size: 13px; }
   midnry-fps .mf-profilechip small .mf-xpbar { display: none; }
-  midnry-fps .mf-playlists b { font-size: 18px; }
-  midnry-fps .mf-playlists button > span { left: 10px; right: 26px; bottom: 10px; }
-  midnry-fps .mf-playlists .mf-ico { right: 8px; }
+  midnry-fps .mf-gamepick b { font-size: 18px; }
+  midnry-fps .mf-gamepick small { font-size: 12px; }
+  midnry-fps .mf-gamepick small::before { display: none; }
+  midnry-fps .mf-gamepick button > span { left: 10px; right: 26px; bottom: 10px; }
+  midnry-fps .mf-gamepick .mf-ico { right: 8px; }
+  midnry-fps .mf-variants { grid-template-columns: 1fr 1fr; }
 }
 `;
 
@@ -324,7 +351,10 @@ export class OutpostMenu {
         (yes) => {
           if (!yes) return;
           if (g.online) g.leaveOnline();
-          else g.reset();
+          else {
+            g.series = null;
+            g.reset();
+          }
         },
       ),
     );
@@ -341,23 +371,30 @@ export class OutpostMenu {
       `<section class="mf-card mf-opcard"><h3>Operator</h3><strong class="mf-opname"></strong><p class="mf-oplevel"></p><span class="mf-xpbar"><i></i></span></section><section class="mf-card mf-challenges"><header><h3>Daily challenges<b class="mf-chcount"></b></h3></header><ul></ul></section><button type="button" class="mf-casecard" data-mode="daily"><img src="menu/card-daily.webp" alt=""><span><small>Today's case</small><em class="mf-casenote"></em><strong class="mf-casescore"></strong></span>${icon("chevron")}</button>`,
     );
     this.modal.append(this.side);
-    // Bottom mode cards.
-    this.cards = el("div", "mf-playlists");
-    this.cards.setAttribute("role", "group");
-    this.cards.setAttribute("aria-label", "Choose a mode");
-    for (const mode of MODES) {
-      const card = el("button", "", `<span><b>${mode.title}</b><small>${mode.sub}</small></span>${icon("chevron")}`);
+    // Bottom: pick the game first, then how to play it.
+    this.cards = el(
+      "div",
+      "mf-playlists",
+      `<p class="mf-steplabel" id="mf-step1"><b>1</b>Choose a game</p><div class="mf-gamepick" role="group" aria-labelledby="mf-step1"></div><p class="mf-steplabel" id="mf-step2"><b>2</b>Choose how to play</p><div class="mf-variants" role="group" aria-labelledby="mf-step2"></div><button type="button" class="mf-playnext"><b>3</b>Play ${icon("chevron")}</button>`,
+    );
+    this.gamePick = this.cards.querySelector(".mf-gamepick");
+    this.variants = this.cards.querySelector(".mf-variants");
+    for (const game of GAMES) {
+      const card = el("button", "", `<span><b>${game.title}</b><small>${game.sub}</small></span>${icon("chevron")}`);
       card.type = "button";
-      card.dataset.mode = mode.id;
-      card.style.backgroundImage = `url("menu/${mode.art}")`;
-      this.cards.append(card);
+      card.dataset.mode = game.id;
+      card.style.backgroundImage = `url("menu/${game.art}")`;
+      this.gamePick.append(card);
     }
     this.modal.append(this.cards);
+    // Phones scroll past the Play button to reach the choices: repeat it here.
+    this.playNext = this.cards.querySelector(".mf-playnext");
+    g.on(this.playNext, "click", () => g.$(".mf-start")?.click());
     const go = (event) => {
       const target = event.target.closest("[data-go]");
       if (target) this.go(target.dataset.go);
-      const mode = event.target.closest("[data-mode]");
-      if (mode && !mode.disabled) this.pick(mode.dataset.mode);
+      const mode = event.target.closest("[data-mode], [data-variant]");
+      if (mode && !mode.disabled) this.pick(mode.dataset.mode || mode.dataset.variant);
     };
     for (const node of [this.top, this.actions, this.foot, this.side, this.cards, this.welcome]) g.on(node, "click", go);
   }
@@ -456,11 +493,12 @@ export class OutpostMenu {
     if (button && !button.disabled) button.click();
   }
 
-  /** The current card: shift plus the night-shift modifier. */
+  /** The current way to play: a Last Signal series kind, or a Blackout
+   * Protocol shift plus the night-shift modifier. */
   current() {
     const g = this.g,
       shift = shiftChoice(g.shift);
-    if (g.mode === "signal") return "signal";
+    if (g.mode === "signal") return seriesKindOf(g.seriesKind);
     if (shift !== "full") return shift;
     return modifierChoice(g.modifier) === "night-shift" ? "night" : "lifeline";
   }
@@ -468,17 +506,36 @@ export class OutpostMenu {
   pick(mode) {
     const g = this.g;
     if (g.online || g.state === "playing" || mode === this.current()) return;
-    // Last Signal is its own game; every other card is a Lifeline Run shift.
-    g.mode = mode === "signal" ? "signal" : "protocol";
-    try {
-      localStorage.setItem("midnry-outpost-mode", g.mode);
-    } catch {}
-    if (mode === "signal") {
+    // Step 1: switch game, keeping that game's last way to play.
+    if (mode === "signal" || mode === "protocol") {
+      if (g.mode === mode) return;
+      g.mode = mode;
+      try {
+        localStorage.setItem("midnry-outpost-mode", g.mode);
+      } catch {}
       g.reset();
       g.protocolUI?.refreshMenu();
       this.refresh();
       return;
     }
+    // Step 2, Last Signal: single round or a series (a new series starts).
+    if (Object.hasOwn(SERIES_KINDS, mode)) {
+      g.mode = "signal";
+      g.seriesKind = mode;
+      g.series = null;
+      try {
+        localStorage.setItem("midnry-outpost-mode", g.mode);
+        localStorage.setItem("midnry-outpost-series", mode);
+      } catch {}
+      g.reset();
+      g.protocolUI?.refreshMenu();
+      this.refresh();
+      return;
+    }
+    g.mode = "protocol";
+    try {
+      localStorage.setItem("midnry-outpost-mode", g.mode);
+    } catch {}
     const shift = mode === "quick" || mode === "daily" ? mode : "full";
     let modifier = modifierChoice(g.modifier);
     if (mode === "night") modifier = "night-shift";
@@ -528,7 +585,19 @@ export class OutpostMenu {
     } catch {}
     const welcome = rookie && rounds === 0 && !trained && !signal;
     if (this.welcome.hidden === welcome) this.welcome.hidden = !welcome;
-    const quick = this.cards.querySelector('[data-mode="quick"]');
+    const game = signal ? "signal" : "protocol";
+    if (this.variants.dataset.game !== game) {
+      this.variants.dataset.game = game;
+      this.variants.replaceChildren(
+        ...VARIANTS[game].map((v) => {
+          const button = el("button", "", `<b>${v.title}</b><small>${v.sub}</small>`);
+          button.type = "button";
+          button.dataset.variant = v.id;
+          return button;
+        }),
+      );
+    }
+    const quick = this.variants.querySelector('[data-variant="quick"]');
     if (quick && quick.hasAttribute("data-start") !== (rookie && !signal)) quick.toggleAttribute("data-start", rookie && !signal);
     const profile = g.retention?.profile;
     const name = g.playerName || "Operator";
@@ -573,14 +642,21 @@ export class OutpostMenu {
     const locked = online || g.state === "playing";
     const now = this.current();
     this.cards.toggleAttribute("data-online", online);
-    for (const card of this.cards.children) {
-      card.setAttribute("aria-pressed", String(card.dataset.mode === (online ? "lifeline" : now)));
+    for (const card of this.cards.querySelectorAll("button")) {
+      const pressed = card.dataset.mode ? card.dataset.mode === (online ? "protocol" : game) : card.dataset.variant === now;
+      if (card.getAttribute("aria-pressed") !== String(pressed)) card.setAttribute("aria-pressed", String(pressed));
       card.disabled = locked;
       card.title = locked && !online ? "Finish or exit this round to change mode" : "";
     }
     this.side.querySelector(".mf-casecard").disabled = locked;
+    const start = g.$(".mf-start");
+    if (this.playNext.hidden !== (online || g.state === "playing")) this.playNext.hidden = online || g.state === "playing";
+    if (this.playNext.disabled !== Boolean(start?.disabled)) this.playNext.disabled = Boolean(start?.disabled);
     const chosen = MODES.find((m) => m.id === (online ? "lifeline" : now));
-    const summary = online ? "" : `<b>${chosen.title}</b> · ${chosen.sub}${g.state === "playing" ? " · in progress" : ""}`;
+    const series = signal && g.series?.rounds.length && !g.series.done ? ` · round ${g.series.round} next` : "";
+    const summary = online
+      ? ""
+      : `<b>${signal ? "Last Signal" : "Blackout Protocol"} · ${chosen.title}</b> · ${chosen.sub}${series}${g.state === "playing" ? " · in progress" : ""}`;
     if (this.summary.innerHTML !== summary) this.summary.innerHTML = summary;
     this.summary.hidden = !summary;
     const midMatch = g.state === "playing" && !g.deathSequence;

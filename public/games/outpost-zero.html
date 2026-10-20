@@ -1444,6 +1444,42 @@
       midnry-fps .mf-results .mf-again {
         width: 100%;
       }
+      midnry-fps .mf-seriesboard {
+        margin: 10px 0;
+      }
+      midnry-fps .mf-serieshead {
+        margin: 0 0 8px;
+        font: 14px/1.4 var(--mf-body);
+      }
+      midnry-fps .mf-seriestable {
+        width: 100%;
+        border-collapse: collapse;
+        font: 13px/1.3 var(--mf-body);
+      }
+      midnry-fps .mf-seriestable caption {
+        text-align: left;
+        padding-bottom: 6px;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #aeb9b2;
+      }
+      midnry-fps .mf-seriestable :is(th, td) {
+        padding: 5px 6px;
+        border-top: 1px solid #ffffff1a;
+        text-align: right;
+      }
+      midnry-fps .mf-seriestable :is(th[scope="row"], thead th:nth-child(2)) {
+        text-align: left;
+      }
+      midnry-fps .mf-seriestable thead th {
+        font-weight: 600;
+        color: #aeb9b2;
+      }
+      midnry-fps .mf-seriestable tr.mf-you {
+        color: #ffc855;
+        font-weight: 700;
+      }
       midnry-fps .mf-countdown {
         position: absolute;
         left: 50%;
@@ -2444,6 +2480,7 @@
         checkScene,
       } from "./outpost-compatibility.js";
       import { Retention } from "./outpost-retention.js";
+      import { Series, SERIES_MAPS, seriesKindOf } from "./outpost-series.js";
       import {
         LookSettings,
         lookDelta,
@@ -2937,9 +2974,16 @@
               this.mapId = "breakwater";
               this.weapon = "carbine";
             } else {
-              // Last Signal rotates through the open arenas.
+              // A Last Signal series plays the arenas in turn and continues
+              // until it is decided; a single round picks an arena at random.
+              this.seriesKind = seriesKindOf(this.seriesKind ?? storedSetting("midnry-outpost-series"));
+              if (this.seriesKind === "single") this.series = null;
+              else if (!this.series || this.series.done || this.series.kind !== this.seriesKind)
+                this.series = new Series(this.seriesKind, Math.floor(Math.random() * SERIES_MAPS.length));
               const arenas = ["outpost", "skyport", "estate"].filter((id) => MAPS[id]);
-              this.mapId = arenas[Math.floor(Math.random() * arenas.length)] || "outpost";
+              this.mapId = this.series
+                ? this.series.mapFor()
+                : arenas[Math.floor(Math.random() * arenas.length)] || "outpost";
             }
             // Offline shift length; the daily case is a seeded Quick shift
             // where everyone is an operator hunting the same infiltrator.
@@ -3400,6 +3444,8 @@
             this.$(".mf-copy").textContent = won
               ? "Lifesaving aid delivered. Start a new Blackout Protocol mission when ready."
               : "The rescue was lost. Start a fresh mission and protect the medical shipment.";
+            // A series needs the whole round: play out what is left, unseen.
+            if (this.mode === "signal" && this.series) this.series.record(this.arena, this.selfId);
             this.retention?.finish(won);
             if (this.mode === "protocol") this.protocolUI?.result(won);
           }
