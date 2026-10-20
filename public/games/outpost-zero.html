@@ -4496,7 +4496,14 @@
               if (stage === "coming") this.message(`⚠ ${info.name.toUpperCase()} INCOMING`, 2.5);
               if (stage === "over") this.message(`${info.name.toUpperCase()} HAS PASSED`, 2);
             }
-            weather.classList.toggle("mf-sand", on && d.kind === "sandstorm");
+            // Sand on the screen builds and clears with the storm.
+            const sand =
+              d?.kind === "sandstorm" && t < d.endAt
+                ? Math.min(1, Math.max(0, (t - (d.startAt - 2)) / 3), Math.max(0, (d.endAt - t) / 3))
+                : 0;
+            weather.classList.toggle("mf-sand", sand > 0);
+            const opacity = sand ? sand.toFixed(2) : "";
+            if (weather.style.opacity !== opacity) weather.style.opacity = opacity;
             const bolt = this.arena.fx.find((f) => f.kind === "lightning" && f.until > t);
             if (bolt && bolt.id !== this.boltSeen) {
               this.boltSeen = bolt.id;

@@ -12,6 +12,7 @@ import {
 } from "./outpost-progression.js";
 import { weaponOf, OUTFITS, mapOf } from "./outpost-sim.js";
 import { standingsHTML } from "./outpost-series.js";
+import { BattleMusic, battleIntensity } from "./outpost-music.js";
 import { spatialSound } from "./outpost-spatial-audio.js";
 const read = (key) => {
   try {
@@ -31,6 +32,7 @@ class FieldAudio {
     const p = read("midnry-outpost-audio");
     this.volume = Number.isFinite(p?.volume) ? Math.max(0, Math.min(1, p.volume)) : 0.35;
     this.muted = Boolean(p?.muted);
+    this.music = Number.isFinite(p?.music) ? Math.max(0, Math.min(1, p.music)) : 0.6;
     this.voices = 0;
   }
   unlock() {
@@ -54,7 +56,19 @@ class FieldAudio {
   level() {
     if (this.master)
       this.master.gain.setTargetAtTime(this.muted ? 0 : this.volume, this.ctx.currentTime, 0.025);
-    write("midnry-outpost-audio", { volume: this.volume, muted: this.muted });
+    if (this.musicGain) this.musicGain.gain.setTargetAtTime(this.music * 0.55, this.ctx.currentTime, 0.05);
+    write("midnry-outpost-audio", { volume: this.volume, muted: this.muted, music: this.music });
+  }
+  /** Last Signal battle music, through the master volume and its own level. */
+  battle() {
+    if (!this.master || this.ctx.state !== "running") return null;
+    if (!this.score) {
+      this.musicGain = this.ctx.createGain();
+      this.musicGain.gain.value = this.music * 0.55;
+      this.musicGain.connect(this.master);
+      this.score = new BattleMusic(this.ctx, this.musicGain);
+    }
+    return this.score;
   }
   tone(frequency, duration = 0.1, gain = 0.12, pan = 0, type = "triangle", end = frequency) {
     const a = this.ctx;
@@ -139,7 +153,7 @@ export class Retention {
     );
     g.$(".mf-network").insertAdjacentHTML(
       "beforebegin",
-      `<details class="mf-retention"><summary>PLAYER EXPERIENCE / <span class="mf-level"></span></summary><label>Bot difficulty<select class="mf-difficulty" aria-label="Bot difficulty"><option value="easy">Easy · relaxed reactions</option><option value="normal" selected>Normal · standard combat</option><option value="hard">Hard · faster, more alert</option></select></label><p>Health and weapon damage stay the same. Online, the host chooses before starting.</p><label>Your name<input class="mf-playername" maxlength="16" autocomplete="nickname" spellcheck="false" placeholder="Shown above your head"></label><label><input class="mf-reveal" type="checkbox" checked> Reveal roles when someone is voted out</label><label>Match modifier<select class="mf-modifier" aria-label="Match modifier"><option value="random">Random each match</option>${MODIFIERS.map((m) => `<option value="${m.id}">${m.name}</option>`).join("")}</select></label><label>Sound volume<input class="mf-volume" aria-label="Sound volume" type="range" min="0" max="100" value="35"></label><label><input class="mf-mute" type="checkbox"> Mute sound</label><button class="mf-lockeropen">RANGER LOCKER →</button></details>`,
+      `<details class="mf-retention"><summary>PLAYER EXPERIENCE / <span class="mf-level"></span></summary><label>Bot difficulty<select class="mf-difficulty" aria-label="Bot difficulty"><option value="easy">Easy · relaxed reactions</option><option value="normal" selected>Normal · standard combat</option><option value="hard">Hard · faster, more alert</option></select></label><p>Health and weapon damage stay the same. Online, the host chooses before starting.</p><label>Your name<input class="mf-playername" maxlength="16" autocomplete="nickname" spellcheck="false" placeholder="Shown above your head"></label><label><input class="mf-reveal" type="checkbox" checked> Reveal roles when someone is voted out</label><label>Match modifier<select class="mf-modifier" aria-label="Match modifier"><option value="random">Random each match</option>${MODIFIERS.map((m) => `<option value="${m.id}">${m.name}</option>`).join("")}</select></label><label>Sound volume<input class="mf-volume" aria-label="Sound volume" type="range" min="0" max="100" value="35"></label><label>Music volume<input class="mf-music" aria-label="Music volume" type="range" min="0" max="100" value="60"></label><label><input class="mf-mute" type="checkbox"> Mute sound</label><button class="mf-lockeropen">RANGER LOCKER →</button></details>`,
     );
     g.shell.insertAdjacentHTML(
       "beforeend",
@@ -149,6 +163,12 @@ export class Retention {
     g.$(".mf-mute").checked = this.audio.muted;
     g.on(g.$(".mf-volume"), "input", (e) => {
       this.audio.volume = Number(e.target.value) / 100;
+      this.audio.unlock();
+      this.audio.level();
+    });
+    g.$(".mf-music").value = String(this.audio.music * 100);
+    g.on(g.$(".mf-music"), "input", (e) => {
+      this.audio.music = Number(e.target.value) / 100;
       this.audio.unlock();
       this.audio.level();
     });
@@ -539,6 +559,25 @@ export class Retention {
     }
     this.lastStand(g, audible);
     this.hazardSounds(g, audible);
+    this.battleMusic(g);
+  }
+  /** Music plays during a Last Signal round you are in, and builds with the
+   * tension; it fades out when you pause, die or the round ends. */
+  battleMusic(g) {
+    const live =
+      g.mode === "signal" &&
+      g.running &&
+      g.state === "playing" &&
+      g.player?.hp > 0 &&
+      !g.deathSequence &&
+      !document.hidden &&
+      this.audio.music > 0;
+    const music = live ? this.audio.battle() : this.audio.score;
+    if (!music) return;
+    if (!live) return music.stop();
+    music.setIntensity(battleIntensity(g));
+    music.start();
+    music.pump();
   }
   /** Disaster siren and weather, explosions near you, thunder. Game-time
    * events are keyed by id so each plays once. */

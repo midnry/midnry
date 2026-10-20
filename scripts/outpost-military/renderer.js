@@ -3354,9 +3354,7 @@ export class MilitaryRenderer {
     // Last Signal disasters: sandstorm haze, or a dark storm lit by lightning.
     const weather = g.mode !== "protocol" && (this.hazards ||= new HazardDressing(this)).weather();
     this.scene.fog.color.set(
-      weather
-        ? weather.fog
-        : sandstorm
+      sandstorm
         ? this.night?.active ? "#4a3f30" : "#b39a72"
         : this.night?.active
         ? "#121d2e"
@@ -3368,9 +3366,7 @@ export class MilitaryRenderer {
     );
     // Electrical sabotage cannot change the weather or fill open air with
     // black fog. Interior darkness comes from unpowered fixtures and shelter.
-    this.scene.fog.density = weather
-      ? this.naturalLighting?.inside ? weather.density * 0.55 : weather.density
-      : sandstorm
+    this.scene.fog.density = sandstorm
       ? this.naturalLighting?.inside ? 0.05 : 0.09
       : this.night?.active
       ? this.naturalLighting?.inside ? 0.01 : 0.026
@@ -3379,8 +3375,14 @@ export class MilitaryRenderer {
         : g.arena.mapId === "medevac" && !protocolView?.protocol?.mission?.vehicle?.arrived
           ? 0.002
           : 0.009;
+    // Disasters blend in from the arena's own fog as they roll in.
+    if (weather) {
+      this.scene.fog.color.lerp((this.weatherFog ||= new THREE.Color()).set(weather.fog), weather.k);
+      const density = this.naturalLighting?.inside ? weather.density * 0.55 : weather.density;
+      this.scene.fog.density += (density - this.scene.fog.density) * weather.k;
+    }
     // Blowing sand hides the sky too; the day sky returns next frame.
-    if (sandstorm || weather?.sky) this.scene.background = (this.sandSky ||= new THREE.Color()).copy(this.scene.fog.color);
+    if (sandstorm) this.scene.background = (this.sandSky ||= new THREE.Color()).copy(this.scene.fog.color);
     // A 30Hz shadow refresh matches visible skeletal animation. Reusing the
     // shadow texture between samples avoids a second full geometry pass at
     // 120Hz; camera and player movement continue on every animation frame.

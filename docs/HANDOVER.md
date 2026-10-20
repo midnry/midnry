@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=signal-weather-2-20261020`.
+  Current live value: `v=signal-weather-2-20261020` (`game-look` carries `v=signal-music-20261020`, not yet deployed).
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -54,6 +54,8 @@ hash is stored: `e4ecd2762674dd4bb706fe3aa4fd2d8fc49e1124691d66437d26f8194c9106d
 | `mode-menu.mjs [width]` | Home: choose a game, then how to play; plays two series rounds and photographs the standings → `screenshots/qa/menu`. |
 | `signal-hazards.mjs [width]` | Canister in view, a red canister exploding, each arena's disaster warning and disaster → `screenshots/qa/hazards`. |
 | `phone-hud.mjs` | Phone game screen (portrait + landscape) with a disaster warning: HUD boxes, overlaps, % of screen covered → `screenshots/qa/phone`. |
+| `signal-haze.mjs [width]` | Red Haze curtain near / far / outside, sandstorm and storm half rolled in → `screenshots/qa/haze`. |
+| `music-preview.mjs` | Renders the battle music (stalk / hunt / fight) to `screenshots/qa/music-preview.wav`, prints loudness, checks it starts, builds and stops in a round. |
 | `signal-rounds.mjs [width]` | Plays 3 Last Signal rounds watching for page errors (caught the Charge Core crash). |
 | `signal-lives.mjs` | Start shield, losing a life, last life ends the round. |
 | `signal-regen.mjs` | Health recovery after 5 s without damage. |
@@ -226,3 +228,17 @@ makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to
 - Phone HUD (≤700 px wide or ≤500 px tall): survivors only, cores line hidden, disaster
   banner one line under the status in the top-left; Overdrive lifted off the health box.
   `phone-hud.mjs`: no overlaps, ~16 % of the screen covered.
+
+## Fades, visible Red Haze, battle music (on `game-look`, awaiting owner's "deploy")
+
+- Disaster weather fades: `HazardDressing.fade()` builds over the last 2 s of the warning
+  + first 1 s, clears over the last 3 s; fog colour/density blend from the arena's fog,
+  the sky dome (clouds for storms, sand colour for sandstorms) and rain use it as opacity,
+  light dimming scales with it; the sand screen overlay uses the same curve.
+- Red Haze edge: `updateHaze()` draws a 4-sided glowing red curtain on the safe-zone square
+  from 3 s before the haze starts, brighter within 4 tiles of the edge.
+- Music: `public/games/outpost-music.js` (`BattleMusic`, Web Audio synthesis, 132 BPM,
+  D minor; levels stalk / hunt / fight via `battleIntensity()`), played by
+  `Retention.battleMusic()` in Last Signal while you are alive and the game runs.
+  "Music volume" slider (Player experience), stored in `midnry-outpost-audio.music`.
+  Blackout Protocol has no music yet (voice chat / meetings) — owner can ask.

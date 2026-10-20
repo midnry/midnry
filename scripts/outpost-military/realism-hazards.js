@@ -139,6 +139,7 @@ export class HazardDressing {
     );
     this.updateTerrain();
     this.updateStorm(t);
+    this.updateHaze(t);
   }
   sync(map, items, make, place) {
     const live = new Set();
@@ -286,6 +287,70 @@ export class HazardDressing {
     r.dynamic.add(root);
     return root;
   }
+  /** The Red Haze edge: a glowing red curtain along the safe-zone square, so
+   * you see it coming. It appears just before the haze starts, follows the
+   * zone as it shrinks and glows harder the closer you are. */
+  updateHaze(t) {
+    const r = this.r,
+      g = r.g,
+      a = g.arena,
+      z = a.zone,
+      show = !["training", "protocol"].includes(g.mode) && !!z && a.time > z.delay - 3;
+    if (!show) {
+      if (this.haze) this.haze.visible = false;
+      return;
+    }
+    const walls = (this.haze ||= this.makeHaze()),
+      p = g.camera(),
+      half = Math.max(0.05, z.half),
+      length = half * 2 * SCALE,
+      inside = half - Math.max(Math.abs(p.x - z.cx), Math.abs(p.y - z.cy)),
+      near = Math.max(0, 1 - Math.abs(inside) / 4),
+      rise = Math.min(1, (a.time - (z.delay - 3)) / 3),
+      pulse = r.motion.matches ? 0 : Math.sin(t * 3) * 0.06;
+    walls.visible = true;
+    walls.children.forEach((wall, i) => {
+      const side = [
+        [0, -1],
+        [1, 0],
+        [0, 1],
+        [-1, 0],
+      ][i];
+      wall.position.set((z.cx + side[0] * half) * SCALE, 0, (z.cy + side[1] * half) * SCALE);
+      wall.scale.x = length;
+      wall.material.map.repeat.x = length / 9;
+      wall.material.map.offset.x = r.motion.matches ? 0 : (t * 0.03 * (i % 2 ? 1 : -1)) % 1;
+      wall.material.opacity = (0.4 + 0.5 * near + pulse) * rise;
+    });
+  }
+  makeHaze() {
+    const r = this.r,
+      root = new THREE.Group(),
+      geo = new THREE.PlaneGeometry(1, 8);
+    geo.translate(0, 4, 0);
+    for (let i = 0; i < 4; i++) {
+      const map = hazeTexture().clone();
+      map.needsUpdate = true;
+      const wall = new THREE.Mesh(
+        geo,
+        new THREE.MeshBasicMaterial({
+          map,
+          color: "#ff3a2e",
+          transparent: true,
+          depthWrite: false,
+          side: THREE.DoubleSide,
+          blending: THREE.AdditiveBlending,
+          fog: false,
+          toneMapped: false,
+        }),
+      );
+      wall.rotation.y = i % 2 ? Math.PI / 2 : 0;
+      wall.renderOrder = 2;
+      root.add(wall);
+    }
+    r.scene.add(root);
+    return root;
+  }
   /** Lasting ground damage, drawn as one instanced batch per kind: quake
    * cracks with buckled slabs, rubble from collapsed walls, scorch marks
    * and sand drifts. */
@@ -413,20 +478,34 @@ export class HazardDressing {
       ),
     };
   }
-  /** A thunderstorm: rolling black clouds, rain, and distant sheet lightning. */
+  /** A thunderstorm (rolling black clouds, rain, distant sheet lightning) or
+   * a sandstorm sky, both fading in and out over the real sky. */
   updateStorm(t) {
     const r = this.r,
-      a = r.g.arena,
-      d = a.disaster,
-      on = !!d && d.kind === "storm" && a.time >= d.startAt && a.time < d.endAt;
-    if (!on) {
+      d = r.g.arena.disaster,
+      k = this.fade();
+    if (!k) {
       if (this.storm) this.storm.root.visible = false;
       return;
     }
     const s = (this.storm ||= this.makeStorm()),
       now = performance.now(),
-      still = r.motion.matches;
+      still = r.motion.matches,
+      storm = d.kind === "storm";
     s.root.visible = true;
+    s.dome.material.map = storm ? s.clouds : null;
+    if (s.dome.material.userData.kind !== d.kind) {
+      s.dome.material.userData.kind = d.kind;
+      s.dome.material.needsUpdate = true;
+    }
+    s.dome.material.opacity = k;
+    s.rain.visible = storm;
+    s.rain.material.opacity = 0.35 * k;
+    if (!storm) {
+      s.root.position.copy(r.camera.position);
+      s.dome.material.color.set("#b39a72");
+      return;
+    }
     s.root.position.copy(r.camera.position);
     s.dome.rotation.y = still ? 0 : t * 0.012;
     s.clouds.offset.x = still ? 0 : t * 0.004;
@@ -436,7 +515,7 @@ export class HazardDressing {
       this.sheetUntil = now + 90 + Math.random() * 120;
     }
     const lit = now < this.flashUntil ? 1 : now < (this.sheetUntil || 0) ? 0.55 : 0;
-    s.dome.material.color.setScalar(1 + lit * 1.8);
+    s.dome.material.color.setRGB(1, 1, 1).multiplyScalar(1 + lit * 1.8);
     // Rain falls around the camera and wraps.
     const pos = s.rain.geometry.attributes.position,
       fall = Math.min(0.1, (now - (this.rainAt || now)) / 1000) * 34;
@@ -462,6 +541,7 @@ export class HazardDressing {
         toneMapped: false,
         fog: false,
         depthWrite: false,
+        transparent: true,
       }),
     );
     dome.renderOrder = -1;
@@ -498,32 +578,42 @@ export class HazardDressing {
     const r = this.r,
       a = r.g.arena,
       d = a.disaster;
-    if (!d || d.kind !== "storm" || a.time < d.startAt || a.time >= d.endAt) return null;
+    const k = d?.kind === "storm" ? this.fade() : 0;
+    if (!k) return null;
     const now = performance.now(),
       lit = now < this.flashUntil ? 1 : now < (this.sheetUntil || 0) ? 0.4 : 0,
-      saved = [r.sun.intensity, r.hemisphere.intensity, r.scene.environmentIntensity];
-    r.sun.intensity *= 0.12 + lit * 0.5;
-    r.hemisphere.intensity *= 0.75 + lit * 3;
-    r.scene.environmentIntensity *= 0.35 + lit * 0.9;
+      saved = [r.sun.intensity, r.hemisphere.intensity, r.scene.environmentIntensity],
+      mix = (to) => 1 + (to - 1) * k;
+    r.sun.intensity *= mix(0.12 + lit * 0.5);
+    r.hemisphere.intensity *= mix(0.75 + lit * 3);
+    r.scene.environmentIntensity *= mix(0.35 + lit * 0.9);
     return () => {
       [r.sun.intensity, r.hemisphere.intensity, r.scene.environmentIntensity] = saved;
     };
   }
-  /** Fog / sky for the active disaster, or null. */
-  weather() {
+  /** How far the weather has rolled in, 0–1: it builds over the last two
+   * seconds of the warning and first second of the disaster, and clears over
+   * its last three seconds. Earthquakes have no weather. */
+  fade() {
     const a = this.r.g.arena,
       d = a.disaster;
-    if (!d || a.time < d.startAt || a.time >= d.endAt) return null;
-    if (d.kind === "sandstorm") return { fog: "#b39a72", density: 0.09, sky: true };
-    if (d.kind === "storm") {
-      const now = performance.now();
-      return now < this.flashUntil
-        ? { fog: "#c9d4ea", density: 0.014, sky: false }
-        : now < (this.sheetUntil || 0)
-          ? { fog: "#4a5468", density: 0.028, sky: false }
-          : { fog: "#1d232d", density: 0.034, sky: false };
-    }
-    return null;
+    if (!d || d.kind === "quake") return 0;
+    const t = a.time,
+      k = Math.min(1, Math.max(0, (t - (d.startAt - 2)) / 3), Math.max(0, (d.endAt - t) / 3));
+    return t >= d.endAt ? 0 : k;
+  }
+  /** Target fog for the active disaster and how far to blend towards it. */
+  weather() {
+    const d = this.r.g.arena.disaster,
+      k = this.fade();
+    if (!k) return null;
+    if (d.kind === "sandstorm") return { fog: "#b39a72", density: 0.09, k };
+    const now = performance.now();
+    return now < this.flashUntil
+      ? { fog: "#c9d4ea", density: 0.014, k }
+      : now < (this.sheetUntil || 0)
+        ? { fog: "#4a5468", density: 0.028, k }
+        : { fog: "#1d232d", density: 0.034, k };
   }
   /** Camera shake during an earthquake, and a stumbling sway when walking
    * over cracked, rubble-strewn or sandy ground (none with reduced motion). */
@@ -689,5 +779,36 @@ const stormClouds = once(() => {
     c.fillRect(0, h * 0.42, w, h * 0.58);
   });
   tex.wrapS = THREE.RepeatWrapping;
+  return tex;
+});
+// Red Haze curtain: bright at the ground, fading upwards, with drifting
+// vertical wisps (tiles horizontally and scrolls upwards).
+const hazeTexture = once(() => {
+  const tex = canvasTexture(256, 256, (c, w, h) => {
+    const g = c.createLinearGradient(0, h, 0, 0);
+    g.addColorStop(0, "#ffffffee");
+    g.addColorStop(0.08, "#ffffff99");
+    g.addColorStop(0.5, "#ffffff40");
+    g.addColorStop(1, "#ffffff00");
+    c.fillStyle = g;
+    c.fillRect(0, 0, w, h);
+    let seed = 5;
+    const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    c.globalCompositeOperation = "destination-out";
+    for (let i = 0; i < 40; i++) {
+      const x = rand() * w,
+        width = 4 + rand() * 18;
+      const gap = c.createLinearGradient(x - width, 0, x + width, 0);
+      gap.addColorStop(0, "#00000000");
+      gap.addColorStop(0.5, `rgba(0,0,0,${0.3 + rand() * 0.4})`);
+      gap.addColorStop(1, "#00000000");
+      c.fillStyle = gap;
+      c.fillRect(x - width, 0, width * 2, h);
+    }
+    c.globalCompositeOperation = "source-over";
+    c.fillStyle = "#ffffff";
+    c.fillRect(0, h - 3, w, 3);
+  });
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   return tex;
 });
