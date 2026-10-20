@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=weapons-20261020` (modelled first-person weapons deployed 2026-10-20).
+  Current live value: `v=store-loading-20261020` (store in NGN/USD, loading screens deployed 2026-10-20).
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -413,7 +413,7 @@ shadows the captions. `node scripts/qa/loading-art.mjs` screenshots laptop + pho
 - Not modelled yet: launcher, fusecaster/shardpod, blades/scythe, knuckles (still procedural).
 - QA: `node scripts/qa/weapon-look.mjs <tag> [width] [weapons]` (rest + mid-reload shots).
 
-## Store: weapon finishes (on `game-look`, not deployed)
+## Store: weapon finishes (deployed 2026-10-20)
 
 Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack, Pass perk).
 - Why finishes, not outfits: in Protocol/Signal every soldier wears the plain uniform dyed by
