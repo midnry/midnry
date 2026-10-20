@@ -112,15 +112,34 @@ export class HazardDressing {
       strikes,
       (s) => this.mark(s),
       (root, s) => {
-        const left = Math.max(0, s.at - a.time),
-          pulse = r.motion.matches
-            ? 0.8
-            : 0.55 + 0.45 * Math.abs(Math.sin(t * (left < 0.6 ? 18 : 9)));
-        root.position.set(s.x * SCALE, 0.05, s.y * SCALE);
-        root.children[0].material.opacity = pulse;
-        root.children[1].material.opacity = 0.15 + (1 - left / 1.6) * 0.3;
+        const total = s.kind === "storm" ? 1.6 : 1.4,
+          left = Math.max(0, s.at - a.time),
+          grown = 1 - left / total,
+          still = r.motion.matches;
+        root.position.set(s.x * SCALE, 0.04, s.y * SCALE);
+        if (s.kind === "storm") {
+          // Hologram: a spinning grid disc and a rising column of light,
+          // flickering faster as the strike gets close.
+          const [disc, column] = root.children,
+            flicker = still ? 1 : 0.75 + 0.25 * Math.sin(t * (left < 0.5 ? 40 : 14));
+          disc.rotation.z = still ? 0 : t * 1.6;
+          disc.material.opacity = (0.45 + 0.45 * grown) * flicker;
+          column.material.opacity = (0.1 + 0.25 * grown) * flicker;
+          column.material.map.offset.y = still ? 0 : -t * 0.8;
+          column.scale.y = 0.4 + grown * 0.6;
+          column.position.y = (column.scale.y * 2.6) / 2;
+        } else {
+          // Cracks spread out from the impact point and start to glow.
+          const crack = root.children[0];
+          crack.scale.setScalar(0.45 + 0.55 * Math.min(1, grown * 1.3));
+          crack.material.opacity = 0.55 + 0.45 * grown;
+          crack.material.emissiveIntensity =
+            0.4 + (still ? 0.6 : 0.6 + 0.4 * Math.sin(t * 20)) * grown;
+        }
       },
     );
+    this.updateTerrain();
+    this.updateStorm(t);
   }
   sync(map, items, make, place) {
     const live = new Set();
@@ -217,37 +236,283 @@ export class HazardDressing {
   }
   mark(s) {
     const r = this.r,
-      root = new THREE.Group(),
-      color = s.kind === "storm" ? "#fff2a8" : "#ff8a3d";
-    const ring = r.mesh(
-      root,
-      r.geo("strike-ring", () => new THREE.RingGeometry(0.82, 1, 40)),
-      r.material({
-        color,
-        emissive: color,
-        emissiveIntensity: 1.4,
-        transparent: true,
-        depthWrite: false,
-      }),
-    );
-    const fill = r.mesh(
-      root,
-      r.geo("strike-fill", () => new THREE.CircleGeometry(0.82, 40)),
-      r.material({
-        color: "#ff3b2f",
-        emissive: "#ff3b2f",
-        emissiveIntensity: 0.8,
-        transparent: true,
-        depthWrite: false,
-      }),
-    );
-    for (const m of [ring, fill]) {
+      root = new THREE.Group();
+    const flat = (geo, mat, size) => {
+      const m = r.mesh(root, geo, mat, [0, 0, 0], [size, size, size]);
       m.rotation.x = -Math.PI / 2;
-      m.castShadow = false;
+      m.castShadow = m.receiveShadow = false;
+      return m;
+    };
+    if (s.kind === "storm") {
+      flat(
+        r.geo("holo-disc", () => new THREE.CircleGeometry(1, 48)),
+        new THREE.MeshBasicMaterial({
+          map: holoDisc(),
+          transparent: true,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          color: "#7fe6ff",
+          side: THREE.DoubleSide,
+        }),
+        1.3 * SCALE,
+      );
+      const column = r.mesh(
+        root,
+        r.geo("holo-column", () => new THREE.CylinderGeometry(1, 1, 2.6, 32, 1, true)),
+        new THREE.MeshBasicMaterial({
+          map: holoColumn(),
+          transparent: true,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          color: "#5fd8ff",
+          side: THREE.DoubleSide,
+        }),
+        [0, 2, 0],
+        [1.25 * SCALE, 1, 1.25 * SCALE],
+      );
+      column.castShadow = column.receiveShadow = false;
+    } else {
+      const crack = flat(
+        r.geo("crack-plane", () => new THREE.PlaneGeometry(2, 2)),
+        new THREE.MeshStandardMaterial({
+          map: crackTexture(),
+          transparent: true,
+          depthWrite: false,
+          roughness: 1,
+          emissive: "#ff6a1e",
+          emissiveMap: crackGlow(),
+          emissiveIntensity: 0.4,
+        }),
+        1.3 * SCALE,
+      );
+      crack.rotation.z = (s.id % 7) * 0.9;
+      r.materials.add(crack.material);
     }
-    root.scale.setScalar(1.3 * SCALE);
     r.dynamic.add(root);
     return root;
+  }
+  /** Lasting ground damage, drawn as one instanced batch per kind: quake
+   * cracks with buckled slabs, rubble from collapsed walls, scorch marks
+   * and sand drifts. */
+  updateTerrain() {
+    const r = this.r,
+      list = r.g.arena.terrain || [],
+      key = list.length + ":" + list.map((t) => t.kind[0]).join("");
+    if (key === this.terrainKey) return;
+    this.terrainKey = key;
+    const kinds = (this.terrain ||= this.makeTerrain()),
+      m = new THREE.Matrix4(),
+      q = new THREE.Quaternion(),
+      e = new THREE.Euler(),
+      v = new THREE.Vector3(),
+      sc = new THREE.Vector3(),
+      counts = {};
+    const put = (name, x, y, z, rx, ry, rz, sx, sy, sz) => {
+      const mesh = kinds[name],
+        i = (counts[name] = (counts[name] || 0) + 1) - 1;
+      if (i >= mesh.instanceMatrix.count) return;
+      mesh.setMatrixAt(
+        i,
+        m.compose(v.set(x, y, z), q.setFromEuler(e.set(rx, ry, rz)), sc.set(sx, sy, sz)),
+      );
+    };
+    for (const t of list) {
+      const x = t.x * SCALE,
+        z = t.y * SCALE,
+        n = t.seed || 0,
+        f = (k) => (((Math.sin(n * 12.99 + k * 78.2) * 43758.5453) % 1) + 1) % 1;
+      if (t.kind === "crack") {
+        put("crack", x, 0.03, z, -Math.PI / 2, 0, f(1) * 6.28, SCALE * 0.55, SCALE * 0.55, 1);
+        // Uneven ground: two broken slabs lifted and tilted.
+        for (let k = 0; k < 2; k++)
+          put(
+            "slab",
+            x + (f(2 + k) - 0.5) * 1.6,
+            0.02 + f(4 + k) * 0.1,
+            z + (f(6 + k) - 0.5) * 1.6,
+            (f(8 + k) - 0.5) * 0.6,
+            f(10 + k) * 3,
+            (f(12 + k) - 0.5) * 0.6,
+            0.8 + f(14 + k) * 0.6,
+            0.3,
+            0.6 + f(16 + k) * 0.6,
+          );
+      } else if (t.kind === "rubble") {
+        for (let k = 0; k < 4; k++)
+          put(
+            "rubble",
+            x + (f(k) - 0.5) * 2.2,
+            0.15 + f(k + 5) * 0.2,
+            z + (f(k + 9) - 0.5) * 2.2,
+            f(k + 3) * 3,
+            f(k + 7) * 3,
+            f(k + 11) * 3,
+            0.5 + f(k + 13) * 0.6,
+            0.35 + f(k + 15) * 0.4,
+            0.5 + f(k + 17) * 0.6,
+          );
+      } else if (t.kind === "scorch")
+        put("scorch", x, 0.025, z, -Math.PI / 2, 0, f(1) * 6.28, SCALE * 0.6, SCALE * 0.6, 1);
+      else if (t.kind === "sand")
+        put(
+          "sand",
+          x + (f(1) - 0.5),
+          0,
+          z + (f(2) - 0.5),
+          0,
+          f(3) * 6.28,
+          0,
+          1.2 + f(4) * 0.5,
+          0.45 + f(5) * 0.25,
+          0.9 + f(6) * 0.4,
+        );
+    }
+    for (const [name, mesh] of Object.entries(kinds)) {
+      mesh.count = Math.min(counts[name] || 0, mesh.instanceMatrix.count);
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.visible = mesh.count > 0;
+    }
+  }
+  makeTerrain() {
+    const r = this.r,
+      make = (geo, mat, max, shadows) => {
+        const mesh = new THREE.InstancedMesh(geo, mat, max);
+        mesh.count = 0;
+        mesh.castShadow = shadows;
+        mesh.receiveShadow = true;
+        mesh.frustumCulled = false;
+        r.materials.add(mat);
+        r.scene.add(mesh);
+        return mesh;
+      };
+    const decal = (map, color) =>
+      new THREE.MeshStandardMaterial({
+        map,
+        color,
+        transparent: true,
+        depthWrite: false,
+        roughness: 1,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+      });
+    return {
+      crack: make(new THREE.PlaneGeometry(2, 2), decal(crackTexture(), "#ffffff"), 400, false),
+      slab: make(
+        new THREE.BoxGeometry(1, 1, 1),
+        new THREE.MeshStandardMaterial({ color: "#3d3d40", roughness: 1, flatShading: true }),
+        800,
+        true,
+      ),
+      rubble: make(
+        new THREE.DodecahedronGeometry(0.5, 0),
+        new THREE.MeshStandardMaterial({ color: "#8a7f72", roughness: 1, flatShading: true }),
+        1600,
+        true,
+      ),
+      scorch: make(new THREE.PlaneGeometry(2, 2), decal(scorchTexture(), "#ffffff"), 400, false),
+      sand: make(
+        new THREE.SphereGeometry(1, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshStandardMaterial({ color: "#cdb282", roughness: 1 }),
+        400,
+        true,
+      ),
+    };
+  }
+  /** A thunderstorm: rolling black clouds, rain, and distant sheet lightning. */
+  updateStorm(t) {
+    const r = this.r,
+      a = r.g.arena,
+      d = a.disaster,
+      on = !!d && d.kind === "storm" && a.time >= d.startAt && a.time < d.endAt;
+    if (!on) {
+      if (this.storm) this.storm.root.visible = false;
+      return;
+    }
+    const s = (this.storm ||= this.makeStorm()),
+      now = performance.now(),
+      still = r.motion.matches;
+    s.root.visible = true;
+    s.root.position.copy(r.camera.position);
+    s.dome.rotation.y = still ? 0 : t * 0.012;
+    s.clouds.offset.x = still ? 0 : t * 0.004;
+    // Distant flashes between strikes (presentation only).
+    if (!still && now > (this.nextSheet || 0)) {
+      this.nextSheet = now + 1800 + Math.random() * 3200;
+      this.sheetUntil = now + 90 + Math.random() * 120;
+    }
+    const lit = now < this.flashUntil ? 1 : now < (this.sheetUntil || 0) ? 0.55 : 0;
+    s.dome.material.color.setScalar(1 + lit * 1.8);
+    // Rain falls around the camera and wraps.
+    const pos = s.rain.geometry.attributes.position,
+      fall = Math.min(0.1, (now - (this.rainAt || now)) / 1000) * 34;
+    this.rainAt = now;
+    if (!still)
+      for (let i = 0; i < pos.count; i += 2) {
+        let y = pos.getY(i) - fall;
+        if (y < -2) y += 18;
+        pos.setY(i, y);
+        pos.setY(i + 1, y + 0.9);
+      }
+    pos.needsUpdate = true;
+  }
+  makeStorm() {
+    const r = this.r,
+      root = new THREE.Group(),
+      clouds = stormClouds();
+    const dome = new THREE.Mesh(
+      new THREE.SphereGeometry(200, 32, 16),
+      new THREE.MeshBasicMaterial({
+        map: clouds,
+        side: THREE.BackSide,
+        toneMapped: false,
+        fog: false,
+        depthWrite: false,
+      }),
+    );
+    dome.renderOrder = -1;
+    root.add(dome);
+    const count = 700,
+      p = new Float32Array(count * 6);
+    for (let i = 0; i < count; i++) {
+      const x = (Math.random() - 0.5) * 30,
+        y = Math.random() * 18 - 2,
+        z = (Math.random() - 0.5) * 30;
+      p.set([x, y, z, x + 0.12, y + 0.9, z], i * 6);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(p, 3));
+    const rain = new THREE.LineSegments(
+      geo,
+      new THREE.LineBasicMaterial({
+        color: "#a9bdd6",
+        transparent: true,
+        opacity: 0.35,
+        depthWrite: false,
+      }),
+    );
+    rain.frustumCulled = false;
+    root.add(rain);
+    r.scene.add(root);
+    return { root, dome, rain, clouds };
+  }
+  /** Storm light: the sun is hidden behind cloud, and lightning lights the
+   * scene up for a moment. Scales this frame's lights and returns a function
+   * that puts them back after rendering, so the day lighting's own easing
+   * never compounds the change. */
+  dim() {
+    const r = this.r,
+      a = r.g.arena,
+      d = a.disaster;
+    if (!d || d.kind !== "storm" || a.time < d.startAt || a.time >= d.endAt) return null;
+    const now = performance.now(),
+      lit = now < this.flashUntil ? 1 : now < (this.sheetUntil || 0) ? 0.4 : 0,
+      saved = [r.sun.intensity, r.hemisphere.intensity, r.scene.environmentIntensity];
+    r.sun.intensity *= 0.12 + lit * 0.5;
+    r.hemisphere.intensity *= 0.75 + lit * 3;
+    r.scene.environmentIntensity *= 0.35 + lit * 0.9;
+    return () => {
+      [r.sun.intensity, r.hemisphere.intensity, r.scene.environmentIntensity] = saved;
+    };
   }
   /** Fog / sky for the active disaster, or null. */
   weather() {
@@ -255,27 +520,193 @@ export class HazardDressing {
       d = a.disaster;
     if (!d || a.time < d.startAt || a.time >= d.endAt) return null;
     if (d.kind === "sandstorm") return { fog: "#b39a72", density: 0.09, sky: true };
-    if (d.kind === "storm")
-      return performance.now() < this.flashUntil
-        ? { fog: "#dfe6f2", density: 0.012, sky: true }
-        : { fog: "#3c4452", density: 0.03, sky: true };
+    if (d.kind === "storm") {
+      const now = performance.now();
+      return now < this.flashUntil
+        ? { fog: "#c9d4ea", density: 0.014, sky: false }
+        : now < (this.sheetUntil || 0)
+          ? { fog: "#4a5468", density: 0.028, sky: false }
+          : { fog: "#1d232d", density: 0.034, sky: false };
+    }
     return null;
   }
-  /** Camera shake during an earthquake (none with reduced motion). */
+  /** Camera shake during an earthquake, and a stumbling sway when walking
+   * over cracked, rubble-strewn or sandy ground (none with reduced motion). */
   shake(camera, t) {
     const a = this.r.g.arena,
-      d = a.disaster;
-    if (
-      this.r.motion.matches ||
-      !d ||
-      d.kind !== "quake" ||
-      a.time < d.startAt ||
-      a.time >= d.endAt
-    )
-      return;
+      d = a.disaster,
+      p = this.r.g.camera();
+    if (this.r.motion.matches) return;
+    const moved = Math.hypot(p.x - (this.lastX ?? p.x), p.y - (this.lastY ?? p.y));
+    this.lastX = p.x;
+    this.lastY = p.y;
+    const footing = a.footing?.(p) ?? 1;
+    if (footing < 1 && moved > 0.002 && p.hp > 0) {
+      const k = (1 - footing) * 4;
+      camera.position.y += Math.abs(Math.sin(t * 11)) * 0.05 * k - 0.03 * k;
+      camera.rotation.z += Math.sin(t * 5.5) * 0.012 * k;
+    }
+    if (!d || d.kind !== "quake" || a.time < d.startAt || a.time >= d.endAt) return;
     const k = 0.06 * Math.min(1, (a.time - d.startAt) / 1.5, (d.endAt - a.time) / 1.5);
     camera.position.x += Math.sin(t * 47) * k;
     camera.position.y += Math.sin(t * 61 + 1) * k * 0.6;
     camera.rotation.z += Math.sin(t * 37) * k * 0.15;
   }
 }
+
+// Procedural textures, drawn once.
+const canvasTexture = (w, h, draw) => {
+  const c = document.createElement("canvas");
+  c.width = w;
+  c.height = h;
+  draw(c.getContext("2d"), w, h);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+};
+const once = (fn) => {
+  let value;
+  return () => (value ||= fn());
+};
+// Jagged cracks branching out from the middle.
+const crackLines = (c, w, color, width) => {
+  let seed = 7;
+  const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  c.strokeStyle = color;
+  c.lineCap = "round";
+  const branch = (x, y, angle, length, thick) => {
+    if (thick < 0.6 || length < 8) return;
+    c.lineWidth = thick * width;
+    c.beginPath();
+    c.moveTo(x, y);
+    let px = x,
+      py = y;
+    for (let i = 0; i < 6; i++) {
+      angle += (rand() - 0.5) * 0.7;
+      px += Math.cos(angle) * (length / 6);
+      py += Math.sin(angle) * (length / 6);
+      c.lineTo(px, py);
+      if (rand() < 0.3)
+        branch(px, py, angle + (rand() < 0.5 ? 0.8 : -0.8), length * 0.5, thick * 0.6);
+    }
+    c.stroke();
+  };
+  for (let i = 0; i < 7; i++)
+    branch(w / 2, w / 2, (i / 7) * Math.PI * 2 + rand() * 0.5, w * (0.32 + rand() * 0.14), 3.2);
+};
+const crackTexture = once(() =>
+  canvasTexture(256, 256, (c, w) => crackLines(c, w, "#0f0c09", 3.4)),
+);
+const crackGlow = once(() =>
+  canvasTexture(256, 256, (c, w) => {
+    c.filter = "blur(3px)";
+    crackLines(c, w, "#ffffff", 5.5);
+  }),
+);
+const scorchTexture = once(() =>
+  canvasTexture(128, 128, (c, w) => {
+    const g = c.createRadialGradient(w / 2, w / 2, 2, w / 2, w / 2, w / 2);
+    g.addColorStop(0, "#0d0b0aee");
+    g.addColorStop(0.45, "#1e1a17aa");
+    g.addColorStop(1, "#1e1a1700");
+    c.fillStyle = g;
+    c.fillRect(0, 0, w, w);
+  }),
+);
+// Hologram disc: rings, ticks and a crosshair.
+const holoDisc = once(() =>
+  canvasTexture(256, 256, (c, w) => {
+    const m = w / 2;
+    c.strokeStyle = "#ffffff";
+    for (const [r, lw, a] of [
+      [124, 4, 1],
+      [104, 2, 0.8],
+      [70, 2, 0.6],
+      [36, 3, 0.9],
+    ]) {
+      c.globalAlpha = a;
+      c.lineWidth = lw;
+      c.beginPath();
+      c.arc(m, m, r, 0, Math.PI * 2);
+      c.stroke();
+    }
+    c.globalAlpha = 0.9;
+    c.lineWidth = 3;
+    for (let i = 0; i < 24; i++) {
+      const a = (i / 24) * Math.PI * 2,
+        r0 = i % 2 ? 108 : 112;
+      c.beginPath();
+      c.moveTo(m + Math.cos(a) * r0, m + Math.sin(a) * r0);
+      c.lineTo(m + Math.cos(a) * 122, m + Math.sin(a) * 122);
+      c.stroke();
+    }
+    c.globalAlpha = 0.5;
+    c.lineWidth = 2;
+    c.beginPath();
+    c.moveTo(m - 104, m);
+    c.lineTo(m + 104, m);
+    c.moveTo(m, m - 104);
+    c.lineTo(m, m + 104);
+    c.stroke();
+    const g = c.createRadialGradient(m, m, 0, m, m, 124);
+    g.addColorStop(0, "#ffffff33");
+    g.addColorStop(1, "#ffffff00");
+    c.globalAlpha = 1;
+    c.fillStyle = g;
+    c.fillRect(0, 0, w, w);
+  }),
+);
+// Hologram column: fades upward, with scan lines that scroll.
+const holoColumn = once(() => {
+  const tex = canvasTexture(64, 256, (c, w, h) => {
+    const g = c.createLinearGradient(0, h, 0, 0);
+    g.addColorStop(0, "#ffffffcc");
+    g.addColorStop(1, "#ffffff00");
+    c.fillStyle = g;
+    c.fillRect(0, 0, w, h);
+    c.globalCompositeOperation = "destination-out";
+    for (let y = 0; y < h; y += 8) c.fillRect(0, y, w, 3);
+  });
+  tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+});
+// Storm clouds: dark, heavy and lumpy, darker towards the horizon.
+const stormClouds = once(() => {
+  const tex = canvasTexture(1024, 512, (c, w, h) => {
+    // Top of the canvas is straight up; the horizon is at about 0.5.
+    const base = c.createLinearGradient(0, 0, 0, h * 0.55);
+    base.addColorStop(0, "#0b0e13");
+    base.addColorStop(1, "#262c36");
+    c.fillStyle = base;
+    c.fillRect(0, 0, w, h);
+    let seed = 11;
+    const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    // Heavy, lumpy cloud banks: lit grey-blue tops over near-black bellies.
+    for (let i = 0; i < 1100; i++) {
+      const x = rand() * w,
+        y = h * 0.05 + rand() * h * 0.47,
+        r = 16 + rand() * 60 * (0.5 + y / h),
+        light = rand() < 0.35,
+        g = c.createRadialGradient(x, y - r * 0.35, r * 0.1, x, y, r);
+      if (light) {
+        g.addColorStop(0, "rgba(120,130,150,0.55)");
+        g.addColorStop(0.5, "rgba(70,78,94,0.35)");
+      } else {
+        g.addColorStop(0, "rgba(28,32,40,0.75)");
+        g.addColorStop(0.6, "rgba(16,19,25,0.45)");
+      }
+      g.addColorStop(1, "rgba(16,19,25,0)");
+      c.fillStyle = g;
+      c.fillRect(x - r, y - r, r * 2, r * 2);
+    }
+    // A sickly glow low on the horizon, below the clouds.
+    const glow = c.createLinearGradient(0, h * 0.42, 0, h * 0.56);
+    glow.addColorStop(0, "#3a4a5200");
+    glow.addColorStop(0.7, "#4c5f5ccc");
+    glow.addColorStop(1, "#1b2225ff");
+    c.fillStyle = glow;
+    c.fillRect(0, h * 0.42, w, h * 0.58);
+  });
+  tex.wrapS = THREE.RepeatWrapping;
+  return tex;
+});

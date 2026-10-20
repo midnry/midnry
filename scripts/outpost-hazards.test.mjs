@@ -150,3 +150,35 @@ test("sandstorm slows everyone; lightning and quakes mark the ground before stri
       assert.ok(a.level.flat().filter((v) => v).length < before, "quake collapses cover");
   }
 });
+
+test("disasters change the ground for the rest of the round, and it slows you", () => {
+  const quake = arena("estate");
+  for (const e of quake.entities) e.shieldUntil = 0;
+  quake.time = quake.disaster.startAt;
+  while (quake.time < quake.disaster.endAt + 2 && quake.state !== "ended")
+    quake.advance(1 / 30, {});
+  const cracks = quake.terrain.filter((t) => t.kind === "crack");
+  assert.ok(cracks.length >= 10, "quake cracks the ground: " + cracks.length);
+  assert.ok(
+    quake.terrain.some((t) => t.kind === "rubble"),
+    "collapsed cover leaves rubble",
+  );
+  for (const t of quake.terrain) assert.ok(!quake.wall(t.x, t.y), "marks lie on walkable floor");
+  const p = quake.entities[0];
+  Object.assign(p, { x: cracks[0].x, y: cracks[0].y });
+  assert.ok(quake.footing(p) < 1, "uneven ground is slower");
+  assert.equal(JSON.parse(JSON.stringify(quake.snapshot())).terrain.length, quake.terrain.length);
+  const storm = arena("skyport");
+  storm.time = storm.disaster.startAt;
+  while (storm.time < storm.disaster.endAt + 2 && storm.state !== "ended")
+    storm.advance(1 / 30, {});
+  assert.ok(
+    storm.terrain.some((t) => t.kind === "scorch"),
+    "lightning scorches the ground",
+  );
+  const sand = arena("outpost");
+  sand.time = sand.disaster.startAt;
+  while (sand.time < sand.disaster.endAt && sand.state !== "ended") sand.advance(1 / 30, {});
+  assert.ok(sand.terrain.filter((t) => t.kind === "sand").length >= 5, "sand drifts pile up");
+  assert.equal(new Arena({ mode: "training", mapId: "estate" }).terrain, null);
+});

@@ -1204,28 +1204,6 @@
         opacity: 1;
         background: #f4f7ffcc;
       }
-      @media (max-width: 1000px) and (orientation: landscape) {
-        midnry-fps .mf-disaster {
-          top: 16px;
-          left: calc(16px + var(--mf-safe-left, 0px));
-          transform: none;
-          max-width: min(260px, 32vw);
-          padding: 4px 10px;
-          font-size: 11px;
-        }
-        midnry-fps .mf-disaster b {
-          font-size: 14px;
-        }
-      }
-      @media (max-width: 700px) and (orientation: portrait) {
-        midnry-fps .mf-disaster {
-          top: 304px;
-          font-size: 12px;
-        }
-        midnry-fps .mf-disaster b {
-          font-size: 16px;
-        }
-      }
       @media (prefers-reduced-motion: reduce) {
         midnry-fps :is(.mf-disaster.mf-soon, .mf-weatherfx.mf-sand) {
           animation: none;
@@ -2294,6 +2272,61 @@
       }
       midnry-fps .mf-shell button:is(.mf-fire, .mf-reload, .mf-pause) {
         border-radius: 50%;
+      }
+      /* Phones: keep the middle of the view clear. Status shrinks to the
+         essentials in the top-left corner and the disaster warning sits
+         under it as one line. */
+      @media (max-width: 700px), (max-height: 500px) {
+        midnry-fps .mf-shell:not(.mf-protocol) .mf-objective {
+          font-size: 0 !important;
+          padding: 4px 8px !important;
+        }
+        midnry-fps .mf-shell:not(.mf-protocol) .mf-objective b {
+          font-size: 13px;
+          margin: 0;
+        }
+        midnry-fps .mf-shell:not(.mf-protocol) .mf-cores {
+          display: none;
+        }
+        midnry-fps .mf-shell:not(.mf-protocol) .mf-match {
+          padding: 4px 8px !important;
+          font-size: 11px !important;
+          line-height: 1.35;
+        }
+        midnry-fps .mf-disaster {
+          left: calc(16px + var(--mf-safe-left, 0px));
+          transform: none;
+          max-width: 210px;
+          padding: 4px 8px;
+          text-align: left;
+        }
+        midnry-fps .mf-disaster b {
+          font-size: 13px;
+        }
+        midnry-fps .mf-disaster span {
+          display: none;
+        }
+      }
+      @media (max-width: 700px) and (orientation: portrait) and (pointer: coarse) {
+        midnry-fps .mf-shell:not(.mf-protocol) .mf-super {
+          bottom: calc(244px + var(--mf-safe-bottom)) !important;
+        }
+      }
+      @media (max-width: 700px) and (orientation: portrait) {
+        midnry-fps .mf-shell:not(.mf-protocol) .mf-match {
+          top: calc(118px + var(--mf-safe-top)) !important;
+        }
+        midnry-fps .mf-disaster {
+          top: calc(178px + var(--mf-safe-top, 0px));
+        }
+      }
+      @media (max-height: 500px) and (orientation: landscape) {
+        midnry-fps .mf-shell:not(.mf-protocol) .mf-match {
+          top: calc(48px + var(--mf-safe-top)) !important;
+        }
+        midnry-fps .mf-disaster {
+          top: calc(16px + var(--mf-safe-top, 0px));
+        }
       }
       midnry-fps :is(.mf-brand, .mf-stat, .mf-objective, .mf-match) {
         border-radius: 8px;
@@ -4451,8 +4484,8 @@
             if (banner.hidden === show) banner.hidden = !show;
             if (show) {
               const html = coming
-                ? `<b>⚠ ${info.name.toUpperCase()} IN ${Math.ceil(d.startAt - t)}s</b>${info.warn}`
-                : `<b>${info.name.toUpperCase()} · ${Math.ceil(d.endAt - t)}s</b>${info.warn}`;
+                ? `<b>⚠ ${info.name.toUpperCase()} IN ${Math.ceil(d.startAt - t)}s</b><span>${info.warn}</span>`
+                : `<b>${info.name.toUpperCase()} · ${Math.ceil(d.endAt - t)}s</b><span>${info.warn}</span>`;
               if (banner.innerHTML !== html) banner.innerHTML = html;
             }
             banner.classList.toggle("mf-on", on);

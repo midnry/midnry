@@ -1,7 +1,7 @@
 // Last Signal hazards and disasters: canisters / sandbags in view, a red
 // canister exploding, the disaster warning banner, and each disaster while
 // it is on (sandstorm, lightning storm with marked ground, earthquake).
-//   node scripts/qa/signal-hazards.mjs [width]   (390 = phone)
+//   node scripts/qa/signal-hazards.mjs [width]   (390 = phone; MAPS=skyport for one arena)
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 const W = Number(process.argv[2] ?? 1280),
@@ -72,11 +72,13 @@ const frame = (setup) =>
 const face = `const c=a.crates.filter(c=>c.kind&&c.kind!=='barrier'&&c.hp>0).sort((p,q)=>Math.hypot(p.x-g.player.x,p.y-g.player.y)-Math.hypot(q.x-g.player.x,q.y-g.player.y))[0];
  let best=null;for(let k=0;k<16;k++){const ang=k*Math.PI/8,x=c.x+Math.cos(ang)*3,y=c.y+Math.sin(ang)*3;if(a.canMove(x,y)&&a.visible({x,y},c)){best={x,y,a:ang+Math.PI};break;}}
  if(best)Object.assign(g.player,best);g.viewPitch=-0.12;return c.kind+' at '+c.x+','+c.y;`;
+const only = process.env.MAPS?.split(",");
 for (const [pick, mapId] of [
   [0.1, "outpost"],
   [0.5, "skyport"],
   [0.9, "estate"],
 ]) {
+  if (only && !only.includes(mapId)) continue;
   await p.evaluate((pick) => {
     const g = document.querySelector("midnry-fps").engine,
       r = Math.random;
@@ -116,6 +118,19 @@ for (const [pick, mapId] of [
     ),
   );
   await p.screenshot({ path: `${OUT}/${mapId}-disaster-${W}.png` });
+  // After the disaster: what it left on the ground.
+  console.log(
+    mapId,
+    "after",
+    JSON.stringify(
+      await frame(`const d=a.disaster;while(a.time<d.endAt+0.5&&a.state!=="ended")a.advance(1/30,{});for(const e of a.entities)e.hp=e.hp||1;
+ const kinds={};for(const t of a.terrain)kinds[t.kind]=(kinds[t.kind]||0)+1;
+ const want={outpost:"sand",skyport:"scorch",estate:"crack"}[a.mapId];const t=a.terrain.find(t=>t.kind===want)||a.terrain[0];
+ if(t){for(let k=0;k<16;k++){const ang=k*Math.PI/8,x=t.x+Math.cos(ang)*2.6,y=t.y+Math.sin(ang)*2.6;if(a.canMove(x,y)&&a.visible({x,y},t)){Object.assign(g.player,{x,y,a:ang+Math.PI});break;}}}
+ g.viewPitch=-0.35;g.time=a.time;return kinds;`),
+    ),
+  );
+  await p.screenshot({ path: `${OUT}/${mapId}-after-${W}.png` });
 }
 console.log("errors", errs);
 await b.close();

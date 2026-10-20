@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=signal-arenas-20261019` (`game-look` carries `v=signal-hazards-20261020`, not yet deployed).
+  Current live value: `v=signal-arenas-20261019` (`game-look` carries `v=signal-weather-20261020`, not yet deployed).
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -53,6 +53,7 @@ hash is stored: `e4ecd2762674dd4bb706fe3aa4fd2d8fc49e1124691d66437d26f8194c9106d
 | `signal-last-life.mjs [width]` | Screen look at 3 lives, 2 lives, last life + rush, last life low health; FINAL THREE / DUEL call-outs → `screenshots/qa/lastlife`. |
 | `mode-menu.mjs [width]` | Home: choose a game, then how to play; plays two series rounds and photographs the standings → `screenshots/qa/menu`. |
 | `signal-hazards.mjs [width]` | Canister in view, a red canister exploding, each arena's disaster warning and disaster → `screenshots/qa/hazards`. |
+| `phone-hud.mjs` | Phone game screen (portrait + landscape) with a disaster warning: HUD boxes, overlaps, % of screen covered → `screenshots/qa/phone`. |
 | `signal-rounds.mjs [width]` | Plays 3 Last Signal rounds watching for page errors (caught the Charge Core crash). |
 | `signal-lives.mjs` | Start shield, losing a life, last life ends the round. |
 | `signal-regen.mjs` | Health recovery after 5 s without damage. |
@@ -211,3 +212,17 @@ makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to
   `hazardSounds()` (`outpost-retention.js`); minimap shows canister colours and strikes.
 - Simulated: rounds avg 83 s; ~5–6 canisters and 1–2 barriers broken per round; disasters
   cost about one life per round; quakes knock down ~17 wall tiles on Wreck Estate.
+
+### Disaster look and lasting ground damage (follow-up)
+
+- Markers: lightning = blue hologram (spinning grid disc + scrolling light column);
+  earthquake = cracks that spread and glow during the warning (no circles).
+- Storm: cloud dome (`toneMapped: false`, or the grade crushes it), rain, distant sheet
+  lightning; `HazardDressing.dim()` scales sun / sky light for one frame and restores it
+  after rendering (scaling in place would compound with `adapt()` in realism-lighting).
+- `arena.terrain` (snapshot): rubble wherever cover collapses (any cause), quake cracks,
+  lightning scorch, sandstorm drifts. `footing()` slows movement on rubble ×0.75, cracks
+  ×0.8, sand ×0.85; the camera sways walking over them. Drawn as one InstancedMesh per kind.
+- Phone HUD (≤700 px wide or ≤500 px tall): survivors only, cores line hidden, disaster
+  banner one line under the status in the top-left; Overdrive lifted off the health box.
+  `phone-hud.mjs`: no overlaps, ~16 % of the screen covered.

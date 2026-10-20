@@ -23,6 +23,7 @@ export const SIGNAL = Object.freeze({
 });
 export { LEVEL, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf };
 import {
+  TERRAIN,
   CANISTERS,
   placeHazards,
   scheduleDisaster,
@@ -237,7 +238,10 @@ export class Arena {
     // Last Signal and Pair Ops: shootable canisters and sandbag barriers;
     // Last Signal also gets one natural disaster per round.
     this.disaster = null;
+    this.terrain = null;
     if (mode === "signal" || mode === "duo") {
+      // Lasting ground damage: rubble, quake cracks, scorch marks, sand drifts.
+      this.terrain = [];
       this.crates.push(...placeHazards(this.level, this.mapId, spawns, this.crates));
       if (mode === "signal") this.disaster = scheduleDisaster(this.mapId, random);
     }
@@ -261,6 +265,7 @@ export class Arena {
     arena.countdown ??= 0;
     arena.roundId ??= `legacy-${arena.mapId}-${arena.entities.map((e) => e.id).join("-")}-${arena.time}`;
     arena.disaster ??= null;
+    arena.terrain ??= null;
     arena.zone.cx ??= arena.level.length / 2;
     arena.zone.cy ??= arena.level.length / 2;
     arena.zone.initialHalf ??= arena.level.length / 2 - 1;
@@ -300,6 +305,7 @@ export class Arena {
       crates: this.crates,
       cores: this.cores,
       disaster: this.disaster,
+      terrain: this.terrain,
     };
   }
   emit(id, text) {
@@ -505,8 +511,8 @@ export class Arena {
     }
   }
   /** Movement multiplier from the weather: sandstorms slow everyone. */
-  weather() {
-    return disasterActive(this, "sandstorm") ? 0.85 : 1;
+  weather(e) {
+    return (disasterActive(this, "sandstorm") ? 0.85 : 1) * (e ? this.footing(e) : 1);
   }
   /** Last Signal bots under fire sometimes slide sideways out of the line of
    * fire, like a player would (same slide speed, longer cooldown). */
@@ -692,7 +698,36 @@ export class Arena {
         i < Math.min(this.level[0].length - 1, x + radius);
         i++
       )
-        if (Math.hypot(i + 0.5 - x, j + 0.5 - y) <= radius) this.level[j][i] = 0;
+        if (Math.hypot(i + 0.5 - x, j + 0.5 - y) <= radius && this.level[j][i]) {
+          this.level[j][i] = 0;
+          // Collapsed walls leave rubble you can cross, slowly.
+          this.addTerrain(i + 0.5, j + 0.5, "rubble");
+        }
+  }
+  /** Mark a floor tile with lasting ground damage (Last Signal / Pair Ops).
+   * Rubble and cracks outrank sand and scorch on the same tile. */
+  addTerrain(x, y, kind) {
+    if (!this.terrain) return;
+    const tx = Math.floor(x),
+      ty = Math.floor(y),
+      rank = TERRAIN[kind].rank,
+      old = this.terrain.find((t) => Math.floor(t.x) === tx && Math.floor(t.y) === ty);
+    if (old) {
+      if (TERRAIN[old.kind].rank < rank) old.kind = kind;
+      return;
+    }
+    if (this.terrain.length >= 400) return;
+    this.terrain.push({ x: tx + 0.5, y: ty + 0.5, kind, seed: (tx * 73 + ty * 151) % 997 });
+    this.terrainIndex = null;
+  }
+  /** Movement multiplier from ground damage under a fighter. */
+  footing(e) {
+    if (!this.terrain?.length) return 1;
+    if (!this.terrainIndex || this.terrainIndex.size !== this.terrain.length) {
+      this.terrainIndex = new Map(this.terrain.map((t) => [Math.floor(t.y) * 1000 + Math.floor(t.x), t]));
+    }
+    const t = this.terrainIndex.get(Math.floor(e.y) * 1000 + Math.floor(e.x));
+    return t ? TERRAIN[t.kind].speed : 1;
   }
   blast(source, x, y, damage, radius, { destroy = false, knock = false, poison = false } = {}) {
     if (destroy) this.breakCover(x, y, radius);
@@ -1247,7 +1282,7 @@ export class Arena {
         const dx = point.x - bot.x,
           dy = point.y - bot.y,
           d = Math.hypot(dx, dy);
-        const boost = (bot.speedUntil > this.time ? 1.4 : 1) * this.weather();
+        const boost = (bot.speedUntil > this.time ? 1.4 : 1) * this.weather(bot);
         if (d > 0.01)
           this.move(
             bot,
@@ -1326,7 +1361,7 @@ export class Arena {
         (sliding ? 3 + 3 * ((e.slideUntil - this.time) / 0.65) : input.sprint ? 4 : 2.6) *
         (e.speedUntil > this.time ? 1.4 : 1) *
         (e.slowUntil > this.time ? 0.45 : 1) *
-        this.weather();
+        this.weather(e);
       this.move(
         e,
         (sliding ? e.slideDx : ca * f - sa * s) * speed * dt,

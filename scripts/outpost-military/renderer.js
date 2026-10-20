@@ -3278,6 +3278,7 @@ export class MilitaryRenderer {
     this.updateCinematic(night, t);
     if (g.mode === "protocol") (this.events ||= new EventDressing(this)).update(protocolView, t);
     updateNaturalLighting(this, protocolView, p, dt);
+    const undim = g.mode !== "protocol" && (this.hazards ||= new HazardDressing(this)).dim();
     if (g.arena.mapId === "medevac" && !this.motion.matches) {
       const heading = Number(protocolView?.protocol?.mission?.vehicle?.heading) || 0;
       this.camera.rotation.z = THREE.MathUtils.clamp(-heading * 0.055, -0.085, 0.085);
@@ -3407,6 +3408,7 @@ export class MilitaryRenderer {
       this.renderer.render(this.weaponScene, this.weaponCamera);
       this.renderer.autoClear = true;
     } else this.composer.render();
+    if (undim) undim();
     this.telemetry.end();
     this.metrics={gpuMs:this.telemetry.gpuMs,drawCalls:this.renderer.info.render.calls,triangles:this.renderer.info.render.triangles,...this.actorStats,...this.worldStats};
     this.takedown.restoreActors();

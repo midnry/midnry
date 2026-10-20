@@ -13,6 +13,14 @@ export const CANISTERS = {
   blue: { name: "Healing canister", hp: 20 },
 };
 export const BARRIER_HP = 160;
+// Lasting ground damage. speed multiplies movement on that tile; rank decides
+// which mark wins when two land on the same tile.
+export const TERRAIN = {
+  scorch: { speed: 1, rank: 0 },
+  sand: { speed: 0.85, rank: 1 },
+  crack: { speed: 0.8, rank: 2 },
+  rubble: { speed: 0.75, rank: 3 },
+};
 export const FOAM = { hp: 70, life: 15 };
 
 // One disaster per arena, themed to it.
@@ -207,21 +215,37 @@ export function updateDisaster(arena, dt) {
     if (s.kind === "storm") {
       arena.effect(s.x, s.y, "lightning", 1.3, 0.5);
       arena.blast(null, s.x, s.y, 45, 1.3);
+      arena.addTerrain(s.x, s.y, "scorch");
     } else {
-      arena.breakCover(s.x, s.y, 0.95);
+      // The ground splits and buckles; the cover beside it collapses.
+      for (const [i, j] of [
+        [0, 0],
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ])
+        if (!arena.wall(s.x + i, s.y + j)) arena.addTerrain(s.x + i, s.y + j, "crack");
+      arena.breakCover(s.x, s.y, 1.05);
       arena.effect(s.x, s.y, "debris", 1.3, 0.8);
       arena.blast(null, s.x, s.y, 30, 1.3);
     }
   }
-  if (
-    d.kind === "sandstorm" ||
-    arena.time < d.startAt ||
-    arena.time >= d.endAt ||
-    arena.time < d.nextStrike
-  )
+  if (arena.time < d.startAt || arena.time >= d.endAt || arena.time < d.nextStrike) return;
+  if (d.kind === "sandstorm") {
+    // Sand piles up in drifts on open ground near fighters.
+    d.count++;
+    d.nextStrike = arena.time + 1.2;
+    const living = arena.entities.filter((e) => e.hp > 0);
+    const near = living[Math.floor(roll(arena, 2) * living.length)];
+    if (!near) return;
+    const x = near.x + (roll(arena, 3) - 0.5) * 8,
+      y = near.y + (roll(arena, 4) - 0.5) * 8;
+    if (x > 1 && y > 1 && !arena.wall(x, y)) arena.addTerrain(x, y, "sand");
     return;
-  // Strikes land near a living fighter (open ground inside the safe zone for
-  // lightning; a wall or cover tile beside open ground for a quake).
+  }
+  // Strikes land on open ground near a living fighter; a quake's lands
+  // beside cover, which collapses.
   const living = arena.entities.filter((e) => e.hp > 0 && !e.departed);
   if (!living.length) return;
   d.count++;
@@ -236,19 +260,14 @@ export function updateDisaster(arena, dt) {
       tx = Math.floor(near.x + Math.cos(a) * r),
       ty = Math.floor(near.y + Math.sin(a) * r);
     if (tx < 1 || ty < 1 || tx > n - 2 || ty > n - 2) continue;
-    const solid = arena.level[ty][tx] !== 0;
-    if (
-      d.kind === "storm"
-        ? solid
-        : !solid ||
-          ![
-            [1, 0],
-            [-1, 0],
-            [0, 1],
-            [0, -1],
-          ].some(([i, j]) => arena.level[ty + j]?.[tx + i] === 0)
-    )
-      continue;
+    if (arena.level[ty][tx] !== 0) continue;
+    const beside = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ].some(([i, j]) => arena.level[ty + j]?.[tx + i] !== 0);
+    if (d.kind === "quake" && !beside) continue;
     d.strikes.push({
       id: ++arena.nextEffect,
       kind: d.kind,
