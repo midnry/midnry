@@ -224,13 +224,15 @@ export class MenuUI {
     );
   }
   confirmExit() {
-    const g = this.g;
+    const g = this.g,
+      // The desktop app closes instead of returning to the website.
+      desktop = !!window.midnryDesktop;
     this.confirm(
-      "Exit game?",
+      desktop ? "Quit game?" : "Exit game?",
       g.online
         ? "Leaving forfeits your player and leaves the online room. Hosting transfers to another player. Completed cosmetic rewards stay saved on this browser."
-        : "Return to Midnry? Any unfinished round will end. Completed cosmetic rewards stay saved on this browser.",
-      "Exit to Midnry",
+        : `${desktop ? "Quit Outpost Zero?" : "Return to Midnry?"} Any unfinished round will end. Completed cosmetic rewards stay saved on this ${desktop ? "computer" : "browser"}.`,
+      desktop ? "Quit game" : "Exit to Midnry",
       (accepted) => {
         if (accepted) this.exitGame();
       },

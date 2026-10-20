@@ -294,3 +294,24 @@ HD pack ← this, (2) first desktop build, (3) Steam features, (4) phone apps.
   `v=dust-preload-20261020`; `node scripts/qa/arena-first-frame.mjs 1280|390` checks the
   first match frame is already dressed. A failed kit load is non-fatal (classic look).
 - Next: other arenas + Blackout base in the same style, KTX2 textures, maybe WebGPU.
+
+## Desktop app (step 2, on `game-look`)
+
+- `desktop/`: Electron shell (own `package.json`, not part of the website build).
+  It opens the live game (`https://www.midnry.com/games/outpost-zero.html?renderer=military&desktop=1`)
+  full screen with no browser chrome, so online play and updates match the site and the
+  cache worker keeps the HD assets on disk. F11 / Alt+Enter toggles full screen (remembered);
+  "Exit Game" becomes "Quit game" (`window.midnryDesktop`, see `desktop/preload.js`) and closes
+  the app; no internet → `desktop/offline.html`. `OUTPOST_URL` points it elsewhere for testing.
+- Builds: `.github/workflows/desktop.yml` runs on pushes touching `desktop/**` and publishes a
+  GitHub **pre-release** `desktop-build-<n>` with Windows (.exe installer + zip), Mac (universal
+  .dmg + zip, ad-hoc signed by `desktop/build/after-pack.js`) and Linux (.AppImage).
+- Local: `cd desktop && npm install` (if Electron's download fails behind the proxy, unzip
+  `electron-v<ver>-linux-x64.zip` from GitHub releases into `node_modules/electron/dist` and write
+  `electron` to `node_modules/electron/path.txt`), then
+  `xvfb-run -a node scripts/qa/desktop-app.mjs [siteUrl]` (menu + 3D, Exit quits, offline screen).
+- Unsigned for now: Windows SmartScreen → "More info → Run anyway"; Mac → right-click → Open
+  (or System Settings → Privacy & Security → Open Anyway). Steam/Mac release needs an Apple
+  Developer ID ($99/yr, notarization) and ideally a Windows code-signing certificate.
+- Next (step 3): Steamworks (owner needs a Steamworks account + $100 app fee): steamworks.js
+  achievements/overlay/cloud saves, offline bundling of game files, Steam Deck controls check.

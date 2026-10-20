@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'" />
+    <title>Outpost Zero</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #101419;
+        color: #fff4dc;
+        font: 16px/1.5 system-ui, sans-serif;
+      }
+      main {
+        display: grid;
+        place-content: center;
+        height: 100%;
+        text-align: center;
+        padding: 0 24px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        letter-spacing: 0.04em;
+      }
+      p {
+        margin: 0 0 24px;
+        color: #c9c1ae;
+      }
+      button {
+        cursor: pointer;
+        margin: 0 6px;
+        padding: 12px 24px;
+        border: 0;
+        border-radius: 8px;
+        background: #f2b544;
+        color: #101419;
+        font: inherit;
+        font-weight: 700;
+      }
+      button.quiet {
+        background: #2a3038;
+        color: #fff4dc;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>No connection</h1>
+      <p>Outpost Zero needs the internet to start. Check your connection and try again.</p>
+      <div>
+        <button id="retry" autofocus>Try again</button>
+        <button id="quit" class="quiet">Quit</button>
+      </div>
+    </main>
+    <script>
+      document.getElementById("retry").onclick = () => window.midnryDesktop.retry();
+      document.getElementById("quit").onclick = () => window.midnryDesktop.quit();
+    </script>
+  </body>
+</html>

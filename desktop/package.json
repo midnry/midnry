@@ -1,0 +1,96 @@
+{
+  "name": "outpost-zero-desktop",
+  "productName": "Outpost Zero",
+  "version": "0.1.0",
+  "description": "Outpost Zero for Windows, macOS and Linux",
+  "author": "Midnry",
+  "homepage": "https://www.midnry.com/games/outpost-zero",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.16.1"
+  },
+  "build": {
+    "appId": "com.midnry.outpostzero",
+    "productName": "Outpost Zero",
+    "artifactName": "Outpost-Zero-${version}-${os}-${arch}.${ext}",
+    "files": [
+      "main.js",
+      "preload.js",
+      "offline.html"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "category": "public.app-category.action-games",
+      "identity": null,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Outpost Zero uses the microphone for voice chat with your squad."
+      }
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Game",
+      "syncDesktopName": true,
+      "executableName": "outpost-zero"
+    },
+    "afterPack": "build/after-pack.js",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "midnry",
+        "repo": "midnry"
+      }
+    ]
+  },
+  "repository": "github:midnry/midnry",
+  "desktopName": "outpost-zero.desktop"
+}

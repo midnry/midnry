@@ -1,0 +1,73 @@
+# Builds the Outpost Zero desktop app (desktop/) for Windows, macOS and Linux
+# and publishes the installers as a GitHub pre-release for testing.
+name: Desktop app
+
+on:
+  push:
+    branches: [game-look, main]
+    paths: ["desktop/**", ".github/workflows/desktop.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: --win
+          - os: macos-latest
+            target: --mac
+          - os: ubuntu-latest
+            target: --linux
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - run: npx electron-builder ${{ matrix.target }} --publish never
+        env:
+          # No signing certificates yet: never pick one up by accident.
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: outpost-zero-${{ matrix.os }}
+          if-no-files-found: error
+          path: |
+            desktop/dist/*.exe
+            desktop/dist/*.dmg
+            desktop/dist/*.zip
+            desktop/dist/*.AppImage
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish test pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -la dist
+          tag="desktop-build-${{ github.run_number }}"
+          gh release create "$tag" dist/* \
+            --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}" \
+            --prerelease \
+            --title "Outpost Zero desktop — test build ${{ github.run_number }}" \
+            --notes "Test build from \`${{ github.ref_name }}\`. Windows: Outpost-Zero-…-win-x64.exe (installer). Mac: Outpost-Zero-…-mac-universal.dmg (right-click the app → Open the first time). Linux / Steam Deck: …AppImage. The app plays the live game, so it needs the internet."
