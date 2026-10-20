@@ -229,7 +229,6 @@ midnry-fps .mf-settab .mf-retention > :is(p, button) { margin: 12px 0 0; }
   midnry-fps .mf-playlists { position: relative; left: auto; right: auto; bottom: auto; margin: 16px 16px 0; }
   midnry-fps .mf-gamepick button { height: 112px; }
   midnry-fps .mf-playnext:not([hidden]) { all: unset; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 52px; border-radius: 3px; background: var(--mf-accent); color: var(--mf-accent-ink); font: 800 20px var(--mf-display); letter-spacing: 0.04em; text-transform: uppercase; }
-  midnry-fps .mf-playnext b { font-size: 13px; padding: 2px 7px; border: 1px solid currentColor; border-radius: 2px; }
   midnry-fps .mf-playnext .mf-ico { width: 18px; height: 18px; }
   midnry-fps .mf-playnext:disabled { opacity: 0.5; cursor: default; }
   midnry-fps .mf-homeside { position: relative; right: auto; top: auto; width: auto; margin: 16px 16px calc(24px + var(--mf-safe-bottom, 0px)); }
@@ -377,7 +376,7 @@ export class OutpostMenu {
     this.cards = el(
       "div",
       "mf-playlists",
-      `<p class="mf-steplabel" id="mf-step1"><b>1</b>Choose a game</p><div class="mf-gamepick" role="group" aria-labelledby="mf-step1"></div><p class="mf-steplabel" id="mf-step2"><b>2</b>Choose how to play</p><div class="mf-variants" role="group" aria-labelledby="mf-step2"></div><button type="button" class="mf-playnext"><b>3</b>Play ${icon("chevron")}</button>`,
+      `<p class="mf-steplabel" id="mf-step1"><b>1</b>Choose a game</p><div class="mf-gamepick" role="group" aria-labelledby="mf-step1"></div><p class="mf-steplabel" id="mf-step2"><b>2</b>Choose how to play</p><div class="mf-variants" role="group" aria-labelledby="mf-step2"></div><button type="button" class="mf-playnext">Play ${icon("chevron")}</button>`,
     );
     this.gamePick = this.cards.querySelector(".mf-gamepick");
     this.variants = this.cards.querySelector(".mf-variants");
