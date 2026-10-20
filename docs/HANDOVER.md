@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=free-match-20261020` (Dust preload, desktop wording, free match + sign-in + stats deployed 2026-10-20).
+  Current live value: `v=play-button-20261020` (key art, Estate/Skyport art, sandbags, drifting sky, Play button deployed 2026-10-20).
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -348,7 +348,7 @@ allowed **one free match** first.
 - `scripts/check-auth-invariant.test.mjs` / `migration-plan.test.mjs` each have one
   template test that already failed before this change (not related).
 
-## Key art on the loading screen (on `game-look`, not deployed)
+## Key art on the loading screen (deployed 2026-10-20)
 
 Owner supplied painted key art (AI-assisted; Steam requires an AI-content disclosure on the
 store submission). `public/games/loading/{bp-key,ls-outpost,ls-estate}-{wide,tall}.webp`
@@ -358,7 +358,7 @@ the screen's own brand line (the art has the logo painted in), lightens the top 
 shadows the captions. `node scripts/qa/loading-art.mjs` screenshots laptop + phone;
 `scripts/check-outpost-loading.mjs` follows the 8-slide order.
 
-## Wreck Estate + Skyport art pass (on `game-look`, not deployed)
+## Wreck Estate + Skyport art pass (deployed 2026-10-20)
 
 - `scripts/outpost-military/arena-style.js` replaces `arena-dust.js`: `ARENAS` holds one config per
   Last Signal arena (kit pieces per wall type, box-wall surfaces per wall type, ground, prop
@@ -383,7 +383,7 @@ shadows the captions. `node scripts/qa/loading-art.mjs` screenshots laptop + pho
 - **Remind the owner about Steam** after this release: they need a Steamworks account ($100 app
   fee) and to send the App ID; then achievements, cloud saves, Steam Deck checks.
 
-## Drifting sky + key-art finish (on `game-look`, not deployed)
+## Drifting sky + key-art finish (deployed 2026-10-20)
 
 - `scripts/outpost-military/sky-clouds.js` (`renderer.clouds`): a shader cloud layer (upper
   hemisphere, radius 240 inside the 260 m far plane, follows the camera, renderOrder -2 so storm
