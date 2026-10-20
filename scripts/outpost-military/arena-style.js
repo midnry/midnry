@@ -225,7 +225,7 @@ class ArenaStyle {
         }
       });
       for (const child of props.scene.children) {
-        const id = child.name.split("/")[0];
+        const id = child.name.split("--")[0];
         if (!this.props.has(id)) this.props.set(id, new THREE.Group());
         this.props.get(id).add(child.clone());
       }

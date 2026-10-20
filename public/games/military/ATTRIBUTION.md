@@ -154,3 +154,8 @@ All CC0 (public domain), no attribution required; listed for the record.
   painted_wooden_bench, ceramic_vase_01, planter_pot_clay, concrete_cat_statue, vintage_suitcase,
   WetFloorSign_01, metal_trash_can, utility_box_01, plastic_crate_02, cardboard_box_01,
   concrete_road_barrier.
+
+## First-person weapons (models/weapons-v2.glb)
+
+Original procedural Blender meshes (`scripts/assets/kit-weapons.py`): VX-7 carbine, pump shotgun,
+striker pistol. No downloaded models.

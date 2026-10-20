@@ -32,7 +32,7 @@ import {
   finishWeapon,
   batchWeapon,
 } from "./realism-weapons.js";
-import { buildCarbine, animateCarbine } from "./realism-carbine.js";
+import { buildCarbine, animateCarbine, prepareWeaponKit, buildModelledShotgun, buildModelledPistols } from "./realism-carbine.js";
 import { PlayerIdentification } from "./realism-identification.js";
 import {buildRiggedHand,disposeRiggedHands} from './realism-hands.js';
 import {bindWeaponGrip,updateWeaponGrip} from './realism-grips.js';
@@ -402,6 +402,21 @@ export class MilitaryRenderer {
           this.wallKeys = null;
         } catch {
           this.assetErrors.push("medevac");
+        }
+      })(),
+      (async () => {
+        // Modelled first-person weapons. Optional: the procedural ones remain.
+        try {
+          const gltf = await new GLTFLoader().loadAsync(ASSET + "models/weapons-v2.glb?assetVersion=" + ASSET_CACHE);
+          if (this.disposed) return;
+          this.weaponKit = prepareWeaponKit(gltf);
+          for (const weapon of Object.values(this.weaponKit))
+            for (const parts of Object.values(weapon))
+              for (const { geometry } of parts) this.geometries.set(`weapon-kit:${geometry.uuid}`, geometry);
+          // Rebuild the held weapon with the model.
+          this.weaponId = null;
+        } catch (error) {
+          console.warn("Modelled weapons unavailable", error);
         }
       })(),
       (async () => {
@@ -2613,8 +2628,17 @@ export class MilitaryRenderer {
     this.weaponOutfit = this.g.camera().outfit;
     const m = this.weaponMaterials();
     this.buildWeapon(this.rig, id, m);
-    this.rig.position.set(id === "twin" || id === "brawler" ? 0.05 : 0.23, -0.2, 0);
-    this.rig.rotation.set(0.02, -0.07, -0.025);
+    // Long guns sit in the lower right with receiver, optic and magazine in
+    // view; paired and fist weapons stay centred.
+    const centred = id === "twin" || id === "brawler";
+    this.rig.position.set(centred ? 0.05 : 0.175, -0.2, 0);
+    this.rigBase = {
+      z: centred ? 0 : 0.035,
+      yaw: centred ? -0.07 : -0.045,
+      // Paired pistols are short: lift them so slides and grips both show.
+      y: id === "twin" ? 0.06 : 0,
+    };
+    this.rig.rotation.set(0.02, this.rigBase.yaw, -0.025);
     finishWeapon(this, id);
   }
   buildWeapon(parent, id, m, hands = true) {
@@ -2623,6 +2647,15 @@ export class MilitaryRenderer {
       if (hands) this.hand(...args);
     };
     m.polymer.color.set(weaponOf(id).color).multiplyScalar(0.55);
+    // Modelled shotguns and pistols when the weapon models have loaded.
+    if (this.weaponKit?.shotgun && (id === "scatter" || id === "breach")) {
+      buildModelledShotgun(this, parent, m, hands, id === "breach");
+      return;
+    }
+    if (this.weaponKit?.pistol && id === "twin") {
+      buildModelledPistols(this, parent, m, hands);
+      return;
+    }
     if (id === "venom") m.steel.color.set("#6eb75a");
     if (id === "veil") m.steel.color.set("#c6b6e0");
     const firearms = ["carbine", "scatter", "twin", "breach"];
@@ -3377,15 +3410,20 @@ export class MilitaryRenderer {
     const combat = protocolView?.protocol?.phase === "combat",
       recoil = g.mode === "protocol" && !combat ? 0 : Math.max(0, 1 - (t - p.shotAt) / 0.16),
       reload = Math.max(0, Math.min(1, (p.reloadUntil - t) / 1.4));
+    // Reloads tilt the gun towards the camera (magazine well in view) rather
+    // than dropping it out of frame, so the magazine change can be seen.
+    const reloadTilt = reload > 0 ? Math.sin(reload * Math.PI) : 0;
     this.rig.position.y =
-      -0.2 * Math.max(1, this.g.h / this.g.w) -
+      -0.185 * Math.max(1, this.g.h / this.g.w) -
       (g.mode === "protocol" && !combat ? 0.075 : 0) -
-      (reload > 0 ? Math.sin(reload * Math.PI) * 0.25 : 0) +
+      reloadTilt * 0.06 +
+      (this.rigBase?.y || 0) +
       (this.motion.matches ? 0 : Math.sin(g.step) * 0.005);
     this.rig.position.y -= fall * 0.65;
-    this.rig.position.z = recoil * 0.04;
-    this.rig.rotation.x = 0.02 - recoil * 0.075;
-    this.rig.rotation.z = -0.025 + Math.sin(reload * Math.PI) * 0.3;
+    this.rig.position.z = (this.rigBase?.z || 0) + recoil * 0.04 + reloadTilt * 0.03;
+    this.rig.rotation.x = 0.02 - recoil * 0.075 + reloadTilt * 0.16;
+    this.rig.rotation.y = (this.rigBase?.yaw ?? -0.07) + reloadTilt * 0.1;
+    this.rig.rotation.z = -0.025 + reloadTilt * 0.5;
     this.flash.intensity = recoil > 0.65 ? 3 : 0;
     animateCarbine(this.rig.userData.carbine,reload,recoil);
     this.rig.visible =

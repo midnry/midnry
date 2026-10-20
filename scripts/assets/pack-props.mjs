@@ -1,5 +1,5 @@
 // Pack downloaded Poly Haven props into one GLB: each asset becomes a named
-// top-level node, textures resized and re-encoded as WebP, meshes deduplicated.
+// top-level node (<id> or <id>--<part>), textures resized and re-encoded as WebP, meshes deduplicated.
 // Run from a folder with glTF-Transform installed (copy this file there):
 //   node <tools>/pack-props.mjs out.glb <maxTex> id...   (cwd = repo root)
 import { NodeIO } from "@gltf-transform/core";
@@ -12,7 +12,8 @@ const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 const doc = await io.read(`assets-src/polyhaven/${ids[0]}/1k/${ids[0]}_1k.gltf`);
 const name = (d, id) => {
   const scene = d.getRoot().getDefaultScene() || d.getRoot().listScenes()[0];
-  for (const n of scene.listChildren()) n.setName(id + (scene.listChildren().length > 1 ? "/" + n.getName() : ""));
+  // "--" survives three.js's node-name sanitising ("/" does not).
+  for (const n of scene.listChildren()) n.setName(id + (scene.listChildren().length > 1 ? "--" + n.getName() : ""));
 };
 name(doc, ids[0]);
 for (const id of ids.slice(1)) {

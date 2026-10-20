@@ -4,6 +4,7 @@ const names = [
   "models/operator-v1.glb",
   "models/props-v1.glb",
   "models/medevac-v1.glb",
+  "models/weapons-v2.glb",
   "sky.hdr",
   "textures/benchmark-operator-body-orm.png",
   "textures/benchmark-operator-skin-roughness.png",

@@ -395,3 +395,20 @@ shadows the captions. `node scripts/qa/loading-art.mjs` screenshots laptop + pho
   `scripts/assets/key-art-finish.py` (needs OpenCV: a venv with opencv-python-headless) applies a
   print finish (edge-preserving smoothing, ink lines, halftone, grade, paper grain) and writes
   `public/games/loading/*.webp`. It cannot redraw bad hands/guns — that needs an illustrator.
+
+## Modelled first-person weapons (on `game-look`, not deployed)
+
+- `scripts/assets/kit-weapons.py` (Blender, shared `kit_common.py`) builds
+  `public/games/military/models/weapons-v2.glb`: carbine (body, magazine, bolt, handle, glass),
+  pump shotgun (body, pump, breacher) and striker pistol (frame, slide). Node names are
+  `<weapon>--<part>`: three.js strips "/" from node names (this also broke multi-part props in the
+  arena prop packs until `pack-props.mjs` switched to "--").
+- `realism-carbine.js`: `prepareWeaponKit`, `buildModelledCarbine` (falls back to the procedural
+  carbine until the GLB loads), `buildModelledShotgun` (Sunburst; Gatebreaker adds the breacher
+  muzzle; pump racks with recoil), `buildModelledPistols` (Twinwire; slides kick). Modelled meshes
+  are tagged `userData.modelled` so `batchWeapon` leaves their baked occlusion alone and
+  `finishWeapon` skips the old procedural detail. Cerakote drops the photo colour map.
+- Framing (`updateWeapon` / render): long guns sit at x 0.175, z +0.035, yaw -0.045; reloads tilt
+  the gun towards the camera instead of dropping it out of frame; Twinwire is lifted 0.06.
+- Not modelled yet: launcher, fusecaster/shardpod, blades/scythe, knuckles (still procedural).
+- QA: `node scripts/qa/weapon-look.mjs <tag> [width] [weapons]` (rest + mid-reload shots).

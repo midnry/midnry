@@ -280,7 +280,13 @@ export function batchWeapon(r, root = r.rig) {
     originals = [],
     mergedMaterials = new Set();
   root.traverse((mesh) => {
-    if (!mesh.isMesh || !mesh.visible || mesh.material.transparent || Array.isArray(mesh.material))
+    if (
+      !mesh.isMesh ||
+      !mesh.visible ||
+      mesh.userData.modelled ||
+      mesh.material.transparent ||
+      Array.isArray(mesh.material)
+    )
       return;
     // Hidden shotgun magazines must not reappear when converted to one mesh.
     for (let parent = mesh.parent; parent && parent !== root; parent = parent.parent)
@@ -321,6 +327,13 @@ export function finishWeapon(r, id) {
   const etch = etchedMaterial(r, id);
   if (id === "carbine") {
     label(r, r.rig, etch, [-0.0315, 0.025, -0.512], 0.09, 0.018);
+    batchWeapon(r);
+    return;
+  }
+  // Modelled shotguns and pistols carry their own detail.
+  let modelled = false;
+  r.rig.traverse((o) => (modelled ||= !!o.userData.modelled));
+  if (modelled) {
     batchWeapon(r);
     return;
   }
