@@ -4,6 +4,7 @@
  * The rules live in public/games/outpost-hazards.js. */
 import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { DisasterWeather, WIND } from "./realism-weather.js";
 
 const SCALE = 3;
 const COLORS = { red: "#c8352b", green: "#4f9a3a", pink: "#e276b8", blue: "#3f86d8" };
@@ -12,16 +13,10 @@ const EFFECTS = {
   toxic: { color: "#7dbd4c", emissive: "#4d8a22", grow: 0.7, opacity: 0.5 },
   heal: { color: "#7fc3ff", emissive: "#3f86d8", grow: 0.6, opacity: 0.55, flat: true },
   foam: { color: "#f1a2d4", emissive: "#c0508e", grow: 0.5, opacity: 0.6 },
-  debris: { color: "#a08a6a", emissive: "#3a2e20", grow: 0.9, opacity: 0.65 },
-  lightning: {
-    color: "#f4f6ff",
-    emissive: "#cfe0ff",
-    grow: 0.3,
-    opacity: 0.9,
-    bolt: true,
-    glow: true,
-  },
 };
+// Lightning bolts and quake debris are drawn by DisasterWeather; the blast
+// the rules add at the same spot (for damage) is not shown as a fireball.
+const DISASTER_FX = new Set(["lightning", "debris"]);
 
 /** Sandbags around the edge of a 2.5 m square, six courses high: filled
  * sacks (squarish, flattened by the weight above), each a slightly
@@ -143,25 +138,39 @@ export class HazardDressing {
     this.r = r;
     this.effects = new Map();
     this.marks = new Map();
-    this.flashUntil = 0;
+  }
+  /** Rain, dust, bolts and debris (realism-weather.js). */
+  get wx() {
+    return (this.weatherFx ||= new DisasterWeather(this.r));
+  }
+  /** The disaster's wind direction in tile coordinates (QA faces into it). */
+  get wind() {
+    return WIND[this.r.g.arena.disaster?.kind] || WIND.sandstorm;
+  }
+  /** Earthquake strength 0–1 (the HUD shows it instead of shaking under
+   * reduced motion). */
+  quakeLevel() {
+    return this.wx.quakeLevel();
   }
   update(t) {
     const r = this.r,
-      a = r.g.arena;
+      a = r.g.arena,
+      // A disaster's own blast (the damage at a lightning strike or quake
+      // impact) is not drawn as a fireball: the bolt or the dust shows it.
+      disasterAt = new Set(a.fx.filter((f) => DISASTER_FX.has(f.kind)).map((f) => f.x + ":" + f.y));
     this.sync(
       this.effects,
-      a.fx.filter((f) => EFFECTS[f.kind] && f.until > a.time),
+      a.fx.filter(
+        (f) =>
+          EFFECTS[f.kind] && f.until > a.time && !(f.kind === "blast" && disasterAt.has(f.x + ":" + f.y)),
+      ),
       (f) => this.effect(f),
       (root, f) => {
         const spec = EFFECTS[f.kind],
           life = Math.max(0, Math.min(1, (f.until - a.time) / root.userData.duration));
         root.position.set(f.x * SCALE, spec.flat ? 0.08 : 0.4, f.y * SCALE);
-        if (!spec.bolt) root.scale.setScalar(f.radius * SCALE * (spec.grow * (1 - life) + 0.35));
+        root.scale.setScalar(f.radius * SCALE * (spec.grow * (1 - life) + 0.35));
         for (const m of root.children) m.material.opacity = spec.opacity * Math.min(1, life * 2);
-        if (f.kind === "lightning" && !this.seenBolts?.has(f.id)) {
-          (this.seenBolts ||= new Set()).add(f.id);
-          this.flashUntil = performance.now() + 140;
-        }
       },
     );
     const strikes = a.disaster?.strikes || [];
@@ -178,13 +187,21 @@ export class HazardDressing {
         if (s.kind === "storm") {
           // Hologram flat on the ground: a spinning grid disc and a pulse
           // ring sweeping inwards, flickering faster as the strike nears.
-          const [disc, pulse] = root.children,
+          // Underneath, the ground itself charges up: a blue glow, arcs
+          // crawling over it and streamers rising in the last half second.
+          const [disc, pulse, glow, arcs] = root.children,
             flicker = still ? 1 : 0.75 + 0.25 * Math.sin(t * (left < 0.5 ? 40 : 14));
           disc.rotation.z = still ? 0 : t * 1.6;
           disc.material.opacity = (0.45 + 0.45 * grown) * flicker;
           const sweep = still ? 0.5 : 1 - ((t * (left < 0.5 ? 2.5 : 1.2)) % 1);
           pulse.scale.setScalar(1.3 * SCALE * (0.2 + 0.8 * sweep));
           pulse.material.opacity = (0.3 + 0.5 * grown) * (1 - sweep * 0.5);
+          glow.material.opacity = (0.3 + 0.7 * grown * grown) * flicker;
+          const now = performance.now();
+          if (!root.userData.arcAt || (!still && now - root.userData.arcAt > 60)) {
+            root.userData.arcAt = now;
+            chargeArcs(arcs, grown, left);
+          }
         } else {
           // Cracks spread out from the impact point and start to glow.
           const crack = root.children[0];
@@ -199,6 +216,7 @@ export class HazardDressing {
     this.updateStorm(t);
     this.updateHaze(t);
     this.updateShock();
+    this.wx.update(t, this.fade());
   }
   sync(map, items, make, place) {
     const live = new Set();
@@ -215,7 +233,7 @@ export class HazardDressing {
           if (o.isMesh) {
             o.material.dispose();
             this.r.materials.delete(o.material);
-          }
+          } else if (o.isLine) o.geometry.dispose();
         });
         map.delete(id);
       }
@@ -236,26 +254,7 @@ export class HazardDressing {
       // Fire and lightning add light instead of painting a solid shell.
       blending: spec.glow ? THREE.AdditiveBlending : THREE.NormalBlending,
     });
-    if (spec.bolt) {
-      // A jagged column of light from the sky to the strike point.
-      let x = 0,
-        z = 0;
-      for (let i = 0; i < 6; i++) {
-        const nx = (Math.random() - 0.5) * 1.6,
-          nz = (Math.random() - 0.5) * 1.6;
-        const seg = r.mesh(
-          root,
-          r.geo("bolt", () => new THREE.CylinderGeometry(1, 1, 1, 6)),
-          mat,
-          [(x + nx) / 2, 30 - i * 5 - 2.5, (z + nz) / 2],
-          [0.12, 5.4, 0.12],
-        );
-        seg.rotation.z = Math.atan2(nx - x, 5) * -1;
-        seg.castShadow = false;
-        x = nx;
-        z = nz;
-      }
-    } else if (spec.flat) {
+    if (spec.flat) {
       const ring = r.mesh(
         root,
         r.geo("hazard-ring", () => new THREE.RingGeometry(0.7, 1, 40)),
@@ -326,6 +325,31 @@ export class HazardDressing {
         }),
         1.3 * SCALE,
       ).position.y = 0.01;
+      // Charged ground: a soft blue glow under the hologram, and arcs.
+      flat(
+        r.geo("holo-disc", () => new THREE.CircleGeometry(1, 48)),
+        new THREE.MeshBasicMaterial({
+          map: chargeGlow(),
+          transparent: true,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          color: "#4aa8ff",
+          toneMapped: false,
+        }),
+        1.7 * SCALE,
+      ).position.y = -0.01;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(ARC_SEGMENTS * 6), 3));
+      const arcs = new THREE.LineSegments(geo, (arcMaterial ||= new THREE.LineBasicMaterial({
+        color: "#d4f0ff",
+        transparent: true,
+        opacity: 0.95,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false,
+      })));
+      arcs.frustumCulled = false;
+      root.add(arcs);
     } else {
       const crack = flat(
         r.geo("crack-plane", () => new THREE.PlaneGeometry(2, 2)),
@@ -657,8 +681,10 @@ export class HazardDressing {
       sandpatch: make(new THREE.PlaneGeometry(2, 2), decal(sandTexture(), "#ffffff"), 400, false),
     };
   }
-  /** A thunderstorm (rolling black clouds, rain, distant sheet lightning) or
-   * a sandstorm sky, both fading in and out over the real sky. */
+  /** The disaster sky over the real one: for a thunderstorm, the drifting
+   * cloud layer closes into a dark overcast (lit from inside by lightning)
+   * over a heavy cloud dome, plus distant sheet lightning; for a sandstorm,
+   * a dusty ochre sky. Rain and dust are drawn by DisasterWeather. */
   updateStorm(t) {
     const r = this.r,
       d = r.g.arena.disaster,
@@ -672,46 +698,53 @@ export class HazardDressing {
       still = r.motion.matches,
       storm = d.kind === "storm";
     s.root.visible = true;
-    s.dome.material.map = storm ? s.clouds : null;
+    s.root.position.copy(r.camera.position);
+    s.dome.material.map = storm ? s.clouds : s.sand;
     if (s.dome.material.userData.kind !== d.kind) {
       s.dome.material.userData.kind = d.kind;
       s.dome.material.needsUpdate = true;
     }
     s.dome.material.opacity = k;
-    s.rain.visible = storm;
-    s.rain.material.opacity = 0.35 * k;
+    const u = r.clouds?.material.uniforms;
     if (!storm) {
-      s.root.position.copy(r.camera.position);
-      s.dome.material.color.set("#b39a72");
+      // Dust hides the sky: drawn over the cloud layer.
+      s.dome.renderOrder = -1;
+      s.dome.material.color.setRGB(1, 1, 1);
       return;
     }
-    s.root.position.copy(r.camera.position);
+    // Storm: dome behind the clouds, clouds closing in over it.
+    s.dome.renderOrder = -3;
     s.dome.rotation.y = still ? 0 : t * 0.012;
     s.clouds.offset.x = still ? 0 : t * 0.004;
     // Distant flashes between strikes (presentation only).
     if (!still && now > (this.nextSheet || 0)) {
       this.nextSheet = now + 1800 + Math.random() * 3200;
+      this.sheetAt = now;
       this.sheetUntil = now + 90 + Math.random() * 120;
     }
-    const lit = now < this.flashUntil ? 1 : now < (this.sheetUntil || 0) ? 0.55 : 0;
+    const lit = this.lightning();
     s.dome.material.color.setRGB(1, 1, 1).multiplyScalar(1 + lit * 1.8);
-    // Rain falls around the camera and wraps.
-    const pos = s.rain.geometry.attributes.position,
-      fall = Math.min(0.1, (now - (this.rainAt || now)) / 1000) * 34;
-    this.rainAt = now;
-    if (!still)
-      for (let i = 0; i < pos.count; i += 2) {
-        let y = pos.getY(i) - fall;
-        if (y < -2) y += 18;
-        pos.setY(i, y);
-        pos.setY(i + 1, y + 0.9);
-      }
-    pos.needsUpdate = true;
+    if (u) {
+      // The cloud deck thickens ahead of the rest of the weather.
+      const c = Math.min(1, k * 1.6);
+      u.coverage.value += (0.04 - u.coverage.value) * c;
+      u.opacity.value += (0.98 - u.opacity.value) * c;
+      u.lit.value.lerp(this.cloudLit.setRGB(0.16, 0.18, 0.22).multiplyScalar(1 + lit * 5), c);
+      u.shade.value.lerp(this.cloudShade.setRGB(0.03, 0.035, 0.045).multiplyScalar(1 + lit * 3), c);
+    }
+  }
+  /** Lightning light right now, 0–1: strikes (nearer is brighter) and the
+   * dimmer distant sheet flashes. */
+  lightning() {
+    const sheet = performance.now() < (this.sheetUntil || 0) ? 0.45 : 0;
+    return Math.max(this.wx.flash(), sheet);
   }
   makeStorm() {
     const r = this.r,
       root = new THREE.Group(),
       clouds = stormClouds();
+    this.cloudLit = new THREE.Color();
+    this.cloudShade = new THREE.Color();
     const dome = new THREE.Mesh(
       new THREE.SphereGeometry(200, 32, 16),
       new THREE.MeshBasicMaterial({
@@ -725,74 +758,104 @@ export class HazardDressing {
     );
     dome.renderOrder = -1;
     root.add(dome);
-    const count = 700,
-      p = new Float32Array(count * 6);
-    for (let i = 0; i < count; i++) {
-      const x = (Math.random() - 0.5) * 30,
-        y = Math.random() * 18 - 2,
-        z = (Math.random() - 0.5) * 30;
-      p.set([x, y, z, x + 0.12, y + 0.9, z], i * 6);
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute("position", new THREE.BufferAttribute(p, 3));
-    const rain = new THREE.LineSegments(
-      geo,
-      new THREE.LineBasicMaterial({
-        color: "#a9bdd6",
-        transparent: true,
-        opacity: 0.35,
-        depthWrite: false,
-      }),
-    );
-    rain.frustumCulled = false;
-    root.add(rain);
     r.scene.add(root);
-    return { root, dome, rain, clouds };
+    return { root, dome, clouds, sand: sandSky() };
   }
-  /** Storm light: the sun is hidden behind cloud, and lightning lights the
-   * scene up for a moment. Scales this frame's lights and returns a function
-   * that puts them back after rendering, so the day lighting's own easing
-   * never compounds the change. */
+  /** Disaster light: storm clouds hide the sun and lightning lights the
+   * scene up; blowing sand dims and reddens the sun and fills the shadows
+   * with warm scattered light; rain darkens the ground and makes it glossy.
+   * Scales this frame's lights and returns a function that puts them back
+   * after rendering, so the day lighting's own easing never compounds. */
   dim() {
     const r = this.r,
       a = r.g.arena,
       d = a.disaster;
-    const k = d?.kind === "storm" ? this.fade() : 0;
-    if (!k) return null;
-    const now = performance.now(),
-      lit = now < this.flashUntil ? 1 : now < (this.sheetUntil || 0) ? 0.4 : 0,
-      saved = [r.sun.intensity, r.hemisphere.intensity, r.scene.environmentIntensity],
-      mix = (to) => 1 + (to - 1) * k;
-    r.sun.intensity *= mix(0.12 + lit * 0.5);
-    r.hemisphere.intensity *= mix(0.75 + lit * 3);
-    r.scene.environmentIntensity *= mix(0.35 + lit * 0.9);
+    if (!d) return null;
+    const k = this.fade(),
+      wet = this.wx.wetness(),
+      wall = d.kind === "sandstorm" ? this.wx.wall(d) : null,
+      // The sun starts to go as the dust wall arrives.
+      dusk = wall ? wall.opacity * Math.max(0, 1 - (wall.distance - 4) / 70) * 0.7 : 0,
+      sand = d.kind === "sandstorm" ? Math.max(k, dusk) : 0,
+      storm = d.kind === "storm" ? k : 0;
+    if (!sand && !storm && !wet) return null;
+    const ground = r.groundMaterial,
+      saved = [
+        r.sun.intensity,
+        r.hemisphere.intensity,
+        r.scene.environmentIntensity,
+        r.sun.color.clone(),
+        r.hemisphere.color.clone(),
+        r.hemisphere.groundColor.clone(),
+        ground?.color.clone(),
+        ground?.roughness,
+      ],
+      mix = (to, by) => 1 + (to - 1) * by;
+    if (storm) {
+      const lit = this.lightning();
+      r.sun.intensity *= mix(0.12 + lit * 0.6, storm);
+      r.hemisphere.intensity *= mix(0.75 + lit * 3.2, storm);
+      r.scene.environmentIntensity *= mix(0.35 + lit * 0.9, storm);
+      // Lightning is cold, blue-white light.
+      if (lit) {
+        r.sun.color.lerp(WHITE_BLUE, Math.min(1, lit * storm));
+        r.hemisphere.color.lerp(WHITE_BLUE, Math.min(1, lit * storm));
+      }
+    }
+    if (sand) {
+      r.sun.intensity *= mix(0.32, sand);
+      r.hemisphere.intensity *= mix(1.25, sand);
+      r.scene.environmentIntensity *= mix(0.6, sand);
+      r.sun.color.lerp(DUST_SUN, sand);
+      r.hemisphere.color.lerp(DUST_SKY, sand);
+      r.hemisphere.groundColor.lerp(DUST_GROUND, sand);
+    }
+    if (wet && ground) {
+      // Rain-soaked ground: darker and glossy, so it reflects the sky.
+      ground.color.multiplyScalar(1 - 0.4 * wet);
+      ground.roughness *= 1 - 0.62 * wet;
+    }
     return () => {
       [r.sun.intensity, r.hemisphere.intensity, r.scene.environmentIntensity] = saved;
+      r.sun.color.copy(saved[3]);
+      r.hemisphere.color.copy(saved[4]);
+      r.hemisphere.groundColor.copy(saved[5]);
+      if (ground) {
+        ground.color.copy(saved[6]);
+        ground.roughness = saved[7];
+      }
     };
   }
-  /** How far the weather has rolled in, 0–1: it builds over the last two
-   * seconds of the warning and first second of the disaster, and clears over
-   * its last three seconds. Earthquakes have no weather. */
+  /** How far the weather has rolled in, 0–1. A storm's clouds gather over
+   * the whole warning; a sandstorm arrives with its dust wall over the last
+   * two seconds of the warning and first second of the storm. Both clear
+   * over the last three seconds. Earthquakes have no weather. */
   fade() {
     const a = this.r.g.arena,
       d = a.disaster;
     if (!d || d.kind === "quake") return 0;
     const t = a.time,
-      k = Math.min(1, Math.max(0, (t - (d.startAt - 2)) / 3), Math.max(0, (d.endAt - t) / 3));
+      gather =
+        d.kind === "storm"
+          ? smoothstep((t - d.warnAt) / (d.startAt + 1 - d.warnAt))
+          : Math.max(0, (t - (d.startAt - 2)) / 3),
+      k = Math.min(1, gather, Math.max(0, (d.endAt - t) / 3));
     return t >= d.endAt ? 0 : k;
   }
   /** Target fog for the active disaster and how far to blend towards it. */
   weather() {
-    const d = this.r.g.arena.disaster,
-      k = this.fade();
+    const d = this.r.g.arena.disaster;
+    if (d?.kind === "quake") {
+      // Shaken dust hangs in the air.
+      const q = this.wx.quakeLevel();
+      return q > 0.02 ? { fog: "#b3a68f", density: 0.032, k: Math.min(1, q * 1.3) } : null;
+    }
+    const k = this.fade();
     if (!k) return null;
-    if (d.kind === "sandstorm") return { fog: "#b39a72", density: 0.09, k };
-    const now = performance.now();
-    return now < this.flashUntil
-      ? { fog: "#c9d4ea", density: 0.014, k }
-      : now < (this.sheetUntil || 0)
-        ? { fog: "#4a5468", density: 0.028, k }
-        : { fog: "#1d232d", density: 0.034, k };
+    if (d.kind === "sandstorm") return { fog: "#a6854f", density: 0.075 + 0.035 * this.wx.gust(), k };
+    const lit = this.lightning(),
+      fog = (this.stormFog ||= new THREE.Color()).set("#1b212b").lerp(STORM_LIT, Math.min(1, lit) * 0.6);
+    return { fog, density: 0.034 - 0.014 * Math.min(1, lit), k };
   }
   /** Camera shake during an earthquake, and a stumbling sway when walking
    * over cracked, rubble-strewn or sandy ground (none with reduced motion). */
@@ -810,12 +873,85 @@ export class HazardDressing {
       camera.position.y += Math.abs(Math.sin(t * 11)) * 0.05 * k - 0.03 * k;
       camera.rotation.z += Math.sin(t * 5.5) * 0.012 * k;
     }
-    if (!d || d.kind !== "quake" || a.time < d.startAt || a.time >= d.endAt) return;
-    const k = 0.06 * Math.min(1, (a.time - d.startAt) / 1.5, (d.endAt - a.time) / 1.5);
-    camera.position.x += Math.sin(t * 47) * k;
-    camera.position.y += Math.sin(t * 61 + 1) * k * 0.6;
-    camera.rotation.z += Math.sin(t * 37) * k * 0.15;
+    if (d?.kind !== "quake") return;
+    // Ground motion: a few incommensurate frequencies in the 2–16 Hz band
+    // so it never loops, scaled by the quake's strength and by jolts from
+    // collapses nearby.
+    const amp = 0.08 * this.wx.quakeLevel();
+    if (!amp) return;
+    camera.position.x += (Math.sin(t * 9.1) * 0.5 + Math.sin(t * 15.7 + 1.3) * 0.3 + Math.sin(t * 3.3 + 0.5) * 0.4) * amp;
+    camera.position.z += (Math.sin(t * 8.3 + 4) * 0.5 + Math.sin(t * 13.9 + 2.2) * 0.3 + Math.sin(t * 2.6) * 0.3) * amp;
+    camera.position.y += (Math.sin(t * 11.3 + 2.1) * 0.5 + Math.sin(t * 6.1) * 0.3) * amp * 0.5;
+    camera.rotation.z += (Math.sin(t * 7.7 + 0.7) * 0.6 + Math.sin(t * 2.9) * 0.4) * amp * 0.22;
+    camera.rotation.x += Math.sin(t * 10.3 + 1.1) * amp * 0.1;
   }
+}
+
+const smoothstep = (v) => {
+  v = Math.max(0, Math.min(1, v));
+  return v * v * (3 - 2 * v);
+};
+const WHITE_BLUE = new THREE.Color("#d4ddff");
+const STORM_LIT = new THREE.Color("#9aa8c4");
+const DUST_SUN = new THREE.Color("#ff9a52");
+const DUST_SKY = new THREE.Color("#d6aa70");
+const DUST_GROUND = new THREE.Color("#8a6a44");
+
+/** Arcs crawling over charged ground towards the strike point, and in the
+ * last half second, streamers reaching up from it (in the marker's space). */
+const ARC_SEGMENTS = 64;
+let arcMaterial;
+function chargeArcs(lines, grown, left) {
+  const pos = lines.geometry.attributes.position,
+    R = 1.25 * SCALE;
+  let k = 0;
+  const seg = (x0, y0, z0, x1, y1, z1) => {
+    if (k >= ARC_SEGMENTS) return;
+    pos.setXYZ(k * 2, x0, y0, z0);
+    pos.setXYZ(k * 2 + 1, x1, y1, z1);
+    k++;
+  };
+  for (let n = 0; n < 2 + Math.round(grown * 4); n++) {
+    let ang = Math.random() * Math.PI * 2,
+      rad = R * (0.55 + Math.random() * 0.45),
+      x = Math.cos(ang) * rad,
+      z = Math.sin(ang) * rad,
+      y = 0.03;
+    for (let i = 0; i < 7; i++) {
+      ang += (Math.random() - 0.5) * 0.6;
+      rad = Math.max(0.1, rad - R * (0.05 + Math.random() * 0.12));
+      const nx = Math.cos(ang) * rad,
+        nz = Math.sin(ang) * rad,
+        ny = 0.03 + Math.random() * 0.12;
+      seg(x, y, z, nx, ny, nz);
+      x = nx;
+      z = nz;
+      y = ny;
+    }
+  }
+  if (left < 0.5)
+    for (let n = 0; n < 3; n++) {
+      const ang = Math.random() * Math.PI * 2,
+        rad = Math.random() * R * 0.45,
+        top = 0.4 + 1.6 * (1 - left / 0.5);
+      let x = Math.cos(ang) * rad,
+        z = Math.sin(ang) * rad,
+        y = 0;
+      for (let i = 0; i < 5; i++) {
+        const nx = x + (Math.random() - 0.5) * 0.35,
+          nz = z + (Math.random() - 0.5) * 0.35,
+          ny = (top * (i + 1)) / 5;
+        seg(x, y, z, nx, ny, nz);
+        x = nx;
+        z = nz;
+        y = ny;
+      }
+    }
+  for (; k < ARC_SEGMENTS; k++) {
+    pos.setXYZ(k * 2, 0, -1, 0);
+    pos.setXYZ(k * 2 + 1, 0, -1, 0);
+  }
+  pos.needsUpdate = true;
 }
 
 // Procedural textures, drawn once.
@@ -867,16 +1003,90 @@ const crackGlow = once(() =>
     crackLines(c, w, "#ffffff", 5.5);
   }),
 );
+// Lightning scorch: a charred centre, a sooty halo and the fern-like burn
+// (Lichtenberg figure) the current leaves as it spreads over the ground.
 const scorchTexture = once(() =>
-  canvasTexture(128, 128, (c, w) => {
-    const g = c.createRadialGradient(w / 2, w / 2, 2, w / 2, w / 2, w / 2);
-    g.addColorStop(0, "#0d0b0aee");
-    g.addColorStop(0.45, "#1e1a17aa");
+  canvasTexture(256, 256, (c, w) => {
+    const m = w / 2,
+      g = c.createRadialGradient(m, m, 3, m, m, m);
+    g.addColorStop(0, "#080606f5");
+    g.addColorStop(0.16, "#141110dd");
+    g.addColorStop(0.45, "#1e1a1766");
     g.addColorStop(1, "#1e1a1700");
+    c.fillStyle = g;
+    c.fillRect(0, 0, w, w);
+    let seed = 41;
+    const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    c.strokeStyle = "#0b0908";
+    c.lineCap = "round";
+    const fern = (x, y, angle, length, thick) => {
+      if (thick < 0.35 || length < 5) return;
+      c.globalAlpha = Math.min(0.9, thick / 2.4);
+      c.lineWidth = thick;
+      c.beginPath();
+      c.moveTo(x, y);
+      for (let i = 0; i < 5; i++) {
+        angle += (rand() - 0.5) * 0.9;
+        x += Math.cos(angle) * (length / 5);
+        y += Math.sin(angle) * (length / 5);
+        c.lineTo(x, y);
+        if (rand() < 0.55) {
+          c.stroke();
+          fern(x, y, angle + (rand() < 0.5 ? 0.7 : -0.7), length * 0.55, thick * 0.62);
+          c.globalAlpha = Math.min(0.9, thick / 2.4);
+          c.lineWidth = thick;
+          c.beginPath();
+          c.moveTo(x, y);
+        }
+      }
+      c.stroke();
+    };
+    for (let i = 0; i < 9; i++) fern(m, m, (i / 9) * Math.PI * 2 + rand() * 0.4, w * (0.2 + rand() * 0.14), 2.6);
+    c.globalAlpha = 1;
+  }),
+);
+// Charged ground: a soft glow, brightest in the middle.
+const chargeGlow = once(() =>
+  canvasTexture(128, 128, (c, w) => {
+    const g = c.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2);
+    g.addColorStop(0, "#ffffffcc");
+    g.addColorStop(0.3, "#ffffff55");
+    g.addColorStop(0.75, "#ffffff18");
+    g.addColorStop(1, "#ffffff00");
     c.fillStyle = g;
     c.fillRect(0, 0, w, w);
   }),
 );
+// Sandstorm sky: dense ochre haze, darker overhead where the dust is
+// thickest, brighter towards the horizon, with faint wind-blown bands.
+const sandSky = once(() => {
+  const tex = canvasTexture(512, 256, (c, w, h) => {
+    const g = c.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, "#6e5232");
+    g.addColorStop(0.3, "#8f6d44");
+    g.addColorStop(0.47, "#b8945f");
+    g.addColorStop(0.53, "#b08b58");
+    g.addColorStop(1, "#7a5c38");
+    c.fillStyle = g;
+    c.fillRect(0, 0, w, h);
+    let seed = 9;
+    const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 260; i++) {
+      const y = h * (0.12 + rand() * 0.38),
+        x = rand() * w,
+        len = 40 + rand() * 160,
+        tone = rand() < 0.5 ? "60,40,20" : "230,190,130",
+        band = c.createLinearGradient(x, 0, x + len, 0);
+      band.addColorStop(0, `rgba(${tone},0)`);
+      band.addColorStop(0.5, `rgba(${tone},${0.05 + rand() * 0.08})`);
+      band.addColorStop(1, `rgba(${tone},0)`);
+      c.fillStyle = band;
+      c.fillRect(x, y, len, 2 + rand() * 7);
+    }
+  });
+  tex.wrapS = THREE.RepeatWrapping;
+  return tex;
+});
 // Hologram disc: rings, ticks and a crosshair.
 const holoDisc = once(() =>
   canvasTexture(256, 256, (c, w) => {

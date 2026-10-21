@@ -55,6 +55,7 @@ hash is stored: `e4ecd2762674dd4bb706fe3aa4fd2d8fc49e1124691d66437d26f8194c9106d
 | `signal-hazards.mjs [width]` | Canister in view, a red canister exploding, each arena's disaster warning and disaster → `screenshots/qa/hazards`. |
 | `phone-hud.mjs` | Phone game screen (portrait + landscape) with a disaster warning: HUD boxes, overlaps, % of screen covered → `screenshots/qa/phone`. |
 | `signal-haze.mjs [width]` | Red Haze curtain near / far / outside, sandstorm and storm half rolled in → `screenshots/qa/haze`. |
+| `disaster-look.mjs [width]` | Each disaster forced on its arena: dust wall far/close, inside the sandstorm; storm warning, charged ground, a bolt, rain, scorch; quake marked ground, collapse, reduced motion, cracks. Laptop + phone by default → `screenshots/qa/disasters`. `BASE=` another server, `MAPS=` one arena. |
 | `music-preview.mjs` | Renders the battle music (stalk / hunt / fight) to `screenshots/qa/music-preview.wav`, prints loudness, checks it starts, builds and stops in a round. |
 | `crate-closeup.mjs [tag]` | Phone-size close-ups of a supply crate (shadow acne / z-fighting) → `screenshots/qa/crate`. |
 | `shock-and-net.mjs` | Lightning after-shock (arcs on a rival, blue edge on you) and the network meter in a real online room → `screenshots/qa/shock`. |
@@ -252,6 +253,36 @@ makes rounds very uneven (78 s median, 191 s max). Nothing applied yet; owner to
 - Inside the Red Haze (owner: "it just looks like a line"): red fog (#9a2a22, 0.075),
   drifting red embers around the camera (`updateEmbers()`), and a pulsing red screen-edge
   aura (`.mf-hazefx`, toggled in `signalIntensity()`).
+
+## Realistic disasters
+
+Owner: "improve the realism of the natural disasters". Presentation only: rules, timings,
+damage and RNG in `outpost-hazards.js` / `outpost-sim.js` are untouched (tests unchanged).
+- New `scripts/outpost-military/realism-weather.js` (`DisasterWeather`, reached as
+  `HazardDressing.wx`): instanced dust billboards (`Puffs`), point sprites (`Specks`),
+  GPU rain + splashes, branching bolt ribbons, debris chunks. Phones get about half the
+  particles. Reduced motion: rain/sand/dust wall frozen, no bolt flicker, no camera shake.
+- Sandstorm: a 110 m dust wall (shader on a curved sheet) rolls in from upwind over the
+  10 s warning (`WIND.sandstorm`, blowing towards the sun so its face is lit); then dust
+  sheets and ground drift moving with gusting wind, grit streaks near the camera, ochre sky,
+  sun dimmed to ~⅓ and turned orange, warm fill light. The screen overlay is only a dusty edge.
+- Lightning storm: cloud layer (`renderer.clouds`) closes into a dark overcast over the whole
+  warning; slanted rain + ground splashes; ground darkens and turns glossy (`renderer.groundMaterial`,
+  restored after each frame in `dim()`); bolts are a jagged main channel with forks, a stepped
+  leader, return stroke and two re-strikes (`strokeLevel()`), lighting the whole scene blue-white
+  (sun/sky light + fog), then sparks, smoke and a cooling ember glow; Lichtenberg scorch decal.
+  Marked ground keeps the hologram and adds a charged blue glow, crawling arcs and streamers
+  rising in the last 0.5 s. The rules' blast at a strike/quake point is not drawn as a fireball.
+- Earthquake: shake in the 2–16 Hz band scaled by `quakeLevel()` (foreshock, main shaking, jolts
+  from nearby collapses); dust pouring off wall tops in front of you, dust lifting from marked
+  ground, chunks + dust clouds wherever cover turns to rubble (also red-canister blasts), dust
+  haze in the air. Reduced motion: no shake, a still dusty screen edge (`.mf-quake`) instead.
+- Audio (`outpost-retention.js`): `FieldAudio.swell()` (filtered noise, can start later) and
+  `bed()` (looping weather that fades out by itself when no longer refreshed). Sandstorm roar
+  growing as the wall nears, then gusting wind and grit; rain (muffled indoors), thunder delayed
+  by distance (3 m per tile at 343 m/s, crack only when close) and rolls after distant flashes;
+  quake rumble with rattles, thud + crumble at impacts.
+- QA: `node scripts/qa/disaster-look.mjs` (see table). No flags or cloth exist in the arenas to sway.
 
 ## Owner's phone test fixes (deployed 2026-10-20)
 

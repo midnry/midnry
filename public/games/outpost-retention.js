@@ -95,6 +95,106 @@ class FieldAudio {
     source.connect(filter);
     this.play(source, duration, gain, pan, filter);
   }
+  /** Four seconds of white or brown (deep, rumbling) noise, made once: long
+   * enough that looped weather never audibly repeats. */
+  noiseOf(brown) {
+    const key = brown ? "brownNoise" : "longNoise";
+    if (!this[key]) {
+      const a = this.ctx,
+        n = a.sampleRate * 4,
+        buffer = a.createBuffer(1, n, a.sampleRate),
+        d = buffer.getChannelData(0);
+      let last = 0;
+      for (let i = 0; i < n; i++) {
+        const white = Math.random() * 2 - 1;
+        d[i] = brown ? (last = (last + 0.02 * white) / 1.02) * 3.5 : white;
+      }
+      this[key] = buffer;
+    }
+    return this[key];
+  }
+  /** A filtered noise swell (gust, thunder, rumble, crumbling), optionally
+   * starting `delay` seconds from now (thunder arrives after its flash). */
+  swell({ delay = 0, attack = 0.2, duration = 1.5, gain = 0.1, frequency = 800, end = frequency, type = "lowpass", q = 0.7, pan = 0, brown = false }) {
+    const a = this.ctx;
+    if (!a || a.state !== "running" || this.muted || !this.volume || gain <= 0 || this.voices >= 16)
+      return;
+    const at = a.currentTime + Math.max(0, delay),
+      source = a.createBufferSource(),
+      filter = a.createBiquadFilter(),
+      envelope = a.createGain(),
+      panner = a.createStereoPanner();
+    source.buffer = this.noiseOf(brown);
+    filter.type = type;
+    filter.Q.value = q;
+    filter.frequency.setValueAtTime(frequency, at);
+    filter.frequency.exponentialRampToValueAtTime(Math.max(20, end), at + duration);
+    envelope.gain.setValueAtTime(0.0001, at);
+    envelope.gain.linearRampToValueAtTime(gain, at + Math.min(attack, duration * 0.8));
+    envelope.gain.exponentialRampToValueAtTime(0.0001, at + duration);
+    panner.pan.value = Math.max(-1, Math.min(1, pan));
+    source.connect(filter);
+    filter.connect(envelope);
+    envelope.connect(panner);
+    panner.connect(this.master);
+    this.voices++;
+    source.onended = () => {
+      for (const node of [source, filter, envelope, panner]) node.disconnect();
+      this.voices--;
+    };
+    source.start(at, Math.random() * 3);
+    source.stop(at + duration + 0.05);
+  }
+  /** A looping weather sound (rain, wind, rumble) held at `gain` while it
+   * keeps being asked for; it fades out by itself once it stops being asked
+   * for (paused, round over, game closed), so it can never get stuck on. */
+  bed(name, gain, frequency, { type = "lowpass", q = 0.7, brown = false } = {}) {
+    const a = this.ctx;
+    if (!a || a.state !== "running" || !this.master) return;
+    this.beds ||= new Map();
+    let b = this.beds.get(name);
+    if (!b) {
+      if (gain <= 0.001) return;
+      const source = a.createBufferSource(),
+        filter = a.createBiquadFilter(),
+        level = a.createGain();
+      source.buffer = this.noiseOf(brown);
+      source.loop = true;
+      filter.type = type;
+      filter.Q.value = q;
+      filter.frequency.value = frequency;
+      level.gain.value = 0.0001;
+      source.connect(filter);
+      filter.connect(level);
+      level.connect(this.master);
+      source.start(0, Math.random() * 3);
+      b = { source, filter, level };
+      this.beds.set(name, b);
+      this.bedWatch ||= setInterval(() => this.sweepBeds(), 250);
+    }
+    b.touched = performance.now();
+    b.level.gain.setTargetAtTime(Math.max(0.0001, gain), a.currentTime, 0.25);
+    b.filter.frequency.setTargetAtTime(frequency, a.currentTime, 0.3);
+  }
+  sweepBeds() {
+    const now = performance.now(),
+      a = this.ctx;
+    for (const [name, b] of this.beds) {
+      const idle = now - b.touched;
+      if (idle > 300 && a.state === "running") b.level.gain.setTargetAtTime(0.0001, a.currentTime, 0.3);
+      if (idle > 2500 || a.state === "closed") {
+        try {
+          b.source.stop();
+        } catch {}
+        for (const node of [b.source, b.filter, b.level]) node.disconnect();
+        this.beds.delete(name);
+      }
+    }
+    if (!this.beds.size) {
+      clearInterval(this.bedWatch);
+      this.bedWatch = 0;
+    }
+  }
   play(source, duration, gain, pan, out = source) {
     const a = this.ctx,
       envelope = a.createGain(),
@@ -138,6 +238,8 @@ class FieldAudio {
       this.tone(n, 0.25, 0.13, 0, "triangle", n * (1 + i * 0.04));
   }
   destroy() {
+    clearInterval(this.bedWatch);
+    this.bedWatch = 0;
     if (this.ctx) void this.ctx.close().catch(() => {});
   }
 }
@@ -696,12 +798,7 @@ export class Retention {
             setTimeout(() => this.audio.tone(i % 2 ? 520 : 760, 0.32, 0.12, 0, "square", i % 2 ? 760 : 520), i * 340);
         this.disasterStage = stage;
       }
-      const now = performance.now();
-      if (stage === 2 && now - (this.weatherAt || 0) > (d.kind === "quake" ? 450 : 800)) {
-        this.weatherAt = now;
-        if (d.kind === "sandstorm") this.audio.hiss(0.9, 0.08, 900);
-        if (d.kind === "quake") this.audio.tone(46, 0.5, 0.2, 0, "sawtooth", 32);
-      }
+      this.weatherSounds(g, d);
     }
     // Electrified: a dry electric crackle until it wears off.
     const self = g.player;
@@ -711,14 +808,35 @@ export class Retention {
       if (Math.random() < 0.4) this.audio.tone(1800, 0.03, 0.04, 0, "square", 600);
     }
     this.fxHeard ||= new Set();
+    // A disaster's own blast (damage at a strike) sounds as thunder or a
+    // collapse, not as an explosion.
+    const disasterAt = new Set(
+      a.fx.filter((f) => f.kind === "lightning" || f.kind === "debris").map((f) => f.x + ":" + f.y),
+    );
     for (const f of a.fx) {
       if (this.fxHeard.has(f.id)) continue;
       this.fxHeard.add(f.id);
-      const dist = Math.hypot(f.x - p.x, f.y - p.y);
+      const dist = Math.hypot(f.x - p.x, f.y - p.y),
+        // Sound takes time to arrive: 3 m per tile at 343 m/s.
+        delay = (dist * 3) / 343,
+        pan = Math.sin(Math.atan2(f.y - p.y, f.x - p.x) - p.a) * 0.7;
       if (f.kind === "lightning") {
-        this.audio.hiss(0.7, 0.22, 500);
-        this.audio.tone(70, 0.7, 0.2, 0, "sawtooth", 30);
-      } else if (dist < 14 && (f.kind === "blast" || f.kind === "debris")) {
+        // Close: a tearing crack, then the boom; far: a deep roll.
+        const near = Math.max(0, 1 - dist / 10);
+        if (near > 0)
+          this.audio.swell({ delay, attack: 0.005, duration: 0.25, gain: 0.32 * near, frequency: 2600, type: "highpass", pan });
+        this.audio.swell({ delay: delay + 0.03, attack: 0.02, duration: 1.8 + (1 - near) * 1.2, gain: 0.26 + 0.2 * near, frequency: 420, end: 55, brown: true, pan });
+        this.audio.swell({ delay: delay + 0.3, attack: 0.6, duration: 3.6, gain: 0.16, frequency: 160, end: 45, brown: true, pan: -pan * 0.5 });
+      } else if (f.kind === "debris") {
+        // The ground splitting: a deep thud and stone crumbling.
+        const v = Math.max(0.12, 1 - dist / 16);
+        this.audio.swell({ delay, attack: 0.01, duration: 1.1, gain: 0.45 * v, frequency: 240, end: 45, brown: true, pan });
+        this.audio.swell({ delay: delay + 0.05, attack: 0.08, duration: 1.6, gain: 0.13 * v, frequency: 1100, end: 280, type: "bandpass", q: 0.9, pan });
+        for (let i = 0; i < 4; i++)
+          setTimeout(() => this.audio.hiss(0.05, 0.05 * v, 2400, pan), (delay + 0.1 + Math.random() * 0.7) * 1000);
+      } else if (f.kind === "blast" && disasterAt.has(f.x + ":" + f.y)) {
+        continue;
+      } else if (dist < 14 && f.kind === "blast") {
         const v = Math.max(0.15, 1 - dist / 14);
         this.audio.hiss(0.45, 0.2 * v, f.kind === "blast" ? 1200 : 600);
         this.audio.tone(80, 0.35, 0.18 * v, 0, "sawtooth", 35);
@@ -726,6 +844,57 @@ export class Retention {
       else if (dist < 10 && f.kind === "toxic") this.audio.hiss(0.6, 0.1, 2600);
     }
     if (this.fxHeard.size > 400) this.fxHeard = new Set(a.fx.map((f) => f.id));
+  }
+  /** Weather you can hear: the sandstorm's roar building as its wall comes
+   * in, then wind gusting and grit; rain (muffled indoors) and thunder
+   * rolling in from distant flashes; an earthquake's deep rumble, from a
+   * faint foreshock to the main shaking. Held beds fade out on their own
+   * when this stops being called. */
+  weatherSounds(g, d) {
+    const au = this.audio,
+      t = g.arena.time,
+      now = performance.now(),
+      hz = g.military?.hazards,
+      inside = !!g.military?.naturalLighting?.inside,
+      ramp = (v) => Math.max(0, Math.min(1, v)),
+      fadeOut = ramp((d.endAt + 1 - t) / 4);
+    if (t < d.warnAt || t > d.endAt + 1) return;
+    if (d.kind === "sandstorm") {
+      const coming = ramp((t - d.warnAt) / (d.startAt - d.warnAt)),
+        on = t >= d.startAt - 0.5,
+        gust = hz?.wx?.gust?.() ?? 0.5;
+      // Distant roar of the wall, deepening and growing as it closes in.
+      au.bed("roar", (on ? 0.12 : 0.02 + 0.2 * coming * coming) * fadeOut, on ? 320 : 140 + 260 * coming, { brown: true });
+      if (on) {
+        au.bed("wind", (0.07 + 0.11 * gust) * fadeOut * (inside ? 0.5 : 1), (inside ? 400 : 520) + 800 * gust, { type: "bandpass", q: 0.8 });
+        if (now > (this.gustAt || 0)) {
+          this.gustAt = now + 2200 + Math.random() * 3000;
+          au.swell({ attack: 0.9, duration: 2.8, gain: 0.08 * fadeOut, frequency: 420, end: 1500, type: "bandpass", q: 1.1, pan: (Math.random() - 0.5) * 1.2 });
+        }
+        // Sand ticking on your gear.
+        if (!inside && Math.random() < 0.18) au.hiss(0.025, 0.018 * fadeOut, 7000, (Math.random() - 0.5) * 1.6);
+      }
+    } else if (d.kind === "storm") {
+      const rain = hz?.wx?.rainLevel?.(d) ?? ramp((t - d.startAt + 2) / 3) * fadeOut,
+        wind = ramp((t - d.warnAt) / 6) * fadeOut;
+      au.bed("storm-wind", 0.05 * wind, 380, { type: "bandpass", q: 0.6 });
+      au.bed("rain", 0.16 * rain, inside ? 900 : 3200, { type: inside ? "lowpass" : "bandpass", q: 0.4 });
+      au.bed("rain-body", 0.09 * rain, inside ? 260 : 700, { brown: true });
+      // Thunder from the distant flashes, a few seconds behind them.
+      const sheet = hz?.sheetAt;
+      if (sheet && sheet !== this.sheetHeard) {
+        this.sheetHeard = sheet;
+        au.swell({ delay: 1.2 + Math.random() * 3, attack: 0.5, duration: 3.8, gain: 0.13, frequency: 190, end: 40, brown: true, pan: (Math.random() - 0.5) * 1.4 });
+      }
+    } else if (d.kind === "quake") {
+      const level = hz?.quakeLevel?.() ?? (t >= d.startAt && t < d.endAt ? 0.6 : 0);
+      au.bed("rumble", 0.5 * level + 0.03 * ramp((t - d.warnAt) / 10), 55 + 90 * level, { brown: true });
+      // Things rattling and settling while it shakes.
+      if (level > 0.3 && now > (this.rattleAt || 0)) {
+        this.rattleAt = now + 300 + Math.random() * 700;
+        au.swell({ attack: 0.02, duration: 0.35, gain: 0.05 * level, frequency: 1400 + Math.random() * 1200, type: "bandpass", q: 3, pan: (Math.random() - 0.5) * 1.6 });
+      }
+    }
   }
   /** Last Signal last life: a heartbeat (faster below 30% health) and a
    * rising rush when the adrenaline kicks in. Real time, so it keeps its

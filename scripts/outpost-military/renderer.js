@@ -672,6 +672,8 @@ export class MilitaryRenderer {
       metalness: 0,
     });
     ground.userData.world = true;
+    // Rain darkens and glosses it (HazardDressing.dim).
+    this.groundMaterial = ground;
     const floor = this.mesh(
       this.world,
       this.geo("floor", () => new THREE.PlaneGeometry(1, 1)),

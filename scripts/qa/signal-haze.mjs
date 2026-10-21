@@ -29,7 +29,7 @@ await p.addInitScript(() => {
     JSON.stringify({ preset: "balanced", options: { adaptive: false } }),
   );
 });
-await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", {
+await p.goto(`${process.env.BASE || "http://127.0.0.1:8080"}/games/outpost-zero.html`, {
   waitUntil: "domcontentloaded",
   timeout: 90000,
 });
