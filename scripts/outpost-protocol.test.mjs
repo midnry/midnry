@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { treatAll } from "./hospital-test-helpers.mjs";
 import { Arena } from "../public/games/outpost-sim.js";
 import { PROTOCOL_MAP, TRANSPORT_MAP } from "../public/games/outpost-protocol-map.js";
 import {
@@ -728,6 +729,11 @@ test("full medical mission gathers every required item, boards the aircraft and 
   assert.equal(arena.state, "playing"); // Arrival still needs an aid delivery.
   position(crew, TRANSPORT_MAP.cargo);
   tick(arena, 4.55, { [crew.id]: { interact: true } });
+  assert.equal(mission.phase, "hospital");
+  assert.equal(arena.mapId, "hospital");
+  assert.equal(arena.state, "playing"); // Landing alone saves nobody.
+  assert.ok(arena.entities.every((e) => arena.canMove(e.x, e.y)));
+  treatAll(arena, crew);
   assert.equal(mission.phase, "delivered");
   assert.equal(arena.winner, 0);
   assert.equal(mission.patients.filter((patient) => patient.rescued).length, 4);
@@ -1007,6 +1013,7 @@ test("damaged cargo requires crew repair before delivery; remaining living patie
   position(crew, TRANSPORT_MAP.cargo);
   for (const patient of arena.protocol.mission.patients.slice(0, 3)) patient.hp = 0;
   tick(arena, 4.55, { [crew.id]: { interact: true } });
+  treatAll(arena, crew);
   assert.equal(arena.winner, 0);
   assert.equal(arena.protocol.mission.patients.filter((patient) => patient.rescued).length, 1);
 });

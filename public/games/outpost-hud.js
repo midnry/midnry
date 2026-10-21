@@ -166,6 +166,16 @@ export class OutpostHud {
           return `<li class="${state}">${icon(SUPPLY_ICON[item.id] || "medkit")}<span>${item.name}</span><b>${item.loaded}/${item.required}</b></li>`;
         })
         .join("");
+    else if (mission?.hospital)
+      // The ward: what each living patient still needs.
+      rows =
+        "<h4>Field hospital</h4>" +
+        mission.patients
+          .map((pt) => {
+            const needs = (pt.needs || []).map((id) => mission.manifest.find((m) => m.id === id)?.name || id).join(", ");
+            return `<li class="${pt.rescued ? "done" : pt.hp <= 0 ? "" : "part"}">${icon("medkit")}<span>${pt.name}${!pt.rescued && pt.hp > 0 && needs ? ` · ${needs}` : ""}</span><b>${pt.rescued ? "Stable" : pt.hp <= 0 ? "Lost" : "Needs"}</b></li>`;
+          })
+          .join("");
     else if (mission?.flightTasks)
       rows =
         "<h4>Aircraft duties</h4>" +
@@ -196,7 +206,9 @@ export class OutpostHud {
     // Phase and clock.
     const started = Number(mission?.startedAt) || 0;
     const phaseText =
-      mission?.phase === "transport"
+      mission?.hospital && protocol.phase === "roam"
+        ? `<span>Hospital</span><b>${clock(Math.max(0, (mission.hospital.deadline || 0) - (view.time || 0)))}</b>`
+        : mission?.phase === "transport"
         ? `<span>In flight</span><b>${Math.round(((mission.vehicle?.progress || 0) / (mission.vehicle?.duration || 1)) * 100)}%</b>`
         : `<span>${protocol.phase === "roam" ? "Base" : protocol.phase === "combat" ? "Last stand" : "Meeting"}</span><b>${clock(Math.max(0, (view.time || 0) - started))}</b>`;
     if (phaseText !== this.lastPhase) {

@@ -587,3 +587,25 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
 - One painting (`bp-key` wide/tall) and one fixed briefing ("Prepare to deploy"); the slideshow,
   its arrows/pause and rotating captions are gone. `check-outpost-loading.mjs` asserts no buttons
   and no rotation.
+
+## Blackout Protocol: field hospital, Act III (owner, 2026-10-21, not deployed yet)
+
+- Owner shared a long design for the mode (three acts, containment, event director, endings).
+  Agreed first step: the field hospital. Rules in `public/games/outpost-hospital.js`
+  (enterHospital, hospitalContext, completeHospital, updateHospital, hospitalEnding,
+  hospitalBotGoal), map `HOSPITAL_MAP` in `outpost-protocol-map.js`, wired into
+  `outpost-protocol.js` (deliver hold → `enterHospital`; `currentMap()`; contexts; bots;
+  `protocolView` exposes crates without contamination, patient bed/needs, `ending`).
+- 3D: `scripts/outpost-military/realism-hospital.js` (stretchers, patients, status lamps, crates
+  by the ramp, generator, floodlights; parked medevac via `medevac-parked` prop). HUD: ward panel
+  in Info, hospital timer, guide arrow (`outpost-navigation.js`), prompts in
+  `outpost-protocol-ui.js`, manual section. Transition scene "Landing at Saint Brigid".
+- Also fixed: a 5-seat Quick/Daily arena restored from a save froze (`presentationOnly`).
+- Tests: `scripts/outpost-hospital.test.mjs` (+ `hospital-test-helpers.mjs`); older delivery
+  tests now treat at the hospital. QA: `node scripts/qa/hospital-look.mjs [width]`
+  (`MOD=night-shift` to see it at night).
+- Bot balance (30 seeded bot rounds): crew 10 delivered + 1 contained, infiltrators 14 at base
+  (pre-existing) + 5 at the hospital.
+- Next from the owner's design: surrender/escape/fight for the accused (second infiltrator can
+  help), emergency landing instead of instant crash, random non-sabotage malfunctions, infiltrator
+  secret objectives.

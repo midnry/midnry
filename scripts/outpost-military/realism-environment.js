@@ -4,6 +4,7 @@
  * has an opaque back wall: it never exposes actors behind collision cover.
  * The only objects over clear floor are flush floor marks and ceiling fittings.
  */
+import { HOSPITAL_MAP } from "../../public/games/outpost-protocol-map.js";
 import * as THREE from "three";
 import { surfaceMaterial } from "./realism-surfaces.js";
 import { roofLayout } from "./architecture.js";
@@ -47,8 +48,8 @@ export function decorateRealisticEnvironment(r, id, n) {
   const batches = new Map();
   const box = r.geo("realism-environment:box", () => new THREE.BoxGeometry(1, 1, 1));
   const plane = r.geo("realism-environment:plane", () => new THREE.PlaneGeometry(1, 1));
-  const height = ["breakwater", "medevac"].includes(id) ? 3.5 : 3;
-  const roofCells = roofLayout(id === "breakwater" ? r.g.protocolMap : id === "medevac" ? r.g.transportMap : null).cells;
+  const height = ["breakwater", "medevac", "hospital"].includes(id) ? 3.5 : 3;
+  const roofCells = roofLayout(id === "breakwater" ? r.g.protocolMap : id === "medevac" ? r.g.transportMap : id === "hospital" ? HOSPITAL_MAP : null).cells;
   const transforms = FACES.map(([dx, dz]) =>
     new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(dx, dz)),
   );
@@ -379,7 +380,7 @@ export function decorateRealisticEnvironment(r, id, n) {
           f,
           steel,
           0,
-          ["breakwater", "medevac"].includes(id) ? 2.42 : height + 0.06,
+          ["breakwater", "medevac", "hospital"].includes(id) ? 2.42 : height + 0.06,
           0,
           width * SCALE + 0.2,
           0.12,
@@ -406,7 +407,7 @@ export function decorateRealisticEnvironment(r, id, n) {
     add(
       plane,
       material,
-      [x * SCALE, id === "breakwater" || id === "medevac" ? 0.034 : 0.022, y * SCALE],
+      [x * SCALE, ["breakwater", "medevac", "hospital"].includes(id) ? 0.034 : 0.022, y * SCALE],
       [w * SCALE, h * SCALE, 1],
       floorQuaternion,
       false,
@@ -568,7 +569,7 @@ export function decorateRealisticEnvironment(r, id, n) {
     }
   }
 
-  const map = id === "medevac" ? r.g.transportMap : id === "breakwater" ? r.g.protocolMap : null;
+  const map = id === "medevac" ? r.g.transportMap : id === "breakwater" ? r.g.protocolMap : id === "hospital" ? HOSPITAL_MAP : null;
   const longRooms = (map?.rooms || []).filter(
     (room) => room.roofed !== false && room.w > 2 && room.h >= 5 && room.h > room.w * 1.15,
   );

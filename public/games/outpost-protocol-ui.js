@@ -15,7 +15,8 @@ import { INTERACTIVE_TASKS } from "./outpost-task-games.js";
 import { ProtocolFocus, renderCaseBoard } from "./outpost-protocol-focus.js";
 import { battlePreparation, eliminationConfirmation } from "./outpost-battle-presentation.js";
 import { protocolView } from "./outpost-protocol.js";
-import { PROTOCOL_MAP, TRANSPORT_MAP } from "./outpost-protocol-map.js";
+import { PROTOCOL_MAP, TRANSPORT_MAP, HOSPITAL_MAP } from "./outpost-protocol-map.js";
+import { HOSPITAL_RULES } from "./outpost-hospital.js";
 
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const countdown = (seconds) => {
@@ -81,12 +82,16 @@ export const readDaily = () => {
 
 const GUIDE = [
   [
-    "Lifeline Run / two phases",
-    "Win one of two ways: deliver medical aid to the wounded before they all die, or find the infiltrators and vote every one of them out. First gather the medical items at Breakwater Forward Base (usually 9: trauma kits, surgical packs, IV fluids and recovery supplements). Cabinets are restocked differently every round, so follow the arrow and the manifest in Info. Carry one item at a time to the hangar loading pad, then board the medevac, fly to the casualty station and deliver. Each quarter of the manifest loaded triggers a 25-second base lockdown that holds the infiltrators back, and nobody can be eliminated aboard the medevac: in the air, infiltrators can only sabotage. Every match also has a modifier and a twist, shown in your orders.",
+    "Lifeline Run / three phases",
+    "Win one of two ways: save the wounded at the field hospital, or find the infiltrators and vote every one of them out before you land. First gather the medical items at Breakwater Forward Base (usually 9: trauma kits, surgical packs, IV fluids and recovery supplements). Cabinets are restocked differently every round, so follow the arrow and the manifest in Info. Carry one item at a time to the hangar loading pad, then board the medevac and fly to Saint Brigid Field Hospital, where the cargo still has to reach the wounded (see Field hospital). Each quarter of the manifest loaded triggers a 25-second base lockdown that holds the infiltrators back, and nobody can be eliminated aboard the medevac: in the air, infiltrators can only sabotage. Every match also has a modifier and a twist, shown in your orders.",
   ],
   [
     "Operators: deliver aid before patients die",
     "At a stocked cabinet, press E or tap Check equipment. Each check is a quick skill test: stop a sweeping needle in the green band, type a batch code that flashes for a moment, or repeat a wire sequence. A miss costs a second and deals a new one. Stay put until the cycle finishes. Watch the remote vitals in Info; patients only fade while the base is working, not during meetings.",
+  ],
+  [
+    "Field hospital: treat the wounded",
+    "When the medevac lands, every loaded supply is a crate on its ramp. Each of the four wounded needs two particular supplies, listed in Info and on the ward panel. Unload one crate at a time, carry it to a patient who needs it and hold Treat at their bed. An infiltrator can secretly contaminate crates on the ramp: check a crate at the triage table first, or a contaminated one hurts the patient it is given to. Treatment needs the generator; if it is cut, restart it in the generator shed. Save at least two patients before the hospital timer runs out. At the hospital, stopping the infiltrators no longer ends the round: only the patients do. The result is graded: Perfect Rescue, Costly or Compromised Victory, or a Failed Rescue.",
   ],
   [
     "Recover a sabotaged aircraft",
@@ -94,7 +99,7 @@ const GUIDE = [
   ],
   [
     "Infiltrators: stop the rescue",
-    "One or two infiltrators wear the same uniforms as everyone else; your partner is named in your orders. You win if you eliminate operators until your side matches theirs, if three base charges detonate, or if the patients die. Blend in: fake checks at wall panels, cut the power or jam communications, and use maintenance hatches. Careful: a real pickup visibly removes a case from its cabinet. Sharp operators notice when someone 'works' and nothing changes.",
+    "One or two infiltrators wear the same uniforms as everyone else; your partner is named in your orders. You win if you eliminate operators until your side matches theirs, if three base charges detonate, or if fewer than two patients are saved. At the field hospital, contaminate crates on the ramp, spend supplies on the wrong patient, or cut the generator. Blend in: fake checks at wall panels, cut the power or jam communications, and use maintenance hatches. Careful: a real pickup visibly removes a case from its cabinet. Sharp operators notice when someone 'works' and nothing changes.",
   ],
   [
     "Base charges and concealed routes",
@@ -1035,7 +1040,8 @@ export class ProtocolUI {
   }
 
   map() {
-    return this.g.arena?.mapId === "medevac" ? TRANSPORT_MAP : this.g.protocolMap || PROTOCOL_MAP;
+    const id = this.g.arena?.mapId;
+    return id === "medevac" ? TRANSPORT_MAP : id === "hospital" ? HOSPITAL_MAP : this.g.protocolMap || PROTOCOL_MAP;
   }
   roomName(id) {
     return this.map().rooms?.find((room) => room.id === id)?.name || "Breakwater Base";
@@ -1071,9 +1077,11 @@ export class ProtocolUI {
       mission = protocol.mission;
     const infiltrator = self.role === "infiltrator",
       alive = this.alive(),
-      transporting = mission?.phase === "transport";
+      transporting = mission?.phase === "transport",
+      // Act III: the field hospital has none of the base's fixtures.
+      ground = mission?.phase === "hospital" || mission?.phase === "delivered";
     const bomb =
-      !infiltrator && alive && !transporting
+      !infiltrator && alive && !transporting && !ground
         ? this.closest(protocol.bombs, 1.4, (item) => item.state === "armed")
         : null;
     const repair =
@@ -1091,9 +1099,9 @@ export class ProtocolUI {
     const carriedBody = protocol.bodies.find((body) => body.carriedBy === this.g.selfId);
     const allLoaded = mission?.manifest?.every((item) => item.loaded >= item.required);
     const flightReady = mission?.flightTasks?.every((task) => task.done);
-    const loading = !transporting && mission ? this.closest([mission.loading], 1.4) : null;
+    const loading = !transporting && !ground && mission ? this.closest([mission.loading], 1.4) : null;
     const supplies =
-      !transporting && mission
+      !transporting && !ground && mission
         ? this.closest(
             mission.supplyStock,
             1.4,
@@ -1111,7 +1119,7 @@ export class ProtocolUI {
     const helm =
       transporting && !infiltrator && alive ? this.closest([TRANSPORT_MAP.helm], 1.4) : null;
     const site =
-      infiltrator && !transporting
+      infiltrator && !transporting && !ground
         ? this.closest(
             protocol.sites,
             1.4,
@@ -1166,8 +1174,8 @@ export class ProtocolUI {
         context = at(
           "deliver",
           cargo.id,
-          "Deliver lifesaving aid",
-          "Hold for 4.5 seconds to treat the surviving wounded soldiers.",
+          "Open the ramp at the field hospital",
+          "Hold for 4.5 seconds. Then carry the supplies to the wounded on the ward.",
           cargo,
         );
       else if (
@@ -1207,6 +1215,7 @@ export class ProtocolUI {
           "Hold to restore this system. Moving interrupts the repair.",
           repair,
         );
+      else if (ground) context = this.hospitalContext(view, infiltrator, at);
       else if (transporting && mission.flightTasks) {
         const task = this.closest(
           mission.flightTasks,
@@ -1294,6 +1303,41 @@ export class ProtocolUI {
       cargo,
       avionics,
     };
+  }
+
+  /** Field hospital prompts: mirror of hospitalContext() in outpost-hospital.js. */
+  hospitalContext(view, infiltrator, at) {
+    const protocol = view.protocol,
+      self = protocol.self,
+      h = protocol.mission.hospital;
+    if (!h) return null;
+    const ramp = this.closest([HOSPITAL_MAP.ramp], 1.4),
+      triage = this.closest([HOSPITAL_MAP.triage], 1.4);
+    if (ramp && !self.cargo) {
+      if (infiltrator && view.time >= (self.tamperReadyAt ?? 0))
+        return at("tamper", ramp.id, "Contaminate a crate", `Hold for ${HOSPITAL_RULES.tamperDuration} seconds. It looks fine until someone checks it at triage.`, ramp);
+      if (h.crates.some((c) => c.at === "ramp"))
+        return at("unload", ramp.id, "Unload a supply crate", `Hold for ${HOSPITAL_RULES.unloadDuration} seconds, then carry it to a patient who needs it.`, ramp);
+    }
+    const crate = self.cargo?.crateId && h.crates.find((c) => c.id === self.cargo.crateId);
+    if (!crate) return null;
+    if (triage && !crate.checked)
+      return at("verify", triage.id, `Check the ${crate.name.toLowerCase()}`, `Hold for ${HOSPITAL_RULES.verifyDuration} seconds. A tampered crate is found and discarded.`, triage);
+    if (protocol.sabotage.powerUntil > view.time) return null;
+    const patient = protocol.mission.patients.find(
+      (pt) => pt.hp > 0 && !pt.rescued && (pt.needs || []).includes(crate.supplyId) && this.closest([HOSPITAL_MAP.beds.find((b) => b.id === pt.bed)], 1.4),
+    );
+    if (!patient) return null;
+    const bed = HOSPITAL_MAP.beds.find((b) => b.id === patient.bed);
+    return at(
+      "treat",
+      bed.id,
+      `${infiltrator ? "Pretend to treat" : "Treat"} ${patient.name}`,
+      infiltrator
+        ? "Hold to look busy. The supply is spent and does nothing."
+        : `Hold for ${HOSPITAL_RULES.treatDuration} seconds to give ${crate.name.toLowerCase()}.`,
+      bed,
+    );
   }
 
   report() {
@@ -1564,13 +1608,22 @@ export class ProtocolUI {
       loaded = mission.manifest.reduce((sum, item) => sum + item.loaded, 0);
     setText(
       this.missionStatus.querySelector("b"),
-      mission.phase === "base" ? "LIFELINE RUN / GATHER & LOAD" : "LIFELINE RUN / MEDICAL FLIGHT",
+      mission.phase === "base"
+        ? "LIFELINE RUN / GATHER & LOAD"
+        : mission.hospital
+          ? "LIFELINE RUN / FIELD HOSPITAL"
+          : "LIFELINE RUN / MEDICAL FLIGHT",
     );
+    const ward = mission.hospital,
+      treated = mission.patients.filter((patient) => patient.rescued).length,
+      onRamp = ward ? ward.crates.filter((c) => c.at === "ramp").length : 0;
     setText(
       this.missionStatus.querySelector("small"),
       mission.phase === "base"
         ? `${loaded}/${total} medical items loaded · one item per carrier`
-        : vehicle.arrived
+        : ward
+          ? `${treated}/${mission.patients.length} treated · ${onRamp} crates on the ramp · ${countdown(Math.max(0, ward.deadline - view.time))} left${view.protocol.sabotage.powerUntil > view.time ? " · GENERATOR DOWN" : ""}`
+          : vehicle.arrived
           ? "Arrival reached · deliver aid at the cargo station"
           : `${Math.round(clamp(vehicle.progress / vehicle.duration, 0, 1) * 100)}% of route · ${countdown(vehicle.duration - vehicle.progress)} remaining · ${vehicle.autopilot ? "autopilot" : "manual control"}`,
     );
@@ -1587,10 +1640,17 @@ export class ProtocolUI {
       [modifier, twist].filter(Boolean).map((o) => o.name).join(" · "),
     );
     this.matchLine.title = [modifier, twist].filter(Boolean).map((o) => `${o.name}: ${o.text}`).join("\n");
-    this.cargoStatus.hidden = mission.phase !== "base";
+    this.cargoStatus.hidden = mission.phase !== "base" && !ward;
+    const needing = ward && view.protocol.self.cargo
+      ? mission.patients.filter((pt) => pt.hp > 0 && !pt.rescued && (pt.needs || []).includes(view.protocol.self.cargo.supplyId)).map((pt) => pt.name)
+      : [];
     setText(
       this.cargoStatus,
-      view.protocol.self.cargo
+      ward
+        ? view.protocol.self.cargo
+          ? `Carrying: ${view.protocol.self.cargo.name} · ${needing.length ? `needed by ${needing.join(", ")}` : "nobody needs this now"}`
+          : "Hands free · unload a crate at the medevac ramp"
+        : view.protocol.self.cargo
         ? `Carrying: ${view.protocol.self.cargo.name} · take it to the hangar pad`
         : view.protocol.self.role === "infiltrator"
           ? "Blend in around the medical fixtures."
@@ -1617,16 +1677,20 @@ export class ProtocolUI {
     const surviving = mission.patients.filter((patient) => patient.hp > 0).length;
     setText(
       this.patients.querySelector("summary"),
-      `Remote vitals · ${surviving}/${mission.patients.length} alive`,
+      ward ? `Ward · ${surviving}/${mission.patients.length} alive` : `Remote vitals · ${surviving}/${mission.patients.length} alive`,
     );
     for (const patient of mission.patients) {
       const row = [...list.children].find((child) => child.dataset.patient === patient.id);
       if (!row) continue;
       row.dataset.critical = String(patient.hp > 0 && patient.hp <= 25);
       setText(row.querySelector("span"), patient.critical ? `${patient.name} · critical` : patient.name);
+      // On the ward, each row also says what the patient still needs.
+      const needs = ward && !patient.rescued && patient.hp > 0 && patient.needs?.length
+        ? ` · needs ${patient.needs.map((id) => mission.manifest.find((m) => m.id === id)?.name.toLowerCase() || id).join(", ")}`
+        : "";
       setText(
         row.querySelector("b"),
-        patient.rescued ? "Rescued" : patient.hp <= 0 ? "Lost" : `${Math.ceil(patient.hp)}%`,
+        (patient.rescued ? "Stable" : patient.hp <= 0 ? "Lost" : `${Math.ceil(patient.hp)}%`) + needs,
       );
       row.querySelector("meter").value = patient.hp;
     }
@@ -1715,7 +1779,11 @@ export class ProtocolUI {
           collect: "Collecting medical supplies",
           load: "Loading the medevac",
           depart: "Boarding Lifeline Medevac",
-          deliver: "Delivering lifesaving aid",
+          deliver: "Landing at the field hospital",
+          unload: "Unloading a crate",
+          verify: "Checking the crate",
+          treat: "Treating the wounded",
+          tamper: "Contaminating a crate",
           "repair-cargo": "Repairing medical cargo",
           "flight-task": "Preparing aircraft equipment",
           "disable-autopilot": "Disabling aircraft autopilot",
@@ -1745,6 +1813,23 @@ export class ProtocolUI {
             : infiltrator
               ? "Blend in with the medical detail"
               : "Gather the medical manifest";
+      } else if (mission.hospital) {
+        // Ward guidance: the ramp, or the bed of a patient who needs your crate.
+        const carrying = protocol.self.cargo,
+          patient = carrying
+            ? mission.patients.find((pt) => pt.hp > 0 && !pt.rescued && (pt.needs || []).includes(carrying.supplyId))
+            : null;
+        destination = patient ? HOSPITAL_MAP.beds.find((b) => b.id === patient.bed) : carrying ? HOSPITAL_MAP.triage : HOSPITAL_MAP.ramp;
+        title =
+          protocol.sabotage.powerUntil > view.time && !infiltrator
+            ? "Restart the hospital generator"
+            : patient
+              ? `${infiltrator ? "Blend in: " : ""}Take the ${carrying.name.toLowerCase()} to ${patient.name}`
+              : carrying
+                ? "Nobody needs this now · check it at triage"
+                : "Unload a crate at the medevac ramp";
+        if (protocol.sabotage.powerUntil > view.time && !infiltrator)
+          destination = HOSPITAL_MAP.stations.find((s) => s.kind === "power");
       } else {
         const task =
           mission.flightTasks?.find((task) => !task.done && task.id === this.trackedFlightTask) ??
@@ -1807,7 +1892,11 @@ export class ProtocolUI {
             collect: "Hold to collect",
             load: "Hold to load",
             depart: "Hold to depart",
-            deliver: "Hold to deliver",
+            deliver: "Hold to land",
+            unload: "Hold to unload",
+            verify: "Hold to check",
+            treat: "Hold to treat",
+            tamper: "Hold to contaminate",
             "repair-cargo": "Hold to repair",
             "flight-task": "Hold to prepare",
             "disable-autopilot": "Hold to sabotage",
@@ -2329,7 +2418,8 @@ export class ProtocolUI {
       element(
         "h2",
         "",
-        operatorsWon ? (delivered ? "Lifesaving aid delivered" : "Infiltrators stopped") : "Lifeline Run lost",
+        protocol.ending?.title ||
+          (operatorsWon ? (delivered ? "Lifesaving aid delivered" : "Infiltrators stopped") : "Lifeline Run lost"),
       ),
     );
     this.results.append(

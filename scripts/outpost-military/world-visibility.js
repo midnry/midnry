@@ -104,7 +104,7 @@ export class WorldVisibility {
   }
   update(p, pitch, now) {
     const r = this.r;
-    if (!["breakwater", "medevac"].includes(r.g.arena.mapId)) return;
+    if (!["breakwater", "medevac", "hospital"].includes(r.g.arena.mapId)) return;
     if (this.dirty) this.rebuild();
     if (
       this.last &&

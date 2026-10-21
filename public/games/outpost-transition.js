@@ -15,6 +15,12 @@ const SCENES = {
     title: "Taking off",
     copy: "Lifeline Medevac is lifting off. Keep autopilot safe and finish the aircraft duties.",
   },
+  hospital: {
+    image: "loading/lz-keyart.webp",
+    kicker: "Phase three / Field hospital",
+    title: "Landing at Saint Brigid",
+    copy: "Unload the cargo, check it at triage, and treat the wounded before the surgeons move on.",
+  },
   base: {
     image: "loading/lz-keyart.webp",
     kicker: "Breakwater forward base",
@@ -116,7 +122,9 @@ export class SceneTransition {
   }
 
   show(map) {
-    this.present(map === this.g.transportMap?.id || /medevac|transport/.test(map) ? SCENES.transport : SCENES.base);
+    this.present(
+      map === "hospital" ? SCENES.hospital : map === this.g.transportMap?.id || /medevac|transport/.test(map) ? SCENES.transport : SCENES.base,
+    );
   }
 
   present(scene) {

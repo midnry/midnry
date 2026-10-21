@@ -1,5 +1,5 @@
 /** Original arena layouts and loadouts. Shared by the renderer and server. */
-import { PROTOCOL_MAP, TRANSPORT_MAP } from "./outpost-protocol-map.js";
+import { PROTOCOL_MAP, TRANSPORT_MAP, HOSPITAL_MAP } from "./outpost-protocol-map.js";
 export const LEVEL = [
   "1111111111111111",
   "1000000000000001",
@@ -95,6 +95,7 @@ const warm = {
 export const MAPS = {
   breakwater: PROTOCOL_MAP,
   medevac: TRANSPORT_MAP,
+  hospital: HOSPITAL_MAP,
   outpost: {
     id: "outpost",
     name: "Dust Outpost",

@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { treatAll } from "./hospital-test-helpers.mjs";
 import { ProtocolArena, protocolView, restoreArena } from "../public/games/outpost-protocol.js";
 import { beginCombat, LAST_STAND } from "../public/games/outpost-protocol-combat.js";
 import { TRANSPORT_MAP } from "../public/games/outpost-protocol-map.js";
@@ -64,6 +65,10 @@ test("arrival and cargo alone cannot finish rescue; prepared aircraft and a real
   prepare(a, e);
   at(e, TRANSPORT_MAP.cargo);
   tick(a, 4.6, { [e.id]: { interact: true } });
+  // The aid hold lands the crew at the field hospital; treating wins.
+  assert.equal(a.protocol.mission.phase, "hospital");
+  assert.equal(a.winner, null);
+  treatAll(a, e);
   assert.equal(a.winner, 0);
 });
 test("oxygen/radio duties wait for repaired systems; cargo sabotage unsecures the trauma packs", () => {

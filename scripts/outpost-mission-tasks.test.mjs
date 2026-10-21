@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { treatAll } from "./hospital-test-helpers.mjs";
 import { ProtocolArena, protocolView } from "../public/games/outpost-protocol.js";
 import { TRANSPORT_MAP } from "../public/games/outpost-protocol-map.js";
 import { contributionsOf, recordContribution } from "../public/games/outpost-mission-progress.js";
@@ -214,7 +215,7 @@ test("smart operator bots finish the entire interactive medical mission", () => 
   assert.equal(a.protocol.taskDone, 9);
   assert.ok(a.protocol.mission.patients.some((p) => p.rescued));
 });
-test("delivery rescues remaining patients and credits only the acting operator", () => {
+test("the aid hold lands at the hospital; treating rescues and credits only the acting operator", () => {
   const a = flight(),
     e = a.entities[0],
     mission = a.protocol.mission;
@@ -226,9 +227,15 @@ test("delivery rescues remaining patients and credits only the acting operator",
   assert.equal(context.kind, "deliver");
   begin(a, e);
   solve(a, e);
+  assert.equal(a.protocol.mission.phase, "hospital");
+  // Nobody else helps on the ward here.
+  for (const x of a.entities) x.bot = false;
+  treatAll(a, e);
   assert.equal(a.state, "ended");
   assert.equal(a.winner, 0);
+  // Every patient treated by this operator (the count is capped at four).
   assert.equal(a.privateFor(e).contributions.patients, 4);
+  assert.ok(a.entities.filter((x) => x !== e).every((x) => !a.privateFor(x).contributions?.patients));
 });
 test("old saved rooms retain held tasks and new challenges survive authoritative restore", () => {
   const a = new ProtocolArena({ rolePreference: "operator" });

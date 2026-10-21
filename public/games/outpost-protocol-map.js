@@ -334,3 +334,83 @@ export const TRANSPORT_MAP = {
   ],
   zones: transportRooms.map((room) => ({ x: room.x, y: room.y, w: room.w, h: room.h, color: "#6f7e85" })),
 };
+
+/**
+ * Act III: Saint Brigid Field Hospital. Lifeline Medevac sets down on the
+ * landing zone; the crew carry the cargo from its ramp, check it at the
+ * triage tent, and treat four wounded on the ward while the generator
+ * keeps the equipment running. Rooms connect on foot; the landing zone is
+ * open ground, the tents and shed are roofed.
+ */
+const HOSPITAL_SIZE = 22;
+const hospitalLevel = Array.from({ length: HOSPITAL_SIZE }, () => Array(HOSPITAL_SIZE).fill(1));
+const hospitalRooms = [
+  { id: "lz", name: "Landing Zone", x: 2, y: 5, w: 8, h: 12, roofed: false },
+  { id: "triage", name: "Triage Tent", x: 12, y: 3, w: 4, h: 4, roofed: true },
+  { id: "ward", name: "Treatment Ward", x: 12, y: 10, w: 8, h: 6, roofed: true },
+  { id: "generator", name: "Generator Shed", x: 17, y: 3, w: 3, h: 4, roofed: true },
+];
+const hospitalCorridors = [
+  { id: "lz-walk", name: "Stretcher Path", x: 10, y: 11, w: 2, h: 3, roofed: false },
+  { id: "triage-walk", name: "Triage Walk", x: 13, y: 7, w: 2, h: 3, roofed: false },
+];
+for (const area of [...hospitalRooms, ...hospitalCorridors])
+  for (let y = area.y; y < area.y + area.h; y++)
+    for (let x = area.x; x < area.x + area.w; x++) hospitalLevel[y][x] = 0;
+// Triage tent ↔ generator shed, and a second way from the landing zone.
+for (const [x, y] of [[16, 4], [16, 5], [10, 6], [11, 6]]) hospitalLevel[y][x] = 0;
+// The parked aircraft is solid on the landing zone.
+for (let y = 7; y < 10; y++) for (let x = 3; x < 6; x++) hospitalLevel[y][x] = 4;
+
+export const HOSPITAL_BEDS = Object.freeze([
+  { id: "bed-1", x: 13.5, y: 10.5 },
+  { id: "bed-2", x: 15.5, y: 10.5 },
+  { id: "bed-3", x: 17.5, y: 10.5 },
+  { id: "bed-4", x: 19.5, y: 12.5 },
+]);
+
+export const HOSPITAL_MAP = {
+  id: "hospital",
+  name: "Saint Brigid Field Hospital",
+  tag: "LIFELINE RUN / FIELD HOSPITAL",
+  description: "The medevac's destination: a battered field hospital. Unload the cargo, check it at triage, and treat the wounded before time runs out.",
+  protocolOnly: true,
+  missionOnly: true,
+  level: hospitalLevel,
+  theme: {
+    ...PROTOCOL_MAP.theme,
+    sky: "#8f9ea6",
+    floor: "#6b6556",
+    walls: {
+      ...PROTOCOL_MAP.theme.walls,
+      1: ["#8d8a78", "#5f5d50", "#bdb9a3"],
+      4: ["#657682", "#3d515f", "#9baeb9"],
+    },
+  },
+  rooms: hospitalRooms,
+  corridors: hospitalCorridors,
+  ramp: { id: "hospital-ramp", name: "Medevac cargo ramp", kind: "ramp", x: 6.5, y: 10.5, room: "lz" },
+  triage: { id: "hospital-triage", name: "Triage check table", kind: "triage", x: 13.5, y: 4.5, room: "triage" },
+  beds: HOSPITAL_BEDS,
+  emergency: { id: "hospital-radio", name: "Field radio", x: 15.5, y: 3.5, room: "triage" },
+  stations: [
+    { id: "hospital-generator", name: "Hospital generator", kind: "power", x: 18.5, y: 4.5, room: "generator" },
+    { id: "hospital-radio-set", name: "Hospital radio", kind: "comms", x: 14.5, y: 5.5, room: "triage" },
+  ],
+  sites: [],
+  vents: [],
+  supplies: [],
+  crates: [],
+  spawns: [
+    [7.5, 8.5], [8.5, 9.5], [7.5, 11.5], [8.5, 12.5],
+    [6.5, 13.5], [4.5, 12.5], [7.5, 14.5], [8.5, 6.5],
+  ],
+  props: [
+    { kind: "medevac-parked", x: 4.5, y: 8.5, w: 3, h: 3, solid: true, label: "LIFELINE MEDEVAC" },
+    { kind: "generator", x: 18.5, y: 3.5, w: 2, h: 1, solid: false, label: "GENERATOR" },
+  ],
+  zones: [...hospitalRooms, ...hospitalCorridors].map((room) => ({
+    x: room.x, y: room.y, w: room.w, h: room.h,
+    color: room.roofed === false ? "#7d7660" : "#6c7470",
+  })),
+};

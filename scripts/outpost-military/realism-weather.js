@@ -975,7 +975,7 @@ export class DisasterWeather {
               nz: dy,
               ax: dy ? 1 : 0,
               az: dx ? 1 : 0,
-              h: ["breakwater", "medevac"].includes(a.mapId) ? 3.4 : 2.95,
+              h: ["breakwater", "medevac", "hospital"].includes(a.mapId) ? 3.4 : 2.95,
             });
       }
     this.emitters = out;

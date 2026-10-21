@@ -1,5 +1,6 @@
 /** Recipient-safe objective selection and floor-grid routing. This module reads
  * the same private view as Info; it never reads raw roles, bot plans or sites. */
+import { HOSPITAL_MAP } from "./outpost-protocol-map.js";
 const finite=p=>Number.isFinite(p?.x)&&Number.isFinite(p?.y);
 export function navigationGoals(view,selfId,wantMeeting=false){
  const p=view?.protocol,self=p?.self,actor=view?.entities?.find(e=>e.id===selfId),m=p?.mission;
@@ -28,6 +29,13 @@ export function navigationGoals(view,selfId,wantMeeting=false){
    }
    if(!goals.length)put(m.loading,'rally','Rally at the loading pad',40);
   }
+ }else if(m.hospital&&m.phase==='hospital'){
+  // Field hospital: the bed that needs your crate, else the ramp.
+  const beds=Object.fromEntries(HOSPITAL_MAP.beds.map(b=>[b.id,b]));
+  if(self.cargo){
+   for(const pt of m.patients||[])if(pt.hp>0&&!pt.rescued&&(pt.needs||[]).includes(self.cargo.supplyId))put(beds[pt.bed],'treat:'+pt.id,'Treat '+pt.name,15);
+   if(!goals.length)put(HOSPITAL_MAP.triage,'triage','Check the crate at triage',35);
+  }else if((m.hospital.crates||[]).some(c=>c.at==='ramp'))put(HOSPITAL_MAP.ramp,'unload','Unload a crate at the ramp',30);
  }else if(m.phase==='transport'){
   // Your own duty first; the rest are help once it is done.
   for(const task of m.flightTasks||[])if(!task.done&&(!task.system||!(p.sabotage?.[task.system+'Until']>view.time)))put(task,'flight:'+task.id,(task.mine?'Your duty: ':'')+task.name,task.mine?18:20);

@@ -53,6 +53,8 @@ import { GroundTrail } from "./ground-trail.js";
 import { NightDressing } from "./realism-night.js";
 import { prepareWorldTypography, makeProtocolSign } from './world-text.js';
 import { prepareMedevac, buildMedevac } from "./realism-medevac.js";
+import { buildHospital, updateHospital } from "./realism-hospital.js";
+import { HOSPITAL_MAP } from "../../public/games/outpost-protocol-map.js";
 import { HazardDressing, buildHazard } from "./realism-hazards.js";
 import { ArenaStyles } from "./arena-style.js";
 import { SkyClouds } from "./sky-clouds.js";
@@ -71,6 +73,7 @@ const PROFILES = {
   estate: { floor: "#c6bca5", fog: "#c4c1ba", metal: "#81867b" },
   breakwater: { floor: "#b2a38c", fog: "#a8bdc4", metal: "#77858b" },
   medevac: { floor: "#7c888a", fog: "#b8c9d0", metal: "#92a1a3" },
+  hospital: { floor: "#8f8466", fog: "#b9b8ac", metal: "#7d8580" },
 };
 export class MilitaryRenderer {
   constructor(g, onProgress = () => {}, { safeMode = false } = {}) {
@@ -751,7 +754,7 @@ export class MilitaryRenderer {
           this.box(fence, rail, [x * SCALE + dx, 6.55, z * SCALE], [0.25, 0.18, 0.2]);
       }
     batchStaticByMaterial(fence);
-    if (["breakwater", "medevac"].includes(id) && this.protocolMetadata())
+    if (["breakwater", "medevac", "hospital"].includes(id) && this.protocolMetadata())
       this.buildProtocolBase(this.protocolMetadata());
     else this.addLandmarks(id, n, rail);
     if (styled) this.arenaStyle.dress(id, this.world, g.level);
@@ -849,7 +852,7 @@ export class MilitaryRenderer {
       // every wall in the base whenever one instance enters the camera frustum.
       const chunks = new Map();
       for (const tile of tiles) {
-        const key = ["breakwater", "medevac"].includes(g.arena.mapId) ? `${Math.floor(tile[0]/6)},${Math.floor(tile[1]/6)}` : "all";
+        const key = ["breakwater", "medevac", "hospital"].includes(g.arena.mapId) ? `${Math.floor(tile[0]/6)},${Math.floor(tile[1]/6)}` : "all";
         if (!chunks.has(key)) chunks.set(key, []);
         chunks.get(key).push(tile);
       }
@@ -857,7 +860,7 @@ export class MilitaryRenderer {
       const mesh = new THREE.InstancedMesh(
         // Continuous interior shells need square joins. Rounded individual
         // tiles leave beveled cracks at the ceiling and adjoining wall bays.
-        ["breakwater", "medevac"].includes(g.arena.mapId)
+        ["breakwater", "medevac", "hospital"].includes(g.arena.mapId)
           ? this.geo("protocol-solid-wall", () => new THREE.BoxGeometry(1, 1, 1))
           : this.wallGeometry,
         this.wallMaterials[type],
@@ -870,7 +873,7 @@ export class MilitaryRenderer {
       // when looking up or crossing a threshold. Normal frustum culling stays.
       mesh.userData.noRoomCull = true;
       tiles.forEach(([x, y], i) => {
-        const height = ["breakwater", "medevac"].includes(g.arena.mapId) ? 3.5 : 3;
+        const height = ["breakwater", "medevac", "hospital"].includes(g.arena.mapId) ? 3.5 : 3;
         dummy.position.set((x + 0.5) * SCALE, height / 2, (y + 0.5) * SCALE);
         dummy.scale.set(SCALE, height, SCALE);
         dummy.rotation.set(0, 0, 0);
@@ -960,7 +963,8 @@ export class MilitaryRenderer {
     }
   }
   protocolMetadata() {
-    return this.g.arena.mapId === "medevac" ? this.g.transportMap : this.g.protocolMap;
+    const id = this.g.arena.mapId;
+    return id === "medevac" ? this.g.transportMap : id === "hospital" ? HOSPITAL_MAP : this.g.protocolMap;
   }
   transportWindowTile(x, y) {
     if (this.g.arena.mapId !== "medevac") return false;
@@ -984,7 +988,7 @@ export class MilitaryRenderer {
     ].some(([dx, dy]) => level[y + dy]?.[x + dx] === 0);
   }
   protocolPropTile(x, y) {
-    if (!["breakwater", "medevac"].includes(this.g.arena.mapId)) return false;
+    if (!["breakwater", "medevac", "hospital"].includes(this.g.arena.mapId)) return false;
     return this.metadataPropTile(x, y) || this.furnitureTile(x, y) || (this.g.arena.mapId === 'breakwater' && (commandStorage(x,y) || communicationsStorage(x,y)));
   }
   /** Solid furniture tiles (storage, racks, mess island, radar) dressed with
@@ -1001,7 +1005,7 @@ export class MilitaryRenderer {
     return (this.protocolMetadata()?.props || []).some(
       (prop) =>
         prop.solid &&
-        ["vehicle", "generator", "medevac-seat", "medical-cargo"].includes(prop.kind) &&
+        ["vehicle", "generator", "medevac-seat", "medical-cargo", "medevac-parked"].includes(prop.kind) &&
         x >= prop.x - prop.w / 2 &&
         x < prop.x + prop.w / 2 &&
         y >= prop.y - prop.h / 2 &&
@@ -1212,7 +1216,7 @@ export class MilitaryRenderer {
     for (const prop of map.props || []) {
       if (
         !prop.solid ||
-        !["vehicle", "generator", "medevac-seat", "medical-cargo"].includes(prop.kind)
+        !["vehicle", "generator", "medevac-seat", "medical-cargo", "medevac-parked"].includes(prop.kind)
       )
         continue;
       const equipment = new THREE.Group();
@@ -1231,6 +1235,9 @@ export class MilitaryRenderer {
             this.box(equipment, steel, [0, y + 0.43, z], [2.2, 0.045, 2.4]);
             this.box(equipment, lamp, [1.09, y, z], [0.026, 0.14, 0.36]);
           }
+      } else if (prop.kind === "medevac-parked") {
+        // Landed on the field hospital's landing zone, rotors winding down.
+        this.buildMedevacExterior(equipment, paint, steel, rubber, lamp);
       } else if (prop.kind === "vehicle" && map.loading) {
         this.buildMedevacExterior(equipment, paint, steel, rubber, lamp);
       } else if (prop.kind === "vehicle") {
@@ -1277,6 +1284,7 @@ export class MilitaryRenderer {
       buildFurniture(this, root, this.g.level, (x, y) => this.furnitureTile(x, y) && !medicalDepotStorage(x,y) && !commandStorage(x,y) && !communicationsStorage(x,y));
     if (map.id === "medevac")
       this.buildTransportInterior(map, root, { steel, paint, rubber, amber, lamp });
+    if (map.id === "hospital") buildHospital(this, root, map, { steel, paint, rubber, lamp });
     this.batchProtocolStatic(root);
   }
   buildMedevacExterior(root, paint, steel, rubber, lamp) {
@@ -1672,6 +1680,8 @@ export class MilitaryRenderer {
     this.transportCargo.forEach((object, i) => {
       object.visible = i < loaded;
     });
+    if (this.g.arena.mapId === "hospital")
+      updateHospital(this, mission, { protocol: this.g.arena.protocol, time: this.g.arena.time }, animationTime);
     if (this.g.arena.mapId !== "medevac" || !mission.vehicle) return;
     const vehicle = mission.vehicle,
       altitude = THREE.MathUtils.clamp(Number(vehicle.altitude) || 0, 0, 1.5),

@@ -12,8 +12,19 @@ import { SPECIALTIES, dealSpecialties } from "./outpost-specialties.js";
 import { EVENT_KINDS, nextEvent } from "./outpost-events.js";
 import { QUICK } from "./outpost-shifts.js";
 import {
+  enterHospital,
+  hospitalContext,
+  completeHospital,
+  dropHospitalCargo,
+  updateHospital,
+  hospitalEnding,
+  hospitalBotGoal,
+  patientNeeds,
+} from "./outpost-hospital.js";
+import {
   PROTOCOL_MAP,
   TRANSPORT_MAP,
+  HOSPITAL_MAP,
   MEDICAL_SUPPLIES,
   AIRCRAFT_TASKS,
   FLIGHT_DUTIES,
@@ -391,7 +402,8 @@ export class ProtocolArena extends Arena {
     arena.presentationOnly =
       data.protocol.authoritative !== true ||
       !data.protocol.players ||
-      data.entities.length !== 8 ||
+      // Full shifts seat eight; Quick and Daily shifts five.
+      data.entities.length !== (arena.shift === "full" ? 8 : QUICK.seats) ||
       !data.entities.every((e) => {
         const player = Object.hasOwn(data.protocol.players, e.id) && data.protocol.players[e.id];
         return (
@@ -559,6 +571,7 @@ export class ProtocolArena extends Arena {
     this.winner = winner;
     this.protocol.phase = "result";
     this.protocol.resultReason = reason;
+    this.protocol.ending = hospitalEnding(this);
     this.protocol.awards = this.awards();
     for (const e of this.entities) {
       const p = this.privateFor(e);
@@ -616,7 +629,8 @@ export class ProtocolArena extends Arena {
         1,
         "The last rescue operator was lost. The wounded patrol never received aid.",
       );
-    if (!living(1))
+    // At the hospital, only the patients decide the round.
+    if (!living(1) && p.mission.phase !== "hospital")
       return this.finish(0, "Every infiltrator has been stopped. The rescue is safe.");
     if (living(1) >= living(0))
       return this.finish(
@@ -687,6 +701,11 @@ export class ProtocolArena extends Arena {
     return this.protocol.mission.manifest.every((item) => item.loaded >= item.required);
   }
 
+  /** The floor plan in use: base, aircraft or field hospital. */
+  currentMap() {
+    return this.mapId === TRANSPORT_MAP.id ? TRANSPORT_MAP : this.mapId === HOSPITAL_MAP.id ? HOSPITAL_MAP : PROTOCOL_MAP;
+  }
+
   flightTasksComplete() {
     return this.protocol.mission.flightTasks.every((task) => task.done);
   }
@@ -695,6 +714,7 @@ export class ProtocolArena extends Arena {
     const player = this.privateFor(entity),
       cargo = player.cargo;
     if (!cargo) return;
+    if (cargo.crateId) return dropHospitalCargo(this, entity, player);
     if (player.role === OPERATORS && !cargo.fake) {
       const fixture =
         this.protocol.mission.supplyStock.find((stock) => stock.id === cargo.sourceId) ??
@@ -817,7 +837,8 @@ export class ProtocolArena extends Arena {
       vehicle = mission.vehicle;
     for (const patient of mission.patients)
       if (!patient.rescued && patient.hp > 0)
-        patient.hp = Math.max(0, patient.hp - patient.decay * dt);
+        patient.hp = Math.max(0, patient.hp - patient.decay * dt * (patient.given?.length ? 0.5 : 1));
+    if (mission.phase === "hospital") return updateHospital(this);
     if (mission.phase !== "transport" || vehicle.arrived || this.state === "ended") return;
     const pilot = this.entities.find((entity) => entity.id === vehicle.pilotId);
     if (
@@ -936,7 +957,7 @@ export class ProtocolArena extends Arena {
   }
 
   roomAt(point) {
-    return (this.mapId === TRANSPORT_MAP.id ? TRANSPORT_MAP : PROTOCOL_MAP).rooms.find(
+    return this.currentMap().rooms.find(
       (room) =>
         point.x >= room.x &&
         point.x < room.x + room.w &&
@@ -1532,6 +1553,7 @@ export class ProtocolArena extends Arena {
       );
       if (repair)
         return { kind: "repair", target: repair.id, duration: PROTOCOL_RULES.repairDuration };
+      if (mission.phase === "hospital") return hospitalContext(this, entity, player, true);
       if (mission.phase === "base") {
         if (this.near(entity, mission.loading, PROTOCOL_RULES.interactRange)) {
           if (player.cargo)
@@ -1577,6 +1599,7 @@ export class ProtocolArena extends Arena {
     if (player.role === INFILTRATORS) {
       if (!this.active(entity) || this.protocol.bodies.some((b) => b.carriedBy === entity.id))
         return null;
+      if (mission.phase === "hospital") return hospitalContext(this, entity, player, false);
       const site = nearest(this.protocol.sites.filter((s) => this.availableSite(s, entity.id)));
       if (site) return { kind: "plant", target: site.id, duration: PROTOCOL_RULES.plantDuration };
       if (mission.phase === "transport" && player.sabotageReadyAt <= this.time) {
@@ -1713,6 +1736,11 @@ export class ProtocolArena extends Arena {
       this.resolveEvent(entity, channel.target);
       return;
     }
+    if (["unload", "tamper", "verify", "treat"].includes(channel.kind)) {
+      player.channel = null;
+      completeHospital(this, entity, player, channel, player.role === OPERATORS);
+      return;
+    }
     if (channel.kind === "collect") {
       const stock = this.protocol.mission.supplyStock.find((stock) => stock.id === channel.target);
       if (stock && !player.cargo) {
@@ -1801,21 +1829,10 @@ export class ProtocolArena extends Arena {
         this.manifestComplete() &&
         this.flightTasksComplete()
       ) {
-        let rescued = 0;
-        for (const patient of mission.patients)
-          if (patient.hp > 0) {
-            patient.rescued = true;
-            patient.hp = Math.min(patient.maxHp, patient.hp + 30);
-            rescued++;
-          }
-        if (rescued) {
-          recordContribution(player, "patients", "delivery", rescued);
-          mission.phase = "delivered";
-          mission.deliveredAt = this.time;
-          this.finish(
-            0,
-            `Medical supplies delivered. ${rescued} wounded ${rescued === 1 ? "soldier was" : "soldiers were"} rescued.`,
-          );
+        // Act III: the cargo still has to reach the wounded on the ward.
+        if (mission.patients.some((patient) => patient.hp > 0)) {
+          recordContribution(player, "checks", "landing");
+          enterHospital(this);
         }
       }
     } else if (channel.kind === "defuse") {
@@ -2019,7 +2036,7 @@ export class ProtocolArena extends Arena {
       });
     } else if (spec.id === "security") {
       const incident = [...p.bodies].sort((a, b) => (b.diedAt ?? 0) - (a.diedAt ?? 0))[0];
-      const map = this.mapId === TRANSPORT_MAP.id ? TRANSPORT_MAP : PROTOCOL_MAP;
+      const map = this.currentMap();
       const room =
         map.rooms.find((r) => r.name === incident?.room) ??
         map.rooms[Math.floor(this.random() * map.rooms.length)];
@@ -2076,7 +2093,7 @@ export class ProtocolArena extends Arena {
         body.trailRoom = this.roomAt(body.trail.at(-1))?.name ?? "the corridor";
       }
       if (body.logUntil > this.time) {
-        const room = (this.mapId === TRANSPORT_MAP.id ? TRANSPORT_MAP : PROTOCOL_MAP).rooms.find((r) => r.name === body.room);
+        const room = this.currentMap().rooms.find((r) => r.name === body.room);
         if (room)
           for (const e of this.entities)
             if (e.id !== body.victimId && this.active(e) && !body.roomLog.includes(e.id) && this.roomAt(e) === room)
@@ -2128,7 +2145,7 @@ export class ProtocolArena extends Arena {
         }
     }
     const bot = speakers[Math.floor(this.random() * speakers.length)];
-    const map = this.mapId === TRANSPORT_MAP.id ? TRANSPORT_MAP : PROTOCOL_MAP;
+    const map = this.currentMap();
     const ctx = {
       ...this.botMeetingContext(bot),
       sabotage: p.sabotage.powerUntil > this.time ? "power" : null,
@@ -2298,8 +2315,11 @@ export class ProtocolArena extends Arena {
       );
       if (target && this.time >= player.killReadyAt && mission.phase === "base")
         this.botAction(entity, "eliminate", target.id);
-      if (mission.phase === "base" && this.time >= player.sabotageReadyAt && this.time > 25) {
-        const kind = this.protocol.detonateAt !== null ? "comms" : "power";
+      // At the hospital, a cut generator stops all treatment.
+      const hospitalCut =
+        mission.phase === "hospital" && this.time - (mission.hospital?.startedAt ?? this.time) > 20 && this.random() < 0.02;
+      if ((mission.phase === "base" && this.time >= player.sabotageReadyAt && this.time > 25) || (hospitalCut && this.time >= player.sabotageReadyAt)) {
+        const kind = this.protocol.detonateAt !== null && mission.phase === "base" ? "comms" : "power";
         if (this.protocol.sabotage[`${kind}Until`] <= this.time)
           this.botAction(entity, "sabotage", kind);
       }
@@ -2328,6 +2348,9 @@ export class ProtocolArena extends Arena {
       }
       let goal = null;
       if (player.role === OPERATORS && this.active(entity)) {
+        // At the hospital a cut generator comes first (answered below).
+        if (mission.phase === "hospital" && this.protocol.sabotage.powerUntil <= this.time)
+          goal = hospitalBotGoal(this, entity, player, true);
         if (mission.phase === "transport") {
           if (!vehicle.autopilot && !vehicle.pilotId && !vehicle.arrived) goal = TRANSPORT_MAP.helm;
           else if (vehicle.cargoDamage) goal = TRANSPORT_MAP.cargo;
@@ -2381,6 +2404,7 @@ export class ProtocolArena extends Arena {
               .slice(0, 2)
               .includes(entity),
         );
+        if (!goal && mission.phase === "hospital") goal = hospitalBotGoal(this, entity, player, true);
         if (!goal && mission.phase === "base") {
           if (player.cargo || this.manifestComplete()) goal = mission.loading;
           else
@@ -2391,6 +2415,8 @@ export class ProtocolArena extends Arena {
               .sort((a, b) => this.buddyCost(entity, a) - this.buddyCost(entity, b))[0];
         }
       }
+      if (!goal && player.role === INFILTRATORS && mission.phase === "hospital")
+        goal = hospitalBotGoal(this, entity, player, false);
       if (!goal && player.role === INFILTRATORS) goal = this.botPrey(entity);
       if (!goal && player.role === INFILTRATORS) {
         if (mission.phase === "transport" && player.sabotageReadyAt <= this.time)
@@ -2498,6 +2524,9 @@ export class ProtocolArena extends Arena {
     for (const key of ["powerUntil", "commsUntil"])
       if (p.sabotage[key] > this.time - dt) p.sabotage[key] += dt;
     if (p.nextEventAt > this.time - dt) p.nextEventAt += dt;
+    if (p.mission?.hospital?.deadline > this.time - dt) p.mission.hospital.deadline += dt;
+    for (const player of Object.values(p.players))
+      if (player.tamperReadyAt > this.time - dt) player.tamperReadyAt += dt;
     if (p.sandstormUntil > this.time - dt) p.sandstormUntil += dt;
     for (const ev of p.events || []) if (ev.active && ev.until > this.time - dt) ev.until += dt;
     for (const player of Object.values(p.players))
@@ -2784,7 +2813,18 @@ export function protocolView(data, selfId) {
           decay: patient.decay,
           critical: patient.critical === true,
           rescued: patient.rescued,
+          bed: patient.bed ?? null,
+          needs: patient.needs ? patientNeeds(patient) : null,
         })),
+        // Contamination stays secret until a crate is checked at triage.
+        hospital: mission.hospital
+          ? {
+              deadline: mission.hospital.deadline,
+              startedAt: mission.hospital.startedAt,
+              contaminated: mission.hospital.contaminated,
+              crates: mission.hospital.crates.map(({ id, supplyId, name, at, checked }) => ({ id, supplyId, name, at, checked })),
+            }
+          : null,
         vehicle: Object.fromEntries(
           [
             "name",
@@ -2873,7 +2913,10 @@ export function protocolView(data, selfId) {
           tasks: clone(player.tasks),
           contributions: contributionsOf(player.contributions),
           channel,
-          cargo: player.cargo ? { supplyId: player.cargo.supplyId, name: player.cargo.name } : null,
+          cargo: player.cargo
+            ? { supplyId: player.cargo.supplyId, name: player.cargo.name, ...(player.cargo.crateId ? { crateId: player.cargo.crateId } : {}) }
+            : null,
+          tamperReadyAt: isInfiltrator ? (player.tamperReadyAt ?? 0) : undefined,
           ...(isInfiltrator
             ? {
                 allies: data.entities
@@ -2916,6 +2959,7 @@ export function protocolView(data, selfId) {
       Object.entries(p.players).map(([id, value]) => [id, value.role]),
     );
     view.protocol.resultReason = p.resultReason;
+    view.protocol.ending = clone(p.ending ?? null);
     view.protocol.awards = clone(p.awards ?? []);
     // Only after the round: whether your votes landed on infiltrators.
     if (view.protocol.self) view.protocol.self.correctVotes = player?.correctVotes || 0;

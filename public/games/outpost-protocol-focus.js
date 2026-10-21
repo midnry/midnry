@@ -229,7 +229,9 @@ export class ProtocolFocus {
         ? "Info · Fight"
         : mission.phase === "base"
           ? `Info · ${loaded}/${total}`
-          : "Info · Flight";
+          : mission.hospital
+            ? `Info · ${mission.patients.filter((pt) => pt.rescued).length}/${mission.patients.length} treated`
+            : "Info · Flight";
     this.button.disabled =
       this.ui.piloting && !mission.vehicle.autopilot && !mission.vehicle.arrived;
     if (this.button.disabled && this.info.open) this.info.close();
