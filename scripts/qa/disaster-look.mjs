@@ -6,6 +6,7 @@
 // Lightning storm (Skyport): darkening sky, charged ground, a bolt, scorch.
 // Earthquake (Wreck Estate): cracking ground, collapse, reduced motion.
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 import { mkdirSync } from "node:fs";
 const BASE = process.env.BASE || "http://127.0.0.1:8080";
 const OUT = "screenshots/qa/disasters";
@@ -42,9 +43,9 @@ for (const W of widths) {
     null,
     { timeout: 180000 },
   );
-  await p.click(".mf-gamepick [data-mode=signal]", { timeout: 60000 });
+  await pickGame(p, "signal", { timeout: 60000 });
   await p.waitForTimeout(1000);
-  await p.click(".mf-start", { timeout: 60000 });
+  await play(p, { timeout: 60000 });
   await p.waitForFunction(() => document.querySelector("midnry-fps")?.engine?.militaryLoaded, null, {
     timeout: 180000,
   });
