@@ -1,10 +1,10 @@
-import { useId, useRef, useState, type ComponentType, type KeyboardEvent } from "react";
+import { useCallback, useId, useRef, useState, type ComponentType, type KeyboardEvent, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { getApp } from "@/lib/catalog";
 import { accessLabel } from "@/lib/plans";
 import { AppMark } from "@/components/app-mark";
 import { cn } from "@/components/ui";
-import { SampleBadge } from "./demo-kit";
+import { DemoTouchProvider, SampleBadge } from "./demo-kit";
 import { DemoCurrencyPicker, DemoCurrencyProvider } from "./demo-currency";
 import { RemindDemo } from "./remind-demo";
 import { InvoiceDemo } from "./invoice-demo";
@@ -24,20 +24,20 @@ export const DEMOS: readonly DemoDef[] = [
   {
     slug: "tasks",
     use: "Plan your day",
-    intro: "Remind turns a plain sentence into a task, with the date, repeat and priority already set.",
+    intro: "Type a reminder the way you’d say it. Remind finds the date and time.",
     Demo: RemindDemo,
   },
   {
     slug: "invoice",
     use: "Bill a client",
-    intro: "Invoice does the sums for you and lays out a clean sheet, ready to print or save as a PDF.",
+    intro: "Change a line or the tax. Invoice does the sums and lays out a clean sheet.",
     Demo: InvoiceDemo,
     money: true,
   },
   {
     slug: "ledger",
     use: "Track spending",
-    intro: "Ledger adds up the month, shows which category took the most and, if you set a budget, how much is left.",
+    intro: "Add an expense. Ledger totals the month and shows where the money went.",
     Demo: LedgerDemo,
     money: true,
   },
@@ -79,7 +79,7 @@ function ProductDemoFrame({ className }: { className?: string }) {
 
   return (
     <div className={cn(FRAME, className)}>
-      <div className="flex flex-col gap-3 border-b border-line bg-paper-2/60 px-3 pt-3 pb-3 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-2 border-b border-line bg-paper-2/60 p-3 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
         <div role="tablist" aria-label="Choose an app to try" onKeyDown={onKey} className="grid grid-cols-3 gap-1 rounded-2xl bg-paper p-1 shadow-line sm:inline-grid">
           {DEMOS.map((demo, index) => {
             const app = getApp(demo.slug);
@@ -128,13 +128,13 @@ function ProductDemoFrame({ className }: { className?: string }) {
             aria-labelledby={`${base}-tab-${demo.slug}`}
             hidden={!on}
             tabIndex={0}
-            className="p-4 focus-visible:outline-offset-[-4px] sm:p-6 lg:p-8"
+            className="p-4 focus-visible:outline-offset-[-4px] sm:p-6"
           >
-            <p className="max-w-2xl text-pretty text-ink-soft sm:text-lg">{demo.intro}</p>
-            <div className="mt-6">
+            <p className="max-w-2xl text-pretty text-ink-soft">{demo.intro}</p>
+            <div className="mt-4">
               <demo.Demo />
             </div>
-            <div className="mt-8 flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-x-4 border-t border-line pt-3">
               <p className="text-sm text-muted">
                 {app.name}: <span className="font-medium text-ink">{accessLabel(app.tier)}</span>
               </p>
@@ -152,33 +152,45 @@ function ProductDemoFrame({ className }: { className?: string }) {
   );
 }
 
-/** Product page: one app's sample, in the same frame. */
-export function AppDemo({ slug, className }: { slug: string; className?: string }) {
+/**
+ * Product page: one app's sample, in the same frame. `next` is the step to offer once
+ * the visitor has done something in the demo (typed, added a line, ticked a task).
+ */
+export function AppDemo({ slug, className, next }: { slug: string; className?: string; next?: ReactNode }) {
   const demo = DEMOS.find((item) => item.slug === slug);
   if (!demo) return null;
   return (
     <DemoCurrencyProvider>
-      <AppDemoFrame demo={demo} className={className} />
+      <AppDemoFrame demo={demo} className={className} next={next} />
     </DemoCurrencyProvider>
   );
 }
 
-function AppDemoFrame({ demo, className }: { demo: DemoDef; className?: string }) {
+function AppDemoFrame({ demo, className, next }: { demo: DemoDef; className?: string; next?: ReactNode }) {
+  const [touched, setTouched] = useState(false);
+  const touch = useCallback(() => setTouched(true), []);
   return (
     <div className={cn(FRAME, className)}>
-      <div className="flex flex-col gap-3 border-b border-line bg-paper-2/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <div className="flex flex-col gap-3 border-b border-line bg-paper-2/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <p className="font-medium">Try it here</p>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <SampleBadge />
           {demo.money ? <DemoCurrencyPicker /> : null}
         </div>
       </div>
-      <div className="p-4 sm:p-6 lg:p-8">
-        <p className="max-w-2xl text-pretty text-ink-soft sm:text-lg">{demo.intro}</p>
-        <div className="mt-6">
-          <demo.Demo />
+      <div className="p-4 sm:p-6">
+        <p className="max-w-2xl text-pretty text-ink-soft">{demo.intro}</p>
+        <div className="mt-4">
+          <DemoTouchProvider value={touch}>
+            <demo.Demo />
+          </DemoTouchProvider>
         </div>
       </div>
+      {touched && next ? (
+        <div className="anim-rise border-t border-line bg-pine/[0.06] px-4 py-4 sm:px-6" data-demo-next>
+          {next}
+        </div>
+      ) : null}
     </div>
   );
 }

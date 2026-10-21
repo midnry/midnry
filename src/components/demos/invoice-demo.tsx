@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 import { addDays, parseIso } from "@/lib/remind/dates";
 import { cn } from "@/components/ui";
-import { DemoGrid, Step, demoInput, useToday } from "./demo-kit";
+import { DemoGrid, LiveSummary, Step, demoInput, useDemoTouch, useToday } from "./demo-kit";
 import { SAMPLES, moneyFor, useDemoCurrency, type Money } from "./demo-currency";
 
 /**
@@ -51,7 +51,12 @@ function InvoiceSample({ money }: { money: Money }) {
   const [taxPercent, setTaxPercent] = useState(sample.taxPercent);
   const [count, setCount] = useState(sample.lines.length);
   // Flash the total only after the visitor changes something, not on load.
-  const [edited, setEdited] = useState(false);
+  const [edited, setEditedState] = useState(false);
+  const touch = useDemoTouch();
+  const setEdited = (value: boolean) => {
+    setEditedState(value);
+    if (value) touch();
+  };
 
   const subtotal = lines.reduce((sum, line) => sum + (lineTotal(line) ?? 0), 0);
   const taxRate = /^\d+(\.\d+)?$/.test(taxPercent.trim()) ? Number(taxPercent) : 0;
@@ -70,7 +75,14 @@ function InvoiceSample({ money }: { money: Money }) {
         <Step n={1} title="Add what you did">
           <label className="block">
             <span className="mb-1.5 block text-sm text-muted">Bill to</span>
-            <input value={client} onChange={(event) => setClient(event.target.value.slice(0, 80))} className={demoInput} />
+            <input
+              value={client}
+              onChange={(event) => {
+                setEdited(true);
+                setClient(event.target.value.slice(0, 80));
+              }}
+              className={demoInput}
+            />
           </label>
           <fieldset className="mt-5">
             <legend className="text-sm text-muted">Line items</legend>
@@ -79,6 +91,7 @@ function InvoiceSample({ money }: { money: Money }) {
               <span>Qty</span>
               <span>Rate ({money.symbol})</span>
             </div>
+            <p className="mt-1 text-xs text-muted sm:hidden">Each line: what you did, then quantity and rate ({money.symbol}).</p>
             <ul className="mt-1.5 space-y-3 sm:space-y-2">
               {lines.map((line, index) => (
                 <li key={line.id} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_2.75rem] gap-2 sm:grid-cols-[minmax(0,1fr)_4rem_6.5rem_2.75rem]">
@@ -129,6 +142,7 @@ function InvoiceSample({ money }: { money: Money }) {
               disabled={lines.length >= MAX_LINES}
               onClick={() => {
                 const next = count + 1;
+                setEdited(true);
                 setCount(next);
                 setLines((all) => [...all, { id: `l${next}`, description: "", qty: "1", rate: "" }]);
               }}
@@ -154,6 +168,7 @@ function InvoiceSample({ money }: { money: Money }) {
       }
       result={
         <Step n={2} title="Get a finished invoice">
+          <LiveSummary active={edited} text={`Invoice total ${money.format(total)}, including ${money.format(tax)} tax.`} />
           <article aria-label="Finished invoice, sample" className="rounded-2xl border border-line bg-card p-5 shadow-[0_18px_40px_-28px_rgba(16,32,51,0.45)] sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>

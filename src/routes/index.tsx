@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PASS_PRICE_LABEL } from "@/lib/access";
-import { FREE_APPS, PASS_APPS } from "@/lib/plans";
+import { FREE_APPS } from "@/lib/plans";
 import { Shell } from "@/components/shell";
 import { Favorites } from "@/components/spotlight";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -37,10 +37,10 @@ function Home() {
             <HeroActions />
           </div>
         </div>
-        <ProductDemo className="mt-10 sm:mt-14" />
+        <ProductDemo className="mt-8 sm:mt-10" />
       </section>
 
-      <section className="mt-20 empty:hidden">
+      <section className="mt-16 empty:hidden">
         <Favorites />
       </section>
 
@@ -70,7 +70,7 @@ function HeroActions() {
         ) : null}
       </div>
       <p className="mt-4 text-sm text-pretty text-muted">
-        {FREE_APPS.length} apps are free with an account. Midnry Pass adds {PASS_APPS.length} more for {PASS_PRICE_LABEL} a month.
+        {FREE_APPS.length} apps are free with an account. No card needed.
       </p>
     </>
   );

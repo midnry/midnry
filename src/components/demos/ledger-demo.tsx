@@ -2,7 +2,7 @@ import { useId, useState, type FormEvent } from "react";
 import { addDays, parseIso } from "@/lib/remind/dates";
 import { parseCents } from "@/components/tools/shared";
 import { cn } from "@/components/ui";
-import { DemoGrid, Step, demoInput, useToday } from "./demo-kit";
+import { DemoGrid, LiveSummary, Step, demoInput, useDemoTouch, useToday } from "./demo-kit";
 import { SAMPLES, moneyFor, useDemoCurrency, type Money } from "./demo-currency";
 
 /**
@@ -37,6 +37,12 @@ function LedgerSample({ money: currency }: { money: Money }) {
   const [category, setCategory] = useState<string>("Food");
   const [error, setError] = useState<string | null>(null);
   const [count, setCount] = useState(sample.entries.length);
+  const [changed, setChanged] = useState(false);
+  const touch = useDemoTouch();
+  const markChanged = () => {
+    setChanged(true);
+    touch();
+  };
 
   const total = entries.reduce((sum, entry) => sum + entry.cents, 0);
   const bars = CATEGORIES.map((name) => ({
@@ -65,6 +71,7 @@ function LedgerSample({ money: currency }: { money: Money }) {
     setError(null);
     const next = count + 1;
     setCount(next);
+    markChanged();
     setEntries((all) => [{ id: `e${next}`, label: label.trim().slice(0, 60), cents, category, daysAgo: 0 }, ...all]);
     setLabel("");
     setAmount("");
@@ -77,7 +84,7 @@ function LedgerSample({ money: currency }: { money: Money }) {
           <form onSubmit={add} className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto]" noValidate>
             <label className="col-span-2 sm:col-span-1">
               <span className="sr-only">What</span>
-              <input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="What, e.g. Fuel" className={demoInput} aria-describedby={error ? `${ids}-error` : undefined} />
+              <input value={label} onChange={(event) => { touch(); setLabel(event.target.value); }} placeholder="What, e.g. Fuel" className={demoInput} aria-describedby={error ? `${ids}-error` : undefined} />
             </label>
             <label>
               <span className="sr-only">Amount in {currency.name}</span>
@@ -114,7 +121,10 @@ function LedgerSample({ money: currency }: { money: Money }) {
                 <button
                   type="button"
                   aria-label={`Remove ${entry.label}`}
-                  onClick={() => setEntries((all) => all.filter((item) => item.id !== entry.id))}
+                  onClick={() => {
+                    markChanged();
+                    setEntries((all) => all.filter((item) => item.id !== entry.id));
+                  }}
                   className="-mr-2 grid size-11 shrink-0 place-items-center rounded-full text-muted hover:bg-paper-2 hover:text-ink"
                 >
                   <svg viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
@@ -129,7 +139,11 @@ function LedgerSample({ money: currency }: { money: Money }) {
       }
       result={
         <Step n={2} title="See where the month went">
-          <div className="rounded-2xl border border-line bg-card p-5 sm:p-6" aria-live="polite" aria-atomic="false">
+          <LiveSummary
+            active={changed}
+            text={`${monthLabel} total ${money(total)}. ${over ? `${money(total - BUDGET_CENTS)} over budget` : `${money(BUDGET_CENTS - total)} left of the budget`}.`}
+          />
+          <div className="rounded-2xl border border-line bg-card p-5 sm:p-6">
             <p className="text-sm text-muted">{monthLabel}</p>
             <p className="mt-1 font-display text-4xl tracking-tight tabular-nums sm:text-5xl">{money(total)}</p>
             <div className="mt-4">

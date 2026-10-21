@@ -1,6 +1,8 @@
-// Interactive checks for the homepage demo: the tablist (keyboard + aria),
-// Remind's live parsing, Invoice's sums, Ledger's bars, reduced motion,
-// and no horizontal overflow at five viewports.
+// Interactive checks for the homepage demo: the simple Remind default and its
+// "Explore more features" disclosure, the tablist (keyboard + aria), Remind's
+// live parsing, Invoice's sums, Ledger's bars, the screen-reader summaries,
+// product pages ("Try the demo", the next step after trying it, sign-up next=),
+// reduced motion, and no horizontal overflow at six viewports.
 // Usage: node scripts/qa/home-demo.mjs [outdir]
 import { chromium } from "playwright";
 import assert from "node:assert/strict";
@@ -34,10 +36,50 @@ async function open(options = {}) {
   assert.equal(await tabs.nth(0).getAttribute("aria-selected"), "true");
   ok("three tabs, Remind selected first");
 
-  // Remind: the real parser runs on the sample and on what you type.
+  // Remind, by default: the sentence, one task with its date and time, two plain examples. Nothing else.
   const panel = page.getByRole("tabpanel", { name: /Remind/ });
-  await panel.getByText("Every month on the 25th").first().waitFor();
   const input = panel.getByLabel("Type a reminder");
+  assert.equal(await input.inputValue(), "Call mum tomorrow at 6pm");
+  const task = panel.locator("[data-demo-task]");
+  await task.getByText("Call mum", { exact: true }).waitFor();
+  const when = await task.locator("[data-demo-when]").textContent();
+  assert.equal(when?.trim(), "Tomorrow, 6pm");
+  const tomorrow = await page.evaluate(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+  });
+  await task.getByText(tomorrow, { exact: true }).waitFor();
+  ok(`"Call mum tomorrow at 6pm" parses to "Call mum", tomorrow (${tomorrow}) at 6pm`);
+  const more = panel.locator("details[data-demo-more]");
+  assert.equal(await more.evaluate((el) => el.open), false);
+  assert.equal(await panel.locator("dl", { hasText: "Priority" }).isVisible(), false);
+  assert.equal(await panel.getByText("p1", { exact: true }).isVisible(), false);
+  const simple = panel.getByRole("button", { name: /^(Dentist on Friday at 10am|Gym every Monday at 7am)$/ });
+  assert.equal(await simple.count(), 2);
+  assert.equal(await panel.getByRole("button", { name: /p1 #Home/ }).isVisible(), false);
+  ok("simple default: one task, two plain examples, details closed");
+
+  // aria-live: quiet on load, then a short summary after the visitor types.
+  const live = panel.locator("[data-demo-live]");
+  assert.equal((await live.textContent())?.trim(), "");
+  await input.fill("Dentist on Friday at 10am");
+  await live.getByText(/^Task: Dentist, .*10am\.$/).waitFor({ timeout: 5000 });
+  ok(`aria-live summary updates: "${(await live.textContent())?.trim()}"`);
+
+  // The disclosure opens from the keyboard and holds the full syntax and table.
+  await more.locator("summary").focus();
+  await page.keyboard.press("Enter");
+  assert.equal(await more.evaluate((el) => el.open), true);
+  const details = panel.getByRole("definition").first();
+  await details.waitFor();
+  ok("Explore more features opens with the keyboard");
+  await panel.getByRole("button", { name: "Pay rent every 25th at 9am p1 #Home" }).click();
+  await panel.locator("dd", { hasText: "Every month on the 25th" }).waitFor({ timeout: 8000 });
+  await panel.locator("dd", { hasText: "Priority 1" }).waitFor();
+  await panel.locator("dd", { hasText: "#Home" }).waitFor();
+  await panel.locator("dd", { hasText: "9am" }).waitFor();
+  ok("rich example inside the disclosure: repeat, priority, project and time");
   await input.fill("Call mum tomorrow at 6pm @family");
   await panel.locator("dd", { hasText: "Tomorrow, 6pm" }).waitFor();
   await panel.locator("dd", { hasText: "@family" }).waitFor();
@@ -46,11 +88,13 @@ async function open(options = {}) {
   await panel.locator("dd", { hasText: "Every Monday and Thursday" }).waitFor();
   await panel.locator("dd", { hasText: "Priority 2" }).waitFor();
   await panel.getByRole("checkbox").click();
-  await panel.getByText(/\+3 Midnry Points\. Next:/).waitFor();
+  await panel.locator("dd", { hasText: /\+3 earned\. Next:/ }).waitFor();
   ok("recurrence + priority parsed; ticking shows points and the next date");
-  await panel.getByRole("button", { name: "Water the plants every 3 days" }).click();
-  await panel.locator("dd", { hasText: "Every 3 days" }).waitFor({ timeout: 5000 });
-  assert.equal(await input.inputValue(), "Water the plants every 3 days");
+  await more.locator("summary").click();
+  assert.equal(await more.evaluate((el) => el.open), false);
+  await panel.getByRole("button", { name: "Dentist on Friday at 10am" }).click();
+  await task.locator("[data-demo-when]").getByText("Friday, 10am").waitFor({ timeout: 5000 });
+  assert.equal(await input.inputValue(), "Dentist on Friday at 10am");
   ok("example button types the example in");
 
   // Keyboard: arrows move selection and focus, Home/End jump.
@@ -82,6 +126,8 @@ async function open(options = {}) {
   await invoice.getByLabel("Rate in naira, line 2").fill("abc");
   await sheet.getByText("₦305,000.00").first().waitFor();
   ok("invoice line totals, tax and total update; a bad rate shows a dash");
+  await invoice.locator("[data-demo-live]").getByText("Invoice total ₦305,000.00, including ₦0.00 tax.").waitFor({ timeout: 5000 });
+  ok("invoice aria-live summary follows the total");
   await page.screenshot({ path: `${out}/demo-invoice-1280.png` });
 
   // Ledger: add an expense and the bars and total change.
@@ -101,6 +147,8 @@ async function open(options = {}) {
   await ledger.getByRole("button", { name: "Add", exact: true }).click();
   await ledger.getByRole("alert").getByText("Enter an amount like 2500.").waitFor();
   ok("ledger adds and removes an expense; total, budget and validation work");
+  await ledger.locator("[data-demo-live]").getByText(/total ₦58,200\.00\. ₦41,800\.00 left of the budget\./).waitFor({ timeout: 5000 });
+  ok("ledger aria-live summary follows the total");
   await page.screenshot({ path: `${out}/demo-ledger-1280.png` });
 
   // Currency: Lagos time zone starts in naira; switching gives the invoice and
@@ -179,14 +227,110 @@ ok("default currency follows time zone, then language, else naira");
 {
   const { context, page } = await open({ reducedMotion: "reduce" });
   const panel = page.getByRole("tabpanel", { name: /Remind/ });
-  await panel.getByRole("button", { name: "Call mum tomorrow at 6pm @family" }).click();
-  assert.equal(await panel.getByLabel("Type a reminder").inputValue(), "Call mum tomorrow at 6pm @family");
+  await panel.getByRole("button", { name: "Dentist on Friday at 10am" }).click();
+  assert.equal(await panel.getByLabel("Type a reminder").inputValue(), "Dentist on Friday at 10am");
   ok("reduced motion: example fills instantly");
   await context.close();
 }
 
+/** Opens a product page, signed out. */
+async function product(slug, options = {}) {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, timezoneId: "Africa/Lagos", ...options });
+  const page = await context.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(String(e)));
+  await page.goto(`${BASE}/discover/${slug}`, { waitUntil: "networkidle", timeout: 120000 });
+  await page.waitForTimeout(1200);
+  await page.waitForLoadState("networkidle").catch(() => {});
+  return { context, page, errors };
+}
+
+const signUp = async (link) => {
+  const href = await link.getAttribute("href");
+  const url = new URL(href, BASE);
+  return { path: url.pathname, next: url.searchParams.get("next"), intent: url.searchParams.get("intent") };
+};
+
+/** The section is at the top of the viewport (below the sticky header) and has focus. */
+async function landed(page, id) {
+  const state = await page.evaluate((target) => {
+    const el = document.getElementById(target);
+    return { focused: document.activeElement === el, top: Math.round(el.getBoundingClientRect().top), hash: location.hash };
+  }, id);
+  assert.equal(state.focused, true, `${id} has focus`);
+  assert.ok(state.top >= 0 && state.top <= 140, `${id} top at ${state.top}px`);
+  assert.equal(state.hash, `#${id}`);
+}
+
+// Product page with a demo: "Try the demo" scrolls and focuses; the account action keeps next=.
+for (const reducedMotion of ["no-preference", "reduce"]) {
+  const { context, page, errors } = await product("invoice", { reducedMotion });
+  const create = page.getByRole("link", { name: "Create a free account" }).first();
+  assert.deepEqual(await signUp(create), { path: "/login", next: "/apps/invoice", intent: "register" });
+  await page.getByRole("link", { name: "Try the demo" }).click();
+  if (reducedMotion === "reduce") {
+    // No smooth scrolling: the section is there on the next frame.
+    await page.waitForTimeout(80);
+  } else {
+    await page.waitForTimeout(1200);
+  }
+  await landed(page, "try-it");
+  ok(`invoice: "Try the demo" scrolls to the demo and focuses it (${reducedMotion})`);
+  if (reducedMotion === "reduce") {
+    await context.close();
+    continue;
+  }
+  // The next step appears only after the visitor does something.
+  const next = page.locator("[data-demo-next]");
+  assert.equal(await next.count(), 0);
+  await page.getByLabel("Quantity, line 1").fill("3");
+  await next.waitFor();
+  await next.getByText("Create a free account to make your own invoices.").waitFor();
+  await next.getByText(/This sample is not kept\./).waitFor();
+  assert.deepEqual(await signUp(next.getByRole("link", { name: "Create a free account" })), { path: "/login", next: "/apps/invoice", intent: "register" });
+  ok("invoice: after editing a line, the next step offers a free account (next=/apps/invoice)");
+  assert.deepEqual(errors, []);
+  await context.close();
+}
+
+// Remind: the next step after typing; sign-up goes back to the app.
+{
+  const { context, page } = await product("tasks");
+  assert.deepEqual(await signUp(page.getByRole("link", { name: "Create a free account" }).first()), { path: "/login", next: "/apps/tasks", intent: "register" });
+  await page.getByLabel("Type a reminder").fill("Call the bank on Friday at 9am");
+  await page.locator("[data-demo-next]").getByText("Create a free account to keep your own reminders.").waitFor();
+  ok("remind: typing shows the next step; sign-up next=/apps/tasks");
+  await context.close();
+}
+
+// Ledger is a Pass app: never called free.
+{
+  const { context, page } = await product("ledger");
+  const create = page.getByRole("link", { name: "Create an account", exact: true }).first();
+  assert.deepEqual(await signUp(create), { path: "/login", next: "/apps/ledger", intent: "register" });
+  assert.equal(await page.getByText(/free account/i).count(), 0);
+  await page.getByPlaceholder("What, e.g. Fuel").fill("Bus fare");
+  const next = page.locator("[data-demo-next]");
+  await next.getByText("Create an account to track your own spending.").waitFor();
+  await next.getByText(/Included with Midnry Pass/).waitFor();
+  assert.equal(await page.getByText(/free account/i).count(), 0);
+  ok("ledger (Pass): \"Create an account\", never \"free\"; next step names Midnry Pass");
+  await context.close();
+}
+
+// An app without a demo: "Create an account to use <App>" and "See how it works".
+{
+  const { context, page } = await product("cycle");
+  assert.deepEqual(await signUp(page.getByRole("link", { name: "Create an account to use Cycle" })), { path: "/login", next: "/apps/cycle", intent: "register" });
+  await page.getByRole("link", { name: "See how it works" }).click();
+  await page.waitForTimeout(1200);
+  await landed(page, "how-it-works");
+  ok("cycle: account action keeps next=/apps/cycle; See how it works scrolls and focuses");
+  await context.close();
+}
+
 // Viewports: no horizontal overflow on the homepage and product pages.
-for (const [w, h] of [[1280, 800], [1024, 768], [768, 1024], [390, 844], [844, 390]]) {
+for (const [w, h] of [[1280, 800], [1024, 768], [768, 1024], [390, 844], [360, 740], [844, 390]]) {
   const phone = w < 900 && h < 900 && Math.min(w, h) < 500;
   const context = await browser.newContext({ viewport: { width: w, height: h }, isMobile: phone, hasTouch: phone, timezoneId: "Africa/Lagos" });
   const page = await context.newPage();

@@ -23,10 +23,10 @@ export function GamesSection() {
           </a>
         }
       >
-        Two free games made by Midnry. They run in your browser, on a phone or a computer.
+        Two free games made by Midnry, in your browser on a phone or a computer.
       </SectionHeader>
 
-      <div className="mt-10 grid gap-5 md:grid-cols-2">
+      <div className="mt-8 grid gap-5 md:grid-cols-2">
         {/* Abuja Hustle: dusk over the city, in the game's own colours. */}
         <article className="flex flex-col overflow-hidden rounded-3xl bg-[linear-gradient(to_bottom,#1d1a4f_0%,#43276a_55%,#86395f_100%)] text-[#f7edda] shadow-line">
           <picture>
@@ -49,10 +49,10 @@ export function GamesSection() {
               Abuja Hustle
             </h3>
             <p className="mt-3 text-pretty text-[#f7edda]/90">
-              A satirical life sim set in a hand-painted Abuja. Grow up from primary school to adult life, build a career or a business, and chase financial freedom without ending up in Kuje.
+              A satirical life sim in a hand-painted Abuja. Grow up, build a career or a business, and chase financial freedom without ending up in Kuje.
             </p>
-            <p className="mt-3 text-sm text-[#f7edda]/75">Sign in to save your progress.</p>
-            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 pt-1">
+            <p className="mt-2 text-sm text-[#f7edda]/75">Sign in to save your progress.</p>
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
               <Link
                 to="/games/abuja-hustle"
                 className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#70d3ad] px-5 text-sm font-extrabold text-[#06251b] hover:bg-[#8be0bf] focus-visible:outline-[#f7edda]"
@@ -82,10 +82,10 @@ export function GamesSection() {
             <p className="text-xs font-bold tracking-[0.2em] text-[#ffc455] uppercase">Free game · Two modes</p>
             <h3 className="mt-2 text-3xl font-black tracking-tight">Outpost Zero</h3>
             <p className="mt-3 text-pretty text-[#d9dbd9]">
-              In Blackout Protocol, fly medical supplies to wounded soldiers while hidden infiltrators sabotage the rescue. In Last Signal, eight fighters battle it out until one survives. Play with bots or friends.
+              Fly medical supplies to the wounded while infiltrators sabotage the rescue, or fight it out in an eight-player last-one-standing. Play with bots or friends.
             </p>
-            <p className="mt-3 text-sm text-[#c6c8c6]">Your first match needs no account. Coming soon to Steam, PC and Mac.</p>
-            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 pt-1">
+            <p className="mt-2 text-sm text-[#c6c8c6]">Your first match needs no account. Coming soon to Steam, PC and Mac.</p>
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
               <Link
                 to="/games/outpost-zero"
                 className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#ffc455] px-5 text-sm font-extrabold text-[#141a20] hover:bg-[#ffda85] focus-visible:outline-[#fff4dc]"

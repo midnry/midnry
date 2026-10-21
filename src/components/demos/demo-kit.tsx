@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { localToday } from "@/lib/remind/parse";
 import { cn } from "@/components/ui";
 
@@ -15,6 +15,34 @@ export function useToday(): string | null {
   const [today, setToday] = useState<string | null>(null);
   useEffect(() => setToday(localToday()), []);
   return today;
+}
+
+/**
+ * Lets a demo say "the visitor just did something" (typed, added a line, ticked a task),
+ * so a product page can offer the next step. A no-op where nobody listens (the homepage).
+ */
+const DemoTouchContext = createContext<() => void>(() => {});
+export const DemoTouchProvider = DemoTouchContext.Provider;
+export function useDemoTouch(): () => void {
+  return useContext(DemoTouchContext);
+}
+
+/**
+ * A polite, screen-reader-only summary of a demo's result (the task, a total).
+ * It waits until the value settles, and says nothing until the visitor has changed something.
+ */
+export function LiveSummary({ text, active }: { text: string; active: boolean }) {
+  const [said, setSaid] = useState("");
+  useEffect(() => {
+    if (!active) return;
+    const id = window.setTimeout(() => setSaid(text), 700);
+    return () => window.clearTimeout(id);
+  }, [text, active]);
+  return (
+    <p className="sr-only" aria-live="polite" data-demo-live>
+      {said}
+    </p>
+  );
 }
 
 /** True when the visitor asked their device for less motion. */

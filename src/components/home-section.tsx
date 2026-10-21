@@ -33,7 +33,7 @@ export function SectionHeader({
 }
 
 /** Space between homepage sections. */
-export const SECTION_GAP = "mt-24 sm:mt-32";
+export const SECTION_GAP = "mt-20 sm:mt-28";
 
 /** A text link with an arrow that nudges on hover. */
 export function ArrowLink({ children, className }: { children: ReactNode; className?: string }) {

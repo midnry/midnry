@@ -4,7 +4,7 @@ import { APPS, getApp, type AppDef } from "@/lib/catalog";
 import { KITS } from "@/lib/kits";
 import { sectionOf } from "@/lib/sections";
 import { PASS_PRICE_LABEL } from "@/lib/access";
-import { FREE_LABEL, PASS_FEATURES, PASS_LABEL } from "@/lib/plans";
+import { FREE_LABEL, PASS_FEATURES, PASS_LABEL, PASS_PRICE_LINE } from "@/lib/plans";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { AppMark } from "@/components/app-mark";
 import { pitchFor } from "@/lib/pitches";
@@ -182,12 +182,132 @@ function relatedTo(app: AppDef): AppDef[] {
 
 /* ------------------------------------------------------------------------- */
 
-/** The one next step: sign up and land in the app, or open it when signed in. */
-function NextAction({ app, onDark = false }: { app: AppDef; onDark?: boolean }) {
+/** The sign-up label: free apps say so, Pass apps don't (they also need Midnry Pass). */
+function createLabel(app: AppDef): string {
+  return app.tier === "free" ? "Create a free account" : "Create an account";
+}
+
+/** What an account does for this app, in facts the page already checks (savesToAccount). */
+function accountLine(app: AppDef): string {
+  if (savesToAccount(app.slug)) return "With an account, what you add is saved, so it is there on your phone and your computer.";
+  return app.tier === "free" ? `${app.name} opens once you are signed in. Nothing to install.` : `${app.name} opens when you are signed in with Midnry Pass.`;
+}
+
+/** Scroll a section into view and move keyboard focus to it (instantly when the visitor asked for less motion). */
+function goToSection(id: string) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  target.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+  target.focus({ preventScroll: true });
+  history.replaceState(history.state, "", `#${id}`);
+}
+
+function SectionLink({ to, className, children }: { to: string; className: string; children: ReactNode }) {
+  return (
+    <a
+      href={`#${to}`}
+      onClick={(event) => {
+        event.preventDefault();
+        goToSection(to);
+      }}
+      className={className}
+    >
+      {children}
+    </a>
+  );
+}
+
+const DEMO_SECTION = "try-it";
+const HOW_SECTION = "how-it-works";
+
+/** What the demo's sample becomes in the real app, for the step after trying it. */
+const DEMO_GOAL: Record<string, string> = {
+  tasks: "keep your own reminders",
+  invoice: "make your own invoices",
+  ledger: "track your own spending",
+};
+
+/**
+ * Hero actions. Apps with a demo lead with "Try the demo" and offer the account
+ * beside it; other apps lead with the account and "See how it works".
+ * Signed in, the first action is always "Open <App>".
+ */
+function HeroActions({ app, demo, hasSteps }: { app: AppDef; demo: boolean; hasSteps: boolean }) {
   const { user } = useCurrentUserState();
-  const primary = onDark
-    ? cn(buttonClass(), "min-h-12 bg-white px-6 text-base text-[#0b1f3d] hover:bg-white/90 hover:opacity-100 focus-visible:outline-white")
-    : cn(buttonClass({ tone: "primary" }), "min-h-12 px-6 text-base");
+  const primary = cn(buttonClass({ tone: "primary" }), "min-h-12 px-6 text-base");
+  const secondary = cn(buttonClass({ tone: "quiet" }), "min-h-12 px-6 text-base");
+  const look = demo ? (
+    <SectionLink to={DEMO_SECTION} className={user ? secondary : primary}>
+      Try the demo
+    </SectionLink>
+  ) : hasSteps ? (
+    <SectionLink to={HOW_SECTION} className={secondary}>
+      See how it works
+    </SectionLink>
+  ) : null;
+
+  if (user) {
+    return (
+      <div className="flex flex-wrap items-center gap-3">
+        <Link to="/apps/$slug" params={{ slug: app.slug }} className={primary}>
+          Open {app.name}
+        </Link>
+        {look}
+      </div>
+    );
+  }
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-3">
+        {demo ? look : null}
+        <Link to="/login" search={{ next: `/apps/${app.slug}`, intent: "register" }} className={demo ? secondary : primary}>
+          {demo ? createLabel(app) : `Create an account to use ${app.name}`}
+        </Link>
+        {demo ? null : look}
+      </div>
+      <p className="mt-3 text-sm text-muted">
+        Have an account?{" "}
+        <Link to="/login" search={{ next: `/apps/${app.slug}`, intent: "sign-in" }} className="inline-flex min-h-11 items-center text-ink underline underline-offset-4 hover:text-pine">
+          Sign in
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+/** Shown under the demo once the visitor has tried it: the same task, for real, in their account. */
+function DemoNextStep({ app }: { app: AppDef }) {
+  const { user } = useCurrentUserState();
+  const goal = DEMO_GOAL[app.slug] ?? `use ${app.name}`;
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+      <div className="min-w-0">
+        <p className="font-medium text-pretty">
+          {user ? `Open ${app.name} to ${goal}.` : `${createLabel(app)} to ${goal}.`}
+        </p>
+        <p className="mt-1 text-sm text-pretty text-muted">
+          This sample is not kept. {accountLine(app)}
+          {app.tier === "pass" ? ` ${app.name}: ${PASS_LABEL}, ${PASS_PRICE_LINE}.` : ""}
+        </p>
+      </div>
+      {user ? (
+        <Link to="/apps/$slug" params={{ slug: app.slug }} className={cn(buttonClass({ tone: "primary" }), "shrink-0")}>
+          Open {app.name}
+        </Link>
+      ) : (
+        <Link to="/login" search={{ next: `/apps/${app.slug}`, intent: "register" }} className={cn(buttonClass({ tone: "primary" }), "shrink-0")}>
+          {createLabel(app)}
+        </Link>
+      )}
+    </div>
+  );
+}
+
+/** The closing action, on the dark panel: sign up and land in the app, or open it when signed in. */
+function NextAction({ app }: { app: AppDef }) {
+  const { user } = useCurrentUserState();
+  const primary = cn(buttonClass(), "min-h-12 bg-white px-6 text-base text-[#0b1f3d] hover:bg-white/90 hover:opacity-100 focus-visible:outline-white");
   if (user) {
     return (
       <Link to="/apps/$slug" params={{ slug: app.slug }} className={primary}>
@@ -198,12 +318,12 @@ function NextAction({ app, onDark = false }: { app: AppDef; onDark?: boolean }) 
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
       <Link to="/login" search={{ next: `/apps/${app.slug}`, intent: "register" }} className={primary}>
-        {app.tier === "free" ? `Try ${app.name} free` : `Get started with ${app.name}`}
+        {createLabel(app)}
       </Link>
       <Link
         to="/login"
         search={{ next: `/apps/${app.slug}`, intent: "sign-in" }}
-        className={cn("inline-flex min-h-11 items-center text-sm underline underline-offset-4", onDark ? "text-white/85 hover:text-white focus-visible:outline-white" : "text-muted hover:text-ink")}
+        className="inline-flex min-h-11 items-center text-sm text-white/85 underline underline-offset-4 hover:text-white focus-visible:outline-white"
       >
         I have an account
       </Link>
@@ -211,9 +331,29 @@ function NextAction({ app, onDark = false }: { app: AppDef; onDark?: boolean }) 
   );
 }
 
-function PageSection({ id, eyebrow, title, children, className }: { id: string; eyebrow: string; title: string; children: ReactNode; className?: string }) {
+function PageSection({
+  id,
+  anchor,
+  eyebrow,
+  title,
+  children,
+  className,
+}: {
+  id: string;
+  /** An id to scroll to and focus (from the hero's "Try the demo" / "See how it works"). */
+  anchor?: string;
+  eyebrow: string;
+  title: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <section className={cn("mt-20 sm:mt-28", className)} aria-labelledby={id}>
+    <section
+      id={anchor}
+      tabIndex={anchor ? -1 : undefined}
+      className={cn("mt-16 sm:mt-24", anchor && "scroll-mt-24 rounded-2xl focus-visible:outline-offset-8", className)}
+      aria-labelledby={id}
+    >
       <p className="eyebrow">{eyebrow}</p>
       <h2 id={id} className="mt-3 font-display text-title text-balance">
         {title}
@@ -264,17 +404,19 @@ export function AppShowcase({ app }: { app: AppDef }) {
           <h1 className="mt-6 font-display text-hero text-balance">{app.name}</h1>
           <p className="mt-5 max-w-xl text-lede text-pretty text-ink-soft">{pitchFor(app)}</p>
           <div className="mt-8">
-            <NextAction app={app} />
+            <HeroActions app={app} demo={demo} hasSteps={steps.length > 0} />
           </div>
-          <p className="mt-4 text-sm text-muted">Works in your browser, on your phone and your computer. Nothing to install.</p>
+          <p className="mt-3 max-w-xl text-sm text-pretty text-muted">
+            {saves ? accountLine(app) : "Works in your browser, on your phone and your computer."} Nothing to install.
+          </p>
         </div>
         <PhoneFrame src={shot("phone")} alt={`${app.name} on a phone, with example data`} eager />
       </div>
 
       {/* The result: a hands-on sample where there is one, otherwise a real screenshot. */}
       {demo ? (
-        <PageSection id="try-heading" eyebrow="Try it" title={app.slug === "invoice" ? "Fill in the lines, get the finished invoice" : `See what ${app.name} does`}>
-          <AppDemo slug={app.slug} />
+        <PageSection id="try-heading" anchor={DEMO_SECTION} eyebrow="Try it" title={app.slug === "invoice" ? "Fill in the lines, get the finished invoice" : `See what ${app.name} does`}>
+          <AppDemo slug={app.slug} next={<DemoNextStep app={app} />} />
         </PageSection>
       ) : (
         <PageSection id="see-heading" eyebrow="See it" title={`${app.name} on a computer`} className="hidden sm:block">
@@ -298,7 +440,7 @@ export function AppShowcase({ app }: { app: AppDef }) {
       </PageSection>
 
       {steps.length ? (
-        <PageSection id="how-heading" eyebrow="How it works" title={`${steps.length === 3 ? "Three" : steps.length === 2 ? "Two" : "One"} ${steps.length === 1 ? "step" : "steps"}`}>
+        <PageSection id="how-heading" anchor={HOW_SECTION} eyebrow="How it works" title={`${steps.length === 3 ? "Three" : steps.length === 2 ? "Two" : "One"} ${steps.length === 1 ? "step" : "steps"}`}>
           <ol className="grid gap-6 md:grid-cols-3 md:gap-8">
             {steps.map((step, index) => (
               <li key={step} className="border-t-2 border-pine pt-4">
@@ -312,7 +454,7 @@ export function AppShowcase({ app }: { app: AppDef }) {
 
       {/* What you need, why, and the action. */}
       <section
-        className="mt-20 overflow-hidden rounded-[2rem] bg-[radial-gradient(ellipse_at_top_left,#2b5fe6,#0b1f3d_72%)] p-6 text-white sm:mt-28 sm:p-10 lg:p-12"
+        className="mt-16 overflow-hidden rounded-[2rem] bg-[radial-gradient(ellipse_at_top_left,#2b5fe6,#0b1f3d_72%)] p-6 text-white sm:mt-24 sm:p-10 lg:p-12"
         aria-labelledby="need-heading"
       >
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-end">
@@ -349,7 +491,7 @@ export function AppShowcase({ app }: { app: AppDef }) {
             </dl>
           </div>
           <div className="lg:justify-self-end">
-            <NextAction app={app} onDark />
+            <NextAction app={app} />
           </div>
         </div>
       </section>

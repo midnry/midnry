@@ -2,16 +2,15 @@ import { Link } from "@tanstack/react-router";
 import { getApp } from "@/lib/catalog";
 import { GOALS } from "@/lib/goals";
 import { accessLabel } from "@/lib/plans";
-import { pitchFor } from "@/lib/pitches";
 import { AppMark } from "@/components/app-mark";
 import { cn } from "@/components/ui";
 import { ArrowLink, SECTION_GAP, SectionHeader } from "@/components/home-section";
 
-/** Three free apps people reach for first, with what each one is for (from the catalogue's features). */
-const PICKS: { slug: string; uses: string[] }[] = [
-  { slug: "tasks", uses: ["Set reminders in plain words", "Repeat them every week, month or 25th", "Earn points for what you finish"] },
-  { slug: "invoice", uses: ["List the work, quantities and tax", "Get the total worked out for you", "Print it, or save it as a PDF"] },
-  { slug: "cycle", uses: ["Log the first and last day of a period", "See when the next one should start", "Keep a note for each period"] },
+/** Three free apps people reach for first: one benefit each, one next action. */
+const PICKS: { slug: string; benefit: string; action: string }[] = [
+  { slug: "tasks", benefit: "Type “pay rent every 25th” and Remind sets the date and the repeat for you.", action: "Try the Remind demo" },
+  { slug: "invoice", benefit: "List the work and the tax. The total is worked out, ready to print or save as a PDF.", action: "Try the Invoice demo" },
+  { slug: "cycle", benefit: "Log each period and see when the next one should start.", action: "See how Cycle works" },
 ];
 
 export function AccessBadge({ tier, className }: { tier: "free" | "pass"; className?: string }) {
@@ -25,14 +24,6 @@ export function AccessBadge({ tier, className }: { tier: "free" | "pass"; classN
     >
       {accessLabel(tier)}
     </span>
-  );
-}
-
-function Tick() {
-  return (
-    <svg viewBox="0 0 20 20" className="mt-0.5 size-4 shrink-0 text-pine" aria-hidden>
-      <path d="M5 10.5l3 3L15 6.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   );
 }
 
@@ -52,8 +43,8 @@ export function StartHere() {
         Each is free with an account, and works on your phone and your computer.
       </SectionHeader>
 
-      <ul className="mt-10 grid gap-4 md:grid-cols-3">
-        {PICKS.map(({ slug, uses }) => {
+      <ul className="mt-8 grid gap-4 md:grid-cols-3">
+        {PICKS.map(({ slug, benefit, action }) => {
           const app = getApp(slug);
           if (!app) return null;
           return (
@@ -61,7 +52,7 @@ export function StartHere() {
               <Link
                 to="/discover/$slug"
                 params={{ slug }}
-                className="group flex h-full flex-col rounded-3xl bg-card p-6 shadow-line motion-safe:transition-[transform,box-shadow] motion-safe:duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+                className="group flex h-full flex-col rounded-3xl bg-card p-5 shadow-line sm:p-6 motion-safe:transition-[transform,box-shadow] motion-safe:duration-200 hover:-translate-y-0.5 hover:shadow-lg"
               >
                 <div className="flex items-center gap-3">
                   <AppMark slug={app.slug} name={app.name} className="size-12" />
@@ -70,27 +61,19 @@ export function StartHere() {
                     <AccessBadge tier={app.tier} className="mt-1" />
                   </div>
                 </div>
-                <p className="mt-4 text-pretty text-ink-soft">{pitchFor(app)}</p>
-                <ul className="mt-4 flex-1 space-y-2 text-sm text-muted">
-                  {uses.map((use) => (
-                    <li key={use} className="flex gap-2">
-                      <Tick />
-                      {use}
-                    </li>
-                  ))}
-                </ul>
-                <ArrowLink className="mt-6 text-sm text-pine">See how {app.name} works</ArrowLink>
+                <p className="mt-4 flex-1 text-pretty text-ink-soft">{benefit}</p>
+                <ArrowLink className="mt-5 text-sm text-pine">{action}</ArrowLink>
               </Link>
             </li>
           );
         })}
       </ul>
 
-      <div className="mt-12">
+      <div className="mt-10">
         <h3 className="text-sm font-semibold text-ink-soft" id="goals-heading">
           Or start from what you want to get done
         </h3>
-        <ul className="mt-4 flex flex-wrap gap-2" aria-labelledby="goals-heading">
+        <ul className="mt-3 flex flex-wrap gap-2" aria-labelledby="goals-heading">
           {GOALS.map((goal) => {
             const app = goal.target === "games" ? undefined : getApp(goal.target);
             const chip =
@@ -119,20 +102,12 @@ export function StartHere() {
             );
           })}
         </ul>
-      </div>
-
-      <div className="mt-10 flex flex-col gap-4 rounded-3xl border border-line p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
-        <div>
-          <h3 className="font-display text-heading">Not sure where to start?</h3>
-          <p className="mt-1 text-pretty text-muted">Answer two quick questions and we'll suggest an app for you.</p>
-        </div>
-        <Link
-          to="/apps"
-          hash="finder"
-          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-card px-5 text-sm font-medium text-ink shadow-line hover:bg-paper-2"
-        >
-          Help me choose
-        </Link>
+        <p className="mt-4 text-sm text-muted">
+          Not sure where to start? Two quick questions suggest an app.{" "}
+          <Link to="/apps" hash="finder" className="inline-flex min-h-11 items-center font-semibold text-pine">
+            <ArrowLink>Help me choose</ArrowLink>
+          </Link>
+        </p>
       </div>
     </section>
   );
