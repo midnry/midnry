@@ -358,8 +358,8 @@ async function roomFor(code: string, id: unknown, token: unknown) {
   if (!promise) {
     promise = loadRoomRecord(code).then((row) => {
       authorize(row.state, id, token);
-      if (row.state.mode !== "protocol")
-        throw new OutpostError("Create a Blackout Protocol room.", 409);
+      if (row.state.mode !== "protocol" && row.state.mode !== "signal")
+        throw new OutpostError("This room uses a retired mode. Create a new room.", 409);
       const room = new LiveRoom(code, row);
       room.start();
       return room;

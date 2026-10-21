@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 const W = Number(process.argv[2] ?? 1280), M = W < 500, H = M ? 844 : 720, MODE = process.argv[3] || "signal";
 const S = "screenshots/qa/signal";
 const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
@@ -7,9 +8,9 @@ const errs = []; p.on("pageerror", (e) => errs.push(e.message)); p.on("console",
 await p.addInitScript(() => localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 5 })));
 await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
 await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
-if (MODE === "signal") await p.click(".mf-gamepick [data-mode=signal]", { timeout: 60000 });
+if (MODE === "signal") await pickGame(p, "signal", { timeout: 60000 });
 await p.waitForTimeout(1000);
-await p.click(".mf-start", { timeout: 60000 }); await p.waitForTimeout(5000);
+await play(p, { timeout: 60000 }); await p.waitForTimeout(5000);
 await p.evaluate(() => [...document.querySelectorAll("button")].find((x) => /Understood/.test(x.textContent))?.click());
 await p.waitForTimeout(1500);
 console.log("stack", await p.evaluate(()=>{ const b=document.querySelector(".mf-pause"), r=b.getBoundingClientRect(); const els=document.elementsFromPoint(r.x+r.width/2,r.y+r.height/2).slice(0,6); return els.map(e=>(e.className||e.tagName)+" z="+getComputedStyle(e).zIndex+" pos="+getComputedStyle(e).position+" pe="+getComputedStyle(e).pointerEvents).join("\n  "); })); const chain=await p.evaluate(()=>{let q=document.querySelector(".mf-pause"),o=[];while(q&&q.tagName!=="BODY"){const c=getComputedStyle(q);o.push((q.className||q.tagName)+" z="+c.zIndex+" pos="+c.position);q=q.parentElement;}return o.join(" < ");}); console.log("pause chain", chain); const pr=await p.locator(".mf-pause").boundingBox(); await p.mouse.click(pr.x+pr.width/2, pr.y+pr.height/2); await p.waitForTimeout(1500); console.log("menu open after real mouse click:", await p.evaluate(()=>!document.querySelector(".mf-modal").hidden), "state", await p.evaluate(()=>document.querySelector("midnry-fps").engine.running)); await p.waitForTimeout(2000);

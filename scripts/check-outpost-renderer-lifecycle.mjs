@@ -156,7 +156,7 @@ try {
     await page.evaluate(() => {
       document.querySelector("midnry-fps").engine.lockMouse = () => {};
     });
-    await page.locator(".mf-start").click();
+    await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
     await page.locator(".mf-protocol-begin").click();
     const beforeLoss = await page.evaluate(() => {
       const g = document.querySelector("midnry-fps").engine;

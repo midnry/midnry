@@ -498,3 +498,92 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   "PLAY LAST SIGNAL →" / "PLAY BLACKOUT PROTOCOL →" (`playLabel()`, also used by
   `outpost-ui.js`). QA: `node scripts/qa/play-choice.mjs [width]`. Older QA that clicks
   `.mf-start` directly must set `localStorage["midnry-outpost-mode"]` first.
+
+## Lobby home screen (built 2026-10-20, not deployed yet)
+
+- Owner asked for a Fortnite-style lobby in our own style (no Fortnite trade dress, no premium
+  currency). The home menu is now a lobby whenever the 3D renderer is up (`mf-lobby` on the
+  modal; safe mode keeps the classic menu).
+- 3D: `scripts/outpost-military/lobby-stage.js` (`LobbyStage`, own small scene: dusk sky,
+  platform plus two squad pads, spot/rim/fill light, dust). `renderer.renderLobby(now)` is called
+  by the game loop while the home menu covers the scene (30 Hz on phones); the arena is never
+  built for it. The operator wears the Locker outfit (`r.lobbyDressing` makes `soldierLook()`
+  false) and holds the carbine in the Locker finish (`r.thirdPersonFinish`, read in
+  `realism-carbine.js`). Gear and rifle follow the Idle pose (`updateSkinParts`,
+  `updateWeaponGrip`). Drag sideways to turn the operator. Portrait camera keeps the operator in
+  the top ~45% of a phone.
+- Menu (`outpost-menu.js`): operator level and daily challenges on the left (`.mf-homeleft`),
+  Today's case card top right, mode card bottom right (`.mf-modecard`: Bots/Friends toggle,
+  game title, Change, big Play). The game picker is a sheet (`.mf-picking`, Done closes;
+  picking a variant closes it). Squad "+" pads (`.mf-squad`) are pinned over the 3D pads by
+  `LobbyStage.placeSquad` and open Friends (online). Match HUD bits are hidden behind the lobby.
+- QA: `node scripts/qa/lobby-look.mjs [width]` (screenshots in `screenshots/qa/lobby/`).
+  The old `.mf-start` button is hidden in the lobby; QA scripts use
+  `scripts/qa/lobby-helpers.mjs` (`pickGame(p, mode)`, `play(p)`), and check scripts click
+  `.mf-start:visible, .mf-modeplay:visible`.
+- Pass 2 (later): real online friends in the squad slots, a rotating featured card.
+
+## Last Signal: "Life lost" screen (owner report, 2026-10-20, not deployed yet)
+
+- Owner: losing a spare life just teleported the player. Now `signalIntensity()` in
+  `outpost-zero.html` spots the player's `lives` dropping and calls `lifeLost(p)`: the round
+  holds still (Last Signal is offline only) for 1.8 s behind a red flash and a `.mf-lifelost`
+  card: lives left, "Life lost", "Taken down by <name>" (`downedBy`, set in `outpost-sim.js`;
+  none for haze/disasters: "You went down"), three life diamonds (the lost one breaks), and a
+  redeploy bar; last life says so in red plus "adrenaline rush". A low tone and a short
+  vibration on phones. The timer counts frame time capped at 100 ms per frame
+  (`lifeLostLeft`), so a hitch drawing the new spot can't swallow it. Blur, hidden tab or lost
+  pointer lock during it pause the game as usual. QA: `node scripts/qa/signal-life-lost.mjs [width]`.
+
+## Locker characters (owner, 2026-10-20, not deployed yet)
+
+- Owner wanted complete characters (Fortnite-locker style) instead of the boxy dressed
+  operator. 12 characters, all free, looks only: Operator (the original Swat sculpt, now shown
+  without the box gear and camo shader), Smoke, Ironside, Wraith, Raven, Ronin, Ember, Phantom,
+  Shade, Redline, Warlord, Scav. Catalog: `public/games/outpost-characters.js`.
+- Sources: Mixamo characters (game use allowed), listed with URL + sha256 in
+  `scripts/assets/outpost-characters/sources.json`; fetched into `assets-src/characters/`
+  (gitignored). Build: `node scripts/build-outpost-characters.mjs [id]` (retargets the
+  operator's clips: Idle, Walk, Run, BackWalk, Crouch, Reload, Hit, Death; trims to ≤16k
+  triangles; keeps colour/normal/glow maps) then pack with glTF-Transform:
+  `scripts/assets/pack-characters.mjs` (1024 px WebP, meshopt) →
+  `public/games/military/models/characters/<id>.glb` (0.6–1.6 MB each). Then
+  `node scripts/build-outpost-cache.mjs` (characters have their own `CHARACTER_CACHE` key and
+  are not precached).
+- Runtime: `renderer.loadCharacter(id)` (on demand), `characterFor(e)`; `makeActor` uses the
+  character's sculpt and clips, no dye or added gear (`prepareLockerCharacter` in
+  `realism-characters.js`). Last Signal: you wear yours, bots get the others in a per-session
+  shuffle (`botCharacter`). Blackout Protocol keeps dyed team uniforms (colour identity
+  matters there). The lobby preloads all characters while Last Signal is selected; an actor
+  built before its character arrives is swapped when it loads.
+- Locker: numbered portrait cards at the top (`characterGrid()` in `outpost-retention.js`);
+  card art from `node scripts/capture-outpost-characters.mjs` + `scripts/assets/pack-character-cards.mjs`
+  → `public/games/menu/characters/<id>.webp`. Lobby operator card shows the character with Change.
+  Choice saved in `midnry-outpost-character`. QA: `node scripts/qa/characters-look.mjs [width]`.
+- Ideas: premium or XP-unlocked characters later (store already supports one-time items).
+
+## Last Signal online (owner, 2026-10-20, not deployed yet)
+
+- Rooms can now be Last Signal as well as Blackout Protocol (`playableModeOf` in
+  `src/games/outpost/rooms.server.ts`; Pair Ops/training stay retired). The server runs the
+  same `Arena` (lives, Red Haze, disasters, canisters) authoritatively; bots fill to 8.
+- Members carry a Locker `character` (validated against `outpost-characters.js`), sent on
+  create/join and by `loadout` when changed in the room lobby; entities get `character` so every
+  player sees each other's pick. Bots' characters use the round id as the shuffle salt online,
+  so all players see the same bots.
+- Rematch moves to the next arena (`SIGNAL_ROTATION`: Dust Outpost → Wreck Estate → Skyport).
+- Quick match only joins rooms of the chosen game. Live rooms (`realtime.server.ts`) accept both.
+- Client: `connectOnline` creates a room for the chosen game; lobby Friends shows the room
+  panel instead of the daily challenges; the mode card's big button reads "Create room" until
+  you are in a room. The offline-only "Life lost" pause does not pause online play (overlay only).
+- Tests: `scripts/outpost-room-equipment.test.mjs` (Last Signal room: characters, bots,
+  rematch rotation). QA: `node scripts/qa/signal-online.mjs` (laptop host + phone guest).
+- Lobby squad pads: friends in your online room lobby stand on the two side pads in their
+  characters with name tags (`LobbyStage.squad()`; names on `.mf-squad` buttons). The 3D lobby
+  now also draws while you wait in an online room lobby.
+
+## Opening loading screen (owner, 2026-10-21)
+
+- One painting (`bp-key` wide/tall) and one fixed briefing ("Prepare to deploy"); the slideshow,
+  its arrows/pause and rotating captions are gone. `check-outpost-loading.mjs` asserts no buttons
+  and no rotation.

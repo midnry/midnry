@@ -1,6 +1,7 @@
 // First-person weapon look: each weapon at rest and mid-reload, laptop or phone.
 //   node scripts/qa/weapon-look.mjs <tag> [width=1280] [weapons=carbine,scatter,twin,breach]
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 import { mkdirSync } from "node:fs";
 const [tag = "now", width = "1280", list = "carbine,scatter,twin,breach"] = process.argv.slice(2);
 const W = Number(width), M = W < 500;
@@ -13,7 +14,7 @@ p.on("pageerror", (e) => errs.push(e.message));
 await p.addInitScript(() => localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 5 })));
 await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
 await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
-await p.click(".mf-gamepick [data-mode=signal]");
+await pickGame(p, "signal");
 await p.waitForTimeout(800);
 await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine, r = Math.random; Math.random = () => 0.1; g.reset(); Math.random = r; document.querySelector(".mf-start").click(); });
 await p.waitForFunction(() => document.querySelector("midnry-fps")?.engine?.militaryLoaded, null, { timeout: 180000 });

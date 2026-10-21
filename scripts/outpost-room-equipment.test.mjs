@@ -54,6 +54,10 @@ source = source
     pathToFileURL(resolve("public/games/outpost-protocol.js")).href,
   )
   .replace(
+    "../../../public/games/outpost-characters.js",
+    pathToFileURL(resolve("public/games/outpost-characters.js")).href,
+  )
+  .replace(
     "../../../public/games/outpost-variety.js",
     pathToFileURL(resolve("public/games/outpost-variety.js")).href,
   );
@@ -62,20 +66,20 @@ await writeFile(modulePath, source);
 const { roomAction } = await import(pathToFileURL(modulePath).href);
 const create = () => roomAction({ op: "create", mode: "protocol" }, "protocol-room-test");
 const session = (r) => ({ code: r.code, id: r.id, token: r.token });
-test("new rooms accept only Blackout Protocol and retired clients cannot switch modes", async () => {
-  for (const mode of ["training", "signal", "duo", "__proto__", null])
+test("new rooms accept Blackout Protocol and Last Signal; retired modes stay closed", async () => {
+  for (const mode of ["training", "duo", "__proto__", null])
     await assert.rejects(
       roomAction({ op: "create", mode }, "old-client-" + mode),
-      /Only Blackout Protocol/,
+      /Only Blackout Protocol and Last Signal/,
     );
   const host = await create();
   assert.equal(host.mode, "protocol");
   assert.equal(host.mapId, "breakwater");
   const before = JSON.stringify(rooms.get(host.code));
-  for (const mode of ["training", "signal", "duo"])
+  for (const mode of ["training", "duo"])
     await assert.rejects(
       roomAction({ op: "settings", ...session(host), mode }, "host"),
-      /Only Blackout Protocol/,
+      /Only Blackout Protocol and Last Signal/,
     );
   assert.equal(JSON.stringify(rooms.get(host.code)), before);
 });
@@ -104,6 +108,29 @@ test("Blackout rooms keep matching kits, private roles, bot-filled seats and aut
   const rematch = await roomAction({ op: "rematch", ...session(host) }, "host");
   assert.equal(rematch.mode, "protocol");
   assert.equal(rematch.arena.entities.length, 8);
+});
+test("Last Signal rooms: own kits and characters, bot-filled field, rematch on the next arena", async () => {
+  const host = await roomAction({ op: "create", mode: "signal", mapId: "outpost", weapon: "scatter", character: "ronin" }, "signal-host");
+  assert.equal(host.mode, "signal");
+  assert.equal(host.mapId, "outpost");
+  await assert.rejects(roomAction({ op: "join", code: host.code, character: "nobody" }, "signal-bad"), /valid character/);
+  const guest = await roomAction({ op: "join", code: host.code, weapon: "carbine", character: "warlord" }, "signal-guest");
+  assert.deepEqual(guest.members.map((m) => m.character), ["ronin", "warlord"]);
+  const started = await roomAction({ op: "start", ...session(host) }, "signal-host");
+  assert.equal(started.arena.mode, "signal");
+  assert.equal(started.arena.entities.length, 8);
+  assert.equal(started.arena.entities.filter((e) => e.bot).length, 6);
+  const mine = started.arena.entities.find((e) => e.id === host.id);
+  assert.equal(mine.character, "ronin");
+  assert.equal(mine.weapon, "scatter");
+  assert.equal(mine.lives, 2);
+  const saved = rooms.get(host.code);
+  saved.state.phase = "ended";
+  saved.state.arena.state = "ended";
+  const rematch = await roomAction({ op: "rematch", ...session(host) }, "signal-host");
+  assert.equal(rematch.mode, "signal");
+  assert.equal(rematch.mapId, "estate");
+  assert.equal(rematch.arena.mapId, "estate");
 });
 test("authenticated online votes unlock Last Stand weapons only for opposing public sides", async () => {
   const host = await create(),

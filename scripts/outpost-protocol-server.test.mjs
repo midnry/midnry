@@ -326,8 +326,9 @@ test("classic room envelope retains duo teams and strips private paths", () => {
   assert.equal(view.arena.entities[0].team, 0);
 });
 
-test("the public mode policy rejects retired combat modes and malformed values", () => {
+test("the public mode policy allows Blackout Protocol and Last Signal only", () => {
   assert.equal(playableModeOf(),"protocol");assert.equal(playableModeOf("protocol"),"protocol");
-  for (const mode of ["training","signal","duo","",null,{},[],"__proto__"])
-    assert.throws(()=>playableModeOf(mode),/Only Blackout Protocol/);
+  assert.equal(playableModeOf("signal"),"signal");
+  for (const mode of ["training","duo","",null,{},[],"__proto__"])
+    assert.throws(()=>playableModeOf(mode),/Only Blackout Protocol and Last Signal/);
 });

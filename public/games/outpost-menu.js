@@ -9,6 +9,7 @@ import { fetchBoard, cachedBoard } from "./outpost-daily-board.js";
 import { dailyKey, shiftChoice } from "./outpost-shifts.js";
 import { modifierChoice } from "./outpost-variety.js";
 import { SERIES_KINDS, seriesKindOf } from "./outpost-series.js";
+import { characterOf } from "./outpost-characters.js";
 
 // Step 1 picks the game; step 2 shows only that game's ways to play.
 const GAMES = [
@@ -101,6 +102,7 @@ midnry-fps .mf-homeactions .mf-ico, midnry-fps .mf-homefoot .mf-ico { width: 18p
 midnry-fps .mf-homefoot { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; }
 midnry-fps .mf-homefoot button { min-height: 44px; font-size: 13px !important; background: none !important; border-color: #ffffff14 !important; color: #aab5ae !important; }
 midnry-fps .mf-homefoot .mf-homeexit { color: #ffb4aa !important; }
+midnry-fps .mf-modal.mf-lobby.mf-friends .mf-challenges { display: none !important; }
 midnry-fps .mf-modal.mf-home .mf-network { margin: 0 !important; border-radius: 3px !important; background: #0c1210e6 !important; border: 1px solid #ffffff24 !important; }
 
 /* Right column */
@@ -213,6 +215,50 @@ midnry-fps .mf-settab .mf-retention > :is(p, button) { margin: 12px 0 0; }
   midnry-fps .mf-settings.mf-tabbed .mf-settingsbody { padding: 4px 16px 20px !important; }
 }
 
+/* Lobby: the 3D operator replaces the photo; panels sit around it. */
+midnry-fps .mf-modal.mf-home.mf-lobby { background:
+  linear-gradient(90deg, #050706e6 0%, #050706a8 22%, #05070600 36%, #05070600 66%, #050706b3 82%, #050706e6 100%),
+  linear-gradient(0deg, #050706b3 0%, #05070600 22%) !important; }
+midnry-fps .mf-modal.mf-lobby .mf-hero { display: none; }
+midnry-fps .mf-modal.mf-lobby > .mf-panel :is(.mf-modes, .mf-start, .mf-playsummary) { display: none !important; }
+midnry-fps .mf-homeleft { display: grid; gap: 12px; margin-top: 4px; }
+midnry-fps .mf-opchar { all: unset; cursor: pointer; box-sizing: border-box; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 8px 10px; border: 1px solid #ffffff24; border-radius: 3px; font: 700 12px var(--mf-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--mf-accent); }
+midnry-fps .mf-opchar span { color: #dfe5e0; letter-spacing: 0.06em; }
+midnry-fps .mf-opchar:hover { border-color: #ffffff66; }
+midnry-fps .mf-opchar:focus-visible { outline: 2px solid var(--mf-accent); outline-offset: 2px; }
+midnry-fps .mf-modal:not(.mf-home) :is(.mf-homeleft, .mf-modecard, .mf-squad) { display: none !important; }
+midnry-fps .mf-modal.mf-home:not(.mf-lobby) :is(.mf-modecard, .mf-squad) { display: none !important; }
+midnry-fps .mf-modecard { position: absolute; right: 32px; bottom: 24px; width: 340px; display: grid; gap: 4px; padding: 16px 18px 18px; border: 1px solid #ffffff24; border-radius: 4px; background: #0a0f0de0; backdrop-filter: blur(8px); color: #eef2ee; z-index: 2; }
+midnry-fps .mf-modecard[hidden] { display: none !important; }
+midnry-fps .mf-modekicker { font: 600 12px var(--mf-display); letter-spacing: 0.16em; text-transform: uppercase; color: #aeb9b2; }
+midnry-fps .mf-modetitle { font: 800 40px/0.95 var(--mf-display); letter-spacing: 0.01em; text-transform: uppercase; color: #f4f6f2; }
+midnry-fps .mf-modesub { font: 400 14px var(--mf-body); color: #c3ccc6; }
+midnry-fps .mf-playtoggle { display: inline-flex; justify-self: start; gap: 2px; padding: 3px; margin-bottom: 8px; border-radius: 4px; background: #050807; }
+midnry-fps .mf-playtoggle button { all: unset; cursor: pointer; display: flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border-radius: 3px; font: 600 13px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; color: #b9c4bd; }
+midnry-fps .mf-playtoggle .mf-ico { width: 16px; height: 16px; }
+midnry-fps .mf-playtoggle button[aria-pressed="true"] { background: #1d2622; color: #f4f6f2; box-shadow: inset 0 0 0 1px #ffffff2b; }
+midnry-fps .mf-modechange { all: unset; cursor: pointer; justify-self: start; box-sizing: border-box; display: grid; place-items: center; margin: 8px 0 4px; padding: 8px 16px; border: 1px solid #ffffff3d; border-radius: 3px; font: 700 14px var(--mf-display); letter-spacing: 0.12em; text-transform: uppercase; color: #eef2ee; }
+midnry-fps .mf-shell:has(> .mf-modal.mf-lobby:not([hidden])) > :is(.mf-match, .mf-cross, .mf-super, .mf-bottom, .mf-hitmark, .mf-damage, .mf-toast) { visibility: hidden; }
+midnry-fps .mf-modechange[hidden] { display: none; }
+midnry-fps .mf-modechange:hover { border-color: #ffffff88; }
+midnry-fps .mf-modeplay { all: unset; cursor: pointer; display: grid; place-items: center; min-height: 64px; margin-top: 8px; border-radius: 3px; background: var(--mf-accent); color: var(--mf-accent-ink); font: 800 30px var(--mf-display); letter-spacing: 0.06em; text-transform: uppercase; box-shadow: 0 12px 34px #ffc85738; transform: skewX(-6deg); }
+midnry-fps .mf-modeplay:hover:not(:disabled) { filter: brightness(1.07); }
+midnry-fps .mf-modeplay:disabled { opacity: 0.5; cursor: default; }
+midnry-fps :is(.mf-modeplay, .mf-modechange, .mf-playtoggle button, .mf-squad button, .mf-pickerclose):focus-visible { outline: 2px solid var(--mf-accent) !important; outline-offset: 3px; }
+midnry-fps .mf-squad[hidden] { display: none; }
+midnry-fps .mf-squad button { all: unset; cursor: pointer; position: absolute; left: var(--x, 30%); top: var(--y, 55%); transform: translate(-50%, -50%); width: 48px; height: 48px; display: grid; place-items: center; border: 2px solid #ffffffa6; border-radius: 4px; background: #0a0f0d99; color: #fff; font: 700 30px/1 var(--mf-display); z-index: 1; }
+midnry-fps .mf-squad button.mf-mate { width: auto; height: auto; min-height: 28px; padding: 4px 10px; top: calc(var(--y, 55%) - 150px); font: 700 13px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; border-width: 1px; cursor: default; }
+midnry-fps .mf-squad button:hover { border-color: var(--mf-accent); color: var(--mf-accent); }
+midnry-fps .mf-pickerhead { display: none; }
+/* The picker becomes a sheet over the lobby, opened by Change or Play. */
+midnry-fps .mf-modal.mf-lobby .mf-playlists:not(.mf-open) { display: none !important; }
+midnry-fps .mf-modal.mf-lobby .mf-playlists.mf-open { left: 50%; right: auto; top: 50%; bottom: auto; transform: translate(-50%, -50%); width: min(860px, calc(100vw - 48px)); padding: 18px 20px 20px; border: 1px solid #ffffff2b; border-radius: 6px; background: #070a09f5; box-shadow: 0 30px 80px #000c; z-index: 6; }
+midnry-fps .mf-modal.mf-lobby .mf-playlists.mf-open .mf-pickerhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+midnry-fps .mf-pickerhead b { font: 800 24px var(--mf-display); letter-spacing: 0.06em; text-transform: uppercase; color: #f4f6f2; }
+midnry-fps .mf-pickerclose { all: unset; cursor: pointer; padding: 8px 16px; border-radius: 3px; background: var(--mf-accent); color: var(--mf-accent-ink); font: 700 14px var(--mf-display); letter-spacing: 0.1em; text-transform: uppercase; }
+midnry-fps .mf-modal.mf-lobby .mf-playlists.mf-open .mf-playnext { display: none !important; }
+midnry-fps .mf-modal.mf-picking::after { content: ""; position: absolute; inset: 0; background: #000a; z-index: 5; }
+
 /* Short or narrow screens: one scrolling column. */
 @media (max-width: 1100px), (max-height: 640px) {
   midnry-fps .mf-modal.mf-home { display: flex !important; flex-direction: column; align-items: stretch !important; justify-content: flex-start !important; overflow-y: auto !important; overscroll-behavior: contain; }
@@ -237,6 +283,17 @@ midnry-fps .mf-settab .mf-retention > :is(p, button) { margin: 12px 0 0; }
   midnry-fps .mf-playnext:disabled { opacity: 0.5; cursor: default; }
   midnry-fps .mf-homeside { position: relative; right: auto; top: auto; width: auto; margin: 16px 16px calc(24px + var(--mf-safe-bottom, 0px)); }
   midnry-fps .mf-homefoot { margin-top: 4px; }
+}
+/* Phones and short screens, lobby: the operator stands in the top half;
+   the mode card with Play comes first below it, then everything else. */
+@media (max-width: 1100px), (max-height: 640px) {
+  midnry-fps .mf-modal.mf-home.mf-lobby { background: linear-gradient(180deg, #05070600 0, #05070600 44vh, #070a09 62vh) !important; background-attachment: local !important; }
+  midnry-fps .mf-modal.mf-lobby > .mf-modecard { order: 1; position: relative; right: auto; bottom: auto; width: auto; margin: 46vh 16px 0; }
+  midnry-fps .mf-modal.mf-lobby > .mf-panel { order: 2; margin-top: 16px !important; }
+  midnry-fps .mf-modal.mf-lobby > .mf-panel :is(h1, .mf-logosub) { display: none !important; }
+  midnry-fps .mf-modal.mf-lobby > .mf-playlists.mf-open { position: fixed; top: 50%; max-height: calc(100dvh - 32px); overflow: auto; }
+  midnry-fps .mf-modetitle { font-size: 34px; }
+  midnry-fps .mf-squad button { position: absolute; }
 }
 @media (max-width: 640px) {
   midnry-fps .mf-logosub { letter-spacing: 0.2em; font-size: 13px; }
@@ -384,14 +441,56 @@ export class OutpostMenu {
     this.side = el(
       "aside",
       "mf-homeside",
-      `<section class="mf-card mf-opcard"><h3>Operator</h3><strong class="mf-opname"></strong><p class="mf-oplevel"></p><span class="mf-xpbar"><i></i></span></section><section class="mf-card mf-challenges"><header><h3>Daily challenges<b class="mf-chcount"></b></h3></header><ul></ul></section><button type="button" class="mf-casecard" data-mode="daily"><img src="menu/card-daily.webp" alt=""><span><small>Today's case</small><em class="mf-casenote"></em><strong class="mf-casescore"></strong></span>${icon("chevron")}</button>`,
+      `<section class="mf-card mf-opcard"><h3>Operator</h3><strong class="mf-opname"></strong><p class="mf-oplevel"></p><span class="mf-xpbar"><i></i></span><button type="button" class="mf-opchar" data-go="locker"><span></span>Change</button></section><section class="mf-card mf-challenges"><header><h3>Daily challenges<b class="mf-chcount"></b></h3></header><ul></ul></section><button type="button" class="mf-casecard" data-mode="daily"><img src="menu/card-daily.webp" alt=""><span><small>Today's case</small><em class="mf-casenote"></em><strong class="mf-casescore"></strong></span>${icon("chevron")}</button>`,
     );
     this.modal.append(this.side);
+    // Lobby: your level and challenges sit on the left, under the logo.
+    this.leftCards = el("div", "mf-homeleft");
+    this.leftCards.append(this.side.querySelector(".mf-opcard"), this.side.querySelector(".mf-challenges"));
+    this.logoSub.after(this.leftCards);
+    // Lobby: the mode card (bottom right) says what Play starts and changes it.
+    this.modeCard = el(
+      "section",
+      "mf-modecard",
+      `<div class="mf-playtoggle" role="group" aria-label="Play with"><button type="button" data-playwith="offline">${icon("squad")}Bots</button><button type="button" data-playwith="online">${icon("globe")}Friends</button></div><small class="mf-modekicker"></small><strong class="mf-modetitle"></strong><span class="mf-modesub"></span><button type="button" class="mf-modechange">Change</button><button type="button" class="mf-modeplay"></button>`,
+    );
+    this.modeCard.setAttribute("aria-label", "Game mode");
+    this.modal.append(this.modeCard);
+    // Lobby: squad pads either side of your operator invite friends.
+    this.squad = el(
+      "div",
+      "mf-squad",
+      `<button type="button" data-invite aria-label="Invite friends">+</button><button type="button" data-invite aria-label="Invite friends">+</button>`,
+    );
+    this.modal.append(this.squad);
+    g.on(this.modeCard, "click", (event) => {
+      const play = event.target.closest(".mf-modeplay"),
+        change = event.target.closest(".mf-modechange"),
+        withWho = event.target.closest("[data-playwith]");
+      // Friends, no room yet: the big button opens one.
+      if (play && !play.disabled) g.$(g.ui?.playChoice === "online" && !g.online ? ".mf-create" : ".mf-start")?.click();
+      if (change) this.openPicker();
+      if (withWho) g.$(withWho.dataset.playwith === "online" ? ".mf-onlinechoice" : ".mf-offlinechoice")?.click();
+    });
+    g.on(this.squad, "click", (event) => {
+      if (event.target.closest("[data-invite]")) g.$(".mf-onlinechoice")?.click();
+    });
+    // Drag across the lobby to turn your operator.
+    let dragX = null;
+    g.on(this.modal, "pointerdown", (event) => {
+      if (event.target === this.modal || event.target === this.hero) dragX = event.clientX;
+    });
+    g.on(window, "pointermove", (event) => {
+      if (dragX === null) return;
+      g.military?.lobby?.drag(event.clientX - dragX);
+      dragX = event.clientX;
+    });
+    g.on(window, "pointerup", () => (dragX = null));
     // Bottom: pick the game first, then how to play it.
     this.cards = el(
       "div",
       "mf-playlists",
-      `<p class="mf-steplabel" id="mf-step1"><b>1</b>Choose a game</p><div class="mf-gamepick" role="group" aria-labelledby="mf-step1"></div><p class="mf-steplabel" id="mf-step2"><b>2</b>Choose how to play</p><div class="mf-variants" role="group" aria-labelledby="mf-step2"></div><button type="button" class="mf-playnext">Play ${icon("chevron")}</button>`,
+      `<header class="mf-pickerhead"><b>Game mode</b><button type="button" class="mf-pickerclose">Done</button></header><p class="mf-steplabel" id="mf-step1"><b>1</b>Choose a game</p><div class="mf-gamepick" role="group" aria-labelledby="mf-step1"></div><p class="mf-steplabel" id="mf-step2"><b>2</b>Choose how to play</p><div class="mf-variants" role="group" aria-labelledby="mf-step2"></div><button type="button" class="mf-playnext">Play ${icon("chevron")}</button>`,
     );
     this.gamePick = this.cards.querySelector(".mf-gamepick");
     this.variants = this.cards.querySelector(".mf-variants");
@@ -405,6 +504,15 @@ export class OutpostMenu {
     this.modal.append(this.cards);
     // Phones scroll past the Play button to reach the choices: repeat it here.
     this.playNext = this.cards.querySelector(".mf-playnext");
+    this.cards.setAttribute("role", "dialog");
+    this.cards.setAttribute("aria-label", "Choose a game mode");
+    g.on(this.cards.querySelector(".mf-pickerclose"), "click", () => this.closePicker());
+    g.on(this.cards, "keydown", (event) => {
+      if (event.key === "Escape" && this.cards.classList.contains("mf-open")) {
+        event.stopPropagation();
+        this.closePicker();
+      }
+    });
     g.on(this.playNext, "click", () => g.$(".mf-start")?.click());
     const go = (event) => {
       const target = event.target.closest("[data-go]");
@@ -412,7 +520,7 @@ export class OutpostMenu {
       const mode = event.target.closest("[data-mode], [data-variant]");
       if (mode && !mode.disabled) this.pick(mode.dataset.mode || mode.dataset.variant);
     };
-    for (const node of [this.top, this.actions, this.foot, this.side, this.cards, this.welcome]) g.on(node, "click", go);
+    for (const node of [this.top, this.actions, this.foot, this.side, this.cards, this.welcome, this.leftCards]) g.on(node, "click", go);
   }
 
   /** Split the settings dialog into sections with a sidebar. The controls
@@ -522,6 +630,7 @@ export class OutpostMenu {
   /** Play was pressed before choosing: show the game choice and say so. */
   askForGame() {
     const step = this.cards.querySelector("#mf-step1");
+    this.openPicker();
     this.gamePick.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
     this.gamePick.classList.remove("mf-ask");
     void this.gamePick.offsetWidth;
@@ -529,6 +638,19 @@ export class OutpostMenu {
     step.textContent = "";
     step.insertAdjacentHTML("beforeend", "<b>1</b>Choose a game to play");
     this.gamePick.querySelector("button")?.focus({ preventScroll: true });
+  }
+
+  /** The game-mode sheet (lobby layout): opened by Change or by Play. */
+  openPicker() {
+    this.cards.classList.add("mf-open");
+    this.modal.classList.add("mf-picking");
+    (this.cards.querySelector('[aria-pressed="true"]') || this.gamePick.querySelector("button"))?.focus({ preventScroll: true });
+  }
+  closePicker() {
+    if (!this.cards.classList.contains("mf-open")) return;
+    this.cards.classList.remove("mf-open");
+    this.modal.classList.remove("mf-picking");
+    this.modeCard.querySelector(".mf-modechange")?.focus({ preventScroll: true });
   }
 
   /** What the big button says: the game it will start, or the next step. */
@@ -565,6 +687,7 @@ export class OutpostMenu {
     }
     // Step 2, Last Signal: single round or a series (a new series starts).
     if (Object.hasOwn(SERIES_KINDS, mode)) {
+      this.closeAfterPick = true;
       g.mode = "signal";
       g.seriesKind = mode;
       g.series = null;
@@ -578,6 +701,7 @@ export class OutpostMenu {
       return;
     }
     g.mode = "protocol";
+    this.closeAfterPick = true;
     try {
       localStorage.setItem("midnry-outpost-mode", g.mode);
     } catch {}
@@ -613,6 +737,13 @@ export class OutpostMenu {
     const debrief = this.panel.classList.contains("mf-debrief");
     const home = !this.modal.hidden && !debrief && (g.mode === "protocol" || g.mode === "signal");
     this.modal.classList.toggle("mf-home", home);
+    // The 3D lobby replaces the photo backdrop once the 3D renderer is up.
+    const lobby = home && !!g.militaryLoaded && !g.militaryError;
+    if (this.modal.classList.contains("mf-lobby") !== lobby) this.modal.classList.toggle("mf-lobby", lobby);
+    if (this.closeAfterPick) {
+      this.closeAfterPick = false;
+      this.closePicker();
+    }
     const signal = g.mode === "signal";
     if (this.modal.dataset.mode !== g.mode) {
       this.modal.dataset.mode = g.mode;
@@ -652,13 +783,15 @@ export class OutpostMenu {
     for (const node of this.modal.querySelectorAll(".mf-chipname, .mf-opname")) node.textContent = name;
     this.modal.querySelector(".mf-chiplevel").textContent = `LV ${level}`;
     this.modal.querySelector(".mf-oplevel").textContent = `Level ${level} · ${xp.toLocaleString()} XP`;
+    const hero = characterOf(g.character);
+    this.modal.querySelector(".mf-opchar span").textContent = `${hero.name} · ${hero.role}`;
     for (const bar of this.modal.querySelectorAll(".mf-xpbar i")) bar.style.width = progress;
     // Daily challenges.
     let daily = [];
     try {
       daily = g.retention?.challengeStatus().daily || [];
     } catch {}
-    const list = this.side.querySelector(".mf-challenges ul");
+    const list = this.modal.querySelector(".mf-challenges ul");
     list.replaceChildren(
       ...daily.map((c) => {
         const li = el("li", c.done ? "done" : "");
@@ -666,7 +799,7 @@ export class OutpostMenu {
         return li;
       }),
     );
-    this.side.querySelector(".mf-chcount").textContent = `${daily.filter((c) => c.done).length}/${daily.length || 3}`;
+    this.modal.querySelector(".mf-chcount").textContent = `${daily.filter((c) => c.done).length}/${daily.length || 3}`;
     // Today's case.
     const best = readDaily()[dailyKey()];
     const board = cachedBoard(),
@@ -681,34 +814,73 @@ export class OutpostMenu {
         .catch(() => {});
     }
     this.side.querySelector(".mf-casescore").innerHTML = best ? `${best.score} <span>/ 1000</span>` : "Play now";
-    // Mode cards: offline picks the mode; online shows the room's mode only.
+    // Mode cards: either game online or offline; in a room, the room's game.
     const online = Boolean(g.online || g.ui?.playChoice === "online");
-    // Mid-match (paused) the mode is locked: changing it would restart the round.
-    const locked = online || g.state === "playing";
+    // Mid-match (paused) or in a room the game is locked.
+    const locked = Boolean(g.online) || g.state === "playing";
     const now = this.current();
     this.cards.toggleAttribute("data-online", online);
     // Before the first choice nothing looks selected and step 2 waits.
-    const unchosen = !this.gameChosen && !online;
+    const unchosen = !this.gameChosen && !g.online;
     if (this.cards.hasAttribute("data-unchosen") !== unchosen) this.cards.toggleAttribute("data-unchosen", unchosen);
     for (const card of this.cards.querySelectorAll("button")) {
       const pressed =
         !unchosen &&
-        (card.dataset.mode ? card.dataset.mode === (online ? "protocol" : game) : card.dataset.variant === now);
+        (card.dataset.mode ? card.dataset.mode === game : card.dataset.variant === now);
       if (card.getAttribute("aria-pressed") !== String(pressed)) card.setAttribute("aria-pressed", String(pressed));
       card.disabled = locked;
-      card.title = locked && !online ? "Finish or exit this round to change mode" : "";
+      card.title = locked && !g.online ? "Finish or exit this round to change mode" : "";
     }
     this.side.querySelector(".mf-casecard").disabled = locked;
     const start = g.$(".mf-start");
     if (start && g.state === "fresh" && !online && start.textContent !== this.playLabel()) start.textContent = this.playLabel();
     if (this.playNext.hidden !== (online || g.state === "playing")) this.playNext.hidden = online || g.state === "playing";
     if (this.playNext.disabled !== Boolean(start?.disabled)) this.playNext.disabled = Boolean(start?.disabled);
-    const chosen = MODES.find((m) => m.id === (online ? "lifeline" : now));
+    const chosen = online
+      ? signal
+        ? { title: "Online room", sub: "Friends + bots · 8 fighters · next arena each rematch" }
+        : MODES.find((m) => m.id === "lifeline")
+      : MODES.find((m) => m.id === now);
     const series = signal && g.series?.rounds.length && !g.series.done ? ` · round ${g.series.round} next` : "";
     const summary = online || unchosen
       ? ""
       : `<b>${signal ? "Last Signal" : "Blackout Protocol"} · ${chosen.title}</b> · ${chosen.sub}${series}${g.state === "playing" ? " · in progress" : ""}`;
     if (this.summary.innerHTML !== summary) this.summary.innerHTML = summary;
+    // Mode card: offline/online, the chosen game and way to play, Play.
+    const onlineChoice = online;
+    // Room controls take the challenges' place in the lobby.
+    if (this.modal.classList.contains("mf-friends") !== online) this.modal.classList.toggle("mf-friends", online);
+    for (const b of this.modeCard.querySelectorAll("[data-playwith]"))
+      b.setAttribute("aria-pressed", String((b.dataset.playwith === "online") === onlineChoice));
+    const kicker = onlineChoice ? (g.online ? `Online · room ${g.online.code}` : "Online · with friends") : "Offline · with bots";
+    const title = unchosen ? "Choose a game" : signal ? "Last Signal" : "Blackout Protocol";
+    const sub = unchosen ? "Blackout Protocol or Last Signal" : `${chosen.title} · ${chosen.sub}${series}`;
+    const set = (sel, text) => {
+      const node = this.modeCard.querySelector(sel);
+      if (node.textContent !== text) node.textContent = text;
+    };
+    set(".mf-modekicker", kicker);
+    set(".mf-modetitle", title);
+    set(".mf-modesub", sub);
+    set(".mf-modechange", unchosen ? "Choose" : "Change");
+    const play = this.modeCard.querySelector(".mf-modeplay");
+    const label = (start?.textContent || "PLAY").replace(/\s*[→↓]$/, "").replace(/^PLAY (LAST SIGNAL|BLACKOUT PROTOCOL)$/, "PLAY");
+    const creating = online && !g.online;
+    set(".mf-modeplay", unchosen ? "Choose a game" : creating ? "Create room" : label);
+    const playOff = creating ? Boolean(g.connecting) : Boolean(start?.disabled);
+    if (play.disabled !== playOff) play.disabled = playOff;
+    this.modeCard.querySelector(".mf-modechange").hidden = Boolean(g.online);
+    this.modeCard.hidden = g.state === "playing";
+    this.squad.hidden = g.state === "playing" || !lobby;
+    // Friends in your room stand on the pads: their name instead of "+".
+    const mates = g.online?.phase === "lobby" ? (g.online.members || []).filter((m) => m.id !== g.selfId) : [];
+    this.squad.querySelectorAll("[data-invite]").forEach((button, i) => {
+      const mate = mates[i],
+        text = mate ? mate.name : "+";
+      if (button.textContent !== text) button.textContent = text;
+      button.classList.toggle("mf-mate", !!mate);
+      button.setAttribute("aria-label", mate ? `${mate.name}, in your room` : "Invite friends");
+    });
     this.summary.hidden = !summary;
     const midMatch = g.state === "playing" && !g.deathSequence;
     if (this.matchbar.hidden !== !midMatch) this.matchbar.hidden = !midMatch;
@@ -737,7 +909,7 @@ export class OutpostMenu {
   dispose() {
     this.observer?.disconnect();
     this.panelObserver?.disconnect();
-    for (const node of [this.style, this.hero, this.top, this.side, this.cards, this.actions, this.foot, this.logoSub, this.summary, this.matchbar]) node?.remove();
-    this.modal?.classList.remove("mf-home");
+    for (const node of [this.style, this.hero, this.top, this.side, this.cards, this.actions, this.foot, this.logoSub, this.summary, this.matchbar, this.leftCards, this.modeCard, this.squad]) node?.remove();
+    this.modal?.classList.remove("mf-home", "mf-lobby", "mf-picking");
   }
 }

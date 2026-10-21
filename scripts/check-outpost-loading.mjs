@@ -1,4 +1,4 @@
-/** Loading art (Blackout + Last Signal key art), native carousel controls and optional-art failure. */
+/** Opening loading screen: one painting, one fixed briefing, no slideshow controls; optional-art failure. */
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
 import { existsSync, mkdirSync } from "node:fs";
@@ -38,7 +38,7 @@ try {
     await page.waitForFunction(
       () => document.querySelector(".mf-loadimage.is-active")?.naturalWidth > 0,
     );
-    assert.equal(await page.locator(".mf-slidetitle").textContent(), "Blackout Protocol");
+    assert.equal(await page.locator(".mf-slidetitle").textContent(), "Prepare to deploy");
     assert.equal(
       await page.locator(".mf-start").isDisabled(),
       true,
@@ -55,40 +55,14 @@ try {
       true,
     );
     await page.screenshot({ path: `/workspace/screenshots/outpost-loading-current-${name}.png` });
-    // Main's current briefing artwork/sequence (the screen itself is unchanged).
-    // Key art (logo painted in) comes in wide and tall cuts.
+    // One painting (wide or tall cut), no slideshow controls, and nothing rotates.
     const cut = mobile ? "tall" : "wide";
-    // One painting (wide or tall cut) under every briefing.
-    for (const [title, image] of [
-      ["Last one standing", `bp-key-${cut}`],
-      ["The ground fights too", `bp-key-${cut}`],
-      ["Watch the patrol", `bp-key-${cut}`],
-      ["The base fights back", `bp-key-${cut}`],
-      ["Lifeline Medevac", `bp-key-${cut}`],
-      ["After dark", `bp-key-${cut}`],
-      ["Every patrol matters", `bp-key-${cut}`],
-      ["Lifeline Run", `bp-key-${cut}`],
-    ]) {
-      await page.getByRole("button", { name: "Next loading slide", exact: true }).click();
-      await page.waitForFunction(
-        (t) => document.querySelector(".mf-slidetitle").textContent === t,
-        title,
-      );
-      assert.ok(
-        (await page.locator(".mf-loadimage.is-active").evaluate((i) => i.currentSrc || i.src)).includes(`/loading/${image}.webp`),
-      );
-      assert.ok((await page.locator(".mf-loadtip p").textContent()).length > 35);
-    }
-    await page.getByRole("button", { name: "Previous loading slide" }).click();
-    await page.waitForFunction(
-      () => document.querySelector(".mf-slidetitle").textContent === "Every patrol matters",
+    assert.ok(
+      (await page.locator(".mf-loadimage.is-active").evaluate((i) => i.currentSrc || i.src)).includes(`/loading/bp-key-${cut}.webp`),
     );
-    assert.equal(
-      await page
-        .getByRole("button", { name: "Resume loading slideshow" })
-        .getAttribute("aria-pressed"),
-      "true",
-    );
+    assert.equal(await page.locator(".mf-loading button").count(), 0);
+    await page.waitForTimeout(5000);
+    assert.equal(await page.locator(".mf-slidetitle").textContent(), "Prepare to deploy");
     release();
     await page.waitForFunction(
       () => document.querySelector("midnry-fps").engine.militaryLoaded,
@@ -101,7 +75,7 @@ try {
       cancelAnimationFrame(g.frame);
       g.frame = 0;
     });
-    const start = page.locator(".mf-start");
+    const start = page.locator(".mf-start:visible, .mf-modeplay:visible").first();
     await start.evaluate((e) => e.scrollIntoView({ block: "center", behavior: "instant" }));
     const r = await start.boundingBox();
     if (mobile) await page.touchscreen.tap(r.x + r.width / 2, r.y + r.height / 2);
@@ -112,8 +86,7 @@ try {
       JSON.stringify({
         name,
         loadingArt: "current main briefing assets",
-        carousel: "eight briefings: Blackout key art, two Last Signal arenas, roles, emergencies, night",
-        reducedMotion: "paused",
+        briefing: "one painting, one fixed briefing, no controls",
         deployment: "passed",
         errors,
       }),
@@ -127,12 +100,11 @@ try {
     await held;
     await route.continue();
   });
-  // Every loading painting fails: briefings still rotate, no retry prompt.
+  // The loading painting fails: the briefing still shows, no retry prompt.
   await page.route("**/loading/*.webp", (route) => route.abort());
   await page.goto(base + "/games/outpost-zero.html");
-  await page.getByRole("button", { name: "Next loading slide" }).click();
   await page.waitForTimeout(500);
-  assert.equal(await page.locator(".mf-slidetitle").textContent(), "Last one standing");
+  assert.equal(await page.locator(".mf-slidetitle").textContent(), "Prepare to deploy");
   assert.equal(await page.locator(".mf-loadretry").isVisible(), false);
   release();
   await page.waitForFunction(

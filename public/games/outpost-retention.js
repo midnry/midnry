@@ -16,6 +16,7 @@ import { BattleMusic, battleIntensity } from "./outpost-music.js";
 import { spatialSound } from "./outpost-spatial-audio.js";
 import { recordMatch } from "./outpost-account.js";
 import { finishOf, money, drawFinish } from "./outpost-finishes.js";
+import { CHARACTERS } from "./outpost-characters.js";
 import { OutpostStore } from "./outpost-store.js";
 const read = (key) => {
   try {
@@ -271,7 +272,7 @@ export class Retention {
     );
     g.shell.insertAdjacentHTML(
       "beforeend",
-      `<div class="mf-countdown" hidden role="status" aria-live="polite"></div><dialog class="mf-locker" aria-label="Ranger locker"><div class="mf-lockerhead"><b>RANGER LOCKER</b><button class="mf-lockerclose">BACK</button></div><div class="mf-lockerbody"></div></dialog>`,
+      `<div class="mf-countdown" hidden role="status" aria-live="polite"></div><dialog class="mf-locker" aria-label="Locker"><div class="mf-lockerhead"><b>LOCKER</b><button class="mf-lockerclose">BACK</button></div><div class="mf-lockerbody"></div></dialog>`,
     );
     g.$(".mf-volume").value = String(this.audio.volume * 100);
     g.$(".mf-mute").checked = this.audio.muted;
@@ -381,6 +382,13 @@ export class Retention {
           this.g.$(`[data-finish="${finish.id}"]`)?.focus({ preventScroll: true });
         } else if (finish.kind === "premium") this.store.buy(finish.id);
         else if (finish.kind === "pass") (window.top || window).location.assign("/pricing");
+        return;
+      }
+      const hero = e.target.closest("[data-character]");
+      if (hero) {
+        g.chooseCharacter(hero.dataset.character);
+        this.lockerContents();
+        g.$(`[data-character="${hero.dataset.character}"]`)?.focus({ preventScroll: true });
         return;
       }
       const card = e.target.closest("[data-outfit]");
@@ -573,7 +581,7 @@ export class Retention {
     const p = this.profile,
       next = FINISHES.find((f) => f.kind === "xp" && f.xp > p.xp);
     this.g.$(".mf-lockerbody").innerHTML =
-      `<h2>Level ${levelOf(p)} / ${p.xp} XP</h2><p>${p.matches} completed rounds · ${p.wins} victories</p><progress max="150" value="${p.xp % 150}" aria-label="Progress to next level"></progress><p>${150 - (p.xp % 150)} XP to the next level. ${next ? `${Math.max(0, next.xp - p.xp)} XP to ${next.name}.` : "All XP finishes unlocked."}</p>${this.finishGrid()}<h3>Today's challenges · +${DAILY_XP} XP each</h3>${this.challengeStatus()
+      `<h2>Level ${levelOf(p)} / ${p.xp} XP</h2><p>${p.matches} completed rounds · ${p.wins} victories</p><progress max="150" value="${p.xp % 150}" aria-label="Progress to next level"></progress><p>${150 - (p.xp % 150)} XP to the next level. ${next ? `${Math.max(0, next.xp - p.xp)} XP to ${next.name}.` : "All XP finishes unlocked."}</p>${this.characterGrid()}${this.finishGrid()}<h3>Today's challenges · +${DAILY_XP} XP each</h3>${this.challengeStatus()
           .daily.map(
             (c) =>
               `<p>${c.done ? "✓ " : ""}${c.text} · ${c.progress}/${c.goal}</p><progress max="${c.goal}" value="${c.progress}" aria-label="${c.text}"></progress>`,
@@ -593,6 +601,16 @@ export class Retention {
   weaponFinish() {
     const finish = finishOf(this.profile.skin);
     return this.finishUsable(finish) ? finish.id : "standard";
+  }
+  /** Characters: numbered portrait cards; the chosen one is in the lobby
+   * and is who you play in Last Signal. */
+  characterGrid() {
+    const mine = this.g.character || "operator";
+    const cards = CHARACTERS.map((c, i) => {
+      const on = c.id === mine;
+      return `<button type="button" class="mf-charcard${on ? " is-on" : ""}" data-character="${c.id}" aria-pressed="${on}" style="--mf-char:${c.accent}"><img src="menu/characters/${c.id}.webp" alt="" loading="lazy" width="240" height="320"><i aria-hidden="true">${String(i + 1).padStart(2, "0")}</i><strong>${escapeText(c.name)}</strong><small>${on ? "Equipped" : escapeText(c.role)}</small></button>`;
+    }).join("");
+    return `<h3>Characters</h3><p>Who you play in Last Signal, and who stands in your lobby. Looks only, never stats.</p><div class="mf-chargrid">${cards}</div>`;
   }
   finishGrid() {
     const p = this.profile,

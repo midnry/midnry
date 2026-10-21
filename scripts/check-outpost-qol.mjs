@@ -82,7 +82,7 @@ try {
       await page.evaluate(() => document.querySelector("midnry-fps").engine.academy.preset),
       "high",
     );
-    await page.locator(".mf-start").click();
+    await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
     await page.evaluate(() => document.querySelector("midnry-fps").engine.pause());
     await page.getByRole("button", { name: "Exit Game", exact: true }).click();
     const time = await page.evaluate(() => document.querySelector("midnry-fps").engine.time);
@@ -128,7 +128,7 @@ try {
   await guest.waitForFunction(
     () => document.querySelector("midnry-fps").engine.online?.members.length === 2,
   );
-  await game.locator(".mf-start").click();
+  await game.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
   await guest.waitForFunction(
     () => document.querySelector("midnry-fps").engine.online?.phase === "playing",
   );

@@ -18,6 +18,17 @@ function materialKind(material) {
 }
 
 function configureMaterial(material, kind, r) {
+  if (material.userData.lockerCharacter) {
+    // Locker characters keep their authored colour, normal and glow maps.
+    material.userData.realismCharacterKind = kind;
+    material.metalness = 0.05;
+    material.roughness = 0.78;
+    material.envMapIntensity = 0.55;
+    material.normalScale?.set(0.8, 0.8);
+    if (material.emissiveMap) material.emissive.set("#ffffff");
+    material.needsUpdate = true;
+    return;
+  }
   if (material.userData.riggedOperator) {
     material.userData.realismCharacterKind = kind;
     // Head 1 is the helmet/goggles and uses the body atlas. Head 2 is skin.
@@ -186,6 +197,31 @@ export function prepareCharacterAsset(r, gltf) {
   });
   gltf.realismCharacterProfile = measureStride(gltf);
   r.characterProfile = gltf.realismCharacterProfile;
+}
+
+/** A Locker character (outpost-characters.js): same rig and clips as the
+ * operator, its own sculpt and maps. The operator's stride profile stays. */
+export function prepareLockerCharacter(r, gltf) {
+  gltf.scene.userData.riggedOperator = true;
+  const anisotropy = Math.min(8, r.renderer?.capabilities?.getMaxAnisotropy?.() || 1);
+  const seen = new Set();
+  gltf.scene.traverse((object) => {
+    if (!object.isMesh) return;
+    object.castShadow = true;
+    object.receiveShadow = true;
+    const material = object.material;
+    if (!material || seen.has(material)) return;
+    seen.add(material);
+    material.userData.lockerCharacter = true;
+    configureMaterial(material, materialKind(material), r);
+    r.materials.add(material);
+    for (const key of ["map", "normalMap", "emissiveMap"]) {
+      const texture = material[key];
+      if (!texture) continue;
+      texture.anisotropy = anisotropy;
+      r.textures.add(texture);
+    }
+  });
 }
 
 function bone(model, suffix) {

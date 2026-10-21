@@ -86,7 +86,7 @@ async function deploy(page) {
     // Disable AI only in this fixture, retaining all eight living participants.
     for (const e of g.arena.entities) e.bot = false;
   });
-  await page.locator(".mf-start").click();
+  await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
   await page.evaluate(() => {
     const g = document.querySelector("midnry-fps").engine;
     cancelAnimationFrame(g.frame);

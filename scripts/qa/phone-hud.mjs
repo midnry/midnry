@@ -2,6 +2,7 @@
 // the last-life overlay: photos in portrait and landscape, a list of HUD
 // boxes, overlaps between them, and how much of the screen they cover.
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 import { mkdirSync } from "node:fs";
 mkdirSync("screenshots/qa/phone", { recursive: true });
 const b = await chromium.launch({
@@ -34,7 +35,7 @@ for (const [w, h] of [
     null,
     { timeout: 180000 },
   );
-  await p.click(".mf-gamepick [data-mode=signal]");
+  await pickGame(p, "signal");
   await p.waitForTimeout(800);
   await p.evaluate(() => document.querySelector(".mf-start").click());
   await p.waitForFunction(

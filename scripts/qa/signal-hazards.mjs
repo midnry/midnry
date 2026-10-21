@@ -3,6 +3,7 @@
 // it is on (sandstorm, lightning storm with marked ground, earthquake).
 //   node scripts/qa/signal-hazards.mjs [width]   (390 = phone; MAPS=skyport for one arena)
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 import { mkdirSync } from "node:fs";
 const W = Number(process.argv[2] ?? 1280),
   M = W < 500,
@@ -40,9 +41,9 @@ await p.waitForFunction(
   null,
   { timeout: 180000 },
 );
-await p.click(".mf-gamepick [data-mode=signal]", { timeout: 60000 });
+await pickGame(p, "signal", { timeout: 60000 });
 await p.waitForTimeout(1000);
-await p.click(".mf-start", { timeout: 60000 });
+await play(p, { timeout: 60000 });
 await p.waitForFunction(() => document.querySelector("midnry-fps")?.engine?.militaryLoaded, null, {
   timeout: 180000,
 });

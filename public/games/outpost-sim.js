@@ -164,6 +164,8 @@ export class Arena {
         pitch: 0,
         weapon: loadout,
         outfit: uniform,
+        // Locker character (online Last Signal); looks only.
+        ...(human?.character ? { character: String(human.character) } : {}),
         charge: 0,
         cloakedUntil: 0,
         speedUntil: 0,
@@ -478,6 +480,8 @@ export class Arena {
     // Last Signal: a spare life redeploys you somewhere quiet, upgrades dropped.
     if (this.mode === "signal" && target.lives > 0 && !target.departed) {
       target.lives--;
+      // Who took the life, for the "Life lost" screen (none: haze, disaster).
+      target.downedBy = source && source !== target ? source.name : null;
       this.redeploy(target);
       if (target.lives) this.emit(target.id, "LIFE LOST / REDEPLOYED");
       else {

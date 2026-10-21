@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 const S = "screenshots/qa";
 const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 for (const [w,h] of [[1280,720],[390,844]]) {
@@ -7,7 +8,7 @@ const errors=[]; p.on("pageerror",e=>errors.push(e.message)); p.on("console",m=>
 await p.addInitScript(() => { let seed = 12345; Math.random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647); localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 5 })); });
 await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
 await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
-await p.click(".mf-start"); await p.waitForTimeout(2500);
+await play(p); await p.waitForTimeout(2500);
 await p.evaluate(() => [...document.querySelectorAll("button")].find((x) => /Understood/.test(x.textContent))?.click());
 await p.waitForTimeout(3000);
 const base = await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine; return g.player.a; });

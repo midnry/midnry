@@ -217,7 +217,7 @@ mkdirSync(screenshotDir, { recursive: true });
           replay: true,
         };
       });
-      await page.locator(".mf-start").click();
+      await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
       if (mobile) await page.getByRole("button", { name: "Fire weapon" }).tap();
       else await page.keyboard.press("Space");
       assert(
@@ -253,7 +253,7 @@ mkdirSync(screenshotDir, { recursive: true });
         await page.evaluate(() => document.querySelector("midnry-fps").engine.mode),
         "training",
       );
-      await page.locator(".mf-start").click();
+      await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
       await page.evaluate(() => {
         const g = document.querySelector("midnry-fps").engine;
         g.player.x = 5.5;

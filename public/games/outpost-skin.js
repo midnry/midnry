@@ -112,7 +112,6 @@ midnry-fps .mf-protocol-flightpad button { min-width: 56px; min-height: 56px !im
 midnry-fps .mf-countdown { font: 800 64px var(--mf-display) !important; }
 
 /* Loading screen. */
-.mf-loading :is(.mf-loadprev, .mf-loadnext, .mf-loadpause) { border-radius: 3px !important; min-width: 44px; min-height: 44px; }
 .mf-loading :is(button):focus-visible { outline: 2px solid #ffc857 !important; outline-offset: 2px; }
 .mf-loading .mf-loadbrand { letter-spacing: 0.32em !important; padding-left: 12px; border-left: 2px solid #ffc857; }
 .mf-loading progress { accent-color: #ffc857; }

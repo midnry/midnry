@@ -40,7 +40,7 @@ try {
       }),
     );
     await page.locator(".mf-settingsclose").click();
-    await page.locator(".mf-start").click();
+    await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
     // Controlled combat fixture uses real rules to finish a round and exercise the debrief.
     await page.evaluate(() => {
       const g = document.querySelector("midnry-fps").engine;
@@ -191,7 +191,7 @@ try {
     );
     await page.evaluate(() => document.querySelector("midnry-fps").engine.academy.finish());
     // Teardown releases the audio context and the component's event subscriptions.
-    await page.locator(".mf-start").click();
+    await page.locator(".mf-start:visible, .mf-modeplay:visible").first().click();
     await page.evaluate(() => {
       const el = document.querySelector("midnry-fps");
       window.oldAudio = el.engine.retention.audio.ctx;

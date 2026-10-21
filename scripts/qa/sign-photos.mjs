@@ -1,4 +1,5 @@
 import { chromium } from "playwright";
+import { pickGame, play } from "./lobby-helpers.mjs";
 import { mkdirSync } from "node:fs";
 const S = "screenshots/qa/clash"; mkdirSync(S,{recursive:true});
 const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
@@ -6,7 +7,7 @@ const p = await (await b.newContext({ viewport: { width: 960, height: 540 } })).
 await p.addInitScript(() => { let seed = 12345; Math.random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647); localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 5 })); localStorage.setItem("midnry-outpost-modifier","rush"); localStorage.setItem("midnry-outpost-graphics", JSON.stringify({ preset:"balanced", options: { adaptive: false } })); });
 await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
 await p.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 180000 });
-await p.click(".mf-start"); await p.waitForTimeout(3000);
+await play(p); await p.waitForTimeout(3000);
 const signs = await p.evaluate(() => {
   [...document.querySelectorAll("button")].find((x) => /Understood/.test(x.textContent))?.click();
   const g = document.querySelector("midnry-fps").engine; cancelAnimationFrame(g.frame); g.frame = 0; g.loop = () => {};

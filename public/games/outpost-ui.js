@@ -56,7 +56,7 @@ export class MenuUI {
     network.id = "outpost-room-" + Math.random().toString(36).slice(2);
     g.$(".mf-onlinechoice").setAttribute("aria-controls", network.id);
     network.querySelector("summary").textContent = "Online room";
-    network.querySelector("p").textContent = "Create a Blackout Protocol room or enter a friend's code. The host starts; smart bots fill unused seats. Online missions continue while menus are open.";
+    network.querySelector("p").textContent = "Create a room for the chosen game or enter a friend's code. The host starts; smart bots fill empty seats. Online matches keep running while menus are open.";
     network.insertAdjacentHTML("afterbegin", '<p class="mf-roomformat"></p>');
     modes.after(network);
     for (const button of modes.querySelectorAll("[data-play]"))
@@ -260,7 +260,7 @@ export class MenuUI {
   choosePlay(choice) {
     const g = this.g;
     if (choice === "offline" && g.online) {
-      this.confirm("Leave online mission?", "You will leave this room and start an offline Blackout Protocol mission with smart bots.", "Play offline", confirmed => {
+      this.confirm("Leave online mission?", `You will leave this room and play ${g.mode === "signal" ? "Last Signal" : "Blackout Protocol"} offline with smart bots.`, "Play offline", confirmed => {
         if (!confirmed) return;
         g.leaveOnline(); this.playChoice = "offline"; g.reset(); this.refresh();
       });
@@ -279,7 +279,7 @@ export class MenuUI {
     network.hidden = this.playChoice !== "online";
     network.open = this.playChoice === "online";
     g.$(".mf-onlinechoice").setAttribute("aria-expanded", String(network.open));
-    g.$(".mf-roomformat").textContent = "Blackout Protocol" + (g.online ? " · Room " + g.online.code : " · Friends + smart bots");
+    g.$(".mf-roomformat").textContent = (g.mode === "signal" ? "Last Signal" : "Blackout Protocol") + (g.online ? " · Room " + g.online.code : " · Friends + smart bots");
     g.$(".mf-copy").textContent = "Gather medical supplies, protect the medevac flight and save wounded soldiers. Hidden infiltrators sabotage the rescue.";
     g.protocolUI?.refreshMenu();
     if (!g.online && this.playChoice === "online") {
