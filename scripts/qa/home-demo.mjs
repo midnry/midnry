@@ -103,12 +103,76 @@ async function open(options = {}) {
   ok("ledger adds and removes an expense; total, budget and validation work");
   await page.screenshot({ path: `${out}/demo-ledger-1280.png` });
 
+  // Currency: Lagos time zone starts in naira; switching gives the invoice and
+  // the ledger their own sample amounts in that currency (no conversion).
+  const currency = page.getByLabel("Currency");
+  assert.equal(await currency.inputValue(), "NGN");
+  await currency.selectOption("GBP");
+  await ledger.getByText("£415.00").first().waitFor();
+  await ledger.getByText("£385.00 left of £800.00").waitFor();
+  assert.equal(await ledger.getByPlaceholder("£ Amount").count(), 1);
+  await tabs.nth(1).click();
+  await sheet.getByText("£1,020.00").waitFor(); // (750 + 2 × 40 + 20) × 1.20
+  await invoice.getByLabel("Rate in pounds, line 1").fill("800");
+  await sheet.getByText("£1,080.00").waitFor();
+  await currency.selectOption("USD");
+  await sheet.getByText("$1,096.20").waitFor(); // (900 + 2 × 45 + 25) × 1.08
+  await tabs.nth(2).click();
+  await ledger.getByText("$520.00").first().waitFor();
+  await currency.selectOption("NGN");
+  await ledger.getByText("₦58,200.00").first().waitFor();
+  await tabs.nth(1).click();
+  await sheet.getByText("₦193,500.00").waitFor();
+  ok("switching currency updates the invoice and ledger totals");
+  await tabs.nth(0).click();
+  assert.equal(await page.getByText("Currency", { exact: true }).isVisible(), false);
+  ok("currency picker hidden on the Remind tab");
+
   // Sample label is visible, nothing is saved (no server calls from typing).
   await page.getByText("Sample data. Try it, nothing is saved.").first().waitFor();
   ok("sample-data label shown");
   assert.deepEqual(errors, []);
   ok("no page errors");
   await context.close();
+}
+
+// The currency choice is remembered on this device.
+{
+  const { context, page } = await open();
+  await page.getByRole("tab").nth(1).click();
+  await page.getByLabel("Currency").selectOption("EUR");
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForTimeout(1000);
+  assert.equal(await page.getByLabel("Currency").inputValue(), "EUR");
+  await page.getByRole("tab").nth(1).click();
+  await page.getByRole("article", { name: /Finished invoice/ }).getByText("€1,119.30").waitFor(); // (800 + 90 + 20) × 1.23
+  ok("currency choice remembered after reload");
+  await context.close();
+}
+
+// Default currency from the browser only: time zone, then language region, then naira.
+for (const [timezoneId, locale, expected] of [
+  ["Europe/London", "en-US", "GBP"],
+  ["Europe/Berlin", "de-DE", "EUR"],
+  ["America/New_York", "en-US", "USD"],
+  ["America/Toronto", "en-CA", "CAD"],
+  ["Africa/Nairobi", "en-US", "KES"],
+  ["Asia/Kolkata", "en-US", "INR"],
+  ["Asia/Tokyo", "en-ZA", "ZAR"],
+  ["Asia/Tokyo", "ja-JP", "NGN"],
+]) {
+  const { context, page } = await open({ timezoneId, locale });
+  await page.getByRole("tab").nth(2).click();
+  assert.equal(await page.getByLabel("Currency").inputValue(), expected, `${timezoneId} ${locale}`);
+  await context.close();
+}
+ok("default currency follows time zone, then language, else naira");
+
+// The server renders naira, so the first paint never depends on the visitor.
+{
+  const html = await (await fetch(BASE + "/")).text();
+  assert.ok(html.includes("₦193,500.00") && html.includes("₦58,200.00"), "server HTML has the naira samples");
+  ok("server-rendered demo is in naira");
 }
 
 // Reduced motion: examples appear at once, no typing.

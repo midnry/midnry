@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { PASS_PRICE_LABEL } from "@/lib/access";
-import { BILLING_FACTS, FREE_APPS, FREE_LABEL, PASS_APPS, PASS_FEATURES, PASS_LABEL } from "@/lib/plans";
+import { BILLING_FACTS, FREE_APPS, FREE_LABEL, PASS_APPS, PASS_EXTRAS, PASS_FEATURES, PASS_LABEL } from "@/lib/plans";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
 import { buttonClass, cn, Skeleton } from "@/components/ui";
@@ -78,6 +78,10 @@ export function PricingPanel() {
           </Point>
           <Point light>Remind’s Pass features: {PASS_FEATURES.tasks}</Point>
           <Point light>Apps other makers add, once they pass review</Point>
+          <Point light>
+            <strong className="font-medium">{PASS_EXTRAS.outpostFinish.name}</strong>, a {PASS_EXTRAS.outpostFinish.look} weapon finish in{" "}
+            {PASS_EXTRAS.outpostFinish.game} (looks only)
+          </Point>
         </ul>
         <ul className="mt-6 space-y-1 border-t border-paper/25 pt-4 text-sm text-paper/90">
           {BILLING_FACTS.map((fact) => (

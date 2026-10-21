@@ -1,23 +1,19 @@
 import { useId, useState } from "react";
 import { addDays, parseIso } from "@/lib/remind/dates";
 import { cn } from "@/components/ui";
-import { DemoGrid, Step, demoInput, naira, useToday } from "./demo-kit";
+import { DemoGrid, Step, demoInput, useToday } from "./demo-kit";
+import { SAMPLES, moneyFor, useDemoCurrency, type Money } from "./demo-currency";
 
 /**
  * Invoice with sample line items. The sums follow the Invoice app exactly
  * (src/components/tools/invoice.tsx): quantity × rate per line, tax as a
  * percent of the subtotal, and "—" for a line that is not a number yet.
- * Nothing is sent or saved.
+ * The sample (amounts, places, tax rate) follows the demo currency; switching
+ * currency starts a fresh sample in that currency. Nothing is sent or saved.
  */
 
 type Line = { id: string; description: string; qty: string; rate: string };
 
-const FROM = "Tola Studio\nWuse 2, Abuja";
-const START: Line[] = [
-  { id: "l1", description: "Logo design", qty: "1", rate: "150000" },
-  { id: "l2", description: "Business cards (box of 100)", qty: "2", rate: "12500" },
-  { id: "l3", description: "Delivery in Abuja", qty: "1", rate: "5000" },
-];
 const MAX_LINES = 6;
 
 function plain(raw: string): string {
@@ -32,9 +28,9 @@ function lineTotal(line: Line): number | null {
   return qty * rate;
 }
 
-function rateText(line: Line): string {
+function rateText(line: Line, money: Money): string {
   const rate = plain(line.rate);
-  return rate && Number.isFinite(Number(rate)) ? naira(Number(rate)) : "—";
+  return rate && Number.isFinite(Number(rate)) ? money.format(Number(rate)) : "—";
 }
 
 function dayText(iso: string): string {
@@ -42,12 +38,18 @@ function dayText(iso: string): string {
 }
 
 export function InvoiceDemo() {
+  const { currency } = useDemoCurrency();
+  return <InvoiceSample key={currency} money={moneyFor(currency)} />;
+}
+
+function InvoiceSample({ money }: { money: Money }) {
   const ids = useId();
   const today = useToday();
-  const [lines, setLines] = useState<Line[]>(START);
-  const [client, setClient] = useState("Ada's Kitchen, Garki, Abuja");
-  const [taxPercent, setTaxPercent] = useState("7.5");
-  const [count, setCount] = useState(START.length);
+  const sample = SAMPLES[money.code].invoice;
+  const [lines, setLines] = useState<Line[]>(() => sample.lines.map((line, index) => ({ id: `l${index + 1}`, ...line })));
+  const [client, setClient] = useState(sample.client);
+  const [taxPercent, setTaxPercent] = useState(sample.taxPercent);
+  const [count, setCount] = useState(sample.lines.length);
   // Flash the total only after the visitor changes something, not on load.
   const [edited, setEdited] = useState(false);
 
@@ -75,7 +77,7 @@ export function InvoiceDemo() {
             <div className="mt-1.5 hidden grid-cols-[minmax(0,1fr)_4rem_6.5rem_2.75rem] gap-2 text-xs text-muted sm:grid" aria-hidden>
               <span>Description</span>
               <span>Qty</span>
-              <span>Rate (₦)</span>
+              <span>Rate ({money.symbol})</span>
             </div>
             <ul className="mt-1.5 space-y-3 sm:space-y-2">
               {lines.map((line, index) => (
@@ -96,7 +98,7 @@ export function InvoiceDemo() {
                     className={cn(demoInput, "tabular-nums")}
                   />
                   <input
-                    aria-label={`Rate in naira, line ${index + 1}`}
+                    aria-label={`Rate in ${money.name}, line ${index + 1}`}
                     inputMode="decimal"
                     value={line.rate}
                     placeholder="Rate"
@@ -166,7 +168,7 @@ export function InvoiceDemo() {
             <div className="mt-5 grid grid-cols-2 gap-4 text-sm">
               <div className="min-w-0">
                 <p className="text-muted">From</p>
-                <p className="mt-0.5 whitespace-pre-line break-words">{FROM}</p>
+                <p className="mt-0.5 whitespace-pre-line break-words">{sample.from}</p>
               </div>
               <div className="min-w-0">
                 <p className="text-muted">Bill to</p>
@@ -190,12 +192,12 @@ export function InvoiceDemo() {
                       <td className="py-2 pr-3">
                         <span className="break-words">{line.description.trim() || "—"}</span>
                         <span className="block text-xs text-muted tabular-nums sm:hidden">
-                          {line.qty || "—"} × {rateText(line)}
+                          {line.qty || "—"} × {rateText(line, money)}
                         </span>
                       </td>
                       <td className="hidden py-2 text-right tabular-nums sm:table-cell">{line.qty || "—"}</td>
-                      <td className="hidden py-2 pl-2 text-right whitespace-nowrap tabular-nums sm:table-cell">{rateText(line)}</td>
-                      <td className="py-2 pl-2 text-right whitespace-nowrap tabular-nums">{amount == null ? "—" : naira(amount)}</td>
+                      <td className="hidden py-2 pl-2 text-right whitespace-nowrap tabular-nums sm:table-cell">{rateText(line, money)}</td>
+                      <td className="py-2 pl-2 text-right whitespace-nowrap tabular-nums">{amount == null ? "—" : money.format(amount)}</td>
                     </tr>
                   );
                 })}
@@ -204,15 +206,15 @@ export function InvoiceDemo() {
             <dl className="mt-4 ml-auto max-w-xs space-y-1 text-sm">
               <div className="flex justify-between gap-4">
                 <dt className="text-muted">Subtotal</dt>
-                <dd className="tabular-nums">{naira(subtotal)}</dd>
+                <dd className="tabular-nums">{money.format(subtotal)}</dd>
               </div>
               <div className="flex justify-between gap-4">
                 <dt className="text-muted">Tax {safeTax}%</dt>
-                <dd className="tabular-nums">{naira(tax)}</dd>
+                <dd className="tabular-nums">{money.format(tax)}</dd>
               </div>
               <div key={total} className={cn("-mx-2 flex items-baseline justify-between gap-4 rounded-lg px-2 pt-2 pb-1", edited && "anim-flash")}>
                 <dt className="font-medium">Total</dt>
-                <dd className="font-display text-2xl tracking-tight tabular-nums">{naira(total)}</dd>
+                <dd className="font-display text-2xl tracking-tight tabular-nums">{money.format(total)}</dd>
               </div>
             </dl>
           </article>

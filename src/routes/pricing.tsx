@@ -6,7 +6,7 @@ import { AppMark } from "@/components/app-mark";
 import { isGeneral } from "@/components/desk-list";
 import { AUDIENCES, audienceOf, sectionOf } from "@/lib/sections";
 import { pitchFor } from "@/lib/pitches";
-import { BILLING_FACTS, FREE_APPS, FREE_LABEL, PASS_APPS, PASS_FEATURES, PASS_LABEL, PLAN_SUMMARY } from "@/lib/plans";
+import { BILLING_FACTS, FREE_APPS, FREE_LABEL, PASS_APPS, PASS_EXTRAS, PASS_FEATURES, PASS_LABEL, PLAN_SUMMARY } from "@/lib/plans";
 import type { AppDef } from "@/lib/catalog";
 
 export const Route = createFileRoute("/pricing")({
@@ -91,14 +91,14 @@ function PricingPage() {
           What Midnry Pass adds
         </h2>
         <p className="mt-2 max-w-2xl text-pretty text-muted">
-          {PASS_APPS.length} tools, extra features in Remind, and apps other makers add after review.
+          {PASS_APPS.length} tools, extra features in Remind, apps other makers add after review, and a weapon finish in {PASS_EXTRAS.outpostFinish.game}.
         </p>
         <ul className="mt-6 grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
           {PASS_APPS.map((app) => (
             <AppLine key={app.slug} app={app} />
           ))}
         </ul>
-        <div className="mt-8 grid gap-3 md:grid-cols-2">
+        <div className="mt-8 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           <div className="rounded-2xl bg-card p-5 shadow-line sm:p-6">
             <div className="flex items-center gap-3">
               <AppMark slug="tasks" name="Remind" className="size-9" />
@@ -115,6 +115,30 @@ function PricingPage() {
               Pass.{" "}
               <Link to="/submit" className="font-medium text-ink underline underline-offset-4">
                 Add your app
+              </Link>
+            </p>
+          </div>
+          <div className="rounded-2xl bg-card p-5 shadow-line sm:p-6 md:col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-3">
+              {/* A swatch of the finish: gold chevrons on black, as the game paints it. */}
+              <svg aria-hidden viewBox="0 0 36 36" className="size-9 shrink-0 rounded-xl">
+                <rect width="36" height="36" fill={PASS_EXTRAS.outpostFinish.colors[0]} />
+                <path
+                  d="M3 7l5 4 5-4M15 7l5 4 5-4M27 7l5 4 5-4M-3 16l5 4 5-4M9 16l5 4 5-4M21 16l5 4 5-4M33 16l5 4 5-4M3 25l5 4 5-4M15 25l5 4 5-4M27 25l5 4 5-4"
+                  fill="none"
+                  stroke={PASS_EXTRAS.outpostFinish.colors[1]}
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <h3 className="font-display text-xl tracking-tight">{PASS_EXTRAS.outpostFinish.name}, in {PASS_EXTRAS.outpostFinish.game}</h3>
+            </div>
+            <p className="mt-3 text-pretty text-muted">
+              A {PASS_EXTRAS.outpostFinish.look} weapon finish, in your Locker for as long as the Pass is active. It changes how a weapon
+              looks, never how it plays.{" "}
+              <Link to="/games/outpost-zero" className="font-medium text-ink underline underline-offset-4">
+                About {PASS_EXTRAS.outpostFinish.game}
               </Link>
             </p>
           </div>

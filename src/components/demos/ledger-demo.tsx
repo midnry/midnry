@@ -2,38 +2,41 @@ import { useId, useState, type FormEvent } from "react";
 import { addDays, parseIso } from "@/lib/remind/dates";
 import { parseCents } from "@/components/tools/shared";
 import { cn } from "@/components/ui";
-import { DemoGrid, Step, demoInput, naira, useToday } from "./demo-kit";
+import { DemoGrid, Step, demoInput, useToday } from "./demo-kit";
+import { SAMPLES, moneyFor, useDemoCurrency, type Money } from "./demo-currency";
 
 /**
  * Ledger with a sample month of spending. Like the Ledger app
  * (src/components/tools/ledger.tsx): the same categories, amounts read with
  * the same rule, the month's total, an optional budget, and one bar per
- * category scaled to the biggest. Nothing is sent or saved.
+ * category scaled to the biggest. The sample month follows the demo
+ * currency; switching currency starts a fresh month in that currency.
+ * Nothing is sent or saved.
  */
 
 const CATEGORIES = ["Food", "Transit", "Home", "Bills", "Health", "Shopping", "Family", "Fun", "Work", "Other"] as const;
 type Entry = { id: string; label: string; cents: number; category: string; daysAgo: number };
 
-const START: Entry[] = [
-  { id: "e1", label: "Groceries at the market", cents: 1_850_000, category: "Food", daysAgo: 0 },
-  { id: "e2", label: "Bus and keke fares", cents: 600_000, category: "Transit", daysAgo: 1 },
-  { id: "e3", label: "Electricity token", cents: 1_500_000, category: "Bills", daysAgo: 2 },
-  { id: "e4", label: "Data bundle", cents: 550_000, category: "Bills", daysAgo: 4 },
-  { id: "e5", label: "Lunch with friends", cents: 900_000, category: "Fun", daysAgo: 5 },
-  { id: "e6", label: "Pharmacy", cents: 420_000, category: "Health", daysAgo: 7 },
-];
-const BUDGET_CENTS = 10_000_000;
 const MAX_ENTRIES = 12;
 
 export function LedgerDemo() {
+  const { currency } = useDemoCurrency();
+  return <LedgerSample key={currency} money={moneyFor(currency)} />;
+}
+
+function LedgerSample({ money: currency }: { money: Money }) {
   const ids = useId();
   const today = useToday();
-  const [entries, setEntries] = useState<Entry[]>(START);
+  const sample = SAMPLES[currency.code].ledger;
+  const BUDGET_CENTS = sample.budget * 100;
+  const [entries, setEntries] = useState<Entry[]>(() =>
+    sample.entries.map(({ amount, ...entry }, index) => ({ id: `e${index + 1}`, cents: Math.round(amount * 100), ...entry })),
+  );
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState<string>("Food");
   const [error, setError] = useState<string | null>(null);
-  const [count, setCount] = useState(START.length);
+  const [count, setCount] = useState(sample.entries.length);
 
   const total = entries.reduce((sum, entry) => sum + entry.cents, 0);
   const bars = CATEGORIES.map((name) => ({
@@ -42,7 +45,7 @@ export function LedgerDemo() {
   })).filter((row) => row.cents > 0);
   const max = Math.max(...bars.map((row) => row.cents), 1);
   const over = total > BUDGET_CENTS;
-  const money = (cents: number) => naira(cents / 100);
+  const money = (cents: number) => currency.format(cents / 100);
 
   // Sample dates stay inside the current month.
   const monthStart = today ? `${today.slice(0, 7)}-01` : "";
@@ -57,7 +60,7 @@ export function LedgerDemo() {
     event.preventDefault();
     const cents = parseCents(amount);
     if (!label.trim()) return setError("Add a short description.");
-    if (cents == null) return setError("Enter an amount like 2500.");
+    if (cents == null) return setError(`Enter an amount like ${sample.example}.`);
     if (entries.length >= MAX_ENTRIES) return setError(`The sample keeps ${MAX_ENTRIES} lines. Remove one first.`);
     setError(null);
     const next = count + 1;
@@ -77,8 +80,8 @@ export function LedgerDemo() {
               <input value={label} onChange={(event) => setLabel(event.target.value)} placeholder="What, e.g. Fuel" className={demoInput} aria-describedby={error ? `${ids}-error` : undefined} />
             </label>
             <label>
-              <span className="sr-only">Amount in naira</span>
-              <input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" placeholder="₦ Amount" className={cn(demoInput, "tabular-nums")} aria-describedby={error ? `${ids}-error` : undefined} />
+              <span className="sr-only">Amount in {currency.name}</span>
+              <input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" placeholder={`${currency.symbol} Amount`} className={cn(demoInput, "tabular-nums")} aria-describedby={error ? `${ids}-error` : undefined} />
             </label>
             <label>
               <span className="sr-only">Category</span>

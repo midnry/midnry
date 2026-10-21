@@ -41,27 +41,76 @@ export function isCurrency(value: unknown): value is CurrencyCode {
   return CURRENCIES.some((item) => item.code === value);
 }
 
+/** Countries (ISO 3166 region codes) whose currency is in the list above. */
+const EURO_REGIONS = ["AT", "BE", "CY", "DE", "EE", "ES", "FI", "FR", "GR", "HR", "IE", "IT", "LT", "LU", "LV", "MT", "NL", "PT", "SI", "SK"];
 const REGION_CURRENCY: Record<string, CurrencyCode> = {
   NG: "NGN", US: "USD", GB: "GBP", GH: "GHS", KE: "KES", ZA: "ZAR", CA: "CAD", IN: "INR",
-  DE: "EUR", FR: "EUR", ES: "EUR", IT: "EUR", NL: "EUR", IE: "EUR", PT: "EUR", BE: "EUR", AT: "EUR", FI: "EUR",
+  ...Object.fromEntries(EURO_REGIONS.map((region) => [region, "EUR" as const])),
 };
 
-/** The visitor's likely currency, from their time zone or browser language. */
-export function guessCurrency(): CurrencyCode {
-  if (typeof navigator === "undefined") return "USD";
+/** IANA time zones in euro-area countries. */
+const EURO_ZONES = new Set(
+  [
+    "Amsterdam", "Athens", "Berlin", "Bratislava", "Brussels", "Busingen", "Dublin", "Helsinki", "Lisbon", "Ljubljana", "Luxembourg",
+    "Madrid", "Malta", "Mariehamn", "Monaco", "Paris", "Riga", "Rome", "San_Marino", "Tallinn", "Vatican", "Vienna", "Vilnius", "Zagreb",
+  ].map((city) => `Europe/${city}`).concat(["Atlantic/Azores", "Atlantic/Canary", "Atlantic/Madeira", "Africa/Ceuta", "Asia/Nicosia", "Asia/Famagusta", "Europe/Nicosia", "Europe/Andorra"]),
+);
+
+/** IANA time zones in Canada (everything else under America/ counts as US dollars). */
+const CANADA_ZONES = new Set(
+  [
+    "Toronto", "Montreal", "Vancouver", "Edmonton", "Calgary", "Winnipeg", "Regina", "Swift_Current", "Halifax", "Glace_Bay", "Moncton",
+    "Goose_Bay", "St_Johns", "Whitehorse", "Dawson", "Dawson_Creek", "Fort_Nelson", "Creston", "Yellowknife", "Inuvik", "Cambridge_Bay",
+    "Rankin_Inlet", "Resolute", "Iqaluit", "Nipigon", "Thunder_Bay", "Rainy_River", "Atikokan", "Blanc-Sablon", "Pangnirtung",
+  ].map((city) => `America/${city}`).concat(["Canada/Atlantic", "Canada/Central", "Canada/Eastern", "Canada/Mountain", "Canada/Newfoundland", "Canada/Pacific", "Canada/Saskatchewan", "Canada/Yukon"]),
+);
+
+const ZONE_CURRENCY: Record<string, CurrencyCode> = {
+  "Africa/Lagos": "NGN",
+  "Africa/Accra": "GHS",
+  "Africa/Nairobi": "KES",
+  "Africa/Johannesburg": "ZAR",
+  "Europe/London": "GBP",
+  "Europe/Belfast": "GBP",
+  "Europe/Jersey": "GBP",
+  "Europe/Guernsey": "GBP",
+  "Europe/Isle_of_Man": "GBP",
+  GB: "GBP",
+  "Asia/Kolkata": "INR",
+  "Asia/Calcutta": "INR",
+};
+
+/** The currency a time zone points to, or null when it says nothing useful. */
+export function currencyFromZone(zone: string | undefined): CurrencyCode | null {
+  if (!zone) return null;
+  if (ZONE_CURRENCY[zone]) return ZONE_CURRENCY[zone];
+  if (EURO_ZONES.has(zone)) return "EUR";
+  if (CANADA_ZONES.has(zone)) return "CAD";
+  if (zone.startsWith("America/") || zone.startsWith("US/")) return "USD";
+  return null;
+}
+
+/** The currency of a language tag's region ("en-GB" → GBP), or null. */
+export function currencyFromLanguage(language: string | undefined): CurrencyCode | null {
+  if (!language) return null;
+  const region = language.split(/[-_]/).slice(1).find((part) => /^[A-Za-z]{2}$/.test(part));
+  return region ? (REGION_CURRENCY[region.toUpperCase()] ?? null) : null;
+}
+
+/**
+ * The visitor's likely currency, read only from the browser itself: the time
+ * zone first, then the region in the browser language, then `fallback`.
+ * Nothing is looked up over the network.
+ */
+export function guessCurrency(fallback: CurrencyCode = "USD"): CurrencyCode {
+  if (typeof navigator === "undefined") return fallback;
+  let zone: string | undefined;
   try {
-    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (zone === "Africa/Lagos") return "NGN";
-    if (zone === "Africa/Accra") return "GHS";
-    if (zone === "Africa/Nairobi") return "KES";
-    if (zone === "Africa/Johannesburg") return "ZAR";
-    if (zone === "Europe/London") return "GBP";
-    if (zone === "Asia/Kolkata" || zone === "Asia/Calcutta") return "INR";
+    zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   } catch {
     /* fall through to the language */
   }
-  const region = (navigator.language.split("-")[1] ?? "").toUpperCase();
-  return REGION_CURRENCY[region] ?? "USD";
+  return currencyFromZone(zone) ?? currencyFromLanguage(navigator.language) ?? fallback;
 }
 
 export function formatMoney(value: number, currency: CurrencyCode): string {

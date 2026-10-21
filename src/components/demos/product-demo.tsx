@@ -5,11 +5,19 @@ import { accessLabel } from "@/lib/plans";
 import { AppMark } from "@/components/app-mark";
 import { cn } from "@/components/ui";
 import { SampleBadge } from "./demo-kit";
+import { DemoCurrencyPicker, DemoCurrencyProvider } from "./demo-currency";
 import { RemindDemo } from "./remind-demo";
 import { InvoiceDemo } from "./invoice-demo";
 import { LedgerDemo } from "./ledger-demo";
 
-type DemoDef = { slug: string; use: string; intro: string; Demo: ComponentType };
+type DemoDef = {
+  slug: string;
+  use: string;
+  intro: string;
+  Demo: ComponentType;
+  /** Shows amounts, so it gets the currency picker. */
+  money?: boolean;
+};
 
 /** The apps with a hands-on sample. Product pages for other apps use real screenshots. */
 export const DEMOS: readonly DemoDef[] = [
@@ -24,12 +32,14 @@ export const DEMOS: readonly DemoDef[] = [
     use: "Bill a client",
     intro: "Invoice does the sums for you and lays out a clean sheet, ready to print or save as a PDF.",
     Demo: InvoiceDemo,
+    money: true,
   },
   {
     slug: "ledger",
     use: "Track spending",
     intro: "Ledger adds up the month, shows which category took the most and, if you set a budget, how much is left.",
     Demo: LedgerDemo,
+    money: true,
   },
 ];
 
@@ -41,6 +51,14 @@ const FRAME = "overflow-hidden rounded-[1.75rem] bg-card shadow-[0_0_0_1px_var(-
 
 /** Homepage: Remind, Invoice and Ledger in one frame, switched with tabs (no autoplay). */
 export function ProductDemo({ className }: { className?: string }) {
+  return (
+    <DemoCurrencyProvider>
+      <ProductDemoFrame className={className} />
+    </DemoCurrencyProvider>
+  );
+}
+
+function ProductDemoFrame({ className }: { className?: string }) {
   const base = useId();
   const [active, setActive] = useState(0);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -93,7 +111,10 @@ export function ProductDemo({ className }: { className?: string }) {
             );
           })}
         </div>
-        <SampleBadge className="self-start lg:self-auto" />
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <SampleBadge />
+          <DemoCurrencyPicker hidden={!DEMOS[active]?.money} />
+        </div>
       </div>
       {DEMOS.map((demo, index) => {
         const app = getApp(demo.slug);
@@ -136,10 +157,21 @@ export function AppDemo({ slug, className }: { slug: string; className?: string 
   const demo = DEMOS.find((item) => item.slug === slug);
   if (!demo) return null;
   return (
+    <DemoCurrencyProvider>
+      <AppDemoFrame demo={demo} className={className} />
+    </DemoCurrencyProvider>
+  );
+}
+
+function AppDemoFrame({ demo, className }: { demo: DemoDef; className?: string }) {
+  return (
     <div className={cn(FRAME, className)}>
       <div className="flex flex-col gap-3 border-b border-line bg-paper-2/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <p className="font-medium">Try it here</p>
-        <SampleBadge className="self-start sm:self-auto" />
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <SampleBadge />
+          {demo.money ? <DemoCurrencyPicker /> : null}
+        </div>
       </div>
       <div className="p-4 sm:p-6 lg:p-8">
         <p className="max-w-2xl text-pretty text-ink-soft sm:text-lg">{demo.intro}</p>

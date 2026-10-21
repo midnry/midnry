@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { localToday } from "@/lib/remind/parse";
-import { formatMoney } from "@/lib/format";
 import { cn } from "@/components/ui";
 
 /**
@@ -30,9 +29,6 @@ export function useReducedMotion(): boolean {
   }, []);
   return reduced;
 }
-
-/** The sample amounts are in naira, the currency most Midnry visitors use. */
-export const naira = (value: number) => formatMoney(value, "NGN");
 
 export function SampleBadge({ className }: { className?: string }) {
   return (

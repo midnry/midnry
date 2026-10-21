@@ -18,3 +18,11 @@ test("the plan description matches the access rule", () => {
   assert.equal(accessLabel("free"), "Free with an account");
   assert.equal(accessLabel("pass"), "Included with Midnry Pass");
 });
+
+test("the Pass finish named on the site is the game's Pass finish", async () => {
+  const { PASS_EXTRAS } = await jiti.import("../src/lib/plans.ts");
+  const { FINISHES } = await import("../public/games/outpost-finishes.js");
+  const passFinishes = FINISHES.filter((finish) => finish.kind === "pass");
+  assert.deepEqual(passFinishes.map((finish) => finish.name), [PASS_EXTRAS.outpostFinish.name]);
+  assert.deepEqual(passFinishes[0].colors, [...PASS_EXTRAS.outpostFinish.colors]);
+});

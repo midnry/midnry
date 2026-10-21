@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { PASS_PRICE_LABEL } from "@/lib/access";
-import { FREE_APPS, FREE_LABEL, PASS_APPS, PASS_FEATURES, PASS_LABEL } from "@/lib/plans";
+import { FREE_APPS, FREE_LABEL, PASS_APPS, PASS_EXTRAS, PASS_FEATURES, PASS_LABEL } from "@/lib/plans";
 import { ArrowLink, SECTION_GAP, SectionHeader } from "@/components/home-section";
 
 /**
@@ -73,6 +73,11 @@ export function PlansSection() {
               <Group key={group.what} {...group} inverted />
             ))}
             <Group inverted what="More in Remind" apps={`${PASS_FEATURES.tasks[0].toUpperCase()}${PASS_FEATURES.tasks.slice(1)}`} />
+            <Group
+              inverted
+              what={`A finish in ${PASS_EXTRAS.outpostFinish.game}`}
+              apps={`${PASS_EXTRAS.outpostFinish.name}, a ${PASS_EXTRAS.outpostFinish.look} weapon skin. Looks only.`}
+            />
           </ul>
         </div>
       </div>

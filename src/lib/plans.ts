@@ -33,3 +33,19 @@ export const PASS_FEATURES: Record<string, string> = {
 
 /** One sentence that explains the two plans, with real numbers. */
 export const PLAN_SUMMARY = `${FREE_APPS.length} apps are free with an account. Midnry Pass, ${PASS_PRICE_LINE}, adds ${PASS_APPS.length} more tools, extra features in Remind, and apps other makers add after review.`;
+
+/**
+ * What the Pass adds outside the apps. Checked against the game:
+ * public/games/outpost-finishes.js lists "Midnry Signal" (id "signal") as the
+ * one finish of kind "pass", and outpost-store.js unlocks it while the account
+ * has Midnry Pass. Finishes are cosmetic and never change a weapon.
+ */
+export const PASS_EXTRAS = {
+  outpostFinish: {
+    name: "Midnry Signal",
+    game: "Outpost Zero",
+    look: "black-and-gold",
+    colors: ["#111214", "#d9a441"],
+    line: "Midnry Signal, a black-and-gold weapon finish in Outpost Zero",
+  },
+} as const;
