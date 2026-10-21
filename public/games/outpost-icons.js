@@ -30,6 +30,9 @@ const P = {
   sand: '<path d="M3 8h12a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h9"/>',
   power: '<path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z"/>',
   bomb: '<circle cx="11" cy="14" r="6.5"/><path d="M15.5 9.5l2-2M17.5 4.5v1.5M20 7h-1.5"/>',
+  home: '<path d="M4 11l8-6.5 8 6.5"/><path d="M6 9.5V20h12V9.5M10 20v-5.5h4V20"/>',
+  bot: '<rect x="5" y="8.5" width="14" height="10" rx="3"/><path d="M12 8.5V5.5M10.5 4.5h3M3 13v2M21 13v2"/><circle cx="9.5" cy="13.5" r="1.1"/><circle cx="14.5" cy="13.5" r="1.1"/>',
+  copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="1.5"/><path d="M15.5 8.5V5.5a1 1 0 0 0-1-1h-9a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h3"/>',
 };
 
 export function icon(name, cls = "") {

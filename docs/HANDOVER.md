@@ -647,3 +647,15 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   BUTTON / PRESS X · what it does" (`SUPER_HINTS`) in full the first 3 times
   (`midnry-outpost-overdrive-hint` counter), then short, with a chime.
 - Tests: `scripts/outpost-stance.test.mjs` (ADS). QA: `node scripts/qa/scope-look.mjs [width]`.
+
+## New in-game HUD and lobby to the owner's mockups (owner, 2026-10-21, not deployed yet)
+
+- HUD: `public/games/outpost-signal-hud.js` (`SignalHud`, shell classes `mf-sighud` everywhere but
+  Blackout Protocol, `mf-sigmode` in Last Signal): ALIVE/LIVES, shield and Red Haze pills, round
+  special-move button with a charge ring, icon thumb buttons (ADS, JUMP, FIRE, CROUCH, RELOAD),
+  bigger joystick, health and weapon cards. Minimap is a zoomed local view (`drawMap` in the html).
+  QA: `node scripts/qa/hud-look.mjs`.
+- Lobby (`public/games/outpost-menu.js`, `scripts/outpost-military/lobby-stage.js`): "PLAY / ONLINE"
+  + game title, pad name labels, ping chip, operator card with level/XP, BOTS/FRIENDS play card with
+  room code, copy, "Invite friends" (opens the room sheet: quick match, join by code, roster) and
+  START MATCH; phone bottom tab bar. Practice/Exit kept. QA: `node scripts/qa/lobby-look.mjs [width]`.

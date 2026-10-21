@@ -63,9 +63,10 @@ export class LobbyStage {
       ringGeo = own(new THREE.TorusGeometry(1.03, 0.012, 8, 96));
     this.pads = [];
     for (const [x, z, s] of [
-      [0, 0, 1],
-      [-1.2, 0.75, 0.55],
-      [1.2, 0.75, 0.55],
+      // Squad pads just behind yours, tucked in at its sides.
+      [0, 0, 0.85],
+      [-1.32, -0.35, 0.62],
+      [1.32, -0.35, 0.62],
     ]) {
       const pad = new THREE.Group();
       pad.position.set(x, 0, z);
@@ -195,11 +196,31 @@ export class LobbyStage {
       aspect = w / h,
       portrait = aspect < 0.9;
     this.camera.aspect = aspect;
-    // Portrait (phones): the operator fills the upper part of the screen,
-    // above the menu sheet. Landscape: centred between the side panels.
-    this.camera.fov = portrait ? 40 : 30;
-    this.camera.position.set(0, portrait ? 1.6 : 1.5, portrait ? 10 : 9);
-    this.camera.lookAt(0, portrait ? -0.35 : 1.15, 0);
+    // The menu's stage box (.mf-stagebox) says where the operator and pads
+    // stand on screen: fit them to it and shift the view so they sit in it.
+    const box = !this.cardShot && this.stageRect(),
+      canvas = r.renderer.domElement;
+    if (box) {
+      const at = canvas.getBoundingClientRect(),
+        bx = box.left - at.left,
+        by = box.top - at.top,
+        // The pads span about 4 m across (their outer edges may crop);
+        // pads to head about 2.4 m.
+        visible = Math.max((2.4 * h) / box.height, (3.6 * h) / box.width),
+        fov = 30,
+        distance = visible / 2 / Math.tan((fov * Math.PI) / 360);
+      this.camera.fov = fov;
+      this.camera.position.set(0, 1.1 + distance * 0.12, distance);
+      this.camera.lookAt(0, 1.1, 0);
+      this.camera.setViewOffset(w, h, w / 2 - (bx + box.width / 2), h / 2 - (by + box.height / 2), w, h);
+    } else {
+      this.camera.clearViewOffset();
+      // Portrait (phones): the operator fills the upper part of the screen,
+      // above the menu sheet. Landscape: centred between the side panels.
+      this.camera.fov = portrait ? 40 : 30;
+      this.camera.position.set(0, portrait ? 1.6 : 1.5, portrait ? 10 : 9);
+      this.camera.lookAt(0, portrait ? -0.35 : 1.15, 0);
+    }
     // Locker card art (scripts/capture-outpost-characters.mjs): head to knees.
     if (this.cardShot) {
       this.camera.fov = 30;
@@ -249,17 +270,42 @@ export class LobbyStage {
     renderer.render(this.scene, this.camera);
     return true;
   }
-  /** Pin the menu's squad "+" buttons over the two side pads. */
+  /** The menu's stage box on screen, when it is laid out. */
+  stageRect() {
+    const box = this.r.g.$?.(".mf-stagebox"),
+      rect = box?.getBoundingClientRect();
+    if (!rect || rect.width < 40 || rect.height < 40) return null;
+    // Its padding keeps room for chips laid over the stage's edges.
+    const css = getComputedStyle(box),
+      top = parseFloat(css.paddingTop) || 0,
+      bottom = parseFloat(css.paddingBottom) || 0,
+      height = rect.height - top - bottom;
+    return height > 40 ? { left: rect.left, top: rect.top + top, width: rect.width, height } : null;
+  }
+  /** Pin the menu's squad "+" buttons over the two side pads and each pad's
+   * name label on its front edge. The squad layer may scroll with the menu,
+   * so positions are relative to it. */
   placeSquad(w, h) {
-    const buttons = this.r.g.$?.(".mf-squad")?.querySelectorAll("[data-invite]");
-    if (!buttons?.length) return;
-    const v = new THREE.Vector3();
-    buttons.forEach((b, i) => {
+    const squad = this.r.g.$?.(".mf-squad");
+    if (!squad || squad.hidden) return;
+    const v = new THREE.Vector3(),
+      at = this.r.renderer.domElement.getBoundingClientRect(),
+      layer = squad.getBoundingClientRect(),
+      dx = at.left - layer.left,
+      dy = at.top - layer.top;
+    const pin = (node, x, y, z) => {
+      v.set(x, y, z).project(this.camera);
+      node.style.setProperty("--x", `${(((v.x + 1) / 2) * w + dx).toFixed(1)}px`);
+      node.style.setProperty("--y", `${(((1 - v.y) / 2) * h + dy).toFixed(1)}px`);
+    };
+    squad.querySelectorAll("[data-invite]").forEach((b, i) => {
       const pad = this.pads[i + 1];
-      if (!pad) return;
-      v.set(pad.position.x, 0.45, pad.position.z).project(this.camera);
-      b.style.setProperty("--x", `${(((v.x + 1) / 2) * w).toFixed(1)}px`);
-      b.style.setProperty("--y", `${(((1 - v.y) / 2) * h).toFixed(1)}px`);
+      // Above the pad's inner half, clear of the cards at the screen sides.
+      if (pad) pin(b, pad.position.x * 0.78, 0.85, pad.position.z);
+    });
+    squad.querySelectorAll("[data-pad]").forEach((label) => {
+      const pad = this.pads[Number(label.dataset.pad)];
+      if (pad) pin(label, pad.position.x, 0.06, pad.position.z + 1.04 * pad.scale.z);
     });
   }
   dispose() {

@@ -26615,17 +26615,17 @@ var xg = (e, t, n) => {
 			[
 				0,
 				0,
-				1
+				.85
 			],
 			[
-				-1.2,
-				.75,
-				.55
+				-1.32,
+				-.35,
+				.62
 			],
 			[
-				1.2,
-				.75,
-				.55
+				1.32,
+				-.35,
+				.62
 			]
 		]) {
 			let r = new X();
@@ -26708,7 +26708,13 @@ var xg = (e, t, n) => {
 			for (let e of fh) t.loadCharacter(e.id);
 		}
 		let i = t.renderer.domElement.clientWidth || 1, a = t.renderer.domElement.clientHeight || 1, o = i / a, s = o < .9;
-		this.camera.aspect = o, this.camera.fov = s ? 40 : 30, this.camera.position.set(0, s ? 1.6 : 1.5, s ? 10 : 9), this.camera.lookAt(0, s ? -.35 : 1.15, 0), this.cardShot && (this.camera.fov = 30, this.camera.position.set(0, 1.3, 4.6), this.camera.lookAt(0, 1.02, 0)), this.camera.updateProjectionMatrix(), this.skyMaterial.uniforms.time.value = r ? 0 : n;
+		this.camera.aspect = o;
+		let c = !this.cardShot && this.stageRect(), l = t.renderer.domElement;
+		if (c) {
+			let e = l.getBoundingClientRect(), t = c.left - e.left, n = c.top - e.top, r = Math.max(2.4 * a / c.height, 3.6 * a / c.width) / 2 / Math.tan(30 * Math.PI / 360);
+			this.camera.fov = 30, this.camera.position.set(0, 1.1 + r * .12, r), this.camera.lookAt(0, 1.1, 0), this.camera.setViewOffset(i, a, i / 2 - (t + c.width / 2), a / 2 - (n + c.height / 2), i, a);
+		} else this.camera.clearViewOffset(), this.camera.fov = s ? 40 : 30, this.camera.position.set(0, s ? 1.6 : 1.5, s ? 10 : 9), this.camera.lookAt(0, s ? -.35 : 1.15, 0);
+		this.cardShot && (this.camera.fov = 30, this.camera.position.set(0, 1.3, 4.6), this.camera.lookAt(0, 1.02, 0)), this.camera.updateProjectionMatrix(), this.skyMaterial.uniforms.time.value = r ? 0 : n;
 		for (let e of [this.actor, ...this.mates || []]) {
 			if (!e) continue;
 			let i = e.actions.Idle;
@@ -26725,16 +26731,32 @@ var xg = (e, t, n) => {
 			e.needsUpdate = !0, this.ringMaterial.color.setRGB(1, .78 + Math.sin(n * 1.6) * .06, .34);
 		}
 		this.scene.environment = t.scene.environment, this.scene.environmentIntensity = .35, this.placeSquad(i, a);
-		let c = t.renderer;
-		return c.setRenderTarget(null), c.render(this.scene, this.camera), !0;
+		let u = t.renderer;
+		return u.setRenderTarget(null), u.render(this.scene, this.camera), !0;
+	}
+	stageRect() {
+		let e = this.r.g.$?.(".mf-stagebox"), t = e?.getBoundingClientRect();
+		if (!t || t.width < 40 || t.height < 40) return null;
+		let n = getComputedStyle(e), r = parseFloat(n.paddingTop) || 0, i = parseFloat(n.paddingBottom) || 0, a = t.height - r - i;
+		return a > 40 ? {
+			left: t.left,
+			top: t.top + r,
+			width: t.width,
+			height: a
+		} : null;
 	}
 	placeSquad(e, t) {
-		let n = this.r.g.$?.(".mf-squad")?.querySelectorAll("[data-invite]");
-		if (!n?.length) return;
-		let r = new W();
-		n.forEach((n, i) => {
-			let a = this.pads[i + 1];
-			a && (r.set(a.position.x, .45, a.position.z).project(this.camera), n.style.setProperty("--x", `${((r.x + 1) / 2 * e).toFixed(1)}px`), n.style.setProperty("--y", `${((1 - r.y) / 2 * t).toFixed(1)}px`));
+		let n = this.r.g.$?.(".mf-squad");
+		if (!n || n.hidden) return;
+		let r = new W(), i = this.r.renderer.domElement.getBoundingClientRect(), a = n.getBoundingClientRect(), o = i.left - a.left, s = i.top - a.top, c = (n, i, a, c) => {
+			r.set(i, a, c).project(this.camera), n.style.setProperty("--x", `${((r.x + 1) / 2 * e + o).toFixed(1)}px`), n.style.setProperty("--y", `${((1 - r.y) / 2 * t + s).toFixed(1)}px`);
+		};
+		n.querySelectorAll("[data-invite]").forEach((e, t) => {
+			let n = this.pads[t + 1];
+			n && c(e, n.position.x * .78, .85, n.position.z);
+		}), n.querySelectorAll("[data-pad]").forEach((e) => {
+			let t = this.pads[Number(e.dataset.pad)];
+			t && c(e, t.position.x, .06, t.position.z + 1.04 * t.scale.z);
 		});
 	}
 	dispose() {

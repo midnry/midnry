@@ -1,7 +1,10 @@
-// Home lobby: the operator on a lit platform, squad "+" pads either side,
-// level and challenges on the left, the mode card bottom right. Checks the
-// unchosen state, the picker sheet (open, pick, close), the mode card's Play
-// starting the chosen game, and dragging to turn the operator.
+// Home lobby: "PLAY / OFFLINE" over the chosen game's name, the operator on a
+// lit platform with name labels under the pads and "+" on empty ones, the
+// operator card on the left, the Play card (Bots / Friends, game, room,
+// Start match) bottom right; on phones one column with a bottom tab bar.
+// Checks the unchosen state, the picker sheet (open, pick, close), dragging
+// to turn the operator, Friends (create a room: code, ping chip, room sheet)
+// and Start match starting the chosen game.
 //   node scripts/qa/lobby-look.mjs [width]
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
@@ -35,9 +38,15 @@ const look = () =>
       state: g.state,
       mode: g.mode,
       title: document.querySelector(".mf-modetitle")?.textContent,
+      lobbyTitle: document.querySelector(".mf-lobbytitle")?.textContent,
+      operator: document.querySelector(".mf-opname")?.textContent,
+      pads: [...document.querySelectorAll(".mf-padname")].filter((e) => !e.hidden && e.textContent).map((e) => e.textContent),
+      room: box(".mf-roomline") && document.querySelector(".mf-roomid")?.textContent,
+      ping: box(".mf-ping"),
+      tabbar: getComputedStyle(document.querySelector(".mf-hometop nav")).position === "fixed",
       play: document.querySelector(".mf-modeplay")?.textContent,
       modeCard: box(".mf-modecard"),
-      left: box(".mf-homeleft"),
+      opcard: box(".mf-opcard"),
       squad: [...document.querySelectorAll(".mf-squad [data-invite]")].map((e) => {
         const r = e.getBoundingClientRect();
         return [Math.round(r.x), Math.round(r.y)];
@@ -68,6 +77,21 @@ await p.waitForTimeout(100);
 result.turned = Math.abs((await p.evaluate(() => document.querySelector("midnry-fps").engine.military.lobby.actor.root.rotation.y)) - spin0) > 0.2;
 await p.waitForTimeout(2500);
 await p.screenshot({ path: `${OUT}/lobby-signal-${W}.png` });
+result.signal = await look();
+// Friends: the big button creates a room; the card shows its code.
+await p.click('[data-playwith="online"]');
+await p.waitForTimeout(500);
+await p.click(".mf-modeplay");
+await p.waitForFunction(() => document.querySelector("midnry-fps").engine.online?.code, null, { timeout: 60000, polling: 1000 });
+await p.waitForTimeout(2500);
+result.friends = await look();
+await p.screenshot({ path: `${OUT}/lobby-friends-${W}.png` });
+await p.click(".mf-roominvite");
+await p.waitForTimeout(500);
+result.roomSheet = await p.evaluate(() => document.querySelector(".mf-modal").classList.contains("mf-roomopen") && !!document.querySelector(".mf-roomsheet .mf-copyinvite"));
+await p.screenshot({ path: `${OUT}/room-sheet-${W}.png` });
+await p.keyboard.press("Escape");
+await p.waitForTimeout(300);
 await p.click(".mf-modeplay");
 await p.waitForFunction(() => document.querySelector("midnry-fps").engine.state === "playing", null, { timeout: 120000 });
 result.started = await look();
@@ -81,6 +105,13 @@ const ok =
   result.afterPlay.state === "fresh" &&
   !result.chosen.picker &&
   /last signal/i.test(result.chosen.title) &&
+  /play\s*\/\s*offline\s*last signal/i.test(result.signal.lobbyTitle) &&
+  result.signal.pads.length === 1 &&
+  /play\s*\/\s*online/i.test(result.friends.lobbyTitle) &&
+  /^[A-Z0-9]{6}$/.test(result.friends.room || "") &&
+  result.friends.ping &&
+  result.roomSheet &&
+  result.fresh.tabbar === M &&
   result.turned &&
   result.started.mode === "signal" &&
   !result.fresh.overflow &&

@@ -10,6 +10,7 @@ import { dailyKey, shiftChoice } from "./outpost-shifts.js";
 import { modifierChoice } from "./outpost-variety.js";
 import { SERIES_KINDS, seriesKindOf } from "./outpost-series.js";
 import { characterOf } from "./outpost-characters.js";
+import { networkQuality } from "./outpost-netmeter.js";
 
 // Step 1 picks the game; step 2 shows only that game's ways to play.
 const GAMES = [
@@ -79,7 +80,7 @@ midnry-fps .mf-newhere .mf-ico { width: 18px; height: 18px; }
 midnry-fps .mf-systemcheck { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 12px; }
 midnry-fps .mf-systemcheck .mf-ico { width: 18px; height: 18px; }
 /* Desktop has the top menu bar; the left column copies are only for phones. */
-@media (min-width: 1101px) and (min-height: 641px) { midnry-fps .mf-modal.mf-home .mf-homeactions { display: none !important; } }
+@media (min-width: 1000px) and (min-height: 600px) { midnry-fps .mf-modal.mf-home .mf-homeactions { display: none !important; } }
 /* Last Signal on touch: lift the health box clear of the movement stick. */
 @media (pointer: coarse) { midnry-fps .mf-shell:not(.mf-protocol) .mf-bottom .mf-stat:first-child { transform: translateY(-128px); } }
 midnry-fps .mf-modal.mf-home .mf-modes { display: grid !important; grid-template-columns: 1fr !important; gap: 8px !important; margin: 0 !important; }
@@ -110,9 +111,14 @@ midnry-fps .mf-homeside { position: absolute; right: 32px; top: 84px; width: 340
 midnry-fps .mf-card { position: relative; border: 1px solid #ffffff1f; border-radius: 4px; background: #0a0f0dd9; backdrop-filter: blur(6px); color: #e9efe9; }
 midnry-fps .mf-card h3 { margin: 0; font: 600 14px var(--mf-display); letter-spacing: 0.14em; text-transform: uppercase; color: #aeb9b2; }
 midnry-fps .mf-opcard { padding: 16px 18px 18px; overflow: hidden; }
-midnry-fps .mf-opcard strong { display: block; margin: 4px 0 8px; font: 800 34px/1 var(--mf-display); text-transform: uppercase; letter-spacing: 0.02em; }
-midnry-fps .mf-opcard p { margin: 0 0 10px; font: 600 14px var(--mf-display); letter-spacing: 0.08em; color: #c7d0ca; }
-midnry-fps .mf-opcard .mf-xpbar { width: 100%; height: 4px; }
+midnry-fps .mf-ophead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding-bottom: 14px; border-bottom: 1px solid #ffffff17; }
+midnry-fps .mf-opname { display: block; margin: 6px 0 2px; font: 800 40px/1 var(--mf-display); text-transform: uppercase; letter-spacing: 0.02em; color: #f4f6f2; }
+midnry-fps .mf-optag { margin: 0; font: 600 18px var(--mf-display); letter-spacing: 0.02em; text-transform: capitalize; color: #e3e9e4; }
+midnry-fps .mf-emblem { flex: none; width: 58px; height: 58px; margin-top: 10px; fill: currentColor; fill-opacity: 0.28; stroke: #cfd6d2; stroke-width: 1.4; stroke-linejoin: round; }
+midnry-fps .mf-opprog { display: grid; gap: 10px; padding-top: 14px; }
+midnry-fps .mf-oplevel { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font: 700 16px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; color: #f1f4ef; }
+midnry-fps .mf-oplevel span { font-weight: 600; font-size: 14px; letter-spacing: 0.04em; color: #aeb9b2; }
+midnry-fps .mf-opcard .mf-xpbar { width: 100%; height: 4px; border-radius: 2px; overflow: hidden; }
 midnry-fps .mf-challenges { padding: 14px 18px; }
 midnry-fps .mf-challenges header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
 midnry-fps .mf-challenges header b { font: 700 15px var(--mf-display); color: var(--mf-accent); margin-left: 8px; }
@@ -222,45 +228,110 @@ midnry-fps .mf-modal.mf-home.mf-lobby { background:
 midnry-fps .mf-modal.mf-lobby .mf-hero { display: none; }
 midnry-fps .mf-modal.mf-lobby > .mf-panel :is(.mf-modes, .mf-start, .mf-playsummary) { display: none !important; }
 midnry-fps .mf-homeleft { display: grid; gap: 12px; margin-top: 4px; }
-midnry-fps .mf-opchar { all: unset; cursor: pointer; box-sizing: border-box; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 8px 10px; border: 1px solid #ffffff24; border-radius: 3px; font: 700 12px var(--mf-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--mf-accent); }
-midnry-fps .mf-opchar span { color: #dfe5e0; letter-spacing: 0.06em; }
-midnry-fps .mf-opchar:hover { border-color: #ffffff66; }
+midnry-fps .mf-opchar { all: unset; cursor: pointer; box-sizing: border-box; width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 52px; margin-top: 6px; padding: 0 16px 0 20px; border: 1px solid #ffffff3d; border-radius: 4px; background: #ffffff08; font: 700 17px var(--mf-display); letter-spacing: 0.1em; text-transform: uppercase; color: #eef2ee; }
+midnry-fps .mf-opchar .mf-ico { width: 18px; height: 18px; }
+midnry-fps .mf-opchar:hover { border-color: #ffffff88; background: #ffffff10; }
 midnry-fps .mf-opchar:focus-visible { outline: 2px solid var(--mf-accent); outline-offset: 2px; }
 midnry-fps .mf-modal:not(.mf-home) :is(.mf-homeleft, .mf-modecard, .mf-squad) { display: none !important; }
 midnry-fps .mf-modal.mf-home:not(.mf-lobby) :is(.mf-modecard, .mf-squad) { display: none !important; }
-midnry-fps .mf-modecard { position: absolute; right: 32px; bottom: 24px; width: 340px; display: grid; gap: 4px; padding: 16px 18px 18px; border: 1px solid #ffffff24; border-radius: 4px; background: #0a0f0de0; backdrop-filter: blur(8px); color: #eef2ee; z-index: 2; }
+midnry-fps .mf-modal:not(.mf-lobby) :is(.mf-lobbytitle, .mf-stagebox, .mf-roomsheet) { display: none !important; }
+midnry-fps .mf-hometop .mf-wordmark em { font-style: normal; color: var(--mf-accent); }
+midnry-fps .mf-hometop nav .mf-ico { display: none; }
+/* Lobby title: PLAY / ONLINE over the chosen game, its last word in gold. */
+midnry-fps .mf-lobbytitle { position: absolute; left: 40px; top: 82px; z-index: 1; pointer-events: none; }
+midnry-fps .mf-lobbykicker { margin: 0 0 4px; font: 600 16px var(--mf-display); letter-spacing: 0.3em; text-transform: uppercase; color: var(--mf-accent); }
+midnry-fps .mf-lobbykicker i { font-style: normal; margin: 0 0.25em; color: #cfd8d2; }
+midnry-fps .mf-lobbykicker span { color: #e3e9e4; }
+midnry-fps .mf-lobbyname { margin: 0; font: 800 76px/0.92 var(--mf-display); letter-spacing: 0; text-transform: uppercase; white-space: nowrap; color: #f4f6f2; text-shadow: 0 4px 24px #0009; }
+midnry-fps .mf-lobbyname em { font-style: normal; color: var(--mf-accent); }
+midnry-fps .mf-modal.mf-lobby > .mf-panel { top: 194px; width: 320px !important; }
+midnry-fps .mf-modal.mf-lobby > .mf-panel :is(h1, .mf-logosub) { display: none !important; }
+midnry-fps .mf-modal.mf-lobby > .mf-panel > .mf-homefoot { flex-direction: column; align-items: flex-start; gap: 10px; }
+midnry-fps .mf-modal.mf-home[data-mode="signal"] .mf-protocol-menunote { display: none; }
+midnry-fps .mf-modal.mf-lobby .mf-protocol-menunote { margin: 0; font: 400 13px var(--mf-body); color: #aeb9b2; }
+/* The 3D stage frames the operator and the squad pads inside this box. */
+midnry-fps .mf-stagebox { position: absolute; left: clamp(240px, 24vw, 440px); right: clamp(220px, 24vw, 440px); top: 150px; bottom: 80px; pointer-events: none; }
+/* Online ping (bottom left, above Exit game). */
+midnry-fps .mf-homefoot .mf-ping { display: inline-flex !important; align-items: center; gap: 10px; min-height: 44px; padding: 0 16px !important; border: 1px solid #ffffff1f !important; border-radius: 4px !important; background: #0a0f0dd9 !important; color: #e3e9e4 !important; font: 500 15px var(--mf-body) !important; letter-spacing: 0 !important; text-transform: none; }
+midnry-fps .mf-homefoot .mf-ping[hidden] { display: none !important; }
+midnry-fps .mf-ping i { width: 10px; height: 10px; border-radius: 50%; background: #8a948e; }
+midnry-fps .mf-ping:is([data-tone="great"], [data-tone="ok"]) i { background: #3fd07f; box-shadow: 0 0 8px #3fd07f99; }
+midnry-fps .mf-ping[data-tone="warn"] i { background: #ffb547; }
+midnry-fps .mf-ping[data-tone="bad"] i { background: #ff5a4a; }
+/* Play card: Bots / Friends, the game (opens the picker), room, Start. */
+midnry-fps .mf-modecard { position: absolute; right: 32px; bottom: 24px; width: 340px; box-sizing: border-box; display: grid; gap: 12px; padding: 16px; border: 1px solid #ffffff24; border-radius: 4px; background: #0a0f0de0; backdrop-filter: blur(8px); color: #eef2ee; z-index: 2; }
 midnry-fps .mf-modecard[hidden] { display: none !important; }
-midnry-fps .mf-modekicker { font: 600 12px var(--mf-display); letter-spacing: 0.16em; text-transform: uppercase; color: #aeb9b2; }
-midnry-fps .mf-modetitle { font: 800 40px/0.95 var(--mf-display); letter-spacing: 0.01em; text-transform: uppercase; color: #f4f6f2; }
-midnry-fps .mf-modesub { font: 400 14px var(--mf-body); color: #c3ccc6; }
-midnry-fps .mf-playtoggle { display: inline-flex; justify-self: start; gap: 2px; padding: 3px; margin-bottom: 8px; border-radius: 4px; background: #050807; }
-midnry-fps .mf-playtoggle button { all: unset; cursor: pointer; display: flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border-radius: 3px; font: 600 13px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; color: #b9c4bd; }
-midnry-fps .mf-playtoggle .mf-ico { width: 16px; height: 16px; }
-midnry-fps .mf-playtoggle button[aria-pressed="true"] { background: #1d2622; color: #f4f6f2; box-shadow: inset 0 0 0 1px #ffffff2b; }
-midnry-fps .mf-modechange { all: unset; cursor: pointer; justify-self: start; box-sizing: border-box; display: grid; place-items: center; margin: 8px 0 4px; padding: 8px 16px; border: 1px solid #ffffff3d; border-radius: 3px; font: 700 14px var(--mf-display); letter-spacing: 0.12em; text-transform: uppercase; color: #eef2ee; }
-midnry-fps .mf-shell:has(> .mf-modal.mf-lobby:not([hidden])) > :is(.mf-match, .mf-cross, .mf-super, .mf-bottom, .mf-hitmark, .mf-damage, .mf-toast) { visibility: hidden; }
-midnry-fps .mf-modechange[hidden] { display: none; }
-midnry-fps .mf-modechange:hover { border-color: #ffffff88; }
-midnry-fps .mf-modeplay { all: unset; cursor: pointer; display: grid; place-items: center; min-height: 64px; margin-top: 8px; border-radius: 3px; background: var(--mf-accent); color: var(--mf-accent-ink); font: 800 30px var(--mf-display); letter-spacing: 0.06em; text-transform: uppercase; box-shadow: 0 12px 34px #ffc85738; transform: skewX(-6deg); }
+midnry-fps .mf-playtoggle { display: grid; grid-template-columns: 1fr 1fr; }
+midnry-fps .mf-playtoggle button { all: unset; cursor: pointer; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; border: 1px solid #ffffff24; background: #070a09; font: 600 15px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; color: #c9d2cc; }
+midnry-fps .mf-playtoggle button:first-child { border-radius: 4px 0 0 4px; }
+midnry-fps .mf-playtoggle button:last-child { border-radius: 0 4px 4px 0; }
+midnry-fps .mf-playtoggle button:hover { color: #fff; }
+midnry-fps .mf-playtoggle .mf-ico { width: 20px; height: 20px; }
+midnry-fps .mf-playtoggle button[aria-pressed="true"] { border-color: var(--mf-accent); background: #ffc85717; color: #fff; box-shadow: inset 0 0 0 1px var(--mf-accent); }
+midnry-fps .mf-playtoggle button[aria-pressed="true"] .mf-ico { color: var(--mf-accent); }
+midnry-fps .mf-modechange { all: unset; cursor: pointer; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 20px; align-items: center; gap: 8px; padding: 2px 0 12px; border-bottom: 1px solid #ffffff17; }
+midnry-fps .mf-modechange > .mf-ico { width: 20px; height: 20px; color: #e3e9e4; }
+midnry-fps .mf-modechange[aria-disabled="true"] { cursor: default; }
+midnry-fps .mf-modechange[aria-disabled="true"] > .mf-ico { visibility: hidden; }
+midnry-fps .mf-modechange:hover:not([aria-disabled="true"]) .mf-modetitle { color: #fff; }
+midnry-fps .mf-modetitle { display: block; font: 800 38px/1 var(--mf-display); letter-spacing: 0.01em; text-transform: uppercase; color: #f4f6f2; overflow-wrap: anywhere; }
+midnry-fps .mf-modetitle[data-long] { font-size: 31px; }
+midnry-fps .mf-modesub { display: block; margin-top: 4px; font: 400 15px var(--mf-body); color: #c3ccc6; }
+midnry-fps .mf-roomline { display: grid; grid-template-columns: auto minmax(0, 1fr) 44px; align-items: center; gap: 6px 8px; }
+midnry-fps .mf-roomline[hidden] { display: none; }
+midnry-fps .mf-roomlabel { font: 600 14px var(--mf-display); letter-spacing: 0.14em; text-transform: uppercase; color: #aeb9b2; }
+midnry-fps .mf-roomid { justify-self: end; font: 700 18px var(--mf-display); letter-spacing: 0.08em; color: #f1f4ef; white-space: nowrap; }
+midnry-fps .mf-roomcopy { all: unset; cursor: pointer; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 4px; color: #e3e9e4; }
+midnry-fps .mf-roomcopy .mf-ico { width: 22px; height: 22px; }
+midnry-fps .mf-roomcopy:hover { background: #ffffff12; color: #fff; }
+midnry-fps .mf-roomcopy[hidden] { display: none; }
+midnry-fps .mf-roominvite { all: unset; cursor: pointer; box-sizing: border-box; grid-column: 1 / -1; display: grid; grid-template-columns: auto minmax(0, 1fr) 18px; align-items: center; gap: 14px; min-height: 48px; padding: 0 14px 0 0; border: 1px solid #ffffff3d; border-radius: 4px; font: 500 16px var(--mf-body); color: #eef2ee; }
+midnry-fps .mf-roominvite > .mf-ico:first-child { box-sizing: content-box; width: 22px; height: 22px; padding: 0 14px 0 16px; border-right: 1px solid #ffffff24; }
+midnry-fps .mf-roominvite > .mf-ico:last-child { width: 18px; height: 18px; }
+midnry-fps .mf-roominvite span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+midnry-fps .mf-roominvite:hover { border-color: #ffffff88; background: #ffffff0a; }
+midnry-fps .mf-modeplay { all: unset; cursor: pointer; box-sizing: border-box; display: grid; grid-template-columns: 24px minmax(0, 1fr) 24px; align-items: center; min-height: 64px; padding: 0 16px; border-radius: 4px; background: var(--mf-accent); color: var(--mf-accent-ink); font: 800 32px/1 var(--mf-display); letter-spacing: 0.04em; text-transform: uppercase; text-align: center; box-shadow: 0 12px 34px #ffc85738; }
+midnry-fps .mf-modeplay > span { grid-column: 2; }
+midnry-fps .mf-modeplay > .mf-ico { width: 24px; height: 24px; stroke-width: 2.4; }
 midnry-fps .mf-modeplay:hover:not(:disabled) { filter: brightness(1.07); }
 midnry-fps .mf-modeplay:disabled { opacity: 0.5; cursor: default; }
-midnry-fps :is(.mf-modeplay, .mf-modechange, .mf-playtoggle button, .mf-squad button, .mf-pickerclose):focus-visible { outline: 2px solid var(--mf-accent) !important; outline-offset: 3px; }
+midnry-fps .mf-modestatus { margin: -4px 0 0; font: 400 13px var(--mf-body); color: #aeb9b2; }
+midnry-fps .mf-modestatus:empty { display: none; }
+midnry-fps .mf-shell:has(> .mf-modal.mf-lobby:not([hidden])) > :is(.mf-match, .mf-cross, .mf-super, .mf-bottom, .mf-hitmark, .mf-damage, .mf-toast, .mf-touch) { visibility: hidden; }
+midnry-fps :is(.mf-modeplay, .mf-modechange, .mf-playtoggle button, .mf-squad button, .mf-pickerclose, .mf-roomclose, .mf-roomcopy, .mf-roominvite, .mf-ping):focus-visible { outline: 2px solid var(--mf-accent) !important; outline-offset: 3px; }
+/* Squad pads: "+" over an empty pad, each fighter's name under theirs. */
+midnry-fps .mf-squad { position: absolute; left: 0; top: 0; width: 100%; height: 0; z-index: 1; pointer-events: none; }
 midnry-fps .mf-squad[hidden] { display: none; }
-midnry-fps .mf-squad button { all: unset; cursor: pointer; position: absolute; left: var(--x, 30%); top: var(--y, 55%); transform: translate(-50%, -50%); width: 48px; height: 48px; display: grid; place-items: center; border: 2px solid #ffffffa6; border-radius: 4px; background: #0a0f0d99; color: #fff; font: 700 30px/1 var(--mf-display); z-index: 1; }
-midnry-fps .mf-squad button.mf-mate { width: auto; height: auto; min-height: 28px; padding: 4px 10px; top: calc(var(--y, 55%) - 150px); font: 700 13px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; border-width: 1px; cursor: default; }
+midnry-fps .mf-squad button { all: unset; pointer-events: auto; cursor: pointer; position: absolute; left: var(--x, 30%); top: var(--y, 55%); transform: translate(-50%, -50%); width: 56px; height: 56px; display: grid; place-items: center; border: 2px solid #ffffffc0; border-radius: 6px; background: #0a0f0db3; color: #fff; font: 600 34px/1 var(--mf-display); box-shadow: 0 6px 20px #0008; }
+midnry-fps .mf-squad button[hidden] { display: none; }
 midnry-fps .mf-squad button:hover { border-color: var(--mf-accent); color: var(--mf-accent); }
+midnry-fps .mf-padname { position: absolute; left: var(--x, 50%); top: var(--y, 70%); transform: translate(-50%, -50%); font: 700 17px var(--mf-display); letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; color: #eef2ee; text-shadow: 0 1px 6px #000, 0 0 2px #000; }
+midnry-fps .mf-padname:is([hidden], :empty) { display: none; }
+/* Online room sheet. */
+midnry-fps .mf-roomsheet { display: none; }
+midnry-fps .mf-modal.mf-lobby.mf-roomopen > .mf-roomsheet { display: grid; gap: 8px; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; width: min(520px, calc(100vw - 32px)); max-height: calc(100% - 32px); overflow: auto; padding: 18px 20px 20px; border: 1px solid #ffffff2b; border-radius: 6px; background: #070a09f5; box-shadow: 0 30px 80px #000c; color: #e3e9e4; z-index: 6; }
+midnry-fps .mf-modal.mf-roomopen::after { content: ""; position: absolute; inset: 0; background: #000a; z-index: 5; }
+midnry-fps .mf-roomsheet .mf-pickerhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+midnry-fps .mf-roomsheet .mf-network { margin: 0 !important; padding: 0 !important; border: 0 !important; background: none !important; font: 400 15px/1.45 var(--mf-body); color: #dfe5e0; }
+midnry-fps .mf-roomsheet .mf-network > summary { display: none; }
+midnry-fps .mf-roomsheet .mf-roomformat { font: 700 16px var(--mf-display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--mf-accent); }
+midnry-fps .mf-roomsheet :is(.mf-netrow button, .mf-quick) { min-height: 44px; padding: 0 14px; border: 1px solid #ffffff3d !important; border-radius: 4px; background: #0c1210 !important; color: #f1f4ef !important; font: 700 15px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; }
+midnry-fps .mf-roomsheet .mf-quick { width: 100%; background: var(--mf-accent) !important; color: var(--mf-accent-ink) !important; border-color: transparent !important; }
+midnry-fps .mf-roomsheet .mf-codeinput { min-height: 44px; border-radius: 4px; font: 700 18px var(--mf-display); letter-spacing: 0.12em; }
+midnry-fps .mf-roomsheet .mf-roomcode { display: block; font: 800 34px var(--mf-display); letter-spacing: 0.12em; color: var(--mf-accent); }
+midnry-fps .mf-roomsheet .mf-publiclabel { display: flex; align-items: center; gap: 10px; min-height: 44px; }
 midnry-fps .mf-pickerhead { display: none; }
 /* The picker becomes a sheet over the lobby, opened by Change or Play. */
 midnry-fps .mf-modal.mf-lobby .mf-playlists:not(.mf-open) { display: none !important; }
 midnry-fps .mf-modal.mf-lobby .mf-playlists.mf-open { left: 50%; right: auto; top: 50%; bottom: auto; transform: translate(-50%, -50%); width: min(860px, calc(100vw - 48px)); padding: 18px 20px 20px; border: 1px solid #ffffff2b; border-radius: 6px; background: #070a09f5; box-shadow: 0 30px 80px #000c; z-index: 6; }
 midnry-fps .mf-modal.mf-lobby .mf-playlists.mf-open .mf-pickerhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
 midnry-fps .mf-pickerhead b { font: 800 24px var(--mf-display); letter-spacing: 0.06em; text-transform: uppercase; color: #f4f6f2; }
-midnry-fps .mf-pickerclose { all: unset; cursor: pointer; padding: 8px 16px; border-radius: 3px; background: var(--mf-accent); color: var(--mf-accent-ink); font: 700 14px var(--mf-display); letter-spacing: 0.1em; text-transform: uppercase; }
+midnry-fps :is(.mf-pickerclose, .mf-roomclose) { all: unset; min-height: 44px; box-sizing: border-box; display: grid; place-items: center; cursor: pointer; padding: 8px 16px; border-radius: 3px; background: var(--mf-accent); color: var(--mf-accent-ink); font: 700 14px var(--mf-display); letter-spacing: 0.1em; text-transform: uppercase; }
 midnry-fps .mf-modal.mf-lobby .mf-playlists.mf-open .mf-playnext { display: none !important; }
 midnry-fps .mf-modal.mf-picking::after { content: ""; position: absolute; inset: 0; background: #000a; z-index: 5; }
 
 /* Short or narrow screens: one scrolling column. */
-@media (max-width: 1100px), (max-height: 640px) {
+@media (max-width: 999px), (max-height: 599px) {
   midnry-fps .mf-modal.mf-home { display: flex !important; flex-direction: column; align-items: stretch !important; justify-content: flex-start !important; overflow-y: auto !important; overscroll-behavior: contain; }
   midnry-fps .mf-modal.mf-home > * { flex: none; }
   midnry-fps .mf-modal.mf-home > .mf-hometop { order: 0; }
@@ -284,16 +355,92 @@ midnry-fps .mf-modal.mf-picking::after { content: ""; position: absolute; inset:
   midnry-fps .mf-homeside { position: relative; right: auto; top: auto; width: auto; margin: 16px 16px calc(24px + var(--mf-safe-bottom, 0px)); }
   midnry-fps .mf-homefoot { margin-top: 4px; }
 }
-/* Phones and short screens, lobby: the operator stands in the top half;
-   the mode card with Play comes first below it, then everything else. */
-@media (max-width: 1100px), (max-height: 640px) {
-  midnry-fps .mf-modal.mf-home.mf-lobby { background: linear-gradient(180deg, #05070600 0, #05070600 44vh, #070a09 62vh) !important; background-attachment: local !important; }
-  midnry-fps .mf-modal.mf-lobby > .mf-modecard { order: 1; position: relative; right: auto; bottom: auto; width: auto; margin: 46vh 16px 0; }
-  midnry-fps .mf-modal.mf-lobby > .mf-panel { order: 2; margin-top: 16px !important; }
-  midnry-fps .mf-modal.mf-lobby > .mf-panel :is(h1, .mf-logosub) { display: none !important; }
-  midnry-fps .mf-modal.mf-lobby > .mf-playlists.mf-open { position: fixed; top: 50%; max-height: calc(100dvh - 32px); overflow: auto; }
-  midnry-fps .mf-modetitle { font-size: 34px; }
-  midnry-fps .mf-squad button { position: absolute; }
+/* Mid-size desktops: narrower side cards and title. */
+@media (min-width: 1000px) and (max-width: 1199px) {
+  midnry-fps .mf-modal.mf-lobby > .mf-panel { width: 300px !important; }
+  midnry-fps .mf-modal.mf-lobby > :is(.mf-homeside, .mf-modecard) { width: 320px; }
+  midnry-fps .mf-lobbyname { font-size: 62px; }
+}
+/* Phones and short screens, lobby: one column under the header (title,
+   today's case, the 3D stage, operator, Play card, then the rest) with a
+   tab bar fixed to the bottom. The panel, right column and footer unwrap
+   (display: contents) so their cards take places in that column. */
+@media (max-width: 999px), (max-height: 599px) {
+  midnry-fps .mf-modal.mf-home.mf-lobby { --mf-gut: max(16px, calc((100% - 600px) / 2)); gap: 6px; padding: 0 0 calc(70px + var(--mf-safe-bottom, 0px)) !important; background: linear-gradient(180deg, #050706c0 0, #05070600 160px, #05070600 45%, #050706b0 75%) !important; }
+  midnry-fps .mf-modal.mf-home.mf-lobby > :is(.mf-panel, .mf-homeside),
+  midnry-fps .mf-modal.mf-home.mf-lobby > .mf-panel > :is(.mf-homeleft, .mf-homefoot) { display: contents !important; }
+  midnry-fps .mf-modal.mf-lobby :is(.mf-lobbytitle, .mf-casecard, .mf-stagebox, .mf-opcard, .mf-modecard, .mf-newhere, .mf-matchbar, .mf-protocol-menu, .mf-challenges, .mf-homeactions, .mf-homeexit, .mf-ping) { flex: none; position: relative; left: auto; right: auto; top: auto; bottom: auto; box-sizing: border-box; width: auto; margin: 0 var(--mf-gut) !important; }
+  midnry-fps .mf-modal.mf-lobby > .mf-lobbytitle { order: 1; margin-top: 4px !important; }
+  midnry-fps .mf-modal.mf-lobby .mf-casecard { order: 2; }
+  midnry-fps .mf-modal.mf-lobby > .mf-stagebox { order: 3; height: 240px; padding-bottom: 6px; }
+  midnry-fps .mf-modal.mf-lobby.mf-pinged > .mf-stagebox { padding-bottom: 34px; }
+  midnry-fps .mf-modal.mf-lobby .mf-homefoot .mf-ping { order: 4; position: relative; z-index: 2; align-self: flex-start; min-height: 36px; padding: 0 12px !important; font-size: 14px !important; margin: -40px 0 -2px var(--mf-gut) !important; }
+  midnry-fps .mf-modal.mf-lobby .mf-homefoot .mf-ping::before { content: ""; position: absolute; inset: -4px; }
+  midnry-fps .mf-modal.mf-lobby .mf-squad button { width: 48px; height: 48px; font-size: 30px; }
+  midnry-fps .mf-modal.mf-lobby .mf-padname { font-size: 15px; }
+  midnry-fps .mf-modal.mf-lobby .mf-opcard { order: 5; }
+  midnry-fps .mf-modal.mf-lobby :is(.mf-modecard, .mf-matchbar) { order: 6; }
+  midnry-fps .mf-modal.mf-lobby .mf-newhere { order: 7; }
+  midnry-fps .mf-modal.mf-lobby .mf-protocol-menu { order: 8; }
+  midnry-fps .mf-modal.mf-lobby .mf-challenges { order: 9; }
+  midnry-fps .mf-modal.mf-lobby .mf-homeactions { order: 10; grid-template-columns: 1fr; }
+  midnry-fps .mf-modal.mf-lobby .mf-homeactions button:not([data-go="practice"]) { display: none !important; }
+  midnry-fps .mf-modal.mf-lobby .mf-homeexit { order: 11; }
+  midnry-fps .mf-modal.mf-lobby .mf-hometop { height: calc(48px + var(--mf-safe-top, 0px)); padding-left: calc(var(--mf-gut) + var(--mf-safe-left, 0px)); padding-right: calc(var(--mf-gut) + var(--mf-safe-right, 0px)); }
+  midnry-fps .mf-modal.mf-lobby .mf-profilechip small .mf-xpbar { display: block; width: 56px; }
+  /* Title */
+  midnry-fps .mf-lobbykicker { font-size: 13px; }
+  midnry-fps .mf-lobbykicker { margin-bottom: 2px; }
+  midnry-fps .mf-lobbyname { font-size: clamp(34px, 12.4vw, 58px); }
+  midnry-fps .mf-lobbyname[data-long] { font-size: clamp(30px, 9.4vw, 58px); }
+  /* Today's case */
+  midnry-fps .mf-modal.mf-lobby .mf-casecard { grid-template-columns: 96px minmax(0, 1fr) 18px; gap: 12px; padding: 5px 14px 5px 5px; border-color: #ffffff24; }
+  midnry-fps .mf-modal.mf-lobby .mf-casecard img { width: 96px; height: 48px; }
+  midnry-fps .mf-modal.mf-lobby .mf-casecard small { font-size: 14px; line-height: 1.15; }
+  midnry-fps .mf-modal.mf-lobby .mf-casecard em { font-size: 12px; line-height: 1.2; }
+  midnry-fps .mf-modal.mf-lobby .mf-casecard strong { font-size: 22px; line-height: 1.05; }
+  /* Operator: compact two columns. */
+  midnry-fps .mf-modal.mf-lobby .mf-opcard { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; padding: 10px 12px; }
+  midnry-fps .mf-modal.mf-lobby .mf-ophead { gap: 8px; padding: 0 10px 0 0; border-bottom: 0; border-right: 1px solid #ffffff17; }
+  midnry-fps .mf-modal.mf-lobby .mf-opname { margin: 2px 0 0; font-size: 26px; }
+  midnry-fps .mf-modal.mf-lobby .mf-optag { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  midnry-fps .mf-modal.mf-lobby .mf-ophead > div { min-width: 0; }
+  midnry-fps .mf-modal.mf-lobby .mf-emblem { width: 34px; height: 34px; margin-top: 10px; }
+  midnry-fps .mf-modal.mf-lobby .mf-opprog { gap: 6px; padding-top: 0; align-content: center; }
+  midnry-fps .mf-modal.mf-lobby .mf-oplevel { font-size: 14px; line-height: 1.2; }
+  midnry-fps .mf-modal.mf-lobby .mf-oplevel span { font-size: 12px; }
+  midnry-fps .mf-modal.mf-lobby .mf-opchar { min-height: 44px; margin-top: 2px; padding: 0 12px 0 16px; font-size: 16px; justify-content: center; position: relative; }
+  midnry-fps .mf-modal.mf-lobby .mf-opchar .mf-ico { position: absolute; right: 12px; }
+  midnry-fps .mf-modal.mf-lobby .mf-opmore { display: none; }
+  /* Play card */
+  midnry-fps .mf-modal.mf-lobby .mf-modecard { gap: 8px; padding: 10px 12px 12px; }
+  midnry-fps .mf-modal.mf-lobby .mf-playtoggle button { min-height: 44px; }
+  midnry-fps .mf-modal.mf-lobby .mf-modechange { padding: 2px 0 8px; }
+  midnry-fps .mf-modal.mf-lobby .mf-modetitle { font-size: 27px; }
+  midnry-fps .mf-modal.mf-lobby .mf-modetitle[data-long] { font-size: 25px; }
+  midnry-fps .mf-modal.mf-lobby .mf-modesub { margin-top: 2px; font-size: 13px; }
+  midnry-fps .mf-modal.mf-lobby .mf-roomline { grid-template-columns: auto auto 40px minmax(0, 1fr); gap: 6px; }
+  midnry-fps .mf-modal.mf-lobby .mf-roomid { justify-self: start; font-size: 16px; }
+  midnry-fps .mf-modal.mf-lobby .mf-roomcopy { width: 40px; }
+  midnry-fps .mf-modal.mf-lobby .mf-roominvite { grid-column: auto; gap: 10px; min-height: 44px; padding-right: 10px; font-size: 15px; }
+  midnry-fps .mf-modal.mf-lobby .mf-roominvite > .mf-ico:first-child { width: 20px; height: 20px; padding: 0 10px 0 12px; }
+  midnry-fps .mf-modal.mf-lobby .mf-modeplay { min-height: 52px; font-size: 27px; }
+  /* Tab bar */
+  midnry-fps .mf-modal.mf-lobby .mf-hometop nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 0; height: calc(60px + var(--mf-safe-bottom, 0px)); padding: 0 var(--mf-safe-right, 0px) var(--mf-safe-bottom, 0px) var(--mf-safe-left, 0px); border-top: 1px solid #ffffff17; background: #070a09f2; backdrop-filter: blur(8px); }
+  midnry-fps .mf-modal.mf-lobby .mf-hometop nav button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 0; padding: 0 2px; font-size: 12px; letter-spacing: 0.08em; white-space: nowrap; }
+  midnry-fps .mf-modal.mf-lobby .mf-hometop nav .mf-ico { display: block; width: 23px; height: 23px; }
+  midnry-fps .mf-modal.mf-lobby .mf-hometop nav button[aria-current="page"]::after { left: 16%; right: 16%; bottom: 0; height: 3px; }
+  midnry-fps .mf-modal.mf-lobby .mf-hometop nav .mf-navpractice { display: none; }
+  /* Sheets cover the screen, not the scrolled column. */
+  midnry-fps .mf-modal.mf-lobby > :is(.mf-playlists.mf-open, .mf-roomsheet) { position: fixed; top: 50%; max-height: calc(100dvh - 32px); overflow: auto; }
+  midnry-fps .mf-modal.mf-lobby:is(.mf-picking, .mf-roomopen)::after { position: fixed; }
+}
+/* Landscape phones: a slimmer tab bar, icon beside the label. */
+@media (max-height: 500px) and (orientation: landscape) {
+  midnry-fps .mf-modal.mf-home.mf-lobby { padding-bottom: calc(58px + var(--mf-safe-bottom, 0px)) !important; }
+  midnry-fps .mf-modal.mf-lobby .mf-hometop nav { height: calc(48px + var(--mf-safe-bottom, 0px)); }
+  midnry-fps .mf-modal.mf-lobby .mf-hometop nav button { flex-direction: row; gap: 8px; }
+  midnry-fps .mf-modal.mf-lobby .mf-hometop nav .mf-ico { width: 20px; height: 20px; }
 }
 @media (max-width: 640px) {
   midnry-fps .mf-logosub { letter-spacing: 0.2em; font-size: 13px; }
@@ -349,10 +496,15 @@ export class OutpostMenu {
     this.observer = new MutationObserver(() => this.schedule());
     this.observer.observe(this.modal, { attributes: true, attributeFilter: ["hidden"] });
     this.observer.observe(this.panel, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "aria-pressed", "disabled"] });
+    // The room controls move into the lobby's room sheet: watch them there too.
+    this.observer.observe(this.roomSlot, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden", "disabled"] });
     // A second observe() on the same node replaces the first one's options,
     // so the panel's own class (leaving the debrief) needs its own observer.
     this.panelObserver = new MutationObserver(() => this.schedule());
     this.panelObserver.observe(this.panel, { attributes: true, attributeFilter: ["class"] });
+    // Phones: refit the stage when the screen or the cards change size.
+    this.resizer = new ResizeObserver(() => this.fitStage());
+    for (const node of [this.modal, this.modeCard, this.lobbyTitle]) this.resizer.observe(node);
     this.refresh();
   }
 
@@ -362,7 +514,7 @@ export class OutpostMenu {
     this.top = el(
       "header",
       "mf-hometop",
-      `<span class="mf-wordmark">OUTPOST ZERO</span><nav aria-label="Menu"><button type="button" aria-current="page" data-go="home">Home</button><button type="button" data-go="locker">Locker</button><button type="button" data-go="guide">How to play</button><button type="button" data-go="practice">Practice</button><button type="button" data-go="settings">Settings</button></nav><div class="mf-profilechip"><span class="mf-avatar">${icon("helmet")}</span><span><b class="mf-chipname"></b><small><span class="mf-chiplevel"></span><span class="mf-xpbar"><i></i></span></small></span></div>`,
+      `<span class="mf-wordmark">OUTPOST <em>ZERO</em></span><nav aria-label="Menu"><button type="button" aria-current="page" data-go="home">${icon("home")}<span>Home</span></button><button type="button" data-go="locker">${icon("bot")}<span>Locker</span></button><button type="button" data-go="guide">${icon("book")}<span>How to play</span></button><button type="button" data-go="settings">${icon("gear")}<span>Settings</span></button><button type="button" class="mf-navpractice" data-go="practice">${icon("target")}<span>Practice</span></button></nav><div class="mf-profilechip"><span class="mf-avatar">${icon("helmet")}</span><span><b class="mf-chipname"></b><small><span class="mf-chiplevel"></span><span class="mf-xpbar"><i></i></span></small></span></div>`,
     );
     this.modal.prepend(this.hero);
     this.modal.append(this.top);
@@ -441,26 +593,64 @@ export class OutpostMenu {
     this.side = el(
       "aside",
       "mf-homeside",
-      `<section class="mf-card mf-opcard"><h3>Operator</h3><strong class="mf-opname"></strong><p class="mf-oplevel"></p><span class="mf-xpbar"><i></i></span><button type="button" class="mf-opchar" data-go="locker"><span></span>Change</button></section><section class="mf-card mf-challenges"><header><h3>Daily challenges<b class="mf-chcount"></b></h3></header><ul></ul></section><button type="button" class="mf-casecard" data-mode="daily"><img src="menu/card-daily.webp" alt=""><span><small>Today's case</small><em class="mf-casenote"></em><strong class="mf-casescore"></strong></span>${icon("chevron")}</button>`,
+      `<section class="mf-card mf-opcard" aria-label="Operator"><div class="mf-ophead"><div><h3>Operator</h3><strong class="mf-opname"></strong><p class="mf-optag"></p></div><svg class="mf-emblem" viewBox="0 0 48 48" aria-hidden="true" focusable="false"><path d="M24 3l5 13.5L43 11l-8.5 11.5L45 30l-14-.5L24 45l-7-15.5L3 30l10.5-7.5L5 11l14 5.5z"/><circle cx="24" cy="24" r="5"/></svg></div><div class="mf-opprog"><div class="mf-oplevel"><b class="mf-oplv"></b><span class="mf-opxp"></span></div><span class="mf-xpbar" role="progressbar" aria-label="Progress to next level" aria-valuemin="0" aria-valuemax="100"><i></i></span><button type="button" class="mf-opchar" data-go="locker" aria-label="Change operator"><span>Change<span class="mf-opmore"> operator</span></span>${icon("chevron")}</button></div></section><section class="mf-card mf-challenges"><header><h3>Daily challenges<b class="mf-chcount"></b></h3></header><ul></ul></section><button type="button" class="mf-casecard" data-mode="daily"><img src="menu/card-daily.webp" alt=""><span><small>Today's case</small><em class="mf-casenote"></em><strong class="mf-casescore"></strong></span>${icon("chevron")}</button>`,
     );
     this.modal.append(this.side);
-    // Lobby: your level and challenges sit on the left, under the logo.
+    // Your operator card sits on the left, under the logo; challenges stay
+    // in the right column (on phones they follow the Play card).
     this.leftCards = el("div", "mf-homeleft");
-    this.leftCards.append(this.side.querySelector(".mf-opcard"), this.side.querySelector(".mf-challenges"));
+    this.leftCards.append(this.side.querySelector(".mf-opcard"));
     this.logoSub.after(this.leftCards);
+    this.side.append(this.side.querySelector(".mf-challenges"));
+    // Lobby title: "PLAY / ONLINE" over the chosen game's name.
+    this.lobbyTitle = el("div", "mf-lobbytitle", `<p class="mf-lobbykicker">Play <i>/</i> <span></span></p><h2 class="mf-lobbyname"></h2>`);
+    this.modal.append(this.lobbyTitle);
+    // The 3D stage frames the operator and pads inside this box.
+    this.stageBox = el("div", "mf-stagebox");
+    this.stageBox.setAttribute("aria-hidden", "true");
+    this.modal.append(this.stageBox);
+    // Online: ping to the room server (opens the network check).
+    this.ping = el("button", "mf-ping", "<i></i><b></b>");
+    this.ping.type = "button";
+    this.ping.hidden = true;
+    this.foot.prepend(this.ping);
+    g.on(this.ping, "click", () => g.netMeter?.open());
     // Lobby: the mode card (bottom right) says what Play starts and changes it.
     this.modeCard = el(
       "section",
       "mf-modecard",
-      `<div class="mf-playtoggle" role="group" aria-label="Play with"><button type="button" data-playwith="offline">${icon("squad")}Bots</button><button type="button" data-playwith="online">${icon("globe")}Friends</button></div><small class="mf-modekicker"></small><strong class="mf-modetitle"></strong><span class="mf-modesub"></span><button type="button" class="mf-modechange">Change</button><button type="button" class="mf-modeplay"></button>`,
+      `<div class="mf-playtoggle" role="group" aria-label="Play with"><button type="button" data-playwith="offline">${icon("bot")}Bots</button><button type="button" data-playwith="online">${icon("squad")}Friends</button></div><button type="button" class="mf-modechange" aria-haspopup="dialog"><span><strong class="mf-modetitle"></strong><span class="mf-modesub"></span></span>${icon("chevron")}</button><div class="mf-roomline"><span class="mf-roomlabel">Room</span><b class="mf-roomid"></b><button type="button" class="mf-roomcopy" aria-label="Copy invite link">${icon("copy")}</button><button type="button" class="mf-roominvite" aria-haspopup="dialog">${icon("squad")}<span></span>${icon("chevron")}</button></div><button type="button" class="mf-modeplay"><span></span>${icon("chevron")}</button><p class="mf-modestatus" role="status" aria-live="polite"></p>`,
     );
     this.modeCard.setAttribute("aria-label", "Game mode");
     this.modal.append(this.modeCard);
-    // Lobby: squad pads either side of your operator invite friends.
+    // Online room sheet: the room's full controls (code, invite, quick
+    // match, join by code, listing, roster, leave) open from the mode card.
+    this.roomSheet = el(
+      "section",
+      "mf-roomsheet",
+      `<header class="mf-pickerhead"><b id="mf-roomsheet-title">Online room</b><button type="button" class="mf-roomclose">Done</button></header><div class="mf-roomslot"></div>`,
+    );
+    this.roomSheet.setAttribute("role", "dialog");
+    this.roomSheet.setAttribute("aria-labelledby", "mf-roomsheet-title");
+    this.roomSlot = this.roomSheet.querySelector(".mf-roomslot");
+    this.network = g.$(".mf-network");
+    // Where the room controls live outside the lobby.
+    this.netHome = document.createComment("mf-network");
+    this.network?.before(this.netHome);
+    this.modal.append(this.roomSheet);
+    g.on(this.roomSheet.querySelector(".mf-roomclose"), "click", () => this.closeRoom());
+    g.on(this.roomSheet, "keydown", (event) => {
+      if (event.key === "Escape" && this.modal.classList.contains("mf-roomopen")) {
+        event.stopPropagation();
+        this.closeRoom();
+      }
+    });
+    // Lobby: squad pads either side of your operator invite friends; each
+    // pad's name label sits under it.
     this.squad = el(
       "div",
       "mf-squad",
-      `<button type="button" data-invite aria-label="Invite friends">+</button><button type="button" data-invite aria-label="Invite friends">+</button>`,
+      `<span class="mf-padname" data-pad="0"></span><span class="mf-padname" data-pad="1"></span><span class="mf-padname" data-pad="2"></span><button type="button" data-invite aria-label="Invite friends">+</button><button type="button" data-invite aria-label="Invite friends">+</button>`,
     );
     this.modal.append(this.squad);
     g.on(this.modeCard, "click", (event) => {
@@ -469,12 +659,25 @@ export class OutpostMenu {
         withWho = event.target.closest("[data-playwith]");
       // Friends, no room yet: the big button opens one.
       if (play && !play.disabled) g.$(g.ui?.playChoice === "online" && !g.online ? ".mf-create" : ".mf-start")?.click();
-      if (change) this.openPicker();
+      if (change && change.getAttribute("aria-disabled") !== "true") this.openPicker();
       if (withWho) g.$(withWho.dataset.playwith === "online" ? ".mf-onlinechoice" : ".mf-offlinechoice")?.click();
+      if (event.target.closest(".mf-roominvite")) this.openRoom();
+      if (event.target.closest(".mf-roomcopy")) {
+        this.statusUntil = Date.now() + 5000;
+        g.$(".mf-copyinvite")?.click();
+        setTimeout(() => this.schedule(), 300);
+        setTimeout(() => this.schedule(), 5100);
+      }
     });
     g.on(this.squad, "click", (event) => {
-      if (event.target.closest("[data-invite]")) g.$(".mf-onlinechoice")?.click();
+      if (!event.target.closest("[data-invite]")) return;
+      if (g.online || g.ui?.playChoice === "online") this.openRoom();
+      else g.$(".mf-onlinechoice")?.click();
     });
+    // Opening a room link (?room=CODE) shows the room sheet to join it.
+    this.roomLink = new URLSearchParams(location.search).has("room");
+    // The ping chip follows the network meter while online.
+    this.pingTimer = setInterval(() => this.updatePing(), 1000);
     // Drag across the lobby to turn your operator.
     let dragX = null;
     g.on(this.modal, "pointerdown", (event) => {
@@ -653,6 +856,37 @@ export class OutpostMenu {
     this.modeCard.querySelector(".mf-modechange")?.focus({ preventScroll: true });
   }
 
+  /** The online room sheet (lobby layout): opened by Invite / Join. */
+  openRoom() {
+    if (!this.modal.classList.contains("mf-lobby")) return;
+    this.refresh();
+    this.modal.classList.add("mf-roomopen");
+    const first = [...this.roomSlot.querySelectorAll("button, input, select")].find((n) => n.offsetParent && !n.disabled);
+    (first || this.roomSheet.querySelector(".mf-roomclose")).focus({ preventScroll: true });
+  }
+  closeRoom() {
+    if (!this.modal.classList.contains("mf-roomopen")) return;
+    this.modal.classList.remove("mf-roomopen");
+    this.modeCard.querySelector(".mf-roominvite")?.focus({ preventScroll: true });
+  }
+
+  /** The lobby ping chip: the room server's round trip, coloured by quality. */
+  updatePing() {
+    const g = this.g,
+      show = !!g.online && !!g.netMeter && this.modal.classList.contains("mf-lobby") && g.state !== "playing";
+    if (this.ping.hidden === show) this.ping.hidden = !show;
+    if (this.modal.classList.contains("mf-pinged") !== show) this.modal.classList.toggle("mf-pinged", show);
+    if (!show) return;
+    const s = g.netMeter.stats(),
+      q = networkQuality(s),
+      text = Number.isFinite(s.ping) ? `${s.ping} ms` : "… ms";
+    if (this.ping.dataset.tone !== q.tone) this.ping.dataset.tone = q.tone;
+    const b = this.ping.querySelector("b");
+    if (b.textContent !== text) b.textContent = text;
+    const label = `Network: ${q.label}${Number.isFinite(s.ping) ? `, ${s.ping} milliseconds` : ""}. Open network check.`;
+    if (this.ping.getAttribute("aria-label") !== label) this.ping.setAttribute("aria-label", label);
+  }
+
   /** What the big button says: the game it will start, or the next step. */
   playLabel() {
     if (!this.gameChosen) return "CHOOSE A GAME ↓";
@@ -740,6 +974,12 @@ export class OutpostMenu {
     // The 3D lobby replaces the photo backdrop once the 3D renderer is up.
     const lobby = home && !!g.militaryLoaded && !g.militaryError;
     if (this.modal.classList.contains("mf-lobby") !== lobby) this.modal.classList.toggle("mf-lobby", lobby);
+    // The room controls: in the lobby's room sheet, elsewhere where they were.
+    if (this.network) {
+      if (lobby && this.network.parentNode !== this.roomSlot) this.roomSlot.append(this.network);
+      else if (!lobby && this.network.parentNode === this.roomSlot) this.netHome.after(this.network);
+    }
+    if (!lobby && this.modal.classList.contains("mf-roomopen")) this.modal.classList.remove("mf-roomopen");
     if (this.closeAfterPick) {
       this.closeAfterPick = false;
       this.closePicker();
@@ -780,11 +1020,19 @@ export class OutpostMenu {
     const level = profile ? levelOf(profile) : 1,
       xp = profile?.xp || 0,
       progress = `${((xp % 150) / 150) * 100}%`;
-    for (const node of this.modal.querySelectorAll(".mf-chipname, .mf-opname")) node.textContent = name;
-    this.modal.querySelector(".mf-chiplevel").textContent = `LV ${level}`;
-    this.modal.querySelector(".mf-oplevel").textContent = `Level ${level} · ${xp.toLocaleString()} XP`;
+    const text = (node, value) => {
+      if (node && node.textContent !== value) node.textContent = value;
+    };
+    text(this.modal.querySelector(".mf-chipname"), name);
+    text(this.modal.querySelector(".mf-chiplevel"), `LV ${level}`);
+    // Operator card: your Locker character, its tagline and your level.
     const hero = characterOf(g.character);
-    this.modal.querySelector(".mf-opchar span").textContent = `${hero.name} · ${hero.role}`;
+    text(this.leftCards.querySelector(".mf-opname"), hero.name);
+    text(this.leftCards.querySelector(".mf-optag"), hero.role);
+    text(this.leftCards.querySelector(".mf-oplv"), `Level ${level}`);
+    text(this.leftCards.querySelector(".mf-opxp"), `${(xp % 150).toLocaleString()} / 150 XP`);
+    this.leftCards.querySelector(".mf-emblem").style.color = hero.accent;
+    this.leftCards.querySelector(".mf-xpbar").setAttribute("aria-valuenow", String(Math.round(((xp % 150) / 150) * 100)));
     for (const bar of this.modal.querySelectorAll(".mf-xpbar i")) bar.style.width = progress;
     // Daily challenges.
     let daily = [];
@@ -852,34 +1100,61 @@ export class OutpostMenu {
     if (this.modal.classList.contains("mf-friends") !== online) this.modal.classList.toggle("mf-friends", online);
     for (const b of this.modeCard.querySelectorAll("[data-playwith]"))
       b.setAttribute("aria-pressed", String((b.dataset.playwith === "online") === onlineChoice));
-    const kicker = onlineChoice ? (g.online ? `Online · room ${g.online.code}` : "Online · with friends") : "Offline · with bots";
-    const title = unchosen ? "Choose a game" : signal ? "Last Signal" : "Blackout Protocol";
-    const sub = unchosen ? "Blackout Protocol or Last Signal" : `${chosen.title} · ${chosen.sub}${series}`;
-    const set = (sel, text) => {
-      const node = this.modeCard.querySelector(sel);
-      if (node.textContent !== text) node.textContent = text;
-    };
-    set(".mf-modekicker", kicker);
-    set(".mf-modetitle", title);
+    const gameName = unchosen ? "Choose a game" : signal ? "Last Signal" : "Blackout Protocol";
+    const sub = unchosen
+      ? "Blackout Protocol or Last Signal"
+      : onlineChoice
+        ? `${signal ? "8 fighters" : "Lifeline Run · 8 players"} · Friends + bots`
+        : `${chosen.title} · ${chosen.sub.replace(/^One round · /, "")}${series}`;
+    const set = (sel, value, root = this.modeCard) => text(root.querySelector(sel), value);
+    // Lobby title: PLAY / ONLINE (or OFFLINE) over the game, last word in gold.
+    set(".mf-lobbykicker span", onlineChoice ? "Online" : "Offline", this.lobbyTitle);
+    const words = (unchosen ? "Outpost Zero" : gameName).split(" "),
+      nameHtml = `${words.slice(0, -1).join(" ")} <em>${words.at(-1)}</em>`;
+    const lobbyName = this.lobbyTitle.querySelector(".mf-lobbyname");
+    if (lobbyName.innerHTML !== nameHtml) lobbyName.innerHTML = nameHtml;
+    const long = words.join(" ").length > 12;
+    for (const node of [lobbyName, this.modeCard.querySelector(".mf-modetitle")])
+      if (node.hasAttribute("data-long") !== long) node.toggleAttribute("data-long", long);
+    set(".mf-modetitle", gameName);
     set(".mf-modesub", sub);
-    set(".mf-modechange", unchosen ? "Choose" : "Change");
+    // In a room the room's game is fixed: the row only shows it.
+    const change = this.modeCard.querySelector(".mf-modechange"),
+      fixed = String(Boolean(g.online));
+    if (change.getAttribute("aria-disabled") !== fixed) change.setAttribute("aria-disabled", fixed);
+    const changeLabel = g.online ? `${gameName}, the room's game` : `${gameName}. Change game mode`;
+    if (change.getAttribute("aria-label") !== changeLabel) change.setAttribute("aria-label", changeLabel);
+    // Friends: the room code with copy, and invite (or join) in the sheet.
+    const roomLine = this.modeCard.querySelector(".mf-roomline");
+    if (roomLine.hidden === onlineChoice) roomLine.hidden = !onlineChoice;
+    set(".mf-roomid", g.online?.code || "None yet");
+    this.modeCard.querySelector(".mf-roomcopy").hidden = !g.online;
+    set(".mf-roominvite span", g.online ? "Invite friends" : "Join with code");
+    // Copy feedback ("Invite copied.") shows on the card for a few seconds.
+    const status = onlineChoice && Date.now() < (this.statusUntil || 0) ? g.$(".mf-netstatus")?.textContent || "" : "";
+    set(".mf-modestatus", status);
     const play = this.modeCard.querySelector(".mf-modeplay");
     const label = (start?.textContent || "PLAY").replace(/\s*[→↓]$/, "").replace(/^PLAY (LAST SIGNAL|BLACKOUT PROTOCOL)$/, "PLAY");
     const creating = online && !g.online;
-    set(".mf-modeplay", unchosen ? "Choose a game" : creating ? "Create room" : label);
+    set(".mf-modeplay > span", unchosen ? "Choose a game" : creating ? "Create room" : /^(PLAY|DEPLOY)$/i.test(label) ? "Start match" : label);
     const playOff = creating ? Boolean(g.connecting) : Boolean(start?.disabled);
     if (play.disabled !== playOff) play.disabled = playOff;
-    this.modeCard.querySelector(".mf-modechange").hidden = Boolean(g.online);
     this.modeCard.hidden = g.state === "playing";
     this.squad.hidden = g.state === "playing" || !lobby;
+    // A room link opens the sheet once, with the code ready to join.
+    if (this.roomLink && lobby && onlineChoice && !g.online) {
+      this.roomLink = false;
+      requestAnimationFrame(() => this.openRoom());
+    }
     // Friends in your room stand on the pads: their name instead of "+".
     const mates = g.online?.phase === "lobby" ? (g.online.members || []).filter((m) => m.id !== g.selfId) : [];
+    text(this.squad.querySelector('[data-pad="0"]'), hero.name);
     this.squad.querySelectorAll("[data-invite]").forEach((button, i) => {
       const mate = mates[i],
-        text = mate ? mate.name : "+";
-      if (button.textContent !== text) button.textContent = text;
-      button.classList.toggle("mf-mate", !!mate);
-      button.setAttribute("aria-label", mate ? `${mate.name}, in your room` : "Invite friends");
+        label = this.squad.querySelector(`[data-pad="${i + 1}"]`);
+      if (button.hidden !== !!mate) button.hidden = !!mate;
+      text(label, mate ? mate.name : "");
+      if (label.hidden !== !mate) label.hidden = !mate;
     });
     this.summary.hidden = !summary;
     const midMatch = g.state === "playing" && !g.deathSequence;
@@ -904,12 +1179,35 @@ export class OutpostMenu {
       if (proxy.hidden !== hidden) proxy.hidden = hidden;
       if (proxy.disabled !== Boolean(button?.disabled)) proxy.disabled = Boolean(button?.disabled);
     }
+    this.updatePing();
+    this.fitStage();
+  }
+
+  /** Phones: the 3D stage takes the height left on the first screen once
+   * the header, title, today's case, operator and Play cards and the tab
+   * bar have theirs, so Start match stays in view. */
+  fitStage() {
+    const stage = this.stageBox;
+    if (!stage.isConnected || getComputedStyle(stage).position === "absolute" || !this.modal.classList.contains("mf-lobby")) {
+      if (stage.style.height) stage.style.height = "";
+      return;
+    }
+    const nav = this.top.querySelector("nav"),
+      parts = [this.top, this.lobbyTitle, this.side.querySelector(".mf-casecard"), this.leftCards.querySelector(".mf-opcard"), this.modeCard],
+      used = parts.reduce((sum, node) => sum + (node.offsetHeight || 0), 0) + (getComputedStyle(nav).position === "fixed" ? nav.offsetHeight : 0),
+      gap = parseFloat(getComputedStyle(this.modal).rowGap) || 0,
+      height = `${Math.round(Math.max(200, Math.min(460, this.modal.clientHeight - used - gap * parts.length - 8)))}px`;
+    if (stage.style.height !== height) stage.style.height = height;
   }
 
   dispose() {
     this.observer?.disconnect();
     this.panelObserver?.disconnect();
-    for (const node of [this.style, this.hero, this.top, this.side, this.cards, this.actions, this.foot, this.logoSub, this.summary, this.matchbar, this.leftCards, this.modeCard, this.squad]) node?.remove();
-    this.modal?.classList.remove("mf-home", "mf-lobby", "mf-picking");
+    clearInterval(this.pingTimer);
+    this.resizer?.disconnect();
+    if (this.network && this.netHome?.parentNode) this.netHome.after(this.network);
+    this.netHome?.remove();
+    for (const node of [this.style, this.hero, this.top, this.side, this.cards, this.actions, this.foot, this.logoSub, this.summary, this.matchbar, this.leftCards, this.modeCard, this.squad, this.lobbyTitle, this.stageBox, this.roomSheet]) node?.remove();
+    this.modal?.classList.remove("mf-home", "mf-lobby", "mf-picking", "mf-roomopen");
   }
 }

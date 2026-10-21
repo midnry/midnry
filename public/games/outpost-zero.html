@@ -2934,6 +2934,7 @@
       import { OutpostTheme } from "./outpost-theme.js";
       import { OutpostMenu } from "./outpost-menu.js";
       import { OutpostHud } from "./outpost-hud.js";
+      import { SignalHud } from "./outpost-signal-hud.js";
       import { OutpostSkin } from "./outpost-skin.js";
       import { SceneTransition } from "./outpost-transition.js";
       import { OutpostGamepad } from "./outpost-gamepad.js";
@@ -3120,6 +3121,7 @@
             this.theme = new OutpostTheme(this);
             this.homeMenu = new OutpostMenu(this);
             this.hudStyle = new OutpostHud(this);
+            this.signalHud = new SignalHud(this);
             this.skin = new OutpostSkin(this);
             this.sceneTransition = new SceneTransition(this);
             this.gamepad = new OutpostGamepad(this);
@@ -4690,7 +4692,7 @@
               this.stickSprint = forward && reach >= (this.stickSprint ? r.width * 0.4 : r.width * 0.48);
               stick.classList.toggle("mf-run", this.stickSprint);
               this.$(".mf-stick i").style.transform =
-                `translate(${this.touch.x * 34}px,${this.touch.y * 34}px)`;
+                `translate(${this.touch.x * r.width * 0.3}px,${this.touch.y * r.width * 0.3}px)`;
             };
             this.on(stick, "pointerdown", (e) => {
               if (!this.running || this.player.hp <= 0 || this.player.departed) return;
@@ -4840,15 +4842,16 @@
             this.verticalFov = view.vertical;
             this.ctx.imageSmoothingEnabled = false;
             this.military?.resize();
-            // Cache DOM geometry only on resize; keep the minimap clear of the
-            // menu button and touch controls at every internal render scale.
+            // Cache DOM geometry only on resize; the minimap sits left of the
+            // menu button, level with it, at every internal render scale.
             const pause = this.$(".mf-pause").getBoundingClientRect(),
               ratio = this.w / Math.max(1, r.width),
-              landscape = r.height <= 500 && r.width >= 600;
+              compact = r.width <= 600 || r.height <= 500;
             this.hudMap = {
-              right: (r.right - (landscape ? pause.left - 12 : pause.right) + 6) * ratio,
-              top: ((landscape ? pause.top : pause.bottom + 12) - r.top) * ratio,
-              size: Math.min(r.width <= 600 || landscape ? 96 : 128, r.width * 0.22) * ratio,
+              right: (pause.width ? r.right - pause.left + 8 : 70) * ratio,
+              top: (pause.width ? Math.max(0, pause.top - r.top) : 14) * ratio,
+              size: Math.min(compact ? 84 : 150, r.width * 0.24) * ratio,
+              ratio,
             };
           }
           wall(...args) {
@@ -5138,20 +5141,32 @@
           }
           drawMap() {
             if (this.mode === "protocol") return;
+            // A zoomed-in local view, north up, centred on the player.
             const c = this.ctx,
               n = this.level.length,
-              layout = this.hudMap || { right: 24, top: 76, size: 128 },
-              s = Math.max(1, layout.size / n),
-              ox = this.w - n * s - layout.right,
-              oy = layout.top;
-            c.fillStyle = "#101923dd";
-            c.fillRect(ox - 5, oy - 5, n * s + 10, n * s + 10);
-            this.level.forEach((row, y) =>
-              row.forEach((v, x) => {
-                c.fillStyle = v ? "#e2b768" : "#25323a";
-                c.fillRect(ox + x * s, oy + y * s, s - 1, s - 1);
-              }),
-            );
+              layout = this.hudMap || { right: 70, top: 14, size: 128, ratio: 1 },
+              k = layout.ratio || 1,
+              size = layout.size,
+              span = size >= 120 * k ? 14 : 11,
+              s = size / span,
+              me = this.player,
+              left = this.w - size - layout.right,
+              top = layout.top,
+              ox = left + size / 2 - me.x * s,
+              oy = top + size / 2 - me.y * s;
+            c.save();
+            c.beginPath();
+            c.roundRect(left, top, size, size, 10 * k);
+            c.fillStyle = "#0b1015e0";
+            c.fill();
+            c.clip();
+            for (let y = Math.max(0, Math.floor(me.y - span / 2) - 1); y <= Math.min(n - 1, Math.ceil(me.y + span / 2) + 1); y++) {
+              const row = this.level[y];
+              for (let x = Math.max(0, Math.floor(me.x - span / 2) - 1); x <= Math.min(row.length - 1, Math.ceil(me.x + span / 2) + 1); x++) {
+                c.fillStyle = row[x] ? "#d9b46a" : "#1c2731";
+                c.fillRect(ox + x * s, oy + y * s, s - k, s - k);
+              }
+            }
             if (this.mode !== "protocol" && this.mode !== "training") {
               if (this.time > this.zone.delay) {
                 const low = this.zone.cx - this.zone.half,
@@ -5208,17 +5223,37 @@
                       : "#fa6751";
                 c.fillRect(ox + e.x * s - 1.5, oy + e.y * s - 1.5, 3, 3);
               }
-            const p = this.player;
-            c.fillStyle = "#faf2d8";
+            // The player: a white arrow pointing where they face.
+            const cx = left + size / 2,
+              cy = top + size / 2,
+              r = Math.max(5, size * 0.085),
+              point = (a, d) => [cx + Math.cos(me.a + a) * d, cy + Math.sin(me.a + a) * d];
             c.beginPath();
-            c.arc(ox + p.x * s, oy + p.y * s, 2.5, 0, TAU);
-            c.fill();
-            c.strokeStyle = "#fff";
-            c.lineWidth = 1.5;
-            c.beginPath();
-            c.moveTo(ox + p.x * s, oy + p.y * s);
-            c.lineTo(ox + (p.x + Math.cos(p.a) * 1.2) * s, oy + (p.y + Math.sin(p.a) * 1.2) * s);
+            c.moveTo(...point(0, r));
+            c.lineTo(...point(2.45, r));
+            c.lineTo(...point(Math.PI, r * 0.35));
+            c.lineTo(...point(-2.45, r));
+            c.closePath();
+            c.fillStyle = "#ffffff";
+            c.strokeStyle = "#0b1015";
+            c.lineWidth = 1.5 * k;
+            c.lineJoin = "round";
             c.stroke();
+            c.fill();
+            c.restore();
+            c.beginPath();
+            c.roundRect(left + 0.5 * k, top + 0.5 * k, size - k, size - k, 10 * k);
+            c.strokeStyle = "#ffffff38";
+            c.lineWidth = 1.5 * k;
+            c.stroke();
+          }
+          /** The minimap's box in CSS pixels, for layout checks. */
+          hudMapBox() {
+            const L = this.hudMap;
+            if (!L || this.mode === "protocol") return null;
+            const k = L.ratio || 1,
+              left = (this.w - L.size - L.right) / k;
+            return [left, L.top / k, left + L.size / k, (L.top + L.size) / k];
           }
           render() {
             // A transparent HUD over a neutral status screen while 3D loads or
@@ -5382,6 +5417,7 @@
             this.theme?.dispose();
             this.homeMenu?.dispose();
             this.hudStyle?.dispose();
+            this.signalHud?.dispose();
             this.skin?.dispose();
             this.sceneTransition?.dispose();
             this.gamepad?.dispose();
