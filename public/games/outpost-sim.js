@@ -164,6 +164,8 @@ export class Arena {
         pitch: 0,
         weapon: loadout,
         outfit: uniform,
+        // Locker character (online Last Signal); looks only.
+        ...(human?.character ? { character: String(human.character) } : {}),
         charge: 0,
         cloakedUntil: 0,
         speedUntil: 0,

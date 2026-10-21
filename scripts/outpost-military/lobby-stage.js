@@ -129,19 +129,39 @@ export class LobbyStage {
     this.clearActor();
     // Your Locker character, holding the gun in its Locker finish.
     r.thirdPersonFinish = finish;
-    const actor = r.makeActor({ id: "lobby-operator", character: id, outfit: g.outfit, weapon: "carbine", team: 0, x: 0, y: 0 });
+    this.actor = this.figure("lobby-operator", id, 0);
     r.thirdPersonFinish = null;
-    r.actors.delete("lobby-operator");
+  }
+  /** One figure on a pad (0: yours, 1 and 2: the squad pads). */
+  figure(key, character, pad) {
+    const r = this.r,
+      actor = r.makeActor({ id: key, character, outfit: r.g.outfit, weapon: "carbine", team: 0, x: 0, y: 0 });
+    r.actors.delete(key);
     actor.root.removeFromParent();
-    actor.root.position.set(0, 0.18, 0);
+    const at = this.pads[pad];
+    actor.root.position.set(at.position.x, 0.18 * at.scale.y, at.position.z);
+    actor.root.scale.setScalar(pad ? 0.92 : 1);
     actor.root.traverse((o) => {
       if (o.isMesh) o.castShadow = true;
     });
     this.scene.add(actor.root);
-    this.actor = actor;
+    return actor;
   }
-  clearActor() {
-    const a = this.actor;
+  /** Friends in your online room stand on the squad pads, in their characters. */
+  squad() {
+    const r = this.r,
+      net = r.g.online,
+      mates = net?.phase === "lobby" ? (net.members || []).filter((m) => m.id !== r.g.selfId).slice(0, 2) : [],
+      wanted = mates.map((m) => m.character || "operator");
+    for (const id of wanted) if (id !== "operator") r.loadCharacter(id);
+    const ready = wanted.every((id) => id === "operator" || r.characterAssets?.has(id)),
+      key = mates.map((m, i) => `${m.id}:${wanted[i]}`).join("|") + `:${ready}:${!!r.soldier}`;
+    if (key === this.squadKey || !r.soldier) return;
+    this.squadKey = key;
+    for (const a of this.mates || []) this.clearActor(a);
+    this.mates = mates.map((m, i) => this.figure(`lobby-mate-${i}`, wanted[i], i + 1));
+  }
+  clearActor(a = this.actor) {
     if (!a) return;
     a.mixer?.stopAllAction();
     a.mixer?.uncacheRoot(a.model);
@@ -153,7 +173,7 @@ export class LobbyStage {
       m.dispose();
       this.r.materials.delete(m);
     }
-    this.actor = null;
+    if (a === this.actor) this.actor = null;
   }
   /** Drag to turn (pixels); the operator eases back when released. */
   drag(dx) {
@@ -164,6 +184,7 @@ export class LobbyStage {
       t = now / 1000,
       still = r.motion.matches;
     this.operator();
+    this.squad();
     // Last Signal dresses the bots as the other characters: fetch them now.
     if (r.g.mode === "signal" && !this.fetched) {
       this.fetched = true;
@@ -187,25 +208,29 @@ export class LobbyStage {
     }
     this.camera.updateProjectionMatrix();
     this.skyMaterial.uniforms.time.value = still ? 0 : t;
-    if (this.actor) {
+    for (const actor of [this.actor, ...(this.mates || [])]) {
+      if (!actor) continue;
       // Idle, captured motion at 30 Hz.
-      const idle = this.actor.actions.Idle;
+      const idle = actor.actions.Idle;
       if (idle) {
         idle.play().setEffectiveWeight(1).setEffectiveTimeScale(0);
         idle.time = still ? 0 : t % idle.getClip().duration;
-        this.actor.mixer.update(0);
+        actor.mixer.update(0);
       }
-      // A three-quarter view, chest towards you (the aiming idle turns the body).
-      this.actor.root.rotation.y = Math.PI + (this.cardShot ? 0.4 : 0.25) + this.spin + (still || this.cardShot ? 0 : Math.sin(t * 0.35) * 0.06);
+      // A three-quarter view, chest towards you (the aiming idle turns the body);
+      // only your own figure turns with a drag.
+      const mine = actor === this.actor;
+      actor.root.rotation.y =
+        Math.PI + (this.cardShot ? 0.4 : 0.25) + (mine ? this.spin : 0) + (still || this.cardShot ? 0 : Math.sin(t * 0.35) * 0.06);
       // Gear and the rifle follow the pose, as in a match.
-      r.updateSkinParts(this.actor);
-      if (this.actor.equipment && !updateWeaponGrip(this.actor, 0) && this.actor.weaponAnchor) {
-        this.actor.root.updateMatrixWorld(true);
-        this.actor.weaponAnchor.getWorldPosition(this.actor.equipment.position);
-        this.actor.root.worldToLocal(this.actor.equipment.position);
+      r.updateSkinParts(actor);
+      if (actor.equipment && !updateWeaponGrip(actor, 0) && actor.weaponAnchor) {
+        actor.root.updateMatrixWorld(true);
+        actor.weaponAnchor.getWorldPosition(actor.equipment.position);
+        actor.root.worldToLocal(actor.equipment.position);
       }
-      this.spin *= 0.94;
     }
+    this.spin *= 0.94;
     if (!still) {
       const p = this.dust.geometry.attributes.position;
       for (let i = 0; i < p.count; i++) {
@@ -239,6 +264,7 @@ export class LobbyStage {
   }
   dispose() {
     this.clearActor();
+    for (const a of this.mates || []) this.clearActor(a);
     for (const x of this.owned) x.dispose();
     this.scene.clear();
   }

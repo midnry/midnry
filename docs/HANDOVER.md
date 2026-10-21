@@ -530,3 +530,29 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   → `public/games/menu/characters/<id>.webp`. Lobby operator card shows the character with Change.
   Choice saved in `midnry-outpost-character`. QA: `node scripts/qa/characters-look.mjs [width]`.
 - Ideas: premium or XP-unlocked characters later (store already supports one-time items).
+
+## Last Signal online (owner, 2026-10-20, not deployed yet)
+
+- Rooms can now be Last Signal as well as Blackout Protocol (`playableModeOf` in
+  `src/games/outpost/rooms.server.ts`; Pair Ops/training stay retired). The server runs the
+  same `Arena` (lives, Red Haze, disasters, canisters) authoritatively; bots fill to 8.
+- Members carry a Locker `character` (validated against `outpost-characters.js`), sent on
+  create/join and by `loadout` when changed in the room lobby; entities get `character` so every
+  player sees each other's pick. Bots' characters use the round id as the shuffle salt online,
+  so all players see the same bots.
+- Rematch moves to the next arena (`SIGNAL_ROTATION`: Dust Outpost → Wreck Estate → Skyport).
+- Quick match only joins rooms of the chosen game. Live rooms (`realtime.server.ts`) accept both.
+- Client: `connectOnline` creates a room for the chosen game; lobby Friends shows the room
+  panel instead of the daily challenges; the mode card's big button reads "Create room" until
+  you are in a room. The offline-only "Life lost" pause does not pause online play (overlay only).
+- Tests: `scripts/outpost-room-equipment.test.mjs` (Last Signal room: characters, bots,
+  rematch rotation). QA: `node scripts/qa/signal-online.mjs` (laptop host + phone guest).
+- Lobby squad pads: friends in your online room lobby stand on the two side pads in their
+  characters with name tags (`LobbyStage.squad()`; names on `.mf-squad` buttons). The 3D lobby
+  now also draws while you wait in an online room lobby.
+
+## Opening loading screen (owner, 2026-10-21)
+
+- One painting (`bp-key` wide/tall) and one fixed briefing ("Prepare to deploy"); the slideshow,
+  its arrows/pause and rotating captions are gone. `check-outpost-loading.mjs` asserts no buttons
+  and no rotation.

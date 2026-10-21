@@ -155,38 +155,6 @@
         line-height: 1.6;
         max-width: 480px;
       }
-      .mf-loadcontrols {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-top: 22px;
-      }
-      .mf-loadcontrols button {
-        min-width: 44px;
-        height: 44px;
-        border: 1px solid #c7d8c54d;
-        background: #101a15a8;
-        color: #eef1e9;
-        font: inherit;
-        cursor: pointer;
-        border-radius: 50%;
-      }
-      .mf-loadcontrols button:hover {
-        background: #3c5146;
-      }
-      .mf-loadcontrols button:focus-visible {
-        outline: 2px solid #dcf4ce;
-        outline-offset: 4px;
-      }
-      .mf-loadcount {
-        font-size: 12px;
-        color: #c8d7c7;
-        letter-spacing: 0.15em;
-        font-variant-numeric: tabular-nums;
-      }
-      .mf-loadpause {
-        margin-left: auto;
-      }
       .mf-loadfooter {
         margin-top: 24px;
         border-top: 1px solid #d3e4d02e;
@@ -284,9 +252,6 @@
         .mf-loadbody h1 {
           font-size: 36px;
           margin: 8px 0;
-        }
-        .mf-loadcontrols {
-          margin-top: 12px;
         }
         .mf-loadfooter {
           margin-top: 12px;
@@ -2735,28 +2700,20 @@
         <div class="mf-loadtitle">LIFELINE RUN<br />PREPARE TO DEPLOY</div>
       </header>
       <div class="mf-loadbody">
-        <div class="mf-loadcategory">MISSION BRIEFING / BASE</div>
-        <h1 class="mf-slidetitle">Blackout Protocol</h1>
-        <p class="mf-loaddescription">Gather medical supplies. Protect the medevac. Save the wounded patrol.</p>
-        <div class="mf-loadcontrols" role="group" aria-label="Loading slideshow controls">
-          <button class="mf-loadprev" aria-label="Previous loading slide">←</button
-          ><span class="mf-loadcount">01 / 08</span
-          ><button class="mf-loadnext" aria-label="Next loading slide">→</button
-          ><button class="mf-loadpause" aria-label="Pause loading slideshow" aria-pressed="false">
-            Ⅱ
-          </button>
-        </div>
+        <div class="mf-loadcategory">OUTPOST ZERO</div>
+        <h1 class="mf-slidetitle">Prepare to deploy</h1>
+        <p class="mf-loaddescription">Rescue the wounded in Blackout Protocol, or be the last one standing in Last Signal.</p>
       </div>
       <footer class="mf-loadfooter">
         <div class="mf-loadtip">
           <b>FIELD TIP</b>
-          <p>Start with Guided practice to learn packing, defusing, radio meetings and emergency flight control.</p>
+          <p>New here? Start with Practice to learn the basics in two minutes.</p>
         </div>
         <div class="mf-loadprogress">
           <progress aria-label="Game loading progress" max="100" value="0"></progress
           ><span class="mf-loadpercent" aria-hidden="true">0%</span>
         </div>
-        <p class="mf-loadstatus" role="status" aria-live="polite">Checking your device and preparing Lifeline Run…</p>
+        <p class="mf-loadstatus" role="status" aria-live="polite">Checking your device and preparing the game…</p>
         <a href="" class="mf-loadretry" hidden>Retry loading</a>
       </footer>
     </div>
@@ -2764,130 +2721,16 @@
       // Starts before any game modules; these small stills never delay deployment.
       (() => {
         const screen = document.querySelector(".mf-loading");
-        const slides = [
-          ["bp-key", "MISSION BRIEFING / BASE", "Lifeline Run",
-            "Gather medical supplies at Breakwater, load the medevac and fly aid to the wounded patrol.",
-            "Start with Practice to learn collecting, loading, defusing, reporting, voting and flying."],
-          ["bp-key", "LAST SIGNAL / DUST OUTPOST", "Last one standing",
-            "Eight fighters, three lives each, and the Red Haze closing in. Win three rounds to take the series.",
-            "Shoot a red canister near a crowd, then slide away. Blue canisters heal whoever stands close."],
-          ["bp-key", "LAST SIGNAL / WRECK ESTATE", "The ground fights too",
-            "Sandstorms, lightning and earthquakes hit mid-round. Watch for the warning and move before it lands.",
-            "On your last life the adrenaline kicks in. Use it: push while the others are still careful."],
-          ["bp-key", "OPERATORS / TRUST", "Watch the patrol",
-            "Operators and infiltrators wear the same uniforms. Evidence matters more than appearances.",
-            "Report a fallen patrol with F. Footprints, paint smudges and the security log go on your case board."],
-          ["bp-key", "EMERGENCIES", "The base fights back",
-            "Fires, new casualties, supply drops and sandstorms arrive mid-match. Handle them before the timer runs out.",
-            "Each quarter of the supplies loaded locks the base down for 25 seconds. Keep the cargo moving."],
-          ["bp-key", "PHASE TWO / MEDEVAC", "Lifeline Medevac",
-            "Once all nine supplies are aboard, take off. Nobody can be eliminated in the air, but sabotage still can.",
-            "If autopilot fails, take the helm. Hold altitude and course in their safe bands, then restore autopilot."],
-          ["bp-key", "NIGHT SHIFT", "After dark",
-            "The same base under lamps and neon. You see less far, and so does everyone else.",
-            "Stay with someone. A lone operator in the dark is exactly what an infiltrator is waiting for."],
-          ["bp-key", "DAILY CASE / ONLINE", "Every patrol matters",
-            "Play the Daily case to compare scores with friends, or play online with friends and smart bots.",
-            "After elimination, follow survivors and use Remote support to help the wounded from afar."],
-        ];
+        // One painting (wide and tall cuts) with its logo painted in, and one
+        // fixed briefing: no slideshow.
         const images = [...screen.querySelectorAll(".mf-loadimage")];
-        // Key art with the logo painted in: wide and tall cuts, and the
-        // screen's own brand line steps aside while it shows.
-        // One painting for the whole loading screen; the briefings and tips
-        // still rotate over it.
-        const KEY_ART = new Set(["bp-key"]);
-        const tall = matchMedia("(max-aspect-ratio: 4/5)");
-        const art = (asset) =>
-          KEY_ART.has(asset) ? `${asset}-${tall.matches ? "tall" : "wide"}` : asset;
-        const motion = matchMedia("(prefers-reduced-motion: reduce)");
-        let index = 0,
-          active = 0,
-          stopped = false,
-          paused = motion.matches,
-          timer,
-          request = 0;
-        const pauseButton = screen.querySelector(".mf-loadpause");
-        const schedule = () => {
-          clearInterval(timer);
-          if (!paused && !stopped)
-            timer = setInterval(() => {
-              if (!document.hidden) show(index + 1);
-            }, 4500);
-        };
-        const show = (next) => {
-          if (stopped) return;
-          index = (next + slides.length) % slides.length;
-          const [asset, category, title, description, tip] = slides[index];
-          const updateCaption = () => {
-            screen.querySelector(".mf-loadcategory").textContent = category;
-            screen.querySelector(".mf-slidetitle").textContent = title;
-            screen.querySelector(".mf-loaddescription").textContent = description;
-            screen.querySelector(".mf-loadtip p").textContent = tip;
-            screen.querySelector(".mf-loadcount").textContent =
-              `${String(index + 1).padStart(2, "0")} / ${String(slides.length).padStart(2, "0")}`;
-            screen.classList.toggle("mf-logoart", KEY_ART.has(asset));
-          };
-          // Same picture: only the briefing text changes.
-          if (images[active].getAttribute("src")?.includes(`/${art(asset)}.webp`) || images[active].currentSrc.includes(`/${art(asset)}.webp`)) {
-            ++request;
-            updateCaption();
-            return;
-          }
-          const image = images[1 - active],
-            token = ++request;
-          image.onload = () => {
-            if (stopped || token !== request) return;
-            updateCaption();
-            images[active].classList.remove("is-active");
-            images[active].alt = "";
-            image.alt = title;
-            image.classList.add("is-active");
-            active = 1 - active;
-          };
-          image.onerror = () => {
-            /* Keep the last successful still if a showcase image fails. */
-          };
-          // The first still is a <picture>; drop its source so src decides.
-          if (image.parentElement.tagName === "PICTURE") image.parentElement.querySelector("source")?.remove();
-          image.src = `./loading/${art(asset)}.webp`;
-        };
-        const syncPause = () => {
-          pauseButton.setAttribute("aria-pressed", String(paused));
-          pauseButton.setAttribute(
-            "aria-label",
-            paused ? "Resume loading slideshow" : "Pause loading slideshow",
-          );
-          pauseButton.textContent = paused ? "▷" : "Ⅱ";
-          schedule();
-        };
-        screen.querySelector(".mf-loadprev").onclick = () => {
-          show(index - 1);
-          schedule();
-        };
-        screen.querySelector(".mf-loadnext").onclick = () => {
-          show(index + 1);
-          schedule();
-        };
-        pauseButton.onclick = () => {
-          paused = !paused;
-          syncPause();
-        };
-        const motionChanged = () => {
-          paused = motion.matches;
-          syncPause();
-        };
-        motion.addEventListener("change", motionChanged);
-        syncPause();
+        screen.classList.add("mf-logoart");
         window.outpostLoading = {
           stop() {
-            stopped = true;
-            ++request;
-            clearInterval(timer);
             images.forEach((i) => {
               i.onload = null;
               i.onerror = null;
             });
-            motion.removeEventListener("change", motionChanged);
           },
         };
         // Optional showcase images must never turn a successful game load into an error.
@@ -3870,6 +3713,9 @@
               localStorage.setItem("midnry-outpost-character", id);
             } catch {}
             this.military?.loadCharacter?.(id);
+            // In an online lobby the room shows it to everyone.
+            if (this.online?.phase === "lobby" && this.mode === "signal")
+              this.onlineAction("loadout", { weapon: this.weapon, outfit: this.outfit, character: id });
             this.homeMenu?.refresh?.();
           }
           chooseOutfit(id) {
@@ -4089,7 +3935,8 @@
             for (const button of this.root.querySelectorAll(".mf-connectrow button, .mf-quick"))
               button.disabled = true;
             try {
-              const mode = "protocol";
+              // Online rooms: Blackout Protocol or Last Signal, whichever is chosen.
+              const mode = this.mode === "signal" ? "signal" : "protocol";
               const controller = new AbortController();
               this.connectionAbort = controller;
               const timer = setTimeout(() => controller.abort(), 10000);
@@ -4104,6 +3951,7 @@
                     mapId: this.mapId,
                     weapon: this.weapon,
                     outfit: this.outfit,
+                    character: this.character,
                     name: this.playerName || storedSetting("midnry-outpost-name") || undefined,
                     ...(op === "resume" && saved
                       ? { code: saved.code, id: saved.id, token: saved.token }
@@ -4134,8 +3982,8 @@
             }
           }
           applyRoom(data) {
-            if (data.mode !== "protocol")
-              throw Error("This room uses a retired mode. Create a Blackout Protocol room.");
+            if (data.mode !== "protocol" && data.mode !== "signal")
+              throw Error("This room uses a retired mode. Create a new room.");
             const net = this.online;
             if (!net) return;
             if (Number.isFinite(data.serverAt) && data.serverAt < (net.serverAt || 0)) return;
@@ -5188,7 +5036,9 @@
             // rebuilding) the hidden 3D arena behind it only costs memory and
             // freezes phones. The arena is built when Play starts.
             const homeCovers =
-              !this.running && !this.online && this.$(".mf-modal.mf-home:not([hidden])") !== null;
+              !this.running &&
+              (!this.online || this.online.phase === "lobby") &&
+              this.$(".mf-modal.mf-home:not([hidden])") !== null;
             if (homeCovers) {
               // The lobby: your operator on its platform (its own small scene),
               // at most 30 frames a second on phones.

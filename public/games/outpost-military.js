@@ -25353,29 +25353,41 @@ var Ah = class {
 	}
 	operator() {
 		let e = this.r, t = e.g, n = t.retention?.weaponFinish?.() || "standard", r = t.character || "operator", i = r === "operator" || !!e.characterAssets?.get(r), a = `${r}:${i}:${n}:${!!e.weaponKit}`;
-		if (i || e.loadCharacter(r), !e.soldier || a === this.key || !i && this.actor) return;
-		this.key = a, this.clearActor(), e.thirdPersonFinish = n;
-		let o = e.makeActor({
-			id: "lobby-operator",
-			character: r,
-			outfit: t.outfit,
+		i || e.loadCharacter(r), e.soldier && a !== this.key && (i || !this.actor) && (this.key = a, this.clearActor(), e.thirdPersonFinish = n, this.actor = this.figure("lobby-operator", r, 0), e.thirdPersonFinish = null);
+	}
+	figure(e, t, n) {
+		let r = this.r, i = r.makeActor({
+			id: e,
+			character: t,
+			outfit: r.g.outfit,
 			weapon: "carbine",
 			team: 0,
 			x: 0,
 			y: 0
 		});
-		e.thirdPersonFinish = null, e.actors.delete("lobby-operator"), o.root.removeFromParent(), o.root.position.set(0, .18, 0), o.root.traverse((e) => {
+		r.actors.delete(e), i.root.removeFromParent();
+		let a = this.pads[n];
+		return i.root.position.set(a.position.x, .18 * a.scale.y, a.position.z), i.root.scale.setScalar(n ? .92 : 1), i.root.traverse((e) => {
 			e.isMesh && (e.castShadow = !0);
-		}), this.scene.add(o.root), this.actor = o;
+		}), this.scene.add(i.root), i;
 	}
-	clearActor() {
-		let e = this.actor;
+	squad() {
+		let e = this.r, t = e.g.online, n = t?.phase === "lobby" ? (t.members || []).filter((t) => t.id !== e.g.selfId).slice(0, 2) : [], r = n.map((e) => e.character || "operator");
+		for (let t of r) t !== "operator" && e.loadCharacter(t);
+		let i = r.every((t) => t === "operator" || e.characterAssets?.has(t)), a = n.map((e, t) => `${e.id}:${r[t]}`).join("|") + `:${i}:${!!e.soldier}`;
+		if (a !== this.squadKey && e.soldier) {
+			this.squadKey = a;
+			for (let e of this.mates || []) this.clearActor(e);
+			this.mates = n.map((e, t) => this.figure(`lobby-mate-${t}`, r[t], t + 1));
+		}
+	}
+	clearActor(e = this.actor) {
 		if (e) {
 			e.mixer?.stopAllAction(), e.mixer?.uncacheRoot(e.model), e.model.traverse((e) => {
 				e.isSkinnedMesh && e.skeleton.dispose();
 			}), e.root.removeFromParent();
 			for (let t of [...e.ownedMaterials || [], ...e.equipmentMaterials || []]) t.dispose(), this.r.materials.delete(t);
-			this.actor = null;
+			e === this.actor && (this.actor = null);
 		}
 	}
 	drag(e) {
@@ -25383,16 +25395,20 @@ var Ah = class {
 	}
 	render(e) {
 		let t = this.r, n = e / 1e3, r = t.motion.matches;
-		if (this.operator(), t.g.mode === "signal" && !this.fetched) {
+		if (this.operator(), this.squad(), t.g.mode === "signal" && !this.fetched) {
 			this.fetched = !0;
 			for (let e of $m) t.loadCharacter(e.id);
 		}
 		let i = t.renderer.domElement.clientWidth || 1, a = t.renderer.domElement.clientHeight || 1, o = i / a, s = o < .9;
-		if (this.camera.aspect = o, this.camera.fov = s ? 40 : 30, this.camera.position.set(0, s ? 1.6 : 1.5, s ? 10 : 9), this.camera.lookAt(0, s ? -.35 : 1.15, 0), this.cardShot && (this.camera.fov = 30, this.camera.position.set(0, 1.3, 4.6), this.camera.lookAt(0, 1.02, 0)), this.camera.updateProjectionMatrix(), this.skyMaterial.uniforms.time.value = r ? 0 : n, this.actor) {
-			let e = this.actor.actions.Idle;
-			e && (e.play().setEffectiveWeight(1).setEffectiveTimeScale(0), e.time = r ? 0 : n % e.getClip().duration, this.actor.mixer.update(0)), this.actor.root.rotation.y = Math.PI + (this.cardShot ? .4 : .25) + this.spin + (r || this.cardShot ? 0 : Math.sin(n * .35) * .06), t.updateSkinParts(this.actor), this.actor.equipment && !Tm(this.actor, 0) && this.actor.weaponAnchor && (this.actor.root.updateMatrixWorld(!0), this.actor.weaponAnchor.getWorldPosition(this.actor.equipment.position), this.actor.root.worldToLocal(this.actor.equipment.position)), this.spin *= .94;
+		this.camera.aspect = o, this.camera.fov = s ? 40 : 30, this.camera.position.set(0, s ? 1.6 : 1.5, s ? 10 : 9), this.camera.lookAt(0, s ? -.35 : 1.15, 0), this.cardShot && (this.camera.fov = 30, this.camera.position.set(0, 1.3, 4.6), this.camera.lookAt(0, 1.02, 0)), this.camera.updateProjectionMatrix(), this.skyMaterial.uniforms.time.value = r ? 0 : n;
+		for (let e of [this.actor, ...this.mates || []]) {
+			if (!e) continue;
+			let i = e.actions.Idle;
+			i && (i.play().setEffectiveWeight(1).setEffectiveTimeScale(0), i.time = r ? 0 : n % i.getClip().duration, e.mixer.update(0));
+			let a = e === this.actor;
+			e.root.rotation.y = Math.PI + (this.cardShot ? .4 : .25) + (a ? this.spin : 0) + (r || this.cardShot ? 0 : Math.sin(n * .35) * .06), t.updateSkinParts(e), e.equipment && !Tm(e, 0) && e.weaponAnchor && (e.root.updateMatrixWorld(!0), e.weaponAnchor.getWorldPosition(e.equipment.position), e.root.worldToLocal(e.equipment.position));
 		}
-		if (!r) {
+		if (this.spin *= .94, !r) {
 			let e = this.dust.geometry.attributes.position;
 			for (let t = 0; t < e.count; t++) {
 				let n = e.getY(t) + .0025;
@@ -25415,6 +25431,7 @@ var Ah = class {
 	}
 	dispose() {
 		this.clearActor();
+		for (let e of this.mates || []) this.clearActor(e);
 		for (let e of this.owned) e.dispose();
 		this.scene.clear();
 	}
@@ -27495,9 +27512,11 @@ var cg = class {
 	}
 	characterFor(e) {
 		let t = e.character;
-		if (!t && this.g.mode === "signal") {
-			let n = this.g.character || "operator";
-			this.characterSalt ??= Math.random().toString(36).slice(2, 8), t = e.id === this.g.selfId ? n : eh(this.characterSalt, this.g.arena.entities.filter((e) => e.id !== this.g.selfId).indexOf(e), n);
+		if (!t && this.g.mode === "signal" && (e.bot || !this.g.online)) {
+			let n = this.g.online ? null : this.g.character || "operator";
+			this.characterSalt ??= Math.random().toString(36).slice(2, 8);
+			let r = this.g.online ? String(this.g.arena.roundId) : this.characterSalt;
+			t = e.id === this.g.selfId ? n : eh(r, this.g.arena.entities.filter((e) => e.bot).indexOf(e), n);
 		}
 		return t && t !== "operator" ? t : null;
 	}

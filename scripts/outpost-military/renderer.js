@@ -1925,13 +1925,16 @@ export class MilitaryRenderer {
    * Signal you wear yours and each bot a stable pick of the others. */
   characterFor(e) {
     let id = e.character;
-    if (!id && this.g.mode === "signal") {
-      const mine = this.g.character || "operator";
+    if (!id && this.g.mode === "signal" && (e.bot || !this.g.online)) {
+      // Offline your pick is yours alone; online players' picks come with them.
+      const mine = this.g.online ? null : this.g.character || "operator";
+      // Online, every player sees the same bots: the round id is shared.
       this.characterSalt ??= Math.random().toString(36).slice(2, 8);
+      const salt = this.g.online ? String(this.g.arena.roundId) : this.characterSalt;
       id =
         e.id === this.g.selfId
           ? mine
-          : botCharacter(this.characterSalt, this.g.arena.entities.filter((x) => x.id !== this.g.selfId).indexOf(e), mine);
+          : botCharacter(salt, this.g.arena.entities.filter((x) => x.bot).indexOf(e), mine);
     }
     return id && id !== "operator" ? id : null;
   }

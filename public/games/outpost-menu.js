@@ -102,6 +102,7 @@ midnry-fps .mf-homeactions .mf-ico, midnry-fps .mf-homefoot .mf-ico { width: 18p
 midnry-fps .mf-homefoot { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; }
 midnry-fps .mf-homefoot button { min-height: 44px; font-size: 13px !important; background: none !important; border-color: #ffffff14 !important; color: #aab5ae !important; }
 midnry-fps .mf-homefoot .mf-homeexit { color: #ffb4aa !important; }
+midnry-fps .mf-modal.mf-lobby.mf-friends .mf-challenges { display: none !important; }
 midnry-fps .mf-modal.mf-home .mf-network { margin: 0 !important; border-radius: 3px !important; background: #0c1210e6 !important; border: 1px solid #ffffff24 !important; }
 
 /* Right column */
@@ -246,6 +247,7 @@ midnry-fps .mf-modeplay:disabled { opacity: 0.5; cursor: default; }
 midnry-fps :is(.mf-modeplay, .mf-modechange, .mf-playtoggle button, .mf-squad button, .mf-pickerclose):focus-visible { outline: 2px solid var(--mf-accent) !important; outline-offset: 3px; }
 midnry-fps .mf-squad[hidden] { display: none; }
 midnry-fps .mf-squad button { all: unset; cursor: pointer; position: absolute; left: var(--x, 30%); top: var(--y, 55%); transform: translate(-50%, -50%); width: 48px; height: 48px; display: grid; place-items: center; border: 2px solid #ffffffa6; border-radius: 4px; background: #0a0f0d99; color: #fff; font: 700 30px/1 var(--mf-display); z-index: 1; }
+midnry-fps .mf-squad button.mf-mate { width: auto; height: auto; min-height: 28px; padding: 4px 10px; top: calc(var(--y, 55%) - 150px); font: 700 13px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; border-width: 1px; cursor: default; }
 midnry-fps .mf-squad button:hover { border-color: var(--mf-accent); color: var(--mf-accent); }
 midnry-fps .mf-pickerhead { display: none; }
 /* The picker becomes a sheet over the lobby, opened by Change or Play. */
@@ -465,7 +467,8 @@ export class OutpostMenu {
       const play = event.target.closest(".mf-modeplay"),
         change = event.target.closest(".mf-modechange"),
         withWho = event.target.closest("[data-playwith]");
-      if (play && !play.disabled) g.$(".mf-start")?.click();
+      // Friends, no room yet: the big button opens one.
+      if (play && !play.disabled) g.$(g.ui?.playChoice === "online" && !g.online ? ".mf-create" : ".mf-start")?.click();
       if (change) this.openPicker();
       if (withWho) g.$(withWho.dataset.playwith === "online" ? ".mf-onlinechoice" : ".mf-offlinechoice")?.click();
     });
@@ -811,29 +814,33 @@ export class OutpostMenu {
         .catch(() => {});
     }
     this.side.querySelector(".mf-casescore").innerHTML = best ? `${best.score} <span>/ 1000</span>` : "Play now";
-    // Mode cards: offline picks the mode; online shows the room's mode only.
+    // Mode cards: either game online or offline; in a room, the room's game.
     const online = Boolean(g.online || g.ui?.playChoice === "online");
-    // Mid-match (paused) the mode is locked: changing it would restart the round.
-    const locked = online || g.state === "playing";
+    // Mid-match (paused) or in a room the game is locked.
+    const locked = Boolean(g.online) || g.state === "playing";
     const now = this.current();
     this.cards.toggleAttribute("data-online", online);
     // Before the first choice nothing looks selected and step 2 waits.
-    const unchosen = !this.gameChosen && !online;
+    const unchosen = !this.gameChosen && !g.online;
     if (this.cards.hasAttribute("data-unchosen") !== unchosen) this.cards.toggleAttribute("data-unchosen", unchosen);
     for (const card of this.cards.querySelectorAll("button")) {
       const pressed =
         !unchosen &&
-        (card.dataset.mode ? card.dataset.mode === (online ? "protocol" : game) : card.dataset.variant === now);
+        (card.dataset.mode ? card.dataset.mode === game : card.dataset.variant === now);
       if (card.getAttribute("aria-pressed") !== String(pressed)) card.setAttribute("aria-pressed", String(pressed));
       card.disabled = locked;
-      card.title = locked && !online ? "Finish or exit this round to change mode" : "";
+      card.title = locked && !g.online ? "Finish or exit this round to change mode" : "";
     }
     this.side.querySelector(".mf-casecard").disabled = locked;
     const start = g.$(".mf-start");
     if (start && g.state === "fresh" && !online && start.textContent !== this.playLabel()) start.textContent = this.playLabel();
     if (this.playNext.hidden !== (online || g.state === "playing")) this.playNext.hidden = online || g.state === "playing";
     if (this.playNext.disabled !== Boolean(start?.disabled)) this.playNext.disabled = Boolean(start?.disabled);
-    const chosen = MODES.find((m) => m.id === (online ? "lifeline" : now));
+    const chosen = online
+      ? signal
+        ? { title: "Online room", sub: "Friends + bots · 8 fighters · next arena each rematch" }
+        : MODES.find((m) => m.id === "lifeline")
+      : MODES.find((m) => m.id === now);
     const series = signal && g.series?.rounds.length && !g.series.done ? ` · round ${g.series.round} next` : "";
     const summary = online || unchosen
       ? ""
@@ -841,10 +848,12 @@ export class OutpostMenu {
     if (this.summary.innerHTML !== summary) this.summary.innerHTML = summary;
     // Mode card: offline/online, the chosen game and way to play, Play.
     const onlineChoice = online;
+    // Room controls take the challenges' place in the lobby.
+    if (this.modal.classList.contains("mf-friends") !== online) this.modal.classList.toggle("mf-friends", online);
     for (const b of this.modeCard.querySelectorAll("[data-playwith]"))
       b.setAttribute("aria-pressed", String((b.dataset.playwith === "online") === onlineChoice));
     const kicker = onlineChoice ? (g.online ? `Online · room ${g.online.code}` : "Online · with friends") : "Offline · with bots";
-    const title = unchosen ? "Choose a game" : onlineChoice || !signal ? "Blackout Protocol" : "Last Signal";
+    const title = unchosen ? "Choose a game" : signal ? "Last Signal" : "Blackout Protocol";
     const sub = unchosen ? "Blackout Protocol or Last Signal" : `${chosen.title} · ${chosen.sub}${series}`;
     const set = (sel, text) => {
       const node = this.modeCard.querySelector(sel);
@@ -856,11 +865,22 @@ export class OutpostMenu {
     set(".mf-modechange", unchosen ? "Choose" : "Change");
     const play = this.modeCard.querySelector(".mf-modeplay");
     const label = (start?.textContent || "PLAY").replace(/\s*[→↓]$/, "").replace(/^PLAY (LAST SIGNAL|BLACKOUT PROTOCOL)$/, "PLAY");
-    set(".mf-modeplay", unchosen ? "Choose a game" : label);
-    if (play.disabled !== Boolean(start?.disabled)) play.disabled = Boolean(start?.disabled);
-    this.modeCard.querySelector(".mf-modechange").hidden = onlineChoice;
+    const creating = online && !g.online;
+    set(".mf-modeplay", unchosen ? "Choose a game" : creating ? "Create room" : label);
+    const playOff = creating ? Boolean(g.connecting) : Boolean(start?.disabled);
+    if (play.disabled !== playOff) play.disabled = playOff;
+    this.modeCard.querySelector(".mf-modechange").hidden = Boolean(g.online);
     this.modeCard.hidden = g.state === "playing";
     this.squad.hidden = g.state === "playing" || !lobby;
+    // Friends in your room stand on the pads: their name instead of "+".
+    const mates = g.online?.phase === "lobby" ? (g.online.members || []).filter((m) => m.id !== g.selfId) : [];
+    this.squad.querySelectorAll("[data-invite]").forEach((button, i) => {
+      const mate = mates[i],
+        text = mate ? mate.name : "+";
+      if (button.textContent !== text) button.textContent = text;
+      button.classList.toggle("mf-mate", !!mate);
+      button.setAttribute("aria-label", mate ? `${mate.name}, in your room` : "Invite friends");
+    });
     this.summary.hidden = !summary;
     const midMatch = g.state === "playing" && !g.deathSequence;
     if (this.matchbar.hidden !== !midMatch) this.matchbar.hidden = !midMatch;

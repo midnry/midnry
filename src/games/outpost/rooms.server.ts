@@ -1,4 +1,5 @@
 import { modifierChoice } from "../../../public/games/outpost-variety.js";
+import { CHARACTERS } from "../../../public/games/outpost-characters.js";
 import { randomBytes, createHash, timingSafeEqual } from "node:crypto";
 import { getSql } from "@/lib/db";
 import {
@@ -27,6 +28,8 @@ export type Member = {
   team: number;
   weapon: string;
   outfit?: string;
+  /** Locker character (Last Signal); looks only. */
+  character?: string;
   lastSeen: number;
   /** Tapped Rematch on the results screen. */
   ready?: boolean;
@@ -81,6 +84,14 @@ export async function saveRoomRecord(
   }>`update outpost_room set state=${JSON.stringify(room)}::jsonb,version=version+1,expires_at=now()+interval '20 minutes' where code=${code} and version=${version} returning version`;
   return updated.length ? Number(updated[0].version) : null;
 }
+function characterId(value: unknown): string {
+  if (value === undefined) return "operator";
+  if (typeof value !== "string" || !CHARACTERS.some((c) => c.id === value))
+    throw new OutpostError("Choose a valid character.");
+  return value;
+}
+// Last Signal rematches move to the next arena, like the offline series.
+const SIGNAL_ROTATION = ["outpost", "estate", "skyport"];
 function outfitId(value: unknown): string {
   if (value === undefined) return "ranger";
   if (typeof value !== "string" || !Object.hasOwn(OUTFITS, value))
@@ -158,10 +169,11 @@ export function publicRoom(code: string, room: Room, selfId: string) {
       : room.mapId || "outpost",
     phase: room.phase,
     host: room.host,
-    members: room.members.map(({ id, name, team, weapon, outfit, lastSeen, ready }) => ({
+    members: room.members.map(({ id, name, team, weapon, outfit, character, lastSeen, ready }) => ({
       id,
       name,
       ready: ready === true,
+      character: character || "operator",
       ...(protocol ? {} : { team }),
       weapon: protocol ? "carbine" : weapon || "carbine",
       outfit: protocol ? "ranger" : outfit || "ranger",
@@ -205,11 +217,12 @@ export function lobbyMapOf(mode: Room["mode"], value: unknown = undefined): stri
     throw new OutpostError("Choose a valid combat map.");
   return mapId;
 }
-/** Public play is Blackout Protocol only; old clients cannot re-enable combat. */
-export function playableModeOf(value: unknown = undefined): "protocol" {
+/** Online play: Blackout Protocol and Last Signal (Pair Ops stays retired). */
+export function playableModeOf(value: unknown = undefined): "protocol" | "signal" {
   if (value === undefined || value === "protocol") return "protocol";
+  if (value === "signal") return "signal";
   throw new OutpostError(
-    "Only Blackout Protocol is available. Update the game and create a new room.",
+    "Only Blackout Protocol and Last Signal are available. Update the game and create a new room.",
   );
 }
 // Only intent crosses this boundary: simulation decides roles, locations,
@@ -332,6 +345,7 @@ export function applyRoomAction(
       weapon,
       // Blackout Protocol uses matching uniforms for everyone.
       outfit: room.mode === "protocol" ? "ranger" : outfitId(body.outfit),
+      character: characterId(body.character),
       id: joinedId,
       hash: sha(joinedToken),
       name: displayName(
@@ -437,6 +451,7 @@ export function applyRoomAction(
           : outfitId(body.outfit);
     member.weapon = room.mode === "protocol" ? "carbine" : (body.weapon as string);
     member.outfit = outfit;
+    if (body.character !== undefined) member.character = characterId(body.character);
     if (body.name !== undefined)
       member.name = displayName(
         body.name,
@@ -483,6 +498,8 @@ export function applyRoomAction(
     if (body.op === "rematch") {
       if (room.phase !== "ended")
         throw new OutpostError("Finish this match before starting another.", 409);
+      if (room.mode === "signal")
+        room.mapId = SIGNAL_ROTATION[(SIGNAL_ROTATION.indexOf(room.mapId) + 1) % SIGNAL_ROTATION.length];
       room.members = room.members.filter((m) => now - m.lastSeen < 20000);
       room.arena = createArena({
         interactiveTasks: true,
@@ -493,12 +510,13 @@ export function applyRoomAction(
         variety: true,
         modifier: modifierChoice(room.modifier),
         countdown: 2,
-        humans: room.members.map(({ id, team, name, weapon, outfit }) => ({
+        humans: room.members.map(({ id, team, name, weapon, outfit, character }) => ({
           id,
           team,
           name,
           weapon: weapon || "carbine",
           outfit: outfit || "ranger",
+          ...(room.mode === "signal" && character && character !== "operator" ? { character } : {}),
         })),
       }).snapshot();
       room.phase = "playing";
@@ -519,12 +537,13 @@ export function applyRoomAction(
         revealRoles: room.reveal !== false,
         variety: true,
         modifier: modifierChoice(room.modifier),
-        humans: room.members.map(({ id, team, name, weapon, outfit }) => ({
+        humans: room.members.map(({ id, team, name, weapon, outfit, character }) => ({
           id,
           team,
           name,
           weapon: weapon || "carbine",
           outfit: outfit || "ranger",
+          ...(room.mode === "signal" && character && character !== "operator" ? { character } : {}),
         })),
       }).snapshot();
       room.phase = "playing";
@@ -555,6 +574,7 @@ export async function roomAction(
   const sql = await getSql(),
     now = Date.now();
   if (body.op === "quick") {
+    const wanted = playableModeOf(body.mode);
     // Quick match: join the fullest open public lobby whose players are still
     // here; otherwise open a new public lobby with you as host.
     const rows = await sql<{ code: string; state: Room }>`select code,state from outpost_room
@@ -566,7 +586,7 @@ export async function roomAction(
         live: row.state.members.filter((m) => now - m.lastSeen < 20000).length,
         mode: row.state.mode,
       }))
-      .filter((row) => row.mode === "protocol" && row.live > 0 && row.live < 8)
+      .filter((row) => row.mode === wanted && row.live > 0 && row.live < 8)
       .sort((a, b) => b.live - a.live);
     for (const row of open) {
       try {
@@ -611,6 +631,7 @@ export async function roomAction(
       name: displayName(body.name, "Ranger 1"),
       weapon,
       outfit: mode === "protocol" ? "ranger" : outfitId(body.outfit),
+      character: characterId(body.character),
       team: 0,
       lastSeen: now,
       inputAt: now,
@@ -676,9 +697,9 @@ export async function roomAction(
       throw new OutpostError("Room not found or expired. Create another room.", 404);
     const { version } = rows[0],
       room = rows[0].state;
-    if (room.mode !== "protocol" && body.op !== "leave")
+    if (room.mode !== "protocol" && room.mode !== "signal" && body.op !== "leave")
       throw new OutpostError(
-        "This room uses a retired mode. Create a Blackout Protocol room.",
+        "This room uses a retired mode. Create a new room.",
         409,
       );
     const result = applyRoomAction(
