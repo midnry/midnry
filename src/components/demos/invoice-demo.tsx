@@ -3,11 +3,13 @@ import { addDays, parseIso } from "@/lib/remind/dates";
 import { cn } from "@/components/ui";
 import { DemoGrid, LiveSummary, Step, demoInput, useDemoTouch, useToday } from "./demo-kit";
 import { SAMPLES, moneyFor, useDemoCurrency, type Money } from "./demo-currency";
+import { checkInvoice, toMajor, type LineCheck } from "@/lib/invoice-math";
 
 /**
- * Invoice with sample line items. The sums follow the Invoice app exactly
- * (src/components/tools/invoice.tsx): quantity × rate per line, tax as a
- * percent of the subtotal, and "—" for a line that is not a number yet.
+ * Invoice with sample line items. The sums are the Invoice app's own
+ * (src/lib/invoice-math.ts): quantity × rate per line rounded to the
+ * currency's smallest unit, tax as a percent of the subtotal, and no total
+ * while any quantity, rate or tax is invalid.
  * The sample (amounts, places, tax rate) follows the demo currency; switching
  * currency starts a fresh sample in that currency. Nothing is sent or saved.
  */
@@ -16,21 +18,8 @@ type Line = { id: string; description: string; qty: string; rate: string };
 
 const MAX_LINES = 6;
 
-function plain(raw: string): string {
-  return raw.trim().replace(/[,\s]/g, "");
-}
-
-function lineTotal(line: Line): number | null {
-  if (!/^\d+(\.\d+)?$/.test(plain(line.qty)) || !/^\d+(\.\d{1,2})?$/.test(plain(line.rate))) return null;
-  const qty = Number(plain(line.qty));
-  const rate = Number(plain(line.rate));
-  if (!Number.isFinite(qty) || !Number.isFinite(rate) || qty < 0 || rate < 0) return null;
-  return qty * rate;
-}
-
-function rateText(line: Line, money: Money): string {
-  const rate = plain(line.rate);
-  return rate && Number.isFinite(Number(rate)) ? money.format(Number(rate)) : "—";
+function rateText(check: LineCheck | undefined, money: Money): string {
+  return check?.rateMinor == null ? "—" : money.format(toMajor(check.rateMinor, money.code));
 }
 
 function dayText(iso: string): string {
@@ -58,11 +47,13 @@ function InvoiceSample({ money }: { money: Money }) {
     if (value) touch();
   };
 
-  const subtotal = lines.reduce((sum, line) => sum + (lineTotal(line) ?? 0), 0);
-  const taxRate = /^\d+(\.\d+)?$/.test(taxPercent.trim()) ? Number(taxPercent) : 0;
-  const safeTax = Number.isFinite(taxRate) && taxRate >= 0 && taxRate <= 100 ? taxRate : 0;
-  const tax = subtotal * (safeTax / 100);
-  const total = subtotal + tax;
+  const check = checkInvoice(lines, taxPercent, money.code);
+  const fmtMinor = (minor: number | null) => (minor == null ? "—" : money.format(toMajor(minor, money.code)));
+  const problem = check.formError
+    ? check.formError
+    : check.errorCount > 0
+      ? `Fix the ${check.errorCount === 1 ? "highlighted field" : `${check.errorCount} highlighted fields`} to see the total.`
+      : null;
 
   function edit(id: string, change: Partial<Line>) {
     setEdited(true);
@@ -108,7 +99,8 @@ function InvoiceSample({ money }: { money: Money }) {
                     value={line.qty}
                     placeholder="Qty"
                     onChange={(event) => edit(line.id, { qty: event.target.value.slice(0, 8) })}
-                    className={cn(demoInput, "tabular-nums")}
+                    aria-invalid={check.lines[index]?.qtyError ? true : undefined}
+                    className={cn(demoInput, "tabular-nums", check.lines[index]?.qtyError && "border-fail")}
                   />
                   <input
                     aria-label={`Rate in ${money.name}, line ${index + 1}`}
@@ -116,7 +108,8 @@ function InvoiceSample({ money }: { money: Money }) {
                     value={line.rate}
                     placeholder="Rate"
                     onChange={(event) => edit(line.id, { rate: event.target.value.slice(0, 12) })}
-                    className={cn(demoInput, "tabular-nums")}
+                    aria-invalid={check.lines[index]?.rateError ? true : undefined}
+                    className={cn(demoInput, "tabular-nums", check.lines[index]?.rateError && "border-fail")}
                   />
                   <button
                     type="button"
@@ -132,6 +125,11 @@ function InvoiceSample({ money }: { money: Money }) {
                       <path d="M5 5l10 10M15 5L5 15" />
                     </svg>
                   </button>
+                  {check.lines[index]?.qtyError || check.lines[index]?.rateError ? (
+                    <p className="col-span-3 text-xs text-fail sm:col-span-4">
+                      Line {index + 1}: {[check.lines[index]?.qtyError, check.lines[index]?.rateError].filter(Boolean).join(" ")}
+                    </p>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -158,17 +156,27 @@ function InvoiceSample({ money }: { money: Money }) {
                 value={taxPercent}
                 onChange={(event) => {
                   setEdited(true);
-                  setTaxPercent(event.target.value.slice(0, 5));
+                  setTaxPercent(event.target.value.slice(0, 7));
                 }}
-                className={cn(demoInput, "w-20 tabular-nums")}
+                aria-invalid={check.taxError ? true : undefined}
+                aria-describedby={check.taxError ? `${ids}-tax-error` : undefined}
+                className={cn(demoInput, "w-20 tabular-nums", check.taxError && "border-fail")}
               />
             </label>
           </div>
+          {check.taxError ? (
+            <p id={`${ids}-tax-error`} className="mt-2 text-right text-xs text-fail">
+              {check.taxError}
+            </p>
+          ) : null}
         </Step>
       }
       result={
         <Step n={2} title="Get a finished invoice">
-          <LiveSummary active={edited} text={`Invoice total ${money.format(total)}, including ${money.format(tax)} tax.`} />
+          <LiveSummary
+            active={edited}
+            text={check.valid ? `Invoice total ${fmtMinor(check.totalMinor)}, including ${fmtMinor(check.taxMinor)} tax.` : `No total yet. ${problem ?? ""}`}
+          />
           <article aria-label="Finished invoice, sample" className="rounded-2xl border border-line bg-card p-5 shadow-[0_18px_40px_-28px_rgba(16,32,51,0.45)] sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -200,38 +208,46 @@ function InvoiceSample({ money }: { money: Money }) {
                 </tr>
               </thead>
               <tbody>
-                {lines.map((line) => {
-                  const amount = lineTotal(line);
+                {lines.map((line, index) => {
+                  const lineCheck = check.lines[index];
+                  if (!lineCheck || lineCheck.empty) return null;
+                  const qty = lineCheck.qtyError ? "—" : line.qty.trim();
                   return (
                     <tr key={line.id} className="border-b border-line align-top">
                       <td className="py-2 pr-3">
                         <span className="break-words">{line.description.trim() || "—"}</span>
                         <span className="block text-xs text-muted tabular-nums sm:hidden">
-                          {line.qty || "—"} × {rateText(line, money)}
+                          {qty} × {rateText(lineCheck, money)}
                         </span>
                       </td>
-                      <td className="hidden py-2 text-right tabular-nums sm:table-cell">{line.qty || "—"}</td>
-                      <td className="hidden py-2 pl-2 text-right whitespace-nowrap tabular-nums sm:table-cell">{rateText(line, money)}</td>
-                      <td className="py-2 pl-2 text-right whitespace-nowrap tabular-nums">{amount == null ? "—" : money.format(amount)}</td>
+                      <td className="hidden py-2 text-right tabular-nums sm:table-cell">{qty}</td>
+                      <td className="hidden py-2 pl-2 text-right whitespace-nowrap tabular-nums sm:table-cell">{rateText(lineCheck, money)}</td>
+                      <td className="py-2 pl-2 text-right whitespace-nowrap tabular-nums">{fmtMinor(lineCheck.amountMinor)}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-            <dl className="mt-4 ml-auto max-w-xs space-y-1 text-sm">
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted">Subtotal</dt>
-                <dd className="tabular-nums">{money.format(subtotal)}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted">Tax {safeTax}%</dt>
-                <dd className="tabular-nums">{money.format(tax)}</dd>
-              </div>
-              <div key={total} className={cn("-mx-2 flex items-baseline justify-between gap-4 rounded-lg px-2 pt-2 pb-1", edited && "anim-flash")}>
-                <dt className="font-medium">Total</dt>
-                <dd className="font-display text-2xl tracking-tight tabular-nums">{money.format(total)}</dd>
-              </div>
-            </dl>
+            {check.valid ? (
+              <dl className="mt-4 ml-auto max-w-xs space-y-1 text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted">Subtotal</dt>
+                  <dd className="tabular-nums">{fmtMinor(check.subtotalMinor)}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted">Tax {check.taxPercent}%</dt>
+                  <dd className="tabular-nums">{fmtMinor(check.taxMinor)}</dd>
+                </div>
+                <div key={check.totalMinor} className={cn("-mx-2 flex items-baseline justify-between gap-4 rounded-lg px-2 pt-2 pb-1", edited && "anim-flash")}>
+                  <dt className="font-medium">Total</dt>
+                  <dd className="font-display text-2xl tracking-tight tabular-nums">{fmtMinor(check.totalMinor)}</dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="mt-4 ml-auto max-w-xs text-right text-sm text-fail" data-testid="invoice-no-total">
+                No total yet. {problem}
+              </p>
+            )}
           </article>
           <p className="mt-3 text-sm text-muted">In the app you print it, or save it as a PDF to send by email or WhatsApp.</p>
         </Step>

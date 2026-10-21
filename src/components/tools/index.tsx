@@ -13,6 +13,7 @@ import { PlannerTool } from "@/components/tools/planner";
 import { ApplyTool } from "@/components/tools/apply";
 import { RemindTool } from "@/components/tools/remind";
 import { CycleTool } from "@/components/tools/cycle";
+import { MedsTool } from "@/components/tools/meds";
 import { KitTool } from "@/components/tools/kit";
 import { getKit } from "@/lib/kits";
 
@@ -31,6 +32,7 @@ const TOOLS: Record<string, () => ReactElement> = {
   apply: ApplyTool,
   tasks: RemindTool,
   cycle: CycleTool,
+  meds: MedsTool,
 };
 
 export function ToolView({ slug }: { slug: string }) {

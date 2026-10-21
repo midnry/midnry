@@ -3,7 +3,7 @@ import { getApp } from "@/lib/catalog";
 import { Skeleton, cn, fieldClass } from "@/components/ui";
 import { AppMark } from "@/components/app-mark";
 import { AppGuide } from "@/components/app-guide";
-import type { SaveState } from "@/components/use-app-doc";
+import { SAVE_MESSAGES, type SaveState } from "@/components/use-app-doc";
 import { CURRENCIES, type CurrencyCode } from "@/lib/format";
 
 
@@ -41,12 +41,38 @@ export function ToolFrame({
   );
 }
 
+export function saveStateLabel(state: SaveState): string {
+  switch (state) {
+    case "saving":
+      return "Saving…";
+    case "saved":
+      return "Saved to your account";
+    case "error":
+      return "Not saved";
+    case "retrying":
+      return SAVE_MESSAGES.retrying;
+    case "conflict":
+      return SAVE_MESSAGES.conflict;
+    case "too-large":
+      return SAVE_MESSAGES.tooLarge;
+    default:
+      return "Saved with your account";
+  }
+}
+
 function SaveMark({ state }: { state: SaveState }) {
-  const label =
-    state === "saving" ? "Saving…" : state === "saved" ? "Saved to your account" : state === "error" ? "Not saved" : "Saved with your account";
+  const problem = state === "retrying" || state === "conflict" || state === "too-large" || state === "error";
   return (
-    <p className="text-sm text-muted" aria-live="polite">
-      {label}
+    <p className={cn("text-sm", problem ? "max-w-xs font-medium text-fail" : "text-muted")} aria-live="polite">
+      {saveStateLabel(state)}
+      {state === "conflict" ? (
+        <>
+          {" "}
+          <button type="button" className="underline underline-offset-2" onClick={() => window.location.reload()}>
+            Reload
+          </button>
+        </>
+      ) : null}
     </p>
   );
 }

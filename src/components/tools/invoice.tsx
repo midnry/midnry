@@ -1,4 +1,6 @@
 import { useAppDoc } from "@/components/use-app-doc";
+import { cn } from "@/components/ui";
+import { checkInvoice, roundingNote, toMajor } from "@/lib/invoice-math";
 import { Button, Field, TextArea, TextInput } from "@/components/ui";
 import { formatMoney, guessCurrency, isCurrency, type CurrencyCode } from "@/lib/format";
 import { CurrencyPicker, nid, todayISO, ToolFrame, ToolStatus } from "@/components/tools/shared";
@@ -53,16 +55,15 @@ function asInvoice(value: InvoiceDoc): InvoiceDoc {
   };
 }
 
-function plain(raw: string): string {
-  return raw.trim().replace(/[,\s]/g, "");
-}
+const invalidClass = "border-fail focus-visible:border-fail";
 
-function lineTotal(line: Line): number | null {
-  if (!/^\d+(\.\d+)?$/.test(plain(line.qty)) || !/^\d+(\.\d{1,2})?$/.test(plain(line.rate))) return null;
-  const qty = Number(plain(line.qty));
-  const rate = Number(plain(line.rate));
-  if (!Number.isFinite(qty) || !Number.isFinite(rate) || qty < 0 || rate < 0) return null;
-  return qty * rate;
+function FieldError({ id, message }: { id: string; message: string | null }) {
+  if (!message) return null;
+  return (
+    <span id={id} className="mt-1 block text-sm text-fail">
+      {message}
+    </span>
+  );
 }
 
 export function InvoiceTool() {
@@ -73,13 +74,15 @@ export function InvoiceTool() {
     setData({ ...invoice, ...next });
   }
 
-  const subtotal = invoice.lines.reduce((sum, line) => sum + (lineTotal(line) ?? 0), 0);
-  const taxRate = /^\d+(\.\d+)?$/.test(invoice.taxPercent.trim()) ? Number(invoice.taxPercent) : 0;
-  const safeTax = Number.isFinite(taxRate) && taxRate >= 0 && taxRate <= 100 ? taxRate : 0;
-  const tax = subtotal * (safeTax / 100);
-  const total = subtotal + tax;
   const currency = invoice.currency ?? guessCurrency();
   const fmt = (value: number) => formatMoney(value, currency);
+  const check = checkInvoice(invoice.lines, invoice.taxPercent, currency);
+  const fmtMinor = (minor: number | null) => (minor == null ? "—" : fmt(toMajor(minor, currency)));
+  const printBlock = check.formError
+    ? check.formError
+    : check.errorCount > 0
+      ? `Fix the ${check.errorCount === 1 ? "highlighted field" : `${check.errorCount} highlighted fields`} to print. No total is shown until every amount is valid.`
+      : null;
 
   function nextInvoice() {
     const digits = invoice.number.match(/(\d+)(?!.*\d)/);
@@ -134,13 +137,22 @@ export function InvoiceTool() {
               <TextInput
                 inputMode="decimal"
                 value={invoice.taxPercent}
+                aria-invalid={check.taxError ? true : undefined}
+                aria-describedby={check.taxError ? "invoice-tax-error" : undefined}
+                className={cn(check.taxError && invalidClass)}
                 onChange={(event) => patch({ taxPercent: event.target.value })}
               />
+              <FieldError id="invoice-tax-error" message={check.taxError} />
             </Field>
             <div className="space-y-3">
               <p className="text-sm font-medium">Line items</p>
-              {invoice.lines.map((line, index) => (
-                <div key={line.id} className="grid gap-2 sm:grid-cols-[1fr_5rem_6rem_auto]">
+              {invoice.lines.map((line, index) => {
+                const lineCheck = check.lines[index];
+                const qtyErrorId = `invoice-qty-error-${line.id}`;
+                const rateErrorId = `invoice-rate-error-${line.id}`;
+                return (
+                <div key={line.id}>
+                <div className="grid gap-2 sm:grid-cols-[1fr_5rem_6rem_auto]">
                   <TextInput
                     value={line.description}
                     aria-label={`Description ${index + 1}`}
@@ -159,6 +171,9 @@ export function InvoiceTool() {
                     value={line.qty}
                     aria-label={`Quantity ${index + 1}`}
                     placeholder="Qty"
+                    aria-invalid={lineCheck?.qtyError ? true : undefined}
+                    aria-describedby={lineCheck?.qtyError ? qtyErrorId : undefined}
+                    className={cn(lineCheck?.qtyError && invalidClass)}
                     onChange={(event) =>
                       patch({
                         lines: invoice.lines.map((item) =>
@@ -172,6 +187,9 @@ export function InvoiceTool() {
                     value={line.rate}
                     aria-label={`Rate ${index + 1}`}
                     placeholder="Rate"
+                    aria-invalid={lineCheck?.rateError ? true : undefined}
+                    aria-describedby={lineCheck?.rateError ? rateErrorId : undefined}
+                    className={cn(lineCheck?.rateError && invalidClass)}
                     onChange={(event) =>
                       patch({
                         lines: invoice.lines.map((item) =>
@@ -188,7 +206,11 @@ export function InvoiceTool() {
                     Remove
                   </Button>
                 </div>
-              ))}
+                <FieldError id={qtyErrorId} message={lineCheck?.qtyError ? `Line ${index + 1}: ${lineCheck.qtyError}` : null} />
+                <FieldError id={rateErrorId} message={lineCheck?.rateError ? `Line ${index + 1}: ${lineCheck.rateError}` : null} />
+                </div>
+                );
+              })}
               <Button
                 tone="quiet"
                 disabled={invoice.lines.length >= 30}
@@ -210,14 +232,25 @@ export function InvoiceTool() {
               />
             </Field>
             <div className="flex flex-wrap gap-2">
-              <Button tone="primary" onClick={() => window.print()}>
+              <Button
+                tone="primary"
+                disabled={printBlock != null}
+                aria-describedby={printBlock ? "invoice-print-block" : undefined}
+                onClick={() => window.print()}
+              >
                 Print or save as PDF
               </Button>
               <Button tone="quiet" onClick={nextInvoice}>
                 Start the next invoice
               </Button>
             </div>
+            {printBlock ? (
+              <p id="invoice-print-block" role="status" className="text-sm font-medium text-fail">
+                {printBlock}
+              </p>
+            ) : null}
             <p className="text-xs text-muted">In the print window, choose “Save as PDF” to send it by email or WhatsApp.</p>
+            <p className="text-xs text-muted">{roundingNote(currency)}</p>
           </form>
 
           <article className="invoice-sheet rounded-3xl bg-card p-6 shadow-line sm:p-8">
@@ -251,37 +284,40 @@ export function InvoiceTool() {
                 </tr>
               </thead>
               <tbody>
-                {invoice.lines.map((line) => {
-                  const amount = lineTotal(line);
+                {invoice.lines.map((line, index) => {
+                  const lineCheck = check.lines[index];
+                  if (!lineCheck || lineCheck.empty) return null;
                   return (
                     <tr key={line.id} className="border-b border-line">
                       <td className="py-2 pr-3">{line.description.trim() || "—"}</td>
-                      <td className="py-2 text-right tabular-nums">{line.qty || "—"}</td>
-                      <td className="py-2 text-right tabular-nums">
-                        {plain(line.rate) && Number.isFinite(Number(plain(line.rate))) ? fmt(Number(plain(line.rate))) : "—"}
-                      </td>
-                      <td className="py-2 text-right tabular-nums">
-                        {amount == null ? "—" : fmt(amount)}
-                      </td>
+                      <td className="py-2 text-right tabular-nums">{lineCheck.qtyError ? "—" : line.qty.trim()}</td>
+                      <td className="py-2 text-right tabular-nums">{fmtMinor(lineCheck.rateMinor)}</td>
+                      <td className="py-2 text-right tabular-nums">{fmtMinor(lineCheck.amountMinor)}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-            <dl className="mt-4 ml-auto max-w-xs space-y-1 text-sm">
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted">Subtotal</dt>
-                <dd className="tabular-nums">{fmt(subtotal)}</dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-muted">Tax {safeTax}%</dt>
-                <dd className="tabular-nums">{fmt(tax)}</dd>
-              </div>
-              <div className="flex justify-between gap-4 pt-2 font-medium">
-                <dt>Total</dt>
-                <dd className="tabular-nums">{fmt(total)}</dd>
-              </div>
-            </dl>
+            {check.valid ? (
+              <dl className="mt-4 ml-auto max-w-xs space-y-1 text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted">Subtotal</dt>
+                  <dd className="tabular-nums">{fmtMinor(check.subtotalMinor)}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-muted">Tax {check.taxPercent}%</dt>
+                  <dd className="tabular-nums">{fmtMinor(check.taxMinor)}</dd>
+                </div>
+                <div className="flex justify-between gap-4 pt-2 font-medium">
+                  <dt>Total</dt>
+                  <dd className="tabular-nums">{fmtMinor(check.totalMinor)}</dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="mt-4 ml-auto max-w-xs text-right text-sm text-fail" data-testid="invoice-no-total">
+                No total yet. {printBlock}
+              </p>
+            )}
             {invoice.notes.trim() ? (
               <p className="mt-6 whitespace-pre-wrap text-sm text-muted">{invoice.notes.trim()}</p>
             ) : null}

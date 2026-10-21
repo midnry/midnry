@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAppDoc } from "@/components/use-app-doc";
+import { SAVE_MESSAGES, useAppDoc, type SaveState } from "@/components/use-app-doc";
 import { Button, TextArea, TextInput, cn, fieldClass } from "@/components/ui";
 import { ToolFrame, ToolStatus } from "@/components/tools/shared";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import { WRITERS, type Piece } from "@/lib/writers";
 import { AI_WRITERS, aiWrite } from "@/lib/ai-write.functions";
 import { Link } from "@tanstack/react-router";
 import { getKit, type Field, type Kit, type Line } from "@/lib/kits";
+import { compareLists, type BadLine } from "@/lib/reconcile";
 import type { SectionId } from "@/lib/sections";
 
 const SENIOR: SectionId[] = ["elder-health", "safety", "family", "elder-money", "hobbies"];
@@ -1488,36 +1489,45 @@ function BreakEven() {
 function Reconcile() {
   const [left, setLeft] = useState("");
   const [right, setRight] = useState("");
-  const a = amounts(left);
-  const b = amounts(right);
-  const onlyA = unmatched(a, b);
-  const onlyB = unmatched(b, a);
-  const gap = Math.round((sum(a) - sum(b)) * 100) / 100;
+  const result = compareLists(left, right);
+  const cents = (value: number) => money(value / 100);
+  const list = (items: { cents: number; line: number }[]) => (items.length ? items.map((item) => `${cents(item.cents)} (line ${item.line})`).join(", ") : "None");
+  const hasInput = result.left.amounts.length + result.right.amounts.length + result.left.bad.length + result.right.bad.length > 0;
+  const clean = result.gap === 0 && !result.onlyLeft.length && !result.onlyRight.length && !result.left.bad.length && !result.right.bad.length;
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <label className="text-sm">
         <span className="mb-1 block text-muted">Your records (one amount per line)</span>
         <TextArea rows={8} value={left} placeholder={"12,500\n3,000\n780.50"} onChange={(event) => setLeft(event.target.value)} />
         <span className="mt-1 block text-xs text-muted">
-          {a.length} amounts · total {money(sum(a))}
+          {result.left.amounts.length} amounts · total {cents(result.leftTotal)}
         </span>
+        <BadLines side="your records" lines={result.left.bad} />
       </label>
       <label className="text-sm">
         <span className="mb-1 block text-muted">Bank or statement (one amount per line)</span>
         <TextArea rows={8} value={right} placeholder={"12,500\n780.50"} onChange={(event) => setRight(event.target.value)} />
         <span className="mt-1 block text-xs text-muted">
-          {b.length} amounts · total {money(sum(b))}
+          {result.right.amounts.length} amounts · total {cents(result.rightTotal)}
         </span>
+        <BadLines side="the statement" lines={result.right.bad} />
       </label>
-      {a.length || b.length ? (
+      {hasInput ? (
         <>
-          <p className={cn("rounded-2xl p-4 font-medium sm:col-span-2", gap === 0 && !onlyA.length && !onlyB.length ? "bg-pine text-paper" : "bg-card shadow-line")}>
-            {gap === 0 && !onlyA.length && !onlyB.length ? "Both sides match." : `The totals differ by ${money(Math.abs(gap))}.`}
+          <p className={cn("rounded-2xl p-4 font-medium sm:col-span-2", clean ? "bg-pine text-paper" : "bg-card shadow-line")}>
+            {clean
+              ? "Every amount appears in both lists, and the totals agree. This compares amounts only, not dates or payees."
+              : result.gap === 0
+                ? "The totals agree, but not every line pairs up."
+                : `The totals differ by ${cents(Math.abs(result.gap))}.`}
           </p>
           <Lines
+            copy={false}
             lines={[
-              { label: "Only in your records", value: onlyA.map(money).join(", ") || "None" },
-              { label: "Only on the statement", value: onlyB.map(money).join(", ") || "None" },
+              { label: `Amounts that appear in both lists (${result.both.length})`, value: result.both.length ? result.both.map((pair) => cents(pair.cents)).join(", ") : "None" },
+              { label: `Only in your records (${result.onlyLeft.length})`, value: list(result.onlyLeft) },
+              { label: `Only on the statement (${result.onlyRight.length})`, value: list(result.onlyRight) },
+              { label: "Lines that could not be read", value: String(result.left.bad.length + result.right.bad.length) },
             ]}
           />
         </>
@@ -1526,31 +1536,30 @@ function Reconcile() {
   );
 }
 
-function amounts(text: string): number[] {
-  return text
-    .split(/\n/)
-    .map((line) => line.replace(/[₦$£€,\s]/g, ""))
-    .filter((line) => line !== "")
-    .map(Number)
-    .filter((item) => Number.isFinite(item));
+function BadLines({ side, lines }: { side: string; lines: BadLine[] }) {
+  if (!lines.length) return null;
+  return (
+    <span role="status" className="mt-2 block rounded-xl bg-card p-3 text-sm text-fail shadow-line">
+      <span className="block font-medium">
+        {lines.length === 1 ? "1 line" : `${lines.length} lines`} in {side} could not be read and {lines.length === 1 ? "is" : "are"} not counted:
+      </span>
+      {lines.slice(0, 12).map((line) => (
+        <span key={line.line} className="block">
+          Line {line.line}: “{line.text.length > 40 ? `${line.text.slice(0, 40)}…` : line.text}” {line.reason}.
+        </span>
+      ))}
+      {lines.length > 12 ? <span className="block">And {lines.length - 12} more.</span> : null}
+    </span>
+  );
 }
 
-function sum(values: number[]): number {
-  return values.reduce((total, item) => total + item, 0);
-}
-function unmatched(source: number[], other: number[]): number[] {
-  const pool = other.slice();
-  return source.filter((item) => {
-    const index = pool.indexOf(item);
-    if (index === -1) return true;
-    pool.splice(index, 1);
-    return false;
-  });
-}
 
-function saveLabel(state: string): string {
+function saveLabel(state: SaveState): string {
   if (state === "saving") return "Saving";
   if (state === "saved") return "Saved";
   if (state === "error") return "Could not save";
+  if (state === "retrying") return SAVE_MESSAGES.retrying;
+  if (state === "conflict") return SAVE_MESSAGES.conflict;
+  if (state === "too-large") return SAVE_MESSAGES.tooLarge;
   return "";
 }

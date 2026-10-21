@@ -123,11 +123,33 @@ async function open(options = {}) {
   await sheet.getByText("₦354,750.00").waitFor(); // (300000 + 25000 + 5000) × 1.075
   await invoice.getByLabel("Tax %").fill("0");
   await sheet.getByText("₦330,000.00").first().waitFor();
-  await invoice.getByLabel("Rate in naira, line 2").fill("abc");
-  await sheet.getByText("₦305,000.00").first().waitFor();
-  ok("invoice line totals, tax and total update; a bad rate shows a dash");
-  await invoice.locator("[data-demo-live]").getByText("Invoice total ₦305,000.00, including ₦0.00 tax.").waitFor({ timeout: 5000 });
+  await invoice.locator("[data-demo-live]").getByText("Invoice total ₦330,000.00, including ₦0.00 tax.").waitFor({ timeout: 5000 });
   ok("invoice aria-live summary follows the total");
+  // An invalid rate, quantity or tax: an inline error and no total at all.
+  await invoice.getByLabel("Rate in naira, line 2").fill("abc");
+  await invoice.getByText("Line 2: Rate must be a number, like 2 or 1.5.").waitFor();
+  await sheet.locator("[data-testid=invoice-no-total]").getByText("No total yet. Fix the highlighted field to see the total.").waitFor();
+  assert.equal(await sheet.getByText("Total", { exact: true }).count(), 0);
+  assert.equal(await invoice.getByLabel("Rate in naira, line 2").getAttribute("aria-invalid"), "true");
+  await invoice.locator("[data-demo-live]").getByText(/^No total yet\./).waitFor({ timeout: 5000 });
+  await invoice.getByLabel("Rate in naira, line 2").fill("12500");
+  await invoice.getByLabel("Quantity, line 1").fill("-1");
+  await invoice.getByText("Line 1: Quantity can’t be negative.").waitFor();
+  await invoice.getByLabel("Quantity, line 1").fill("");
+  await invoice.getByText("Line 1: Enter a quantity.").waitFor();
+  await invoice.getByLabel("Quantity, line 1").fill("2");
+  await invoice.getByLabel("Tax %").fill("100.01");
+  await invoice.getByText("Tax can’t be more than 100%.").waitFor();
+  await invoice.getByLabel("Tax %").fill("");
+  await invoice.getByText("Enter a tax percent. Use 0 if there is no tax.").waitFor();
+  assert.equal(await sheet.locator("[data-testid=invoice-no-total]").count(), 1);
+  await invoice.getByLabel("Tax %").fill("7.5");
+  await sheet.getByText("₦354,750.00").waitFor();
+  await invoice.getByLabel("Rate in naira, line 2").fill("12500.555");
+  await invoice.getByText("Line 2: Rate can have at most 2 decimal places.").waitFor();
+  await invoice.getByLabel("Rate in naira, line 2").fill("12500");
+  await sheet.getByText("₦354,750.00").waitFor();
+  ok("invoice: blank, text, negative, 3-decimal and 100.01% inputs show inline errors and hide the total");
   await page.screenshot({ path: `${out}/demo-invoice-1280.png` });
 
   // Ledger: add an expense and the bars and total change.

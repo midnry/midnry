@@ -698,3 +698,16 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   `src/lib/auth/age.server.ts`; Google passes it through OAuth state). Pass checkout and store buys
   require "18 or older, or a parent is paying" (checked per request, not stored). QA `scripts/qa/age-confirm.mjs`.
 - Migrations 0021 and 0022 must run before the code (npm start does).
+
+## App reliability, Phase 1 of the app audit (owner, 2026-10-21, not deployed yet)
+
+- Ledger: no 500-entry cap (doc limit 1,000,000 chars, `src/lib/doc-limits.ts`; warns at 85%, refuses
+  at full, never drops). Board: 40 cards per column checked before add/move; over-full saved columns kept.
+- Invoice + homepage demo share `src/lib/invoice-math.ts`: inline errors, no total/print while invalid.
+- Medicines: dedicated `src/components/tools/meds.tsx` with daily tick + 30-day history (ticks >90 days cleared).
+- Apply PDF: Unicode via @pdf-lib/fontkit + Nunito WOFF (`src/lib/apply/resume-pdf.ts`), lazy-loaded.
+- Reconcile: reports unreadable lines; honest "amounts in both lists" wording.
+- Saving (`src/lib/doc-saver.ts`, `src/lib/app-docs.server.ts`): revision compare-and-set (migration
+  0023), flush on hide/close, retry with backoff, "changed in another tab" conflict state.
+  Rollback: old code ignores the `revision` column.
+- Tests: scripts/apps-phase1.test.mjs, app-docs.test.mjs, apply-pdf.test.mjs; QA scripts/qa/apps-phase1.mjs.

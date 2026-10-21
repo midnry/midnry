@@ -2,41 +2,19 @@ import { useState, type FormEvent } from "react";
 import { useAppDoc } from "@/components/use-app-doc";
 import { Button, TextInput } from "@/components/ui";
 import { nid, ToolFrame, ToolStatus } from "@/components/tools/shared";
+import { addCard as addTo, asColumns, DEFAULT_COLUMNS, MAX_CARDS_PER_COLUMN, moveCard, type BoardColumn } from "@/lib/board";
 
-type Card = { id: string; title: string };
-type Column = { id: string; title: string; cards: Card[] };
+type Column = BoardColumn;
 type BoardDoc = { columns: Column[] };
 
-const FALLBACK: BoardDoc = {
-  columns: [
-    { id: "todo", title: "To do", cards: [] },
-    { id: "doing", title: "Doing", cards: [] },
-    { id: "done", title: "Done", cards: [] },
-  ],
-};
-
-function asColumns(value: unknown): Column[] {
-  if (!Array.isArray(value) || value.length !== 3) return FALLBACK.columns;
-  const columns = value.map((column) => {
-    if (!column || typeof column !== "object") return null;
-    const raw = column as Partial<Column>;
-    if (typeof raw.id !== "string" || typeof raw.title !== "string" || !Array.isArray(raw.cards)) return null;
-    const cards = raw.cards
-      .filter(
-        (card): card is Card =>
-          !!card && typeof card.id === "string" && typeof card.title === "string",
-      )
-      .slice(0, 40);
-    return { id: raw.id, title: raw.title, cards };
-  });
-  if (columns.some((column) => column == null)) return FALLBACK.columns;
-  return columns as Column[];
-}
+const FALLBACK: BoardDoc = { columns: DEFAULT_COLUMNS };
 
 export function BoardTool() {
   const { data, setData, ready, loadError, blocked, saveState } = useAppDoc("board", FALLBACK);
   const columns = asColumns(data.columns);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  // A refused add or move, shown under the column it came from.
+  const [notice, setNotice] = useState<{ column: string; message: string } | null>(null);
 
   function commit(next: Column[]) {
     setData({ columns: next });
@@ -47,26 +25,30 @@ export function BoardTool() {
     const column = columns[index];
     const title = (drafts[column.id] ?? "").trim();
     if (!title) return;
-    const total = columns.reduce((sum, col) => sum + col.cards.length, 0);
-    if (total >= 80) return;
-    const next = columns.map((col, i) =>
-      i === index ? { ...col, cards: [...col.cards, { id: nid(), title }] } : col,
-    );
+    const result = addTo(columns, index, { id: nid(), title });
+    if (!result.ok) {
+      setNotice({ column: result.column, message: result.message });
+      return;
+    }
+    setNotice(null);
     setDrafts((prev) => ({ ...prev, [column.id]: "" }));
-    commit(next);
+    commit(result.columns);
   }
 
   function move(from: number, cardId: string, direction: -1 | 1) {
-    const to = from + direction;
-    if (to < 0 || to >= columns.length) return;
-    const card = columns[from].cards.find((item) => item.id === cardId);
-    if (!card) return;
+    const result = moveCard(columns, from, cardId, direction);
+    if (!result.ok) {
+      setNotice({ column: result.column, message: result.message });
+      return;
+    }
+    setNotice(null);
+    commit(result.columns);
+  }
+
+  function remove(index: number, cardId: string) {
+    setNotice(null);
     commit(
-      columns.map((column, index) => {
-        if (index === from) return { ...column, cards: column.cards.filter((item) => item.id !== cardId) };
-        if (index === to) return { ...column, cards: [...column.cards, card] };
-        return column;
-      }),
+      columns.map((col, i) => (i === index ? { ...col, cards: col.cards.filter((item) => item.id !== cardId) } : col)),
     );
   }
 
@@ -119,25 +101,24 @@ export function BoardTool() {
                       >
                         Right
                       </Button>
-                      <Button
-                        tone="quiet"
-                        onClick={() =>
-                          commit(
-                            columns.map((col, i) =>
-                              i === index
-                                ? { ...col, cards: col.cards.filter((item) => item.id !== card.id) }
-                                : col,
-                            ),
-                          )
-                        }
-                      >
+                      <Button tone="quiet" onClick={() => remove(index, card.id)}>
                         Remove
                       </Button>
                     </div>
                   </li>
                 ))}
               </ul>
-              <form onSubmit={(event) => addCard(index, event)} className="mt-3 flex gap-2">
+              {notice?.column === column.id ? (
+                <p role="alert" className="mt-3 text-sm font-medium text-fail">
+                  {notice.message}
+                </p>
+              ) : null}
+              <p className="mt-3 text-xs text-muted">
+                {column.cards.length > MAX_CARDS_PER_COLUMN
+                  ? `${column.cards.length} cards, over the limit of ${MAX_CARDS_PER_COLUMN}. All are kept; new cards go in another column.`
+                  : `${column.cards.length} of ${MAX_CARDS_PER_COLUMN} cards`}
+              </p>
+              <form onSubmit={(event) => addCard(index, event)} className="mt-2 flex gap-2">
                 <TextInput
                   value={drafts[column.id] ?? ""}
                   onChange={(event) => setDrafts((prev) => ({ ...prev, [column.id]: event.target.value }))}

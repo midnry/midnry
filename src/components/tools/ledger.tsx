@@ -1,39 +1,20 @@
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { useAppDoc } from "@/components/use-app-doc";
 import { Button, Field, fieldClass, TextInput } from "@/components/ui";
 import { formatCents, guessCurrency, isCurrency, type CurrencyCode } from "@/lib/format";
+import { asEntries, ledgerCsv, ledgerRoom, type LedgerEntry } from "@/lib/ledger";
 import { CurrencyPicker, nid, parseCents, todayISO, ToolFrame, ToolStatus } from "@/components/tools/shared";
 
 const CATEGORIES = ["Food", "Transit", "Home", "Bills", "Health", "Shopping", "Family", "Fun", "Work", "Other"] as const;
 
-type Entry = {
-  id: string;
-  label: string;
-  cents: number;
-  category: string;
-  date: string;
-};
+type Entry = LedgerEntry;
 
 type LedgerDoc = { entries: Entry[]; currency?: CurrencyCode; budget?: string };
 
 const FALLBACK: LedgerDoc = { entries: [] };
 
-function asEntries(value: unknown): Entry[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .filter(
-      (entry): entry is Entry =>
-        !!entry &&
-        typeof entry === "object" &&
-        typeof (entry as Entry).id === "string" &&
-        typeof (entry as Entry).label === "string" &&
-        typeof (entry as Entry).cents === "number" &&
-        typeof (entry as Entry).category === "string" &&
-        typeof (entry as Entry).date === "string",
-    )
-    .slice(0, 500);
-}
+const FULL_MESSAGE = "Your ledger is full, so this was not added. Nothing was deleted. Export a CSV copy, then remove old entries to make room.";
 
 export function LedgerTool() {
   const { data, setData, ready, loadError, blocked, saveState } = useAppDoc("ledger", FALLBACK);
@@ -61,8 +42,7 @@ export function LedgerTool() {
     setMonth(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`);
   }
   function exportCsv() {
-    const rows = [["Date", "What", "Category", "Amount"], ...entries.map((entry) => [entry.date, entry.label, entry.category, (entry.cents / 100).toFixed(2)])];
-    const csv = rows.map((row) => row.map((cell) => (/[",\n]/.test(cell) ? `"${cell.replace(/"/g, '""')}"` : cell)).join(",")).join("\n");
+    const csv = ledgerCsv(entries);
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
     const link = document.createElement("a");
     link.href = url;
@@ -77,6 +57,7 @@ export function LedgerTool() {
     cents: monthEntries.filter((entry) => entry.category === name).reduce((sum, entry) => sum + entry.cents, 0),
   })).filter((row) => row.cents > 0);
   const max = Math.max(...bars.map((row) => row.cents), 1);
+  const room = useMemo(() => ledgerRoom(data), [data]);
 
   function add(event: FormEvent) {
     event.preventDefault();
@@ -95,10 +76,20 @@ export function LedgerTool() {
     }
     setError(null);
     if (editing) {
-      save({ entries: entries.map((entry) => (entry.id === editing ? { ...entry, label: label.trim(), cents, category, date } : entry)) });
+      const next = entries.map((entry) => (entry.id === editing ? { ...entry, label: label.trim(), cents, category, date } : entry));
+      if (ledgerRoom({ ...data, entries: next }).full) {
+        setError(FULL_MESSAGE);
+        return;
+      }
+      save({ entries: next });
       setEditing(null);
     } else {
-      save({ entries: [{ id: nid(), label: label.trim(), cents, category, date }, ...entries].slice(0, 500) });
+      const next = [{ id: nid(), label: label.trim(), cents, category, date }, ...entries];
+      if (ledgerRoom({ ...data, entries: next }).full) {
+        setError(FULL_MESSAGE);
+        return;
+      }
+      save({ entries: next });
     }
     setLabel("");
     setAmount("");
@@ -161,6 +152,17 @@ export function LedgerTool() {
                 </div>
               </div>
             </form>
+            {room.nearlyFull ? (
+              <div role="status" className="mt-6 rounded-2xl bg-card p-4 text-sm shadow-line">
+                <p className="font-medium">
+                  {room.full ? "Your ledger is full." : "Your ledger is nearly full."} It holds {entries.length.toLocaleString("en")} expenses ({Math.min(100, Math.round((room.size / room.limit) * 100))}% of the space).
+                </p>
+                <p className="mt-1 text-muted">Nothing is deleted for you. Export a CSV copy, then remove old entries to make room.</p>
+                <Button tone="quiet" className="mt-3" onClick={exportCsv}>
+                  Export CSV
+                </Button>
+              </div>
+            ) : null}
             <div className="mt-8 flex flex-wrap items-center gap-2">
               <Button tone="quiet" onClick={() => shift(-1)} aria-label="Previous month">
                 ←

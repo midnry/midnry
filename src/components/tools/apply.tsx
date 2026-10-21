@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import { Button, TextArea, fieldClass } from "@/components/ui";
 import { ToolFrame, ToolStatus } from "@/components/tools/shared";
 import { useAppDoc } from "@/components/use-app-doc";
@@ -57,61 +58,20 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-async function downloadPdf(role: string, text: string) {
-  const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib");
-  const doc = await PDFDocument.create();
-  const font = await doc.embedFont(StandardFonts.Helvetica);
-  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-  const pageW = 595.28;
-  const pageH = 841.89;
-  const margin = 54;
-  const width = pageW - margin * 2;
-  let page = doc.addPage([pageW, pageH]);
-  let y = pageH - margin;
-
-  const fresh = () => {
-    page = doc.addPage([pageW, pageH]);
-    y = pageH - margin;
-  };
-  const write = (line: string, size: number, face: typeof font, gap: number) => {
-    if (y - size < margin) fresh();
-    page.drawText(line, { x: margin, y: y - size, size, font: face, color: rgb(0.1, 0.12, 0.16) });
-    y -= size + gap;
-  };
-  const wrap = (source: string, size: number, face: typeof font) => {
-    const words = source.split(/\s+/).filter(Boolean);
-    const lines: string[] = [];
-    let line = "";
-    for (const word of words) {
-      const next = line ? `${line} ${word}` : word;
-      if (face.widthOfTextAtSize(next, size) <= width) line = next;
-      else {
-        if (line) lines.push(line);
-        line = word;
-      }
-    }
-    if (line) lines.push(line);
-    return lines.length ? lines : [""];
-  };
-
-  write(role, 16, bold, 8);
-  for (const block of text.split("\n")) {
-    const plain = block.replace(/[^\x20-\x7E]/g, " ").trim();
-    if (!plain) {
-      y -= 8;
-      continue;
-    }
-    for (const line of wrap(plain, 10, font)) write(line, 10, font, 3);
-    y -= 3;
-  }
-
-  const bytes = await doc.save();
+async function downloadPdf(role: string, text: string): Promise<string[]> {
+  // Loaded only now: the PDF library and the font files are not part of the page.
+  const [{ buildResumePdf }, { loadResumeFonts }] = await Promise.all([
+    import("@/lib/apply/resume-pdf"),
+    import("@/lib/apply/resume-fonts"),
+  ]);
+  const { bytes, missing } = await buildResumePdf(role, text, await loadResumeFonts());
   const url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: "application/pdf" }));
   const link = document.createElement("a");
   link.href = url;
   link.download = `${fileName(role)}.pdf`;
   link.click();
   window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+  return missing;
 }
 
 export function ApplyTool() {
@@ -121,6 +81,7 @@ export function ApplyTool() {
   const [hydrated, setHydrated] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pdfBusy, setPdfBusy] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ready || hydrated) return;
@@ -246,8 +207,24 @@ export function ApplyTool() {
                 >
                   Open on LinkedIn
                 </a>
-                <Button tone="quiet" onClick={() => void downloadPdf(pack.role, pack.resume)}>
-                  Download PDF
+                <Button
+                  tone="quiet"
+                  disabled={pdfBusy === pack.role}
+                  onClick={() => {
+                    setPdfBusy(pack.role);
+                    void downloadPdf(pack.role, pack.resume)
+                      .then((missing) => {
+                        if (missing.length) {
+                          toast(`Some characters are not in the PDF font: ${missing.slice(0, 8).join(" ")}`, {
+                            description: "They show as blanks in the PDF. “Download text” keeps every character.",
+                          });
+                        }
+                      })
+                      .catch((caught: unknown) => toast.error(caught instanceof Error ? caught.message : "Could not make the PDF."))
+                      .finally(() => setPdfBusy(null));
+                  }}
+                >
+                  {pdfBusy === pack.role ? "Making the PDF…" : "Download PDF"}
                 </Button>
                 <Button
                   tone="quiet"

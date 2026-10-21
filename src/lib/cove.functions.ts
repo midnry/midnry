@@ -5,6 +5,11 @@ import { getApp } from "@/lib/catalog";
 import { readAccount } from "@/lib/account.server";
 import { readIsAdmin } from "@/lib/community.functions";
 import type { AccountState } from "@/lib/access";
+import { DOC_LIMITS, docLimit } from "@/lib/doc-limits";
+import { readDoc, writeDoc } from "@/lib/app-docs.server";
+
+/** Requests above every app's limit are refused before parsing. */
+const HARD_LIMIT = Math.max(...Object.values(DOC_LIMITS)) + 1_000;
 
 async function gate(
   userId: string,
@@ -41,40 +46,41 @@ export const loadDoc = createServerFn({ method: "GET" })
       values (${slug}, ${context.userId}, ${today})
       on conflict do nothing
     `;
-    const rows = await sql<{ payload: string }>`
-      select payload from app_documents
-      where user_id = ${context.userId} and app_id = ${slug}
-    `;
-    return { ok: true as const, payload: rows[0]?.payload ?? null };
+    const doc = await readDoc(sql, context.userId, slug);
+    return { ok: true as const, payload: doc.payload, revision: doc.revision };
   });
 
+export type SaveDocResult =
+  | { ok: true; revision: number }
+  | { ok: false; error: "locked" }
+  | { ok: false; error: "conflict"; revision: number }
+  | { ok: false; error: "too_large"; limit: number };
+
 export const saveDoc = createServerFn({ method: "POST" })
-  .validator((input: { slug: string; payload: string }) => {
+  .validator((input: { slug: string; payload: string; baseRevision?: number }) => {
     if (!input || typeof input.slug !== "string" || typeof input.payload !== "string") {
       throw new Error("Invalid document");
     }
     if (!getApp(input.slug)) throw new Error("Unknown app");
-    // Remind keeps up to 500 tasks with comments, so it gets more room.
-    const limit = input.slug === "tasks" ? 600_000 : 100_000;
-    if (input.payload.length > limit) throw new Error("Document is too large");
+    if (input.payload.length > HARD_LIMIT) throw new Error("Document is too large");
+    const base = input.baseRevision;
+    if (base !== undefined && (typeof base !== "number" || !Number.isInteger(base) || base < 0)) {
+      throw new Error("Invalid revision");
+    }
     try {
       JSON.parse(input.payload);
     } catch {
       throw new Error("Invalid document");
     }
-    return { slug: input.slug, payload: input.payload };
+    return { slug: input.slug, payload: input.payload, baseRevision: base };
   })
   .middleware([authMiddleware])
-  .handler(async ({ context, data }) => {
+  .handler(async ({ context, data }): Promise<SaveDocResult> => {
     const allowed = await gate(context.userId, data.slug);
     if (!allowed.ok) return allowed;
+    const limit = docLimit(data.slug);
+    if (data.payload.length > limit) return { ok: false, error: "too_large", limit };
     const sql = await getSql();
-    await sql`
-      insert into app_documents (user_id, app_id, payload, updated_at)
-      values (${context.userId}, ${data.slug}, ${data.payload}, now())
-      on conflict (user_id, app_id) do update
-      set payload = excluded.payload, updated_at = now()
-    `;
-    return { ok: true as const };
+    // Without a base revision (an older open tab) the save overwrites, as before.
+    return writeDoc(sql, context.userId, data.slug, data.payload, data.baseRevision);
   });
-
