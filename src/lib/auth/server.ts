@@ -36,6 +36,7 @@ import { getCookie } from "@tanstack/react-start/server";
 import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
 import { ensureDbReady, getPglite } from "../db";
+import { closedAccountGuard } from "./closed-account.server";
 import { emailAndPasswordEnabled } from "./email-password";
 import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
 import { GROK_PROVIDERS } from "./providers";
@@ -309,6 +310,10 @@ export const auth = betterAuth({
     twoFactor({
       issuer: "Midnry",
     }),
+
+    // Closed accounts can't sign in (or sign up again with the same email)
+    // until they are restored or purged. See ./closed-account.server.ts.
+    closedAccountGuard(),
 
     // Bridges Better Auth's Set-Cookie into TanStack Start responses. MUST be
     // last so it runs after every other plugin's hooks.

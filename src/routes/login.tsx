@@ -8,22 +8,25 @@ import { Shell } from "@/components/shell";
 import { Button, Field, TextInput } from "@/components/ui";
 import { getApp } from "@/lib/catalog";
 import { getSignInOptions } from "@/lib/sign-in-options.functions";
+import { ACCOUNT_CLOSED_CODE, ACCOUNT_CLOSED_MESSAGE } from "@/lib/account-closed";
 
-type LoginSearch = { next: string; intent: "register" | "sign-in" };
+// `error` arrives from Better Auth's OAuth error redirect; only the closed
+// account code is kept (never arbitrary text from the URL).
+type LoginSearch = { next: string; intent: "register" | "sign-in"; error?: typeof ACCOUNT_CLOSED_CODE };
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): LoginSearch => {
     const nextRaw = typeof search.next === "string" ? search.next : "";
     const next = nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : "/apps";
     const intent = search.intent === "sign-in" ? "sign-in" : "register";
-    return { next, intent };
+    return search.error === ACCOUNT_CLOSED_CODE ? { next, intent, error: ACCOUNT_CLOSED_CODE } : { next, intent };
   },
   loader: () => getSignInOptions(),
   component: LoginPage,
 });
 
 function LoginPage() {
-  const { next, intent } = Route.useSearch();
+  const { next, intent, error: searchError } = Route.useSearch();
   const options = Route.useLoaderData();
   // The Grok broker buttons only work inside the Grok live preview; the hosted
   // site signs in with Google directly.
@@ -38,7 +41,7 @@ function LoginPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(searchError === ACCOUNT_CLOSED_CODE ? ACCOUNT_CLOSED_MESSAGE : null);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<"credentials" | "code" | "backup">("credentials");
   const [code, setCode] = useState("");

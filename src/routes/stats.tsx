@@ -66,7 +66,7 @@ function StatsPage() {
             <Tile label="Midnry Pass" value={stats.totals.passes} />
           </dl>
           <Signups data={stats.signups} />
-          <TopApps last30={stats.apps30} all={stats.appsAll} />
+          <TopApps last30={stats.apps30} last90={stats.apps90} />
           <Users stats={stats} />
           <OutpostSection />
           <GameSection />
@@ -125,16 +125,16 @@ function Signups({ data }: { data: AdminStats["signups"] }) {
   );
 }
 
-function TopApps({ last30, all }: { last30: AdminApp[]; all: AdminApp[] }) {
-  const [range, setRange] = useState<"30" | "all">("30");
-  const list = range === "30" ? last30 : all;
+function TopApps({ last30, last90 }: { last30: AdminApp[]; last90: AdminApp[] }) {
+  const [range, setRange] = useState<"30" | "90">("30");
+  const list = range === "30" ? last30 : last90;
   const max = Math.max(1, ...list.map((item) => item.users));
   return (
     <section className="mt-6 rounded-2xl bg-card p-5 shadow-line">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-2xl">Most used apps</h2>
         <div className="flex gap-1 rounded-full bg-paper p-1" role="group" aria-label="Time range">
-          {(["30", "all"] as const).map((item) => (
+          {(["30", "90"] as const).map((item) => (
             <button
               key={item}
               type="button"
@@ -142,12 +142,12 @@ function TopApps({ last30, all }: { last30: AdminApp[]; all: AdminApp[] }) {
               onClick={() => setRange(item)}
               className={cn("min-h-9 rounded-full px-4 text-sm", range === item ? "bg-card font-medium shadow-line" : "text-muted")}
             >
-              {item === "30" ? "Last 30 days" : "All time"}
+              {item === "30" ? "Last 30 days" : "Last 90 days"}
             </button>
           ))}
         </div>
       </div>
-      <p className="mt-1 text-sm text-muted">Ranked by how many people opened each app. A person counts once per app per day.</p>
+      <p className="mt-1 text-sm text-muted">Ranked by how many people opened each app. A person counts once per app per day. Usage is kept for 90 days.</p>
       {list.length === 0 ? (
         <p className="mt-4 text-sm text-muted">No app use recorded yet.</p>
       ) : (
@@ -184,8 +184,8 @@ function Users({ stats }: { stats: AdminStats }) {
   function exportCsv() {
     const cell = (value: string) => (/[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value);
     const rows = [
-      ["Name", "Email", "Signed in with", "Joined", "Last active", "Apps used", "Midnry Pass"],
-      ...stats.users.map((user) => [user.name, user.email, user.signIn, user.joined.slice(0, 10), user.lastActive ?? "", String(user.appsUsed), user.hasPass ? "Yes" : "No"]),
+      ["Name", "Email", "Signed in with", "Joined", "Last active (90 days)", "Apps used (90 days)", "Midnry Pass", "Closed"],
+      ...stats.users.map((user) => [user.name, user.email, user.signIn, user.joined.slice(0, 10), user.lastActive ?? "", String(user.appsUsed), user.hasPass ? "Yes" : "No", user.closedAt ? user.closedAt.slice(0, 10) : ""]),
     ];
     const url = URL.createObjectURL(new Blob([rows.map((row) => row.map(cell).join(",")).join("\n")], { type: "text/csv" }));
     const link = document.createElement("a");
@@ -207,7 +207,8 @@ function Users({ stats }: { stats: AdminStats }) {
         </div>
       </div>
       <p className="mt-1 text-sm text-muted">
-        {shown.length === stats.users.length ? `${stats.users.length} people, newest first.` : `${shown.length} of ${stats.users.length} match.`}
+        {shown.length === stats.users.length ? `${stats.users.length} people, newest first.` : `${shown.length} of ${stats.users.length} match.`} Activity covers the last 90 days.
+        {stats.users.some((user) => user.closedAt) ? " Closed accounts are deleted 30 days after closing." : ""}
       </p>
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[42rem] text-left text-sm">
@@ -218,14 +219,21 @@ function Users({ stats }: { stats: AdminStats }) {
               <th className="py-2 pr-3 font-medium">Signed in with</th>
               <th className="py-2 pr-3 font-medium">Joined</th>
               <th className="py-2 pr-3 font-medium">Last active</th>
-              <th className="py-2 pr-3 text-right font-medium">Apps used</th>
+              <th className="py-2 pr-3 text-right font-medium">Apps used, 90 days</th>
               <th className="py-2 font-medium">Pass</th>
             </tr>
           </thead>
           <tbody>
             {shown.slice(0, 500).map((user) => (
               <tr key={user.id} className="border-b border-line/60">
-                <td className="py-2 pr-3 font-medium">{user.name}</td>
+                <td className="py-2 pr-3 font-medium">
+                  {user.name}
+                  {user.closedAt ? (
+                    <span className="ml-2 rounded-full bg-paper-2 px-2 py-0.5 text-xs font-normal text-muted" title={`Closed ${prettyDay(user.closedAt.slice(0, 10))}`}>
+                      Closed
+                    </span>
+                  ) : null}
+                </td>
                 <td className="py-2 pr-3 break-all">{user.email}</td>
                 <td className="py-2 pr-3">{user.signIn}</td>
                 <td className="py-2 pr-3 whitespace-nowrap">{prettyDay(user.joined.slice(0, 10))}</td>
@@ -374,7 +382,8 @@ function OutpostSection() {
         </div>
       ) : null}
       <div className="mt-6 rounded-2xl bg-card p-5 shadow-line">
-        <h3 className="font-display text-2xl">Players</h3>
+        <h3 className="font-display text-2xl">Players, last 90 days</h3>
+        <p className="mt-1 text-sm text-muted">Match stats are kept for 90 days, so these totals cover that window, not a lifetime.</p>
         {data.players.length ? (
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[36rem] text-left text-sm">

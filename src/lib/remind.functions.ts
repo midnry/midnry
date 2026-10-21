@@ -296,7 +296,8 @@ export const removeMember = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-async function unassign(sql: Sql, id: string, userId: string) {
+/** Clear a person's task assignments in a shared project (also used when an account is closed). */
+export async function unassign(sql: Sql, id: string, userId: string) {
   await mutate(sql, id, (doc) => ({
     ...doc,
     tasks: doc.tasks.map((task) => (task.assigneeId === userId ? { ...task, assigneeId: "" } : task)),

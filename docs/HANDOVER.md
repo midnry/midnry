@@ -672,3 +672,14 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   share one structure. Outpost Zero page `/discover/outpost-zero` follows the owner's landing design.
 - QA: `scripts/qa/site-journeys.mjs`, `home-demo.mjs`, `home-shots.mjs`, `outpost-page.mjs`, `site-shots.mjs`.
 - `npm test` fails on this checkout only because the builder `.grok/` folder is absent (platform tests).
+
+## Delete account + data retention (owner, 2026-10-21, not deployed yet)
+
+- /account "Delete account" (type DELETE; password or a fresh Google session) → `closeAccount`
+  (`src/lib/account-closure.*`): cancels the Pass renewal via the existing Paystack path, writes
+  `account_closure`, unpublishes their apps, leaves shared Remind projects, revokes sessions. Sign-in
+  for a closed account is refused (`src/lib/auth/closed-account.server.ts`).
+- Hourly job inside the /api/remind/tick ping (`src/lib/retention.ts`): purges accounts closed >30
+  days (payments kept 6 years, anonymised); deletes usage/match/daily/play/feedback/AI counters
+  after 90 days. Migration 0020 must run before the code (npm start does). Restore = delete the
+  `account_closure` row within 30 days. Tests: `scripts/retention.test.mjs`, QA `scripts/qa/account-delete.mjs`.

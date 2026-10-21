@@ -5,7 +5,7 @@ import { authClient } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { RedirectToSignIn } from "@/lib/auth/gates";
 import { removeAvatar, saveAvatar } from "@/lib/profile.functions";
-import { useAccount } from "@/components/account";
+import { DeleteAccountSection, useAccount } from "@/components/account";
 import { Shell } from "@/components/shell";
 import { TwoFactorPanel } from "@/components/two-factor";
 import { Button, Field, Skeleton, TextInput } from "@/components/ui";
@@ -100,8 +100,8 @@ function AccountPage() {
   }, [currentName]);
 
   useEffect(() => {
-    if (!user || window.location.hash !== "#security") return;
-    document.getElementById("security")?.scrollIntoView();
+    if (!user || (window.location.hash !== "#security" && window.location.hash !== "#delete")) return;
+    document.getElementById(window.location.hash.slice(1))?.scrollIntoView();
   }, [user, providers]);
 
   if (isPending || (user && session.isPending)) {
@@ -279,6 +279,10 @@ function AccountPage() {
             </Link>
           </div>
         </Section>
+
+        <div className="pt-10">
+          <DeleteAccountSection hasPassword={providers === null ? null : hasPassword} />
+        </div>
       </div>
     </Shell>
   );

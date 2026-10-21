@@ -33,6 +33,8 @@ export type AdminUser = {
   lastActive: string | null;
   appsUsed: number;
   hasPass: boolean;
+  /** When the person closed their account (data is deleted 30 days later). */
+  closedAt: string | null;
 };
 
 export type AdminApp = { slug: string; name: string; users: number; opens: number };
@@ -42,7 +44,8 @@ export type AdminStats = {
   signups: { day: string; count: number }[];
   users: AdminUser[];
   apps30: AdminApp[];
-  appsAll: AdminApp[];
+  /** Usage counts are kept for 90 days (src/lib/retention.ts). */
+  apps90: AdminApp[];
 };
 
 function signInLabel(providers: string | null): string {
@@ -78,15 +81,17 @@ export const adminStats = createServerFn({ method: "GET" })
       apps_used: number | string;
       status: string | null;
       period_end: unknown;
+      closed_at: unknown;
     }>`
       select
         u.id, u.name, u.email, u."createdAt" as created,
         (select string_agg(distinct a."providerId", ',') from "account" a where a."userId" = u.id) as providers,
         (select max(c.used_on) from catalog_uses c where c.user_id = u.id) as last_active,
         (select count(distinct c.slug) from catalog_uses c where c.user_id = u.id) as apps_used,
-        s.status, s.current_period_end as period_end
+        s.status, s.current_period_end as period_end, c.closed_at
       from "user" u
       left join subscriptions s on s.user_id = u.id
+      left join account_closure c on c.user_id = u.id
       order by u."createdAt" desc
       limit 5000
     `;
@@ -104,6 +109,7 @@ export const adminStats = createServerFn({ method: "GET" })
         lastActive: row.last_active ? iso(row.last_active).slice(0, 10) : null,
         appsUsed: Number(row.apps_used ?? 0),
         hasPass: (row.status === "active" || row.status === "canceled") && end > now,
+        closedAt: row.closed_at ? iso(row.closed_at) : null,
       };
     });
 
@@ -115,18 +121,12 @@ export const adminStats = createServerFn({ method: "GET" })
       from catalog_uses
     `;
 
-    const top = async (from: string | null) => {
-      const rows = from
-        ? await sql<{ slug: string; users: number | string; opens: number | string }>`
-            select slug, count(distinct user_id) as users, count(*) as opens
-            from catalog_uses where used_on >= ${from}
-            group by slug order by count(distinct user_id) desc, count(*) desc limit 25
-          `
-        : await sql<{ slug: string; users: number | string; opens: number | string }>`
-            select slug, count(distinct user_id) as users, count(*) as opens
-            from catalog_uses
-            group by slug order by count(distinct user_id) desc, count(*) desc limit 25
-          `;
+    const top = async (from: string) => {
+      const rows = await sql<{ slug: string; users: number | string; opens: number | string }>`
+        select slug, count(distinct user_id) as users, count(*) as opens
+        from catalog_uses where used_on >= ${from}
+        group by slug order by count(distinct user_id) desc, count(*) desc limit 25
+      `;
       return rows.map((row) => ({ slug: row.slug, name: appName(row.slug), users: Number(row.users), opens: Number(row.opens) }));
     };
 
@@ -154,6 +154,6 @@ export const adminStats = createServerFn({ method: "GET" })
       signups,
       users: list,
       apps30: await top(since(30)),
-      appsAll: await top(null),
+      apps90: await top(since(90)),
     };
   });

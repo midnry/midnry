@@ -137,6 +137,7 @@ export async function runTick(now = new Date()): Promise<TickResult> {
     from remind_email_prefs p
     join "user" u on u.id = p.user_id
     where (p.digest or p.due) and u.email is not null
+      and not exists (select 1 from account_closure c where c.user_id = p.user_id)
     limit ${MAX_USERS_PER_TICK}
   `;
   let sent = 0;

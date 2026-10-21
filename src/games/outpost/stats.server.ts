@@ -63,6 +63,7 @@ export type OutpostStats = {
   modes: { mode: string; matches: number; players: number; winRate: number }[];
   platforms: { platform: string; matches: number; players: number }[];
   daily: { day: string; matches: number; players: number }[];
+  /** Per-player totals over the last 90 days (match stats are kept 90 days). */
   players: {
     name: string;
     email: string;
@@ -111,6 +112,7 @@ export async function outpostStats(): Promise<OutpostStats> {
     select u.name, u.email, count(*)::int as matches, count(case when m.won then 1 end)::int as wins,
       sum(m.kills)::int as kills, sum(m.seconds)::int as seconds, max(m.created_at) as last
     from outpost_match m join "user" u on u.id = m.user_id
+    where m.created_at > now() - interval '90 days'
     group by u.id, u.name, u.email
     order by max(m.created_at) desc
     limit 200`;
