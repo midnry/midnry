@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { recordUse } from "@/lib/admin.functions";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, redirect, Link } from "@tanstack/react-router";
+import { aliasOf } from "@/lib/app-aliases";
 import { getApp, includedNames, tierLabel } from "@/lib/catalog";
 import { canOpenApp, PASS_PRICE_LABEL } from "@/lib/access";
 import { PASS_LABEL } from "@/lib/plans";
@@ -17,6 +18,11 @@ import { AppGuide } from "@/components/app-guide";
 import { AppShowcase } from "@/components/showcase";
 
 export const Route = createFileRoute("/apps/$slug")({
+  // A merged app's old link goes to the app that now holds it.
+  beforeLoad: ({ params }) => {
+    const alias = aliasOf(params.slug);
+    if (alias) throw redirect({ to: "/apps/$slug", params: { slug: alias.to }, search: alias.view ? { view: alias.view } : {}, statusCode: 301 });
+  },
   head: ({ params }) => ({
     meta: [{ title: `${getApp(params.slug)?.name ?? "App"} — Midnry` }],
   }),

@@ -1,11 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { Shell } from "@/components/shell";
 import { AppShowcase } from "@/components/showcase";
 import { pitchFor } from "@/lib/pitches";
 import { CommunityPage } from "@/components/community-app";
+import { aliasOf } from "@/lib/app-aliases";
 import { getApp } from "@/lib/catalog";
 
 export const Route = createFileRoute("/discover/$slug")({
+  // A merged app's old link goes to the app that now holds it.
+  beforeLoad: ({ params }) => {
+    const alias = aliasOf(params.slug);
+    if (alias) throw redirect({ to: "/discover/$slug", params: { slug: alias.to }, search: alias.view ? { view: alias.view } : {}, statusCode: 301 });
+  },
   head: ({ params }) => {
     const app = getApp(params.slug);
     if (!app) return { meta: [{ title: "App — Midnry" }] };
