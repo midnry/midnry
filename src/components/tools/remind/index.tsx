@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useAppDoc } from "@/components/use-app-doc";
 import { ToolFrame, ToolStatus, nid } from "@/components/tools/shared";
-import { Button, TextInput, cn } from "@/components/ui";
+import { Button, Skeleton, TextInput, buttonClass, cn } from "@/components/ui";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { addDays, isoOf, prettyDate } from "@/lib/remind/dates";
 import { cleanDoc, EMPTY_DOC, INBOX, withDescendants, type Doc, type Filter, type Task } from "@/lib/remind/model";
@@ -31,6 +31,13 @@ import { TaskRow, type RowActions, type RowContext } from "./task-row";
 import { Productivity } from "./productivity";
 import { CalendarLink, EmailSettings, FilterEditor, PeoplePanel } from "./panels";
 import { Board, Month } from "./layouts";
+import { useAccount } from "@/components/account";
+import { PASS_PRICE_LABEL } from "@/lib/access";
+import { useRole } from "@/components/role";
+import { BoardPanel } from "@/components/tools/board";
+import { FocusPanel, type FocusIntent } from "@/components/tools/pulse";
+import { HabitsPanel, TodayHabits } from "@/components/tools/habits";
+import { isPassView, linkableView, PASS_VIEW_KINDS, PASS_VIEWS, passViewsOpen, type PassViewKind } from "@/lib/remind/pass-views";
 
 type Layout = "list" | "board" | "month";
 type SharedState = { canShare: boolean; projects: SharedProject[]; invitations: Invitation[] };
@@ -97,6 +104,12 @@ function sharedPatch(change: ItemPatch): Record<string, unknown> {
   return out;
 }
 
+/** The view a ?view= link asks for, or Today. */
+function viewFromLink(value: unknown): View {
+  const kind = linkableView(value);
+  return kind ? ({ kind } as View) : { kind: "today" };
+}
+
 export function RemindTool() {
   const { user } = useCurrentUserState();
   const me = user?.id ?? "";
@@ -108,7 +121,15 @@ export function RemindTool() {
   const [today, setToday] = useState(today0);
   const [shared, setShared] = useState<SharedState>({ canShare: false, projects: [], invitations: [] });
   const [files, setFiles] = useState<FileMeta[]>([]);
-  const [view, setView] = useState<View>({ kind: "today" });
+  const search: { view?: unknown } = useSearch({ strict: false });
+  const navigate = useNavigate();
+  const [view, setView] = useState<View>(() => viewFromLink(search.view));
+  // Board, Focus and Habits come with Midnry Pass (or for admins), like every Pass app.
+  const { account, loading: accountLoading } = useAccount();
+  const { isAdmin, ready: roleReady } = useRole();
+  const passKnown = !accountLoading && roleReady;
+  const passOpen = passViewsOpen(account?.hasPass ?? false, isAdmin);
+  const [focusIntent, setFocusIntent] = useState<FocusIntent | null>(null);
   const [layout, setLayout] = useState<Layout>("list");
   const [query, setQuery] = useState("");
   const [openKey, setOpenKey] = useState<string | null>(null);
@@ -558,6 +579,24 @@ export function RemindTool() {
     setMenuOpen(false);
     setEditingFilter(null);
     setShowPeople(false);
+    // Keep ?view= in the address for views a link can open, so a reload lands in the same place.
+    const linked = linkableView(next.kind);
+    const wanted = linked && linked !== "today" ? linked : undefined;
+    if (wanted !== linkableView(search.view)) {
+      void navigate({ to: "/apps/$slug", params: { slug: "tasks" }, search: wanted ? { view: wanted } : {}, replace: true, resetScroll: false });
+    }
+  }
+
+  // A link to another view while Remind is open (for example an old Board link).
+  const linkedView = linkableView(search.view);
+  useEffect(() => {
+    if (!linkedView) return;
+    setView((current) => (current.kind === linkedView ? current : ({ kind: linkedView } as View)));
+  }, [linkedView]);
+
+  function focusOn(item: Item) {
+    setFocusIntent({ title: item.title, at: Date.now() });
+    go({ kind: "focus" });
   }
 
   // ── What to show ───────────────────────────────────────────────────────────
@@ -610,8 +649,9 @@ export function RemindTool() {
     assigned: items.filter((item) => !item.done && item.shared && item.assigneeId === me).length,
   };
 
-  const title =
-    view.kind === "inbox"
+  const title = isPassView(view.kind)
+    ? PASS_VIEWS[view.kind].name
+    : view.kind === "inbox"
       ? "Inbox"
       : view.kind === "today"
         ? "Today"
@@ -642,9 +682,9 @@ export function RemindTool() {
     files,
     projectName: (key) => projectLabel(doc, shared.projects, key),
   };
-  const actions: RowActions = { toggle, patch, remove, addChild, addComment, removeComment, upload, download, removeFile };
+  const actions: RowActions = { toggle, patch, remove, addChild, addComment, removeComment, upload, download, removeFile, focus: passOpen ? focusOn : undefined };
   const showProject = view.kind !== "project" && view.kind !== "inbox";
-  const listView = !["stats", "settings"].includes(view.kind);
+  const listView = !["stats", "settings", ...PASS_VIEW_KINDS].includes(view.kind);
   const defaultProject = view.kind === "project" ? view.id : INBOX;
   const defaultDue = view.kind === "today" ? today : "";
 
@@ -747,6 +787,14 @@ export function RemindTool() {
                 Productivity · {doc.stats.points} pts
               </Nav>
             </nav>
+
+            <SideGroup title="With Midnry Pass">
+              {PASS_VIEW_KINDS.map((kind) => (
+                <Nav key={kind} active={view.kind === kind} onClick={() => go({ kind })}>
+                  {PASS_VIEWS[kind].name}
+                </Nav>
+              ))}
+            </SideGroup>
 
             <SideGroup title="My projects">
               {doc.projects
@@ -928,7 +976,22 @@ export function RemindTool() {
               />
             ) : null}
 
-            {view.kind === "stats" ? (
+            {isPassView(view.kind) ? (
+              <>
+                <p className="mt-1 max-w-2xl text-sm text-pretty text-muted">{PASS_VIEWS[view.kind].what}</p>
+                {!passKnown ? (
+                  <Skeleton className="mt-4 h-60 w-full" />
+                ) : !passOpen ? (
+                  <PassLocked kind={view.kind} onBack={() => go({ kind: "today" })} />
+                ) : view.kind === "board" ? (
+                  <BoardPanel />
+                ) : view.kind === "focus" ? (
+                  <FocusPanel intent={focusIntent} />
+                ) : (
+                  <HabitsPanel />
+                )}
+              </>
+            ) : view.kind === "stats" ? (
               <Productivity
                 stats={doc.stats}
                 today={today}
@@ -972,6 +1035,8 @@ export function RemindTool() {
                   </div>
                 ) : null}
 
+                {view.kind === "today" && passKnown && passOpen ? <TodayHabits onOpen={() => go({ kind: "habits" })} /> : null}
+
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <TextInput value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search" aria-label="Search tasks" className="h-10 max-w-xs" />
                   {view.kind === "filter" && currentFilter ? (
@@ -1012,6 +1077,29 @@ export function RemindTool() {
         </div>
       </ToolStatus>
     </ToolFrame>
+  );
+}
+
+/** A Pass view without the Pass: what it is, and where to get it. Normal Remind keeps working. */
+function PassLocked({ kind, onBack }: { kind: PassViewKind; onBack: () => void }) {
+  const name = PASS_VIEWS[kind].name;
+  return (
+    <section className="mt-4 max-w-xl rounded-3xl bg-card p-5 shadow-line sm:p-6" data-pass-locked={kind}>
+      <p className="text-sm font-medium text-pine">Included with Midnry Pass</p>
+      <h3 className="mt-1 font-display text-2xl tracking-tight">{name} comes with Midnry Pass</h3>
+      <p className="mt-2 text-sm text-pretty text-muted">
+        Remind stays free: your tasks, projects, repeats and streaks keep working as they are. The Pass adds Board, Focus and Habits here,
+        plus shared projects, attachments and a calendar link, for {PASS_PRICE_LABEL} a month. Cancel any time.
+      </p>
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <Link to="/billing" className={buttonClass({ tone: "primary" })}>
+          See Midnry Pass
+        </Link>
+        <Button tone="quiet" onClick={onBack}>
+          Back to Today
+        </Button>
+      </div>
+    </section>
   );
 }
 

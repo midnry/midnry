@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { recordUse } from "@/lib/admin.functions";
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { aliasOf } from "@/lib/app-aliases";
+import { viewParam } from "@/lib/remind/pass-views";
 import { getApp, includedNames, tierLabel } from "@/lib/catalog";
 import { canOpenApp, PASS_PRICE_LABEL } from "@/lib/access";
 import { PASS_LABEL } from "@/lib/plans";
@@ -16,8 +17,14 @@ import { SaveButton } from "@/components/spotlight";
 import { AppMark } from "@/components/app-mark";
 import { AppGuide } from "@/components/app-guide";
 import { AppShowcase } from "@/components/showcase";
+import { KeptMoneyData } from "@/components/tools/kept-money";
 
 export const Route = createFileRoute("/apps/$slug")({
+  // ?view= opens one part of an app (Remind: board, focus, habits, today…). Other apps ignore it.
+  validateSearch: (search: Record<string, unknown>): { view?: string } => {
+    const view = viewParam(search.view);
+    return view ? { view } : {};
+  },
   // A merged app's old link goes to the app that now holds it.
   beforeLoad: ({ params }) => {
     const alias = aliasOf(params.slug);
@@ -76,7 +83,11 @@ function AppPage() {
           <AppShowcase app={app} />
         </div>
       ) : !canOpenApp(app, account?.hasPass ?? false, isAdmin) ? (
-        <LockedGate name={app.name} blurb={app.blurb} slug={app.slug} features={app.features} guide={app.guide} />
+        <>
+          <LockedGate name={app.name} blurb={app.blurb} slug={app.slug} features={app.features} guide={app.guide} />
+          {/* Budget and Pocket (free) moved into Ledger (Pass): their saved entries stay readable and exportable. */}
+          {app.slug === "ledger" ? <KeptMoneyData /> : null}
+        </>
       ) : (
         <ToolView slug={app.slug} />
       )}

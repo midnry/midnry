@@ -294,4 +294,24 @@ html[data-mode="dark"] .site-logo {
   body {
     background: white;
   }
+
+  /* Invoice, quote and proposal pages: black on white, full width, no card chrome,
+     whatever the screen theme. */
+  .invoice-sheet {
+    background: white !important;
+    color: #111 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    font-size: 11pt;
+  }
+  .invoice-sheet .text-muted {
+    color: #444 !important;
+  }
+  .invoice-sheet .border-line {
+    border-color: #ccc !important;
+  }
+  .invoice-sheet tr {
+    break-inside: avoid;
+  }
 }

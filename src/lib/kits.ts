@@ -5,6 +5,10 @@ export type Line = { label: string; value: string };
 export type Card = { front: string; back: string };
 export type Question = { q: string; options: string[]; answer: number; why: string };
 export type Entry = { title: string; body: string };
+/** A second list inside a tracker (Farm sales: Sales · Price log). A view without fields is the main list. */
+export type TrackerView = { id: string; label: string; fields?: Field[]; blurb?: string };
+/** A QR code section under a tracker (Menu). It encodes a link the person already has; nothing is hosted. */
+export type QrSection = { title: string; blurb: string };
 
 type Base = {
   slug: string;
@@ -20,7 +24,7 @@ export type Kit = Base &
   (
     | { kind: "calc"; fields: Field[]; run: (v: Record<string, string>) => Line[] }
     | { kind: "template"; parts: Field[] }
-    | { kind: "tracker"; fields: Field[] }
+    | { kind: "tracker"; fields: Field[]; views?: TrackerView[]; qr?: QrSection }
     | { kind: "cards"; deck: Card[] }
     | { kind: "quiz"; questions: Question[] }
     | { kind: "write" }
@@ -360,7 +364,15 @@ export const KITS: readonly Kit[] = [
     ],
   },
   { slug: "regex", name: "Regex", section: "developers", blurb: "A pattern, a sample, and the matches.", features: ["A JavaScript pattern and flags", "Matches marked in the sample", "The error if the pattern is bad"], guide: ["Type the pattern without slashes.", "Add flags such as g or i.", "Paste a sample and read the matches."], kind: "regex" },
-  { slug: "json-fmt", name: "JSON", section: "developers", blurb: "Format JSON, or see the first error.", features: ["Pretty print", "Minify", "The parse error when it fails"], guide: ["Paste JSON.", "Format or minify it.", "Fix the spot named in the error."], kind: "json" },
+  {
+    slug: "json-fmt",
+    name: "JSON",
+    section: "developers",
+    blurb: "A simple free JSON check: format it, or see the line and column where it breaks.",
+    features: ["Format JSON so it is readable", "Check that it is valid", "The line and column of the first error, with that spot marked"],
+    guide: ["Paste JSON.", "Press Format, or Check to only validate it.", "If it fails, go to the line and column named in the error. For a tree view, minify, sorted keys and large files, Glyph is included with Midnry Pass."],
+    kind: "json",
+  },
   {
     slug: "readme",
     name: "README",
@@ -392,16 +404,7 @@ export const KITS: readonly Kit[] = [
     guide: ["Describe the product, who it is for, and the main benefit.", "Pick one of three ad lines, or try another wording.", "Edit it so every claim is true."],
     kind: "write",
   },
-  {
-    slug: "proposal",
-    name: "Proposal",
-    section: "marketing",
-    blurb: "Problem, work, price, and next step.",
-    features: ["Four parts you can edit", "Saved with your account", "Copy or print it when it is ready"],
-    guide: ["Describe the client and the work.", "Fill the parts or ask for a draft.", "Put the real price in yourself."],
-    kind: "template",
-    parts: [f("client", "Client"), a("problem", "Problem"), a("work", "Work"), f("price", "Price"), a("next", "Next step")],
-  },
+  // Proposal is now part of Invoice (proposals view); its saved document is copied in there.
   {
     slug: "paye",
     name: "Tax",
@@ -420,16 +423,6 @@ export const KITS: readonly Kit[] = [
     features: ["Your figures and theirs", "Lines that are not amounts, by line number", "Amounts only on one side, and the difference of the totals"],
     guide: ["Paste one amount per line on each side.", "An amount that appears in both lists is paired once, by amount only.", "Read what is left, and fix any line it could not read."],
     kind: "reconcile",
-  },
-  {
-    slug: "budget",
-    name: "Budget",
-    section: "books",
-    blurb: "Income lines and spending lines. What is left.",
-    features: ["Income and spending", "A remaining figure", "Saved with your account"],
-    guide: ["Add each income line.", "Add each cost.", "Read what remains."],
-    kind: "tracker",
-    fields: [f("name", "Name", "Sales"), n("amount", "Amount", "0"), f("side", "Income or cost", "income")],
   },
   {
     slug: "contract-scan",
@@ -487,17 +480,6 @@ export const KITS: readonly Kit[] = [
     kind: "mood",
   },
   {
-    slug: "client-terms",
-    name: "Terms",
-    section: "creatives",
-    blurb: "A short client agreement from the job and the fee.",
-    note: "A starting draft. Have it read before anyone signs.",
-    features: ["Job, fee, and revisions", "A one-page draft", "Saved with your account"],
-    guide: ["Enter the client, the job, and the fee.", "Set how many revisions.", "Edit the draft, then get it read."],
-    kind: "template",
-    parts: [f("client", "Client"), a("job", "Job"), f("fee", "Fee"), f("revisions", "Revisions", "2")],
-  },
-  {
     slug: "stock",
     name: "Stock",
     section: "retail",
@@ -506,16 +488,6 @@ export const KITS: readonly Kit[] = [
     guide: ["Add the item and how many you have.", "Set the number that means low.", "Update the quantity when stock moves."],
     kind: "tracker",
     fields: [f("item", "Item"), n("qty", "Quantity", "0"), n("low", "Low at", "5")],
-  },
-  {
-    slug: "price-list",
-    name: "Prices",
-    section: "retail",
-    blurb: "A price list you can copy.",
-    features: ["Item and price", "A list you can copy", "Saved with your account"],
-    guide: ["Add each item and its price.", "Copy the list when you need to send it.", "Change a price in the same row."],
-    kind: "tracker",
-    fields: [f("item", "Item"), n("price", "Price", "0")],
   },
   {
     slug: "margin",
@@ -542,11 +514,26 @@ export const KITS: readonly Kit[] = [
     slug: "menu",
     name: "Menu",
     section: "kitchen",
-    blurb: "Dishes, prices, and a short note. Copy it or print it.",
-    features: ["Dish, price, and a note", "A list you can copy", "Saved with your account"],
-    guide: ["Add each dish.", "Write a short note if it needs one.", "Copy the menu when it is ready."],
+    blurb: "Dishes, prices, and a short note, plus a QR code that opens your menu link. Copy it or print it.",
+    features: [
+      "Dish, price, and a note",
+      "A list you can copy",
+      "Saved with your account",
+      "A QR code for a menu link you already have (any https link), saved as an image",
+      "The link is not checked or hosted for you",
+    ],
+    guide: [
+      "Add each dish.",
+      "Write a short note if it needs one.",
+      "Copy the menu when it is ready.",
+      "Under QR code, paste the link where your menu already lives, make the code, and save the image where people can scan it.",
+    ],
     kind: "tracker",
     fields: [f("dish", "Dish"), n("price", "Price"), f("note", "Note")],
+    qr: {
+      title: "QR code",
+      blurb: "Paste the link where your menu already lives, such as a website, a PDF link or a WhatsApp catalogue. The code only opens that link: Midnry does not host your menu and does not check the link.",
+    },
   },
   {
     slug: "recipe-cost",
@@ -568,7 +555,6 @@ export const KITS: readonly Kit[] = [
       ];
     },
   },
-  { slug: "qr-menu", name: "QR menu", section: "kitchen", blurb: "A QR code for a menu link.", features: ["Any https link", "A code you can save", "The link is not checked for you"], guide: ["Paste the menu link.", "Generate the code.", "Save the image and put it where people can scan it."], kind: "qr" },
   {
     slug: "bookings",
     name: "Bookings",
@@ -583,11 +569,20 @@ export const KITS: readonly Kit[] = [
     slug: "catalog",
     name: "Catalog",
     section: "beauty",
-    blurb: "Products, prices, and a one-line description.",
-    features: ["Name, price, and a line", "A list you can copy", "Saved with your account"],
-    guide: ["Add the product.", "Set the price and a short line.", "Copy it into your shop or status."],
+    blurb: "Products and their prices, with a one-line description. A price list you can copy.",
+    features: [
+      "Product or item, price, and an optional line",
+      "A price list you can copy or export",
+      "Change a price in the same row",
+      "Saved with your account",
+    ],
+    guide: [
+      "Add each product or item and its price.",
+      "Add a short line if it helps.",
+      "Copy the list into your shop, your status or a message. Change a price in the same row.",
+    ],
     kind: "tracker",
-    fields: [f("name", "Product"), n("price", "Price"), f("line", "Line")],
+    fields: [f("name", "Product or item"), n("price", "Price", "0"), f("line", "Line")],
   },
   {
     slug: "captions",
@@ -598,26 +593,17 @@ export const KITS: readonly Kit[] = [
     guide: ["Say the product and what the photo shows.", "Pick one of three captions, with hashtags.", "Post the one that is true."],
     kind: "write",
   },
-  {
-    slug: "quote",
-    name: "Quote",
-    section: "freelance",
-    blurb: "A quote with lines, a total, and a date it holds until.",
-    features: ["Client and lines", "A total", "Saved with your account"],
-    guide: ["Name the client.", "Add the work and the price in the lines.", "Set the date the quote holds until."],
-    kind: "template",
-    parts: [f("client", "Client"), a("lines", "Work and prices"), f("until", "Holds until"), n("total", "Total")],
-  },
+  // Quote is now part of Invoice (quotes view); its saved document is copied in there.
   {
     slug: "service-terms",
     name: "Agreement",
     section: "freelance",
-    blurb: "A short services agreement. Edit it, then get it read.",
-    note: "A starting draft, not a finished contract.",
-    features: ["Parties, work, fee, and notice", "Saved with your account", "You add the governing details"],
-    guide: ["Fill the names, work, and fee.", "Read every sentence.", "Get it checked before it is signed."],
+    blurb: "A short client or services agreement from the job, the fee, revisions and notice. Edit it, then get it read.",
+    note: "A starting draft, not a finished contract. Have it read before anyone signs.",
+    features: ["Parties, the work or job, fee, revisions, and notice", "A one-page draft you can copy or print", "Saved with your account", "You add the governing details"],
+    guide: ["Fill the names, the work or job, and the fee.", "Set how many revisions, and the notice period.", "Read every sentence.", "Get it checked before it is signed."],
     kind: "template",
-    parts: [f("you", "You"), f("client", "Client"), a("work", "Work"), f("fee", "Fee"), f("notice", "Notice", "14 days")],
+    parts: [f("you", "You"), f("client", "Client"), a("work", "Work or job"), f("fee", "Fee"), f("revisions", "Revisions", "2"), f("notice", "Notice", "14 days")],
   },
   {
     slug: "listing",
@@ -675,24 +661,27 @@ export const KITS: readonly Kit[] = [
     },
   },
   {
-    slug: "produce",
-    name: "Crop prices",
-    section: "agro",
-    blurb: "A log of what a crop sold for, and when.",
-    features: ["Crop, price, and date", "Saved with your account", "Your own prices, not a market feed"],
-    guide: ["Add the crop and the price you saw or got.", "Add the date.", "This is your log. It does not fetch market prices."],
-    kind: "tracker",
-    fields: [f("crop", "Crop"), n("price", "Price"), f("when", "Date")],
-  },
-  {
     slug: "farm-sales",
-    name: "Sales",
+    name: "Farm sales",
     section: "agro",
-    blurb: "Who bought, what, and for how much.",
-    features: ["Buyer, crop, and amount", "A running list", "Saved with your account"],
-    guide: ["Add the buyer and the crop.", "Enter the amount.", "The list stays on your account."],
+    blurb: "A farm sales book: who bought, what, and for how much, with a log of crop prices and when.",
+    features: [
+      "Sales: buyer, crop, and amount, in a running list",
+      "Price log: crop, price, and date",
+      "Your own prices, not a market feed",
+      "Saved with your account",
+    ],
+    guide: [
+      "Under Sales, add the buyer, the crop, and the amount.",
+      "Under Price log, add the crop, the price you saw or got, and the date.",
+      "This is your book. It does not fetch market prices.",
+    ],
     kind: "tracker",
     fields: [f("buyer", "Buyer"), f("crop", "Crop"), n("amount", "Amount")],
+    views: [
+      { id: "sales", label: "Sales" },
+      { id: "prices", label: "Price log", fields: [f("crop", "Crop"), n("price", "Price"), f("when", "Date")], blurb: "What a crop sold for, and when. Your own prices, not a market feed." },
+    ],
   },
   {
     slug: "meds",
@@ -804,16 +793,6 @@ export const KITS: readonly Kit[] = [
     guide: ["Add the bill and the amount.", "Write the day it is due.", "Open the list. Nothing is paid automatically."],
     kind: "tracker",
     fields: [f("name", "Bill"), n("amount", "Amount"), f("due", "Due", "1st")],
-  },
-  {
-    slug: "pocket",
-    name: "Pocket",
-    section: "elder-money",
-    blurb: "Money in, money out, and what is left. Large type.",
-    features: ["Income and spending", "What is left", "Saved with your account"],
-    guide: ["Add money coming in as income.", "Add money going out as cost.", "Read what is left."],
-    kind: "tracker",
-    fields: [f("name", "What"), n("amount", "Amount"), f("side", "Income or cost", "cost")],
   },
   {
     slug: "recipes",

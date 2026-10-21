@@ -60,7 +60,7 @@ export function saveStateLabel(state: SaveState): string {
   }
 }
 
-function SaveMark({ state }: { state: SaveState }) {
+export function SaveMark({ state }: { state: SaveState }) {
   const problem = state === "retrying" || state === "conflict" || state === "too-large" || state === "error";
   return (
     <p className={cn("text-sm", problem ? "max-w-xs font-medium text-fail" : "text-muted")} aria-live="polite">

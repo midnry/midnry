@@ -6,9 +6,14 @@ import { toast } from "sonner";
 import { WRITERS, type Piece } from "@/lib/writers";
 import { AI_WRITERS, aiWrite } from "@/lib/ai-write.functions";
 import { Link } from "@tanstack/react-router";
-import { getKit, type Field, type Kit, type Line } from "@/lib/kits";
+import { getKit, type Field, type Kit, type Line, type QrSection as QrSpec } from "@/lib/kits";
 import { compareLists, type BadLine } from "@/lib/reconcile";
 import type { SectionId } from "@/lib/sections";
+import { rowsCsv, type TemplateDoc, type TrackerDoc } from "@/lib/merges";
+import { downloadText, setViewParam, viewParam } from "@/components/use-merged-docs";
+import { ViewTabs } from "@/components/tools/view-tabs";
+import { KitImports } from "@/components/tools/kit-import";
+import { checkJson, formatJson, problemExcerpt } from "@/lib/json-tools";
 
 const SENIOR: SectionId[] = ["elder-health", "safety", "family", "elder-money", "hobbies"];
 
@@ -181,7 +186,7 @@ function Fields({
 }
 
 function Template({ kit }: { kit: Extract<Kit, { kind: "template" }> }) {
-  const { data, setData, ready, loadError, blocked, saveState } = useAppDoc(kit.slug, { values: {} as Record<string, string> });
+  const { data, setData, ready, loadError, blocked, saveState } = useAppDoc<TemplateDoc & { values: Record<string, string> }>(kit.slug, { values: {} });
   const values = data.values ?? {};
   const revenue = Number(values.revenue);
   const cogs = Number(values.cogs);
@@ -205,14 +210,15 @@ function Template({ kit }: { kit: Extract<Kit, { kind: "template" }> }) {
   const filled = kit.parts.some((part) => values[part.id]?.trim());
   return (
     <ToolStatus ready={ready} loadError={loadError} blocked={blocked}>
-      <Fields fields={kit.parts} values={values} onChange={(next) => setData({ values: next })} />
+      <KitImports slug={kit.slug} data={data} setData={setData} labels={Object.fromEntries(kit.parts.map((part) => [part.id, part.label]))} />
+      <Fields fields={kit.parts} values={values} onChange={(next) => setData((prev) => ({ ...prev, values: next }))} />
       {showStatement ? <Lines lines={statement} copy={false} /> : null}
       <div className="no-print mt-4 flex flex-wrap items-center gap-2">
         <CopyButton text={filled ? text : ""} label="Copy as text" />
         <Button tone="quiet" disabled={!filled} onClick={() => printText(kit.name, text)}>
           Print
         </Button>
-        <ConfirmButton label="Clear" question="Clear every field?" disabled={!filled} onConfirm={() => setData({ values: {} })} />
+        <ConfirmButton label="Clear" question="Clear every field?" disabled={!filled} onConfirm={() => setData((prev) => ({ ...prev, values: {} }))} />
         <span className="text-sm text-muted">{saveLabel(saveState)}</span>
       </div>
     </ToolStatus>
@@ -271,17 +277,81 @@ function money(value: number): string {
   return Number.isFinite(value) ? (Math.round(value * 100) / 100).toLocaleString("en", { maximumFractionDigits: 2 }) : "—";
 }
 
+type TrackerRows = Record<string, string>[];
+
+function asRows(value: unknown): TrackerRows {
+  return Array.isArray(value) ? (value as TrackerRows) : [];
+}
+
+/**
+ * A saved list (or several, for a tracker with views), plus an optional QR
+ * section. The document is { rows, views: { [id]: rows }, qrLink, imported };
+ * every change keeps the parts it does not touch.
+ */
 function Tracker({ kit }: { kit: Extract<Kit, { kind: "tracker" }> }) {
-  const { data, setData, ready, loadError, blocked, saveState } = useAppDoc(kit.slug, {
-    rows: [] as Record<string, string>[],
+  const { data, setData, ready, loadError, blocked, saveState } = useAppDoc<TrackerDoc>(kit.slug, { rows: [] });
+  const views = kit.views ?? [];
+  const [viewId, setViewId] = useState(() => {
+    const asked = viewParam();
+    return views.find((view) => view.id === asked)?.id ?? views[0]?.id ?? "";
   });
+  const view = views.find((item) => item.id === viewId);
+  const extra = view?.fields ? view : undefined;
+  const rows = extra ? asRows(data.views?.[extra.id]) : asRows(data.rows);
+  const setRows = (next: TrackerRows) =>
+    setData((prev) => (extra ? { ...prev, views: { ...(prev.views ?? {}), [extra.id]: next } } : { ...prev, rows: next }));
+  return (
+    <ToolStatus ready={ready} loadError={loadError} blocked={blocked}>
+      <KitImports slug={kit.slug} data={data} setData={setData} />
+      {views.length > 0 ? (
+        <div className="mb-4">
+          <ViewTabs
+            label={`${kit.name} views`}
+            views={views}
+            value={viewId}
+            onChange={(id) => {
+              setViewId(id);
+              setViewParam(id === views[0]?.id ? null : id);
+            }}
+          />
+          {view?.blurb ? <p className="mt-3 max-w-2xl text-sm text-pretty text-muted">{view.blurb}</p> : null}
+        </div>
+      ) : null}
+      <TrackerList
+        key={viewId}
+        fields={extra?.fields ?? kit.fields}
+        rows={rows}
+        setRows={setRows}
+        saveState={saveState}
+        title={view ? `${kit.name}: ${view.label}` : kit.name}
+        csvName={extra ? `${kit.slug}-${extra.id}.csv` : `${kit.slug}.csv`}
+      />
+      {kit.qr ? <QrSection section={kit.qr} link={typeof data.qrLink === "string" ? data.qrLink : ""} onLink={(qrLink) => setData((prev) => ({ ...prev, qrLink }))} /> : null}
+    </ToolStatus>
+  );
+}
+
+function TrackerList({
+  fields,
+  rows,
+  setRows,
+  saveState,
+  title,
+  csvName,
+}: {
+  fields: Field[];
+  rows: TrackerRows;
+  setRows: (next: TrackerRows) => void;
+  saveState: SaveState;
+  title: string;
+  csvName: string;
+}) {
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
-  const rows = Array.isArray(data.rows) ? data.rows : [];
-  const hasSide = kit.fields.some((field) => field.id === "side");
-  const hasAmount = kit.fields.some((field) => field.id === "amount");
+  const hasSide = fields.some((field) => field.id === "side");
+  const hasAmount = fields.some((field) => field.id === "amount");
   const income = rows.filter((row) => /income/i.test(row.side || "")).reduce((total, row) => total + (Number(row.amount) || 0), 0);
   const cost = rows.filter((row) => /cost/i.test(row.side || "")).reduce((total, row) => total + (Number(row.amount) || 0), 0);
   const total = rows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
@@ -295,36 +365,41 @@ function Tracker({ kit }: { kit: Extract<Kit, { kind: "tracker" }> }) {
 
   function save() {
     if (!canSave) return;
-    const clean = Object.fromEntries(kit.fields.map((field) => [field.id, (draft[field.id] ?? "").trim()]));
-    if (editing != null) setData({ rows: rows.map((row, index) => (index === editing ? clean : row)) });
-    else setData({ rows: [...rows, clean] });
+    // Keep fields the form does not show (an old copy may carry more), so an edit never drops data.
+    const clean = { ...(editing != null ? rows[editing] : {}), ...Object.fromEntries(fields.map((field) => [field.id, (draft[field.id] ?? "").trim()])) };
+    if (editing != null) setRows(rows.map((row, index) => (index === editing ? clean : row)));
+    else setRows([...rows, clean]);
     setDraft({});
     setEditing(null);
   }
 
   function remove(index: number) {
     const before = rows;
-    setData({ rows: rows.filter((_, item) => item !== index) });
+    setRows(rows.filter((_, item) => item !== index));
     if (editing === index) {
       setEditing(null);
       setDraft({});
     }
-    toast("Removed", { action: { label: "Undo", onClick: () => setData({ rows: before }) } });
+    toast("Removed", { action: { label: "Undo", onClick: () => setRows(before) } });
   }
 
   function exportCsv() {
-    const cell = (value: string) => (/[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value);
-    const csv = [kit.fields.map((field) => cell(field.label)).join(","), ...rows.map((row) => kit.fields.map((field) => cell(row[field.id] ?? "")).join(","))].join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${kit.slug}.csv`;
-    link.click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    downloadText(csvName, rowsCsv(fields, rows));
   }
 
+  const listText = [
+    title,
+    "",
+    ...rows.map((row) =>
+      fields
+        .filter((field) => row[field.id]?.trim())
+        .map((field) => row[field.id].trim())
+        .join(" — "),
+    ),
+  ].join("\n");
+
   return (
-    <ToolStatus ready={ready} loadError={loadError} blocked={blocked}>
+    <>
       <form
         ref={formRef}
         className="rounded-2xl bg-card p-4 shadow-line"
@@ -334,7 +409,7 @@ function Tracker({ kit }: { kit: Extract<Kit, { kind: "tracker" }> }) {
         }}
       >
         <p className="mb-3 font-medium">{editing != null ? "Edit entry" : "New entry"}</p>
-        <Fields fields={kit.fields} values={draft} onChange={setDraft} />
+        <Fields fields={fields} values={draft} onChange={setDraft} />
         <div className="mt-3 flex flex-wrap gap-2">
           <Button tone="primary" type="submit" disabled={!canSave}>
             {editing != null ? "Save changes" : "Add"}
@@ -379,6 +454,7 @@ function Tracker({ kit }: { kit: Extract<Kit, { kind: "tracker" }> }) {
           {rows.length > 4 ? (
             <TextInput className="w-full sm:w-56" value={query} placeholder="Search entries" onChange={(event) => setQuery(event.target.value)} />
           ) : null}
+          <CopyButton text={listText} label="Copy list" />
           <Button tone="quiet" onClick={exportCsv}>
             Export CSV
           </Button>
@@ -394,7 +470,7 @@ function Tracker({ kit }: { kit: Extract<Kit, { kind: "tracker" }> }) {
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <dl className="grid min-w-0 flex-1 grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
-                {kit.fields
+                {fields
                   .filter((field) => row[field.id]?.trim())
                   .map((field) => (
                     <div key={field.id} className="contents">
@@ -428,7 +504,7 @@ function Tracker({ kit }: { kit: Extract<Kit, { kind: "tracker" }> }) {
       </ul>
       {needle && shown.length === 0 ? <p className="mt-3 text-sm text-muted">No entries match “{query.trim()}”.</p> : null}
       <p className="mt-3 text-sm text-muted">{saveLabel(saveState)}</p>
-    </ToolStatus>
+    </>
   );
 }
 
@@ -1008,17 +1084,66 @@ function RegexTool() {
   );
 }
 
+/** The free JSON check: format and validate, with the line and column of the first error. Glyph (Pass) does more. */
 function JsonTool() {
   const [raw, setRaw] = useState('{"ok":true}');
-  const [out, setOut] = useState("");
+  const [result, setResult] = useState<{ kind: "formatted" | "valid"; text: string } | { kind: "error"; message: string; where: string; line: string; caret: string } | null>(null);
+  function run(format: boolean) {
+    const check = checkJson(raw);
+    if (!check.ok) {
+      const { line, caret } = problemExcerpt(raw, check.problem);
+      setResult({ kind: "error", message: check.problem.message, where: `Line ${check.problem.line}, column ${check.problem.column}`, line, caret });
+      return;
+    }
+    if (format) {
+      const text = formatJson(check.value);
+      setRaw(text);
+      setResult({ kind: "formatted", text });
+    } else setResult({ kind: "valid", text: "" });
+  }
   return (
     <div>
-      <TextArea value={raw} onChange={(event) => setRaw(event.target.value)} />
-      <div className="mt-3 flex gap-2">
-        <Button tone="primary" onClick={() => { try { setOut(JSON.stringify(JSON.parse(raw), null, 2)); } catch (error) { setOut(error instanceof Error ? error.message : "Invalid JSON"); } }}>Format</Button>
-        <Button tone="quiet" onClick={() => { try { setOut(JSON.stringify(JSON.parse(raw))); } catch (error) { setOut(error instanceof Error ? error.message : "Invalid JSON"); } }}>Minify</Button>
+      <TextArea
+        value={raw}
+        spellCheck={false}
+        aria-label="JSON"
+        className="font-mono text-sm"
+        onChange={(event) => {
+          setRaw(event.target.value);
+          setResult(null);
+        }}
+      />
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button tone="primary" onClick={() => run(true)}>
+          Format
+        </Button>
+        <Button tone="quiet" onClick={() => run(false)}>
+          Check
+        </Button>
+        <CopyButton text={raw} />
       </div>
-      {out ? <pre className="mt-4 overflow-auto whitespace-pre-wrap rounded-2xl bg-card p-4 shadow-line">{out}</pre> : null}
+      {result?.kind === "error" ? (
+        <div role="alert" className="mt-4 rounded-2xl bg-card p-4 shadow-line" data-json-error>
+          <p className="font-medium text-fail">{result.where}</p>
+          <p className="mt-1 text-pretty">{result.message}</p>
+          <pre className="mt-3 overflow-x-auto font-mono text-sm">
+            {result.line}
+            {"\n"}
+            <span className="text-fail">{result.caret}</span>
+          </pre>
+        </div>
+      ) : result ? (
+        <p role="status" className="mt-4 text-sm text-pine" data-json-ok>
+          {result.kind === "formatted" ? "Valid JSON. Formatted." : "Valid JSON."}
+        </p>
+      ) : null}
+      <p className="mt-6 text-sm text-pretty text-muted">
+        Need a tree view, the path of a value, minify, sorted keys or large files?{" "}
+        <Link to="/apps/$slug" params={{ slug: "glyph" }} className="underline underline-offset-2">
+          Glyph
+        </Link>{" "}
+        does that, with Midnry Pass.
+      </p>
     </div>
   );
 }
@@ -1115,6 +1240,61 @@ function Solver() {
       <FieldBox label={which === "force" ? "Acceleration" : which === "molarity" ? "Litres" : which === "speed" ? "Time" : "Volume"} value={b} onChange={setB} />
       <p className="font-medium">{line}</p>
     </div>
+  );
+}
+
+/** Menu's QR code: it encodes a link the person already has. Nothing is hosted or checked. */
+function QrSection({ section, link, onLink }: { section: QrSpec; link: string; onLink: (link: string) => void }) {
+  const ref = useRef<HTMLElement>(null);
+  const [value, setValue] = useState(link || "https://");
+  const [src, setSrc] = useState("");
+  const [error, setError] = useState("");
+  useEffect(() => {
+    if (viewParam() === "qr") ref.current?.scrollIntoView({ block: "start" });
+  }, []);
+  function make() {
+    const trimmed = value.trim();
+    setError("");
+    setSrc("");
+    if (!/^https?:\/\/\S+\.\S+/i.test(trimmed)) {
+      setError("Paste a full link that starts with https://");
+      return;
+    }
+    onLink(trimmed);
+    void import("qrcode")
+      .then((mod) => mod.default.toDataURL(trimmed, { margin: 1, width: 640 }))
+      .then(setSrc)
+      .catch(() => setError("Could not make a code from that."));
+  }
+  return (
+    <section ref={ref} id="qr" className="mt-10 scroll-mt-24 rounded-2xl bg-card p-4 shadow-line" data-qr-section>
+      <h2 className="font-display text-2xl tracking-tight">{section.title}</h2>
+      <p className="mt-2 max-w-2xl text-sm text-pretty text-muted">{section.blurb}</p>
+      <form
+        className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"
+        onSubmit={(event) => {
+          event.preventDefault();
+          make();
+        }}
+      >
+        <label className="min-w-0 flex-1 text-sm">
+          <span className="mb-1 block text-muted">Menu link</span>
+          <input className={fieldClass} inputMode="url" value={value} onChange={(event) => setValue(event.target.value)} />
+        </label>
+        <Button tone="primary" type="submit">
+          Make code
+        </Button>
+      </form>
+      {error ? <p className="mt-3 text-sm text-fail">{error}</p> : null}
+      {src ? (
+        <div className="mt-4 flex flex-wrap items-end gap-4">
+          <img src={src} alt={`QR code for ${value.trim()}`} className="size-56 rounded-2xl bg-paper p-3 shadow-line" />
+          <a href={src} download="menu-qr.png" className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+            Save the image
+          </a>
+        </div>
+      ) : null}
+    </section>
   );
 }
 

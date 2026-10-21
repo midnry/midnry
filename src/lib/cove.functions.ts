@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
-import { getApp } from "@/lib/catalog";
+import { docTier } from "@/lib/merged-docs";
 import { readAccount } from "@/lib/account.server";
 import { readIsAdmin } from "@/lib/community.functions";
 import type { AccountState } from "@/lib/access";
@@ -15,9 +15,9 @@ async function gate(
   userId: string,
   slug: string,
 ): Promise<{ ok: true } | { ok: false; error: "locked" }> {
-  const app = getApp(slug);
-  if (!app) throw new Error("Unknown app");
-  if (app.tier === "free") return { ok: true };
+  const tier = docTier(slug);
+  if (!tier) throw new Error("Unknown app");
+  if (tier === "free") return { ok: true };
   if (await readIsAdmin(userId)) return { ok: true };
   const account = await readAccount(userId);
   if (!account.hasPass) return { ok: false, error: "locked" };
@@ -32,7 +32,7 @@ export const getAccount = createServerFn({ method: "GET" })
 
 export const loadDoc = createServerFn({ method: "GET" })
   .validator((slug: string) => {
-    if (typeof slug !== "string" || !getApp(slug)) throw new Error("Unknown app");
+    if (typeof slug !== "string" || !docTier(slug)) throw new Error("Unknown app");
     return slug;
   })
   .middleware([authMiddleware])
@@ -61,7 +61,7 @@ export const saveDoc = createServerFn({ method: "POST" })
     if (!input || typeof input.slug !== "string" || typeof input.payload !== "string") {
       throw new Error("Invalid document");
     }
-    if (!getApp(input.slug)) throw new Error("Unknown app");
+    if (!docTier(input.slug)) throw new Error("Unknown app");
     if (input.payload.length > HARD_LIMIT) throw new Error("Document is too large");
     const base = input.baseRevision;
     if (base !== undefined && (typeof base !== "number" || !Number.isInteger(base) || base < 0)) {

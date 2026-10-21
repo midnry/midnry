@@ -93,7 +93,8 @@ async function open(options = {}) {
   await more.locator("summary").click();
   assert.equal(await more.evaluate((el) => el.open), false);
   await panel.getByRole("button", { name: "Dentist on Friday at 10am" }).click();
-  await task.locator("[data-demo-when]").getByText("Friday, 10am").waitFor({ timeout: 5000 });
+  // On a Thursday the next Friday is "Tomorrow".
+  await task.locator("[data-demo-when]").getByText(/^(Friday|Tomorrow), 10am$/).waitFor({ timeout: 5000 });
   assert.equal(await input.inputValue(), "Dentist on Friday at 10am");
   ok("example button types the example in");
 

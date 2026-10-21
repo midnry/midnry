@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useAppDoc } from "@/components/use-app-doc";
 import { Button } from "@/components/ui";
-import { ToolFrame, ToolStatus } from "@/components/tools/shared";
+import { SaveMark, ToolStatus } from "@/components/tools/shared";
 
 const FOCUS_SEC = 25 * 60;
 const BREAK_SEC = 5 * 60;
@@ -14,7 +14,12 @@ type PulseDoc = {
   running: boolean;
   startedAt: number | null;
   rounds: number;
+  /** The Remind task this round is for, if it was started from one. */
+  label?: string;
 };
+
+/** A request from Remind to focus on one task. `at` makes each tap a new request. */
+export type FocusIntent = { title: string; at: number };
 
 const FALLBACK: PulseDoc = {
   mode: "focus",
@@ -38,6 +43,7 @@ function asPulse(value: PulseDoc): PulseDoc {
     running: value.running === true && typeof value.startedAt === "number",
     startedAt: typeof value.startedAt === "number" ? value.startedAt : null,
     rounds: Number.isFinite(rounds) ? Math.max(0, Math.floor(rounds)) : 0,
+    label: typeof value.label === "string" ? value.label.slice(0, 200) : "",
   };
 }
 
@@ -78,7 +84,11 @@ function chime() {
   }
 }
 
-export function PulseTool() {
+/**
+ * Remind's Focus view (a Pass feature), formerly the Pulse app. It keeps the
+ * "pulse" document, so a running round and the finished count carry over.
+ */
+export function FocusPanel({ intent }: { intent?: FocusIntent | null }) {
   const { data, setData, ready, loadError, blocked, saveState } = useAppDoc("pulse", FALLBACK);
   const pulse = asPulse(data);
   const pulseRef = useRef(pulse);
@@ -113,17 +123,18 @@ export function PulseTool() {
       running: false,
       startedAt: null,
       rounds: current.rounds + (finishedFocus ? 1 : 0),
+      label: current.label,
     });
   }, [ready, pulse.running, pulse.startedAt, pulse.secondsLeft, left, setData]);
 
   useEffect(() => {
     if (!pulse.running) return;
     const before = document.title;
-    document.title = `${clock(left)} · ${pulse.mode === "focus" ? "Focus" : "Break"}`;
+    document.title = `${clock(left)} · ${pulse.mode === "focus" ? (pulse.label ? `Focus: ${pulse.label}` : "Focus") : "Break"}`;
     return () => {
       document.title = before;
     };
-  }, [left, pulse.running, pulse.mode]);
+  }, [left, pulse.running, pulse.mode, pulse.label]);
 
   const total = duration(pulse.mode);
   const scale = total === 0 ? 0 : left / total;
@@ -159,6 +170,19 @@ export function PulseTool() {
     });
   }
 
+  // "Focus" on a Remind task: start a fresh focus round for it, or relabel the one running.
+  const handled = useRef(0);
+  useEffect(() => {
+    if (!ready || blocked || loadError || !intent || handled.current === intent.at) return;
+    handled.current = intent.at;
+    const current = asPulse(pulseRef.current);
+    if (current.running && current.mode === "focus") {
+      setData({ ...current, label: intent.title });
+      return;
+    }
+    setData({ ...current, mode: "focus", secondsLeft: FOCUS_SEC, running: true, startedAt: Date.now(), label: intent.title });
+  }, [ready, blocked, loadError, intent, setData]);
+
   function skip() {
     const current = asPulse(pulseRef.current);
     const mode: PulseMode = current.mode === "focus" ? "break" : "focus";
@@ -172,10 +196,26 @@ export function PulseTool() {
   }
 
   return (
-    <ToolFrame slug="pulse" saveState={saveState}>
+    <div className="mt-4" data-remind-panel="focus">
       <ToolStatus ready={ready} loadError={loadError} blocked={blocked}>
-        <div className="max-w-md">
-          <p className="text-sm text-pine">{pulse.mode === "focus" ? "Focus · 25 minutes" : "Break · 5 minutes"}</p>
+        <div className="max-w-md rounded-3xl bg-card p-5 shadow-line sm:p-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-sm text-pine">{pulse.mode === "focus" ? "Focus · 25 minutes" : "Break · 5 minutes"}</p>
+            <SaveMark state={saveState} />
+          </div>
+          {pulse.label ? (
+            <p className="mt-2 flex flex-wrap items-baseline gap-x-2 text-pretty" data-focus-task>
+              <span className="text-sm text-muted">For</span>
+              <span className="min-w-0 break-words font-medium">{pulse.label}</span>
+              <button
+                type="button"
+                className="min-h-9 text-xs text-muted underline underline-offset-2 hover:text-ink"
+                onClick={() => setData({ ...asPulse(pulseRef.current), label: "" })}
+              >
+                Clear
+              </button>
+            </p>
+          ) : null}
           <p className="mt-3 font-display text-7xl tabular-nums tracking-tight sm:text-8xl">{clock(left)}</p>
           <div className="mt-6 h-1.5 overflow-hidden rounded-full bg-paper-2" aria-hidden>
             <div className="timer-bar h-full origin-left bg-pine" style={{ transform: `scaleX(${scale})` }} />
@@ -202,6 +242,6 @@ export function PulseTool() {
           </div>
         </div>
       </ToolStatus>
-    </ToolFrame>
+    </div>
   );
 }

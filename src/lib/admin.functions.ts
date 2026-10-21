@@ -3,6 +3,7 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
 import { getApp } from "@/lib/catalog";
 import { readIsAdmin } from "@/lib/community.functions";
+import { mergedDoc } from "@/lib/merged-docs";
 
 /** Slugs counted in usage that are not desk apps. */
 const EXTRA_SLUGS: Record<string, string> = { "abuja-hustle": "Abuja Hustle (game)" };
@@ -57,7 +58,7 @@ function signInLabel(providers: string | null): string {
 }
 
 function appName(slug: string): string {
-  return getApp(slug)?.name ?? EXTRA_SLUGS[slug] ?? slug;
+  return getApp(slug)?.name ?? EXTRA_SLUGS[slug] ?? mergedDoc(slug)?.name ?? slug;
 }
 
 function iso(value: unknown): string {

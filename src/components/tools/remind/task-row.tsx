@@ -30,6 +30,8 @@ export type RowActions = {
   upload: (item: Item, file: File) => Promise<void>;
   download: (file: FileMeta) => void;
   removeFile: (file: FileMeta) => void;
+  /** Start a Focus round for this task. Only set with Midnry Pass. */
+  focus?: (item: Item) => void;
 };
 
 function Check({ item, onToggle }: { item: Item; onToggle: () => void }) {
@@ -417,6 +419,11 @@ function Detail({ item, kids, ctx, actions, onClose }: { item: Item; kids: Item[
         <Button tone="quiet" onClick={onClose}>
           Close
         </Button>
+        {actions.focus && !item.done ? (
+          <Button tone="quiet" onClick={() => actions.focus?.(item)}>
+            Focus for 25 min
+          </Button>
+        ) : null}
         {confirmDelete ? (
           <>
             <Button tone="primary" className="bg-fail" onClick={() => actions.remove(item)}>

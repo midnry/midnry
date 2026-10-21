@@ -2,7 +2,7 @@ import { useState } from "react";
 import { addDays, format, startOfWeek } from "date-fns";
 import { useAppDoc } from "@/components/use-app-doc";
 import { Button, cn, TextInput } from "@/components/ui";
-import { nid, todayISO, ToolFrame, ToolStatus } from "@/components/tools/shared";
+import { nid, SaveMark, todayISO, ToolStatus } from "@/components/tools/shared";
 
 type Habit = { id: string; name: string; done: string[] };
 type HabitsDoc = { habits: Habit[] };
@@ -44,7 +44,8 @@ function weekStart(date: Date): Date {
   return startOfWeek(date, { weekStartsOn: 1 });
 }
 
-export function HabitsTool() {
+/** Remind's Habits view (a Pass feature), formerly the Habits app. It keeps the "habits" document. */
+export function HabitsPanel() {
   const { data, setData, ready, loadError, blocked, saveState } = useAppDoc("habits", FALLBACK);
   const habits = asHabits(data.habits);
   const [name, setName] = useState("");
@@ -58,12 +59,15 @@ export function HabitsTool() {
   }
 
   return (
-    <ToolFrame slug="habits" saveState={saveState}>
+    <div className="mt-4" data-remind-panel="habits">
       <ToolStatus ready={ready} loadError={loadError} blocked={blocked}>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="font-medium">
-            {format(days[0], "MMM d")} – {format(days[6], "MMM d")}
-          </p>
+          <div>
+            <p className="font-medium">
+              {format(days[0], "MMM d")} – {format(days[6], "MMM d")}
+            </p>
+            <SaveMark state={saveState} />
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button tone="quiet" onClick={() => setCursor((date) => addDays(date, -7))}>
               Previous
@@ -190,6 +194,56 @@ export function HabitsTool() {
         </form>
         <p className="mt-2 text-sm text-muted">{habits.length} of 8</p>
       </ToolStatus>
-    </ToolFrame>
+    </div>
+  );
+}
+
+/**
+ * Today's habits, shown next to Remind's Today view: one tap ticks today.
+ * Nothing shows until there is at least one habit.
+ */
+export function TodayHabits({ onOpen }: { onOpen: () => void }) {
+  const { data, setData, ready, loadError, blocked } = useAppDoc("habits", FALLBACK);
+  const habits = asHabits(data.habits);
+  const today = todayISO();
+  if (!ready || loadError || blocked || habits.length === 0) return null;
+  const doneCount = habits.filter((habit) => habit.done.includes(today)).length;
+  return (
+    <section className="mt-4 rounded-2xl bg-card p-4 shadow-line" aria-label="Today's habits" data-today-habits>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-medium">
+          Today's habits <span className="text-muted">· {doneCount} of {habits.length}</span>
+        </h3>
+        <button type="button" onClick={onOpen} className="min-h-9 text-sm text-muted underline underline-offset-2 hover:text-ink">
+          Open Habits
+        </button>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {habits.map((habit) => {
+          const on = habit.done.includes(today);
+          return (
+            <button
+              key={habit.id}
+              type="button"
+              aria-pressed={on}
+              onClick={() =>
+                setData({
+                  habits: habits.map((item) =>
+                    item.id !== habit.id ? item : { ...item, done: on ? item.done.filter((day) => day !== today) : [...item.done, today] },
+                  ),
+                })
+              }
+              className={cn(
+                "inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border px-3 text-sm",
+                on ? "border-pine bg-pine text-paper" : "border-line bg-paper text-ink hover:border-pine",
+              )}
+            >
+              <span aria-hidden>{on ? "✓" : "○"}</span>
+              <span className="min-w-0 truncate">{habit.name || "Habit"}</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }

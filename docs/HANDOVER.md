@@ -662,7 +662,7 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
 
 ## Website redesign (owner brief, 2026-10-21, not deployed yet)
 
-- One source for access wording: `src/lib/plans.ts` (77 free / 11 Pass, $5 USD monthly via Paystack,
+- One source for access wording: `src/lib/plans.ts` (free and Pass counts derived from the catalogue, never written by hand; $5 USD monthly via Paystack,
   cancel keeps access to the period end; test `scripts/site-plans.test.mjs`) and `src/lib/goals.ts`.
 - Homepage (`src/routes/index.tsx`, `src/components/home-*.tsx`): one large sample-data demo with
   tabs for Remind (real `parseTask`), Invoice and Ledger (`src/components/demos/`), Start here, browse
@@ -711,3 +711,16 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   0023), flush on hide/close, retry with backoff, "changed in another tab" conflict state.
   Rollback: old code ignores the `revision` column.
 - Tests: scripts/apps-phase1.test.mjs, app-docs.test.mjs, apply-pdf.test.mjs; QA scripts/qa/apps-phase1.mjs.
+
+## App merges + Invoice workflow (owner, 2026-10-22, not deployed yet)
+
+- Rule: a merge that includes a Pass app is Pass; all-free stays free. Exception approved: Remind stays
+  free and gains Board, Focus (Pulse) and Habits as Pass views (`src/lib/remind/pass-views.ts`).
+- Ledger (Pass) gains Budget and Pocket views; free users keep a read-only view + CSV of their old
+  Budget/Pocket data. Free JSON stays simple; Glyph (Pass) adds tree, path, minify, sort, download.
+- Free merges: Agreement (+Terms), Catalog (+Prices), Farm sales (+Crop prices), Menu (+QR code).
+- Invoice (free): many invoices, quotes, proposals, saved clients, numbering, paid/overdue
+  (`src/lib/client-work.ts`); Quote and Proposal merged in, old docs copied on first open.
+- Old slugs: redirects in `src/lib/app-aliases.ts`; their saved documents stay readable via
+  `src/lib/merged-docs.ts` (tier of the OLD app) — never remove entries there while data may exist.
+- Tests: scripts/{remind-merge,merges,invoice-workflow}.test.mjs; QA scripts/qa/{remind-merge,merges,invoice-workflow}.mjs.

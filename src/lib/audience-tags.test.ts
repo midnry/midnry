@@ -4,7 +4,7 @@ import { KITS } from "./kits.ts";
 import { GENERAL_APPS, TAG_OVERRIDES } from "./audience-tags.ts";
 import { defaultTagOf, isTag, parseTags } from "./sections.ts";
 
-const BUILT_IN = ["scratch", "pulse", "split", "ledger", "board", "invoice", "glyph", "habits", "contrast", "compressor", "planner", "apply", "tasks", "cycle"];
+const BUILT_IN = ["scratch","split", "ledger", "invoice", "glyph", "contrast", "compressor", "planner", "apply", "tasks", "cycle"];
 const SLUGS = new Set([...BUILT_IN, ...KITS.map((kit) => kit.slug)]);
 
 test("every override names a real app and real tags", () => {
@@ -32,6 +32,21 @@ test("Remind is found under Everyday, Professionals and Students, not only Devel
   assert.ok(GENERAL_APPS.has("tasks"));
   for (const tag of ["everyday", "professionals", "students"] as const) {
     assert.ok(TAG_OVERRIDES.tasks.includes(tag), `Remind is missing ${tag}`);
+  }
+});
+
+test("Quote and Proposal live inside Invoice, which keeps the business and professional tags", () => {
+  for (const slug of ["quote", "proposal"]) {
+    assert.ok(!SLUGS.has(slug), `${slug} is still a separate app`);
+    assert.equal(TAG_OVERRIDES[slug], undefined, `${slug} still has its own tags`);
+  }
+  assert.deepEqual(TAG_OVERRIDES.invoice, ["business", "professionals"]);
+});
+
+test("apps merged into another app carry no tags of their own", () => {
+  for (const slug of ["budget", "pocket", "client-terms", "price-list", "produce", "qr-menu"]) {
+    assert.ok(!SLUGS.has(slug), `${slug} should have left the catalogue`);
+    assert.equal(TAG_OVERRIDES[slug], undefined, `${slug} still has tags`);
   }
 });
 

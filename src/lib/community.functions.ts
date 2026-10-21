@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getApp, isGenre, type GenreId } from "@/lib/catalog";
+import { aliasOf } from "@/lib/app-aliases";
 import { passIsOpen } from "@/lib/access";
 import { cleanTags, defaultTagOf, parseTags, type TagId } from "@/lib/sections";
 import { MAX_APPS_PER_OWNER, MAX_HTML_CHARS } from "@/lib/revenue";
@@ -170,7 +171,8 @@ async function uniqueSlug(name: string): Promise<string> {
   const sql = await getSql();
   let candidate = slugBase(name);
   for (let attempt = 0; attempt < 6; attempt += 1) {
-    const takenCatalog = Boolean(getApp(candidate));
+    // An old link of a merged app redirects, so its slug stays taken.
+    const takenCatalog = Boolean(getApp(candidate) || aliasOf(candidate));
     const taken = await sql<{ slug: string }>`select slug from submissions where slug = ${candidate}`;
     if (!takenCatalog && !taken[0]) return candidate;
     candidate = `${slugBase(name)}-${Math.random().toString(36).slice(2, 6)}`;

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getApp, isGenre, type GenreId } from "@/lib/catalog";
+import { aliasOf, aliasesTo } from "@/lib/app-aliases";
 
 export type SpotApp = {
   slug: string;
@@ -21,7 +22,8 @@ function asSlug(value: unknown): string {
 }
 
 async function resolveApp(slug: string): Promise<SpotApp | null> {
-  const built = getApp(slug);
+  // A merged app's old slug (saved, or counted in usage) stands for the app that holds it now.
+  const built = getApp(aliasOf(slug)?.to ?? slug);
   if (built) {
     return {
       slug: built.slug,
@@ -68,9 +70,12 @@ export const listTrending = createServerFn({ method: "GET" }).handler(async (): 
     const uses = Number(row.uses);
     if (!Number.isFinite(uses) || uses < 1) continue;
     const app = await resolveApp(row.slug);
-    if (app) apps.push({ ...app, uses });
+    if (!app) continue;
+    const same = apps.find((entry) => entry.slug === app.slug);
+    if (same) same.uses += uses;
+    else apps.push({ ...app, uses });
   }
-  return apps;
+  return apps.sort((a, b) => b.uses - a.uses);
 });
 
 export const listFavorites = createServerFn({ method: "GET" })
@@ -85,7 +90,7 @@ export const listFavorites = createServerFn({ method: "GET" })
     const apps: SpotApp[] = [];
     for (const row of rows) {
       const app = await resolveApp(row.slug);
-      if (app) apps.push(app);
+      if (app && !apps.some((entry) => entry.slug === app.slug)) apps.push(app);
     }
     return apps;
   });
@@ -97,16 +102,18 @@ export const toggleFavorite = createServerFn({ method: "POST" })
     const app = await resolveApp(slug);
     if (!app) throw new Error("Unknown app");
     const sql = await getSql();
+    // A bookmark kept under a merged app's old slug counts as this app's.
+    const slugs = [app.slug, ...aliasesTo(app.slug)];
     const existing = await sql<{ slug: string }>`
-      select slug from app_favorites where user_id = ${context.userId} and slug = ${slug}
+      select slug from app_favorites where user_id = ${context.userId} and slug = any(${slugs}::text[])
     `;
     if (existing[0]) {
-      await sql`delete from app_favorites where user_id = ${context.userId} and slug = ${slug}`;
+      await sql`delete from app_favorites where user_id = ${context.userId} and slug = any(${slugs}::text[])`;
       return { saved: false, app };
     }
     await sql`
       insert into app_favorites (user_id, slug)
-      values (${context.userId}, ${slug})
+      values (${context.userId}, ${app.slug})
       on conflict do nothing
     `;
     return { saved: true, app };

@@ -28,7 +28,7 @@ export function accessLabel(tier: AppTier): string {
 
 /** Pass-only features inside apps that are otherwise free. */
 export const PASS_FEATURES: Record<string, string> = {
-  tasks: "shared projects, assigning tasks, file attachments and a calendar link",
+  tasks: "shared projects, assigning tasks, file attachments, a calendar link, a Board, a Focus timer and Habits",
 };
 
 /** One sentence that explains the two plans, with real numbers. */

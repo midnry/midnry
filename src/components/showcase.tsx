@@ -124,14 +124,14 @@ const CAPABILITIES: Record<string, Capability[]> = {
     { title: "Stay on top of it", text: "Projects, sub-tasks, priorities and saved filters, with streaks and Midnry Points for what you finish." },
   ],
   invoice: [
-    { title: "Who it is from and who it is for", text: "Your details and your client's, at the top of a clean page." },
     { title: "Line items and tax, added up", text: "Quantities, rates and a tax percent. Subtotal, tax and total are worked out for you, in naira or eight other currencies." },
-    { title: "Ready to send", text: "Print it, or save it as a PDF to send by email or WhatsApp. Then start the next invoice with the number moved on." },
+    { title: "Quote first, then invoice", text: "Price the job as a quote, or start from a short proposal. When the client agrees, turn it into an invoice without retyping." },
+    { title: "Every invoice kept", text: "Numbered in order, saved clients, and draft, sent, paid or overdue at a glance. Print any of them or save it as a PDF." },
   ],
   ledger: [
-    { title: "Log an expense in seconds", text: "An amount, a short description, a category and the date." },
-    { title: "See where the month went", text: "The month's total, a bar for each category, and how much of your budget is left if you set one." },
-    { title: "Keep the record", text: "The log stays with your account, and you can export it as a CSV file." },
+    { title: "Log an expense in seconds", text: "An amount, a short description, a category and the date. Money in too, when you want it." },
+    { title: "Three ways to look at it", text: "The full ledger with a bar for each category, a Budget view of income against costs, and a simple large-type Pocket view." },
+    { title: "Keep the record", text: "The log stays with your account and exports as a CSV file. Used Budget or Pocket before? Copy those entries in with one click." },
   ],
   cycle: [
     { title: "Know what is coming", text: "The date your next period should start, and how many days away it is." },
@@ -142,15 +142,15 @@ const CAPABILITIES: Record<string, Capability[]> = {
 
 /** Tools that go well together. Other apps show three from the same section. */
 const RELATED: Record<string, string[]> = {
-  tasks: ["habits", "board", "pulse"],
-  invoice: ["quote", "proposal", "ledger"],
-  ledger: ["budget", "split", "pocket"],
+  tasks: ["scratch", "split", "cycle"],
+  invoice: ["ledger", "service-terms", "tasks"],
+  ledger: ["split", "bill-watch", "statements"],
   cycle: ["symptom-log", "meds", "visits"],
   apply: ["cold-email", "letters", "tasks"],
 };
 
 /** Apps that keep your work on your account (they save through useAppDoc or Remind's own store). */
-const SAVES = new Set(["tasks", "invoice", "ledger", "cycle", "apply", "board", "contrast", "glyph", "habits", "planner", "pulse", "scratch", "split"]);
+const SAVES = new Set(["tasks", "invoice", "ledger", "cycle", "apply", "contrast", "glyph", "planner", "scratch", "split"]);
 const SAVING_KITS = new Set(["template", "tracker", "write", "mood"]);
 
 function savesToAccount(slug: string): boolean {

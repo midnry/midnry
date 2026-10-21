@@ -41,7 +41,11 @@ export type View =
   | { kind: "settings" }
   | { kind: "project"; id: string }
   | { kind: "label"; name: string }
-  | { kind: "filter"; id: string };
+  | { kind: "filter"; id: string }
+  // Pass views (formerly the Board, Pulse and Habits apps).
+  | { kind: "board" }
+  | { kind: "focus" }
+  | { kind: "habits" };
 
 export const sharedKey = (id: string) => `shared:${id}`;
 

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useAppDoc } from "@/components/use-app-doc";
 import { Button, TextInput } from "@/components/ui";
-import { nid, ToolFrame, ToolStatus } from "@/components/tools/shared";
+import { nid, SaveMark, ToolStatus } from "@/components/tools/shared";
 import { addCard as addTo, asColumns, DEFAULT_COLUMNS, MAX_CARDS_PER_COLUMN, moveCard, type BoardColumn } from "@/lib/board";
 
 type Column = BoardColumn;
@@ -9,7 +9,8 @@ type BoardDoc = { columns: Column[] };
 
 const FALLBACK: BoardDoc = { columns: DEFAULT_COLUMNS };
 
-export function BoardTool() {
+/** Remind's Board view (a Pass feature). It keeps the "board" document Board saved before it moved into Remind. */
+export function BoardPanel() {
   const { data, setData, ready, loadError, blocked, saveState } = useAppDoc("board", FALLBACK);
   const columns = asColumns(data.columns);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -53,8 +54,11 @@ export function BoardTool() {
   }
 
   return (
-    <ToolFrame slug="board" saveState={saveState}>
+    <div className="mt-4" data-remind-panel="board">
       <ToolStatus ready={ready} loadError={loadError} blocked={blocked}>
+        <div className="mb-3">
+          <SaveMark state={saveState} />
+        </div>
         <div className="grid gap-4 md:grid-cols-3">
           {columns.map((column, index) => (
             <section key={column.id} className="rounded-3xl bg-card p-4 shadow-line sm:p-5">
@@ -134,6 +138,6 @@ export function BoardTool() {
           ))}
         </div>
       </ToolStatus>
-    </ToolFrame>
+    </div>
   );
 }
