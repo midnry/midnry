@@ -7,7 +7,6 @@ const EMAIL = "hello@midnry.com";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { name: "robots", content: "noindex" },
       { title: "Privacy — Midnry" },
       { name: "description", content: "What Midnry collects, why, who else handles it, and the choices you have." },
     ],
@@ -57,13 +56,6 @@ function PrivacyPage() {
   return (
     <Shell>
       <article className="max-w-2xl break-words">
-        <p
-          role="note"
-          className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
-        >
-          <strong>Draft — awaiting approval.</strong> This wording is waiting for the owner's approval before this page
-          goes live.
-        </p>
         <h1 className="font-display text-5xl tracking-tight">Privacy</h1>
         <p className="mt-3 text-sm text-muted">Last updated: 21 October 2026</p>
         <p className="mt-5 text-pretty text-muted">
