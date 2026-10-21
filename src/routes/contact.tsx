@@ -68,8 +68,15 @@ function ContactPage() {
 
           <Block title="Your data and your account">
             <p>
-              To ask for a copy of your data, a correction, or to close your account and delete its data, email us from
-              the address on the account. See the{" "}
+              You can delete your account yourself with the Delete account button on the{" "}
+              <Link to="/account" className={inline}>
+                Account
+              </Link>{" "}
+              page, or by emailing us.
+            </p>
+            <p>
+              To ask for a copy of your data or a correction, email us from the address on the account. We'll reply
+              within 30 days, and may need to confirm it's you. See the{" "}
               <Link to="/privacy" className={inline}>
                 Privacy
               </Link>{" "}

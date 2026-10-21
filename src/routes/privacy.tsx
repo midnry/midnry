@@ -15,15 +15,6 @@ export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
 });
 
-/** Something only the owner can supply. Shown highlighted until the draft is approved. */
-function Owner({ children }: { children: ReactNode }) {
-  return (
-    <mark className="rounded bg-amber-100 px-1.5 py-0.5 font-medium text-amber-950 ring-1 ring-amber-300 box-decoration-clone">
-      [Owner to confirm: {children}]
-    </mark>
-  );
-}
-
 const SECTIONS = [
   ["collect", "What we collect"],
   ["why", "Why"],
@@ -70,14 +61,14 @@ function PrivacyPage() {
           role="note"
           className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950"
         >
-          <strong>Draft — awaiting approval.</strong> Highlighted items are for the owner to confirm before this page goes
-          live.
+          <strong>Draft — awaiting approval.</strong> This wording is waiting for the owner's approval before this page
+          goes live.
         </p>
         <h1 className="font-display text-5xl tracking-tight">Privacy</h1>
         <p className="mt-3 text-sm text-muted">Last updated: 21 October 2026</p>
         <p className="mt-5 text-pretty text-muted">
           This page explains what Midnry collects when you use midnry.com, its apps and its games, why, and who else
-          handles it. It describes what the site does today. Midnry is run by <Owner>legal name of the business</Owner>.
+          handles it. It describes what the site does today. Midnry is run by Midnry Ltd (“Midnry”, “we”).
         </p>
 
         <nav aria-label="On this page" className="mt-8 rounded-2xl bg-card p-5 shadow-line">
@@ -199,8 +190,9 @@ function PrivacyPage() {
                 <li>
                   Nearby voice is optional. Joining voice only listens. Your microphone stays off until you turn it on,
                   and it only sends while you hold the talk button. Voice goes directly between players' browsers where
-                  possible, or else through Midnry's server. It isn't recorded or stored. A direct connection can show
-                  your IP address to the players you talk with, and a Google server helps set it up.
+                  possible. If players can't connect directly, it may pass through a relay server operated for Midnry.
+                  It's never recorded or stored. A direct connection can show your IP address to the players you talk
+                  with, and a Google server helps set it up.
                 </li>
                 <li>
                   Daily case leaderboard: the name you choose and your score are public. You're identified by a random
@@ -261,7 +253,8 @@ function PrivacyPage() {
           <Section id="processors">
             <List>
               <li>
-                <strong>Render</strong> hosts the website and its database. <Owner>hosting region (the site's setup file names Oregon, USA)</Owner>
+                <strong>Render</strong> hosts the website and its database, in Oregon, USA. This means your data may be
+                processed outside your country.
               </li>
               <li>
                 <strong>Paystack</strong> takes payments for the pass and for store items.
@@ -283,7 +276,8 @@ function PrivacyPage() {
                 with.
               </li>
               <li>
-                Voice relay: <Owner>whether a voice relay (TURN) service is switched on, and which company runs it</Owner>
+                <strong>Voice relay.</strong> If Outpost Zero players can't connect directly, voice may pass through a relay
+                server operated for Midnry. Voice is never recorded.
               </li>
               <li>
                 <strong>Other people, where you choose.</strong> Players in your Outpost Zero room. People in a shared
@@ -291,9 +285,11 @@ function PrivacyPage() {
                 and the Hall of Fame.
               </li>
             </List>
+            <p>Each of these services handles data under its own privacy policy.</p>
             <p>
-              Each of these services handles data under its own privacy policy.{" "}
-              <Owner>when Midnry would share data with authorities, for example when the law requires it</Owner>
+              We share personal data with police, regulators or courts only when the law requires it (for example a valid
+              court order), or when it's needed to prevent fraud or protect someone's safety. We share only what is
+              required and, where the law allows, tell the person first. We never sell personal data.
             </p>
           </Section>
 
@@ -305,13 +301,19 @@ function PrivacyPage() {
               </li>
               <li>Sign-in sessions: about 7 days, renewed while you keep using the site.</li>
               <li>Outpost Zero online rooms: about 20 minutes after the last activity.</li>
-              <li>Records of which Remind emails were sent: 40 days.</li>
+              <li>Records of which Remind emails were sent: 40 days, then deleted.</li>
               <li>
-                Usage counts, match stats, payment records, leaderboards, Hall of Fame entries, feedback and play counts
-                aren't deleted automatically today. <Owner>how long these are kept</Owner>
+                Usage counts, Outpost Zero match stats and daily leaderboards, Abuja Hustle play counts, AI writing
+                counters and game feedback: deleted automatically after 90 days.
               </li>
               <li>
-                After an account is closed: <Owner>how long data is kept after an account is closed, including any backups</Owner>
+                Payment records for the pass and the store: 6 years, for tax and accounting. Your name and email are
+                removed from them after your account is deleted.
+              </li>
+              <li>Everything else: while your account is open.</li>
+              <li>
+                After an account is closed, its data is kept for 30 days, so it can be restored if it was closed by
+                mistake. Then it's permanently deleted, including from backups as they cycle.
               </li>
             </List>
           </Section>
@@ -346,34 +348,53 @@ function PrivacyPage() {
               <li>Delete things inside apps, such as a period and its notes in Cycle, or a saved life in Abuja Hustle.</li>
               <li>Keep your microphone off in Outpost Zero. Voice is off until you turn it on.</li>
               <li>
-                Ask for a copy of your data, a correction, or deletion of your account and its data by emailing{" "}
+                Delete your account yourself with the Delete account button on the{" "}
+                <Link to="/account" className={inline}>
+                  Account
+                </Link>{" "}
+                page, or by emailing{" "}
+                <a href={`mailto:${EMAIL}`} className={inline}>
+                  {EMAIL}
+                </a>
+                .
+              </li>
+              <li>
+                Ask for a copy of your data, or a correction, by emailing{" "}
                 <a href={`mailto:${EMAIL}`} className={inline}>
                   {EMAIL}
                 </a>{" "}
-                from the address on your account. There's no delete-account button yet.{" "}
-                <Owner>that Midnry will act on these requests, and how</Owner>
+                from the address on your account. We'll reply within 30 days, and may need to confirm it's you.
               </li>
             </List>
           </Section>
 
           <Section id="children">
-            <p>Abuja Hustle is for adults 18 and over, and asks your age before you play.</p>
+            <List>
+              <li>You must be at least 13 to use Midnry. Midnry doesn't check ages when you create an account.</li>
+              <li>
+                If you're under 18, you need a parent's or guardian's permission. Midnry Pass and store purchases need
+                someone 18 or over, so a parent or guardian should make any payments.
+              </li>
+              <li>Abuja Hustle is for adults 18 and over, and asks your age before you play.</li>
+            </List>
             <p>
-              Midnry doesn't check ages when you create an account. <Owner>minimum age to use Midnry</Owner>
-            </p>
-            <p>
-              If you think a child has given Midnry personal information, email{" "}
+              If we learn we hold personal information from a child under 13, we delete it and close the account.
+              Parents can contact{" "}
               <a href={`mailto:${EMAIL}`} className={inline}>
                 {EMAIL}
               </a>
-              . <Owner>what Midnry does then, for example deleting it</Owner>
+              .
             </p>
           </Section>
 
           <Section id="changes">
             <p>
-              When what Midnry collects changes, this page is updated and the date at the top changes.{" "}
-              <Owner>whether account holders are also emailed about big changes</Owner>
+              When what Midnry collects changes, this page is updated and the date at the top changes.
+            </p>
+            <p>
+              We email account holders about important changes at least 30 days before they take effect, or straight
+              away if the law or security requires it. If you keep using Midnry after that, you accept the changes. If
+              you don't agree, you can close your account.
             </p>
           </Section>
 
