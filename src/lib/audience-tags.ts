@@ -10,7 +10,7 @@ export const TAG_OVERRIDES: Record<string, readonly TagId[]> = {
   habits: ["students", "everyday"],
   split: ["everyday"],
   ledger: ["business", "professionals", "everyday"],
-  board: ["professionals", "students"],
+  board: ["professionals", "students", "everyday"],
   invoice: ["business", "professionals"],
   planner: ["business", "professionals"],
   apply: ["professionals", "students"],
@@ -31,6 +31,25 @@ export const TAG_OVERRIDES: Record<string, readonly TagId[]> = {
   "client-terms": ["business", "professionals"],
   digest: ["professionals", "students"],
 };
+
+/**
+ * Built-in apps that help anyone and do not belong to one subject. Their
+ * catalogue genre is only where they were first filed (Remind under
+ * Developers, Cycle under Medicine & Nursing, Split under Accountants), so
+ * browsing lists them by their tags instead of under that one subject, and
+ * never labels them with it.
+ */
+export const GENERAL_APPS: ReadonlySet<string> = new Set([
+  "tasks",
+  "scratch",
+  "pulse",
+  "board",
+  "habits",
+  "split",
+  "ledger",
+  "cycle",
+  "apply",
+]);
 
 // Sub-filters for later (e.g. "law", "retail", "teachers"). Empty for now.
 export const FIELD_TAGS: Record<string, readonly string[]> = {};

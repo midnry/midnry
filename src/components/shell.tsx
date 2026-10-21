@@ -3,79 +3,67 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { UserButton } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { APP_NAME } from "@/lib/catalog";
+import { FREE_APPS } from "@/lib/plans";
+import { PASS_PRICE_LABEL } from "@/lib/access";
 import { useRole } from "@/components/role";
 import { cn } from "@/components/ui";
 import { TagLink } from "@/components/desk-list";
 import { TAGS } from "@/lib/sections";
 
-function BrowseMenu({ active }: { active: boolean }) {
-  const menu = useRef<HTMLDetailsElement>(null);
-  const close = () => {
-    if (menu.current) menu.current.open = false;
-  };
-  return (
-    <details ref={menu} className="group relative">
-      <summary className={cn(navClass(active), "cursor-pointer list-none gap-1 [&::-webkit-details-marker]:hidden")}>
-        Browse
-        <svg aria-hidden viewBox="0 0 20 20" className="size-4 transition-transform group-open:rotate-180" fill="none">
-          <path d="M5 8l5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </summary>
-      <div className="absolute left-0 z-20 mt-1 w-56 rounded-2xl bg-card p-2 shadow-line">
-        <p className="px-3 pb-1 pt-2 text-xs font-medium text-muted">By audience</p>
-        {TAGS.map((tag) => (
-          <TagLink
-            key={tag.id}
-            tag={tag.id}
-            onClick={close}
-            className="flex min-h-11 items-center rounded-xl px-3 text-sm hover:bg-paper"
-          >
-            {tag.label}
-          </TagLink>
-        ))}
-        <div className="my-1 h-px bg-line" />
-        <Link to="/apps" onClick={close} className="flex min-h-11 items-center rounded-xl px-3 text-sm text-muted hover:bg-paper">
-          Browse by subject
-        </Link>
-      </div>
-    </details>
-  );
-}
+type NavLink = { to: string; label: string };
 
 function navClass(on: boolean) {
   return cn(
-    "inline-flex min-h-11 items-center text-sm",
+    "inline-flex min-h-11 items-center rounded-md px-1 text-sm",
     on ? "font-medium text-ink" : "text-muted hover:text-ink",
   );
+}
+
+/** Whether a nav link is the current page: /apps is on for /apps/<slug> and the browse pages too. */
+function isOn(path: string, to: string): boolean {
+  if (to === "/apps") return path.startsWith("/apps") || path.startsWith("/for/") || path === "/everyday" || path.startsWith("/sections/") || path.startsWith("/audiences/");
+  return path === to || path.startsWith(`${to}/`);
 }
 
 /** The links in the header, for the signed-in person and their role. */
 function useNavLinks() {
   const { user } = useCurrentUserState();
   const { isAdmin } = useRole();
-  const links: { to: string; label: string }[] = [
-    { to: "/apps", label: "Desk" },
+  const main: NavLink[] = [
+    { to: "/apps", label: "Apps" },
+    { to: "/games", label: "Games" },
     { to: "/pricing", label: "Pricing" },
   ];
-  if (user) links.push({ to: "/submit", label: "Add" }, { to: "/earnings", label: "Earnings" }, { to: "/billing", label: "Billing" });
-  if (isAdmin) links.push({ to: "/review", label: "Review" }, { to: "/stats", label: "Stats" });
-  return links;
+  const yours: NavLink[] = [];
+  if (user) yours.push({ to: "/submit", label: "Add an app" }, { to: "/earnings", label: "Earnings" }, { to: "/billing", label: "Billing" });
+  if (isAdmin) yours.push({ to: "/review", label: "Review" }, { to: "/stats", label: "Stats" });
+  return { main, yours };
 }
 
-/** On phones: one menu button that opens every page in a grouped list, like an iOS sheet. */
+/** On phones and tablets: one menu button that opens every page in a grouped list. */
 function MobileMenu({ path }: { path: string }) {
   const [open, setOpen] = useState(false);
   const { user } = useCurrentUserState();
-  const links = useNavLinks();
+  const { main, yours } = useNavLinks();
   const panel = useRef<HTMLDivElement>(null);
-  // Close when the page changes, on Escape, and on a tap outside.
+  const button = useRef<HTMLButtonElement>(null);
+
+  // Close when the page changes.
   useEffect(() => setOpen(false), [path]);
+
+  // While open: Escape closes and returns focus to the button, a tap outside closes,
+  // and focus moves into the menu so keyboard users land on the first link.
   useEffect(() => {
     if (!open) return;
-    const key = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    panel.current?.querySelector<HTMLElement>("a, button")?.focus();
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      button.current?.focus();
+    };
     const tap = (e: PointerEvent) => {
       const el = e.target as Node;
-      if (panel.current && !panel.current.contains(el) && !(el as HTMLElement).closest?.("[data-menu-button]")) setOpen(false);
+      if (panel.current && !panel.current.contains(el) && !button.current?.contains(el)) setOpen(false);
     };
     document.addEventListener("keydown", key);
     document.addEventListener("pointerdown", tap);
@@ -84,13 +72,16 @@ function MobileMenu({ path }: { path: string }) {
       document.removeEventListener("pointerdown", tap);
     };
   }, [open]);
-  const row = "flex min-h-12 items-center justify-between px-4 text-base active:bg-paper-2";
+
+  const row = "flex min-h-12 items-center justify-between px-4 text-base active:bg-paper-2 focus-visible:-outline-offset-2";
+  const group = "divide-y divide-line overflow-hidden rounded-2xl bg-card shadow-line";
+  const title = "px-4 pt-5 pb-2 text-xs font-medium tracking-wide text-muted uppercase";
   return (
     <>
       <button
+        ref={button}
         type="button"
-        data-menu-button
-        className="inline-flex size-11 items-center justify-center rounded-full text-ink active:bg-paper-2"
+        className="inline-flex size-11 items-center justify-center rounded-full text-ink hover:bg-paper-2 active:bg-paper-2"
         aria-expanded={open}
         aria-controls="site-menu"
         aria-label={open ? "Close menu" : "Open menu"}
@@ -100,20 +91,40 @@ function MobileMenu({ path }: { path: string }) {
           {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
         </svg>
       </button>
-      {open ? (
-        <div id="site-menu" ref={panel} className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-b border-line bg-paper px-4 pt-3 pb-6 shadow-lg">
-          <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-card shadow-line">
-            {links.map((l) => (
+      <div
+        id="site-menu"
+        ref={panel}
+        hidden={!open}
+        className="absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-b border-line bg-paper px-4 pt-3 pb-6 shadow-lg"
+      >
+        <nav aria-label="Menu">
+          <ul className={group}>
+            {main.map((l) => (
               <li key={l.to}>
-                <Link to={l.to} className={cn(row, path.startsWith(l.to) && "font-semibold text-pine")}>
+                <Link to={l.to} aria-current={isOn(path, l.to) ? "page" : undefined} className={cn(row, isOn(path, l.to) && "font-semibold text-pine")}>
                   {l.label}
                   <span aria-hidden className="text-muted">›</span>
                 </Link>
               </li>
             ))}
           </ul>
-          <p className="px-4 pt-5 pb-2 text-xs font-medium tracking-wide text-muted uppercase">Browse by audience</p>
-          <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-card shadow-line">
+          {yours.length ? (
+            <>
+              <p className={title}>Your account</p>
+              <ul className={group}>
+                {yours.map((l) => (
+                  <li key={l.to}>
+                    <Link to={l.to} aria-current={isOn(path, l.to) ? "page" : undefined} className={cn(row, isOn(path, l.to) && "font-semibold text-pine")}>
+                      {l.label}
+                      <span aria-hidden className="text-muted">›</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+          <p className={title}>Browse apps by who they’re for</p>
+          <ul className={group}>
             {TAGS.map((tag) => (
               <li key={tag.id}>
                 <TagLink tag={tag.id} className={row}>
@@ -124,46 +135,126 @@ function MobileMenu({ path }: { path: string }) {
             ))}
           </ul>
           {!user ? (
-            <Link to="/login" search={{ next: "/apps", intent: "sign-in" }} className="mt-5 flex min-h-12 items-center justify-center rounded-full bg-card text-base font-medium shadow-line active:bg-paper-2">
-              Sign in
-            </Link>
+            <div className="mt-5 grid gap-2 sm:grid-cols-2">
+              <Link
+                to="/login"
+                search={{ next: "/apps", intent: "register" }}
+                className="flex min-h-12 items-center justify-center rounded-full bg-pine text-base font-medium text-paper active:opacity-80"
+              >
+                Create account
+              </Link>
+              <Link
+                to="/login"
+                search={{ next: "/apps", intent: "sign-in" }}
+                className="flex min-h-12 items-center justify-center rounded-full bg-card text-base font-medium shadow-line active:bg-paper-2"
+              >
+                Sign in
+              </Link>
+            </div>
           ) : null}
-        </div>
-      ) : null}
+        </nav>
+      </div>
     </>
+  );
+}
+
+const footerLink = "inline-flex min-h-11 items-center text-sm text-muted hover:text-ink";
+
+function Footer() {
+  return (
+    <footer className="no-print border-t border-line">
+      <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-x-6 gap-y-8 px-5 py-12 sm:grid-cols-3 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="col-span-2 max-w-sm sm:col-span-3 md:col-span-1">
+          <Link to="/" className="inline-flex min-h-11 items-center gap-2.5">
+            <img src="/logo.png" alt="" width={28} height={28} className="site-logo size-7" />
+            <span className="font-display text-xl leading-none tracking-tight">{APP_NAME}</span>
+          </Link>
+          <p className="mt-2 text-sm text-pretty text-muted">
+            Browser apps for school, work, business and home, plus free games. {FREE_APPS.length} apps are free with an account;
+            Midnry Pass adds the rest for {PASS_PRICE_LABEL} a month.
+          </p>
+        </div>
+        <nav aria-label="Explore">
+          <p className="text-sm font-medium text-ink">Explore</p>
+          <ul className="mt-2">
+            <li>
+              <Link to="/apps" className={footerLink}>Apps</Link>
+            </li>
+            <li>
+              <Link to="/games" className={footerLink}>Games</Link>
+            </li>
+            <li>
+              <Link to="/pricing" className={footerLink}>Pricing</Link>
+            </li>
+          </ul>
+        </nav>
+        <nav aria-label="Midnry">
+          <p className="text-sm font-medium text-ink">Midnry</p>
+          <ul className="mt-2">
+            <li>
+              <Link to="/about" className={footerLink}>About</Link>
+            </li>
+            <li>
+              <Link to="/contact" className={footerLink}>Contact</Link>
+            </li>
+            <li>
+              <Link to="/submit" className={footerLink}>Add your app</Link>
+            </li>
+          </ul>
+        </nav>
+        <nav aria-label="Trust and legal">
+          <p className="text-sm font-medium text-ink">Trust</p>
+          <ul className="mt-2">
+            <li>
+              <Link to="/security" className={footerLink}>Account security</Link>
+            </li>
+            <li>
+              <Link to="/privacy" className={footerLink}>Privacy</Link>
+            </li>
+            <li>
+              <Link to="/terms" className={footerLink}>Terms</Link>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </footer>
   );
 }
 
 export function Shell({ children }: { children: ReactNode }) {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { user, isPending } = useCurrentUserState();
-  const links = useNavLinks();
+  const { main, yours } = useNavLinks();
   const account = isPending ? (
-    <span className="h-8 w-24 animate-pulse rounded-full bg-paper-2" />
+    <span className="h-8 w-24 animate-pulse rounded-full bg-paper-2 motion-reduce:animate-none" />
   ) : user ? (
     <UserButton />
   ) : null;
 
   return (
     <div className="site-shell flex min-h-screen flex-col">
-      {/* A slim, translucent bar that stays at the top, like the navigation bar in Apple's apps. */}
+      <a
+        href="#main"
+        className="sr-only z-50 rounded-full bg-pine px-4 py-2 text-sm font-medium text-paper focus:not-sr-only focus:fixed focus:left-4 focus:top-3"
+      >
+        Skip to content
+      </a>
+      {/* A slim, translucent bar that stays at the top. */}
       <header className="no-print sticky top-0 z-30 border-b border-line bg-paper/80 backdrop-blur-xl backdrop-saturate-150">
         <div className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-1.5 sm:px-5">
-          <Link to="/" className="inline-flex min-h-11 items-center gap-2.5">
+          <Link to="/" className="inline-flex min-h-11 items-center gap-2.5 rounded-md" aria-label={`${APP_NAME} home`}>
             <img src="/logo.png" alt="" width={36} height={36} className="site-logo size-8 sm:size-9" />
             <span className="font-display text-2xl leading-none tracking-tight">{APP_NAME}</span>
           </Link>
           {/* Larger screens: everything in one row. */}
-          <nav className="hidden items-center gap-x-5 lg:flex" aria-label="Main">
-            <Link to="/apps" className={navClass(path.startsWith("/apps"))}>
-              Desk
-            </Link>
-            <BrowseMenu active={path.startsWith("/for/") || path === "/everyday"} />
-            {links.slice(1).map((l) => (
-              <Link key={l.to} to={l.to} className={navClass(path.startsWith(l.to))}>
-                {l.label}
-              </Link>
-            ))}
+          <div className="hidden items-center gap-x-6 lg:flex">
+            <nav className="flex items-center gap-x-5" aria-label="Main">
+              {[...main, ...yours].map((l) => (
+                <Link key={l.to} to={l.to} aria-current={isOn(path, l.to) ? "page" : undefined} className={navClass(isOn(path, l.to))}>
+                  {l.label}
+                </Link>
+              ))}
+            </nav>
             <div className="inline-flex min-h-11 items-center">
               {account ?? (
                 <span className="flex items-center gap-4">
@@ -173,15 +264,15 @@ export function Shell({ children }: { children: ReactNode }) {
                   <Link
                     to="/login"
                     search={{ next: "/apps", intent: "register" }}
-                    className="inline-flex min-h-11 items-center rounded-full bg-pine px-4 text-sm font-medium text-paper active:opacity-80"
+                    className="inline-flex min-h-11 items-center rounded-full bg-pine px-4 text-sm font-medium text-paper hover:opacity-90 active:opacity-80"
                   >
                     Create account
                   </Link>
                 </span>
               )}
             </div>
-          </nav>
-          {/* Phones and small tablets: the main action and a menu. */}
+          </div>
+          {/* Phones and tablets: the main action and a menu. */}
           <div className="flex items-center gap-1 lg:hidden">
             {account ?? (
               <Link
@@ -196,22 +287,10 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="flex-1">
+      <main id="main" tabIndex={-1} className="flex-1 outline-none">
         <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:py-12">{children}</div>
       </main>
-      <footer className="no-print border-t border-line">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 px-5 py-6 text-sm text-muted">
-          <p>Free apps for everyone. Midnry Pass unlocks the rest for $5 a month.</p>
-          <span className="flex gap-2">
-            <Link to="/apps" className="inline-flex min-h-11 items-center px-2 hover:text-ink">
-              Desk
-            </Link>
-            <Link to="/pricing" className="inline-flex min-h-11 items-center px-2 hover:text-ink">
-              Pricing
-            </Link>
-          </span>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

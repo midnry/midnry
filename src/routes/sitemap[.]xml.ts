@@ -5,7 +5,9 @@ import { AUDIENCES, SECTIONS, TAGS } from "@/lib/sections";
 const PAGES = [
   "/",
   "/apps",
+  "/games",
   "/pricing",
+  "/about",
   "/submit",
   ...TAGS.map((tag) => (tag.id === "everyday" ? "/everyday" : `/for/${tag.id}`)),
   ...AUDIENCES.map((audience) => `/audiences/${audience.id}`),

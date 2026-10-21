@@ -1,4 +1,5 @@
 import { KITS } from "@/lib/kits";
+import { PASS_PRICE_LABEL } from "@/lib/access";
 import { FIELD_TAGS, TAG_OVERRIDES } from "@/lib/audience-tags";
 import { GENRES, defaultTagOf, genreLabel, isGenre, type GenreId, type TagId } from "@/lib/sections";
 
@@ -198,17 +199,21 @@ const SOURCES: readonly AppSource[] = [
 
 export const APPS: readonly AppDef[] = SOURCES.map(tagged);
 
+const FREE_COUNT = APPS.filter((app) => app.tier === "free").length;
+const PASS_COUNT = APPS.length - FREE_COUNT;
+
+/** What every account opens, for sentences like "Your account includes …". */
 export function includedNames(): string {
-  return "three apps in every section";
+  return `all ${FREE_COUNT} free apps`;
 }
 
-export const SITE_DESCRIPTION =
-  "Midnry is a desk of web apps for students, professionals, business owners, and seniors. Each section includes three free apps. The rest is $5 a month.";
+export const SITE_DESCRIPTION = `Midnry is a desk of browser apps for school, work, business and home, plus free games. ${FREE_COUNT} apps are free with an account; Midnry Pass adds ${PASS_COUNT} more tools for ${PASS_PRICE_LABEL} a month.`;
 
 export function getApp(slug: string): AppDef | undefined {
   return APPS.find((app) => app.slug === slug);
 }
 
+/** The short access label, for breadcrumbs and tight rows. The long form is accessLabel in plans.ts. */
 export function tierLabel(tier: AppTier): string {
-  return tier === "free" ? "Included" : "Pass";
+  return tier === "free" ? "Free" : "Midnry Pass";
 }

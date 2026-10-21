@@ -659,3 +659,16 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   + game title, pad name labels, ping chip, operator card with level/XP, BOTS/FRIENDS play card with
   room code, copy, "Invite friends" (opens the room sheet: quick match, join by code, roster) and
   START MATCH; phone bottom tab bar. Practice/Exit kept. QA: `node scripts/qa/lobby-look.mjs [width]`.
+
+## Website redesign (owner brief, 2026-10-21, not deployed yet)
+
+- One source for access wording: `src/lib/plans.ts` (77 free / 11 Pass, $5 USD monthly via Paystack,
+  cancel keeps access to the period end; test `scripts/site-plans.test.mjs`) and `src/lib/goals.ts`.
+- Homepage (`src/routes/index.tsx`, `src/components/home-*.tsx`): one large sample-data demo with
+  tabs for Remind (real `parseTask`), Invoice and Ledger (`src/components/demos/`), Start here, browse
+  by goal, Help me choose (/apps#finder), Games by Midnry, Free vs Pass, trust facts.
+- Nav "Apps" (was Desk) + "Games"; new /games, /about, /contact, and DRAFT /privacy + /terms
+  (noindex, yellow owner-to-confirm placeholders; not approved yet). Product pages (`showcase.tsx`)
+  share one structure. Outpost Zero page `/discover/outpost-zero` follows the owner's landing design.
+- QA: `scripts/qa/site-journeys.mjs`, `home-demo.mjs`, `home-shots.mjs`, `outpost-page.mjs`, `site-shots.mjs`.
+- `npm test` fails on this checkout only because the builder `.grok/` folder is absent (platform tests).

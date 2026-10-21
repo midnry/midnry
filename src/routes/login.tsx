@@ -6,7 +6,7 @@ import { RedirectToSignIn } from "@/lib/auth/gates";
 import { captureBearer } from "@/lib/capture-bearer";
 import { Shell } from "@/components/shell";
 import { Button, Field, TextInput } from "@/components/ui";
-import { includedNames } from "@/lib/catalog";
+import { getApp } from "@/lib/catalog";
 import { getSignInOptions } from "@/lib/sign-in-options.functions";
 
 type LoginSearch = { next: string; intent: "register" | "sign-in" };
@@ -166,9 +166,19 @@ function LoginPage() {
             : step === "backup"
               ? "Enter one backup code. Each code works once."
               : mode === "register"
-                ? `${includedNames()} open as soon as the account exists.`
-                : "Welcome back. Included tools are waiting."}
+                ? "Your apps save your work to your account, so it’s there on your phone and your computer. Free apps open as soon as the account exists. No card needed."
+                : "Welcome back. Sign in to pick up where you left off."}
         </p>
+        {step === "credentials" && next.startsWith("/apps/") && next.length > 6 ? (
+          <p className="mt-3 rounded-2xl bg-paper-2 px-4 py-3 text-sm text-pretty text-ink-soft">
+            {mode === "register" ? "Once your account is ready" : "Once you’re signed in"}, we’ll take you straight to{" "}
+            {getApp(next.slice(6).split(/[?#]/)[0])?.name ?? "the app you chose"}.
+          </p>
+        ) : step === "credentials" && next === "/billing" ? (
+          <p className="mt-3 rounded-2xl bg-paper-2 px-4 py-3 text-sm text-pretty text-ink-soft">
+            Next, you’ll go to Billing to start Midnry Pass. You pay on Paystack’s checkout page.
+          </p>
+        ) : null}
 
         {!authEnabled ? (
           <p className="mt-6 text-sm text-muted">Sign-in is disabled.</p>

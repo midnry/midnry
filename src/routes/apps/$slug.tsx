@@ -3,6 +3,7 @@ import { recordUse } from "@/lib/admin.functions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getApp, includedNames, tierLabel } from "@/lib/catalog";
 import { canOpenApp, PASS_PRICE_LABEL } from "@/lib/access";
+import { PASS_LABEL } from "@/lib/plans";
 import { Shell } from "@/components/shell";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
@@ -55,7 +56,7 @@ function AppPage() {
         <div className="no-print flex items-center justify-between gap-4">
           <p className="flex items-center text-sm text-muted">
             <Link to="/apps" className="-ml-1 inline-flex min-h-11 items-center px-1 hover:text-ink">
-              Desk
+              Your desk
             </Link>
             <span aria-hidden className="px-1">/</span>
             <span className={app.tier === "pass" ? "px-1 text-pine" : "px-1"}>{tierLabel(app.tier)}</span>
@@ -99,15 +100,15 @@ function LockedGate({
       <p className="mt-3 text-pretty text-muted">{blurb}</p>
       <AppGuide features={features} guide={guide} />
       <p className="mt-4 text-pretty">
-        Your account includes {includedNames()}. {name} opens with Midnry Pass —{" "}
-        {PASS_PRICE_LABEL} a month, charged to your card.
+        {name} is {PASS_LABEL.toLowerCase()}. Your account already opens {includedNames()}; the Pass adds {name} and the other
+        Pass tools for {PASS_PRICE_LABEL} (US dollars) a month, charged to a card through Paystack. Cancel any time.
       </p>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <Link to="/billing" className={buttonClass({ tone: "primary" })}>
           Start Midnry Pass
         </Link>
         <Link to="/apps" className={buttonClass({ tone: "quiet" })}>
-          Back to the desk
+          Back to your apps
         </Link>
       </div>
     </div>

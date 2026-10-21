@@ -10,18 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as BillingRouteImport } from './routes/billing'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as EarningsRouteImport } from './routes/earnings'
 import { Route as EverydayRouteImport } from './routes/everyday'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StatsRouteImport } from './routes/stats'
 import { Route as SubmitRouteImport } from './routes/submit'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AppsIndexRouteImport } from './routes/apps/index'
 import { Route as AppsSlugRouteImport } from './routes/apps/$slug'
 import { Route as AudiencesAudienceRouteImport } from './routes/audiences/$audience'
@@ -29,6 +33,7 @@ import { Route as DiscoverSlugRouteImport } from './routes/discover/$slug'
 import { Route as DiscoverAbujaHustleRouteImport } from './routes/discover/abuja-hustle'
 import { Route as DiscoverOutpostZeroRouteImport } from './routes/discover/outpost-zero'
 import { Route as ForAudienceRouteImport } from './routes/for/$audience'
+import { Route as GamesIndexRouteImport } from './routes/games/index'
 import { Route as GamesAbujaHustleRouteImport } from './routes/games/abuja-hustle'
 import { Route as GamesOutpostZeroRouteImport } from './routes/games/outpost-zero'
 import { Route as SectionsGenreRouteImport } from './routes/sections/$genre'
@@ -49,6 +54,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AccountRoute = AccountRouteImport.update({
   id: '/account',
   path: '/account',
@@ -57,6 +67,11 @@ const AccountRoute = AccountRouteImport.update({
 const BillingRoute = BillingRouteImport.update({
   id: '/billing',
   path: '/billing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EarningsRoute = EarningsRouteImport.update({
@@ -77,6 +92,11 @@ const LoginRoute = LoginRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReviewRoute = ReviewRouteImport.update({
@@ -107,6 +127,11 @@ const StatsRoute = StatsRouteImport.update({
 const SubmitRoute = SubmitRouteImport.update({
   id: '/submit',
   path: '/submit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppsIndexRoute = AppsIndexRouteImport.update({
@@ -142,6 +167,11 @@ const DiscoverOutpostZeroRoute = DiscoverOutpostZeroRouteImport.update({
 const ForAudienceRoute = ForAudienceRouteImport.update({
   id: '/for/$audience',
   path: '/for/$audience',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GamesIndexRoute = GamesIndexRouteImport.update({
+  id: '/games/',
+  path: '/games/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GamesAbujaHustleRoute = GamesAbujaHustleRouteImport.update({
@@ -219,18 +249,22 @@ const ApiRemindUnsubscribeTokenRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/billing': typeof BillingRoute
+  '/contact': typeof ContactRoute
   '/earnings': typeof EarningsRoute
   '/everyday': typeof EverydayRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/review': typeof ReviewRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/submit': typeof SubmitRoute
+  '/terms': typeof TermsRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
   '/discover/$slug': typeof DiscoverSlugRoute
@@ -241,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/games/outpost-zero': typeof GamesOutpostZeroRoute
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps/': typeof AppsIndexRoute
+  '/games/': typeof GamesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/games/outpost': typeof ApiGamesOutpostRoute
@@ -255,18 +290,22 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/billing': typeof BillingRoute
+  '/contact': typeof ContactRoute
   '/earnings': typeof EarningsRoute
   '/everyday': typeof EverydayRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/review': typeof ReviewRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/submit': typeof SubmitRoute
+  '/terms': typeof TermsRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
   '/discover/$slug': typeof DiscoverSlugRoute
@@ -277,6 +316,7 @@ export interface FileRoutesByTo {
   '/games/outpost-zero': typeof GamesOutpostZeroRoute
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps': typeof AppsIndexRoute
+  '/games': typeof GamesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/games/outpost': typeof ApiGamesOutpostRoute
@@ -292,18 +332,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/billing': typeof BillingRoute
+  '/contact': typeof ContactRoute
   '/earnings': typeof EarningsRoute
   '/everyday': typeof EverydayRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/review': typeof ReviewRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/stats': typeof StatsRoute
   '/submit': typeof SubmitRoute
+  '/terms': typeof TermsRoute
   '/apps/$slug': typeof AppsSlugRoute
   '/audiences/$audience': typeof AudiencesAudienceRoute
   '/discover/$slug': typeof DiscoverSlugRoute
@@ -314,6 +358,7 @@ export interface FileRoutesById {
   '/games/outpost-zero': typeof GamesOutpostZeroRoute
   '/sections/$genre': typeof SectionsGenreRoute
   '/apps/': typeof AppsIndexRoute
+  '/games/': typeof GamesIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/avatar/$id': typeof ApiAvatarIdRoute
   '/api/games/outpost': typeof ApiGamesOutpostRoute
@@ -330,18 +375,22 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/account'
     | '/billing'
+    | '/contact'
     | '/earnings'
     | '/everyday'
     | '/login'
     | '/pricing'
+    | '/privacy'
     | '/review'
     | '/robots.txt'
     | '/security'
     | '/sitemap.xml'
     | '/stats'
     | '/submit'
+    | '/terms'
     | '/apps/$slug'
     | '/audiences/$audience'
     | '/discover/$slug'
@@ -352,6 +401,7 @@ export interface FileRouteTypes {
     | '/games/outpost-zero'
     | '/sections/$genre'
     | '/apps/'
+    | '/games/'
     | '/api/auth/$'
     | '/api/avatar/$id'
     | '/api/games/outpost'
@@ -366,18 +416,22 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/account'
     | '/billing'
+    | '/contact'
     | '/earnings'
     | '/everyday'
     | '/login'
     | '/pricing'
+    | '/privacy'
     | '/review'
     | '/robots.txt'
     | '/security'
     | '/sitemap.xml'
     | '/stats'
     | '/submit'
+    | '/terms'
     | '/apps/$slug'
     | '/audiences/$audience'
     | '/discover/$slug'
@@ -388,6 +442,7 @@ export interface FileRouteTypes {
     | '/games/outpost-zero'
     | '/sections/$genre'
     | '/apps'
+    | '/games'
     | '/api/auth/$'
     | '/api/avatar/$id'
     | '/api/games/outpost'
@@ -402,18 +457,22 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/account'
     | '/billing'
+    | '/contact'
     | '/earnings'
     | '/everyday'
     | '/login'
     | '/pricing'
+    | '/privacy'
     | '/review'
     | '/robots.txt'
     | '/security'
     | '/sitemap.xml'
     | '/stats'
     | '/submit'
+    | '/terms'
     | '/apps/$slug'
     | '/audiences/$audience'
     | '/discover/$slug'
@@ -424,6 +483,7 @@ export interface FileRouteTypes {
     | '/games/outpost-zero'
     | '/sections/$genre'
     | '/apps/'
+    | '/games/'
     | '/api/auth/$'
     | '/api/avatar/$id'
     | '/api/games/outpost'
@@ -439,18 +499,22 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   AccountRoute: typeof AccountRoute
   BillingRoute: typeof BillingRoute
+  ContactRoute: typeof ContactRoute
   EarningsRoute: typeof EarningsRoute
   EverydayRoute: typeof EverydayRoute
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
   ReviewRoute: typeof ReviewRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SecurityRoute: typeof SecurityRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StatsRoute: typeof StatsRoute
   SubmitRoute: typeof SubmitRoute
+  TermsRoute: typeof TermsRoute
   AppsSlugRoute: typeof AppsSlugRoute
   AudiencesAudienceRoute: typeof AudiencesAudienceRoute
   DiscoverSlugRoute: typeof DiscoverSlugRoute
@@ -461,6 +525,7 @@ export interface RootRouteChildren {
   GamesOutpostZeroRoute: typeof GamesOutpostZeroRoute
   SectionsGenreRoute: typeof SectionsGenreRoute
   AppsIndexRoute: typeof AppsIndexRoute
+  GamesIndexRoute: typeof GamesIndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAvatarIdRoute: typeof ApiAvatarIdRoute
   ApiGamesOutpostRoute: typeof ApiGamesOutpostRoute
@@ -483,6 +548,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account': {
       id: '/account'
       path: '/account'
@@ -495,6 +567,13 @@ declare module '@tanstack/react-router' {
       path: '/billing'
       fullPath: '/billing'
       preLoaderRoute: typeof BillingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/earnings': {
@@ -523,6 +602,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/review': {
@@ -565,6 +651,13 @@ declare module '@tanstack/react-router' {
       path: '/submit'
       fullPath: '/submit'
       preLoaderRoute: typeof SubmitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/apps/': {
@@ -614,6 +707,13 @@ declare module '@tanstack/react-router' {
       path: '/for/$audience'
       fullPath: '/for/$audience'
       preLoaderRoute: typeof ForAudienceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/games/': {
+      id: '/games/'
+      path: '/games'
+      fullPath: '/games/'
+      preLoaderRoute: typeof GamesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/games/abuja-hustle': {
@@ -719,18 +819,22 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   AccountRoute: AccountRoute,
   BillingRoute: BillingRoute,
+  ContactRoute: ContactRoute,
   EarningsRoute: EarningsRoute,
   EverydayRoute: EverydayRoute,
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
   ReviewRoute: ReviewRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SecurityRoute: SecurityRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StatsRoute: StatsRoute,
   SubmitRoute: SubmitRoute,
+  TermsRoute: TermsRoute,
   AppsSlugRoute: AppsSlugRoute,
   AudiencesAudienceRoute: AudiencesAudienceRoute,
   DiscoverSlugRoute: DiscoverSlugRoute,
@@ -741,6 +845,7 @@ const rootRouteChildren: RootRouteChildren = {
   GamesOutpostZeroRoute: GamesOutpostZeroRoute,
   SectionsGenreRoute: SectionsGenreRoute,
   AppsIndexRoute: AppsIndexRoute,
+  GamesIndexRoute: GamesIndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAvatarIdRoute: ApiAvatarIdRoute,
   ApiGamesOutpostRoute: ApiGamesOutpostRoute,

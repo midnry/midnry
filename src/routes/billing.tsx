@@ -13,8 +13,8 @@ import {
   resumeRenewal,
   type BillingConfig,
 } from "@/lib/billing.functions";
-import { APPS } from "@/lib/catalog";
 import { PASS_PRICE_LABEL } from "@/lib/access";
+import { BILLING_FACTS, FREE_APPS, PASS_APPS, PASS_FEATURES } from "@/lib/plans";
 import { formatUsd, formatWhen } from "@/lib/format";
 import { Button, Skeleton } from "@/components/ui";
 import { toast } from "sonner";
@@ -116,8 +116,8 @@ function BillingPage() {
   if (!user) return <RedirectToSignIn to="/login" />;
 
   const state = account;
-  const passApps = [...new Set(APPS.filter((app) => app.tier === "pass").map((app) => app.name))];
-  const freeApps = [...new Set(APPS.filter((app) => app.tier === "free").map((app) => app.name))];
+  const passApps = [...new Set(PASS_APPS.map((app) => app.name))];
+  const freeApps = [...new Set(FREE_APPS.map((app) => app.name))];
 
   async function start() {
     setBusy("start");
@@ -205,15 +205,15 @@ function BillingPage() {
               <ul className="mt-6 space-y-3 text-sm">
                 <li className="flex gap-2.5">
                   <Check />
-                  Unlock all {passApps.length} Pass apps
+                  {passApps.length} more tools, Remind’s Pass features, and apps other makers add after review
                 </li>
                 <li className="flex gap-2.5">
                   <Check />
-                  Cancel anytime. Keep access until the month ends.
+                  {BILLING_FACTS[0]}
                 </li>
                 <li className="flex gap-2.5">
                   <Check />
-                  Secure card payment with Paystack
+                  {BILLING_FACTS[1]} {BILLING_FACTS[2]}
                 </li>
               </ul>
               <Button
@@ -299,18 +299,22 @@ function BillingPage() {
 
         <section className="rounded-3xl bg-card p-6 shadow-line sm:p-8">
           <h2 className="font-display text-2xl tracking-tight">What's included</h2>
-          <p className="mt-4 text-sm font-medium">Unlocked with the pass</p>
+          <p className="mt-4 text-sm font-medium">Tools that open with the Pass</p>
           <AppChips names={passApps} />
+          <p className="mt-5 text-sm font-medium">In Remind</p>
+          <p className="mt-1 text-sm text-pretty text-muted">The Pass adds {PASS_FEATURES.tasks}.</p>
+          <p className="mt-5 text-sm font-medium">Apps by other makers</p>
+          <p className="mt-1 text-sm text-pretty text-muted">Every app people add, once it passes review.</p>
           <p className="mt-5 text-sm text-muted">
-            Plus {freeApps.length} free apps for everyone, with or without the pass.{" "}
-            <Link to="/apps" className="text-ink underline underline-offset-4">
-              Browse the desk
+            The {freeApps.length} free apps stay open with or without the Pass.{" "}
+            <Link to="/pricing" className="text-ink underline underline-offset-4">
+              See what each one does
             </Link>
           </p>
         </section>
 
         <Link to="/apps" className="inline-flex min-h-11 items-center text-sm text-muted hover:text-ink">
-          ← Back to the desk
+          ← Back to your apps
         </Link>
       </div>
     </Shell>

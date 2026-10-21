@@ -16,6 +16,25 @@
   --color-line: #d5e2f0;
   --color-pine: #1d4ed8;
   --color-fail: #b42318;
+  /* Positive states: "Free with an account", a finished task. */
+  --color-ok: #166534;
+
+  /* Type scale. Headings use the serif (font-display); sizes grow with the
+     screen so a phone and a laptop keep the same proportions. */
+  --text-hero: clamp(2.75rem, 1.85rem + 3.6vw, 4.75rem);
+  --text-hero--line-height: 1.02;
+  --text-hero--letter-spacing: -0.028em;
+  --text-title: clamp(2rem, 1.55rem + 1.8vw, 3rem);
+  --text-title--line-height: 1.08;
+  --text-title--letter-spacing: -0.022em;
+  --text-heading: clamp(1.375rem, 1.2rem + 0.6vw, 1.75rem);
+  --text-heading--line-height: 1.2;
+  --text-heading--letter-spacing: -0.015em;
+  --text-lede: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  --text-lede--line-height: 1.6;
+
+  /* Motion: short, calm, and only to show what changed. */
+  --ease-calm: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Day modes: light (7am–4pm), evening (4pm–7pm) and dark (7pm–7am, or when the
@@ -30,6 +49,7 @@
 @property --color-line { syntax: "<color>"; inherits: true; initial-value: #d5e2f0; }
 @property --color-pine { syntax: "<color>"; inherits: true; initial-value: #1d4ed8; }
 @property --color-fail { syntax: "<color>"; inherits: true; initial-value: #b42318; }
+@property --color-ok { syntax: "<color>"; inherits: true; initial-value: #166534; }
 @property --mark-a { syntax: "<color>"; inherits: true; initial-value: #3d9bff; }
 @property --mark-b { syntax: "<color>"; inherits: true; initial-value: #1a46e0; }
 @property --shadow-tint { syntax: "<color>"; inherits: true; initial-value: rgba(16, 32, 51, 0.06); }
@@ -44,6 +64,7 @@ html[data-mode="evening"] {
   --color-line: #ead5c0;
   --color-pine: #1d4ed8;
   --color-fail: #b91c1c;
+  --color-ok: #166534;
   --shadow-tint: rgba(60, 30, 10, 0.08);
 }
 
@@ -60,6 +81,7 @@ html[data-mode="dark"] {
   --mark-a: #8cc8ff;
   --mark-b: #5b8cff;
   --color-fail: #e5484d;
+  --color-ok: #6ee7a0;
   --shadow-tint: rgba(255, 255, 255, 0.07);
 }
 
@@ -75,6 +97,7 @@ html.mode-ease {
     --color-line 2s ease,
     --color-pine 2s ease,
     --color-fail 2s ease,
+    --color-ok 2s ease,
     --mark-a 2s ease,
     --mark-b 2s ease,
     --shadow-tint 2s ease;
@@ -159,6 +182,27 @@ html[data-mode="dark"] .site-logo {
       0 2px 4px 0 rgba(16, 32, 51, 0.04);
   }
 
+  /* A small label above a heading: what the section is about, in the accent colour. */
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    line-height: 1.4;
+    text-transform: uppercase;
+    color: var(--color-pine);
+  }
+
+  /* Something new appeared because of what you did (a recognised date, a new total). */
+  .anim-rise {
+    animation: rise 260ms var(--ease-calm) both;
+  }
+
+  /* A soft blue wash behind a value that just changed. */
+  .anim-flash {
+    animation: flash 900ms var(--ease-calm) both;
+  }
+
   .timer-bar {
     width: 100%;
     transform-origin: left center;
@@ -184,6 +228,26 @@ html[data-mode="dark"] .site-logo {
     display: flex;
     gap: 0.75rem;
     padding-right: 0.75rem;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes flash {
+  from {
+    background-color: color-mix(in oklab, var(--color-pine) 16%, transparent);
+  }
+  to {
+    background-color: transparent;
   }
 }
 

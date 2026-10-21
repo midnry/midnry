@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { SECTIONS, genreLabel, isSection, type SectionId } from "@/lib/sections";
-import { APPS } from "@/lib/catalog";
+import { useEffect, useRef, useState } from "react";
+import { Link, useRouterState } from "@tanstack/react-router";
+import { APPS, getApp, type AppDef } from "@/lib/catalog";
+import { accessLabel } from "@/lib/plans";
+import { pitchFor } from "@/lib/pitches";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
-import { Button, TextArea, TextInput, cn } from "@/components/ui";
+import { AppMark } from "@/components/app-mark";
+import { Button, TextArea, buttonClass, cn } from "@/components/ui";
 
 const KEY = "midnry.match";
 
-// What fills someone's days. Several can be true at once, and none of them is an
-// age or a job title. It only decides which ideas are shown first.
+// Question 1: what fills someone's days. Several can be true at once, and none
+// of them is an age or a job title. It only decides which ideas come first.
 type LifeId = "study" | "job" | "self" | "sell" | "care" | "pace" | "seeking" | "other";
 type GroupId = "study" | "work" | "business" | "everyday";
 
@@ -30,46 +32,55 @@ const GROUPS: { id: GroupId; label: string }[] = [
   { id: "everyday", label: "Everyday life" },
 ];
 
-// Each task points at the section whose apps do that job. The first section is
-// the best fit; any others are a good second place to look.
-type Task = { id: string; group: GroupId; label: string; sections: SectionId[] };
+/** Results can point at the games hub as well as at apps. */
+const GAMES = "games";
+
+// Question 2: what they want a hand with. Each task lists the apps that do
+// that job, best fit first. Slugs are checked against the catalogue below.
+type Task = { id: string; group: GroupId; label: string; apps: string[] };
 
 const TASKS: Task[] = [
-  { id: "health-study", group: "study", label: "Health or nursing studies: doses, anatomy, cases", sections: ["medicine"] },
-  { id: "calc", group: "study", label: "Maths, physics, or engineering calculations", sections: ["engineering", "science"] },
-  { id: "lab", group: "study", label: "Lab reports, science formulas, or graphs", sections: ["science"] },
-  { id: "law-study", group: "study", label: "Law cases, citations, or practice questions", sections: ["law"] },
-  { id: "biz-study", group: "study", label: "Business, economics, or accounting coursework", sections: ["accounting"] },
-  { id: "code-learn", group: "study", label: "Understanding code, or finding a bug", sections: ["computing"] },
-  { id: "essay", group: "study", label: "Essays, sources, or summing up long reading", sections: ["arts"] },
-  { id: "focus", group: "study", label: "Staying focused and on top of tasks", sections: ["computing", "developers"] },
+  { id: "health-study", group: "study", label: "Health or nursing studies: doses, anatomy, cases", apps: ["dose", "anatomy", "clinic-quiz"] },
+  { id: "calc", group: "study", label: "Maths, physics, or engineering calculations", apps: ["units", "formula-sheet", "solver", "circuit"] },
+  { id: "lab", group: "study", label: "Lab reports, science formulas, or graphs", apps: ["lab-notes", "solver", "plot"] },
+  { id: "law-study", group: "study", label: "Law cases, citations, or practice questions", apps: ["case-brief", "legal-cite", "law-drill"] },
+  { id: "biz-study", group: "study", label: "Business, economics, or accounting coursework", apps: ["ratios", "statements", "breakeven"] },
+  { id: "code-learn", group: "study", label: "Understanding code, or finding a bug", apps: ["explainer", "bug-scan", "algo"] },
+  { id: "essay", group: "study", label: "Essays, sources, or summing up long reading", apps: ["outliner", "citations", "digest"] },
+  { id: "focus", group: "study", label: "Staying focused and on top of tasks", apps: ["tasks", "pulse", "habits"] },
 
-  { id: "teach", group: "work", label: "Lesson plans, quizzes, or report comments", sections: ["teaching"] },
-  { id: "care-work", group: "work", label: "Patient notes, shifts, or checking a dose", sections: ["clinic"] },
-  { id: "ship-code", group: "work", label: "Writing code: JSON, regex, or a README", sections: ["developers"] },
-  { id: "outreach", group: "work", label: "Emails, ads, proposals, or a year of posts", sections: ["marketing"] },
-  { id: "job-hunt", group: "work", label: "A resume or job applications", sections: ["freelance"] },
-  { id: "accounts", group: "work", label: "Tax, budgets, or reconciling accounts", sections: ["books"] },
-  { id: "legal", group: "work", label: "Contracts, clauses, or formal letters", sections: ["practice"] },
-  { id: "creative", group: "work", label: "Design briefs, colours, or video", sections: ["creatives"] },
+  { id: "organise", group: "work", label: "Reminders, to-dos, and planning my week", apps: ["tasks", "board", "scratch"] },
+  { id: "teach", group: "work", label: "Lesson plans, quizzes, or report comments", apps: ["lesson", "quiz-maker", "remarks"] },
+  { id: "care-work", group: "work", label: "Patient notes, shifts, or checking a dose", apps: ["soap-note", "shifts", "dose-ref"] },
+  { id: "ship-code", group: "work", label: "Writing code: JSON, regex, or a README", apps: ["json-fmt", "regex", "readme", "glyph"] },
+  { id: "outreach", group: "work", label: "Emails, ads, proposals, or a year of posts", apps: ["cold-email", "ad-copy", "proposal", "planner"] },
+  { id: "job-hunt", group: "work", label: "A resume or job applications", apps: ["apply", "letters"] },
+  { id: "accounts", group: "work", label: "Tax, budgets, or reconciling accounts", apps: ["paye", "reconcile", "budget"] },
+  { id: "legal", group: "work", label: "Contracts, clauses, or formal letters", apps: ["contract-scan", "clauses", "letters"] },
+  { id: "creative", group: "work", label: "Design briefs, colours, or video", apps: ["creative-brief", "mood", "contrast", "compressor"] },
 
-  { id: "invoice", group: "business", label: "Invoices, quotes, or client terms", sections: ["freelance", "creatives"] },
-  { id: "stock", group: "business", label: "Stock, prices, and profit", sections: ["retail"] },
-  { id: "food", group: "business", label: "A menu, or what a dish costs to make", sections: ["kitchen"] },
-  { id: "bookings", group: "business", label: "Bookings, a product catalog, or captions", sections: ["beauty"] },
-  { id: "online", group: "business", label: "Online orders, listings, or WhatsApp replies", sections: ["sellers"] },
-  { id: "farm", group: "business", label: "Harvest, crop prices, or farm sales", sections: ["agro"] },
+  { id: "invoice", group: "business", label: "Invoices, quotes, or client terms", apps: ["invoice", "quote", "client-terms", "service-terms"] },
+  { id: "stock", group: "business", label: "Stock, prices, and profit", apps: ["stock", "price-list", "margin"] },
+  { id: "food", group: "business", label: "A menu, or what a dish costs to make", apps: ["menu", "recipe-cost", "qr-menu"] },
+  { id: "bookings", group: "business", label: "Bookings, a product catalog, or captions", apps: ["bookings", "catalog", "captions"] },
+  { id: "online", group: "business", label: "Online orders, listings, or WhatsApp replies", apps: ["orders", "listing", "wa-replies"] },
+  { id: "farm", group: "business", label: "Harvest, crop prices, or farm sales", apps: ["yield", "produce", "farm-sales"] },
+  { id: "spend", group: "business", label: "Knowing where the money goes", apps: ["ledger", "statements", "margin"] },
 
-  { id: "health", group: "everyday", label: "Medicines, appointments, or how I have been feeling", sections: ["elder-health"] },
-  { id: "period", group: "everyday", label: "Tracking my period", sections: ["medicine"] },
-  { id: "habits", group: "everyday", label: "Building daily habits", sections: ["elder-health"] },
-  { id: "scam", group: "everyday", label: "Checking whether a message is a scam", sections: ["safety"] },
-  { id: "family", group: "everyday", label: "Staying in touch: voice notes, photos, or calls", sections: ["family"] },
-  { id: "money", group: "everyday", label: "Household money: bills, savings, or splitting costs", sections: ["elder-money", "books"] },
-  { id: "hobby", group: "everyday", label: "Cooking, reading aloud, or writing down memories", sections: ["hobbies"] },
+  { id: "day", group: "everyday", label: "Organising my day: reminders and to-dos", apps: ["tasks", "scratch", "habits"] },
+  { id: "health", group: "everyday", label: "Medicines, appointments, or how I have been feeling", apps: ["meds", "visits", "symptom-log"] },
+  { id: "period", group: "everyday", label: "Tracking my period", apps: ["cycle"] },
+  { id: "habits", group: "everyday", label: "Building daily habits", apps: ["habits", "tasks"] },
+  { id: "scam", group: "everyday", label: "Checking whether a message is a scam", apps: ["scam-check", "rumor-check", "ice-card"] },
+  { id: "family", group: "everyday", label: "Staying in touch: voice notes, photos, or calls", apps: ["voice-note", "call-guide", "clearer"] },
+  { id: "money", group: "everyday", label: "Household money: bills, savings, or splitting costs", apps: ["budget", "ledger", "split", "bill-watch", "pocket"] },
+  { id: "hobby", group: "everyday", label: "Cooking, reading aloud, or writing down memories", apps: ["recipes", "read-aloud", "memoir"] },
+  { id: "play", group: "everyday", label: "Something to play", apps: [GAMES] },
 ];
 
-type Saved = { name: string; sections: SectionId[]; picked: string[] };
+const MAX_RESULTS = 5;
+
+type Saved = { picked: string[]; extra: string; results: string[] };
 
 function firstName(displayName: string | null): string {
   const raw = displayName?.trim() ?? "";
@@ -77,119 +88,134 @@ function firstName(displayName: string | null): string {
   return raw.split(/\s+/)[0] ?? "";
 }
 
-function appsIn(section: SectionId): string[] {
-  return APPS.filter((app) => app.genre === section).map((app) => app.name);
-}
-
 function listOf(items: string[]): string {
   if (items.length <= 1) return items[0] ?? "";
   return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 }
 
-const STOP = new Set(["about", "and", "for", "from", "have", "help", "into", "just", "like", "more", "need", "some", "that", "the", "them", "this", "what", "when", "with", "want", "would", "your"]);
+const STOP = new Set(["about", "and", "for", "from", "have", "help", "into", "just", "like", "more", "need", "some", "that", "the", "them", "this", "what", "when", "with", "want", "would", "your", "keep", "make", "track"]);
 
-// Words someone typed, matched against each section's name, description, and apps.
-function fromWords(text: string): Map<SectionId, number> {
+const HAYSTACK = new Map(
+  APPS.map((app) => [app.slug, [app.name, app.blurb, pitchFor(app), ...app.features].join(" ").toLowerCase()]),
+);
+
+// Words someone typed, matched against each app's name, purpose and features.
+function fromWords(text: string): Map<string, number> {
   const words = [...new Set(text.toLowerCase().match(/[a-z]{3,}/g) ?? [])].filter((word) => !STOP.has(word));
-  const scores = new Map<SectionId, number>();
+  const scores = new Map<string, number>();
   if (words.length === 0) return scores;
-  for (const section of SECTIONS) {
-    const haystack = [
-      section.label,
-      section.blurb,
-      ...APPS.filter((app) => app.genre === section.id).flatMap((app) => [app.name, app.blurb]),
-    ]
-      .join(" ")
-      .toLowerCase();
+  for (const [slug, haystack] of HAYSTACK) {
     const hits = words.filter((word) => new RegExp(`\\b${word}`).test(haystack)).length;
-    if (hits > 0) scores.set(section.id, hits);
+    if (hits > 0) scores.set(slug, hits);
   }
   return scores;
 }
 
-type Match = { section: SectionId; because: string[] };
+type Match = { slug: string; because: string[] };
 
 function rank(picked: string[], extra: string): Match[] {
-  const score = new Map<SectionId, number>();
-  const because = new Map<SectionId, string[]>();
+  const score = new Map<string, number>();
+  const because = new Map<string, string[]>();
   for (const task of TASKS.filter((item) => picked.includes(item.id))) {
-    task.sections.forEach((section, index) => {
-      score.set(section, (score.get(section) ?? 0) + (index === 0 ? 3 : 1));
-      if (index === 0) because.set(section, [...(because.get(section) ?? []), task.label]);
+    task.apps.forEach((slug, index) => {
+      score.set(slug, (score.get(slug) ?? 0) + Math.max(3 - index, 1));
+      because.set(slug, [...(because.get(slug) ?? []), task.label]);
     });
   }
   const typed = extra.trim();
-  for (const [section, hits] of fromWords(typed)) {
-    score.set(section, (score.get(section) ?? 0) + Math.min(hits, 3));
-    if (!because.get(section)?.length) because.set(section, [`You wrote “${typed.length > 60 ? `${typed.slice(0, 57)}…` : typed}”`]);
+  const typedHits = [...fromWords(typed).entries()].sort((a, b) => b[1] - a[1]).slice(0, 4);
+  for (const [slug, hits] of typedHits) {
+    score.set(slug, (score.get(slug) ?? 0) + Math.min(hits, 3));
+    if (!because.get(slug)?.length) because.set(slug, [`You wrote “${typed.length > 60 ? `${typed.slice(0, 57)}…` : typed}”`]);
   }
+  const paid = (slug: string) => (getApp(slug)?.tier === "pass" ? 1 : 0);
+  const order = (slug: string) => (slug === GAMES ? -1 : APPS.findIndex((app) => app.slug === slug));
   return [...score.entries()]
-    .sort((a, b) => b[1] - a[1] || SECTIONS.findIndex((s) => s.id === a[0]) - SECTIONS.findIndex((s) => s.id === b[0]))
-    .slice(0, 3)
-    .map(([section]) => ({ section, because: because.get(section) ?? [] }));
+    .filter(([slug]) => slug === GAMES || getApp(slug))
+    // Ties: free apps first (they open with just an account), then catalogue order.
+    .sort((a, b) => b[1] - a[1] || paid(a[0]) - paid(b[0]) || order(a[0]) - order(b[0]))
+    .slice(0, MAX_RESULTS)
+    .map(([slug]) => ({ slug, because: because.get(slug) ?? [] }));
 }
 
 function readSaved(): Saved | null {
   try {
     const stored = localStorage.getItem(KEY);
     if (!stored) return null;
-    if (isSection(stored)) return { name: "", sections: [stored], picked: [] };
-    const parsed = JSON.parse(stored) as Partial<Saved> & { section?: string };
-    const name = typeof parsed.name === "string" ? parsed.name : "";
-    const sections = Array.isArray(parsed.sections)
-      ? parsed.sections.filter((item): item is SectionId => typeof item === "string" && isSection(item)).slice(0, 3)
-      : typeof parsed.section === "string" && isSection(parsed.section)
-        ? [parsed.section]
-        : [];
+    const parsed = JSON.parse(stored) as Partial<Saved>;
     const picked = Array.isArray(parsed.picked) ? parsed.picked.filter((id) => TASKS.some((task) => task.id === id)) : [];
-    return sections.length > 0 ? { name, sections, picked } : null;
+    const extra = typeof parsed.extra === "string" ? parsed.extra.slice(0, 200) : "";
+    // Earlier versions saved subject sections, not apps: work the apps out again from the answers.
+    const results = Array.isArray(parsed.results)
+      ? parsed.results.filter((slug): slug is string => typeof slug === "string" && (slug === GAMES || Boolean(getApp(slug))))
+      : rank(picked, extra).map((match) => match.slug);
+    return results.length > 0 ? { picked, extra, results } : null;
   } catch {
     return null;
   }
 }
 
-type Step = "name" | "life" | "tasks" | "result";
+type Step = "life" | "tasks" | "result";
 
+/**
+ * "Help me choose": two questions, then the apps that fit, each linking to its
+ * product page with the site's access label. Answers stay in this browser.
+ */
 export function MatchQuiz() {
-  const { user, isPending } = useCurrentUserState();
-  const knownName = firstName(user?.displayName ?? null);
+  const { user } = useCurrentUserState();
+  const name = firstName(user?.displayName ?? null);
+  const hash = useRouterState({ select: (state) => state.location.hash });
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("life");
-  const [name, setName] = useState("");
   const [lives, setLives] = useState<LifeId[]>([]);
   const [picked, setPicked] = useState<string[]>([]);
   const [extra, setExtra] = useState("");
   const [saved, setSaved] = useState<Saved | null>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const moved = useRef(false);
 
   useEffect(() => {
     setSaved(readSaved());
   }, []);
 
-  if (isPending) return null;
+  // Someone followed a "Help me choose" link: start the questions for them.
+  useEffect(() => {
+    if (hash === "finder" && !open) begin();
+    // begin only reads state; run once per arrival on #finder.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hash]);
 
-  const called = (name.trim() || knownName || saved?.name || "").trim();
-  const order: Step[] = knownName ? ["life", "tasks"] : ["name", "life", "tasks"];
+  // Move keyboard and screen reader focus to each new question.
+  useEffect(() => {
+    if (!moved.current) return;
+    heading.current?.focus();
+  }, [step, open]);
+
   const matches = rank(picked, extra);
 
+  function go(next: Step) {
+    moved.current = true;
+    setStep(next);
+  }
+
   function begin() {
-    setName(saved?.name || knownName);
     setLives([]);
     setPicked(saved?.picked ?? []);
-    setExtra("");
-    setStep(knownName ? "life" : "name");
+    setExtra(saved?.extra ?? "");
+    moved.current = false;
+    setStep("life");
     setOpen(true);
   }
 
-  function back() {
-    const index = step === "result" ? order.length : order.indexOf(step);
-    if (index <= 0) setOpen(false);
-    else setStep(order[index - 1]);
+  function close() {
+    moved.current = false;
+    setOpen(false);
   }
 
   function finish() {
-    setStep("result");
+    go("result");
     if (matches.length === 0) return;
-    const next: Saved = { name: called, sections: matches.map((match) => match.section), picked };
+    const next: Saved = { picked, extra: extra.trim(), results: matches.map((match) => match.slug) };
     try {
       localStorage.setItem(KEY, JSON.stringify(next));
     } catch {
@@ -198,33 +224,30 @@ export function MatchQuiz() {
     setSaved(next);
   }
 
+  const number = step === "life" ? 1 : 2;
+
   return (
-    <section className="rounded-2xl bg-card p-5 shadow-line sm:p-8">
-      <p className="text-sm text-muted">Find your place on Midnry</p>
-      <h2 className="mt-2 font-display text-3xl tracking-tight text-balance">
-        {called ? `${called}, what can we help with?` : "What can we help with?"}
+    <section id="finder" aria-labelledby="finder-title" className="scroll-mt-20 rounded-3xl bg-card p-5 shadow-line sm:p-8">
+      <p className="text-sm font-medium text-pine">Help me choose</p>
+      <h2 id="finder-title" className="mt-2 font-display text-3xl tracking-tight text-balance sm:text-4xl">
+        {name ? `${name}, not sure where to start?` : "Not sure where to start?"}
       </h2>
       {!open ? (
         <>
           <p className="mt-3 max-w-xl text-pretty text-muted">
             {saved
-              ? `${saved.name ? `${saved.name}, last time` : "Last time"} we suggested ${listOf(saved.sections.map(genreLabel))}.`
-              : "Two quick questions about your days and what you want to get done. There are no wrong answers, and you can pick more than one."}
+              ? `Last time we suggested ${listOf(saved.results.map((slug) => (slug === GAMES ? "the games" : (getApp(slug)?.name ?? slug))))}.`
+              : "Answer two quick questions about your days and what you want to get done, and we’ll suggest the apps that fit. Your answers stay in this browser."}
           </p>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
             <Button tone="primary" onClick={begin}>
-              {saved ? "Answer again" : "Start"}
+              {saved ? "Answer again" : "Start the two questions"}
             </Button>
             {saved
-              ? saved.sections.map((section) => (
-                  <Link
-                    key={section}
-                    to="/sections/$genre"
-                    params={{ genre: section }}
-                    className="inline-flex min-h-11 items-center text-sm underline"
-                  >
-                    Open {genreLabel(section)}
-                  </Link>
+              ? saved.results.slice(0, 3).map((slug) => (
+                  <ResultLink key={slug} slug={slug} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+                    {slug === GAMES ? "See the games" : `See ${getApp(slug)?.name ?? slug}`}
+                  </ResultLink>
                 ))
               : null}
           </div>
@@ -232,25 +255,27 @@ export function MatchQuiz() {
       ) : (
         <div className="mt-6">
           {step !== "result" ? (
-            <p className="text-sm text-muted">
-              {order.indexOf(step) + 1} of {order.length}
-            </p>
-          ) : null}
-
-          {step === "name" ? (
-            <NameStep name={name} onChange={setName} onNext={() => setStep("life")} />
+            <div className="flex items-center gap-3" aria-hidden>
+              <span className="text-sm text-muted tabular-nums">Question {number} of 2</span>
+              <span className="flex gap-1.5">
+                <span className="h-1.5 w-8 rounded-full bg-pine" />
+                <span className={cn("h-1.5 w-8 rounded-full", number === 2 ? "bg-pine" : "bg-paper-2")} />
+              </span>
+            </div>
           ) : null}
 
           {step === "life" ? (
             <LifeStep
+              heading={heading}
               lives={lives}
               onToggle={(id) => setLives((list) => (list.includes(id) ? list.filter((item) => item !== id) : [...list, id]))}
-              onNext={() => setStep("tasks")}
+              onNext={() => go("tasks")}
             />
           ) : null}
 
           {step === "tasks" ? (
             <TaskStep
+              heading={heading}
               lives={lives}
               picked={picked}
               extra={extra}
@@ -260,18 +285,17 @@ export function MatchQuiz() {
             />
           ) : null}
 
-          {step === "result" ? <Result matches={matches} signedIn={Boolean(user)} onRetry={() => setStep("tasks")} /> : null}
+          {step === "result" ? <Result heading={heading} matches={matches} signedIn={Boolean(user)} onRetry={() => go("tasks")} /> : null}
 
-          <div className="mt-6 flex gap-4 text-sm text-muted">
-            {step !== "result" ? (
-              <button type="button" className="min-h-11" onClick={back}>
-                {order.indexOf(step) === 0 ? "Close" : "Back"}
+          <div className="mt-6 flex gap-4 text-sm">
+            {step === "tasks" ? (
+              <button type="button" className="min-h-11 text-muted underline-offset-4 hover:text-ink hover:underline" onClick={() => go("life")}>
+                Back
               </button>
-            ) : (
-              <button type="button" className="min-h-11" onClick={() => setOpen(false)}>
-                Done
-              </button>
-            )}
+            ) : null}
+            <button type="button" className="min-h-11 text-muted underline-offset-4 hover:text-ink hover:underline" onClick={close}>
+              {step === "result" ? "Done" : "Close"}
+            </button>
           </div>
         </div>
       )}
@@ -279,26 +303,18 @@ export function MatchQuiz() {
   );
 }
 
-function NameStep({ name, onChange, onNext }: { name: string; onChange: (value: string) => void; onNext: () => void }) {
+function ResultLink({ slug, className, children }: { slug: string; className?: string; children: React.ReactNode }) {
+  if (slug === GAMES) {
+    return (
+      <Link to="/games" className={className}>
+        {children}
+      </Link>
+    );
+  }
   return (
-    <form
-      className="mt-3 max-w-md"
-      onSubmit={(event) => {
-        event.preventDefault();
-        onNext();
-      }}
-    >
-      <label className="block font-display text-2xl tracking-tight" htmlFor="match-name">
-        What should we call you?
-      </label>
-      <p className="mt-1 text-sm text-muted">Optional. Any name or nickname works.</p>
-      <TextInput id="match-name" className="mt-4" value={name} placeholder="Your name" onChange={(event) => onChange(event.target.value)} />
-      <div className="mt-4 flex flex-wrap gap-3">
-        <Button tone="primary" type="submit">
-          {name.trim() ? "Continue" : "Skip"}
-        </Button>
-      </div>
-    </form>
+    <Link to="/discover/$slug" params={{ slug }} preload="intent" className={className}>
+      {children}
+    </Link>
   );
 }
 
@@ -309,7 +325,7 @@ function Option({ on, onClick, label, detail }: { on: boolean; onClick: () => vo
       aria-pressed={on}
       onClick={onClick}
       className={cn(
-        "flex items-start gap-3 rounded-2xl px-4 py-3 text-left transition-colors",
+        "flex min-h-11 items-start gap-3 rounded-2xl px-4 py-3 text-left transition-colors",
         on ? "bg-pine text-paper" : "bg-paper hover:bg-paper-2",
       )}
     >
@@ -317,37 +333,48 @@ function Option({ on, onClick, label, detail }: { on: boolean; onClick: () => vo
         aria-hidden
         className={cn(
           "mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border text-xs",
-          on ? "border-paper bg-paper text-pine" : "border-line",
+          on ? "border-paper bg-paper text-pine" : "border-muted/50",
         )}
       >
         {on ? "✓" : ""}
       </span>
       <span>
         <span className="block font-medium">{label}</span>
-        {detail ? <span className={cn("mt-0.5 block text-sm", on ? "opacity-85" : "text-muted")}>{detail}</span> : null}
+        {detail ? <span className={cn("mt-0.5 block text-sm", on ? "text-paper/90" : "text-muted")}>{detail}</span> : null}
       </span>
     </button>
   );
 }
 
-function LifeStep({ lives, onToggle, onNext }: { lives: LifeId[]; onToggle: (id: LifeId) => void; onNext: () => void }) {
+type HeadingRef = React.RefObject<HTMLHeadingElement | null>;
+
+function StepHeading({ heading, children }: { heading: HeadingRef; children: React.ReactNode }) {
   return (
-    <div className="mt-3">
-      <p className="font-display text-2xl tracking-tight text-balance">What fills most of your days right now?</p>
-      <p className="mt-1 text-sm text-muted">Pick all that apply. This only changes which ideas we show first.</p>
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+    <h3 ref={heading} tabIndex={-1} className="mt-4 font-display text-2xl tracking-tight text-balance outline-none">
+      {children}
+    </h3>
+  );
+}
+
+function LifeStep({ heading, lives, onToggle, onNext }: { heading: HeadingRef; lives: LifeId[]; onToggle: (id: LifeId) => void; onNext: () => void }) {
+  return (
+    <div>
+      <StepHeading heading={heading}>What fills most of your days right now?</StepHeading>
+      <p className="mt-1 text-sm text-muted">Pick any that fit. This only changes which ideas we show first.</p>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2" role="group" aria-label="What fills your days">
         {LIVES.map((item) => (
           <Option key={item.id} on={lives.includes(item.id)} onClick={() => onToggle(item.id)} label={item.label} detail={item.detail} />
         ))}
       </div>
       <Button tone="primary" className="mt-5" onClick={onNext}>
-        {lives.length > 0 ? "Continue" : "Skip"}
+        {lives.length > 0 ? "Next question" : "Skip this one"}
       </Button>
     </div>
   );
 }
 
 function TaskStep({
+  heading,
   lives,
   picked,
   extra,
@@ -355,6 +382,7 @@ function TaskStep({
   onExtra,
   onNext,
 }: {
+  heading: HeadingRef;
   lives: LifeId[];
   picked: string[];
   extra: string;
@@ -370,12 +398,12 @@ function TaskStep({
   const ready = picked.length > 0 || extra.trim().length > 0;
 
   return (
-    <div className="mt-3">
-      <p className="font-display text-2xl tracking-tight text-balance">What would you like a hand with?</p>
-      <p className="mt-1 text-sm text-muted">Pick as many as you like.</p>
+    <div>
+      <StepHeading heading={heading}>What would you like a hand with?</StepHeading>
+      <p className="mt-1 text-sm text-muted">Pick as many as you like, or describe it in your own words.</p>
       {shown.map((group) => (
         <fieldset key={group.id} className="mt-5">
-          <legend className="text-sm font-medium text-muted">{group.label}</legend>
+          <legend className="text-sm font-medium text-ink-soft">{group.label}</legend>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {TASKS.filter((task) => task.group === group.id).map((task) => (
               <Option key={task.id} on={picked.includes(task.id)} onClick={() => onToggle(task.id)} label={task.label} />
@@ -384,12 +412,12 @@ function TaskStep({
         </fieldset>
       ))}
       {rest.length > 0 && !showAll ? (
-        <button type="button" className="mt-4 min-h-11 text-sm underline" onClick={() => setShowAll(true)}>
+        <button type="button" className="mt-4 min-h-11 text-sm font-medium underline underline-offset-4" onClick={() => setShowAll(true)}>
           Show more ideas ({listOf(rest.map((group) => group.label.toLowerCase()))})
         </button>
       ) : null}
       <label className="mt-5 block">
-        <span className="text-sm font-medium text-muted">Something else? Describe it in your own words.</span>
+        <span className="text-sm font-medium text-ink-soft">Something else? Describe it in your own words.</span>
         <TextArea
           value={extra}
           onChange={(event) => onExtra(event.target.value.slice(0, 200))}
@@ -399,89 +427,117 @@ function TaskStep({
         />
       </label>
       <Button tone="primary" className="mt-5" onClick={onNext} disabled={!ready}>
-        See my suggestions
+        Show my suggestions
       </Button>
+      {!ready ? <p className="mt-2 text-sm text-muted">Pick at least one, or write a few words.</p> : null}
     </div>
   );
 }
 
-function Result({ matches, signedIn, onRetry }: { matches: Match[]; signedIn: boolean; onRetry: () => void }) {
+function ResultCard({ match, best, signedIn }: { match: Match; best: boolean; signedIn: boolean }) {
+  if (match.slug === GAMES) {
+    return (
+      <li className="rounded-2xl bg-[#0b1220] p-4 text-[#f4f7fb] sm:p-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <img src="/abuja-hustle-v2-192.png" alt="" width={44} height={44} className="size-11 rounded-xl" />
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-xl tracking-tight">Games</p>
+            <p className="text-sm text-[#c4d3e8]">Abuja Hustle and Outpost Zero. Free to play.</p>
+          </div>
+          <Link to="/games" className={cn(buttonClass({ tone: "paper" }), "shrink-0")}>
+            See the games <span aria-hidden>→</span>
+          </Link>
+        </div>
+      </li>
+    );
+  }
+  const app = getApp(match.slug) as AppDef;
+  return (
+    <li className={cn("rounded-2xl p-4 sm:p-5", best ? "bg-paper shadow-line" : "bg-paper")}>
+      <div className="flex gap-3">
+        <AppMark slug={app.slug} name={app.name} className="size-11" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <p className="font-display text-xl tracking-tight">{app.name}</p>
+            <span className={app.tier === "pass" ? "text-sm font-medium text-pine" : "text-sm text-muted"}>{accessLabel(app.tier)}</span>
+          </div>
+          <p className="mt-1 text-pretty">{pitchFor(app)}</p>
+          {match.because.length > 0 ? (
+            <p className="mt-1.5 text-sm text-pretty text-muted">Because you picked: {listOf(match.because.map((reason) => reason.toLowerCase().startsWith("you wrote") ? reason : `“${reason}”`))}</p>
+          ) : null}
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+            <Link
+              to="/discover/$slug"
+              params={{ slug: app.slug }}
+              preload="intent"
+              className={best ? buttonClass({ tone: "primary" }) : "inline-flex min-h-11 items-center text-sm font-medium text-pine underline-offset-4 hover:underline"}
+            >
+              See how it works <span aria-hidden>→</span>
+            </Link>
+            {signedIn ? (
+              <Link to="/apps/$slug" params={{ slug: app.slug }} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+                Open {app.name}
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function Result({ heading, matches, signedIn, onRetry }: { heading: HeadingRef; matches: Match[]; signedIn: boolean; onRetry: () => void }) {
   if (matches.length === 0) {
     return (
-      <div className="mt-3 max-w-xl">
-        <p className="font-display text-2xl tracking-tight text-balance">We could not find a close match for that.</p>
+      <div className="max-w-xl">
+        <StepHeading heading={heading}>We couldn’t find a close match for that.</StepHeading>
         <p className="mt-2 text-pretty text-muted">
-          Midnry may not have the right tool for it yet. You can browse every section on the desk, or try different words.
+          Midnry may not have the right tool for it yet. Try different words, or look through every app.
         </p>
-        <div className="mt-5 flex flex-wrap gap-3">
+        <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
           <Button tone="primary" onClick={onRetry}>
-            Try again
+            Change my answers
           </Button>
-          <Link to="/" className="inline-flex min-h-11 items-center text-sm underline">
-            Browse every section
+          <Link to="/apps" hash="all" className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+            Browse all apps
           </Link>
         </div>
       </div>
     );
   }
+  const free = matches.some((match) => getApp(match.slug)?.tier === "free");
+  const pass = matches.some((match) => getApp(match.slug)?.tier === "pass");
   return (
-    <div className="mt-3">
-      <p className="font-display text-2xl tracking-tight text-balance">
-        Here is where to start.
-      </p>
+    <div>
+      <StepHeading heading={heading}>Here’s where to start.</StepHeading>
       <p className="mt-1 text-sm text-muted">
-        {matches.length === 1 ? "The best fit for what you picked." : "Best fit first. Every section stays open to you."}
+        {matches.length === 1 ? "The best fit for what you picked." : "Best fit first. Each one opens its own page, so you can see how it works before you sign up."}
       </p>
       <ol className="mt-4 grid gap-3">
-        {matches.map((match, index) => {
-          const apps = appsIn(match.section);
-          return (
-            <li key={match.section} className={cn("rounded-2xl p-4", index === 0 ? "bg-paper shadow-line" : "bg-paper")}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-medium">{genreLabel(match.section)}</p>
-                  {apps.length > 0 ? <p className="mt-0.5 text-sm text-muted">Apps: {listOf(apps)}</p> : null}
-                </div>
-                <Link
-                  to="/sections/$genre"
-                  params={{ genre: match.section }}
-                  className={cn(
-                    "inline-flex min-h-11 shrink-0 items-center rounded-full px-5 text-sm font-medium",
-                    index === 0 ? "bg-pine text-paper" : "bg-card shadow-line",
-                  )}
-                >
-                  Open
-                </Link>
-              </div>
-              {match.because.length > 0 ? (
-                <p className="mt-2 text-sm text-pretty">
-                  <span className="text-muted">From your answers: </span>
-                  {listOf(match.because)}
-                </p>
-              ) : null}
-            </li>
-          );
-        })}
+        {matches.map((match, index) => (
+          <ResultCard key={match.slug} match={match} best={index === 0} signedIn={signedIn} />
+        ))}
       </ol>
-      {!signedIn ? (
-        <div className="mt-5 rounded-2xl bg-pine/10 p-4">
-          <p className="font-medium">Ready to try them?</p>
-          <p className="mt-1 text-sm text-muted">Create a free account. Three apps in every section are free, no card needed.</p>
-          <Link
-            to="/login"
-            search={{ next: `/sections/${matches[0].section}`, intent: "register" }}
-            className="mt-3 inline-flex min-h-11 items-center rounded-full bg-pine px-5 text-sm font-medium text-paper"
-          >
-            Get started free
+      {!signedIn && (free || pass) ? (
+        <div className="mt-5 rounded-2xl bg-pine/10 p-4 sm:p-5">
+          <p className="font-medium">{free ? "Free apps open as soon as you have an account." : "These are part of Midnry Pass."}</p>
+          <p className="mt-1 text-sm text-pretty text-muted">
+            {free
+              ? "Create one with your email or Google. No card needed."
+              : "Create a free account first, then add the Pass when you’re ready."}
+            {free && pass ? " Apps marked Midnry Pass need the Pass." : ""}
+          </p>
+          <Link to="/login" search={{ next: "/apps", intent: "register" }} className={cn(buttonClass({ tone: "primary" }), "mt-3")}>
+            Create a free account
           </Link>
         </div>
       ) : null}
-      <div className="mt-4 flex flex-wrap gap-4 text-sm">
-        <button type="button" className="min-h-11 underline" onClick={onRetry}>
+      <div className="mt-4 flex flex-wrap gap-x-5 text-sm">
+        <button type="button" className="min-h-11 font-medium underline underline-offset-4" onClick={onRetry}>
           Change my answers
         </button>
-        <Link to="/" className="inline-flex min-h-11 items-center underline">
-          Browse every section
+        <Link to="/apps" hash="all" className="inline-flex min-h-11 items-center font-medium underline underline-offset-4">
+          Browse all apps
         </Link>
       </div>
     </div>

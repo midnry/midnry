@@ -8,6 +8,7 @@ import { AppMark } from "@/components/app-mark";
 import { AppGuide } from "@/components/app-guide";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { PASS_PRICE_LABEL } from "@/lib/access";
+import { PASS_LABEL } from "@/lib/plans";
 import { genreLabel, includedNames } from "@/lib/catalog";
 import { peekApp, openApp, type OpenResult, type PublishedDetail } from "@/lib/community.functions";
 
@@ -61,9 +62,9 @@ export function CommunityPage({ slug }: { slug: string }) {
   if (failed || (user && opened?.state === "missing") || (!user && !peek)) {
     return (
       <Shell>
-        <h1 className="font-display text-4xl tracking-tight">That app is not on the desk.</h1>
+        <h1 className="font-display text-4xl tracking-tight">We couldn’t find that app.</h1>
         <Link to="/apps" className="mt-6 inline-flex min-h-11 items-center text-sm underline">
-          Back to the desk
+          Browse all apps
         </Link>
       </Shell>
     );
@@ -79,12 +80,12 @@ export function CommunityPage({ slug }: { slug: string }) {
       <div className="flex items-start justify-between gap-4">
         <p className="text-sm text-muted">
           <Link to="/apps" className="hover:text-ink">
-            Desk
+            Apps
           </Link>
           <span aria-hidden> / </span>
           <span>{opened?.state === "ready" ? genreLabel(opened.genre) : peek ? genreLabel(peek.genre) : "Pass"}</span>
         </p>
-        {user && peek ? <SaveButton slug={slug} /> : null}
+        {user && peek ? <SaveButton slug={slug} name={peek.name} /> : null}
       </div>
       <div className="mt-4 flex items-center gap-4">
         <AppMark slug={slug} name={name} className="size-14" />
@@ -95,7 +96,10 @@ export function CommunityPage({ slug }: { slug: string }) {
 
       {!user ? (
         <div className="mt-6 max-w-xl">
-          <p>This tool is part of Midnry Pass, {PASS_PRICE_LABEL} a month. Sign in to open it.</p>
+          <p className="text-pretty">
+            Apps by other makers are {PASS_LABEL.toLowerCase()}, {PASS_PRICE_LABEL} (US dollars) a month. Create an account or sign in, and
+            we’ll bring you back here.
+          </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link to="/login" search={{ next: `/apps/${slug}`, intent: "register" }} className={buttonClass({ tone: "primary" })}>
               Create an account
@@ -108,14 +112,15 @@ export function CommunityPage({ slug }: { slug: string }) {
       ) : opened?.state === "locked" ? (
         <div className="mt-6 max-w-xl">
           <p>
-            Your account includes {includedNames()}. {name} opens with Midnry Pass — {PASS_PRICE_LABEL} a month.
+            Your account opens {includedNames()}. {name} was added by another maker, so it opens with Midnry Pass:{" "}
+            {PASS_PRICE_LABEL} (US dollars) a month, charged to a card through Paystack.
           </p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link to="/billing" className={buttonClass({ tone: "primary" })}>
               Start Midnry Pass
             </Link>
             <Link to="/apps" className={buttonClass({ tone: "quiet" })}>
-              Back to the desk
+              Back to your apps
             </Link>
           </div>
         </div>

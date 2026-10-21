@@ -1,263 +1,77 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PASS_PRICE_LABEL } from "@/lib/access";
+import { FREE_APPS, PASS_APPS } from "@/lib/plans";
 import { Shell } from "@/components/shell";
-import { AppSearch } from "@/components/desk-list";
-import { AppMark } from "@/components/app-mark";
-import { PhoneFrame } from "@/components/showcase";
-import { APPS, getApp } from "@/lib/catalog";
-import { pitchFor } from "@/lib/pitches";
 import { Favorites } from "@/components/spotlight";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
-import { buttonClass, Skeleton } from "@/components/ui";
-import "@fontsource/nunito/latin-900.css";
+import { buttonClass, cn } from "@/components/ui";
+import { ProductDemo } from "@/components/demos/product-demo";
+import { StartHere } from "@/components/home-start";
+import { GamesSection } from "@/components/home-games";
+import { PlansSection } from "@/components/home-plans";
+import { ClosingSection, TrustSection } from "@/components/home-trust";
 
 export const Route = createFileRoute("/")({
   component: Home,
 });
 
+/**
+ * The homepage, one purpose per section:
+ * the promise and a hands-on demo, where to start, games, Free vs Pass,
+ * plain facts, and one last action.
+ */
 function Home() {
+  const { user } = useCurrentUserState();
   return (
     <Shell>
-      <section className="grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="max-w-2xl">
-          <h1 className="font-display text-5xl tracking-tight text-balance sm:text-6xl">
+      <section aria-labelledby="hero-heading">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-end lg:gap-16">
+          <h1 id="hero-heading" className="font-display text-hero text-balance">
             Simple tools for everyday life.
           </h1>
-          <p className="mt-4 max-w-lg text-pretty text-lg text-muted">
-            Free apps for school, work, business and home. Start with our favourites below, or
-            explore them all.
-          </p>
-          <HeroActions />
-        </div>
-        {/* Lead with the product: two of the apps, as they look on a phone (large screens only). */}
-        <div className="relative hidden h-[30rem] lg:block" aria-hidden>
-          <PhoneFrame
-            src="/shots/tasks/phone.jpg"
-            alt=""
-            eager
-            className="!absolute top-0 left-4 !w-[14.5rem] -rotate-3"
-          />
-          <PhoneFrame
-            src="/shots/ledger/phone.jpg"
-            alt=""
-            eager
-            className="!absolute top-10 right-2 !w-[14.5rem] rotate-3"
-          />
-        </div>
-      </section>
-
-      <FeaturedApps />
-
-      <section className="mt-10 rounded-3xl bg-card p-6 shadow-line sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="font-display text-2xl tracking-tight">Looking for something else?</h2>
-            <p className="mt-1 text-sm text-pretty text-muted">
-              There are {APPS.length} apps on the desk for school, work, business and home. Search
-              them, or browse by where you fit.
+          <div className="lg:pb-2">
+            <p className="text-lede text-pretty text-ink-soft">
+              Organise your tasks, create invoices and understand your spending. Small, focused apps that work in your browser, on your phone or your computer.
             </p>
+            <HeroActions />
           </div>
-          <Link to="/apps" className={buttonClass({ tone: "primary" })}>
-            Explore all {APPS.length} apps
-          </Link>
         </div>
-        <AppSearch className="mt-5 max-w-2xl" />
+        <ProductDemo className="mt-10 sm:mt-14" />
       </section>
 
-      <section className="mt-10 empty:hidden">
+      <section className="mt-20 empty:hidden">
         <Favorites />
       </section>
 
-      <section className="mt-12 rounded-3xl bg-card p-6 shadow-line sm:p-8">
-        <ul className="grid gap-4 text-sm sm:grid-cols-3">
-          <li>
-            <p className="font-medium">Free to start</p>
-            <p className="mt-1 text-muted">Three apps in every section, free with an account.</p>
-          </li>
-          <li>
-            <p className="font-medium">No card needed</p>
-            <p className="mt-1 text-muted">Sign up with your email or Google.</p>
-          </li>
-          <li>
-            <p className="font-medium">{PASS_PRICE_LABEL} a month for more</p>
-            <p className="mt-1 text-muted">
-              Midnry Pass unlocks everything.{" "}
-              <Link
-                to="/pricing"
-                className="inline-flex min-h-11 items-center text-ink underline underline-offset-4"
-              >
-                See pricing
-              </Link>
-            </p>
-          </li>
-        </ul>
-      </section>
-
-      <section className="mt-12 flex flex-col gap-4 rounded-3xl border border-dashed border-line p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
-        <div className="max-w-lg">
-          <h2 className="font-display text-2xl tracking-tight">Made an app? Add it to Midnry.</h2>
-          <p className="mt-1 text-sm text-pretty text-muted">
-            Upload it, we review it, and once it's on the desk you earn a share of Midnry Pass.
-          </p>
-        </div>
-        <Link to="/submit" className={buttonClass({ tone: "quiet" })}>
-          Add your app
-        </Link>
-      </section>
+      <StartHere />
+      <GamesSection />
+      <PlansSection />
+      <TrustSection />
+      <ClosingSection signedIn={Boolean(user)} />
     </Shell>
   );
 }
 
-/** The five most useful everyday apps, in the words people would use for them. */
-const PICKS: { slug: string; tint: string }[] = [
-  { slug: "tasks", tint: "from-sky-500/15 evening:from-amber-400/20" },
-  { slug: "apply", tint: "from-indigo-500/15 evening:from-rose-400/15" },
-  { slug: "cycle", tint: "from-pink-500/15 evening:from-pink-400/20" },
-  { slug: "ledger", tint: "from-emerald-500/15 evening:from-lime-500/15" },
-  { slug: "invoice", tint: "from-amber-500/15 evening:from-orange-400/20" },
-];
-
-function FeaturedApps() {
-  return (
-    <section className="mt-12" aria-labelledby="featured-heading">
-      <div className="mb-5 flex items-end justify-between gap-4">
-        <div>
-          <h2 id="featured-heading" className="font-display text-3xl tracking-tight">
-            Start with these
-          </h2>
-          <p className="mt-1 text-sm text-muted">Our five most useful apps, and two games.</p>
-        </div>
-        <Link
-          to="/apps"
-          className="hidden min-h-11 shrink-0 items-center text-sm font-medium text-ink underline underline-offset-4 sm:inline-flex"
-        >
-          See all apps
-        </Link>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {PICKS.map(({ slug, tint }) => {
-          const app = getApp(slug);
-          if (!app) return null;
-          return (
-            <Link
-              key={slug}
-              to="/discover/$slug"
-              params={{ slug }}
-              className={`group flex flex-col rounded-3xl bg-card bg-gradient-to-br ${tint} to-transparent p-5 shadow-line transition hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2`}
-            >
-              <div className="flex items-center gap-3">
-                <AppMark slug={app.slug} name={app.name} className="size-12 shrink-0" />
-                <div className="min-w-0">
-                  <p className="font-display text-xl tracking-tight">{app.name}</p>
-                  <p className="text-xs text-muted">
-                    {app.tier === "free" ? "Free with an account" : "Midnry Pass"}
-                  </p>
-                </div>
-              </div>
-              <p className="mt-3 flex-1 text-sm text-pretty text-muted">{pitchFor(app)}</p>
-              <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-ink">
-                Learn more{" "}
-                <span aria-hidden className="transition group-hover:translate-x-0.5">
-                  →
-                </span>
-              </span>
-            </Link>
-          );
-        })}
-        <Link
-          to="/discover/abuja-hustle"
-          className="group flex flex-col rounded-3xl bg-[radial-gradient(ellipse_90%_45%_at_50%_100%,rgba(240,160,75,0.5),transparent_70%),linear-gradient(to_bottom,#0b0f2a_0%,#1d1a4f_38%,#43276a_66%,#86395f_100%)] p-5 text-[#f7edda] shadow-line transition hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2"
-        >
-          <div className="flex items-center gap-3">
-            <img src="/abuja-hustle-v2-192.png" alt="" className="size-12 shrink-0 rounded-2xl" />
-            <div className="min-w-0">
-              <p
-                className="text-xl font-black tracking-tight"
-                style={{ fontFamily: '"Nunito", "Outfit", system-ui, sans-serif' }}
-              >
-                Abuja Hustle
-              </p>
-              <p className="text-xs font-semibold tracking-widest text-[#edc584] uppercase">
-                Free game · 18+ · Updated
-              </p>
-            </div>
-          </div>
-          <p className="mt-3 flex-1 text-sm text-pretty text-[#f7edda]/90">
-            A life sim. Grow up in a hand-painted Abuja, build a banking career, make friends in
-            high places, and chase financial freedom.
-          </p>
-          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#a7f0d2]">
-            See the game{" "}
-            <span aria-hidden className="transition group-hover:translate-x-0.5">
-              →
-            </span>
-          </span>
-        </Link>
-        <Link
-          to="/discover/outpost-zero"
-          className="group flex flex-col rounded-3xl border-2 border-[#080e15] bg-[#18212b] p-5 text-[#fff4dc] shadow-line transition hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2"
-        >
-          <div className="flex items-center gap-3">
-            <img src="/games/military/lifeline-mission.png" alt="" loading="lazy" className="size-12 shrink-0 rounded-xl object-cover" />
-            <div className="min-w-0">
-              <p className="text-xl font-black tracking-tight">Outpost Zero</p>
-              <p className="text-xs font-semibold tracking-widest text-[#ffc455] uppercase">
-                Free game · Medical rescue
-              </p>
-            </div>
-          </div>
-          <p className="mt-3 flex-1 text-sm text-pretty text-[#c6c8c6]">
-            Gather medical supplies, protect a sabotaged medevac flight, and save wounded
-            soldiers. Play Blackout Protocol offline with smart AI or online with friends.
-          </p>
-          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#ffc455]">
-            See the game{" "}
-            <span aria-hidden className="transition group-hover:translate-x-0.5">
-              →
-            </span>
-          </span>
-        </Link>
-      </div>
-    </section>
-  );
-}
-
+/** One primary action. New visitors explore the apps; signed-in visitors open theirs. Sign-in lives in the header. */
 function HeroActions() {
-  const { user, isPending } = useCurrentUserState();
-  const { account, loading } = useAccount();
-  if (isPending || (user && loading)) {
-    return (
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <Skeleton className="h-11 w-full rounded-full sm:w-44" />
-        <Skeleton className="h-11 w-full rounded-full sm:w-40" />
-      </div>
-    );
-  }
-  if (!user) {
-    return (
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <Link
-          to="/login"
-          search={{ next: "/apps", intent: "register" }}
-          className={buttonClass({ tone: "primary" })}
-        >
-          Get started free
-        </Link>
-        <Link to="/apps" className={buttonClass({ tone: "quiet" })}>
-          Look around first
-        </Link>
-      </div>
-    );
-  }
+  const { user } = useCurrentUserState();
+  const { account } = useAccount();
   return (
-    <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-      <Link to="/apps" className={buttonClass({ tone: "primary" })}>
-        Open the desk
-      </Link>
-      <Link to="/billing" className={buttonClass({ tone: "quiet" })}>
-        {account?.hasPass ? "Pass is active" : `Midnry Pass · ${PASS_PRICE_LABEL}`}
-      </Link>
-    </div>
+    <>
+      <div className="mt-7 flex flex-wrap items-center gap-3">
+        <Link to="/apps" className={cn(buttonClass({ tone: "primary" }), "min-h-12 px-6 text-base")}>
+          {user ? "Open your apps" : "Explore the apps"}
+        </Link>
+        {user ? (
+          <Link to="/billing" className={buttonClass({ tone: "quiet" })}>
+            {account?.hasPass ? "Midnry Pass is active" : `Midnry Pass · ${PASS_PRICE_LABEL} a month`}
+          </Link>
+        ) : null}
+      </div>
+      <p className="mt-4 text-sm text-pretty text-muted">
+        {FREE_APPS.length} apps are free with an account. Midnry Pass adds {PASS_APPS.length} more for {PASS_PRICE_LABEL} a month.
+      </p>
+    </>
   );
 }
