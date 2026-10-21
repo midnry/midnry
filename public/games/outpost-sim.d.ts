@@ -10,6 +10,10 @@ export type Input = {
   pitch?: number;
   sprint?: boolean;
   slide?: boolean;
+  /** Stance request (combat modes): stand, crouch or lie prone. */
+  stance?: "stand" | "crouch" | "prone";
+  /** Jump press (edge-triggered). */
+  jump?: boolean;
   fire?: boolean;
   reload?: boolean;
   super?: boolean;
@@ -25,6 +29,9 @@ export type Entity = {
   pitch: number;
   hp: number;
   sprinting?: boolean;
+  stance?: "stand" | "crouch" | "prone";
+  stanceAt?: number;
+  jumpAt?: number;
   slideUntil?: number;
   crouching?: boolean;
   slideCooldown?: number;

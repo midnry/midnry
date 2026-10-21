@@ -1040,6 +1040,94 @@
       midnry-fps .mf-slide {
         right: calc(25px + var(--mf-safe-right));
       }
+      /* Last Signal stances (touch): one stance button and a jump button
+         in the right thumb's arc, around FIRE. The stance button shows what
+         a tap will do; holding it fills a ring, then you lie down. */
+      midnry-fps .mf-slide.mf-stance,
+      midnry-fps .mf-jump {
+        position: absolute;
+        display: grid;
+        place-items: center;
+        align-content: center;
+        gap: 2px;
+        width: 60px;
+        height: 60px;
+        min-height: 0;
+        padding: 0;
+        border: 2px solid #ffffff59;
+        border-radius: 50%;
+        background: #101614c4;
+        color: #f4f1e6;
+        pointer-events: auto;
+        touch-action: none;
+        font: 700 9px/1 var(--mf-display, sans-serif);
+        letter-spacing: 0.08em;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+      }
+      midnry-fps .mf-slide.mf-stance {
+        right: calc(112px + var(--mf-safe-right));
+        bottom: calc(190px + var(--mf-safe-bottom));
+      }
+      midnry-fps .mf-jump {
+        right: calc(34px + var(--mf-safe-right));
+        bottom: calc(216px + var(--mf-safe-bottom));
+        display: none;
+      }
+      @media (pointer: coarse) {
+        midnry-fps .mf-jump { display: grid; }
+      }
+      midnry-fps .mf-stance i,
+      midnry-fps .mf-jump i {
+        width: 24px;
+        height: 24px;
+        background: currentColor;
+        -webkit-mask: var(--mf-glyph) center / contain no-repeat;
+        mask: var(--mf-glyph) center / contain no-repeat;
+      }
+      /* The icon is the stance a tap gives you. */
+      midnry-fps .mf-stance[data-stance="stand"] { --mf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Ccircle cx='11' cy='7' r='2.3'/%3E%3Cpath d='M8.5 10.2h4.2l2.6 4.3 2.9 1.3-.6 1.4-3.6-1.4-1.6-2-1.2 2.6 2.3 4.6h-1.7L9.6 17l-1.9 4h-1.6l2.4-6.3z'/%3E%3C/svg%3E"); }
+      midnry-fps .mf-stance[data-stance="crouch"] { --mf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Ccircle cx='12' cy='4' r='2.3'/%3E%3Cpath d='M10 7.5h4l1 7h-2l-.5 7h-1l-.5-7H9z'/%3E%3C/svg%3E"); border-color: var(--mf-accent, #f2b950); }
+      midnry-fps .mf-stance[data-stance="prone"] { --mf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Ccircle cx='12' cy='4' r='2.3'/%3E%3Cpath d='M10 7.5h4l1 7h-2l-.5 7h-1l-.5-7H9z'/%3E%3C/svg%3E"); border-color: var(--mf-accent, #f2b950); background: #3a2c10d0; }
+      midnry-fps .mf-jump { --mf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 19V5M6 11l6-6 6 6'/%3E%3Cpath d='M5 21h14'/%3E%3C/svg%3E"); }
+      /* Holding: a ring fills in 0.35 s, then the stance changes. */
+      midnry-fps .mf-stance::after {
+        content: "";
+        position: absolute;
+        inset: -5px;
+        border-radius: 50%;
+        background: conic-gradient(var(--mf-accent, #f2b950) var(--mf-hold, 0turn), transparent 0);
+        -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+        mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+        opacity: 0;
+        pointer-events: none;
+      }
+      midnry-fps .mf-stance.mf-holding::after {
+        opacity: 1;
+        animation: mf-stancehold 0.35s linear forwards;
+      }
+      @property --mf-hold { syntax: "<angle>"; inherits: false; initial-value: 0turn; }
+      @keyframes mf-stancehold { to { --mf-hold: 1turn; } }
+      midnry-fps .mf-jump:active,
+      midnry-fps .mf-stance:active { transform: scale(0.94); }
+      midnry-fps .mf-protocol :is(.mf-jump) { display: none !important; }
+      /* Blackout Protocol keeps the plain slide button. */
+      midnry-fps .mf-protocol .mf-stance i { display: none; }
+      midnry-fps .mf-protocol .mf-stance span { font-size: 0; }
+      midnry-fps .mf-protocol .mf-stance span::after { content: "SLIDE"; font-size: 11px; }
+      @media (max-height: 500px) and (min-width: 600px) {
+        midnry-fps .mf-slide.mf-stance {
+          right: calc(118px + var(--mf-safe-right));
+          bottom: calc(176px + var(--mf-safe-bottom));
+        }
+        midnry-fps .mf-jump {
+          right: calc(28px + var(--mf-safe-right));
+          bottom: calc(210px + var(--mf-safe-bottom));
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        midnry-fps .mf-stance.mf-holding::after { animation-duration: 0.01s; animation-delay: 0.34s; }
+      }
       midnry-fps .mf-movement {
         position: absolute;
         bottom: calc(108px + var(--mf-safe-bottom));
@@ -2589,7 +2677,7 @@
       midnry-fps .mf-shell :is(.mf-start, .mf-exit, .mf-panel > .mf-results) {
         border-radius: max(8px, calc(var(--mf-corner-surface) - var(--mf-panel-inset)));
       }
-      midnry-fps .mf-shell button:is(.mf-fire, .mf-reload, .mf-pause) {
+      midnry-fps .mf-shell button:is(.mf-fire, .mf-reload, .mf-pause, .mf-stance, .mf-jump) {
         border-radius: 50%;
       }
       /* Phones: keep the middle of the view clear. Status shrinks to the
@@ -2866,7 +2954,7 @@
         <div class="mf-match" hidden><b class="mf-cores">CHARGE CORES 0</b><div class="mf-teamstat"></div><div class="mf-zone"></div></div><div class="mf-cross"></div><div class="mf-toast" role="status" aria-live="polite"></div>
         <div class="mf-damage" role="status" aria-live="polite"></div><div class="mf-hitmark" aria-hidden="true"></div><button class="mf-super" aria-label="Use charged ability">Q · SUPER <b>0%</b></button>
         <div class="mf-bottom"><div class="mf-stat">VITALS<strong class="mf-hp">100</strong><div class="mf-health"><i></i></div></div><div class="mf-stat mf-ammo">VX–7 / AUTO CARBINE<strong class="mf-rounds">24 <span>/ ∞</span></strong></div></div>
-        <div class="mf-movement" hidden role="status" aria-live="polite"></div><div class="mf-death" hidden role="status" aria-live="polite">SIGNAL LOST</div><div class="mf-lifelost" role="status" aria-live="assertive"></div><div class="mf-touch"><button class="mf-sprint" aria-label="Toggle sprint" aria-pressed="false">SPRINT</button><button class="mf-slide" aria-label="Slide while sprinting">SLIDE</button><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
+        <div class="mf-movement" hidden role="status" aria-live="polite"></div><div class="mf-death" hidden role="status" aria-live="polite">SIGNAL LOST</div><div class="mf-lifelost" role="status" aria-live="assertive"></div><div class="mf-touch"><button class="mf-sprint" aria-label="Toggle sprint" aria-pressed="false">SPRINT</button><button class="mf-slide mf-stance" data-stance="stand" aria-label="Crouch. Hold to lie down. While sprinting: slide"><i aria-hidden="true"></i><span>CROUCH</span></button><button class="mf-jump" aria-label="Jump"><i aria-hidden="true"></i><span>JUMP</span></button><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
         <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">Field operations in a weathered compound. Choose a loadout and deploy.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="protocol" aria-pressed="true">BLACKOUT PROTOCOL</button></div><div class="mf-kit"><label>Arena<select class="mf-mapselect" aria-label="Choose arena"></select></label><label>Loadout<select class="mf-weaponselect" aria-label="Choose loadout"></select></label><label class="mf-outfitlabel"><span>Outfit<select class="mf-outfitselect" aria-label="Choose outfit"></select></span><img class="mf-outfitpreview" alt="Selected outfit" width="120" height="150"></label></div><p class="mf-mapinfo"></p><p class="mf-weaponinfo"></p><p class="mf-kitnote">Choose before deploying. Offline changes start a fresh round; online, the host chooses the arena.</p><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><button class="mf-quick">QUICK MATCH →</button><p class="mf-quicknote">Join an open public game, or start one that others can join. Bots fill empty seats.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><label class="mf-publiclabel"><input class="mf-public" type="checkbox"> Listed for Quick match</label><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Hold E · interact &nbsp; / &nbsp; Esc or P · pause<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
       </div>`;
             this.engine = new Game(this);
@@ -3307,6 +3395,8 @@
             this.pendingResult = null;
             this.touchSprint = false;
             this.pendingSlide = false;
+            this.pendingJump = false;
+            this.setStance?.("stand");
             this.$(".mf-death").hidden = true;
             this.$(".mf-sprint").setAttribute("aria-pressed", "false");
             this.art?.reset();
@@ -3528,12 +3618,20 @@
               pitch: this.viewPitch / this.projection,
               sprint: this.keys.has("shift") || this.touchSprint || this.stickSprint,
               slide: this.pendingSlide,
-              fire: this.firing || this.keys.has(" ") || this.pendingShot > 0,
+              // Space jumps in Last Signal; it still fires in Blackout Protocol.
+              fire: this.firing || (this.mode === "protocol" && this.keys.has(" ")) || this.pendingShot > 0,
+              jump: !!this.pendingJump,
+              stance: this.stanceWant || "stand",
               reload: this.pendingReload,
               super: this.pendingSuper,
             };
+            // Sprinting stands you up (the simulation agrees).
+            if (controls.sprint && Math.hypot(controls.forward, controls.strafe) > 0.1 && this.stanceWant !== "stand")
+              this.setStance("stand");
             if (protocol) {
               controls.super = false;
+              controls.jump = false;
+              controls.stance = "stand";
               if (!fighting || frozen || dialogOpen) controls.fire = controls.reload = false;
               controls.sprint = false;
               if (frozen || this.protocolUI?.piloting || this.protocolUI?.hasDialogOpen())
@@ -3546,6 +3644,45 @@
               if (frozen) controls.vehicleInput = { pitch: 0, steer: 0 };
             }
             return controls;
+          }
+          /** Last Signal stances. One stance control everywhere: tap to crouch or
+           * stand, hold to lie down (hold again to get up), and while sprinting
+           * forward a tap slides. Keyboard C, the touch button, controller B. */
+          stancePress() {
+            if (!this.running || this.mode === "protocol" || this.player.hp <= 0) return;
+            clearTimeout(this.stanceTimer);
+            this.stanceHeld = false;
+            this.$(".mf-stance")?.classList.add("mf-holding");
+            this.stanceTimer = setTimeout(() => {
+              this.stanceHeld = true;
+              this.$(".mf-stance")?.classList.remove("mf-holding");
+              this.setStance(this.stanceWant === "prone" ? "stand" : "prone");
+              navigator.vibrate?.(12);
+            }, 350);
+          }
+          stanceRelease() {
+            clearTimeout(this.stanceTimer);
+            this.$(".mf-stance")?.classList.remove("mf-holding");
+            if (this.stanceHeld || !this.running || this.mode === "protocol") return;
+            const input = this.controls();
+            if (input.sprint && input.forward > 0.2) return this.requestSlide();
+            this.setStance(this.stanceWant === "crouch" ? "stand" : "crouch");
+          }
+          setStance(stance) {
+            this.stanceWant = stance;
+            const button = this.$(".mf-stance");
+            if (!button) return;
+            button.dataset.stance = stance;
+            button.querySelector("span").textContent = stance === "stand" ? "CROUCH" : stance === "crouch" ? "STAND" : "GET UP";
+            button.setAttribute(
+              "aria-label",
+              stance === "prone" ? "Lying down. Hold to stand up, tap to crouch" : stance === "crouch" ? "Crouching. Tap to stand, hold to lie down" : "Crouch. Hold to lie down. While sprinting: slide",
+            );
+          }
+          requestJump() {
+            if (!this.running || this.mode === "protocol" || this.player.hp <= 0) return;
+            this.pendingJump = true;
+            if (this.stanceWant !== "stand") this.setStance("stand");
           }
           requestSlide() {
             if (!this.running || this.player.hp <= 0 || this.deathSequence) return;
@@ -3589,6 +3726,8 @@
             this.pendingShot = 0;
             this.pendingReload = this.pendingSuper = false;
             this.pendingSlide = false;
+            this.pendingJump = false;
+            this.setStance?.("stand");
             this.touchSprint = false;
             this.touch = { x: 0, y: 0 };
             this.look = null;
@@ -3681,6 +3820,8 @@
             this.pendingShot = 0;
             this.pendingReload = this.pendingSuper = false;
             this.pendingSlide = false;
+            this.pendingJump = false;
+            this.setStance?.("stand");
             this.touch = { x: 0, y: 0 };
             this.look = null;
             this.stickId = null;
@@ -4115,6 +4256,8 @@
                 this.pendingResult = null;
                 this.touchSprint = false;
                 this.pendingSlide = false;
+                this.pendingJump = false;
+                this.setStance?.("stand");
                 this.$(".mf-sprint").setAttribute("aria-pressed", "false");
                 this.$(".mf-death").hidden = true;
                 this.state = "playing";
@@ -4211,7 +4354,8 @@
                 shot = this.pendingShot || 0,
                 reload = this.pendingReload,
                 superPending = this.pendingSuper,
-                slidePending = this.pendingSlide;
+                slidePending = this.pendingSlide,
+                jumpPending = this.pendingJump;
               const input =
                 this.running && (this.player.hp > 0 || this.mode === "protocol")
                   ? this.controls()
@@ -4231,6 +4375,7 @@
                   if (superPending) this.pendingSuper = false;
                   this.protocolUI?.acknowledge(input.protocolAction?.seq);
                   if (slidePending) this.pendingSlide = false;
+                  if (jumpPending) this.pendingJump = false;
                 }
                 this.scheduleRoomPoll(
                   net.errors
@@ -4293,9 +4438,25 @@
               this.touchSprint = !this.touchSprint;
               this.$(".mf-sprint").setAttribute("aria-pressed", String(this.touchSprint));
             });
+            // Touch: the stance button is tap / hold (see stancePress); in
+            // Blackout Protocol it stays a plain slide button.
             this.on(this.$(".mf-slide"), "pointerdown", (e) => {
               e.preventDefault();
-              this.requestSlide();
+              if (this.mode === "protocol") return this.requestSlide();
+              // Keep the release even if the thumb slides off the button.
+              try {
+                this.$(".mf-slide").setPointerCapture(e.pointerId);
+              } catch {}
+              this.stancePress();
+            });
+            this.on(this.$(".mf-slide"), "pointerup", () => this.stanceRelease());
+            this.on(this.$(".mf-slide"), "pointercancel", () => {
+              clearTimeout(this.stanceTimer);
+              this.$(".mf-stance")?.classList.remove("mf-holding");
+            });
+            this.on(this.$(".mf-jump"), "pointerdown", (e) => {
+              e.preventDefault();
+              this.requestJump();
             });
             this.on(this.shell, "keydown", (e) => {
               if (e.target.closest?.("input,select,textarea,dialog")) return;
@@ -4317,6 +4478,7 @@
                   "p",
                   "shift",
                   "c",
+                  "z",
                   "control",
                 ].includes(k)
               )
@@ -4336,10 +4498,21 @@
               this.keys.add(k);
               if (k === "r") this.reload();
               if (k === "q" && !e.repeat) this.useSuper();
-              if ((k === "c" || k === "control") && !e.repeat) this.requestSlide();
-              if (k === " " && !e.repeat) this.shoot();
+              if (k === "control" && !e.repeat) this.requestSlide();
+              if (this.mode === "protocol") {
+                if (k === "c" && !e.repeat) this.requestSlide();
+                if (k === " " && !e.repeat) this.shoot();
+              } else {
+                if (k === " " && !e.repeat) this.requestJump();
+                if (k === "c" && !e.repeat) this.stancePress();
+                if (k === "z" && !e.repeat) this.setStance(this.stanceWant === "prone" ? "stand" : "prone");
+              }
             });
-            this.on(this.shell, "keyup", (e) => this.keys.delete(e.key.toLowerCase()));
+            this.on(this.shell, "keyup", (e) => {
+              const k = e.key.toLowerCase();
+              this.keys.delete(k);
+              if (k === "c" && this.mode !== "protocol") this.stanceRelease();
+            });
             this.on(window, "blur", () => {
               if (this.running || this.lifeLostLeft) this.pause();
             });
@@ -4746,6 +4919,7 @@
             this.pendingReload = false;
             this.pendingSuper = false;
             this.pendingSlide = false;
+            this.pendingJump = false;
             this.step +=
               Math.hypot(this.controls().forward, this.controls().strafe) *
               dt *

@@ -23,7 +23,7 @@ model.traverse(o=>{
  originals.set(m.name,old);m.userData.riggedOperator=true;m.userData.realismCharacterKind=head?'skin':'uniform';
  m.color.set('#ffffff');m.metalness=0;m.roughness=head?.76:.93;m.side=THREE.FrontSide;
 });
-const clips=[['Rifle_Aiming_Idle','Idle'],['Rifle_Walk','Walk'],['Rifle_Run','Run'],['Backwards_Rifle_Walk','BackWalk'],['Idle_Crouching_Aiming','Crouch'],['Reloading','Reload'],['Hit_Reaction','Hit'],['Death','Death'],['Being_Strangled','Struggle'],['Stealth_Assassination','Stealth'],['Brutal_Assassination','Grapple'],['Stabbing','Stab']];
+const clips=[['Rifle_Aiming_Idle','Idle'],['Rifle_Walk','Walk'],['Rifle_Run','Run'],['Backwards_Rifle_Walk','BackWalk'],['Idle_Crouching_Aiming','Crouch'],['Reloading','Reload'],['Hit_Reaction','Hit'],['Death','Death'],['Being_Strangled','Struggle'],['Stealth_Assassination','Stealth'],['Brutal_Assassination','Grapple'],['Stabbing','Stab'],['Prone_Idle','Prone'],['Prone_Forward','ProneCrawl'],['Rifle_Jump_In_Place','Jump'],['Crouch_Walk','CrouchWalk']];
 const animations=[];
 for(const [file,name]of clips){const source=await readMotionAsset(root+file+'.glb');animations.push(retargetMotion(model,source.gltf,name));}
 // Index-only LOD preserves the photographed UVs, original vertices, skin

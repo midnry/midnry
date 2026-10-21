@@ -241,6 +241,8 @@ export function inputOf(value: unknown): Input {
     pitch: number("pitch", 1),
     sprint: v.sprint === true,
     slide: v.slide === true,
+    jump: v.jump === true,
+    ...(v.stance === "stand" || v.stance === "crouch" || v.stance === "prone" ? { stance: v.stance } : {}),
     fire: v.fire === true,
     reload: v.reload === true,
     super: v.super === true,

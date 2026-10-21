@@ -609,3 +609,25 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
 - Next from the owner's design: surrender/escape/fight for the accused (second infiltrator can
   help), emergency landing instead of instant crash, random non-sabotage malfunctions, infiltrator
   secret objectives.
+
+## Last Signal stances: jump, crouch, lie prone (owner, 2026-10-21, not deployed yet)
+
+- Rules: `public/games/outpost-stance.js` (shared by sim, server and bots). Shots check height:
+  `verticalHit` compares the aim's vertical offset (pitch × distance, tiles) with the target's
+  centre minus the shooter's eye; crouch/prone lower the centre and shrink the window, a jump
+  lifts it. Speeds: crouch 60%, prone 30% (no sprinting; sprint stands you up). Bots spot prone
+  fighters within 6.5 tiles and crouched within 11 (unless they fired in the last 2 s). Jumps
+  (0.55 s, ~0.75 m) clear sandbag barriers and canisters (`canMove(..., over)`); mid-air shots
+  wander slightly; a prone fighter can't fire for 0.35 s after getting down.
+- Inputs: `input.stance` ("stand"|"crouch"|"prone") and `input.jump` (edge), validated in
+  `applyStanceInput`; server `inputOf` passes them. Bots (`botStance`): prone when hurt in cover
+  or holding a long rifle line, crouched trading shots at mid range, standing to move; they aim
+  at the target's height (`pitchTo`) and sometimes jump instead of sliding to dodge.
+- Controls (one stance control everywhere): keyboard C tap crouch/stand, hold prone, tap while
+  sprinting = slide; Z prone; Space jumps in Last Signal (still fires in Blackout Protocol);
+  controller A jump, B stance (Y slide); touch: round STANCE button (icon = what a tap does,
+  hold fills a ring then lies down, haptic tick) and JUMP button in the right thumb arc.
+- Animations: Mixamo Prone_Idle, Prone_Forward (crawl), Rifle_Jump_In_Place, Crouch_Walk,
+  converted FBX→GLB with Blender and recorded in `scripts/assets/outpost-operator/sources.json`;
+  added to operator-v1 and all Locker characters. First-person eye height follows the stance.
+- Tests: `scripts/outpost-stance.test.mjs`. QA: `node scripts/qa/stance-look.mjs [width]`.

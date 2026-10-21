@@ -201,6 +201,8 @@ export default defineConfig(({ command, isPreview }) => ({
                   "outpost-frame-diagnostics.js",
                   "outpost-protocol-focus.js",
                   "outpost-navigation.js",
+                  "outpost-hospital.js",
+                  "outpost-stance.js",
                   "outpost-practice.js",
                   "outpost-protocol-ai.js",
                   "outpost-variety.js",

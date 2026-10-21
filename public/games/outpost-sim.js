@@ -1,5 +1,6 @@
 /** Shared, DOM-free simulation for offline games and authoritative online rooms. */
 export const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+import { applyStanceInput, airborne, botStance, jumpPhase, JUMP, lowCover, pitchTo, settling, speedOf, spotRange, stanceOf, verticalHit } from "./outpost-stance.js";
 import { LEVEL, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf } from "./outpost-content.js";
 // Health recovery: starts this many seconds after the last damage taken,
 // then restores this fraction of maximum health per second.
@@ -175,6 +176,9 @@ export class Arena {
         poisonDamage: 0,
         slowUntil: 0,
         sprinting: false,
+        stance: "stand",
+        stanceAt: 0,
+        jumpAt: -10,
         slideUntil: 0,
         slideCooldown: 0,
         slideHeld: false,
@@ -370,20 +374,26 @@ export class Arena {
     }
     return { distance: max, type: 1, side: 0, u: 0, mx, my };
   }
-  canMove(x, y, r = 0.2) {
+  canMove(x, y, r = 0.2, over = false) {
     return (
       !this.wall(x - r, y - r) &&
       !this.wall(x + r, y - r) &&
       !this.wall(x - r, y + r) &&
       !this.wall(x + r, y + r) &&
       !this.crates.some(
-        (c) => c.hp > 0 && Math.abs(x - c.x) < r + footprint(c) && Math.abs(y - c.y) < r + footprint(c),
+        (c) =>
+          c.hp > 0 &&
+          !(over && lowCover(c)) &&
+          Math.abs(x - c.x) < r + footprint(c) &&
+          Math.abs(y - c.y) < r + footprint(c),
       )
     );
   }
   move(e, dx, dy) {
-    if (this.canMove(e.x + dx, e.y)) e.x += dx;
-    if (this.canMove(e.x, e.y + dy)) e.y += dy;
+    // A jump clears low cover; landing on it, you can still step off.
+    const over = airborne(e, this.time) || !this.canMove(e.x, e.y);
+    if (this.canMove(e.x + dx, e.y, 0.2, over)) e.x += dx;
+    if (this.canMove(e.x, e.y + dy, 0.2, over)) e.y += dy;
   }
   rayTarget(origin, dx, dy, targets) {
     let nearest = this.cast(origin.x, origin.y, dx, dy).distance,
@@ -532,6 +542,12 @@ export class Arena {
       return v - Math.floor(v);
     };
     if (roll(0) >= skill.dodge) return;
+    // Sometimes a jump over the line of fire instead of a slide.
+    if (roll(2) < 0.3 && stanceOf(bot) === "stand" && this.time >= (bot.jumpReadyAt ?? 0)) {
+      bot.jumpAt = this.time;
+      bot.jumpReadyAt = this.time + JUMP.duration + JUMP.cooldown;
+      return;
+    }
     const side = roll(1) < 0.5 ? 1 : -1;
     for (const s of [side, -side]) {
       const a = bot.damageAngle + (s * Math.PI) / 2,
@@ -635,6 +651,8 @@ export class Arena {
     e.respawnAt = 0;
     e.reloadUntil = 0;
     e.sprinting = false;
+    e.stance = "stand";
+    e.jumpAt = -10;
     e.slideUntil = 0;
     e.slideCooldown = 0;
     e.slideHeld = false;
@@ -832,7 +850,9 @@ export class Arena {
       const t = this.rayTarget(e, Math.cos(a), Math.sin(a), [...this.entities, ...this.crates]);
       if (!t) continue;
       const d = Math.hypot(t.x - e.x, t.y - e.y);
-      if (d > range || Math.abs((e.pitch || 0) * d) > (t.id.startsWith("crate") ? 0.32 : 0.48))
+      if (d > range) continue;
+      // Height matters: crouched and prone fighters are smaller, lower targets.
+      if (t.id.startsWith("crate") ? Math.abs((e.pitch || 0) * d) > 0.32 : !verticalHit(e, t, e.pitch, d, this.time))
         continue;
       const falloff =
         w.kind === "shotgun"
@@ -858,6 +878,7 @@ export class Arena {
     if (this.countdown > 0) return false;
     const w = weaponOf(e.weapon);
     if (
+      settling(e, this.time) ||
       e.hp <= 0 ||
       this.state === "ended" ||
       e.reloadUntil ||
@@ -872,6 +893,9 @@ export class Arena {
     e.ammo--;
     e.shotAt = this.time;
     e.cloakedUntil = 0;
+    // Shots fired mid-jump wander a little.
+    const phase = jumpPhase(e, this.time);
+    if (phase !== null) e.a += Math.sin(this.time * 97 + (e.phase || 0)) * JUMP.wander;
     if (w.kind === "rifle") this.pellets(e, w, w.damage, 0, 1, w.range);
     else if (w.kind === "shotgun") this.pellets(e, w);
     else if (w.kind === "burst") {
@@ -1233,7 +1257,8 @@ export class Arena {
       nearest = (list) => [...list].sort((a, b) => dist(a) - dist(b))[0];
     // A sandstorm cuts how far bots can spot rivals.
     const awareness = disasterActive(this, "sandstorm") ? Math.min(skill.awareness, 3.5) : skill.awareness;
-    const foe = nearest(rivals.filter((e) => dist(e) < awareness && this.visible(bot, e))),
+    // Low stances hide a fighter at range (until they fire).
+    const foe = nearest(rivals.filter((e) => dist(e) < Math.min(awareness, spotRange(e, this.time)) && this.visible(bot, e))),
       box = nearest(this.crates.filter((c) => c.hp > 0 && !c.kind && !this.outsideSafe(c))),
       core = nearest(this.cores.filter((c) => !this.outsideSafe(c)));
     let goal;
@@ -1276,6 +1301,13 @@ export class Arena {
     }
     const stop =
       goal === foe ? Math.min(2.1, weaponOf(bot.weapon).range * 0.65) : goal === box ? 1.2 : 0.25;
+    if (this.mode === "signal")
+      botStance(this, bot, foe, {
+        retreating: !!bot.retreating,
+        moving: dist(goal) > stop + 0.6,
+        outside: this.outsideSafe(bot),
+        rifle: ["rifle", "burst"].includes(weaponOf(bot.weapon).kind),
+      });
     const sliding = bot.slideUntil > this.time;
     if (sliding) {
       const speed =
@@ -1292,7 +1324,7 @@ export class Arena {
         const dx = point.x - bot.x,
           dy = point.y - bot.y,
           d = Math.hypot(dx, dy);
-        const boost = (bot.speedUntil > this.time ? 1.4 : 1) * this.weather(bot);
+        const boost = (bot.speedUntil > this.time ? 1.4 : 1) * this.weather(bot) * speedOf(bot);
         if (d > 0.01)
           this.move(
             bot,
@@ -1321,7 +1353,8 @@ export class Arena {
       bot.a =
         Math.atan2(target.y - bot.y, target.x - bot.x) +
         Math.sin(this.time * 3 + bot.phase) * skill.aim;
-      bot.pitch = 0;
+      // Aim at the target's height: low against prone, up at a jumper.
+      bot.pitch = target.id.startsWith("crate") ? 0 : pitchTo(bot, target, dist(target), this.time);
       if (bot.charge >= 100) this.super(bot);
       this.shoot(bot);
     } else if (goal) bot.a = Math.atan2(goal.y - bot.y, goal.x - bot.x);
@@ -1365,10 +1398,11 @@ export class Arena {
         e.slideDy = (sa * f + ca * s) / direction;
       }
       e.slideHeld = !!input.slide;
+      applyStanceInput(e, input, this.time, Math.hypot(f, s) > 0.1);
       const sliding = e.slideUntil > this.time;
-      e.sprinting = !sliding && !!input.sprint && Math.hypot(f, s) > 0.1;
+      e.sprinting = !sliding && !!input.sprint && Math.hypot(f, s) > 0.1 && stanceOf(e) === "stand";
       const speed =
-        (sliding ? 3 + 3 * ((e.slideUntil - this.time) / 0.65) : input.sprint ? 4 : 2.6) *
+        (sliding ? 3 + 3 * ((e.slideUntil - this.time) / 0.65) : (e.sprinting ? 4 : 2.6) * speedOf(e)) *
         (e.speedUntil > this.time ? 1.4 : 1) *
         (e.slowUntil > this.time ? 0.45 : 1) *
         this.weather(e);

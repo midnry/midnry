@@ -335,6 +335,7 @@ export class RoomTransport {
         reload: g.pendingReload,
         super: g.pendingSuper,
         slide: g.pendingSlide,
+        jump: g.pendingJump,
       };
     if (this.send({ type: "input", seq, input })) {
       n.seq = seq;
@@ -352,6 +353,7 @@ export class RoomTransport {
     if (sent.some((s) => s.reload)) g.pendingReload = false;
     if (sent.some((s) => s.super)) g.pendingSuper = false;
     if (sent.some((s) => s.slide)) g.pendingSlide = false;
+    if (sent.some((s) => s.jump)) g.pendingJump = false;
   }
   action(op, extra) {
     const requestId = ++this.requestId;

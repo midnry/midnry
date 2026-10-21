@@ -38,6 +38,11 @@ const CLIPS = [
   ["Reloading", "Reload"],
   ["Hit_Reaction", "Hit"],
   ["Death", "Death"],
+  // Stances (Last Signal): lying prone, crawling, a rifle jump, crouched walking.
+  ["Prone_Idle", "Prone"],
+  ["Prone_Forward", "ProneCrawl"],
+  ["Rifle_Jump_In_Place", "Jump"],
+  ["Crouch_Walk", "CrouchWalk"],
 ];
 const motions = [];
 for (const [file, name] of CLIPS) motions.push([(await readMotionAsset(MOTION + file + ".glb")).gltf, name]);

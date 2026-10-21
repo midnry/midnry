@@ -1,5 +1,6 @@
 // @ts-nocheck
 /** Authored character materials and distance-driven skeletal presentation. */
+import { jumpPhase } from "../../public/games/outpost-stance.js";
 import * as THREE from "three";
 import { ASSET_CACHE } from "../../public/games/outpost-asset-manifest.js";
 
@@ -495,10 +496,26 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
   const reduced = r.motion?.matches;
   const moving = !reduced && state.speed > 0.15 && e.hp > 0 && !(e.slideUntil > r.g.time);
   const backward = state.signedDistance < -state.distance * 0.35;
-  const capturedCrouch = (e.crouching || e.slideUntil > r.g.time) && actor.actions.Crouch;
+  const capturedCrouch = (e.crouching || e.stance === "crouch" || e.slideUntil > r.g.time) && actor.actions.Crouch;
+  const jump = jumpPhase(e, r.g.time);
   // The bundled Walk and BackWalk clips are broken (a flying kick and a fall),
   // so every gait plays Run, slowed to the actual speed and reversed backwards.
-  const next = capturedCrouch ? "Crouch" : moving ? "Run" : "Idle";
+  // Stances (Last Signal): a rifle jump, lying prone (crawling when moving),
+  // and crouched walking.
+  const next =
+    jump !== null && actor.actions.Jump
+      ? "Jump"
+      : e.stance === "prone" && actor.actions.Prone
+        ? moving && actor.actions.ProneCrawl
+          ? "ProneCrawl"
+          : "Prone"
+        : capturedCrouch
+          ? moving && actor.actions.CrouchWalk && !(e.slideUntil > r.g.time)
+            ? "CrouchWalk"
+            : "Crouch"
+          : moving
+            ? "Run"
+            : "Idle";
   if (next !== actor.action) {
     actor.actions[actor.action]?.fadeOut(0.15);
     actor.actions[next]?.reset().fadeIn(0.15).play();
@@ -508,11 +525,17 @@ export function updateActorPresentation(r, actor, e, delta, sample) {
   if (action) {
     const duration = action.getClip().duration;
     const loopDistance = r.characterProfile?.[next] || (next === "Run" ? 2.25 : 1.45);
-    action.setEffectiveTimeScale(
-      moving && !capturedCrouch
-        ? (backward ? -1 : 1) * clamp((speed * duration) / loopDistance, 0.25, 3)
-        : 1,
-    );
+    const gait = next === "Run" || next === "ProneCrawl" || next === "CrouchWalk";
+    if (next === "Jump") {
+      // The jump follows the simulation's arc exactly.
+      action.setEffectiveTimeScale(0);
+      action.time = jump * duration;
+    } else
+      action.setEffectiveTimeScale(
+        moving && gait
+          ? (backward ? -1 : 1) * clamp((speed * duration) / (next === "Run" ? loopDistance : next === "ProneCrawl" ? 0.9 : 1.3), 0.25, 3)
+          : 1,
+      );
   }
   state.distance = 0;
   state.signedDistance = 0;

@@ -151,11 +151,18 @@ export class OutpostGamepad {
     // Look: a curved response, like most console shooters.
     if (rx || ry) g.applyLook(rx * Math.abs(rx) * 900 * dt, ry * Math.abs(ry) * 600 * dt);
     this.hold("shift", down[BUTTON.L3] || down[BUTTON.LT]);
-    this.hold("e", down[BUTTON.A]);
-    if (pressed(BUTTON.A)) ui?.startEquipmentCheck?.();
-    if (pressed(BUTTON.B)) this.tap("f");
+    if (g.mode === "protocol") {
+      this.hold("e", down[BUTTON.A]);
+      if (pressed(BUTTON.A)) ui?.startEquipmentCheck?.();
+      if (pressed(BUTTON.B)) this.tap("f");
+    } else {
+      // Last Signal: A jumps; B crouches (hold to lie down; while sprinting, slides).
+      if (pressed(BUTTON.A)) g.requestJump?.();
+      if (pressed(BUTTON.B)) g.stancePress?.();
+      if (released(BUTTON.B)) g.stanceRelease?.();
+    }
     if (pressed(BUTTON.X)) this.tap("q");
-    if (pressed(BUTTON.Y)) this.tap("c");
+    if (pressed(BUTTON.Y)) g.mode === "protocol" ? this.tap("c") : g.requestSlide?.();
     if (pressed(BUTTON.RB)) this.tap("x");
     if (pressed(BUTTON.LB)) this.tap("b");
     if (pressed(BUTTON.RT)) {

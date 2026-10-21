@@ -54,6 +54,7 @@ import { NightDressing } from "./realism-night.js";
 import { prepareWorldTypography, makeProtocolSign } from './world-text.js';
 import { prepareMedevac, buildMedevac } from "./realism-medevac.js";
 import { buildHospital, updateHospital } from "./realism-hospital.js";
+import { STANCE, stanceOf, jumpLift } from "../../public/games/outpost-stance.js";
 import { HOSPITAL_MAP } from "../../public/games/outpost-protocol-map.js";
 import { HazardDressing, buildHazard } from "./realism-hazards.js";
 import { ArenaStyles } from "./arena-style.js";
@@ -3415,14 +3416,15 @@ export class MilitaryRenderer {
         protocolView?.protocol?.mission?.vehicle?.pilotId === p.id;
     const now = performance.now(),
       dt = Math.min(0.1, (now - (this.lastRenderAt || now)) / 1000),
-      targetHeight = p.slideUntil > g.time ? 0.7 : p.crouching ? 1.17 : 1.65;
+      // Eye height follows the stance (crouch, prone); a jump lifts it below.
+      targetHeight = p.slideUntil > g.time ? 0.7 : p.crouching ? 1.17 : 1.65 + STANCE[stanceOf(p)].eye * SCALE;
     this.lastRenderAt = now;
     this.eyeHeight ??= 1.65;
     this.eyeHeight += (targetHeight - this.eyeHeight) * (1 - Math.exp(-dt * 18));
     const fall = this.motion.matches ? 0 : (g.deathProgress || 0) ** 2;
     this.camera.position.set(
       p.x * SCALE,
-      g.deathSequence ? 1.65 - fall * 1.4 : this.eyeHeight,
+      g.deathSequence ? 1.65 - fall * 1.4 : this.eyeHeight + jumpLift(p, g.time) * SCALE,
       p.y * SCALE + (seatedPilot ? 0.85 : 0),
     );
     this.camera.rotation.set(pitch - fall * 0.25, -p.a - Math.PI / 2, fall * 0.5, "YXZ");
