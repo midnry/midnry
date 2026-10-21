@@ -320,10 +320,29 @@ function score(item: DeskItem, words: string[]): { matched: number; points: numb
   return { matched, points };
 }
 
+/** How many results show before "Show all". */
+const FIRST_RESULTS = 24;
+/** Screen readers hear the count once typing settles, not on every key. */
+const ANNOUNCE_DELAY = 700;
+
+type AppSearchProps = {
+  className?: string;
+  /** Width limit for the search box alone, so results can use the full page width. */
+  fieldClassName?: string;
+  autoFocus?: boolean;
+  /** Controlled query (e.g. kept in the address bar). Leave out to let the box keep its own. */
+  query?: string;
+  onQueryChange?: (query: string) => void;
+  /** "Help me choose" from the empty state. Without it, the button links to the finder on /apps. */
+  onHelpChoose?: () => void;
+};
+
 /** Search every app on the desk by name, purpose, audience, and features. */
-export function AppSearch({ className, autoFocus }: { className?: string; autoFocus?: boolean }) {
+export function AppSearch({ className, fieldClassName, autoFocus, query: controlled, onQueryChange, onHelpChoose }: AppSearchProps) {
   const { items, known, signedIn, hasPass, isAdmin } = useDesk();
-  const [query, setQuery] = useState("");
+  const [own, setOwn] = useState("");
+  const query = controlled ?? own;
+  const [showAll, setShowAll] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const statusId = useId();
   const words = searchWords(query);
@@ -334,8 +353,32 @@ export function AppSearch({ className, autoFocus }: { className?: string; autoFo
   const results = (partial ? scored : exact)
     .sort((a, b) => b.matched - a.matched || b.points - a.points || a.item.name.localeCompare(b.item.name))
     .map((entry) => entry.item);
-  const shown = results.slice(0, 24);
+  const shown = showAll ? results : results.slice(0, FIRST_RESULTS);
   const typed = query.trim();
+  const active = words.length > 0;
+
+  // A short, settled status for screen readers ("7 results"), separate from the visible heading.
+  const announcement = !active
+    ? ""
+    : results.length === 0
+      ? "No results"
+      : partial
+        ? `No exact match. ${results.length} close ${results.length === 1 ? "match" : "matches"}`
+        : `${results.length} ${results.length === 1 ? "result" : "results"}`;
+  const [announced, setAnnounced] = useState("");
+  useEffect(() => {
+    const id = setTimeout(() => setAnnounced(announcement), ANNOUNCE_DELAY);
+    return () => clearTimeout(id);
+  }, [announcement]);
+
+  useEffect(() => {
+    setShowAll(false);
+  }, [typed]);
+
+  function setQuery(value: string) {
+    if (controlled === undefined) setOwn(value);
+    onQueryChange?.(value);
+  }
 
   function clear() {
     setQuery("");
@@ -343,8 +386,17 @@ export function AppSearch({ className, autoFocus }: { className?: string; autoFo
   }
 
   return (
-    <div className={className}>
-      <form role="search" aria-label="Apps" onSubmit={(event) => event.preventDefault()} className="relative">
+    <div
+      className={className}
+      onKeyDown={(event) => {
+        // Escape clears from anywhere in the search or its results, and returns to the box.
+        if (event.key === "Escape" && query) {
+          event.preventDefault();
+          clear();
+        }
+      }}
+    >
+      <form role="search" aria-label="Apps" onSubmit={(event) => event.preventDefault()} className={cn("relative", fieldClassName)}>
         <label htmlFor={`${statusId}-q`} className="sr-only">
           Search apps
         </label>
@@ -361,11 +413,8 @@ export function AppSearch({ className, autoFocus }: { className?: string; autoFo
           autoComplete="off"
           enterKeyHint="search"
           onChange={(event) => setQuery(event.target.value.slice(0, 80))}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") setQuery("");
-          }}
           placeholder={`Search ${items.length} apps`}
-          aria-describedby={words.length ? statusId : undefined}
+          aria-describedby={active ? `${statusId}-count` : undefined}
           className="h-14 w-full rounded-full border border-line bg-card pl-13 pr-14 text-base text-ink shadow-line outline-none placeholder:text-muted focus-visible:border-pine focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine [&::-webkit-search-cancel-button]:hidden"
         />
         {query ? (
@@ -381,31 +430,69 @@ export function AppSearch({ className, autoFocus }: { className?: string; autoFo
           </button>
         ) : null}
       </form>
-      <div aria-live="polite" className="empty:hidden">
-        {words.length ? (
-          <p id={statusId} className="mt-4 text-sm text-muted">
-            {results.length === 0
-              ? `No apps match “${typed}”.`
-              : partial
-                ? `Nothing matches every word. Closest ${results.length === 1 ? "match" : "matches"}:`
-                : `${results.length} ${results.length === 1 ? "app matches" : "apps match"} “${typed}”${results.length > shown.length ? `. Showing the best ${shown.length}.` : "."}`}
-          </p>
-        ) : null}
-      </div>
-      {words.length && shown.length ? (
-        <AppGroup apps={shown} view="grid" known={known} signedIn={signedIn} hasPass={hasPass} isAdmin={isAdmin} />
+      <p role="status" aria-live="polite" aria-atomic="true" className="sr-only" data-search-status>
+        {announced}
+      </p>
+      {active ? (
+        <section aria-labelledby={`${statusId}-count`} className="mt-8" data-search-results>
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-line pb-4">
+            <div className="min-w-0">
+              <h2 id={`${statusId}-count`} className="font-display text-2xl tracking-tight text-balance break-words sm:text-3xl">
+                {results.length === 0
+                  ? `No apps match “${typed}”.`
+                  : partial
+                    ? `No app matches every word. ${results.length} close ${results.length === 1 ? "match" : "matches"} for “${typed}”`
+                    : `${results.length} ${results.length === 1 ? "app matches" : "apps match"} “${typed}”`}
+              </h2>
+              {results.length > shown.length ? (
+                <p className="mt-1 text-sm text-muted">Best {shown.length} first.</p>
+              ) : results.length > 0 ? (
+                <p className="mt-1 text-sm text-muted">Press Escape or Clear search to go back to browsing.</p>
+              ) : null}
+            </div>
+            {results.length > 0 ? (
+              <button type="button" onClick={clear} className={cn(buttonClass({ tone: "quiet" }), "shrink-0")}>
+                <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+                  <path d="M7 7l10 10M17 7L7 17" />
+                </svg>
+                Clear search
+              </button>
+            ) : null}
+          </div>
+          {shown.length ? <AppGroup apps={shown} view="grid" known={known} signedIn={signedIn} hasPass={hasPass} isAdmin={isAdmin} /> : null}
+          {results.length > shown.length ? (
+            <button type="button" onClick={() => setShowAll(true)} className={cn(buttonClass({ tone: "quiet" }), "mt-5")}>
+              Show all {results.length} matches
+            </button>
+          ) : null}
+          {results.length === 0 ? <NoResults onClear={clear} onHelpChoose={onHelpChoose} /> : null}
+        </section>
       ) : null}
-      {words.length && results.length === 0 ? <NoResults onClear={clear} /> : null}
     </div>
   );
 }
 
-/** What to do when a search finds nothing: a goal to start from, a clean slate, or the full list. */
-function NoResults({ onClear }: { onClear: () => void }) {
+/** What to do when a search finds nothing: a clean slate, the finder, or a goal to start from. */
+function NoResults({ onClear, onHelpChoose }: { onClear: () => void; onHelpChoose?: () => void }) {
   return (
-    <div className="mt-3 rounded-2xl bg-card p-5 shadow-line sm:p-6">
-      <p className="font-medium">Try a simpler word, or start from what you want to get done:</p>
-      <ul className="mt-3 flex flex-wrap gap-2">
+    <div className="mt-5 rounded-2xl bg-card p-5 shadow-line sm:p-6">
+      <p className="text-pretty text-muted">Nothing matched. Try a simpler word, let us help you choose, or start from what you want to get done.</p>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <button type="button" onClick={onClear} className={buttonClass({ tone: "quiet" })}>
+          Clear search
+        </button>
+        {onHelpChoose ? (
+          <button type="button" onClick={onHelpChoose} className={buttonClass({ tone: "primary" })}>
+            Help me choose
+          </button>
+        ) : (
+          <Link to="/apps" hash="finder" className={buttonClass({ tone: "primary" })}>
+            Help me choose
+          </Link>
+        )}
+      </div>
+      <h3 className="mt-6 text-sm font-medium text-ink-soft">Popular goals</h3>
+      <ul className="mt-2 flex flex-wrap gap-2">
         {GOALS.map((goal) => (
           <li key={goal.id}>
             <GoalLink goal={goal} className="inline-flex min-h-11 items-center rounded-full bg-paper px-4 text-sm hover:bg-paper-2">
@@ -414,17 +501,6 @@ function NoResults({ onClear }: { onClear: () => void }) {
           </li>
         ))}
       </ul>
-      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
-        <button type="button" onClick={onClear} className={buttonClass({ tone: "quiet" })}>
-          Clear search
-        </button>
-        <Link to="/apps" hash="all" className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
-          Browse all apps
-        </Link>
-        <Link to="/apps" hash="finder" className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
-          Help me choose
-        </Link>
-      </div>
     </div>
   );
 }
