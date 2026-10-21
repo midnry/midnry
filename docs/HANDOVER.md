@@ -683,3 +683,18 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   days (payments kept 6 years, anonymised); deletes usage/match/daily/play/feedback/AI counters
   after 90 days. Migration 0020 must run before the code (npm start does). Restore = delete the
   `account_closure` row within 30 days. Tests: `scripts/retention.test.mjs`, QA `scripts/qa/account-delete.mjs`.
+
+## Creator earnings, payouts and age confirmations (owner, 2026-10-21, not deployed yet)
+
+- Earnings: 70% of Pass revenue after Paystack fees and refunds (`pass_payments` recorded from the
+  charge.success / refund.processed webhooks; `src/lib/payouts/ledger.ts`, `src/lib/revenue.ts`).
+  Months become final one day after they end and are frozen in `creator_months`/`creator_earnings`.
+- Payouts are manual: makers add encrypted bank details on /earnings (`src/lib/payouts/details.ts`,
+  key derived from BETTER_AUTH_SECRET — rotating it makes saved details unreadable); admin page
+  /payouts (mark paid, withhold, CSV). Minimum US$20 / ₦20,000 for Nigerian banks (NGN_PER_USD_ESTIMATE).
+  Tests `scripts/payouts.test.mjs`, QA `scripts/qa/payouts.mjs`. Past months show $0 (no payment
+  data was recorded before this).
+- Age: sign-up requires "13 or older, or parent's permission" (`age_confirmed_at`, migration 0021,
+  `src/lib/auth/age.server.ts`; Google passes it through OAuth state). Pass checkout and store buys
+  require "18 or older, or a parent is paying" (checked per request, not stored). QA `scripts/qa/age-confirm.mjs`.
+- Migrations 0021 and 0022 must run before the code (npm start does).

@@ -8,6 +8,8 @@
 // - Payment records needed for tax/accounting (Midnry Pass subscription rows
 //   with a payment reference, Outpost Zero store purchases) are kept,
 //   anonymised (no name or email, linked to a random id), for 6 years.
+// - The same goes for creator earnings and payouts made to a maker; a maker's
+//   payout (bank) details are deleted with the account.
 // - Usage stats are deleted after 90 days.
 
 export type Runner = {
@@ -62,6 +64,9 @@ export const USER_COLUMNS: Record<string, string[]> = {
   outpost_match: ["user_id"],
   outpost_purchase: ["user_id"],
   account_closure: ["user_id"],
+  creator_earnings: ["owner_id"],
+  creator_payouts: ["owner_id"],
+  creator_payout_details: ["user_id"],
 };
 
 /**
@@ -78,6 +83,8 @@ export const UNLINKED_TABLES = [
   "outpost_room", // short-lived anonymous rooms with their own expiry
   "outpost_daily", // hash of a random device token; 90-day retention
   "maintenance_runs",
+  "pass_payments", // Pass payment amounts and fees, no user id; kept 6 years
+  "creator_months", // monthly pool totals
 ];
 
 /**
@@ -109,6 +116,20 @@ export function purgeSteps(userId: string, anonId: string): Step[] {
       `update outpost_purchase set user_id = $2 where user_id = $1`,
       [userId, anonId],
     ),
+
+    // Creator earnings and payouts: accounting records, kept anonymised.
+    // Bank details are deleted.
+    step(
+      "creator_earnings: anonymise",
+      `update creator_earnings set owner_id = $2 where owner_id = $1`,
+      [userId, anonId],
+    ),
+    step(
+      "creator_payouts: anonymise",
+      `update creator_payouts set owner_id = $2 where owner_id = $1`,
+      [userId, anonId],
+    ),
+    step("creator_payout_details", `delete from creator_payout_details where user_id = $1`),
 
     // Community apps they made, and what pointed at them.
     step(
@@ -213,6 +234,25 @@ export const RETENTION_STEPS: Step[] = [
     text: `delete from outpost_purchase
             where user_id like '${ANON_PREFIX}%'
               and coalesce(paid_at, created_at) < now() - interval '${PAYMENT_RETENTION_YEARS} years'`,
+    params: [],
+  },
+  {
+    label: "creator_earnings: anonymised, past 6 years",
+    text: `delete from creator_earnings
+            where owner_id like '${ANON_PREFIX}%'
+              and month < now() - interval '${PAYMENT_RETENTION_YEARS} years'`,
+    params: [],
+  },
+  {
+    label: "creator_payouts: anonymised, past 6 years",
+    text: `delete from creator_payouts
+            where owner_id like '${ANON_PREFIX}%'
+              and created_at < now() - interval '${PAYMENT_RETENTION_YEARS} years'`,
+    params: [],
+  },
+  {
+    label: "pass_payments: past 6 years",
+    text: `delete from pass_payments where occurred_at < now() - interval '${PAYMENT_RETENTION_YEARS} years'`,
     params: [],
   },
 ];

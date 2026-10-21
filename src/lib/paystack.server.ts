@@ -3,6 +3,7 @@ import { getRequest } from "@tanstack/react-start/server";
 import { getSql } from "@/lib/db";
 import { readAccount } from "@/lib/account.server";
 import { PASS_PRICE_CENTS, type AccountState } from "@/lib/access";
+import type { RefundInput } from "@/lib/payouts/ledger";
 
 // Local QA only (scripts/qa/outpost-store.mjs): a stand-in Paystack. Never on Render.
 const PAYSTACK_API =
@@ -44,6 +45,8 @@ export type PaystackCharge = {
   status?: string;
   reference?: string;
   amount?: number | string;
+  /** Paystack's fee for this charge, in the minor unit. */
+  fees?: number | string | null;
   currency?: string;
   paid_at?: string | null;
   metadata?: { user_id?: string; purpose?: string; item?: string } | null;
@@ -391,6 +394,9 @@ async function applyVerifiedCharge(userId: string, charge: PaystackCharge): Prom
   if (purpose !== "cove_pass" && !isMidnryPlan(charge.plan, planCode)) {
     throw new Error("This payment is not for Midnry Pass.");
   }
+  // The creator pool is worked out from recorded Pass payments. Never let a
+  // recording failure block the Pass; the webhook records it again.
+  await recordPassPayment(charge).catch(() => console.error("pass payment record failed"));
   const paidAt = charge.paid_at ?? new Date().toISOString();
   let periodEnd = addMonth(paidAt);
   let subscriptionCode: string | null = null;
@@ -484,6 +490,11 @@ export async function openCardPortal(userId: string): Promise<string> {
   return link.link;
 }
 
+async function recordPassPayment(charge: PaystackCharge): Promise<void> {
+  const { recordPassCharge } = await import("@/lib/payouts/ledger");
+  await recordPassCharge(await getSql(), charge);
+}
+
 function signed(payload: string, header: string | null): boolean {
   if (!header) return false;
   const hash = createHmac("sha512", secretKey()).update(payload).digest("hex");
@@ -527,12 +538,18 @@ async function dispatch(name: string, data: unknown): Promise<void> {
     const userId =
       charge.metadata?.user_id ||
       (await userIdForCustomer(charge.customer?.customer_code ?? null, charge.customer?.email ?? null));
-    if (!userId) return;
     const planCode = await storedPlanCode();
     if (charge.metadata?.purpose !== "cove_pass" && !isMidnryPlan(charge.plan, planCode)) return;
     if (Number(charge.amount) !== PASS_PRICE_CENTS || charge.currency?.toUpperCase() !== CURRENCY) return;
     if (charge.status !== "success") return;
-    await applyVerifiedCharge(userId, charge);
+    if (userId) await applyVerifiedCharge(userId, charge);
+    // Recorded for the creator pool whether or not an account was found.
+    await recordPassPayment(charge);
+    return;
+  }
+  if (name === "refund.processed") {
+    const { recordPassRefund } = await import("@/lib/payouts/ledger");
+    await recordPassRefund(await getSql(), data as RefundInput);
     return;
   }
   if (name !== "subscription.create" && name !== "subscription.disable" && name !== "subscription.not_renew") {

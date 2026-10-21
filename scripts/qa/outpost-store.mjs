@@ -23,7 +23,7 @@ const stamp = Date.now().toString(36),
   password = "outpost-zero-qa-1";
 const headers = { origin: BASE };
 async function account(ctx, email, name) {
-  const r = await ctx.request.post(`${BASE}/api/auth/sign-up/email`, { headers, data: { email, password, name } });
+  const r = await ctx.request.post(`${BASE}/api/auth/sign-up/email`, { headers, data: { email, password, name, ageConfirmed: true } });
   if (!r.ok()) await ctx.request.post(`${BASE}/api/auth/sign-in/email`, { headers, data: { email, password } });
 }
 // Store calls run inside a page: its __Host- session cookie is Secure, which
@@ -57,6 +57,7 @@ await p.screenshot({ path: `${OUT}/locker-1280.png` });
 result.lockerTiger = await game(p).locator('[data-finish="tiger"] .mf-finishstate').innerText();
 
 // 2. Buy Tiger Stripe through the checkout page.
+await game(p).locator(".mf-adultcheck").check();
 await game(p).locator('[data-finish="tiger"]').click({ noWaitAfter: true });
 await p.waitForURL(/127\.0\.0\.1:8099\/pay\//, { timeout: 60000 });
 await p.getByRole("button", { name: "Pay" }).click();
@@ -86,20 +87,20 @@ result.gun = await game(p).evaluate(() => {
 await p.screenshot({ path: `${OUT}/gun-tiger-1280.png` });
 
 // 3. Webhook only: start a checkout through the API, pay, no redirect.
-const started = await api(ctx, { op: "buy", item: "carbon" });
+const started = await api(ctx, { op: "buy", item: "carbon", adultConfirmed: true });
 const last = await (await fetch(`${MOCK}/qa/last`)).json();
 result.webhookStatus = (await (await fetch(`${MOCK}/qa/pay`, { method: "POST", body: JSON.stringify({ reference: last.reference, webhook: true }) })).json()).webhook;
 result.afterWebhook = (await api(ctx, { op: "state" })).body.owned;
 
 // 3b. Dollars: the same flow priced in USD cents.
-await api(ctx, { op: "buy", item: "pixel", currency: "USD" });
+await api(ctx, { op: "buy", item: "pixel", currency: "USD", adultConfirmed: true });
 const usd = await (await fetch(`${MOCK}/qa/last`)).json();
 result.usdCharge = `${usd.currency} ${usd.amount}`;
 await fetch(`${MOCK}/qa/pay`, { method: "POST", body: JSON.stringify({ reference: usd.reference, webhook: true }) });
 result.usdOwned = (await api(ctx, { op: "state" })).body.owned.includes("pixel");
 
 // 4. Tampering: underpaid webhook, and another account confirming our reference.
-await api(ctx, { op: "buy", item: "damascus" });
+await api(ctx, { op: "buy", item: "damascus", adultConfirmed: true });
 const cheap = await (await fetch(`${MOCK}/qa/last`)).json();
 await fetch(`${MOCK}/qa/pay`, { method: "POST", body: JSON.stringify({ reference: cheap.reference, webhook: true, overrides: { amount: 100 } }) });
 const afterCheap = await api(ctx, { op: "state" });
@@ -108,7 +109,7 @@ const thief = await b.newContext();
 await account(thief, `thief-${stamp}@example.test`, "Thief");
 result.thief = await api(thief, { op: "confirm", reference: cheap.reference });
 result.thiefOwned = (await api(thief, { op: "state" })).body.owned;
-result.notForSale = (await api(ctx, { op: "buy", item: "signal" })).status;
+result.notForSale = (await api(ctx, { op: "buy", item: "signal", adultConfirmed: true })).status;
 await thief.close();
 await ctx.close();
 

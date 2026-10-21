@@ -101,11 +101,11 @@ function TermsPage() {
             </p>
             <p>Who can use Midnry:</p>
             <List>
-              <li>You must be at least 13 to use Midnry.</li>
+              <li>You must be at least 13 to use Midnry. When you create an account you confirm this, or that you have a parent's or guardian's permission.</li>
               <li>
                 If you're under 18, you need a parent's or guardian's permission, and they should make any payments.
               </li>
-              <li>Midnry Pass and store purchases need someone 18 or over, or a parent or guardian paying.</li>
+              <li>Midnry Pass and store purchases need someone 18 or over, or a parent or guardian paying. You confirm this before paying.</li>
               <li>Abuja Hustle is for adults 18 and over.</li>
             </List>
             <p>Some apps are aids, not professional advice:</p>
@@ -206,7 +206,7 @@ function TermsPage() {
               </li>
               <li>
                 Earnings: approved apps share {CREATOR_POOL_PERCENT}% of the month's revenue from active Midnry Pass
-                subscriptions, after payment-processing fees, refunds and taxes. Your share is that pool times your
+                subscriptions, after payment fees and refunds. Your share is that pool times your
                 app's opens, divided by every approved app's opens. One person counts once per app per day, and opening
                 your own app doesn't count. The{" "}
                 <Link to="/earnings" className={inline}>
@@ -216,7 +216,7 @@ function TermsPage() {
               </li>
               <li>
                 Payouts: earnings are paid monthly by bank transfer, by the 15th of the following month, once your
-                balance reaches ₦20,000 (or US$20). Smaller balances roll over to the next month.
+                balance reaches US$20 (₦20,000 for a Nigerian bank account). Smaller balances roll over to the next month.
               </li>
               <li>
                 You must give accurate payout details, and you're responsible for your own taxes.

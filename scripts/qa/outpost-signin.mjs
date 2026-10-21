@@ -96,6 +96,7 @@ await p.getByLabel("Name").waitFor({ timeout: 120000 });
 await p.getByLabel("Name").fill(player.name);
 await p.getByLabel("Email").fill(player.email);
 await p.getByLabel("Password").fill(player.password);
+await p.getByLabel("I'm 13 or older, or I have a parent's or guardian's permission.").check();
 await p.locator("form button[type=submit]").first().click();
 await p.waitForURL(/\/games\/outpost-zero/, { timeout: 60000 });
 await ready(p);
@@ -112,7 +113,7 @@ const headers = { origin: BASE };
 const creds = { email: "qa-admin@example.test", password: player.password };
 const signIn = await admin.request.post(`${BASE}/api/auth/sign-in/email`, { headers, data: creds });
 if (!signIn.ok())
-  await admin.request.post(`${BASE}/api/auth/sign-up/email`, { headers, data: { ...creds, name: "QA Admin" } });
+  await admin.request.post(`${BASE}/api/auth/sign-up/email`, { headers, data: { ...creds, name: "QA Admin", ageConfirmed: true } });
 const a = await admin.newPage();
 a.on("pageerror", (e) => errors.push(e.message));
 await a.goto(`${BASE}/stats`, { waitUntil: "domcontentloaded", timeout: 90000 });

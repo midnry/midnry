@@ -67,7 +67,7 @@ function AboutPage() {
           <h2 className="font-display text-2xl tracking-tight">Apps by other makers</h2>
           <p className="mt-2 text-sm text-pretty text-muted">
             Anyone with an account can add an app. Each one is reviewed in a sandbox before it appears, and approved apps share{" "}
-            {CREATOR_POOL_PERCENT}% of Midnry Pass, split by how often each is opened.
+            {CREATOR_POOL_PERCENT}% of Midnry Pass revenue after payment fees and refunds, shared by opens.
           </p>
           <Link to="/submit" className="mt-auto inline-flex min-h-11 items-center pt-4 text-sm font-medium text-pine underline-offset-4 hover:underline">
             Add your app <span aria-hidden className="ml-1">→</span>

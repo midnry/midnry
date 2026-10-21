@@ -2,9 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getApp, isGenre, type GenreId } from "@/lib/catalog";
-import { passIsOpen, PASS_PRICE_CENTS } from "@/lib/access";
+import { passIsOpen } from "@/lib/access";
 import { cleanTags, defaultTagOf, parseTags, type TagId } from "@/lib/sections";
-import { cutCents, MAX_APPS_PER_OWNER, MAX_HTML_CHARS, poolCents } from "@/lib/revenue";
+import { MAX_APPS_PER_OWNER, MAX_HTML_CHARS } from "@/lib/revenue";
 
 export type PublishedApp = {
   slug: string;
@@ -480,47 +480,6 @@ export const publishOwnApp = createServerFn({ method: "POST" })
       )
     `;
     return { ok: true as const, id, slug };
-  });
-
-export const getEarnings = createServerFn({ method: "GET" })
-  .middleware([authMiddleware])
-  .handler(async ({ context }) => {
-    const sql = await getSql();
-    const subs = await sql<{ n: number }>`
-      select count(*) as n from subscriptions
-      where status in ('active', 'canceled')
-        and current_period_end > now()
-        and (paystack_subscription_code is not null or paystack_reference is not null)
-    `;
-    const activePasses = Number(subs[0]?.n ?? 0);
-    const pool = poolCents(activePasses, PASS_PRICE_CENTS);
-    const useRows = await sql<{ app_id: string; uses: number }>`
-      select u.app_id, count(*) as uses
-      from app_uses u
-      join submissions s on s.id = u.app_id
-      where s.published_html is not null
-        and u.used_on >= date_trunc('month', now())::date
-      group by u.app_id
-    `;
-    const totalUses = useRows.reduce((sum, row) => sum + Number(row.uses), 0);
-    const mine = await sql<{ id: string; name: string }>`
-      select id, coalesce(published_name, name) as name
-      from submissions
-      where owner_id = ${context.userId} and published_html is not null
-      order by published_name
-    `;
-    const byId = new Map(useRows.map((row) => [row.app_id, Number(row.uses)]));
-    const apps = mine.map((app) => {
-      const uses = byId.get(app.id) ?? 0;
-      return { id: app.id, name: app.name, uses, cents: cutCents(pool, uses, totalUses) };
-    });
-    return {
-      activePasses,
-      poolCents: pool,
-      totalUses,
-      cents: apps.reduce((sum, app) => sum + app.cents, 0),
-      apps,
-    };
   });
 
 export const listPending = createServerFn({ method: "GET" })

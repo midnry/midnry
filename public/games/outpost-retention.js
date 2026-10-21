@@ -356,6 +356,11 @@ export class Retention {
     g.on(g.$(".mf-lockerclose"), "click", () => g.$(".mf-locker").close());
     g.on(g.$(".mf-locker"), "keydown", (e) => e.stopPropagation());
     g.on(g.$(".mf-lockerbody"), "change", (e) => {
+      if (e.target.matches(".mf-adultcheck")) {
+        this.store.setAdultConfirmed(e.target.checked);
+        this.g.$(".mf-adultcheck")?.focus({ preventScroll: true });
+        return;
+      }
       if (!e.target.matches(".mf-finish")) return;
       const finish = FINISHES.find((f) => f.id === e.target.value && f.xp <= this.profile.xp);
       if (finish) {
@@ -380,7 +385,12 @@ export class Retention {
           write("midnry-outpost-profile", this.profile);
           this.lockerContents();
           this.g.$(`[data-finish="${finish.id}"]`)?.focus({ preventScroll: true });
-        } else if (finish.kind === "premium") this.store.buy(finish.id);
+        } else if (finish.kind === "premium") {
+          // Buying needs the adult confirmation; point to it when unticked.
+          const asked = this.store.adultConfirmed;
+          this.store.buy(finish.id);
+          if (!asked) this.g.$(".mf-adultcheck")?.focus();
+        }
         else if (finish.kind === "pass") (window.top || window).location.assign("/pricing");
         return;
       }
@@ -639,7 +649,13 @@ export class Retention {
     ]
       .map(([c, label]) => `<button type="button" data-currency="${c}" aria-pressed="${store.currency === c}">${label}</button>`)
       .join("")}</div>`;
-    return `<h3>Weapon finishes</h3><p>Your gun in first person. Looks only, never stats.</p>${pay}<div class="mf-finishgrid">${tiles}</div><p class="mf-storestatus" role="status" aria-live="polite">${escapeText(store.message || (store.ready || store.signedIn === null ? "" : store.signedIn === false ? "Sign in with your Midnry account to buy finishes." : "The store is opening soon."))}</p>`;
+    // Paying needs "18 or older, or a parent or guardian is paying" (the
+    // server refuses a checkout without it). Shown while something is for sale.
+    const forSale = store.signedIn === true && FINISHES.some((f) => f.kind === "premium" && !store.owns(f));
+    const adult = forSale
+      ? `<div class="mf-adult"><label><input type="checkbox" class="mf-adultcheck" id="mf-adultcheck"${store.adultConfirmed ? " checked" : ""} aria-required="true"${store.adultError ? ' aria-invalid="true" aria-describedby="mf-adulterr"' : ""}><span>I'm 18 or older, or a parent or guardian is paying.</span></label>${store.adultError ? `<p class="mf-adulterr" id="mf-adulterr" role="alert">Before paying, confirm you're 18 or older or that a parent or guardian is paying.</p>` : ""}</div>`
+      : "";
+    return `<h3>Weapon finishes</h3><p>Your gun in first person. Looks only, never stats.</p>${pay}${adult}<div class="mf-finishgrid">${tiles}</div><p class="mf-storestatus" role="status" aria-live="polite">${escapeText(store.message || (store.ready || store.signedIn === null ? "" : store.signedIn === false ? "Sign in with your Midnry account to buy finishes." : "The store is opening soon."))}</p>`;
   }
   paintSwatches() {
     for (const tile of this.g.root.querySelectorAll(".mf-finishtile")) {

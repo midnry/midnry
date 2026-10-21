@@ -35,11 +35,13 @@ export async function handleAuthPopupRequest(request: Request): Promise<Response
 
   if (done) {
     const errored = url.searchParams.has("error");
+    // `error=1` is ours; Better Auth appends its own `error=<code>` after it.
+    const code = url.searchParams.getAll("error").find((value) => value !== "1");
     const token = errored ? null : readCookie(request, SESSION_TOKEN_COOKIE);
     const message: PopupMessage = {
       source: "grok-auth-popup",
       token,
-      ...(errored ? { error: url.searchParams.get("error") ?? "sign_in_failed" } : {}),
+      ...(errored ? { error: code ?? "sign_in_failed" } : {}),
     };
     return new Response(completionHtml(message), {
       status: 200,
@@ -67,6 +69,9 @@ export async function handleAuthPopupRequest(request: Request): Promise<Response
         providerId,
         callbackURL: back,
         errorCallbackURL: `${back}&error=1`,
+        // Sign-up age confirmation from the login page, kept in the signed
+        // OAuth state and read when a new account is created (age.server.ts).
+        ...(url.searchParams.get("ageConfirmed") === "1" ? { additionalData: { ageConfirmed: true } } : {}),
       },
       // Forward the preview host so Better Auth derives the correct baseURL /
       // redirect_uri for the dynamic `*.grok-sandbox.com` origin.

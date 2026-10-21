@@ -453,6 +453,43 @@
         background: var(--mf-accent, #f2c45a);
         color: #101419;
       }
+      /* Adult confirmation before buying: one row, 44px hit area. */
+      midnry-fps .mf-locker .mf-adult {
+        margin-top: 10px;
+      }
+      midnry-fps .mf-locker .mf-adult label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 44px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        background: #121a17;
+        color: #edf2e9;
+        font: 14px/1.35 var(--mf-body);
+        cursor: pointer;
+      }
+      midnry-fps .mf-locker .mf-adult input {
+        flex: none;
+        width: 20px;
+        height: 20px;
+        margin: 0;
+        accent-color: var(--mf-accent, #f2c45a);
+        cursor: pointer;
+      }
+      midnry-fps .mf-locker .mf-adult input:focus-visible {
+        outline: 2px solid var(--mf-accent, #f2c45a);
+        outline-offset: 3px;
+      }
+      midnry-fps .mf-locker .mf-adult input[aria-invalid="true"] {
+        outline: 2px solid #ff8a7a;
+        outline-offset: 2px;
+      }
+      midnry-fps .mf-locker .mf-adulterr {
+        margin: 6px 0 0;
+        color: #ffb3a7;
+        font: 600 13px/1.35 var(--mf-body);
+      }
       midnry-fps .mf-locker .mf-storestatus:empty {
         display: none;
       }

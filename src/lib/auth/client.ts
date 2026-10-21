@@ -2,6 +2,7 @@ import { genericOAuthClient, twoFactorClient } from "better-auth/client/plugins"
 import { createAuthClient } from "better-auth/react";
 import { runPreSignInSignOut, runSignOut } from "../../../scripts/sign-out-plan.mjs";
 import { GROK_PROVIDERS } from "./providers";
+import { AGE_REQUIRED_CODE } from "../age";
 
 /**
  * Better Auth client for this React SPA (browser-side).
@@ -98,7 +99,7 @@ type PopupMessage = { source: "grok-auth-popup"; token: string | null; error?: s
  */
 export async function signIn(
   providerId: string,
-  opts: { callbackURL?: string; errorCallbackURL?: string } = {},
+  opts: { callbackURL?: string; errorCallbackURL?: string; ageConfirmed?: boolean } = {},
 ): Promise<void> {
   const callbackURL = opts.callbackURL ?? "/";
   const errorCallbackURL = opts.errorCallbackURL ?? "/";
@@ -106,7 +107,7 @@ export async function signIn(
   // Open the popup SYNCHRONOUSLY on the user gesture — before any await
   // (including signOut). Awaiting first drops user-gesture privilege in some
   // browsers when the opener is a cross-origin live-preview iframe.
-  const popup = inLivePreview() ? openSignInPopup(providerId) : null;
+  const popup = inLivePreview() ? openSignInPopup(providerId, opts.ageConfirmed === true) : null;
 
   // Clear any prior session so switching providers actually switches identity.
   // Bounded because the popup is already open — a request that never settles
@@ -122,7 +123,10 @@ export async function signIn(
 
   if (inLivePreview()) {
     if (!popup) throw new Error("Pop-up blocked — allow pop-ups for sign-in");
-    const token = await waitForPopupToken(popup);
+    const { token, error: popupError } = await waitForPopupToken(popup);
+    // A new account without the sign-up age confirmation is refused by the
+    // server (see `age.server.ts`); surface that code to the login page.
+    if (!token && popupError === AGE_REQUIRED_CODE) throw new Error(AGE_REQUIRED_CODE);
     if (!token) throw new Error("Sign-in was cancelled or failed");
     setBearerToken(token);
     // Refresh the client session store with the bearer attached (onRequest).
@@ -147,6 +151,9 @@ export async function signIn(
     providerId,
     callbackURL,
     errorCallbackURL,
+    // Kept in Better Auth's signed OAuth state; read when the account is
+    // created (sign-up age confirmation, `age.server.ts`).
+    ...(opts.ageConfirmed ? { additionalData: { ageConfirmed: true } } : {}),
   });
   if (error) throw new Error(error.message ?? "Sign-in failed");
   if (data?.url) window.location.href = data.url;
@@ -161,9 +168,9 @@ export async function signIn(
  * iframe the about:blank dance often fails on the first click and the window
  * ends up showing the app shell.
  */
-function openSignInPopup(providerId: string): Window | null {
+function openSignInPopup(providerId: string, ageConfirmed: boolean): Window | null {
   const origin = window.location.origin;
-  const url = `${origin}/auth/popup?providerId=${encodeURIComponent(providerId)}`;
+  const url = `${origin}/auth/popup?providerId=${encodeURIComponent(providerId)}${ageConfirmed ? "&ageConfirmed=1" : ""}`;
   // Unique name per attempt so a prior attempt stuck on the SPA is not reused.
   const name = `grok-signin-${Date.now()}`;
   return window.open(url, name, "popup,width=500,height=650");
@@ -173,22 +180,22 @@ function openSignInPopup(providerId: string): Window | null {
  * Wait for the popup's completion page to postMessage the session bearer (or
  * for the user to dismiss the popup).
  */
-function waitForPopupToken(popup: Window): Promise<string | null> {
+function waitForPopupToken(popup: Window): Promise<{ token: string | null; error?: string }> {
   return new Promise((resolve) => {
     const origin = window.location.origin;
     let settled = false;
     let closeTimer: number | undefined;
-    const settle = (token: string | null) => {
+    const settle = (token: string | null, error?: string) => {
       if (settled) return;
       settled = true;
       cleanup();
-      resolve(token);
+      resolve({ token, error });
     };
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== origin) return;
       const data = event.data as PopupMessage | undefined;
       if (!data || data.source !== "grok-auth-popup") return;
-      settle(data.token ?? null);
+      settle(data.token ?? null, data.error);
     };
     // Fallback when the user dismisses the popup. Grace period lets the
     // completion page's postMessage win over a racing `popup.closed`.

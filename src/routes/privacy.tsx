@@ -154,6 +154,25 @@ function PrivacyPage() {
                   Paystack's customer and subscription codes, and payment references. For store items: the item, the
                   price, the currency and whether it was paid.
                 </li>
+                <li>
+                  For each Midnry Pass payment and refund: the amount, Paystack's fee, the currency, the date and the
+                  payment reference, with no name or email. We use these to work out what app makers earn.
+                </li>
+                <li>Before paying, you confirm you're 18 or over or that a parent or guardian is paying. This is checked each time and isn't stored.</li>
+              </List>
+            </Sub>
+
+            <Sub title="If you add apps and earn from them">
+              <List>
+                <li>
+                  Your payout details: account holder name, bank name, account number and country. They're stored
+                  encrypted, you see them masked, and only Midnry's admin can read them, to make the transfer.
+                </li>
+                <li>Your monthly earnings and the payouts made or withheld, with any reason given.</li>
+                <li>
+                  If your account is deleted, your payout details are deleted with it. Earnings and payout records are
+                  kept for 6 years for tax and accounting, with your name and email removed.
+                </li>
               </List>
             </Sub>
 
@@ -370,7 +389,11 @@ function PrivacyPage() {
 
           <Section id="children">
             <List>
-              <li>You must be at least 13 to use Midnry. Midnry doesn't check ages when you create an account.</li>
+              <li>
+                You must be at least 13 to use Midnry. When you create an account you confirm you're 13 or older, or that
+                you have a parent's or guardian's permission, and we record when you confirmed it. We don't ask for your
+                date of birth.
+              </li>
               <li>
                 If you're under 18, you need a parent's or guardian's permission. Midnry Pass and store purchases need
                 someone 18 or over, so a parent or guardian should make any payments.

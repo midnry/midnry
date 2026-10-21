@@ -122,7 +122,9 @@ function SubmitPage() {
       <h1 className="font-display text-5xl tracking-tight">Add an app</h1>
       <p className="mt-3 max-w-xl text-pretty text-muted">
         Upload one HTML file. It stays off the desk until the admin opens it in a sandbox and approves it.
-        Approved apps share {CREATOR_POOL_PERCENT}% of Midnry Pass, split by how often each one is opened.
+        Approved apps earn {CREATOR_POOL_PERCENT}% of Midnry Pass revenue after payment fees and refunds, shared by opens.
+        Makers are paid by bank transfer by the 15th of the next month once their balance reaches US$20 (₦20,000 for
+        a Nigerian bank); smaller balances roll over. See Earnings for details.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 max-w-xl space-y-4">

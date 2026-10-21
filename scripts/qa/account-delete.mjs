@@ -35,6 +35,7 @@ async function register(page) {
   await page.getByLabel("Name").fill("QA Closer");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
+  await page.getByLabel("I'm 13 or older, or I have a parent's or guardian's permission.").check();
   await page.getByRole("button", { name: "Create account" }).click();
   await page.waitForURL(/\/account/, { timeout: 60000 });
   await page.getByRole("heading", { name: "Delete account" }).waitFor({ timeout: 60000 });
@@ -125,6 +126,7 @@ await again.getByRole("button", { name: "Need an account? Register" }).click();
 await again.getByLabel("Name").fill("Again");
 await again.getByLabel("Email").fill(email);
 await again.getByLabel("Password").fill(password);
+await again.getByLabel("I'm 13 or older, or I have a parent's or guardian's permission.").check();
 await again.getByRole("button", { name: "Create account" }).click();
 await again.getByText(CLOSED).waitFor({ timeout: 30000 });
 ok(true, "sign-up with the closed account's email is refused with the closed message");
@@ -142,6 +144,7 @@ await phone.goto(`${BASE}/login?intent=register&next=/account`, { waitUntil: "ne
 await phone.getByLabel("Name").fill("QA Phone");
 await phone.getByLabel("Email").fill(email2);
 await phone.getByLabel("Password").fill(password);
+await phone.getByLabel("I'm 13 or older, or I have a parent's or guardian's permission.").check();
 await phone.getByRole("button", { name: "Create account" }).click();
 await phone.waitForURL(/\/account/, { timeout: 60000 });
 await phone.locator("#delete").getByRole("button", { name: "Delete my account" }).click();

@@ -14,6 +14,7 @@ import {
   type BillingConfig,
 } from "@/lib/billing.functions";
 import { PASS_PRICE_LABEL } from "@/lib/access";
+import { ADULT_PAY_LABEL, ADULT_PAY_MESSAGE } from "@/lib/age";
 import { BILLING_FACTS, FREE_APPS, PASS_APPS, PASS_FEATURES } from "@/lib/plans";
 import { formatUsd, formatWhen } from "@/lib/format";
 import { Button, Skeleton } from "@/components/ui";
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/billing")({
 
 function checkoutError(error: unknown): string {
   const message = error instanceof Error ? error.message : "";
+  if (message.includes(ADULT_PAY_MESSAGE)) return ADULT_PAY_MESSAGE;
   if (/channel|currency|not configured|merchant/i.test(message)) {
     return "Payments aren't available right now. Please try again later. You weren't charged.";
   }
@@ -59,6 +61,11 @@ function BillingPage() {
   const [busy, setBusy] = useState<"start" | "cancel" | "resume" | "portal" | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [config, setConfig] = useState<BillingConfig | null>(null);
+  // "I'm 18 or older, or a parent or guardian is paying." Checkout needs it
+  // (the server refuses without it too).
+  const [adultConfirmed, setAdultConfirmed] = useState(false);
+  const [adultError, setAdultError] = useState(false);
+  const adultBox = useRef<HTMLInputElement>(null);
   const handledReturn = useRef(false);
 
   useEffect(() => {
@@ -120,9 +127,14 @@ function BillingPage() {
   const freeApps = [...new Set(FREE_APPS.map((app) => app.name))];
 
   async function start() {
+    if (!adultConfirmed) {
+      setAdultError(true);
+      adultBox.current?.focus();
+      return;
+    }
     setBusy("start");
     try {
-      const result = await beginCheckout();
+      const result = await beginCheckout({ data: { adultConfirmed: true } });
       if (result.action === "redirect") {
         window.location.assign(result.url);
         return;
@@ -216,9 +228,35 @@ function BillingPage() {
                   {BILLING_FACTS[1]} {BILLING_FACTS[2]}
                 </li>
               </ul>
+              {config?.ready ? (
+                <div className="mt-6">
+                  <label className="-mx-2 flex min-h-11 cursor-pointer items-start gap-3 rounded-xl px-2 py-2.5 text-sm text-pretty">
+                    <input
+                      ref={adultBox}
+                      id="adult-confirm"
+                      type="checkbox"
+                      checked={adultConfirmed}
+                      onChange={(e) => {
+                        setAdultConfirmed(e.target.checked);
+                        if (e.target.checked) setAdultError(false);
+                      }}
+                      aria-required="true"
+                      aria-invalid={adultError || undefined}
+                      aria-describedby={adultError ? "adult-confirm-error" : undefined}
+                      className="mt-0.5 size-5 shrink-0 accent-ink"
+                    />
+                    <span>{ADULT_PAY_LABEL}</span>
+                  </label>
+                  {adultError ? (
+                    <p id="adult-confirm-error" role="alert" className="text-sm text-pretty text-fail">
+                      {ADULT_PAY_MESSAGE}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
               <Button
                 tone="primary"
-                className="mt-7 w-full sm:w-auto"
+                className={config?.ready ? "mt-4 w-full sm:w-auto" : "mt-7 w-full sm:w-auto"}
                 disabled={busy !== null || !config?.ready}
                 onClick={() => void start()}
               >

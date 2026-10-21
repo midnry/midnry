@@ -36,7 +36,7 @@ function useNavLinks() {
   ];
   const yours: NavLink[] = [];
   if (user) yours.push({ to: "/submit", label: "Add an app" }, { to: "/earnings", label: "Earnings" }, { to: "/billing", label: "Billing" });
-  if (isAdmin) yours.push({ to: "/review", label: "Review" }, { to: "/stats", label: "Stats" });
+  if (isAdmin) yours.push({ to: "/review", label: "Review" }, { to: "/stats", label: "Stats" }, { to: "/payouts", label: "Payouts" });
   return { main, yours };
 }
 

@@ -32,6 +32,10 @@ export class OutpostStore {
     this.ready = false;
     this.signedIn = null;
     this.message = "";
+    // "I'm 18 or older, or a parent or guardian is paying." Ticked in the
+    // Locker for this visit; the server refuses a checkout without it.
+    this.adultConfirmed = false;
+    this.adultError = false;
     // Naira or dollars: remembered once chosen, else guessed from time zone.
     try {
       const saved = localStorage.getItem(CURRENCY);
@@ -106,11 +110,23 @@ export class OutpostStore {
     }
     this.onChange?.();
   }
+  setAdultConfirmed(on) {
+    this.adultConfirmed = on === true;
+    if (this.adultConfirmed) this.adultError = false;
+    this.onChange?.();
+  }
+  /** Returns false (and flags the box) when the adult confirmation is missing. */
   async buy(item) {
+    // Signed out (or not known yet): the server answers with what is missing.
+    if (this.signedIn === true && !this.adultConfirmed) {
+      this.adultError = true;
+      this.onChange?.();
+      return false;
+    }
     this.message = "Opening secure checkout…";
     this.onChange?.();
     try {
-      const result = await call({ op: "buy", item, currency: this.currency });
+      const result = await call({ op: "buy", item, currency: this.currency, adultConfirmed: this.adultConfirmed });
       if (result.already) {
         this.message = "You already own that finish.";
         await this.refresh();

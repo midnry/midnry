@@ -56,6 +56,7 @@ const stamp = Date.now().toString(36);
 await page.getByLabel("Name").fill(`Desk ${stamp}`);
 await page.getByLabel("Email").fill(`desk-${stamp}@example.test`);
 await page.getByLabel("Password").fill("outpost-zero-qa-1");
+await page.getByLabel("I'm 13 or older, or I have a parent's or guardian's permission.").check();
 await page.locator("form button[type=submit]").first().click({ noWaitAfter: true });
 await page.waitForURL(/outpost-zero\.html/, { timeout: 180000 });
 await page.waitForFunction(() => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled, null, { timeout: 240000 });

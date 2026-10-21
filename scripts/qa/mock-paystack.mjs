@@ -8,6 +8,7 @@ import { createHmac } from "node:crypto";
 const SECRET = process.env.PAYSTACK_SECRET_KEY || "sk_test_outpost_qa_local";
 const SITE = process.env.SITE || "http://127.0.0.1:8080";
 const tx = new Map();
+const plans = new Map();
 const json = (res, status, body) => {
   res.writeHead(status, { "content-type": "application/json" });
   res.end(JSON.stringify(body));
@@ -41,6 +42,17 @@ createServer(async (req, res) => {
     const b = JSON.parse(body);
     tx.set(b.reference, { ...b, paid: false });
     return json(res, 200, { status: true, data: { authorization_url: `http://127.0.0.1:8099/pay/${b.reference}` } });
+  }
+  // Midnry Pass checkout (src/lib/paystack.server.ts) creates or reads its plan.
+  if (url.pathname === "/plan" || url.pathname.startsWith("/plan/")) {
+    if (req.headers.authorization !== `Bearer ${SECRET}`) return json(res, 401, { status: false, message: "Bad key" });
+    if (req.method === "POST") {
+      const b = JSON.parse(body);
+      plans.set("PLN_qa", { ...b, plan_code: "PLN_qa" });
+      return json(res, 200, { status: true, data: plans.get("PLN_qa") });
+    }
+    const plan = plans.get(decodeURIComponent(url.pathname.split("/").pop()));
+    return plan ? json(res, 200, { status: true, data: plan }) : json(res, 404, { status: false, message: "Plan not found" });
   }
   if (req.method === "GET" && url.pathname.startsWith("/transaction/verify/")) {
     const t = tx.get(decodeURIComponent(url.pathname.split("/").pop()));

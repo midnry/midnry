@@ -9,15 +9,23 @@ import { Button, Field, TextInput } from "@/components/ui";
 import { getApp } from "@/lib/catalog";
 import { getSignInOptions } from "@/lib/sign-in-options.functions";
 import { ACCOUNT_CLOSED_CODE, ACCOUNT_CLOSED_MESSAGE } from "@/lib/account-closed";
+import { AGE_REQUIRED_CODE, AGE_SIGNUP_LABEL, AGE_SIGNUP_MESSAGE } from "@/lib/age";
 
 // `error` arrives from Better Auth's OAuth error redirect; only the closed
-// account code is kept (never arbitrary text from the URL).
-type LoginSearch = { next: string; intent: "register" | "sign-in"; error?: typeof ACCOUNT_CLOSED_CODE };
+// account and sign-up age codes are kept (never arbitrary text from the URL).
+type LoginSearch = {
+  next: string;
+  intent: "register" | "sign-in";
+  error?: typeof ACCOUNT_CLOSED_CODE | typeof AGE_REQUIRED_CODE;
+};
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): LoginSearch => {
     const nextRaw = typeof search.next === "string" ? search.next : "";
     const next = nextRaw.startsWith("/") && !nextRaw.startsWith("//") ? nextRaw : "/apps";
+    // A Google sign-in that would have created a new account without the age
+    // confirmation comes back here: show the register form with the box.
+    if (search.error === AGE_REQUIRED_CODE) return { next, intent: "register", error: AGE_REQUIRED_CODE };
     const intent = search.intent === "sign-in" ? "sign-in" : "register";
     return search.error === ACCOUNT_CLOSED_CODE ? { next, intent, error: ACCOUNT_CLOSED_CODE } : { next, intent };
   },
@@ -46,6 +54,10 @@ function LoginPage() {
   const [step, setStep] = useState<"credentials" | "code" | "backup">("credentials");
   const [code, setCode] = useState("");
   const [trustDevice, setTrustDevice] = useState(false);
+  // Sign-up only: "I'm 13 or older, or I have a parent's or guardian's
+  // permission". The server refuses to create an account without it.
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [ageError, setAgeError] = useState(searchError === AGE_REQUIRED_CODE);
 
   if (isPending) {
     return (
@@ -55,6 +67,14 @@ function LoginPage() {
     );
   }
   if (user) return <RedirectToSignIn to={next} />;
+
+  /** Creating an account needs the age box; false (and points to it) when unticked. */
+  function ageReady(): boolean {
+    if (mode !== "register" || ageConfirmed) return true;
+    setAgeError(true);
+    document.getElementById("age-confirm")?.focus();
+    return false;
+  }
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -71,6 +91,7 @@ function LoginPage() {
       setError("Use at least 8 characters.");
       return;
     }
+    if (!ageReady()) return;
     setBusy(true);
     try {
       const fetchOptions = {
@@ -84,6 +105,8 @@ function LoginPage() {
               name: name.trim(),
               email: email.trim(),
               password,
+              // Not a user field: read and enforced by age.server.ts.
+              ...({ ageConfirmed } as object),
               fetchOptions,
             })
           : await authClient.signIn.email({
@@ -98,7 +121,8 @@ function LoginPage() {
               },
             });
       if (result.error) {
-        setError(result.error.message || "That did not work. Try again.");
+        if (result.error.code === AGE_REQUIRED_CODE) setAgeError(true);
+        else setError(result.error.message || "That did not work. Try again.");
         setBusy(false);
         return;
       }
@@ -258,6 +282,31 @@ function LoginPage() {
                   required
                 />
               </Field>
+              {mode === "register" ? (
+                <div>
+                  <label className="-mx-2 flex min-h-11 cursor-pointer items-start gap-3 rounded-xl px-2 py-2.5 text-sm text-pretty">
+                    <input
+                      id="age-confirm"
+                      type="checkbox"
+                      checked={ageConfirmed}
+                      onChange={(e) => {
+                        setAgeConfirmed(e.target.checked);
+                        if (e.target.checked) setAgeError(false);
+                      }}
+                      aria-required="true"
+                      aria-invalid={ageError || undefined}
+                      aria-describedby={ageError ? "age-confirm-error" : undefined}
+                      className="mt-0.5 size-5 shrink-0 accent-ink"
+                    />
+                    <span>{AGE_SIGNUP_LABEL}</span>
+                  </label>
+                  {ageError ? (
+                    <p id="age-confirm-error" role="alert" className="text-sm text-pretty text-fail">
+                      {AGE_SIGNUP_MESSAGE}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
               {error ? (
                 <p role="alert" className="text-sm text-fail">
                   {error}
@@ -274,6 +323,7 @@ function LoginPage() {
               onClick={() => {
                 setMode(mode === "register" ? "sign-in" : "register");
                 setError(null);
+                setAgeError(false);
               }}
             >
               {mode === "register" ? "Already have an account? Sign in" : "Need an account? Register"}
@@ -293,8 +343,16 @@ function LoginPage() {
                   className="w-full"
                   onClick={() => {
                     setError(null);
+                    if (!ageReady()) return;
+                    // A new Google account is created on the callback; the
+                    // confirmation rides in Better Auth's signed OAuth state.
                     void authClient.signIn
-                      .social({ provider: "google", callbackURL: next, errorCallbackURL: "/login" })
+                      .social({
+                        provider: "google",
+                        callbackURL: next,
+                        errorCallbackURL: "/login",
+                        ...(mode === "register" && ageConfirmed ? { additionalData: { ageConfirmed: true } } : {}),
+                      })
                       .then((result) => {
                         if (result.error) setError(result.error.message || "Google sign-in did not start. Try again.");
                       })
@@ -313,7 +371,17 @@ function LoginPage() {
                   className="w-full"
                   onClick={() => {
                     setError(null);
-                    void signIn(provider.providerId, { callbackURL: next }).catch((err: unknown) => {
+                    if (!ageReady()) return;
+                    void signIn(provider.providerId, {
+                      callbackURL: next,
+                      errorCallbackURL: "/login",
+                      ageConfirmed: mode === "register" && ageConfirmed,
+                    }).catch((err: unknown) => {
+                      if (err instanceof Error && err.message === AGE_REQUIRED_CODE) {
+                        setMode("register");
+                        setAgeError(true);
+                        return;
+                      }
                       setError(err instanceof Error ? err.message : "Sign-in failed");
                     });
                   }}

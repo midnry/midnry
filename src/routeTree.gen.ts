@@ -17,6 +17,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as EarningsRouteImport } from './routes/earnings'
 import { Route as EverydayRouteImport } from './routes/everyday'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as PayoutsRouteImport } from './routes/payouts'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReviewRouteImport } from './routes/review'
@@ -87,6 +88,11 @@ const EverydayRoute = EverydayRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayoutsRoute = PayoutsRouteImport.update({
+  id: '/payouts',
+  path: '/payouts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -256,6 +262,7 @@ export interface FileRoutesByFullPath {
   '/earnings': typeof EarningsRoute
   '/everyday': typeof EverydayRoute
   '/login': typeof LoginRoute
+  '/payouts': typeof PayoutsRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/review': typeof ReviewRoute
@@ -297,6 +304,7 @@ export interface FileRoutesByTo {
   '/earnings': typeof EarningsRoute
   '/everyday': typeof EverydayRoute
   '/login': typeof LoginRoute
+  '/payouts': typeof PayoutsRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/review': typeof ReviewRoute
@@ -339,6 +347,7 @@ export interface FileRoutesById {
   '/earnings': typeof EarningsRoute
   '/everyday': typeof EverydayRoute
   '/login': typeof LoginRoute
+  '/payouts': typeof PayoutsRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/review': typeof ReviewRoute
@@ -382,6 +391,7 @@ export interface FileRouteTypes {
     | '/earnings'
     | '/everyday'
     | '/login'
+    | '/payouts'
     | '/pricing'
     | '/privacy'
     | '/review'
@@ -423,6 +433,7 @@ export interface FileRouteTypes {
     | '/earnings'
     | '/everyday'
     | '/login'
+    | '/payouts'
     | '/pricing'
     | '/privacy'
     | '/review'
@@ -464,6 +475,7 @@ export interface FileRouteTypes {
     | '/earnings'
     | '/everyday'
     | '/login'
+    | '/payouts'
     | '/pricing'
     | '/privacy'
     | '/review'
@@ -506,6 +518,7 @@ export interface RootRouteChildren {
   EarningsRoute: typeof EarningsRoute
   EverydayRoute: typeof EverydayRoute
   LoginRoute: typeof LoginRoute
+  PayoutsRoute: typeof PayoutsRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ReviewRoute: typeof ReviewRoute
@@ -595,6 +608,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payouts': {
+      id: '/payouts'
+      path: '/payouts'
+      fullPath: '/payouts'
+      preLoaderRoute: typeof PayoutsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -826,6 +846,7 @@ const rootRouteChildren: RootRouteChildren = {
   EarningsRoute: EarningsRoute,
   EverydayRoute: EverydayRoute,
   LoginRoute: LoginRoute,
+  PayoutsRoute: PayoutsRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ReviewRoute: ReviewRoute,

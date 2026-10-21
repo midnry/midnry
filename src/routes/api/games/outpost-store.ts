@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ADULT_PAY_MESSAGE } from "@/lib/age";
 
 // Outpost Zero store: { op: "state" } (owned items, Pass, open or not),
-// { op: "buy", item, currency: "NGN" | "USD" } (Paystack checkout page), { op: "confirm", reference }.
+// { op: "buy", item, currency: "NGN" | "USD", adultConfirmed: true } (Paystack checkout page),
+// { op: "confirm", reference }. A buy without `adultConfirmed: true` ("I'm 18 or
+// older, or a parent or guardian is paying.") never starts a checkout.
 export const Route = createFileRoute("/api/games/outpost-store")({
   server: {
     handlers: {
@@ -48,7 +51,11 @@ export const Route = createFileRoute("/api/games/outpost-store")({
         const { OutpostError } = await import("@/games/outpost/rooms.server");
         try {
           if (body.op === "state") return Response.json(await store.storeState(userId), { headers });
-          if (body.op === "buy") return Response.json(await store.beginPurchase(userId, body.item, body.currency), { headers });
+          if (body.op === "buy") {
+            if (body.adultConfirmed !== true)
+              return Response.json({ error: ADULT_PAY_MESSAGE, code: "ADULT_CONFIRMATION_REQUIRED" }, { status: 400, headers });
+            return Response.json(await store.beginPurchase(userId, body.item, body.currency), { headers });
+          }
           if (body.op === "confirm")
             return Response.json(await store.confirmPurchase(userId, body.reference), { headers });
           return Response.json({ error: "Invalid request." }, { status: 400, headers });

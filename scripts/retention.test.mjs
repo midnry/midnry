@@ -79,8 +79,10 @@ test("retention windows are 90 days for stats and 6 years for anonymised payment
   }
   assert.doesNotMatch(text, /remind_email_sent/, "remind_email_sent keeps its own 40-day rule");
   assert.doesNotMatch(text, /abuja_lives/, "the Hall of Fame is not usage stats");
-  assert.equal((text.match(/6 years/g) ?? []).length, 2);
-  assert.equal((text.match(/like 'deleted-%'/g) ?? []).length, 2, "only anonymised payment rows expire");
+  // subscriptions, outpost_purchase, creator_earnings, creator_payouts (anonymised) and pass_payments.
+  assert.equal((text.match(/6 years/g) ?? []).length, 5);
+  assert.equal((text.match(/like 'deleted-%'/g) ?? []).length, 4, "only anonymised payment rows expire");
+  assert.match(text, /delete from pass_payments where occurred_at < .*6 years/);
 });
 
 // ── Against Postgres ────────────────────────────────────────────────────────
@@ -125,6 +127,9 @@ async function seedUser(sql, id, { closedDaysAgo = null } = {}) {
   await q(`insert into outpost_match (user_id, round_id, mode, map, online, platform, won, kills, damage, seconds, placement) values ($1, 'round-0001', 'signal', 'm', false, 'web', true, 1, 1, 60, 1)`, [id]);
   await q(`insert into outpost_purchase (reference, user_id, item, amount, currency, status, paid_at) values ($1 || '-paid', $1, 'skin', 100, 'NGN', 'paid', now())`, [id]);
   await q(`insert into outpost_purchase (reference, user_id, item, amount, currency, status) values ($1 || '-pending', $1, 'skin2', 100, 'NGN', 'pending')`, [id]);
+  await q(`insert into creator_earnings (month, app_id, owner_id, app_name, uses, cents) values ('2026-09-01', $1 || '-app', $1, 'App', 3, 120)`, [id]);
+  await q(`insert into creator_payouts (id, owner_id, month, kind, amount_cents, paid_on) values ($1 || '-po', $1, '2026-09-01', 'paid', 100, '2026-10-10')`, [id]);
+  await q(`insert into creator_payout_details (user_id, details) values ($1, 'sealed')`, [id]);
   if (closedDaysAgo !== null) {
     await q(`insert into account_closure (user_id, closed_at) values ($1, now() - make_interval(days => $2))`, [id, closedDaysAgo]);
   }
@@ -173,6 +178,12 @@ test("closed accounts past 30 days are purged; payment records stay, anonymised"
   assert.equal(subs[0].paystack_email, null);
   assert.equal(subs[0].paystack_email_token, null);
   assert.equal(subs[0].paystack_reference, "ref-old");
+  const earned = await sql.query(`select cents from creator_earnings where owner_id = 'deleted-test-1'`);
+  assert.deepEqual(earned, [{ cents: 120 }], "creator earnings kept, anonymised");
+  const payouts = await sql.query(`select amount_cents from creator_payouts where owner_id = 'deleted-test-1'`);
+  assert.deepEqual(payouts, [{ amount_cents: 100 }], "payouts kept, anonymised");
+  const [{ n: bank }] = await sql.query(`select count(*)::int as n from creator_payout_details where user_id in ('old', 'deleted-test-1')`);
+  assert.equal(bank, 0, "payout details deleted");
   const buys = await sql.query(`select reference, status from outpost_purchase where user_id = 'deleted-test-1'`);
   assert.deepEqual(buys, [{ reference: "old-paid", status: "paid" }], "paid kept, unpaid checkout deleted");
 
@@ -268,6 +279,18 @@ test("retention deletes stats older than 90 days and anonymised payments older t
     ('p2', 'deleted-b', 'i', 1, 'NGN', 'paid', now() - interval '5 years', now() - interval '5 years'),
     ('p3', 'live', 'i', 1, 'NGN', 'paid', now() - interval '7 years', now() - interval '7 years')`);
 
+  await q(`insert into creator_earnings (month, app_id, owner_id, app_name, uses, cents) values
+    ((now() - interval '6 years 2 months')::date, 'a1', 'deleted-a', 'A', 1, 1),
+    ((now() - interval '5 years')::date, 'a2', 'deleted-b', 'A', 1, 1),
+    ((now() - interval '7 years')::date, 'a3', 'live', 'A', 1, 1)`);
+  await q(`insert into creator_payouts (id, owner_id, month, kind, amount_cents, created_at) values
+    ('c1', 'deleted-a', '2019-01-01', 'withheld', 1, now() - interval '7 years'),
+    ('c2', 'deleted-b', '2021-01-01', 'withheld', 1, now() - interval '5 years'),
+    ('c3', 'live', '2019-01-01', 'withheld', 1, now() - interval '7 years')`);
+  await q(`insert into pass_payments (id, kind, reference, amount_cents, currency, occurred_at) values
+    ('charge:old', 'charge', 'old', 500, 'USD', now() - interval '7 years'),
+    ('charge:new', 'charge', 'new', 500, 'USD', now() - interval '5 years')`);
+
   await R.applyRetention(sql);
 
   const count = async (text) => (await sql.query(text))[0].n;
@@ -283,6 +306,9 @@ test("retention deletes stats older than 90 days and anonymised payments older t
   assert.equal(await count(`select count(*)::int as n from abuja_lives`), 2, "Hall of Fame is kept");
   assert.deepEqual((await sql.query(`select user_id from subscriptions order by user_id`)).map((r) => r.user_id), ["deleted-b", "live"]);
   assert.deepEqual((await sql.query(`select reference from outpost_purchase order by reference`)).map((r) => r.reference), ["p2", "p3"]);
+  assert.deepEqual((await sql.query(`select app_id from creator_earnings order by app_id`)).map((r) => r.app_id), ["a2", "a3"]);
+  assert.deepEqual((await sql.query(`select id from creator_payouts order by id`)).map((r) => r.id), ["c2", "c3"]);
+  assert.deepEqual((await sql.query(`select id from pass_payments`)).map((r) => r.id), ["charge:new"]);
   await pg.close();
 });
 

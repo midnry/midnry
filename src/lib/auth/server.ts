@@ -36,6 +36,7 @@ import { getCookie } from "@tanstack/react-start/server";
 import { randomBytes } from "node:crypto";
 import { Pool } from "pg";
 import { ensureDbReady, getPglite } from "../db";
+import { ageConfirmationGuard } from "./age.server";
 import { closedAccountGuard } from "./closed-account.server";
 import { emailAndPasswordEnabled } from "./email-password";
 import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
@@ -314,6 +315,10 @@ export const auth = betterAuth({
     // Closed accounts can't sign in (or sign up again with the same email)
     // until they are restored or purged. See ./closed-account.server.ts.
     closedAccountGuard(),
+
+    // New accounts must confirm age (13+, or a parent's or guardian's
+    // permission) on every sign-up path. See ./age.server.ts.
+    ageConfirmationGuard(),
 
     // Bridges Better Auth's Set-Cookie into TanStack Start responses. MUST be
     // last so it runs after every other plugin's hooks.

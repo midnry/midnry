@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import type { AccountState } from "@/lib/access";
+import { ADULT_PAY_MESSAGE } from "@/lib/age";
 
 export type CheckoutStart =
   | { action: "redirect"; url: string }
@@ -16,7 +17,13 @@ export const billingConfig = createServerFn({ method: "GET" }).handler(
   },
 );
 
+// Paying needs "I'm 18 or older, or a parent or guardian is paying." ticked;
+// a checkout is never started without it.
 export const beginCheckout = createServerFn({ method: "POST" })
+  .validator((input: { adultConfirmed: true }) => {
+    if ((input as { adultConfirmed?: unknown } | null)?.adultConfirmed !== true) throw new Error(ADULT_PAY_MESSAGE);
+    return { adultConfirmed: true as const };
+  })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<CheckoutStart> => {
     const billing = await import("./paystack.server");
