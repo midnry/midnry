@@ -631,3 +631,19 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   converted FBX→GLB with Blender and recorded in `scripts/assets/outpost-operator/sources.json`;
   added to operator-v1 and all Locker characters. First-person eye height follows the stance.
 - Tests: `scripts/outpost-stance.test.mjs`. QA: `node scripts/qa/stance-look.mjs [width]`.
+
+## Last Signal scope (ADS) and the special-move hint (owner, 2026-10-21, not deployed yet)
+
+- Rules (`ADS`, `canAim` in `outpost-stance.js`): `input.ads` while aiming down the sights:
+  walk ×0.55, no sprinting (sprint cancels it), spread ×0.65, mid-air wander halved. Fists and
+  the scythe (`melee`, `dash`) can't aim. Bots aim (ads) at targets over 6 tiles when standing
+  still. Server `inputOf` passes `ads`.
+- Client: right mouse (hold), touch SCOPE toggle (`.mf-scope`, left of the stance button),
+  controller LT (LT sprints only in Blackout Protocol; L3 sprints everywhere). Look speed ×0.55
+  (`ADS_LOOK`); crosshair becomes a red dot (`.mf-ads`). Renderer zooms the FOV per weapon
+  (`ADS_ZOOM` in renderer.js: carbine 0.6 … breach 0.88) and slides the gun to the centre.
+  Aim math uses the look angle, so zoom does not change where shots land.
+- Special-move hint: when the meter fills, `overdriveReady` shows "<MOVE> READY · PRESS Q / TAP THE
+  BUTTON / PRESS X · what it does" (`SUPER_HINTS`) in full the first 3 times
+  (`midnry-outpost-overdrive-hint` counter), then short, with a chime.
+- Tests: `scripts/outpost-stance.test.mjs` (ADS). QA: `node scripts/qa/scope-look.mjs [width]`.

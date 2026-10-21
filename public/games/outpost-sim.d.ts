@@ -14,6 +14,8 @@ export type Input = {
   stance?: "stand" | "crouch" | "prone";
   /** Jump press (edge-triggered). */
   jump?: boolean;
+  /** Aiming down the sights (held). */
+  ads?: boolean;
   fire?: boolean;
   reload?: boolean;
   super?: boolean;
@@ -31,6 +33,7 @@ export type Entity = {
   sprinting?: boolean;
   stance?: "stand" | "crouch" | "prone";
   stanceAt?: number;
+  ads?: boolean;
   jumpAt?: number;
   slideUntil?: number;
   crouching?: boolean;

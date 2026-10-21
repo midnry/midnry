@@ -6,7 +6,8 @@
  *   Left stick  move (or fly while at the helm)   Right stick  look
  *   A  interact (hold)    B  report body    X  ability    Y  emergency radio
  *   LB tactics            RB eliminate      RT fire (Last Stand)
- *   L3 / LT sprint        View  Info        Start  menu / resume
+ *   L3 sprint (Blackout Protocol: LT too)   LT aim down the sights (Last Signal)
+ *   View  Info            Start  menu / resume
  *   D-pad left / right    switch player while spectating
  */
 const BUTTON = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, VIEW: 8, START: 9, L3: 10, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 };
@@ -150,7 +151,10 @@ export class OutpostGamepad {
     this.hold("d", piloting && lx > 0.5);
     // Look: a curved response, like most console shooters.
     if (rx || ry) g.applyLook(rx * Math.abs(rx) * 900 * dt, ry * Math.abs(ry) * 600 * dt);
-    this.hold("shift", down[BUTTON.L3] || down[BUTTON.LT]);
+    // Last Signal: LT aims down the sights; in Blackout Protocol it sprints.
+    const aimTrigger = g.mode !== "protocol";
+    g.padAds = aimTrigger && !!down[BUTTON.LT];
+    this.hold("shift", down[BUTTON.L3] || (!aimTrigger && down[BUTTON.LT]));
     if (g.mode === "protocol") {
       this.hold("e", down[BUTTON.A]);
       if (pressed(BUTTON.A)) ui?.startEquipmentCheck?.();

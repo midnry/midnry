@@ -66,6 +66,11 @@ import { BattlePreparation } from "./battle-preparation.js";
 const SCALE = 3,
   ASSET = "/games/military/",
   TAU = Math.PI * 2;
+/** Field of view while aiming down the sights, as a share of the normal
+ * view: long guns zoom most, scatterguns and thrown weapons a little. */
+const ADS_ZOOM = { carbine: 0.6, twin: 0.7, rocket: 0.72, scatter: 0.85, breach: 0.88 };
+/** Where the gun sits when aiming: the carbine's optic on the crosshair. */
+const ADS_RIG = { carbine: { x: -0.008, y: 0.08 }, twin: { x: 0.05, y: 0.04 }, other: { x: 0.02, y: 0.05 } };
 const PROFILES = {
   outpost: { floor: "#a69980", fog: "#d4c8ad", metal: "#788178" },
   testblock: { floor: "#8e958c", fog: "#b8c1c5", metal: "#75806e" },
@@ -567,7 +572,7 @@ export class MilitaryRenderer {
     this.fxaa?.uniforms.resolution.value.set(1 / renderWidth, 1 / renderHeight);
     this.camera.aspect = w / h;
     // Match the shared projection used by classic rendering and aim.
-    this.camera.fov = THREE.MathUtils.radToDeg(this.g.verticalFov);
+    this.camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(this.g.verticalFov / 2) * (this.adsZoom ?? 1)));
     this.camera.updateProjectionMatrix();
     this.weaponCamera.aspect = w / h;
     this.weaponCamera.fov = THREE.MathUtils.radToDeg(
@@ -2713,6 +2718,7 @@ export class MilitaryRenderer {
     const centred = id === "twin" || id === "brawler";
     this.rig.position.set(centred ? 0.05 : 0.175, -0.2, 0);
     this.rigBase = {
+      x: this.rig.position.x,
       z: centred ? 0 : 0.035,
       yaw: centred ? -0.07 : -0.045,
       // Paired pistols are short: lift them so slides and grips both show.
@@ -3428,6 +3434,17 @@ export class MilitaryRenderer {
       p.y * SCALE + (seatedPilot ? 0.85 : 0),
     );
     this.camera.rotation.set(pitch - fall * 0.25, -p.a - Math.PI / 2, fall * 0.5, "YXZ");
+    // Aiming down the sights: zoom in (more for long guns) and bring the gun
+    // to the middle of the view. Aim math uses the look angle, not the FOV.
+    this.adsBlend ??= 0;
+    this.adsBlend += ((g.aiming ? 1 : 0) - this.adsBlend) * (this.motion.matches ? 1 : 1 - Math.exp(-dt * 14));
+    if (this.adsBlend < 1e-3) this.adsBlend = 0;
+    this.adsZoom = 1 - this.adsBlend * (1 - (ADS_ZOOM[this.weaponId] ?? 0.85));
+    const fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(g.verticalFov / 2) * this.adsZoom));
+    if (Math.abs(this.camera.fov - fov) > 1e-3) {
+      this.camera.fov = fov;
+      this.camera.updateProjectionMatrix();
+    }
     (this.hazards ||= new HazardDressing(this)).shake(this.camera, t);
     this.updateProtocol(protocolView, p);
     this.updateMedicalMission(protocolView?.protocol?.mission, t);
@@ -3502,8 +3519,13 @@ export class MilitaryRenderer {
       (this.motion.matches ? 0 : Math.sin(g.step) * 0.005);
     this.rig.position.y -= fall * 0.65;
     this.rig.position.z = (this.rigBase?.z || 0) + recoil * 0.04 + reloadTilt * 0.03;
+    // Sights up: the gun slides toward the middle and rises a little.
+    const ads = this.adsBlend || 0,
+      sights = ADS_RIG[this.weaponId] || ADS_RIG.other;
+    if (this.rigBase) this.rig.position.x = this.rigBase.x + (sights.x - this.rigBase.x) * ads;
+    this.rig.position.y += ads * sights.y;
     this.rig.rotation.x = 0.02 - recoil * 0.075 + reloadTilt * 0.16;
-    this.rig.rotation.y = (this.rigBase?.yaw ?? -0.07) + reloadTilt * 0.1;
+    this.rig.rotation.y = (this.rigBase?.yaw ?? -0.07) * (1 - (this.adsBlend || 0)) + reloadTilt * 0.1;
     this.rig.rotation.z = -0.025 + reloadTilt * 0.5;
     this.flash.intensity = recoil > 0.65 ? 3 : 0;
     animateCarbine(this.rig.userData.carbine,reload,recoil);

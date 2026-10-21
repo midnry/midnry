@@ -808,11 +808,30 @@
       midnry-fps .mf-cross::after {
         right: 0;
       }
+      /* Aiming down the sights: the crosshair closes to a small, steady dot
+         (the view zooms in), with a faint ring. */
+      midnry-fps .mf-cross {
+        transition: width 0.15s, height 0.15s;
+      }
+      midnry-fps .mf-ads .mf-cross {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px #fff4dc80;
+        background: radial-gradient(circle, #ff5a4a 0 2px, transparent 2.5px);
+      }
+      midnry-fps .mf-ads .mf-cross::before,
+      midnry-fps .mf-ads .mf-cross::after {
+        display: none;
+      }
       midnry-fps .mf-toast {
         position: absolute;
         left: 50%;
         top: 62%;
         transform: translateX(-50%);
+        width: max-content;
+        max-width: min(92%, 620px);
+        white-space: pre-line;
         text-align: center;
         color: #ffca49;
         font-weight: 900;
@@ -1044,7 +1063,8 @@
          in the right thumb's arc, around FIRE. The stance button shows what
          a tap will do; holding it fills a ring, then you lie down. */
       midnry-fps .mf-slide.mf-stance,
-      midnry-fps .mf-jump {
+      midnry-fps .mf-jump,
+      midnry-fps .mf-scope {
         position: absolute;
         display: grid;
         place-items: center;
@@ -1074,11 +1094,24 @@
         bottom: calc(216px + var(--mf-safe-bottom));
         display: none;
       }
+      /* Scope: a toggle above JUMP (tap in, tap out). */
+      midnry-fps .mf-scope {
+        right: calc(34px + var(--mf-safe-right));
+        bottom: calc(294px + var(--mf-safe-bottom));
+        display: none;
+      }
+      midnry-fps .mf-scope[aria-pressed="true"] {
+        border-color: var(--mf-accent, #f2b950);
+        background: #3a2c10d0;
+        color: var(--mf-accent, #f2b950);
+      }
       @media (pointer: coarse) {
-        midnry-fps .mf-jump { display: grid; }
+        midnry-fps .mf-jump,
+        midnry-fps .mf-scope { display: grid; }
       }
       midnry-fps .mf-stance i,
-      midnry-fps .mf-jump i {
+      midnry-fps .mf-jump i,
+      midnry-fps .mf-scope i {
         width: 24px;
         height: 24px;
         background: currentColor;
@@ -1090,6 +1123,7 @@
       midnry-fps .mf-stance[data-stance="crouch"] { --mf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Ccircle cx='12' cy='4' r='2.3'/%3E%3Cpath d='M10 7.5h4l1 7h-2l-.5 7h-1l-.5-7H9z'/%3E%3C/svg%3E"); border-color: var(--mf-accent, #f2b950); }
       midnry-fps .mf-stance[data-stance="prone"] { --mf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Ccircle cx='12' cy='4' r='2.3'/%3E%3Cpath d='M10 7.5h4l1 7h-2l-.5 7h-1l-.5-7H9z'/%3E%3C/svg%3E"); border-color: var(--mf-accent, #f2b950); background: #3a2c10d0; }
       midnry-fps .mf-jump { --mf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 19V5M6 11l6-6 6 6'/%3E%3Cpath d='M5 21h14'/%3E%3C/svg%3E"); }
+      midnry-fps .mf-scope { --mf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='7.5'/%3E%3Cpath d='M12 2v5M12 17v5M2 12h5M17 12h5'/%3E%3Ccircle cx='12' cy='12' r='1' fill='black'/%3E%3C/svg%3E"); }
       /* Holding: a ring fills in 0.35 s, then the stance changes. */
       midnry-fps .mf-stance::after {
         content: "";
@@ -1109,8 +1143,9 @@
       @property --mf-hold { syntax: "<angle>"; inherits: false; initial-value: 0turn; }
       @keyframes mf-stancehold { to { --mf-hold: 1turn; } }
       midnry-fps .mf-jump:active,
+      midnry-fps .mf-scope:active,
       midnry-fps .mf-stance:active { transform: scale(0.94); }
-      midnry-fps .mf-protocol :is(.mf-jump) { display: none !important; }
+      midnry-fps .mf-protocol :is(.mf-jump, .mf-scope) { display: none !important; }
       /* Blackout Protocol keeps the plain slide button. */
       midnry-fps .mf-protocol .mf-stance i { display: none; }
       midnry-fps .mf-protocol .mf-stance span { font-size: 0; }
@@ -1123,6 +1158,10 @@
         midnry-fps .mf-jump {
           right: calc(28px + var(--mf-safe-right));
           bottom: calc(210px + var(--mf-safe-bottom));
+        }
+        midnry-fps .mf-scope {
+          right: calc(196px + var(--mf-safe-right));
+          bottom: calc(140px + var(--mf-safe-bottom));
         }
       }
       @media (prefers-reduced-motion: reduce) {
@@ -1248,6 +1287,10 @@
         height: 100%;
         background: #ffc857;
         animation: mf-lifebar var(--mf-lifewait, 1.8s) linear forwards;
+      }
+      /* Phones: messages sit above the crosshair, clear of the thumb controls. */
+      @media (max-width: 700px) and (min-height: 501px) {
+        midnry-fps .mf-toast { top: 30%; }
       }
       midnry-fps .mf-lifelosing :is(.mf-touch, .mf-super, .mf-cross, .mf-movement, .mf-toast) {
         visibility: hidden;
@@ -2677,7 +2720,7 @@
       midnry-fps .mf-shell :is(.mf-start, .mf-exit, .mf-panel > .mf-results) {
         border-radius: max(8px, calc(var(--mf-corner-surface) - var(--mf-panel-inset)));
       }
-      midnry-fps .mf-shell button:is(.mf-fire, .mf-reload, .mf-pause, .mf-stance, .mf-jump) {
+      midnry-fps .mf-shell button:is(.mf-fire, .mf-reload, .mf-pause, .mf-stance, .mf-jump, .mf-scope) {
         border-radius: 50%;
       }
       /* Phones: keep the middle of the view clear. Status shrinks to the
@@ -2928,6 +2971,22 @@
         // A custom element keeps state private and supports multiple independent instances.
         if (customElements.get("midnry-fps")) return;
         const TAU = Math.PI * 2;
+        /** Look speed while aiming down the sights (finer aim at a zoomed view). */
+        const ADS_LOOK = 0.55;
+        /** What each weapon's special move does, for the "ready" message. */
+        const SUPER_HINTS = {
+          carbine: "A 5-shot burst that hits harder and costs no ammo. Aim, then fire it",
+          scatter: "A heavy blast that knocks rivals back and breaks cover",
+          twin: "A 9-shot sweeping burst",
+          breach: "Rush through cover and shove rivals aside",
+          shard: "A field of shards that hurts and slows rivals",
+          veil: "Turn invisible until you attack or get close",
+          venom: "Leap away, spraying poison where you take off and land",
+          brawler: "A leaping strike that also speeds you up",
+          reaper: "Rush forward; the echoes heal you",
+          rocket: "Five rockets rain on the spot you aim at",
+          demo: "A heavy barrel that breaks cover and knocks rivals back",
+        };
 
         /** Finished rounds on this device (the locker profile). */
         const completedRounds = () => {
@@ -2954,7 +3013,7 @@
         <div class="mf-match" hidden><b class="mf-cores">CHARGE CORES 0</b><div class="mf-teamstat"></div><div class="mf-zone"></div></div><div class="mf-cross"></div><div class="mf-toast" role="status" aria-live="polite"></div>
         <div class="mf-damage" role="status" aria-live="polite"></div><div class="mf-hitmark" aria-hidden="true"></div><button class="mf-super" aria-label="Use charged ability">Q · SUPER <b>0%</b></button>
         <div class="mf-bottom"><div class="mf-stat">VITALS<strong class="mf-hp">100</strong><div class="mf-health"><i></i></div></div><div class="mf-stat mf-ammo">VX–7 / AUTO CARBINE<strong class="mf-rounds">24 <span>/ ∞</span></strong></div></div>
-        <div class="mf-movement" hidden role="status" aria-live="polite"></div><div class="mf-death" hidden role="status" aria-live="polite">SIGNAL LOST</div><div class="mf-lifelost" role="status" aria-live="assertive"></div><div class="mf-touch"><button class="mf-sprint" aria-label="Toggle sprint" aria-pressed="false">SPRINT</button><button class="mf-slide mf-stance" data-stance="stand" aria-label="Crouch. Hold to lie down. While sprinting: slide"><i aria-hidden="true"></i><span>CROUCH</span></button><button class="mf-jump" aria-label="Jump"><i aria-hidden="true"></i><span>JUMP</span></button><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
+        <div class="mf-movement" hidden role="status" aria-live="polite"></div><div class="mf-death" hidden role="status" aria-live="polite">SIGNAL LOST</div><div class="mf-lifelost" role="status" aria-live="assertive"></div><div class="mf-touch"><button class="mf-sprint" aria-label="Toggle sprint" aria-pressed="false">SPRINT</button><button class="mf-slide mf-stance" data-stance="stand" aria-label="Crouch. Hold to lie down. While sprinting: slide"><i aria-hidden="true"></i><span>CROUCH</span></button><button class="mf-jump" aria-label="Jump"><i aria-hidden="true"></i><span>JUMP</span></button><button class="mf-scope" aria-label="Aim down the sights" aria-pressed="false"><i aria-hidden="true"></i><span>SCOPE</span></button><div class="mf-stick" aria-label="Movement joystick"><i></i></div><button class="mf-reload" aria-label="Reload">R</button><button class="mf-fire" aria-label="Fire weapon">FIRE</button></div>
         <div class="mf-modal"><div class="mf-panel"><div class="mf-eyebrow">MIDNRY ORIGINAL / 01</div><h1>Outpost<br><em>Zero.</em></h1><p class="mf-copy">Field operations in a weathered compound. Choose a loadout and deploy.</p><div class="mf-modes" role="group" aria-label="Game mode"><button class="mf-mode" data-mode="protocol" aria-pressed="true">BLACKOUT PROTOCOL</button></div><div class="mf-kit"><label>Arena<select class="mf-mapselect" aria-label="Choose arena"></select></label><label>Loadout<select class="mf-weaponselect" aria-label="Choose loadout"></select></label><label class="mf-outfitlabel"><span>Outfit<select class="mf-outfitselect" aria-label="Choose outfit"></select></span><img class="mf-outfitpreview" alt="Selected outfit" width="120" height="150"></label></div><p class="mf-mapinfo"></p><p class="mf-weaponinfo"></p><p class="mf-kitnote">Choose before deploying. Offline changes start a fresh round; online, the host chooses the arena.</p><details class="mf-network"><summary>PLAY ONLINE / ROOM CODE</summary><p>Invite friends. The host starts with bots filling empty seats. Online matches keep running while your menu is open.</p><button class="mf-quick">QUICK MATCH →</button><p class="mf-quicknote">Join an open public game, or start one that others can join. Bots fill empty seats.</p><div class="mf-connectrow mf-netrow"><button class="mf-create">CREATE ROOM</button><input class="mf-codeinput" maxlength="6" aria-label="Room code" placeholder="CODE"><button class="mf-join">JOIN</button></div><div class="mf-roompanel" hidden><strong class="mf-roomcode"></strong><label class="mf-publiclabel"><input class="mf-public" type="checkbox"> Listed for Quick match</label><div class="mf-netrow"><button class="mf-copyinvite">COPY INVITE</button><button class="mf-leave">LEAVE ROOM</button><label class="mf-teamlabel" hidden>Team <select class="mf-teamselect" aria-label="Choose your team"><option value="0">Pair 1</option><option value="1">Pair 2</option><option value="2">Pair 3</option><option value="3">Pair 4</option></select></label></div><ul class="mf-roster"></ul></div><div class="mf-netstatus" role="status" aria-live="polite"></div></details><button class="mf-start">DEPLOY →</button><div class="mf-help">WASD · move &nbsp; / &nbsp; Mouse · aim &nbsp; / &nbsp; Hold E · interact &nbsp; / &nbsp; Esc or P · pause<br>Touch: left stick to move, drag the right side to aim.</div></div></div>
       </div>`;
             this.engine = new Game(this);
@@ -3397,6 +3456,8 @@
             this.pendingSlide = false;
             this.pendingJump = false;
             this.setStance?.("stand");
+            this.adsHeld = false;
+            this.setScope?.(false);
             this.$(".mf-death").hidden = true;
             this.$(".mf-sprint").setAttribute("aria-pressed", "false");
             this.art?.reset();
@@ -3622,16 +3683,21 @@
               fire: this.firing || (this.mode === "protocol" && this.keys.has(" ")) || this.pendingShot > 0,
               jump: !!this.pendingJump,
               stance: this.stanceWant || "stand",
+              ads: !!(this.adsHeld || this.adsToggle || this.padAds),
               reload: this.pendingReload,
               super: this.pendingSuper,
             };
-            // Sprinting stands you up (the simulation agrees).
-            if (controls.sprint && Math.hypot(controls.forward, controls.strafe) > 0.1 && this.stanceWant !== "stand")
-              this.setStance("stand");
+            // Sprinting stands you up and lowers the sights (the simulation agrees).
+            if (controls.sprint && Math.hypot(controls.forward, controls.strafe) > 0.1) {
+              if (this.stanceWant !== "stand") this.setStance("stand");
+              if (this.adsToggle) this.setScope(false);
+              controls.ads = false;
+            }
             if (protocol) {
               controls.super = false;
               controls.jump = false;
               controls.stance = "stand";
+              controls.ads = false;
               if (!fighting || frozen || dialogOpen) controls.fire = controls.reload = false;
               controls.sprint = false;
               if (frozen || this.protocolUI?.piloting || this.protocolUI?.hasDialogOpen())
@@ -3644,6 +3710,20 @@
               if (frozen) controls.vehicleInput = { pitch: 0, steer: 0 };
             }
             return controls;
+          }
+          /** The special move just charged: say what it is and how to fire it
+           * (in full the first few times, then briefly). */
+          overdriveReady(weapon) {
+            let seen = 0;
+            try {
+              seen = Number(localStorage.getItem("midnry-outpost-overdrive-hint")) || 0;
+              localStorage.setItem("midnry-outpost-overdrive-hint", String(seen + 1));
+            } catch {}
+            const input = this.shell.dataset.input,
+              how = input === "pad" ? "PRESS X" : matchMedia("(pointer: coarse)").matches ? "TAP THE BUTTON" : "PRESS Q",
+              what = SUPER_HINTS[weapon.id] || "your weapon's special move";
+            this.message(seen < 3 ? `${weapon.super.toUpperCase()} READY · ${how}\n${what}` : `${weapon.super.toUpperCase()} READY · ${how}`, seen < 3 ? 4.5 : 2.5);
+            this.retention?.audio.tone(880, 0.12, 0.12, 0, "triangle", 1320);
           }
           /** Last Signal stances. One stance control everywhere: tap to crouch or
            * stand, hold to lie down (hold again to get up), and while sprinting
@@ -3678,6 +3758,15 @@
               "aria-label",
               stance === "prone" ? "Lying down. Hold to stand up, tap to crouch" : stance === "crouch" ? "Crouching. Tap to stand, hold to lie down" : "Crouch. Hold to lie down. While sprinting: slide",
             );
+          }
+          /** Touch scope: a toggle (a held button would tie up a thumb). */
+          setScope(on) {
+            this.adsToggle = !!on;
+            this.$(".mf-scope")?.setAttribute("aria-pressed", String(this.adsToggle));
+          }
+          /** Aiming down the sights right now (any input). */
+          get aiming() {
+            return this.mode !== "protocol" && this.running && this.player.hp > 0 && !!this.player.ads;
           }
           requestJump() {
             if (!this.running || this.mode === "protocol" || this.player.hp <= 0) return;
@@ -3728,6 +3817,8 @@
             this.pendingSlide = false;
             this.pendingJump = false;
             this.setStance?.("stand");
+            this.adsHeld = false;
+            this.setScope?.(false);
             this.touchSprint = false;
             this.touch = { x: 0, y: 0 };
             this.look = null;
@@ -3822,6 +3913,8 @@
             this.pendingSlide = false;
             this.pendingJump = false;
             this.setStance?.("stand");
+            this.adsHeld = false;
+            this.setScope?.(false);
             this.touch = { x: 0, y: 0 };
             this.look = null;
             this.stickId = null;
@@ -4258,6 +4351,8 @@
                 this.pendingSlide = false;
                 this.pendingJump = false;
                 this.setStance?.("stand");
+                this.adsHeld = false;
+                this.setScope?.(false);
                 this.$(".mf-sprint").setAttribute("aria-pressed", "false");
                 this.$(".mf-death").hidden = true;
                 this.state = "playing";
@@ -4458,6 +4553,11 @@
               e.preventDefault();
               this.requestJump();
             });
+            this.on(this.$(".mf-scope"), "pointerdown", (e) => {
+              e.preventDefault();
+              if (!this.running || this.mode === "protocol" || this.player.hp <= 0) return;
+              this.setScope(!this.adsToggle);
+            });
             this.on(this.shell, "keydown", (e) => {
               if (e.target.closest?.("input,select,textarea,dialog")) return;
               if (!this.running && e.target.closest?.("button,summary")) return;
@@ -4546,6 +4646,10 @@
                 this.firing = true;
                 this.shoot();
                 this.lockMouse();
+              } else if (e.pointerType === "mouse" && e.button === 2) {
+                // Hold the right button to aim down the sights.
+                this.adsHeld = true;
+                this.lockMouse();
               } else if (
                 e.clientX >
                 this.canvas.getBoundingClientRect().left + this.canvas.clientWidth * 0.35
@@ -4562,7 +4666,8 @@
               }
             });
             this.on(window, "pointerup", (e) => {
-              if (e.pointerType === "mouse") this.firing = false;
+              if (e.pointerType === "mouse" && e.button === 2) this.adsHeld = false;
+              else if (e.pointerType === "mouse") this.firing = false;
               if (this.look?.id === e.pointerId) this.look = null;
             });
             this.on(this.canvas, "pointercancel", () => {
@@ -4639,8 +4744,10 @@
           applyLook(dx, dy, touch = false) {
             if (!Number.isFinite(dx) || !Number.isFinite(dy) || this.player.hp <= 0) return;
             const delta = lookDelta(dx, dy, this.aimSettings.values, touch);
-            this.player.a += delta.yaw;
-            this.lookPitch = clamp(this.lookPitch + delta.pitch, -PITCH_LIMIT, PITCH_LIMIT);
+            // Zoomed in, the view turns slower so aim stays steady.
+            const steady = this.aiming ? ADS_LOOK : 1;
+            this.player.a += delta.yaw * steady;
+            this.lookPitch = clamp(this.lookPitch + delta.pitch * steady, -PITCH_LIMIT, PITCH_LIMIT);
           }
 
           start() {
@@ -4829,7 +4936,11 @@
             this.$(".mf-super").disabled = p.hp <= 0 || p.charge < 100;
             this.$(".mf-super").firstChild.textContent = "Q · " + weapon.super.toUpperCase() + " ";
             this.$(".mf-super b").textContent = Math.floor(p.charge || 0) + "%";
-            this.$(".mf-super").classList.toggle("mf-super-ready", p.charge >= 100);
+            const ready = p.hp > 0 && p.charge >= 100;
+            this.$(".mf-super").classList.toggle("mf-super-ready", ready);
+            if (ready && !this.superWasReady) this.overdriveReady(weapon);
+            this.superWasReady = ready;
+            this.shell.classList.toggle("mf-ads", this.aiming);
             this.$(".mf-hp").classList.toggle("mf-critical", p.hp > 0 && p.hp / p.maxHp < 0.3);
             this.$(".mf-hp").textContent = Math.ceil(p.hp);
             this.$(".mf-health i").style.width = (p.hp / p.maxHp) * 100 + "%";

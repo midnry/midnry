@@ -19,6 +19,11 @@ export const STANCE = Object.freeze({
   crouch: { speed: 0.6, centre: -0.12, eye: -0.13, window: 0.38, spot: 11 },
   prone: { speed: 0.3, centre: -0.42, eye: -0.45, window: 0.22, spot: 6.5 },
 });
+/** Aiming down the sights: a zoomed view (client), a slower walk, no
+ * sprinting, and a tighter spread for spread weapons. */
+export const ADS = Object.freeze({ speed: 0.55, spread: 0.65 });
+/** Fists and the scythe have no sights. */
+export const canAim = (weapon) => !["melee", "dash"].includes(weapon?.kind);
 export const JUMP = Object.freeze({ duration: 0.55, height: 0.25, cooldown: 0.35, wander: 0.06 });
 /** Getting down takes a moment before a prone fighter can shoot. */
 export const PRONE_SETTLE = 0.35;

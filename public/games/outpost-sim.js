@@ -1,6 +1,6 @@
 /** Shared, DOM-free simulation for offline games and authoritative online rooms. */
 export const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
-import { applyStanceInput, airborne, botStance, jumpPhase, JUMP, lowCover, pitchTo, settling, speedOf, spotRange, stanceOf, verticalHit } from "./outpost-stance.js";
+import { ADS, applyStanceInput, canAim, airborne, botStance, jumpPhase, JUMP, lowCover, pitchTo, settling, speedOf, spotRange, stanceOf, verticalHit } from "./outpost-stance.js";
 import { LEVEL, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf } from "./outpost-content.js";
 // Health recovery: starts this many seconds after the last damage taken,
 // then restores this fraction of maximum health per second.
@@ -845,6 +845,8 @@ export class Arena {
     range = w.range,
     poison = false,
   ) {
+    // Aiming down the sights tightens a spread (shotguns, twin pistols).
+    if (e.ads) spread *= ADS.spread;
     for (let i = 0; i < count; i++) {
       const a = e.a + (count === 1 ? 0 : (i / (count - 1) - 0.5) * spread * 2);
       const t = this.rayTarget(e, Math.cos(a), Math.sin(a), [...this.entities, ...this.crates]);
@@ -895,7 +897,7 @@ export class Arena {
     e.cloakedUntil = 0;
     // Shots fired mid-jump wander a little.
     const phase = jumpPhase(e, this.time);
-    if (phase !== null) e.a += Math.sin(this.time * 97 + (e.phase || 0)) * JUMP.wander;
+    if (phase !== null) e.a += Math.sin(this.time * 97 + (e.phase || 0)) * JUMP.wander * (e.ads ? 0.5 : 1);
     if (w.kind === "rifle") this.pellets(e, w, w.damage, 0, 1, w.range);
     else if (w.kind === "shotgun") this.pellets(e, w);
     else if (w.kind === "burst") {
@@ -1355,9 +1357,14 @@ export class Arena {
         Math.sin(this.time * 3 + bot.phase) * skill.aim;
       // Aim at the target's height: low against prone, up at a jumper.
       bot.pitch = target.id.startsWith("crate") ? 0 : pitchTo(bot, target, dist(target), this.time);
+      // Sights up for a long shot (shown on the bot; it is standing still to shoot).
+      bot.ads = dist(target) > 6 && canAim(weaponOf(bot.weapon));
       if (bot.charge >= 100) this.super(bot);
       this.shoot(bot);
-    } else if (goal) bot.a = Math.atan2(goal.y - bot.y, goal.x - bot.x);
+    } else if (goal) {
+      bot.a = Math.atan2(goal.y - bot.y, goal.x - bot.x);
+      bot.ads = false;
+    }
     this.collectCores(bot);
   }
   advance(dt, inputs = {}) {
@@ -1400,9 +1407,11 @@ export class Arena {
       e.slideHeld = !!input.slide;
       applyStanceInput(e, input, this.time, Math.hypot(f, s) > 0.1);
       const sliding = e.slideUntil > this.time;
-      e.sprinting = !sliding && !!input.sprint && Math.hypot(f, s) > 0.1 && stanceOf(e) === "stand";
+      // Sprinting lowers the sights; aiming means walking.
+      e.ads = !!input.ads && canAim(weaponOf(e.weapon)) && !(input.sprint && Math.hypot(f, s) > 0.1) && !sliding;
+      e.sprinting = !sliding && !e.ads && !!input.sprint && Math.hypot(f, s) > 0.1 && stanceOf(e) === "stand";
       const speed =
-        (sliding ? 3 + 3 * ((e.slideUntil - this.time) / 0.65) : (e.sprinting ? 4 : 2.6) * speedOf(e)) *
+        (sliding ? 3 + 3 * ((e.slideUntil - this.time) / 0.65) : (e.sprinting ? 4 : 2.6) * speedOf(e) * (e.ads ? ADS.speed : 1)) *
         (e.speedUntil > this.time ? 1.4 : 1) *
         (e.slowUntil > this.time ? 0.45 : 1) *
         this.weather(e);

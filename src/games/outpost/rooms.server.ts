@@ -242,6 +242,7 @@ export function inputOf(value: unknown): Input {
     sprint: v.sprint === true,
     slide: v.slide === true,
     jump: v.jump === true,
+    ads: v.ads === true,
     ...(v.stance === "stand" || v.stance === "crouch" || v.stance === "prone" ? { stance: v.stance } : {}),
     fire: v.fire === true,
     reload: v.reload === true,

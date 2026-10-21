@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Arena } from "../public/games/outpost-sim.js";
-import { JUMP, PRONE_SETTLE, STANCE, pitchTo, verticalHit } from "../public/games/outpost-stance.js";
+import { ADS, JUMP, PRONE_SETTLE, STANCE, pitchTo, verticalHit } from "../public/games/outpost-stance.js";
 
 // A quiet Last Signal round: nobody moves unless told, no shields, no disasters.
 const quiet = () => {
@@ -131,4 +131,38 @@ test("bots take cover low when hurt and keep a stance for a moment", () => {
   bot.hp = bot.maxHp;
   step(a, 2);
   assert.equal(bot.stance, "stand");
+});
+
+test("aiming down the sights slows you, tightens spread and cancels sprinting; fists cannot aim", () => {
+  const a = quiet(),
+    me = a.entities[0];
+  const start = lane(a, 8);
+  const run = (input) => {
+    Object.assign(me, start, { a: 0, stance: "stand" });
+    step(a, 1, { [me.id]: { forward: 1, ...input } });
+    return me.x - start.x;
+  };
+  const walk = run({}),
+    aimed = run({ ads: true });
+  assert.ok(Math.abs(aimed / walk - ADS.speed) < 0.08, `aimed ${aimed} vs ${walk}`);
+  assert.equal(me.ads, true);
+  // Sprinting drops the sights.
+  run({ ads: true, sprint: true });
+  assert.equal(me.ads, false);
+  assert.equal(me.sprinting, true);
+  // Spread: a tighter blast lands more pellets on a fighter a few tiles ahead.
+  const foe = a.entities[1];
+  const blast = (ads) => {
+    Object.assign(me, start, { a: 0, ads, pitch: 0, stance: "stand" });
+    Object.assign(foe, { x: start.x + 2.5, y: start.y, hp: 1000, maxHp: 1000, shieldUntil: 0, stance: "stand" });
+    a.pellets(me, { ...a.weaponFor?.(me), kind: "shotgun", damage: 10, spread: 0.32, pellets: 5, range: 6 });
+    return 1000 - foe.hp;
+  };
+  const hip = blast(false),
+    ads = blast(true);
+  assert.ok(ads > hip, `aimed blast ${ads} vs hip ${hip}`);
+  // Fists have no sights.
+  me.weapon = "brawler";
+  run({ ads: true });
+  assert.equal(me.ads, false);
 });

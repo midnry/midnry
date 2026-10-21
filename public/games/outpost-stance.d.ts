@@ -1,5 +1,7 @@
 type Fighter = { stance?: string; jumpAt?: number; shotAt?: number; [key: string]: unknown };
 export const STANCE: Readonly<Record<"stand" | "crouch" | "prone", { speed: number; centre: number; eye: number; window: number; spot: number }>>;
+export const ADS: Readonly<{ speed: number; spread: number }>;
+export function canAim(weapon: { kind?: string } | null | undefined): boolean;
 export const JUMP: Readonly<{ duration: number; height: number; cooldown: number; wander: number }>;
 export const PRONE_SETTLE: number;
 export function stanceOf(e: Fighter): "stand" | "crouch" | "prone";
