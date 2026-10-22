@@ -2869,6 +2869,8 @@ export function protocolView(data, selfId) {
     phase: p.phase,
     revealRoles: p.revealRoles !== false,
     match: clone(p.match ?? { modifier: null, twist: null }),
+    // Which base the round plays (public: everyone stands in it).
+    base: p.base ?? "breakwater",
     revealed: p.revealRoles !== false ? clone(p.revealed ?? {}) : {},
     taskDone: p.taskDone,
     taskTotal: p.taskTotal,

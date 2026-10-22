@@ -394,7 +394,12 @@ export class Arena {
   }
   /** Tile types you can see and shoot across but not walk on (canal water). */
   seeThrough(type) {
-    return !!mapOf(this.mapId).seeThrough?.includes(type);
+    // Cached per map: cast() asks this for every wall a ray meets.
+    if (this.seeThroughMap !== this.mapId || !this.seeThroughTypes) {
+      this.seeThroughMap = this.mapId;
+      this.seeThroughTypes = mapOf(this.mapId).seeThrough || [];
+    }
+    return this.seeThroughTypes.length > 0 && this.seeThroughTypes.includes(type);
   }
   /** Solid for movement? Water is solid unless `swim` (players may swim). */
   blocks(x, y, swim = false) {
@@ -423,8 +428,9 @@ export class Arena {
   }
   move(e, dx, dy) {
     if (e.diveUntil > this.time) return;
-    // Players may swim; bots keep to the streets and bridges.
-    const swim = !e.bot;
+    // Last Signal players may swim; bots keep to the streets and bridges.
+    // Blackout Protocol has no swimming: water is a wall to everyone there.
+    const swim = !e.bot && this.mode !== "protocol";
     // A jump clears low cover; landing on it, you can still step off.
     const over = airborne(e, this.time) || !this.canMove(e.x, e.y, 0.2, false, swim);
     if (this.canMove(e.x + dx, e.y, 0.2, over, swim)) e.x += dx;

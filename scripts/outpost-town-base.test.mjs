@@ -62,3 +62,16 @@ test("town rounds end with a result on several seeds (infiltrators active too)",
     assert.equal(a.state, "ended", `seed ${seed} still running`);
   }
 });
+
+test("online players learn the base; nobody walks or swims across the canal in Blackout", async () => {
+  const { protocolView } = await import("../public/games/outpost-protocol.js");
+  const a = createArena({ mode: "protocol", mapId: "town", humans: [{ id: "h", team: 0 }] });
+  const view = protocolView(JSON.parse(JSON.stringify(a.snapshot())), "h");
+  assert.equal(view.protocol.base, "town");
+  assert.equal(restoreArena(view).base(), TOWN_MAP);
+  const h = a.entities.find((e) => e.id === "h");
+  Object.assign(h, { x: 6.5, y: 18.5 });
+  assert.equal(a.level[19][6], 6);
+  a.move(h, 0, 1);
+  assert.ok(h.y < 19, "water stops a Blackout player");
+});

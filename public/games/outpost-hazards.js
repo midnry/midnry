@@ -272,7 +272,8 @@ export function updateDisaster(arena, dt) {
   const d = arena.disaster;
   if (!d) return;
   for (const e of arena.entities)
-    if (e.shockUntil > arena.time && e.hp > 0) arena.damage(e, SHOCK.perSecond * dt, null);
+    // Electrified water deals its own damage; its short shock is only the effect.
+    if (e.shockUntil > arena.time && e.hp > 0 && e.shockFrom !== "water") arena.damage(e, SHOCK.perSecond * dt, null);
   for (let i = d.strikes.length - 1; i >= 0; i--) {
     const s = d.strikes[i];
     if (arena.time < s.at) continue;

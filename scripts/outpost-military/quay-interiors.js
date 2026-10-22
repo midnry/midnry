@@ -8,6 +8,7 @@
  * in a doorway or in front of one, and the collision grid is unchanged, so
  * a room's furniture never reads as cover the rules do not have. */
 import * as THREE from "three";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { displayFont, fitDisplay } from "./world-text.js";
 
 const SCALE = 3;
@@ -180,26 +181,9 @@ export class QuayInteriors {
   }
 }
 
+/** Merge and free the source geometries. */
 function mergeAll(geos) {
-  // Small local merge (positions, normals, uvs) without another import.
-  let count = 0;
-  for (const g of geos) count += g.index ? g.index.count : g.attributes.position.count;
-  const out = new THREE.BufferGeometry();
-  const pos = new Float32Array(count * 3),
-    nor = new Float32Array(count * 3),
-    uv = new Float32Array(count * 2);
-  let o = 0;
-  for (const g of geos) {
-    const src = g.index ? g.toNonIndexed() : g;
-    pos.set(src.attributes.position.array, o * 3);
-    nor.set(src.attributes.normal.array, o * 3);
-    uv.set(src.attributes.uv.array, o * 2);
-    o += src.attributes.position.count;
-    if (src !== g) src.dispose();
-    g.dispose();
-  }
-  out.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  out.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
-  out.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
-  return out;
+  const merged = mergeGeometries(geos);
+  for (const g of geos) g.dispose();
+  return merged;
 }

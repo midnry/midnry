@@ -25537,14 +25537,9 @@ var Zh = class {
 	}
 };
 function Qh(e) {
-	let t = 0;
-	for (let n of e) t += n.index ? n.index.count : n.attributes.position.count;
-	let n = new Fn(), r = new Float32Array(t * 3), i = new Float32Array(t * 3), a = new Float32Array(t * 2), o = 0;
-	for (let t of e) {
-		let e = t.index ? t.toNonIndexed() : t;
-		r.set(e.attributes.position.array, o * 3), i.set(e.attributes.normal.array, o * 3), a.set(e.attributes.uv.array, o * 2), o += e.attributes.position.count, e !== t && e.dispose(), t.dispose();
-	}
-	return n.setAttribute("position", new Tn(r, 3)), n.setAttribute("normal", new Tn(i, 3)), n.setAttribute("uv", new Tn(a, 2)), n;
+	let t = Au(e);
+	for (let t of e) t.dispose();
+	return t;
 }
 //#endregion
 //#region public/games/outpost-skins.js

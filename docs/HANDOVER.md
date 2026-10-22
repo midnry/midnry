@@ -942,3 +942,7 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   `outpost-zero.html` and the server's `SIGNAL_ROTATION`, each appended (existing order unchanged). The guide names
   its storm surge, swimming and culverts. QA scripts that pick an arena with a fixed `Math.random` now use four
   arenas (0.1 outpost, 0.3 skyport, 0.6 estate, 0.9 quay). `?arena=` still pins a single round.
+- Code review before release (2026-10-23) found and fixed: `protocolView` now carries `protocol.base` (online clients
+  restored Breakwater fixtures inside the town); Blackout Protocol has no swimming (`Arena.move` swim only outside
+  protocol mode; humans walked across the canal there); water shock no longer stacks with the storm's shock damage;
+  `Arena.seeThrough` caches the map's water types. Skipped: replacing the quay/town id checks with a `style` field.
