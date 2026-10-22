@@ -38,8 +38,9 @@ await p.evaluate((map) => {
   g.mode = "signal";
   g.seriesKind = "single";
   const random = Math.random,
-    index = ["outpost", "skyport", "estate"].indexOf(map);
-  Math.random = () => (index + 0.5) / 3;
+    list = ["outpost", "skyport", "estate", "quay"],
+    index = list.indexOf(map);
+  Math.random = () => (index + 0.5) / list.length;
   g.series = null;
   g.reset();
   g.start();

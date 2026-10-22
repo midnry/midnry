@@ -938,3 +938,7 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   follows `arena.base()` on each world build.
 - Tests: `scripts/outpost-town-base.test.mjs` (bases, objectives on reachable open ground, full bot mission, seeded
   rounds end). QA: `node scripts/qa/town-base.mjs [width]` → `screenshots/qa/town`.
+- Calder Quay joined the Last Signal rotation (2026-10-23): `SERIES_MAPS`, the single-round list in
+  `outpost-zero.html` and the server's `SIGNAL_ROTATION`, each appended (existing order unchanged). The guide names
+  its storm surge, swimming and culverts. QA scripts that pick an arena with a fixed `Math.random` now use four
+  arenas (0.1 outpost, 0.3 skyport, 0.6 estate, 0.9 quay). `?arena=` still pins a single round.

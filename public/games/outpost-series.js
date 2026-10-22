@@ -26,7 +26,7 @@ export const SERIES_KINDS = {
 };
 export const seriesKindOf = (id) => (Object.hasOwn(SERIES_KINDS, id) ? id : "single");
 // Arenas rotate in this order from a random starting point.
-export const SERIES_MAPS = ["outpost", "skyport", "estate"];
+export const SERIES_MAPS = ["outpost", "skyport", "estate", "quay"];
 // Points by finishing place (index = placement). They separate fighters with
 // the same number of wins before kills are compared.
 export const PLACEMENT_POINTS = [0, 10, 7, 5, 4, 3, 2, 1, 0];

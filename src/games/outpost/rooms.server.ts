@@ -91,7 +91,7 @@ function characterId(value: unknown): string {
   return value;
 }
 // Last Signal rematches move to the next arena, like the offline series.
-const SIGNAL_ROTATION = ["outpost", "estate", "skyport"];
+const SIGNAL_ROTATION = ["outpost", "estate", "skyport", "quay"];
 function outfitId(value: unknown): string {
   if (value === undefined) return "ranger";
   if (typeof value !== "string" || !Object.hasOwn(OUTFITS, value))

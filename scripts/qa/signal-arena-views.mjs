@@ -28,8 +28,9 @@ const views = {
   outpost: [["edge", 2.5, 2.5, Math.PI / 4], ["gate", 9.9, 4.5, Math.PI / 2], ["centre", 14, 9, Math.PI / 2]],
   skyport: [["edge", 2.5, 2.5, Math.PI / 4], ["fence", 11.9, 4.5, Math.PI / 2], ["apron", 18, 30.5, -Math.PI / 2]],
   estate: [["edge", 2.5, 2.5, Math.PI / 4], ["gate", 9.9, 4.5, Math.PI / 2], ["pool", 16, 24, -Math.PI / 2]],
+  quay: [["edge", 2.5, 2.5, Math.PI / 4], ["avenue", 15.5, 6.5, Math.PI / 2], ["quay", 6.5, 18.5, 0]],
 };
-const r = { 0.1: "outpost", 0.5: "skyport", 0.9: "estate" };
+const r = { 0.1: "outpost", 0.3: "skyport", 0.6: "estate", 0.9: "quay" };
 for (const [pick, mapId] of Object.entries(r)) {
   const map = await p.evaluate(async (pick) => {
     const g = document.querySelector("midnry-fps").engine, random = Math.random;

@@ -3670,7 +3670,7 @@
               if (this.seriesKind === "single") this.series = null;
               else if (!this.series || this.series.done || this.series.kind !== this.seriesKind)
                 this.series = new Series(this.seriesKind, Math.floor(Math.random() * SERIES_MAPS.length));
-              const arenas = ["outpost", "skyport", "estate"].filter((id) => MAPS[id]);
+              const arenas = ["outpost", "skyport", "estate", "quay"].filter((id) => MAPS[id]);
               // Play-test link: ?arena=<id> pins single rounds to an arena
               // that is not in the rotation yet (Calder Quay: ?arena=quay).
               const pinned = new URLSearchParams(location.search).get("arena");

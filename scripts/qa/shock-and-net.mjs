@@ -39,7 +39,7 @@ await p.waitForTimeout(800);
 await p.evaluate(() => {
   const g = document.querySelector("midnry-fps").engine,
     r = Math.random;
-  Math.random = () => 0.5;
+  Math.random = () => 0.3; // Skyport (lightning) of the four arenas
   g.reset();
   Math.random = r;
   document.querySelector(".mf-start").click();

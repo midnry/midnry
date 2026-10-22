@@ -28,7 +28,7 @@ test("series kinds: first to three wins, five-round cap, no-limit marathon", () 
   const s = new Series("series", 1);
   assert.equal(s.mapFor(1), SERIES_MAPS[1]);
   assert.equal(s.mapFor(2), SERIES_MAPS[2]);
-  assert.equal(s.mapFor(3), SERIES_MAPS[0], "arenas rotate");
+  assert.equal(s.mapFor(SERIES_MAPS.length), SERIES_MAPS[0], "arenas rotate");
   let n = 0;
   while (!s.done) round(s, 1000 + n++ * 7919);
   assert.ok(s.rounds.length <= 5);

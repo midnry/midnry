@@ -46,7 +46,7 @@ const shot = async (name, pick, setup) => {
     ({ pick, setup }) => {
       const g = document.querySelector("midnry-fps").engine;
       if (
-        g.arena.mapId !== { 0.1: "outpost", 0.5: "skyport", 0.9: "estate" }[pick] ||
+        g.arena.mapId !== { 0.1: "outpost", 0.3: "skyport", 0.6: "estate", 0.9: "quay" }[pick] ||
         g.state !== "playing"
       ) {
         const r = Math.random;
@@ -106,7 +106,7 @@ await shot(
 );
 await shot(
   "storm-half",
-  0.5,
+  0.3,
   `const d=a.disaster;d.warnAt=30;d.startAt=40;d.endAt=62;a.time=d.startAt-0.5;Object.assign(g.player,{x:18,y:18,a:Math.PI/2});g.viewPitch=0.2;const h=g.military.hazards;h.nextSheet=performance.now()+1e6;return {k:h.fade().toFixed(2)}`,
 );
 console.log("errors", errs);
