@@ -57,7 +57,9 @@ async function newCtx(viewport = { width: 1280, height: 900 }, mobile = false) {
 async function seed(page, slug, doc) {
   const res = await page.evaluate(async ({ slug, payload }) => {
     const m = await import("/src/lib/cove.functions.ts");
-    return m.saveDoc({ data: { slug, payload } });
+    // Saves need the current revision (a revision-less save is refused once the row has one).
+    const current = await m.loadDoc({ data: slug });
+    return m.saveDoc({ data: { slug, payload, baseRevision: current.ok ? current.revision : 0 } });
   }, { slug, payload: JSON.stringify(doc) });
   if (!res.ok) throw new Error(`seed ${slug}: ${JSON.stringify(res)}`);
 }
@@ -257,12 +259,20 @@ await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 120000 });
   await tabA.getByLabel("Column 1 name").fill("Edited in tab A");
   await saved(tabA);
   await tabB.getByLabel("Column 1 name").fill("Edited in tab B");
-  await tabB.getByText("This was changed in another tab. Reload to see the latest.").first().waitFor({ timeout: 30000 });
-  ok(true, "a stale tab is told it was changed in another tab");
+  await tabB.getByText("This was changed in another tab. Your changes are kept until you choose.").first().waitFor({ timeout: 30000 });
+  await tabB.locator('[data-doc-recovery="conflict"]').waitFor({ timeout: 10000 });
+  ok(true, "a stale tab is told it was changed in another tab, with choices");
   ok((await load(tabB, "board")).columns[0].title === "Edited in tab A", "the other tab's save was not overwritten");
   await tabB.screenshot({ path: `${OUT}/conflict.png` });
   await tabB.reload({ waitUntil: "networkidle" });
   ok((await tabB.getByLabel("Column 1 name").inputValue()) === "Edited in tab A", "reload shows the latest");
+  // The unsaved change from before the reload is offered back (scripts/qa/save-conflict.mjs covers the choices).
+  const offer = tabB.locator('[data-doc-recovery="recovered"]');
+  await offer.waitFor({ timeout: 15000 });
+  ok(true, "after the reload the unsaved change is offered back");
+  await offer.getByRole("button", { name: "Discard it and keep what’s saved" }).click();
+  await offer.getByRole("button", { name: "Discard mine, use the saved version" }).click();
+  await offer.waitFor({ state: "detached", timeout: 10000 });
   await tabA.close();
 
   // A failed save keeps the change and retries.

@@ -1,6 +1,6 @@
 import { useId, useState, type FormEvent } from "react";
 import { addDays, parseIso } from "@/lib/remind/dates";
-import { parseCents } from "@/components/tools/shared";
+import { checkCents } from "@/lib/number-input";
 import { cn } from "@/components/ui";
 import { DemoGrid, LiveSummary, Step, demoInput, useDemoTouch, useToday } from "./demo-kit";
 import { SAMPLES, moneyFor, useDemoCurrency, type Money } from "./demo-currency";
@@ -64,9 +64,10 @@ function LedgerSample({ money: currency }: { money: Money }) {
 
   function add(event: FormEvent) {
     event.preventDefault();
-    const cents = parseCents(amount);
+    const checked = checkCents(amount);
     if (!label.trim()) return setError("Add a short description.");
-    if (cents == null) return setError(`Enter an amount like ${sample.example}.`);
+    if (!checked.ok) return setError(checked.hint ?? `Enter an amount like ${sample.example}.`);
+    const cents = checked.cents;
     if (entries.length >= MAX_ENTRIES) return setError(`The sample keeps ${MAX_ENTRIES} lines. Remove one first.`);
     setError(null);
     const next = count + 1;

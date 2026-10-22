@@ -737,3 +737,14 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   (`src/lib/review-notes.ts`), Add to Remind (`?add=`), Apply job-advert tailoring, smarter search.
 - Dev tip: if a QA script fails on a dynamic import (504 "Outdated Optimize Dep"), stop the dev
   server, `rm -rf node_modules/.vite`, and start it again with scripts/qa/dev-up.sh.
+
+## Brand, favicons and reliability (owner, 2026-10-22, not deployed yet)
+
+- Brand: four-tile symbol + outlined Newsreader 800 wordmark (`scripts/brand/build-logo.mjs`
+  regenerates everything into public/brand and the favicons); `<BrandLogo>` in src/components/brand.tsx;
+  token --color-brand. Favicons declared once in __root (?v=3); the old builder injector now yields
+  when the page declares its own manifest/apple-touch-icon (scripts/grok-pwa-shared.mjs hasLinkRel).
+- Numbers: one policy in src/lib/number-input.ts (dot decimal, comma thousands only; "7,5" refused
+  with a hint) used by Invoice, Ledger, Split, kits, reconcile, imports, payouts.
+- Saving: conflicts keep a browser-only recovery copy (src/lib/doc-recovery.ts) with a choice
+  panel; revision-less saves are refused once a row has revision > 0 (refresh_required).

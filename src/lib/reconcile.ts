@@ -2,9 +2,12 @@
  * Reconcile: two lists of amounts, paired by amount only.
  *
  * Each non-blank line must be one amount. A line that is not (text, two
- * numbers, too many decimals) is reported with its line number and reason,
- * never silently skipped. Amounts are compared in whole cents.
+ * numbers, too many decimals, a comma as the decimal point) is reported with
+ * its line number and reason, never silently skipped. Amounts are compared in
+ * whole cents. Numbers are read with src/lib/number-input.ts.
  */
+
+import { parseNumberInput, toScaled } from "@/lib/number-input";
 
 export type ParsedAmount = { line: number; cents: number };
 export type BadLine = { line: number; text: string; reason: string };
@@ -12,29 +15,30 @@ export type ParsedList = { amounts: ParsedAmount[]; bad: BadLine[] };
 
 const SYMBOLS = /[₦$£€₵₹¥]|\bKSh\b|\bNGN\b|\bUSD\b|\bGBP\b|\bEUR\b|\bGHS\b|\bKES\b|\bZAR\b|\bCAD\b|\bINR\b/gi;
 
+/** "(1,500.00)" or "₦(1,500)": accounting brackets mean a negative amount. */
+function unbracket(text: string): { text: string; bracketed: boolean } {
+  const m = /^([^()]*)\((.+)\)([^()]*)$/.exec(text);
+  if (!m || m[1].replace(SYMBOLS, "").trim() || m[3].replace(SYMBOLS, "").trim()) return { text, bracketed: false };
+  return { text: `${m[1]}${m[2]}${m[3]}`, bracketed: true };
+}
+
 function parseLine(raw: string): { cents: number } | { reason: string } {
-  const stripped = raw.trim().replace(SYMBOLS, "");
-  let text = stripped.replace(/[,\s]/g, "");
-  let negative = false;
-  if (/^\(.*\)$/.test(text)) {
-    negative = true;
-    text = text.slice(1, -1);
-  }
-  if (text.startsWith("-")) {
-    negative = !negative;
-    text = text.slice(1);
-  } else if (text.startsWith("+")) {
-    text = text.slice(1);
-  }
-  if (/^\d+(\.\d+)?$/.test(text)) {
-    const [whole, frac = ""] = text.split(".");
-    if (frac.length > 2) return { reason: "has more than 2 decimal places" };
-    const cents = Number(whole) * 100 + Number((frac + "00").slice(0, 2));
+  const { text, bracketed } = unbracket(raw.trim());
+  // The shared number format (src/lib/number-input.ts): dot for decimals,
+  // commas only between thousands, currency only at the start or end.
+  const parsed = parseNumberInput(text, { allowNegative: true });
+  if (parsed.ok) {
+    if (parsed.frac.length > 2) return { reason: "has more than 2 decimal places" };
+    const units = toScaled(parsed, 2);
+    const cents = Number(bracketed ? -units : units);
     if (!Number.isSafeInteger(cents)) return { reason: "is too large" };
-    return { cents: negative ? -cents : cents };
+    return { cents };
   }
-  if ((stripped.match(/\d[\d,.]*/g) ?? []).length >= 2) {
+  if ((text.replace(SYMBOLS, "").match(/\d[\d,.]*/g) ?? []).length >= 2 && parsed.problem !== "comma-decimal" && parsed.problem !== "comma-decimal-european") {
     return { reason: "has more than one number; put only the amount on the line" };
+  }
+  if (parsed.problem === "comma-decimal" || parsed.problem === "comma-decimal-european") {
+    return { reason: `uses a comma as the decimal point. ${parsed.message.replace(/\.$/, "")}` };
   }
   return { reason: "is not an amount" };
 }

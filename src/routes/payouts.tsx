@@ -10,6 +10,7 @@ import { countryName } from "@/lib/payouts/countries";
 import { CREATOR_POOL_PERCENT } from "@/lib/revenue";
 import { formatUsd } from "@/lib/format";
 import { Button, Field, Skeleton, TextInput, cn, fieldClass } from "@/components/ui";
+import { checkCents } from "@/lib/number-input";
 
 export const Route = createFileRoute("/payouts")({
   head: () => ({ meta: [{ title: "Payouts — Midnry" }, { name: "robots", content: "noindex" }] }),
@@ -33,10 +34,6 @@ function aboutNgn(cents: number, rate: number): string {
   return `about ₦${Math.round((cents / 100) * rate).toLocaleString("en")}`;
 }
 
-function toCents(text: string): number {
-  const n = Number(text.replace(/[$,\s]/g, ""));
-  return Number.isFinite(n) ? Math.round(n * 100) : NaN;
-}
 
 /** One CSV cell; formula-looking text is prefixed so spreadsheets don't run it. */
 function cell(value: unknown): string {
@@ -350,9 +347,11 @@ function PayoutForm({
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    const cents = toCents(amount);
-    if (!Number.isInteger(cents) || cents <= 0) {
-      setError("Enter an amount in US dollars.");
+    // The shared number format (src/lib/number-input.ts): "$1,500.00" is fine, "1,5" is refused.
+    const checked = checkCents(amount);
+    const cents = checked.ok ? checked.cents : NaN;
+    if (!checked.ok || cents <= 0) {
+      setError((checked.ok ? null : checked.hint) ?? "Enter an amount in US dollars.");
       return;
     }
     setBusy(true);

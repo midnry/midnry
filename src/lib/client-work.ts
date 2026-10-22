@@ -15,6 +15,7 @@
  *    unit, tax on the subtotal, no total while any input is invalid.
  */
 import { checkInvoice, minorDigits, type InvoiceCheck } from "@/lib/invoice-math";
+import { parseNumberInput } from "@/lib/number-input";
 import { isCurrency, type CurrencyCode } from "@/lib/format";
 
 export type Line = { id: string; description: string; qty: string; rate: string };
@@ -670,8 +671,9 @@ const CURRENCY_MARK = String.raw`(?:[₦$£€₵₹]|KSh|NGN|USD|GBP|EUR|GHS|KE
 
 /** "12500" or "₦12,500.00" as "12500" / "12500.00", or null. At most two decimals. */
 export function amountOf(text: string): string | null {
-  const match = text.trim().match(new RegExp(String.raw`^${CURRENCY_MARK}\s*(\d{1,3}(?:,\d{3})+|\d+)(\.\d{1,2})?$`, "i"));
-  return match ? `${match[1].replace(/,/g, "")}${match[2] ?? ""}` : null;
+  // The shared number format (src/lib/number-input.ts): "7,5" is not 75.
+  const parsed = parseNumberInput(text, { maxDecimals: 2 });
+  return parsed.ok ? parsed.text : null;
 }
 
 /**

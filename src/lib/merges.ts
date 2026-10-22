@@ -1,3 +1,4 @@
+import { parseNumberInput } from "@/lib/number-input";
 import type { LedgerEntry } from "@/lib/ledger";
 
 /**
@@ -91,11 +92,16 @@ export function sideOf(row: Row): "in" | "out" | null {
   return null;
 }
 
-/** An old Budget/Pocket amount ("1,200.50", "₦500") in cents, or null. */
+/**
+ * An old Budget/Pocket amount ("1,200.50", "₦500") in cents, or null. Read
+ * with the shared number format (src/lib/number-input.ts), so "7,5" is not
+ * brought in as 75 (it is counted as skipped and stays in the old document).
+ * A minus sign is ignored, as before: the side says which way money went.
+ */
 export function amountCents(raw: string | undefined): number | null {
-  const cleaned = (raw ?? "").trim().replace(/[$₦£€₵₹,\s]|KSh/g, "");
-  if (!/^-?\d+(\.\d+)?$/.test(cleaned)) return null;
-  const cents = Math.round(Math.abs(Number(cleaned)) * 100);
+  const parsed = parseNumberInput(raw ?? "", { allowNegative: true });
+  if (!parsed.ok) return null;
+  const cents = Math.round(Math.abs(parsed.value) * 100);
   return Number.isFinite(cents) ? cents : null;
 }
 

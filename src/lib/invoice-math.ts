@@ -8,8 +8,11 @@
  * whole minor units with BigInt, so there is no floating-point drift.
  *
  * Any invalid input (blank, text, negative, too many decimals, tax outside
- * 0–100) gives an error for that field and no total at all.
+ * 0–100, a comma used as the decimal point) gives an error for that field and
+ * no total at all. Numbers are read with src/lib/number-input.ts.
  */
+
+import { parseNumberInput, toScaled } from "@/lib/number-input";
 
 export type InvoiceLineInput = { description: string; qty: string; rate: string };
 
@@ -53,24 +56,17 @@ export function minorDigits(currency: string): number {
   }
 }
 
-function plain(raw: string): string {
-  return raw.trim().replace(/[,\s]/g, "");
-}
-
 type Parsed = { ok: true; scaled: bigint; text: string } | { ok: false; error: string };
 
-/** A non-negative decimal with at most `decimals` places, scaled to an integer. */
-function parseDecimal(raw: string, decimals: number, what: string, blank: string): Parsed {
-  const text = plain(raw);
-  if (!text) return { ok: false, error: blank };
-  if (/^-/.test(text) && /^-\d*\.?\d+$/.test(text)) return { ok: false, error: `${what} can’t be negative.` };
-  if (!/^(\d+(\.\d*)?|\.\d+)$/.test(text)) return { ok: false, error: `${what} must be a number, like 2 or 1.5.` };
-  const [whole, frac = ""] = text.split(".");
-  if (frac.length > decimals) {
-    return { ok: false, error: decimals === 0 ? `${what} must be a whole number.` : `${what} can have at most ${decimals} decimal places.` };
-  }
-  const scaled = BigInt(whole || "0") * 10n ** BigInt(decimals) + BigInt((frac + "0".repeat(decimals)).slice(0, decimals) || "0");
-  return { ok: true, scaled, text };
+/**
+ * A non-negative decimal with at most `decimals` places, scaled to an integer.
+ * The number format (dot for decimals, commas only as thousands grouping) is
+ * the shared one in src/lib/number-input.ts, so "7,5" is refused, not read as 75.
+ */
+function parseDecimal(raw: string, decimals: number, what: string, blank: string, allowCurrency = false): Parsed {
+  const parsed = parseNumberInput(raw, { label: what, maxDecimals: decimals, allowCurrency });
+  if (!parsed.ok) return { ok: false, error: parsed.problem === "blank" ? blank : parsed.message };
+  return { ok: true, scaled: toScaled(parsed, decimals), text: parsed.text };
 }
 
 /** Round a non-negative numerator / denominator half-up. */
@@ -79,8 +75,8 @@ function roundDiv(numerator: bigint, denominator: bigint): bigint {
 }
 
 function isEmptyLine(line: InvoiceLineInput): boolean {
-  const qty = plain(line.qty);
-  return !line.description.trim() && !plain(line.rate) && (qty === "" || qty === "1");
+  const qty = line.qty.trim();
+  return !line.description.trim() && !line.rate.trim() && (qty === "" || qty === "1");
 }
 
 export function checkInvoice(lines: InvoiceLineInput[], taxRaw: string, currency: string): InvoiceCheck {
@@ -89,7 +85,7 @@ export function checkInvoice(lines: InvoiceLineInput[], taxRaw: string, currency
   const checked: LineCheck[] = lines.map((line) => {
     if (isEmptyLine(line)) return { empty: true, qtyError: null, rateError: null, rateMinor: null, amountMinor: null };
     const qty = parseDecimal(line.qty, QTY_DECIMALS, "Quantity", "Enter a quantity.");
-    const rate = parseDecimal(line.rate, digits, "Rate", "Enter a rate.");
+    const rate = parseDecimal(line.rate, digits, "Rate", "Enter a rate.", true);
     let qtyError = qty.ok ? null : qty.error;
     let rateError = rate.ok ? null : rate.error;
     if (qty.ok && qty.scaled > BigInt(MAX_QTY) * qtyScale) qtyError = `Quantity can be at most ${MAX_QTY.toLocaleString("en")}.`;
@@ -123,7 +119,7 @@ export function checkInvoice(lines: InvoiceLineInput[], taxRaw: string, currency
     formError: null,
     valid: true,
     errorCount: 0,
-    taxPercent: tax.text.replace(/^\./, "0.").replace(/\.$/, ""),
+    taxPercent: tax.text,
     subtotalMinor: Number(subtotal),
     taxMinor: Number(taxMinor),
     totalMinor: Number(subtotal + taxMinor),

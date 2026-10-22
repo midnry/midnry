@@ -58,12 +58,31 @@ test("two tabs: the stale save is refused and the newer payload is kept", async 
   assert.deepEqual(second, { ok: false, error: "conflict", revision: 1 });
 });
 
-test("an older client without a base revision still saves and bumps the revision", async () => {
-  const { sql } = await freshDb();
+test("an outdated client without a base revision may still make the first save, or save over a revision-0 row", async () => {
+  const { pg, sql } = await freshDb();
+  // No row yet: the first save is accepted and starts the row at revision 1.
   assert.deepEqual(await D.writeDoc(sql, "u3", "scratch", '{"x":1}'), { ok: true, revision: 1 });
-  assert.deepEqual(await D.writeDoc(sql, "u3", "scratch", '{"x":2}'), { ok: true, revision: 2 });
-  // …and a newer tab based on revision 1 now sees the conflict.
-  assert.equal((await D.writeDoc(sql, "u3", "scratch", '{"x":3}', 1)).ok, false);
+  // A row from before revisions (revision 0) was never written by a
+  // revision-aware client, so nothing newer can be lost: accepted.
+  await pg.query(`insert into app_documents (user_id, app_id, payload, revision) values ('u3', 'ledger', '{"old":true}', 0)`);
+  assert.deepEqual(await D.writeDoc(sql, "u3", "ledger", '{"old":false}'), { ok: true, revision: 1 });
+  assert.deepEqual(await D.readDoc(sql, "u3", "ledger"), { payload: '{"old":false}', revision: 1 });
+});
+
+test("an outdated client saving after a modern client updated the row gets refresh-required and the row is unchanged", async () => {
+  const { sql } = await freshDb();
+  // A modern client saves (revision 0 → 1 → 2).
+  assert.deepEqual(await D.writeDoc(sql, "u6", "ledger", '{"entries":["modern"]}', 0), { ok: true, revision: 1 });
+  assert.deepEqual(await D.writeDoc(sql, "u6", "ledger", '{"entries":["modern","second"]}', 1), { ok: true, revision: 2 });
+  // The outdated tab, which sends no revision, is refused and nothing is written.
+  assert.deepEqual(await D.writeDoc(sql, "u6", "ledger", '{"entries":["legacy"]}'), { ok: false, error: "refresh_required", revision: 2 });
+  assert.deepEqual(await D.readDoc(sql, "u6", "ledger"), { payload: '{"entries":["modern","second"]}', revision: 2 });
+  // Even after the outdated client's own first save, its next revision-less save is refused.
+  assert.deepEqual(await D.writeDoc(sql, "u6", "board", '{"a":1}'), { ok: true, revision: 1 });
+  assert.deepEqual(await D.writeDoc(sql, "u6", "board", '{"a":2}'), { ok: false, error: "refresh_required", revision: 1 });
+  assert.equal((await D.readDoc(sql, "u6", "board")).payload, '{"a":1}');
+  // …and the modern client keeps saving with its revision.
+  assert.deepEqual(await D.writeDoc(sql, "u6", "ledger", '{"entries":["modern","third"]}', 2), { ok: true, revision: 3 });
 });
 
 test("saves are scoped to one user and one app", async () => {

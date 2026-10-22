@@ -5,18 +5,23 @@
  * - One save in flight at a time; each carries the revision it was based on.
  * - A failed request keeps the change and retries with backoff (1s … 30s).
  * - A conflict (another tab saved first) stops saving; nothing is overwritten.
+ *   It resumes only on an explicit choice: overwrite(latestRevision) saves this
+ *   version over the newer one, adopt(latestRevision) drops this version.
+ * - "refresh_required" (the server no longer accepts this client's saves)
+ *   stops saving for good; the page must be refreshed.
  * - A document over the size limit is not sent; the change stays local.
  */
 
-export type SaveState = "idle" | "saving" | "saved" | "error" | "retrying" | "conflict" | "too-large";
+export type SaveState = "idle" | "saving" | "saved" | "error" | "retrying" | "conflict" | "too-large" | "refresh";
 
 export type SaveResult =
   | { ok: true; revision: number }
   | { ok: false; error: "locked" }
   | { ok: false; error: "conflict"; revision: number }
+  | { ok: false; error: "refresh_required"; revision: number }
   | { ok: false; error: "too_large"; limit: number };
 
-export type SaverEvent = "retrying" | "saved-after-retry" | "conflict" | "too-large" | "locked";
+export type SaverEvent = "retrying" | "saved-after-retry" | "conflict" | "too-large" | "locked" | "refresh-required";
 
 export type SaverDeps = {
   limit: number;
@@ -44,7 +49,7 @@ export class DocSaver<T> {
   pending: T | null = null;
   inFlight = false;
   attempt = 0;
-  stopped: "conflict" | "locked" | null = null;
+  stopped: "conflict" | "locked" | "refresh" | null = null;
   closed = false;
   private timer: unknown = null;
   private retryTimer: unknown = null;
@@ -90,6 +95,38 @@ export class DocSaver<T> {
   /** Send now (page hidden, tab closing, tool closing, back online). */
   flush(keepalive = false) {
     this.send(keepalive);
+  }
+
+  /** The change not yet saved (kept through failures and conflicts), or null. */
+  get unsaved(): T | null {
+    return this.pending;
+  }
+
+  /**
+   * After a conflict, the person chose to keep their version: save it over the
+   * newer one, based on the latest revision they were shown. If yet another
+   * save lands first, this conflicts again; nothing is overwritten silently.
+   */
+  overwrite(latestRevision: number) {
+    if (this.stopped !== "conflict") return;
+    this.revision = latestRevision;
+    this.stopped = null;
+    this.attempt = 0;
+    this.send();
+  }
+
+  /**
+   * After a conflict, the person chose the newer saved version: drop this
+   * version and continue from `latestRevision`.
+   */
+  adopt(latestRevision: number) {
+    if (this.stopped === "refresh" || this.stopped === "locked") return;
+    this.clearTimers();
+    this.pending = null;
+    this.revision = latestRevision;
+    this.stopped = null;
+    this.attempt = 0;
+    if (!this.inFlight) this.state("saved");
   }
 
   /** The tool closed. Sends what is left; later state changes are not shown. */
@@ -147,6 +184,10 @@ export class DocSaver<T> {
           this.stopped = "conflict";
           this.state("conflict");
           this.event("conflict");
+        } else if (res.error === "refresh_required") {
+          this.stopped = "refresh";
+          this.state("refresh");
+          this.event("refresh-required");
         } else if (res.error === "too_large") {
           this.state("too-large");
           this.event("too-large");

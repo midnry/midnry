@@ -89,7 +89,9 @@ const ctx = await newCtx();
 const page = await ctx.newPage();
 await register(page);
 const OLD_VALUES = { name: "Eunice", role: "videographer", them: "Ruth, event planner", offer: "film and edit videos of your events" };
-const seeded = await call(page, "/src/lib/cove.functions.ts", "saveDoc", { slug: "cold-email", payload: JSON.stringify({ values: OLD_VALUES }) });
+// Saves need the current revision (a revision-less save is refused once the row has one).
+const seedBase = await call(page, "/src/lib/cove.functions.ts", "loadDoc", "cold-email");
+const seeded = await call(page, "/src/lib/cove.functions.ts", "saveDoc", { slug: "cold-email", payload: JSON.stringify({ values: OLD_VALUES }), baseRevision: seedBase.ok ? seedBase.revision : 0 });
 ok(seeded.ok, "an old Outreach document is saved under its old name");
 
 await page.goto(`${BASE}/apps/cold-email`, { waitUntil: "networkidle", timeout: 120000 });

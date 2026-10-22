@@ -47,13 +47,16 @@ export const loadDoc = createServerFn({ method: "GET" })
       on conflict do nothing
     `;
     const doc = await readDoc(sql, context.userId, slug);
-    return { ok: true as const, payload: doc.payload, revision: doc.revision };
+    // `owner` keys this browser's recovery copy of unsaved changes per account
+    // (src/lib/doc-recovery.ts); it is the signed-in person's own id.
+    return { ok: true as const, payload: doc.payload, revision: doc.revision, owner: context.userId };
   });
 
 export type SaveDocResult =
   | { ok: true; revision: number }
   | { ok: false; error: "locked" }
   | { ok: false; error: "conflict"; revision: number }
+  | { ok: false; error: "refresh_required"; revision: number }
   | { ok: false; error: "too_large"; limit: number };
 
 export const saveDoc = createServerFn({ method: "POST" })
@@ -81,6 +84,7 @@ export const saveDoc = createServerFn({ method: "POST" })
     const limit = docLimit(data.slug);
     if (data.payload.length > limit) return { ok: false, error: "too_large", limit };
     const sql = await getSql();
-    // Without a base revision (an older open tab) the save overwrites, as before.
+    // Without a base revision (an outdated open tab) the save is refused with
+    // "refresh_required" once the row has a revision; see app-docs.server.ts.
     return writeDoc(sql, context.userId, data.slug, data.payload, data.baseRevision);
   });

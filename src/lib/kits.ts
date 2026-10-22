@@ -1,4 +1,5 @@
 import type { SectionId } from "@/lib/sections";
+import { firstHint, typedNumber } from "@/lib/number-input";
 
 /**
  * A form box. `legacy` marks a box that only older saved rows use: it shows on a
@@ -56,9 +57,9 @@ const d = (id: string, label: string): Field => ({ id, label, kind: "date" });
 const t = (id: string, label: string): Field => ({ id, label, kind: "time" });
 const old = (id: string, label: string): Field => ({ id, label, legacy: true });
 
+/** A typed field as a number (src/lib/number-input.ts); blank is 0 and missing NaN, as Number() gave. */
 function num(v: Record<string, string>, id: string): number {
-  const value = Number(v[id]);
-  return Number.isFinite(value) ? value : NaN;
+  return typedNumber(v[id]);
 }
 
 export const KITS: readonly Kit[] = [
@@ -329,7 +330,11 @@ export const KITS: readonly Kit[] = [
     kind: "calc",
     fields: [a("costs", "Costs, one per line", "500\n200"), n("portions", "Portions", "4")],
     run: (v) => {
-      const lines = (v.costs || "").split(/\n/).map((line) => Number(line.trim())).filter((item) => Number.isFinite(item));
+      const typed = (v.costs || "").split(/\n/);
+      // "7,5" is named instead of being dropped from the total.
+      const hint = firstHint(typed);
+      if (hint) return [{ label: "Check the costs", value: hint }];
+      const lines = typed.map((line) => typedNumber(line.trim())).filter((item) => Number.isFinite(item));
       const portions = num(v, "portions");
       const total = lines.reduce((sum, item) => sum + item, 0);
       if (lines.length === 0 || !(portions > 0)) return [{ label: "Result", value: "Add costs and a portion count." }];

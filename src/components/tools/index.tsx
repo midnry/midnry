@@ -15,6 +15,7 @@ import { StudioTool } from "@/components/tools/studio";
 import { StudyTool } from "@/components/tools/study";
 import { KitTool } from "@/components/tools/kit";
 import { getKit } from "@/lib/kits";
+import { DocRecoveryHost } from "@/components/doc-recovery-panel";
 
 const TOOLS: Record<string, () => ReactElement> = {
   scratch: ScratchTool,
@@ -35,7 +36,18 @@ const TOOLS: Record<string, () => ReactElement> = {
 
 export function ToolView({ slug }: { slug: string }) {
   const Tool = TOOLS[slug];
-  if (Tool) return <Tool />;
-  if (getKit(slug)) return <KitTool slug={slug} />;
+  // The save-conflict / recovery panel for whichever tool is open (use-app-doc.ts).
+  if (Tool) return (
+    <>
+      <Tool />
+      <DocRecoveryHost />
+    </>
+  );
+  if (getKit(slug)) return (
+    <>
+      <KitTool slug={slug} />
+      <DocRecoveryHost />
+    </>
+  );
   return null;
 }

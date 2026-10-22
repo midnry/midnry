@@ -5,6 +5,8 @@
  * Rows are saved as strings; old rows may hold free text, so every helper
  * accepts anything and falls back quietly.
  */
+import { parseNumberInput } from "@/lib/number-input";
+
 export type RecordRow = Record<string, string | undefined>;
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -109,8 +111,10 @@ function ordinal(day: number): string {
 function amountText(value: string | undefined): string {
   const raw = (value ?? "").trim();
   if (!raw) return "";
-  const amount = Number(raw);
-  return Number.isFinite(amount) ? amount.toLocaleString("en", { maximumFractionDigits: 2 }) : plain(raw);
+  // Read with the shared number format: "12,000" and "₦12,000" are 12,000;
+  // "7,5" is not a number and is copied as typed.
+  const parsed = parseNumberInput(raw);
+  return parsed.ok ? parsed.value.toLocaleString("en", { maximumFractionDigits: 2 }) : plain(raw);
 }
 
 /**

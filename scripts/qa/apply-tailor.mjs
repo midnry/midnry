@@ -92,7 +92,9 @@ async function newCtx(viewport = { width: 1280, height: 900 }, mobile = false) {
 async function seed(page, doc) {
   const res = await page.evaluate(async (payload) => {
     const m = await import("/src/lib/cove.functions.ts");
-    return m.saveDoc({ data: { slug: "apply", payload } });
+    // Saves need the current revision (a revision-less save is refused once the row has one).
+    const current = await m.loadDoc({ data: "apply" });
+    return m.saveDoc({ data: { slug: "apply", payload, baseRevision: current.ok ? current.revision : 0 } });
   }, JSON.stringify(doc));
   if (!res.ok) throw new Error(`seed: ${JSON.stringify(res)}`);
 }

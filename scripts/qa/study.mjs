@@ -72,7 +72,11 @@ async function call(page, mod, fn, data) {
     { mod, fn, data },
   );
 }
-const saveDoc = (page, slug, doc) => call(page, "/src/lib/cove.functions.ts", "saveDoc", { slug, payload: JSON.stringify(doc) });
+// Saves need the current revision (a revision-less save is refused once the row has one).
+const saveDoc = async (page, slug, doc) => {
+  const current = await call(page, "/src/lib/cove.functions.ts", "loadDoc", slug);
+  return call(page, "/src/lib/cove.functions.ts", "saveDoc", { slug, payload: JSON.stringify(doc), baseRevision: current.ok ? current.revision : 0 });
+};
 const loadDoc = async (page, slug) => {
   const res = await call(page, "/src/lib/cove.functions.ts", "loadDoc", slug);
   return res.ok && res.payload ? JSON.parse(res.payload) : null;

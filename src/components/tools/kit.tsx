@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { getKit, type Field, type Kit, type Line, type QrSection as QrSpec } from "@/lib/kits";
 import { compareLists, type BadLine } from "@/lib/reconcile";
+import { firstHint, typedNumber } from "@/lib/number-input";
 import type { SectionId } from "@/lib/sections";
 import { rowsCsv, type TemplateDoc, type TrackerDoc } from "@/lib/merges";
 import { downloadText, setViewParam, viewParam } from "@/components/use-merged-docs";
@@ -189,11 +190,15 @@ function Fields({
 function Template({ kit }: { kit: Extract<Kit, { kind: "template" }> }) {
   const { data, setData, ready, loadError, blocked, saveState } = useAppDoc<TemplateDoc & { values: Record<string, string> }>(kit.slug, { values: {} });
   const values = data.values ?? {};
-  const revenue = Number(values.revenue);
-  const cogs = Number(values.cogs);
-  const expenses = Number(values.expenses);
-  const showStatement = kit.slug === "statements" && [revenue, cogs, expenses].every((item) => Number.isFinite(item));
-  const statement: Line[] = showStatement
+  // Typed numbers follow src/lib/number-input.ts: "1,500" is 1500, "7,5" is refused with a hint.
+  const revenue = typedNumber(values.revenue);
+  const cogs = typedNumber(values.cogs);
+  const expenses = typedNumber(values.expenses);
+  const statementHint = kit.slug === "statements" ? firstHint([values.revenue, values.cogs, values.expenses]) : null;
+  const showStatement = kit.slug === "statements" && (statementHint != null || [revenue, cogs, expenses].every((item) => Number.isFinite(item)));
+  const statement: Line[] = statementHint
+    ? [{ label: "Check the figures", value: statementHint }]
+    : showStatement
     ? [
         { label: "Gross profit", value: money(revenue - cogs) },
         { label: "Net", value: money(revenue - cogs - expenses) },
@@ -204,7 +209,7 @@ function Template({ kit }: { kit: Extract<Kit, { kind: "template" }> }) {
     kit.name,
     "",
     ...kit.parts.filter((part) => values[part.id]?.trim()).map((part) => `${part.label}\n${values[part.id].trim()}\n`),
-    ...statement.map((line) => `${line.label}: ${line.value}`),
+    ...(statementHint ? [] : statement.map((line) => `${line.label}: ${line.value}`)),
   ]
     .join("\n")
     .trim();
@@ -359,9 +364,9 @@ function TrackerList({
   const formRef = useRef<HTMLFormElement>(null);
   const hasSide = fields.some((field) => field.id === "side");
   const hasAmount = fields.some((field) => field.id === "amount");
-  const income = rows.filter((row) => /income/i.test(row.side || "")).reduce((total, row) => total + (Number(row.amount) || 0), 0);
-  const cost = rows.filter((row) => /cost/i.test(row.side || "")).reduce((total, row) => total + (Number(row.amount) || 0), 0);
-  const total = rows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+  const income = rows.filter((row) => /income/i.test(row.side || "")).reduce((total, row) => total + (typedNumber(row.amount) || 0), 0);
+  const cost = rows.filter((row) => /cost/i.test(row.side || "")).reduce((total, row) => total + (typedNumber(row.amount) || 0), 0);
+  const total = rows.reduce((sum, row) => sum + (typedNumber(row.amount) || 0), 0);
   const lowCount = rows.filter(isLow).length;
   const needle = query.trim().toLowerCase();
   const shown = rows
@@ -372,6 +377,12 @@ function TrackerList({
 
   function save() {
     if (!canSave) return;
+    // An amount the totals can't read ("7,5") is named, not silently counted as 0.
+    const amountHint = hasAmount ? firstHint([draft.amount]) : null;
+    if (amountHint) {
+      toast.error(amountHint);
+      return;
+    }
     // Keep fields the form does not show (an old copy may carry more), so an edit never drops data.
     const clean = { ...(editing != null ? rows[editing] : {}), ...Object.fromEntries(fields.map((field) => [field.id, (draft[field.id] ?? "").trim()])) };
     if (editing != null) setRows(rows.map((row, index) => (index === editing ? clean : row)));
@@ -550,8 +561,8 @@ function TrackerList({
 
 function isLow(row: Record<string, string>): boolean {
   if (!row.low?.trim() || !row.qty?.trim()) return false;
-  const qty = Number(row.qty);
-  const low = Number(row.low);
+  const qty = typedNumber(row.qty);
+  const low = typedNumber(row.low);
   return Number.isFinite(qty) && Number.isFinite(low) && qty <= low;
 }
 
@@ -963,8 +974,9 @@ function Tax() {
   const [pay, setPay] = useState("3000000");
   const [rent, setRent] = useState("0");
   const [sale, setSale] = useState("100000");
-  const income = Number(pay);
-  const relief = Math.min(Math.max(Number(rent) || 0, 0) * 0.2, 500000);
+  const income = typedNumber(pay);
+  const relief = Math.min(Math.max(typedNumber(rent) || 0, 0) * 0.2, 500000);
+  const hint = firstHint([pay, rent, sale]);
   const chargeable = Math.max(0, (Number.isFinite(income) ? income : 0) - relief);
   const bands: [number, number][] = [
     [800000, 0],
@@ -985,7 +997,7 @@ function Tax() {
       if (left <= 0) break;
     }
   }
-  const vat = (Number(sale) || 0) * 0.075;
+  const vat = (typedNumber(sale) || 0) * 0.075;
   return (
     <div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -993,7 +1005,7 @@ function Tax() {
         <FieldBox label="Annual rent, optional (₦)" value={rent} onChange={setRent} />
         <FieldBox label="Amount for VAT (₦)" value={sale} onChange={setSale} />
       </div>
-      <Lines lines={[{ label: "PAYE estimate", value: `₦${Math.round(tax).toLocaleString("en")}` }, { label: "VAT at 7.5%", value: `₦${Math.round(vat).toLocaleString("en")}` }]} />
+      <Lines lines={hint ? [{ label: "Check the figures", value: hint }] : [{ label: "PAYE estimate", value: `₦${Math.round(tax).toLocaleString("en")}` }, { label: "VAT at 7.5%", value: `₦${Math.round(vat).toLocaleString("en")}` }]} />
     </div>
   );
 }
@@ -1251,15 +1263,16 @@ function Ratios() {
   const [stock, setStock] = useState("");
   const [debt, setDebt] = useState("");
   const [equity, setEquity] = useState("");
-  const assets = Number(current);
-  const owed = Number(liability);
-  const inventory = Number(stock);
-  const d = Number(debt);
-  const e = Number(equity);
-  const lines: Line[] = [];
-  if (owed > 0 && Number.isFinite(assets)) lines.push({ label: "Current", value: String(Math.round((assets / owed) * 100) / 100) });
-  if (owed > 0 && Number.isFinite(assets) && Number.isFinite(inventory)) lines.push({ label: "Quick", value: String(Math.round(((assets - inventory) / owed) * 100) / 100) });
-  if (e > 0 && Number.isFinite(d)) lines.push({ label: "Debt / equity", value: String(Math.round((d / e) * 100) / 100) });
+  const assets = typedNumber(current);
+  const owed = typedNumber(liability);
+  const inventory = typedNumber(stock);
+  const d = typedNumber(debt);
+  const e = typedNumber(equity);
+  const hint = firstHint([current, liability, stock, debt, equity]);
+  const lines: Line[] = hint ? [{ label: "Check the figures", value: hint }] : [];
+  if (!hint && owed > 0 && Number.isFinite(assets)) lines.push({ label: "Current", value: String(Math.round((assets / owed) * 100) / 100) });
+  if (!hint && owed > 0 && Number.isFinite(assets) && Number.isFinite(inventory)) lines.push({ label: "Quick", value: String(Math.round(((assets - inventory) / owed) * 100) / 100) });
+  if (!hint && e > 0 && Number.isFinite(d)) lines.push({ label: "Debt / equity", value: String(Math.round((d / e) * 100) / 100) });
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <FieldBox label="Current assets" value={current} onChange={setCurrent} />
@@ -1276,11 +1289,14 @@ function BreakEven() {
   const [fixed, setFixed] = useState("");
   const [price, setPrice] = useState("");
   const [variable, setVariable] = useState("");
-  const fCost = Number(fixed);
-  const p = Number(price);
-  const v = Number(variable);
+  const fCost = typedNumber(fixed);
+  const p = typedNumber(price);
+  const v = typedNumber(variable);
   const gap = p - v;
-  const lines: Line[] = gap > 0 && fCost >= 0
+  const hint = firstHint([fixed, price, variable]);
+  const lines: Line[] = hint
+    ? [{ label: "Check the figures", value: hint }]
+    : gap > 0 && fCost >= 0
     ? [{ label: "Units to sell", value: Math.ceil(fCost / gap).toLocaleString("en") }, { label: "Sales needed", value: money(Math.ceil(fCost / gap) * p) }, { label: "Profit per unit", value: money(gap) }]
     : [{ label: "Result", value: "Price has to be above the cost of one unit." }];
   return (
@@ -1367,6 +1383,7 @@ function saveLabel(state: SaveState): string {
   if (state === "error") return "Could not save";
   if (state === "retrying") return SAVE_MESSAGES.retrying;
   if (state === "conflict") return SAVE_MESSAGES.conflict;
+  if (state === "refresh") return SAVE_MESSAGES.refresh;
   if (state === "too-large") return SAVE_MESSAGES.tooLarge;
   return "";
 }

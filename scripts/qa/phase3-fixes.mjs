@@ -52,7 +52,9 @@ async function seed(page, slug, doc) {
   const res = await page.evaluate(
     async ({ slug, payload }) => {
       const m = await import("/src/lib/cove.functions.ts");
-      return m.saveDoc({ data: { slug, payload } });
+      // Saves need the current revision (a revision-less save is refused once the row has one).
+      const current = await m.loadDoc({ data: slug });
+      return m.saveDoc({ data: { slug, payload, baseRevision: current.ok ? current.revision : 0 } });
     },
     { slug, payload: JSON.stringify(doc) },
   );

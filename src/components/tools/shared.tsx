@@ -5,6 +5,8 @@ import { AppMark } from "@/components/app-mark";
 import { AppGuide } from "@/components/app-guide";
 import { SAVE_MESSAGES, type SaveState } from "@/components/use-app-doc";
 import { CURRENCIES, type CurrencyCode } from "@/lib/format";
+import { checkCents } from "@/lib/number-input";
+import { ResolveButton } from "@/components/doc-recovery-panel";
 
 
 export function nid(): string {
@@ -33,7 +35,7 @@ export function ToolFrame({
             <p className="mt-2 text-pretty text-muted">{app?.blurb}</p>
           </div>
         </div>
-        {saveState ? <SaveMark state={saveState} /> : null}
+        {saveState ? <SaveMark state={saveState} slug={slug} /> : null}
       </div>
       <AppGuide features={app?.features ?? []} guide={app?.guide ?? []} className={hideOnPrint ? "no-print" : undefined} collapsed />
       <div className="mt-8">{children}</div>
@@ -53,6 +55,8 @@ export function saveStateLabel(state: SaveState): string {
       return SAVE_MESSAGES.retrying;
     case "conflict":
       return SAVE_MESSAGES.conflict;
+    case "refresh":
+      return SAVE_MESSAGES.refresh;
     case "too-large":
       return SAVE_MESSAGES.tooLarge;
     default:
@@ -60,19 +64,11 @@ export function saveStateLabel(state: SaveState): string {
   }
 }
 
-export function SaveMark({ state }: { state: SaveState }) {
-  const problem = state === "retrying" || state === "conflict" || state === "too-large" || state === "error";
+export function SaveMark({ state, slug }: { state: SaveState; slug?: string }) {
+  const problem = state === "retrying" || state === "conflict" || state === "refresh" || state === "too-large" || state === "error";
   return (
     <p className={cn("text-sm", problem ? "max-w-xs font-medium text-fail" : "text-muted")} aria-live="polite">
-      {saveStateLabel(state)}
-      {state === "conflict" ? (
-        <>
-          {" "}
-          <button type="button" className="underline underline-offset-2" onClick={() => window.location.reload()}>
-            Reload
-          </button>
-        </>
-      ) : null}
+      {saveStateLabel(state)} <ResolveButton slug={slug} />
     </p>
   );
 }
@@ -105,13 +101,14 @@ export function todayISO(date = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
+/**
+ * A typed amount in cents, or null. The number format is the shared one in
+ * src/lib/number-input.ts: "1,500.50" and "₦1,500" are fine, "7,5" is not.
+ * Use checkCents for the reason, to show "Use a dot for decimals".
+ */
 export function parseCents(raw: string): number | null {
-  const cleaned = raw.trim().replace(/[$₦£€₵₹,\s]|KSh|R(?=\d)/g, "");
-  if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
-  const [whole, frac = ""] = cleaned.split(".");
-  const cents = Number(whole) * 100 + Number((frac + "00").slice(0, 2));
-  if (!Number.isFinite(cents) || cents > 100_000_000_00) return null;
-  return cents;
+  const result = checkCents(raw);
+  return result.ok ? result.cents : null;
 }
 
 export function CurrencyPicker({ value, onChange, className }: { value: CurrencyCode; onChange: (code: CurrencyCode) => void; className?: string }) {

@@ -7,6 +7,7 @@ import { formatCents, guessCurrency, isCurrency, type CurrencyCode } from "@/lib
 import { asEntries, isIncome, ledgerCsv, ledgerRoom, type LedgerEntry } from "@/lib/ledger";
 import { ledgerImport, ledgerPending, rowsOf, type MoneySource } from "@/lib/merges";
 import { CurrencyPicker, nid, parseCents, todayISO, ToolFrame, ToolStatus } from "@/components/tools/shared";
+import { checkCents } from "@/lib/number-input";
 import { ViewTabs } from "@/components/tools/view-tabs";
 
 const CATEGORIES = ["Food", "Transit", "Home", "Bills", "Health", "Shopping", "Family", "Fun", "Work", "Income", "Other"] as const;
@@ -229,6 +230,8 @@ type ViewProps = {
 
 function FullLedger({ entries, data, save, money, currency, month, setMonth, exportCsv }: ViewProps & { currency: CurrencyCode }) {
   const budgetCents = parseCents(data.budget ?? "");
+  const budgetCheck = checkCents(data.budget ?? "");
+  const budgetHint = budgetCheck.ok ? null : budgetCheck.hint;
   const [editing, setEditing] = useState<string | null>(null);
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
@@ -250,15 +253,16 @@ function FullLedger({ entries, data, save, money, currency, month, setMonth, exp
 
   function add(event: FormEvent) {
     event.preventDefault();
-    const cents = parseCents(amount);
+    const checked = checkCents(amount);
     if (!label.trim()) {
       setError("Add a short description.");
       return;
     }
-    if (cents == null) {
-      setError("Enter an amount like 12.50.");
+    if (!checked.ok) {
+      setError(checked.hint ?? "Enter an amount like 12.50.");
       return;
     }
+    const cents = checked.cents;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       setError("Pick a date.");
       return;
@@ -429,6 +433,11 @@ function FullLedger({ entries, data, save, money, currency, month, setMonth, exp
           <Field label="Monthly budget (optional)">
             <TextInput inputMode="decimal" value={data.budget ?? ""} placeholder="e.g. 150000" onChange={(event) => save({ budget: event.target.value })} />
           </Field>
+          {budgetHint ? (
+            <p className="text-sm text-fail" role="alert">
+              {budgetHint}
+            </p>
+          ) : null}
           <CurrencyPicker value={currency} onChange={(code) => save({ currency: code })} />
         </div>
       </aside>
@@ -452,9 +461,10 @@ function QuickAdd({
   const [error, setError] = useState<string | null>(null);
 
   function add(flow: "in" | "out") {
-    const cents = parseCents(amount);
+    const checked = checkCents(amount);
     if (!label.trim()) return setError("Write what it was.");
-    if (cents == null) return setError("Enter an amount like 500 or 12.50.");
+    if (!checked.ok) return setError(checked.hint ?? "Enter an amount like 500 or 12.50.");
+    const cents = checked.cents;
     const entry: Entry = { id: nid(), label: label.trim().slice(0, 80), cents, category: flow === "in" ? "Income" : "Other", date: todayISO(), ...(flow === "in" ? { flow: "in" as const } : {}) };
     const problem = addEntries([entry]);
     if (problem) return setError(problem);

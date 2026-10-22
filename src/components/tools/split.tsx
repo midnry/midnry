@@ -2,7 +2,8 @@ import { toast } from "sonner";
 import { useAppDoc } from "@/components/use-app-doc";
 import { Button, Field, TextInput } from "@/components/ui";
 import { formatCents, guessCurrency, isCurrency, type CurrencyCode } from "@/lib/format";
-import { CurrencyPicker, parseCents, ToolFrame, ToolStatus } from "@/components/tools/shared";
+import { CurrencyPicker, ToolFrame, ToolStatus } from "@/components/tools/shared";
+import { checkCents, formatHint, parseNumberInput } from "@/lib/number-input";
 
 type SplitDoc = { amount: string; people: string; tip: string; currency?: CurrencyCode };
 
@@ -24,11 +25,15 @@ function peopleCount(raw: string): number | null {
   return count;
 }
 
+function readTip(raw: string) {
+  return parseNumberInput(raw, { allowCurrency: false, label: "Tip" });
+}
+
 function tipRate(raw: string): number | null {
-  if (!/^\d+(\.\d+)?$/.test(raw.trim())) return null;
-  const rate = Number(raw);
-  if (rate < 0 || rate > 100) return null;
-  return rate;
+  const parsed = readTip(raw);
+  if (!parsed.ok) return null;
+  if (parsed.value < 0 || parsed.value > 100) return null;
+  return parsed.value;
 }
 
 export function SplitTool() {
@@ -36,7 +41,10 @@ export function SplitTool() {
   const split = asSplit(data);
   const currency = split.currency ?? guessCurrency();
   const formatUsd = (cents: number) => formatCents(cents, currency);
-  const amount = parseCents(split.amount);
+  const amountCheck = checkCents(split.amount);
+  const amount = amountCheck.ok ? amountCheck.cents : null;
+  // A format mistake ("84,20") is named; otherwise the usual prompt.
+  const formatProblem = (amountCheck.ok ? null : amountCheck.hint) ?? formatHint(readTip(split.tip));
   const people = peopleCount(split.people);
   const tip = tipRate(split.tip);
   const readyMath = amount != null && people != null && tip != null;
@@ -102,7 +110,7 @@ export function SplitTool() {
               {readyMath ? formatUsd(extra ? base + 1 : base) : "—"}
             </p>
             <p className="mt-3 text-pretty text-sm text-muted">
-              {readyMath ? summary : "Enter an amount, a headcount, and a tip."}
+              {readyMath ? summary : formatProblem ?? "Enter an amount, a headcount, and a tip."}
             </p>
             {readyMath ? (
               <dl className="mt-6 space-y-2 text-sm">
