@@ -1,6 +1,11 @@
 import type { SectionId } from "@/lib/sections";
 
-export type Field = { id: string; label: string; kind?: "text" | "number" | "area"; placeholder?: string };
+/**
+ * A form box. `legacy` marks a box that only older saved rows use: it shows on a
+ * row (and in its edit form) when that row has a value, and is not offered for
+ * new entries, so old rows keep loading exactly as they were saved.
+ */
+export type Field = { id: string; label: string; kind?: "text" | "number" | "area" | "date" | "time"; placeholder?: string; legacy?: boolean };
 export type Line = { label: string; value: string };
 export type Card = { front: string; back: string };
 export type Question = { q: string; options: string[]; answer: number; why: string };
@@ -53,6 +58,9 @@ export type Kit = Base &
 const f = (id: string, label: string, placeholder?: string): Field => ({ id, label, placeholder });
 const n = (id: string, label: string, placeholder?: string): Field => ({ id, label, kind: "number", placeholder });
 const a = (id: string, label: string, placeholder?: string): Field => ({ id, label, kind: "area", placeholder });
+const d = (id: string, label: string): Field => ({ id, label, kind: "date" });
+const t = (id: string, label: string): Field => ({ id, label, kind: "time" });
+const old = (id: string, label: string): Field => ({ id, label, legacy: true });
 
 function num(v: Record<string, string>, id: string): number {
   const value = Number(v[id]);
@@ -148,13 +156,13 @@ export const KITS: readonly Kit[] = [
     name: "Circuit",
     section: "engineering",
     blurb: "Ohm's law. Leave one of voltage, current, or resistance blank.",
-    features: ["Solves the missing one of V, I, or R", "Series and parallel for two resistors", "The unit is written next to the figure"],
-    guide: ["Fill two of voltage, current, and resistance.", "Leave the one you want blank.", "For two resistors, use the series or parallel line."],
+    features: ["Solves the missing one of V, I, or R", "The unit is written next to the figure"],
+    guide: ["Fill two of voltage, current, and resistance.", "Leave the one you want blank.", "Read the missing value and its unit."],
     kind: "ohm",
   },
   {
     slug: "case-brief",
-    name: "Brief",
+    name: "Case brief",
     section: "law",
     blurb: "Turns a case into facts, issue, holding, and reason. A study aid, not advice.",
     note: "A draft for study. It is not a legal opinion.",
@@ -166,9 +174,9 @@ export const KITS: readonly Kit[] = [
     slug: "legal-cite",
     name: "Cite",
     section: "law",
-    blurb: "A case citation from the names, year, court, and report.",
-    features: ["Parties, year, volume, report, and court", "One line you can copy", "You still check the style your school wants"],
-    guide: ["Fill the parties and the year.", "Add the report if you have it.", "Copy the line and fix it to your school's guide."],
+    blurb: "A Nigerian-style case citation from the parties, year, volume, report, part, page, and court.",
+    features: ["Parties, year, volume, report, part, page, and court", "One line you can copy", "You still check the style your school wants"],
+    guide: ["Fill the parties and the year.", "Add the volume, report, part, page, and court if you have them.", "Copy the line and fix it to your school's guide."],
     kind: "cite",
     mode: "legal",
   },
@@ -239,8 +247,8 @@ export const KITS: readonly Kit[] = [
     name: "Algo",
     section: "computing",
     blurb: "Steps through bubble sort on a short list of numbers.",
-    features: ["Your numbers, or a sample list", "One swap at a time", "The comparisons counted"],
-    guide: ["Type numbers separated by spaces.", "Press step to see the next comparison.", "Reset when you want a new list."],
+    features: ["Your numbers, or a sample list", "One swap at a time", "The comparisons and swaps counted"],
+    guide: ["Type numbers separated by spaces, then press Start.", "Press Step to see the next swap, and how many comparisons it took.", "Press Start again for a new list."],
     kind: "algo",
   },
   {
@@ -286,8 +294,8 @@ export const KITS: readonly Kit[] = [
     name: "Solver",
     section: "science",
     blurb: "Speed, density, force, and molarity. Pick one and fill the knowns.",
-    features: ["Speed, density, force, and molarity", "The missing value", "The formula written out"],
-    guide: ["Pick a formula.", "Fill the knowns.", "Read the missing value."],
+    features: ["Speed, density, force, and molarity", "The answer from the two values you fill", "The formula written out"],
+    guide: ["Pick a formula.", "Fill the two values it asks for.", "Read the answer. It works one way: speed from distance and time, not time from speed."],
     kind: "solver",
   },
   {
@@ -312,8 +320,8 @@ export const KITS: readonly Kit[] = [
     slug: "quiz-maker",
     name: "Quiz",
     section: "teaching",
-    blurb: "Write questions, or draft some from a topic.",
-    features: ["Questions you type and save", "Copy or print it when it is ready", "Copy the list when it is ready"],
+    blurb: "Write your questions and answers, saved in one place.",
+    features: ["Questions you type and save", "Copy or print it when it is ready"],
     guide: ["Add the topic.", "Write each question and its answer.", "Copy or print the quiz when it is ready."],
     kind: "template",
     parts: [f("topic", "Topic"), a("questions", "Questions and answers")],
@@ -331,11 +339,11 @@ export const KITS: readonly Kit[] = [
     slug: "shifts",
     name: "Shifts",
     section: "clinic",
-    blurb: "A list of shifts. Date, start, end, and where.",
-    features: ["Date, start, end, and place", "The list stays on your account", "Hours for each line"],
-    guide: ["Add the date and the clock times.", "Add the ward or site.", "The list saves on its own."],
+    blurb: "A list of shifts. Date, start, end, and where, with the hours worked out.",
+    features: ["Date, start, end, and place", "Hours for each line, this week, and in total", "The list stays on your account"],
+    guide: ["Add the date and the clock times. A shift that ends after midnight is counted as a night shift.", "Add the ward or site.", "The list saves on its own. Each shift has a button to copy it into your to-do list."],
     kind: "tracker",
-    fields: [f("date", "Date", "2026-10-04"), f("start", "Start", "07:00"), f("end", "End", "19:00"), f("where", "Where", "Ward")],
+    fields: [d("date", "Date"), t("start", "Start"), t("end", "End"), f("where", "Where", "Ward")],
   },
   {
     slug: "soap-note",
@@ -462,11 +470,11 @@ export const KITS: readonly Kit[] = [
   },
   {
     slug: "creative-brief",
-    name: "Brief",
+    name: "Creative brief",
     section: "creatives",
     blurb: "Audience, message, and what done looks like.",
     features: ["Audience, message, deliverable, and deadline", "Saved with your account", "Copy or print it when it is ready"],
-    guide: ["Fill what the client actually said.", "Generate a tighter version if you want.", "Send it only after the client would recognise it."],
+    guide: ["Fill what the client actually said.", "Cut anything the client did not ask for.", "Send it only after the client would recognise it."],
     kind: "template",
     parts: [f("client", "Client"), a("audience", "Audience"), a("message", "Message"), f("done", "Deliverable"), f("when", "Deadline")],
   },
@@ -701,9 +709,9 @@ export const KITS: readonly Kit[] = [
     section: "elder-health",
     blurb: "Appointments in a large list.",
     features: ["Who, where, and when", "Large type", "Saved with your account"],
-    guide: ["Add the clinic or person.", "Add the day and time.", "Open the list when you need it. It will not call you."],
+    guide: ["Add the clinic or person.", "Add the date and time.", "Open the list when you need it. It will not call you, but each visit has a button to copy it into your to-do list."],
     kind: "tracker",
-    fields: [f("who", "Who"), f("where", "Where"), f("when", "When")],
+    fields: [f("who", "Who"), f("where", "Where"), d("date", "Date"), t("time", "Time"), old("when", "When")],
   },
   {
     slug: "symptom-log",
@@ -722,7 +730,7 @@ export const KITS: readonly Kit[] = [
     section: "safety",
     blurb: "Paste a message. It looks for pressure, money, and odd links.",
     note: "A warning list, not proof. When money is involved, stop and ask someone you trust.",
-    features: ["Pressure, payment, and links", "A plain warning", "It does not contact the sender"],
+    features: ["Pressure, payment, and links", "Each warning sign found, what it means, and what to do", "It does not contact the sender"],
     guide: ["Paste the message.", "Read which signs showed up.", "Do not pay or share a code if you are unsure."],
     kind: "scam",
   },
@@ -741,8 +749,8 @@ export const KITS: readonly Kit[] = [
     name: "Claims",
     section: "safety",
     blurb: "Questions to ask before you forward a claim.",
-    features: ["Who said it, and whether you can open the source", "A checklist, not a fact-check of the whole web", "Large type"],
-    guide: ["Paste the claim.", "Answer the questions on the screen.", "Do not forward it if the source will not open."],
+    features: ["Who said it, and whether you can open the source", "A checklist, not a fact-check", "Large type"],
+    guide: ["Read the claim again.", "Answer the questions on the screen.", "Do not forward it if the source will not open."],
     kind: "scam",
   },
   { slug: "voice-note", name: "Voice", section: "family", blurb: "Record a message on this device and play it back.", features: ["A large record button", "Play it back here", "Download the file. It is not sent for you."], guide: ["Press record and speak.", "Press stop.", "Play it, or download it and send it in the app your family uses."], kind: "voice" },
@@ -789,10 +797,10 @@ export const KITS: readonly Kit[] = [
     name: "Bills",
     section: "elder-money",
     blurb: "Bills and the day they are due. The app does not pay them.",
-    features: ["Name, amount, and due day", "Large type", "Saved with your account"],
-    guide: ["Add the bill and the amount.", "Write the day it is due.", "Open the list. Nothing is paid automatically."],
+    features: ["Name, amount, and due date", "Large type", "Saved with your account"],
+    guide: ["Add the bill and the amount.", "Pick the date it is due.", "Open the list. Nothing is paid automatically. Each bill has a button to copy it into your to-do list."],
     kind: "tracker",
-    fields: [f("name", "Bill"), n("amount", "Amount"), f("due", "Due", "1st")],
+    fields: [f("name", "Bill"), n("amount", "Amount"), d("dueOn", "Due date"), old("due", "Due")],
   },
   {
     slug: "recipes",
@@ -829,4 +837,45 @@ function round(value: number): string {
 
 export function getKit(slug: string): Kit | undefined {
   return KITS.find((item) => item.slug === slug);
+}
+
+/**
+ * Cite (law): "Ade v Bello (2024) 5 NWLR (Pt. 1925) 1, SC". Each part is left
+ * out when empty, and the year appears once. Older entries typed the whole
+ * report ("[2024] 5 NWLR") into Report; that still prints as typed.
+ */
+export function legalCitation(values: Record<string, string | undefined>): string {
+  const part = (id: string) => (values[id] ?? "").trim();
+  const pt = part("part").replace(/^pt\.?\s*/i, "");
+  const report = part("report");
+  const year = part("year");
+  // An old-style report that already holds the year ("[2024] 5 NWLR") is not given the year again.
+  const yearShown = year && !report.includes(year) ? `(${year})` : "";
+  const line = [part("parties") || "Parties", yearShown, part("volume"), report, pt ? `(Pt. ${pt})` : "", part("page")].filter(Boolean).join(" ");
+  const court = part("court");
+  return court ? `${line}, ${court}` : line;
+}
+
+/** Algo: bubble sort frames. Each frame is the list after a swap, with the comparisons and swaps so far. */
+export function bubbleFrames(input: readonly number[]): { list: number[]; comparisons: number; swaps: number }[] {
+  const arr = input.slice(0, 12);
+  const frames = [{ list: arr.slice(), comparisons: 0, swaps: 0 }];
+  let comparisons = 0;
+  let swaps = 0;
+  for (let i = 0; i < arr.length; i += 1) {
+    let swapped = false;
+    for (let j = 0; j < arr.length - i - 1; j += 1) {
+      comparisons += 1;
+      if (arr[j] > arr[j + 1]) {
+        [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+        swaps += 1;
+        swapped = true;
+        frames.push({ list: arr.slice(), comparisons, swaps });
+      }
+    }
+    if (!swapped) break;
+  }
+  const last = frames[frames.length - 1];
+  if (last.comparisons !== comparisons) frames.push({ list: arr.slice(), comparisons, swaps });
+  return frames;
 }

@@ -121,7 +121,8 @@ export function RemindTool() {
   const [today, setToday] = useState(today0);
   const [shared, setShared] = useState<SharedState>({ canShare: false, projects: [], invitations: [] });
   const [files, setFiles] = useState<FileMeta[]>([]);
-  const search: { view?: unknown } = useSearch({ strict: false });
+  const search: { view?: unknown; add?: unknown } = useSearch({ strict: false });
+  const prefill = typeof search.add === "string" ? search.add : "";
   const navigate = useNavigate();
   const [view, setView] = useState<View>(() => viewFromLink(search.view));
   // Board, Focus and Habits come with Midnry Pass (or for admins), like every Pass app.
@@ -1031,7 +1032,15 @@ export function RemindTool() {
               <>
                 {view.kind !== "done" && view.kind !== "assigned" ? (
                   <div className="mt-4">
-                    <QuickAdd today={today} projects={projectOptions.map((project) => ({ key: project.key, name: project.name.replace(/ \(shared\)$/, "") }))} defaultProject={defaultProject} defaultDue={defaultDue} onAdd={addFromQuick} />
+                    <QuickAdd today={today} projects={projectOptions.map((project) => ({ key: project.key, name: project.name.replace(/ \(shared\)$/, "") }))} defaultProject={defaultProject} defaultDue={defaultDue}
+                      onAdd={addFromQuick}
+                      prefill={prefill}
+                      onPrefillUsed={() => {
+                        // Drop ?add= once used, so a reload doesn't fill the box again.
+                        const linked = linkableView(search.view);
+                        void navigate({ to: "/apps/$slug", params: { slug: "tasks" }, search: linked ? { view: linked } : {}, replace: true, resetScroll: false });
+                      }}
+                    />
                   </div>
                 ) : null}
 

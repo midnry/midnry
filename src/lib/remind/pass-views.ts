@@ -50,3 +50,14 @@ export function linkableView(value: unknown): LinkableView | undefined {
 export function viewParam(value: unknown): string | undefined {
   return typeof value === "string" && /^[a-z][a-z-]{0,23}$/.test(value) ? value : undefined;
 }
+
+/**
+ * `?add=` on /apps/tasks: text to put in Remind's add box (from "Add to Remind"
+ * in Bills, Visits and Shifts). One line, at most 300 characters (the box's own
+ * limit), or nothing. It only fills the box; the person still presses Add.
+ */
+export function addParam(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const text = value.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 300);
+  return text || undefined;
+}

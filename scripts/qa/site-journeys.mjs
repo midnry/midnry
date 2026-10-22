@@ -132,7 +132,7 @@ async function finderShots(pg, tag) {
   await f.getByRole("button", { name: /More options/ }).click();
   await f.locator("[data-more-options] legend").first().scrollIntoViewIfNeeded();
   await pg.screenshot({ path: `${out}/finder-more-${tag}.png` });
-  await f.getByRole("button", { name: /Invoices, quotes, or client terms/ }).click();
+  await f.getByRole("button", { name: /Invoices or quotes/ }).click();
   await f.getByRole("button", { name: "Show my suggestions" }).click();
   await pg.waitForTimeout(400);
   await f.locator("h3").scrollIntoViewIfNeeded();
@@ -149,7 +149,7 @@ ok(await finder.getByText("Question 2 of 2").isVisible(), "second question shows
 ok(await p.evaluate(() => document.activeElement?.tagName === "H3"), "focus moves to the new question");
 const firstShort = await shortCount(p);
 ok(firstShort >= 5 && firstShort <= 6 && (await optionCount(p)) === firstShort, `second question shows ≤6 options at first (${firstShort})`);
-ok(await finder.locator("[data-short-list] button").first().getByText("Invoices, quotes, or client terms").isVisible(), "working for yourself puts invoices first");
+ok(await finder.locator("[data-short-list] button").first().getByText("Invoices or quotes").isVisible(), "working for yourself puts invoices first");
 const more = finder.getByRole("button", { name: /More options/ });
 ok((await more.getAttribute("aria-expanded")) === "false", "More options starts collapsed");
 await more.click();
@@ -158,7 +158,7 @@ ok(all >= 30, `More options reveals the rest (${all})`);
 ok((await finder.locator("[data-more-options] legend").count()) >= 3, "the rest are grouped");
 ok(await finder.getByRole("button", { name: "Fewer options" }).isVisible(), "the toggle offers Fewer options");
 ok(await finder.getByText("Something else? Describe it in your own words.").isVisible(), "free text alternative stays");
-await finder.getByRole("button", { name: /Invoices, quotes, or client terms/ }).click();
+await finder.getByRole("button", { name: /Invoices or quotes/ }).click();
 await finder.getByRole("button", { name: /Knowing where the money goes/ }).click();
 await finder.getByRole("button", { name: "Show my suggestions" }).click();
 await p.waitForTimeout(300);

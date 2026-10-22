@@ -8,9 +8,9 @@ export const AUDIENCES = [
 export type AudienceId = (typeof AUDIENCES)[number]["id"];
 
 export const SECTIONS = [
-  { id: "medicine", audience: "students", label: "Medicine & Nursing", blurb: "Dosage, anatomy, and case drills." },
+  { id: "medicine", audience: "students", label: "Medicine & Nursing", blurb: "Dosage arithmetic, anatomy, and case drills." },
   { id: "engineering", audience: "students", label: "Engineering", blurb: "Units, formulas, and circuits." },
-  { id: "law", audience: "students", label: "Law", blurb: "Briefs, citations, and practice questions." },
+  { id: "law", audience: "students", label: "Law", blurb: "Case briefs, citations, and practice questions." },
   { id: "accounting", audience: "students", label: "Business & Accounting", blurb: "Ratios, statements, and break-even." },
   { id: "computing", audience: "students", label: "Computer Science", blurb: "Explain code, find bugs, see an algorithm." },
   { id: "arts", audience: "students", label: "Arts & Humanities", blurb: "Outlines, citations, and summaries." },
@@ -18,10 +18,10 @@ export const SECTIONS = [
   { id: "teaching", audience: "professionals", label: "Teachers", blurb: "Lessons, quizzes, and report comments." },
   { id: "clinic", audience: "professionals", label: "Healthcare workers", blurb: "Shifts, notes, and a dosage reference." },
   { id: "developers", audience: "professionals", label: "Developers", blurb: "Regex, JSON, and READMEs." },
-  { id: "marketing", audience: "professionals", label: "Sales & Marketing", blurb: "Emails, ads, and proposals." },
-  { id: "books", audience: "professionals", label: "Accountants", blurb: "Tax, reconciliation, and budgets." },
+  { id: "marketing", audience: "professionals", label: "Sales & Marketing", blurb: "Emails, ads, and a year of posts." },
+  { id: "books", audience: "professionals", label: "Accountants", blurb: "Tax, reconciliation, a ledger, and splitting costs." },
   { id: "practice", audience: "professionals", label: "Lawyers", blurb: "Contracts, clauses, and letters." },
-  { id: "creatives", audience: "professionals", label: "Creatives", blurb: "Briefs, mood, colour contrast, and video." },
+  { id: "creatives", audience: "professionals", label: "Creatives", blurb: "Creative briefs, mood, colour contrast, and video." },
   { id: "retail", audience: "owners", label: "Retail & Shops", blurb: "Stock and profit." },
   { id: "kitchen", audience: "owners", label: "Food & Restaurant", blurb: "Menus with a QR code, and recipe cost." },
   { id: "beauty", audience: "owners", label: "Fashion & Beauty", blurb: "Bookings, a catalog with prices, and captions." },

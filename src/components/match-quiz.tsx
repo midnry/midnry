@@ -3,6 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { APPS, getApp, type AppDef } from "@/lib/catalog";
 import { accessLabel } from "@/lib/plans";
 import { pitchFor } from "@/lib/pitches";
+import { isUnreviewed } from "@/lib/review-notes";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { AppMark } from "@/components/app-mark";
 import { Button, TextArea, buttonClass, cn } from "@/components/ui";
@@ -15,7 +16,7 @@ type LifeId = "study" | "job" | "self" | "sell" | "care" | "pace" | "seeking" | 
 type GroupId = "study" | "work" | "business" | "everyday";
 
 const LIVES: { id: LifeId; label: string; detail: string; groups: GroupId[]; reason: string; top: string[] }[] = [
-  { id: "study", label: "Studying or training", detail: "School, university, a course, or an apprenticeship.", groups: ["study"], reason: "you’re studying", top: ["essay", "calc", "focus", "lab", "code-learn", "health-study"] },
+  { id: "study", label: "Studying or training", detail: "School, university, a course, or an apprenticeship.", groups: ["study"], reason: "you’re studying", top: ["essay", "calc", "focus", "lab", "code-learn", "law-study"] },
   { id: "job", label: "Working a job", detail: "Employed, on shifts, or on contract.", groups: ["work"], reason: "you’re working a job", top: ["organise", "outreach", "accounts", "legal", "teach", "care-work"] },
   { id: "self", label: "Working for myself", detail: "Freelance, a side hustle, or my own business.", groups: ["business", "work"], reason: "you’re working for yourself", top: ["invoice", "spend", "outreach", "organise", "bookings", "legal"] },
   { id: "sell", label: "Selling things", detail: "A shop, online, at a market, or from a farm.", groups: ["business"], reason: "you’re selling things", top: ["stock", "online", "invoice", "spend", "food", "farm"] },
@@ -46,10 +47,9 @@ const GAMES = "games";
 type Task = { id: string; group: GroupId; label: string; apps: string[]; /** Finishes "Because you …". */ why: string };
 
 const TASKS: Task[] = [
-  { id: "health-study", group: "study", label: "Health or nursing studies: doses, anatomy, cases", apps: ["dose", "anatomy", "clinic-quiz"], why: "want help with health or nursing studies" },
   { id: "calc", group: "study", label: "Maths, physics, or engineering calculations", apps: ["units", "formula-sheet", "solver", "circuit"], why: "want help with maths, physics, or engineering sums" },
   { id: "lab", group: "study", label: "Lab reports, science formulas, or graphs", apps: ["lab-notes", "solver", "plot"], why: "want help with lab reports and graphs" },
-  { id: "law-study", group: "study", label: "Law cases, citations, or practice questions", apps: ["case-brief", "legal-cite", "law-drill"], why: "want help with law cases and citations" },
+  { id: "law-study", group: "study", label: "Law cases or citations", apps: ["case-brief", "legal-cite"], why: "want help with law cases and citations" },
   { id: "biz-study", group: "study", label: "Business, economics, or accounting coursework", apps: ["ratios", "statements", "breakeven"], why: "want help with business or accounting coursework" },
   { id: "code-learn", group: "study", label: "Understanding code, or finding a bug", apps: ["explainer", "bug-scan", "algo"], why: "want to understand code or find a bug" },
   { id: "essay", group: "study", label: "Essays, sources, or summing up long reading", apps: ["outliner", "citations", "digest"], why: "want help with essays and sources" },
@@ -57,15 +57,15 @@ const TASKS: Task[] = [
 
   { id: "organise", group: "work", label: "Reminders, to-dos, and planning my week", apps: ["tasks", "scratch"], why: "want to plan your week" },
   { id: "teach", group: "work", label: "Lesson plans, quizzes, or report comments", apps: ["lesson", "quiz-maker", "remarks"], why: "want help with lessons, quizzes, or report comments" },
-  { id: "care-work", group: "work", label: "Patient notes, shifts, or checking a dose", apps: ["soap-note", "shifts", "dose-ref"], why: "want help with patient notes, shifts, or doses" },
+  { id: "care-work", group: "work", label: "Patient notes or shift lists", apps: ["soap-note", "shifts"], why: "want help with patient notes or shifts" },
   { id: "ship-code", group: "work", label: "Writing code: JSON, regex, or a README", apps: ["json-fmt", "regex", "readme", "glyph"], why: "want help writing code" },
   { id: "outreach", group: "work", label: "Emails, ads, proposals, or a year of posts", apps: ["cold-email", "ad-copy", "invoice", "planner"], why: "want to write emails, ads, or proposals" },
   { id: "job-hunt", group: "work", label: "A resume or job applications", apps: ["apply", "letters"], why: "want help with a resume or applications" },
-  { id: "accounts", group: "work", label: "Tax, budgets, or reconciling accounts", apps: ["paye", "reconcile", "ledger"], why: "want help with tax, budgets, or accounts" },
-  { id: "legal", group: "work", label: "Contracts, clauses, or formal letters", apps: ["contract-scan", "clauses", "letters"], why: "want help with contracts or formal letters" },
+  { id: "accounts", group: "work", label: "Budgets or reconciling accounts", apps: ["reconcile", "ledger"], why: "want help with budgets or accounts" },
+  { id: "legal", group: "work", label: "Formal letters", apps: ["letters"], why: "want help with formal letters" },
   { id: "creative", group: "work", label: "Design briefs, colours, or video", apps: ["creative-brief", "mood", "contrast", "compressor"], why: "want help with design briefs, colour, or video" },
 
-  { id: "invoice", group: "business", label: "Invoices, quotes, or client terms", apps: ["invoice", "service-terms"], why: "want to send invoices or quotes" },
+  { id: "invoice", group: "business", label: "Invoices or quotes", apps: ["invoice"], why: "want to send invoices or quotes" },
   { id: "stock", group: "business", label: "Stock, prices, and profit", apps: ["stock", "catalog", "margin"], why: "want to track stock, prices, and profit" },
   { id: "food", group: "business", label: "A menu, or what a dish costs to make", apps: ["menu", "recipe-cost"], why: "want to cost a menu or a dish" },
   { id: "bookings", group: "business", label: "Bookings, a product catalog, or captions", apps: ["bookings", "catalog", "captions"], why: "want to take bookings or show your products" },
@@ -74,7 +74,7 @@ const TASKS: Task[] = [
   { id: "spend", group: "business", label: "Knowing where the money goes", apps: ["ledger", "statements", "margin"], why: "want to know where the money goes" },
 
   { id: "day", group: "everyday", label: "Organising my day: reminders and to-dos", apps: ["tasks", "scratch"], why: "want to organise your day" },
-  { id: "health", group: "everyday", label: "Medicines, appointments, or how I have been feeling", apps: ["meds", "visits", "symptom-log"], why: "want to keep track of medicines and appointments" },
+  { id: "health", group: "everyday", label: "Medicines or appointments", apps: ["meds", "visits"], why: "want to keep track of medicines and appointments" },
   { id: "period", group: "everyday", label: "Tracking my period", apps: ["cycle"], why: "want to track your period" },
   { id: "habits", group: "everyday", label: "Building daily habits", apps: ["tasks"], why: "want to build daily habits" },
   { id: "scam", group: "everyday", label: "Checking whether a message is a scam", apps: ["scam-check", "rumor-check", "ice-card"], why: "want to check whether a message is a scam" },
@@ -103,8 +103,9 @@ function listOf(items: string[]): string {
 
 const STOP = new Set(["about", "and", "for", "from", "have", "help", "into", "just", "like", "more", "need", "some", "that", "the", "them", "this", "what", "when", "with", "want", "would", "your", "keep", "make", "track"]);
 
+// Tools not yet reviewed by a professional (src/lib/review-notes.ts) are never suggested here.
 const HAYSTACK = new Map(
-  APPS.map((app) => [app.slug, [app.name, app.blurb, pitchFor(app), ...app.features].join(" ").toLowerCase()]),
+  APPS.filter((app) => !isUnreviewed(app.slug)).map((app) => [app.slug, [app.name, app.blurb, pitchFor(app), ...app.features].join(" ").toLowerCase()]),
 );
 
 const taskById = (id: string) => TASKS.find((task) => task.id === id);
@@ -190,7 +191,7 @@ function rank(lives: LifeId[], picked: string[], extra: string): Match[] {
   const order = (slug: string) => (slug === GAMES ? -1 : APPS.findIndex((app) => app.slug === slug));
   const sorted = () =>
     [...score.entries()]
-      .filter(([slug]) => slug === GAMES || getApp(slug))
+      .filter(([slug]) => slug === GAMES || (getApp(slug) && !isUnreviewed(slug)))
       // Ties: free apps first (they open with just an account), then catalogue order.
       .sort((a, b) => b[1] - a[1] || paid(a[0]) - paid(b[0]) || order(a[0]) - order(b[0]))
       .map(([slug]) => slug);
@@ -232,7 +233,7 @@ function readSaved(): Saved | null {
     const extra = typeof parsed.extra === "string" ? parsed.extra.slice(0, 200) : "";
     // Earlier versions saved subject sections, not apps: work the apps out again from the answers.
     const results = Array.isArray(parsed.results)
-      ? parsed.results.filter((slug): slug is string => typeof slug === "string" && (slug === GAMES || Boolean(getApp(slug))))
+      ? parsed.results.filter((slug): slug is string => typeof slug === "string" && (slug === GAMES || (Boolean(getApp(slug)) && !isUnreviewed(slug))))
       : rank(lives, picked, extra).map((match) => match.slug);
     return results.length > 0 ? { lives, picked, extra, results } : null;
   } catch {

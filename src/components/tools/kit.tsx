@@ -14,6 +14,11 @@ import { downloadText, setViewParam, viewParam } from "@/components/use-merged-d
 import { ViewTabs } from "@/components/tools/view-tabs";
 import { KitImports } from "@/components/tools/kit-import";
 import { checkJson, formatJson, problemExcerpt } from "@/lib/json-tools";
+import { bubbleFrames, legalCitation } from "@/lib/kits";
+import { reviewNote } from "@/lib/review-notes";
+import { REMIND_APPS, hoursLabel, prettyDay, remindText, shiftHours, shiftTotals } from "@/lib/records";
+import { CLAIM_QUESTIONS, SCAM_FOOTNOTE, scamHeadline, scamSigns } from "@/lib/scam-signs";
+import { isoOf } from "@/lib/remind/dates";
 
 const SENIOR: SectionId[] = ["elder-health", "safety", "family", "elder-money", "hobbies"];
 
@@ -21,9 +26,15 @@ export function KitTool({ slug }: { slug: string }) {
   const kit = getKit(slug);
   if (!kit) return null;
   const large = SENIOR.includes(kit.section);
+  const review = reviewNote(kit.slug);
   return (
     <ToolFrame slug={slug}>
       <div className={cn(large && "text-lg")}>
+        {review ? (
+          <p className="mb-3 max-w-2xl rounded-2xl bg-paper-2 px-4 py-3 text-sm text-pretty" data-review-note>
+            {review}
+          </p>
+        ) : null}
         {kit.note ? <p className="mb-4 max-w-2xl text-sm text-pretty text-muted">{kit.note}</p> : null}
         <KitBody kit={kit} />
       </div>
@@ -76,7 +87,7 @@ function KitBody({ kit }: { kit: Kit }) {
     case "steps":
       return <Steps steps={kit.steps} />;
     case "scam":
-      return <Scam rumors={kit.slug === "rumor-check"} />;
+      return kit.slug === "rumor-check" ? <Claims /> : <Scam />;
     case "mood":
       return <Mood slug={kit.slug} />;
     case "ratios":
@@ -150,8 +161,8 @@ function Fields({
 }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      {fields.map((field) => (
-        <label key={field.id} className={cn("text-sm", field.kind === "area" && "sm:col-span-2")}>
+      {fields.filter((field) => !field.legacy || values[field.id]?.trim()).map((field) => (
+        <label key={field.id} className={cn("min-w-0 text-sm", field.kind === "area" && "sm:col-span-2")}>
           <span className="mb-1 block text-muted">{field.label}</span>
           {field.id === "side" ? (
             <select
@@ -172,7 +183,7 @@ function Fields({
             />
           ) : (
             <TextInput
-              type={field.kind === "number" ? "number" : "text"}
+              type={field.kind === "number" || field.kind === "date" || field.kind === "time" ? field.kind : "text"}
               inputMode={field.kind === "number" ? "decimal" : undefined}
               value={values[field.id] ?? ""}
               placeholder={field.placeholder}
@@ -324,6 +335,7 @@ function Tracker({ kit }: { kit: Extract<Kit, { kind: "tracker" }> }) {
         setRows={setRows}
         saveState={saveState}
         title={view ? `${kit.name}: ${view.label}` : kit.name}
+        slug={kit.slug}
         csvName={extra ? `${kit.slug}-${extra.id}.csv` : `${kit.slug}.csv`}
       />
       {kit.qr ? <QrSection section={kit.qr} link={typeof data.qrLink === "string" ? data.qrLink : ""} onLink={(qrLink) => setData((prev) => ({ ...prev, qrLink }))} /> : null}
@@ -337,6 +349,7 @@ function TrackerList({
   setRows,
   saveState,
   title,
+  slug,
   csvName,
 }: {
   fields: Field[];
@@ -344,8 +357,12 @@ function TrackerList({
   setRows: (next: TrackerRows) => void;
   saveState: SaveState;
   title: string;
+  slug: string;
   csvName: string;
 }) {
+  const toRemind = (REMIND_APPS as readonly string[]).includes(slug);
+  const isShifts = slug === "shifts";
+  const shiftSum = isShifts ? shiftTotals(rows, isoOf(new Date())) : null;
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState<number | null>(null);
   const [query, setQuery] = useState("");
@@ -439,6 +456,14 @@ function TrackerList({
         />
       ) : hasAmount && rows.length > 0 ? (
         <Lines copy={false} lines={[{ label: "Total", value: money(total) }]} />
+      ) : shiftSum && shiftSum.counted > 0 ? (
+        <Lines
+          copy={false}
+          lines={[
+            { label: "Hours this week", value: hoursLabel(shiftSum.week) },
+            { label: "Hours in this list", value: hoursLabel(shiftSum.total) },
+          ]}
+        />
       ) : null}
       {lowCount > 0 ? (
         <p className="mt-4 rounded-2xl bg-pine/10 p-3 text-sm font-medium">
@@ -469,20 +494,45 @@ function TrackerList({
             className={cn("rounded-2xl bg-card p-4 shadow-line", editing === index && "ring-2 ring-pine")}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <dl className="grid min-w-0 flex-1 grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+              <dl className="grid min-w-0 flex-1 basis-56 grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
                 {fields
                   .filter((field) => row[field.id]?.trim())
                   .map((field) => (
                     <div key={field.id} className="contents">
                       <dt className="text-muted">{field.label}</dt>
                       <dd className="min-w-0 break-words whitespace-pre-wrap">
-                        {field.id === "side" ? (/income/i.test(row.side) ? "Income" : /cost/i.test(row.side) ? "Cost" : row.side) : row[field.id]}
+                        {field.id === "side"
+                          ? /income/i.test(row.side)
+                            ? "Income"
+                            : /cost/i.test(row.side)
+                              ? "Cost"
+                              : row.side
+                          : field.kind === "date"
+                            ? prettyDay(row[field.id]) || row[field.id]
+                            : row[field.id]}
                       </dd>
                     </div>
                   ))}
+                {isShifts && shiftHours(row.start, row.end) != null ? (
+                  <div className="contents">
+                    <dt className="text-muted">Hours</dt>
+                    <dd data-shift-hours>{hoursLabel(shiftHours(row.start, row.end) ?? 0)}</dd>
+                  </div>
+                ) : null}
               </dl>
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="flex shrink-0 flex-wrap items-center gap-1">
                 {isLow(row) ? <span className="rounded-full bg-pine px-2 py-0.5 text-xs font-medium text-paper">Low</span> : null}
+                {toRemind ? (
+                  <Link
+                    to="/apps/$slug"
+                    params={{ slug: "tasks" }}
+                    search={{ add: remindText(slug, row) }}
+                    className="inline-flex min-h-9 items-center rounded-full px-3 text-sm font-medium text-pine hover:bg-paper-2"
+                    data-add-to-remind
+                  >
+                    Add to Remind
+                  </Link>
+                ) : null}
                 <button
                   type="button"
                   className="min-h-9 rounded-full px-3 text-sm text-muted hover:bg-paper-2"
@@ -776,7 +826,7 @@ function Write({ kit }: { kit: Extract<Kit, { kind: "write" }> }) {
     ai.kind === "ai"
       ? `Written by AI${ai.left === null ? "" : ` · ${ai.left} AI ${ai.left === 1 ? "write" : "writes"} left today`}. Check names, facts and figures before you use it.`
       : ai.kind === "fallback" && ai.reason === "limit"
-        ? `You've used today's ${ai.limit} AI writes, so this is Midnry's quick writer. AI writing resets tomorrow.`
+        ? `You've used today's ${ai.limit} AI writes, so this is Midnry's quick writer. Your AI writes reset at 1 am Nigeria time (midnight GMT).`
         : ai.kind === "fallback" && (ai.reason === "busy" || ai.reason === "error")
           ? "AI writing isn't available right now, so this is Midnry's quick writer. Try again in a minute."
           : "Written on your device by Midnry. Check facts and figures before you use it.";
@@ -855,12 +905,20 @@ function Cite({ mode }: { mode: "paper" | "legal" }) {
   const [list, setList] = useState<string[]>([]);
   const fields: Field[] =
     mode === "legal"
-      ? [f("parties", "Parties", "Ade v Bello"), f("year", "Year", "2024"), f("report", "Report", "[2024] 5 NWLR")]
+      ? [
+          f("parties", "Parties", "Ade v Bello"),
+          f("year", "Year", "2024"),
+          f("volume", "Volume", "5"),
+          f("report", "Report", "NWLR"),
+          f("part", "Part", "1925"),
+          f("page", "Page", "1"),
+          f("court", "Court, optional", "SC"),
+        ]
       : [f("author", "Author", "Adebayo, T."), f("year", "Year", "2024"), f("title", "Title"), f("source", "Source"), f("url", "Link or DOI, optional")];
   const url = values.url?.trim() ? ` ${values.url.trim()}` : "";
   const line =
     mode === "legal"
-      ? `${values.parties || "Parties"} ${values.report || ""} ${values.year ? `(${values.year})` : ""}`.replace(/\s+/g, " ").trim()
+      ? legalCitation(values)
       : values.style === "MLA"
         ? `${values.author || "Author"}. "${values.title || "Title"}." ${values.source || "Source"}, ${values.year || "n.d."}.${url}`
         : values.style === "Chicago"
@@ -1150,26 +1208,14 @@ function JsonTool() {
 
 function Algo() {
   const [text, setText] = useState("5 1 4 2");
-  const [steps, setSteps] = useState<number[][]>([]);
+  const [steps, setSteps] = useState<ReturnType<typeof bubbleFrames>>([]);
   const [at, setAt] = useState(0);
   function build() {
-    const list = text.split(/[\s,]+/).map(Number).filter((item) => Number.isFinite(item)).slice(0, 12);
-    const frames = [list.slice()];
-    const arr = list.slice();
-    for (let i = 0; i < arr.length; i += 1) {
-      for (let j = 0; j < arr.length - i - 1; j += 1) {
-        if (arr[j] > arr[j + 1]) {
-          const hold = arr[j];
-          arr[j] = arr[j + 1];
-          arr[j + 1] = hold;
-          frames.push(arr.slice());
-        }
-      }
-    }
-    setSteps(frames);
+    setSteps(bubbleFrames(text.split(/[\s,]+/).filter(Boolean).map(Number).filter((item) => Number.isFinite(item))));
     setAt(0);
   }
-  const frame = steps[at] ?? [];
+  const frame = steps[at];
+  const done = steps.length > 0 && at === steps.length - 1;
   return (
     <div>
       <FieldBox label="Numbers" value={text} onChange={setText} />
@@ -1177,7 +1223,13 @@ function Algo() {
         <Button tone="primary" onClick={build}>Start</Button>
         <Button tone="quiet" onClick={() => setAt((value) => Math.min(steps.length - 1, value + 1))} disabled={at >= steps.length - 1}>Step</Button>
       </div>
-      <p className="mt-4 font-medium">{frame.join("  ") || "Press start."}</p>
+      <p className="mt-4 font-medium">{frame ? frame.list.join("  ") : "Press start."}</p>
+      {frame ? (
+        <p className="mt-1 text-sm text-muted" data-algo-count>
+          {done ? "Sorted. " : ""}
+          {frame.comparisons} {frame.comparisons === 1 ? "comparison" : "comparisons"}, {frame.swaps} {frame.swaps === 1 ? "swap" : "swaps"} so far.
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -1538,55 +1590,47 @@ function Steps({ steps }: { steps: { title: string; body: string }[] }) {
   );
 }
 
-function Scam({ rumors }: { rumors: boolean }) {
+/** Scam check: the warning signs found, what each means and what to do. A checklist, never a verdict. */
+function Scam() {
   const [text, setText] = useState("");
-  const lower = text.toLowerCase();
-  const checks: [RegExp, string][] = [
-    [/\b(urgent(ly)?|immediately|right now|act (fast|now)|last chance|within \d+ (hours?|minutes?)|expires? today)\b/, "It pushes you to act quickly. Real banks and family can wait while you check."],
-    [/\b(gift ?cards?|bitcoin|crypto|usdt|wire (the )?money|western union|send money|transfer (the )?(money|fee))\b/, "It asks you to send money in a way that is hard to get back."],
-    [/\b(otp|one[- ]time (code|password|pin)|verification code|pin|password|bvn|cvv)\b/, "It asks for a code, PIN, or password. No real company asks for these by message."],
-    [/https?:\/\/|www\.|bit\.ly|tinyurl|wa\.me|t\.me/, "It contains a link. Do not open it unless you typed the address yourself."],
-    [/\b(you (have )?won|winner|prize|lottery|inheritance|congratulations|claim your)\b/, "It offers a prize or money you did not expect."],
-    [/\b(account (has been|will be|is) (blocked|suspended|closed|locked)|unusual activity|verify your account)\b/, "It threatens your account to scare you into acting."],
-    [/\b(new number|lost my phone|changed my number|it'?s me,? (mum|mom|dad))\b/, "It says it is someone you know on a new number. Call their old number to check."],
-    [/\b(keep (this|it) (secret|between us)|don'?t tell (anyone|your))\b/, "It asks you to keep it secret. Scammers do not want you to ask anyone."],
-  ];
-  const hits = checks.filter(([pattern]) => pattern.test(lower)).map(([, note]) => note);
-  const level = hits.length >= 2 ? "high" : hits.length === 1 ? "some" : "none";
+  const signs = scamSigns(text);
   return (
     <div>
-      <TextArea value={text} rows={6} placeholder={rumors ? "Paste the claim" : "Paste the message you received"} onChange={(event) => setText(event.target.value)} />
-      {rumors ? (
-        <ul className="mt-4 list-disc space-y-2 pl-5">
-          <li>Who said it, and can you open that source yourself?</li>
-          <li>Do the date and the place match?</li>
-          <li>Is a trusted news site or official page saying the same thing?</li>
-          <li>If it asks you to forward it, wait.</li>
-        </ul>
-      ) : null}
+      <TextArea value={text} rows={6} placeholder="Paste the message you received" aria-label="The message" onChange={(event) => setText(event.target.value)} />
       {text.trim() ? (
-        <div
-          role="status"
-          className={cn(
-            "mt-4 rounded-2xl p-4 font-medium",
-            level === "high" ? "bg-fail text-white" : level === "some" ? "bg-pine/15" : "bg-card shadow-line",
-          )}
-        >
-          {level === "high"
-            ? "This looks like a scam. Do not reply, pay, or open links."
-            : level === "some"
-              ? "Be careful. One warning sign was found."
-              : "No common warning signs found. That does not prove it is safe. If unsure, ask someone you trust."}
-        </div>
+        <section className="mt-4" aria-live="polite" data-scam-result>
+          <h2 className="rounded-2xl bg-card p-4 font-medium shadow-line" role="status">
+            {scamHeadline(signs.length)}
+          </h2>
+          {signs.length > 0 ? (
+            <ul className="mt-3 space-y-2">
+              {signs.map((sign) => (
+                <li key={sign.id} className="rounded-2xl bg-card p-4 shadow-line" data-scam-sign={sign.id}>
+                  <p className="font-medium">{sign.label}</p>
+                  <p className="mt-1 text-pretty text-muted">{sign.meaning}</p>
+                  <p className="mt-1 text-pretty">
+                    <span className="font-medium">What to do: </span>
+                    {sign.todo}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <p className="mt-3 text-sm text-pretty text-muted">{SCAM_FOOTNOTE}</p>
+        </section>
       ) : null}
-      <ul className="mt-3 space-y-2">
-        {hits.map((hit) => (
-          <li key={hit} className="rounded-2xl bg-card p-4 shadow-line">
-            {hit}
-          </li>
-        ))}
-      </ul>
     </div>
+  );
+}
+
+/** Claims: questions to ask before forwarding something. No scam signs, no verdict. */
+function Claims() {
+  return (
+    <ul className="list-disc space-y-2 pl-5" data-claim-questions>
+      {CLAIM_QUESTIONS.map((question) => (
+        <li key={question}>{question}</li>
+      ))}
+    </ul>
   );
 }
 

@@ -5,6 +5,7 @@ import { KITS } from "@/lib/kits";
 import { sectionOf } from "@/lib/sections";
 import { PASS_PRICE_LABEL } from "@/lib/access";
 import { FREE_LABEL, PASS_FEATURES, PASS_LABEL, PASS_PRICE_LINE } from "@/lib/plans";
+import { isUnreviewed, reviewNote } from "@/lib/review-notes";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { AppMark } from "@/components/app-mark";
 import { pitchFor } from "@/lib/pitches";
@@ -164,16 +165,22 @@ function notesFor(app: AppDef): string[] {
   const notes: string[] = [];
   if (app.slug === "cycle") notes.push("Your periods and notes are saved on your account. Dates are estimates, not medical advice, and not a form of birth control.");
   if (app.slug === "compressor") notes.push("The video is re-encoded on this device. It is not uploaded.");
+  const review = reviewNote(app.slug);
+  if (review) notes.push(review);
   const kit = KITS.find((item) => item.slug === app.slug);
   if (kit?.note) notes.push(kit.note);
   return notes;
 }
 
 function relatedTo(app: AppDef): AppDef[] {
-  const curated = (RELATED[app.slug] ?? []).map((slug) => getApp(slug)).filter((item): item is AppDef => Boolean(item));
+  // Tools not yet reviewed by a professional are never suggested here (src/lib/review-notes.ts).
+  const curated = (RELATED[app.slug] ?? [])
+    .filter((slug) => !isUnreviewed(slug))
+    .map((slug) => getApp(slug))
+    .filter((item): item is AppDef => Boolean(item));
   if (curated.length >= 3) return curated.slice(0, 3);
   const section = sectionOf(app.genre) ?? app.genre;
-  const same = APPS.filter((a) => a.slug !== app.slug && !curated.includes(a) && (sectionOf(a.genre) ?? a.genre) === section);
+  const same = APPS.filter((a) => a.slug !== app.slug && !isUnreviewed(a.slug) && !curated.includes(a) && (sectionOf(a.genre) ?? a.genre) === section);
   const everyday = ["tasks", "invoice", "cycle"].map((slug) => getApp(slug)).filter((a): a is AppDef => Boolean(a) && a!.slug !== app.slug);
   const out: AppDef[] = [];
   for (const candidate of [...curated, ...same, ...everyday]) if (!out.includes(candidate) && out.length < 3) out.push(candidate);

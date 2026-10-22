@@ -131,7 +131,8 @@ function PrivacyPage() {
                 <li>
                   <strong>AI writing.</strong> Some writing apps (such as Outreach, Captions, Letters and Contract) send
                   the text you type in them to Anthropic, which writes the reply. Their results say “Written by AI”. We
-                  count how many AI writes each account uses per day, for the daily limit.
+                  count how many AI writes each account uses per day, for the daily limit. The day runs on GMT, so the
+                  count starts again at 1 am Nigeria time.
                 </li>
               </List>
             </Sub>

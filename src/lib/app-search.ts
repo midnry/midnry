@@ -66,6 +66,7 @@ export const SYNONYM_GROUPS: readonly SynonymGroup[] = [
   { terms: ["note", "notepad", "memo", "jot"], apps: ["scratch", "soap-note", "lab-notes", "memoir"] },
   { terms: ["contract", "agreement", "terms", "nda", "legal", "clause"], apps: ["service-terms", "contract-scan", "clauses"] },
   { terms: ["tax", "vat", "paye"], apps: ["paye"] },
+  { terms: ["brief", "case brief", "creative brief", "design brief"], apps: ["case-brief", "creative-brief"] },
   { terms: ["price", "pricing", "price list"], apps: ["catalog", "menu", "farm-sales", "margin"] },
   { terms: ["inventory", "stock"], apps: ["stock"] },
   { terms: ["shop", "store", "sell", "seller", "ecommerce"], apps: ["orders", "listing", "stock", "catalog", "wa-replies"] },

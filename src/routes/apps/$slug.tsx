@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { recordUse } from "@/lib/admin.functions";
 import { createFileRoute, redirect, Link } from "@tanstack/react-router";
 import { aliasOf } from "@/lib/app-aliases";
-import { viewParam } from "@/lib/remind/pass-views";
+import { addParam, viewParam } from "@/lib/remind/pass-views";
 import { getApp, includedNames, tierLabel } from "@/lib/catalog";
 import { canOpenApp, PASS_PRICE_LABEL } from "@/lib/access";
 import { PASS_LABEL } from "@/lib/plans";
@@ -21,9 +21,11 @@ import { KeptMoneyData } from "@/components/tools/kept-money";
 
 export const Route = createFileRoute("/apps/$slug")({
   // ?view= opens one part of an app (Remind: board, focus, habits, today…). Other apps ignore it.
-  validateSearch: (search: Record<string, unknown>): { view?: string } => {
+  // ?add= pre-fills Remind's add box ("Add to Remind" in Bills, Visits and Shifts); the person still presses Add.
+  validateSearch: (search: Record<string, unknown>): { view?: string; add?: string } => {
     const view = viewParam(search.view);
-    return view ? { view } : {};
+    const add = addParam(search.add);
+    return { ...(view ? { view } : {}), ...(add ? { add } : {}) };
   },
   // A merged app's old link goes to the app that now holds it.
   beforeLoad: ({ params }) => {

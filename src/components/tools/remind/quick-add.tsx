@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { parseTask, type Parsed } from "@/lib/remind/parse";
 import { prettyDate, prettyTime } from "@/lib/remind/dates";
 import { recurLabel } from "@/lib/remind/recur";
@@ -19,6 +19,8 @@ export function QuickAdd({
   defaultProject,
   defaultDue,
   onAdd,
+  prefill = "",
+  onPrefillUsed,
 }: {
   today: string;
   /** Project names you can send a task to with #Name, by key. */
@@ -26,8 +28,17 @@ export function QuickAdd({
   defaultProject: string;
   defaultDue: string;
   onAdd: (parsed: Parsed, projectKey: string, newProject: string) => void;
+  /** Text another app sent with "Add to Remind" (?add=). It only fills the box; nothing is added until the person presses Add. */
+  prefill?: string;
+  onPrefillUsed?: () => void;
 }) {
-  const [text, setText] = useState("");
+  const [text, setText] = useState(prefill.slice(0, 300));
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!prefill) return;
+    setText(prefill.slice(0, 300));
+    input.current?.focus();
+  }, [prefill]);
   const [example] = useState(() => EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)]);
   const parsed = useMemo(() => parseTask(text, today), [text, today]);
   const match = parsed.project
@@ -40,6 +51,7 @@ export function QuickAdd({
     if (!parsed.title) return;
     onAdd({ ...parsed, due }, match?.key ?? defaultProject, parsed.project && !match ? parsed.project : "");
     setText("");
+    if (prefill) onPrefillUsed?.();
   }
 
   const chips: { label: string; tone?: string }[] = [];
@@ -58,6 +70,7 @@ export function QuickAdd({
         </label>
         <input
           id="remind-quick-add"
+          ref={input}
           value={text}
           onChange={(event) => setText(event.target.value.slice(0, 300))}
           placeholder={`Add a task, e.g. "${example}"`}
@@ -68,6 +81,11 @@ export function QuickAdd({
           Add
         </Button>
       </div>
+      {prefill && text === prefill.slice(0, 300) ? (
+        <p className="mt-2 text-sm text-pretty" data-remind-prefill>
+          Check the task below, change it if you need to, then press Add. Nothing is added until you do.
+        </p>
+      ) : null}
       {text.trim() ? (
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-sm" aria-live="polite">
           <span className="text-muted">{parsed.title ? `“${parsed.title}”` : "Add a few words for the task"}</span>
