@@ -791,3 +791,12 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   (`npx playwright install chromium`) and preload a shim that drops a missing `executablePath` and the
   SwiftShader flags. On a real GPU steps run much faster than in the sandbox, so fixed waits written for
   SwiftShader can be too short (e.g. Esc is ignored for 400 ms after pausing).
+
+## Lobby backdrop to the lobby concept (owner, 2026-10-22, not deployed yet)
+
+- `scripts/outpost-military/lobby-backdrop.js` (`buildLobbyBackdrop`, `lobbySky`, `LOBBY_SUN`), used by
+  `LobbyStage`: sunset sky shader (palette in sRGB, converted to linear), lit clouds, flat-topped
+  mesas, a far skyline of lit blocks and towers (60–90 m out, merged), the hangar on the left (amber
+  strips, red banner, crates), a parked vehicle on the right, lamp glows, and a warm additive sheen on
+  the floor towards the sun. Floor is Lambert so the arena's blue environment map doesn't tint it.
+  Reference: `public/games/outpost-zero/lobby-concept.webp`. QA: `node scripts/qa/lobby-look.mjs [width]`.

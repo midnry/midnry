@@ -7,53 +7,40 @@
 import * as THREE from "three";
 import { updateWeaponGrip } from "./realism-grips.js";
 import { CHARACTERS } from "../../public/games/outpost-characters.js";
-
-const sky = /* glsl */ `
-varying vec3 vDir;
-uniform float time;
-void main() {
-  vec3 d = normalize(vDir);
-  float h = clamp(d.y * 0.5 + 0.5, 0.0, 1.0);
-  // Dusk: deep teal overhead, ember glow on the horizon behind the platform.
-  vec3 top = vec3(0.035, 0.06, 0.07), mid = vec3(0.09, 0.12, 0.12), horizon = vec3(0.55, 0.24, 0.1);
-  vec3 c = mix(horizon, mid, smoothstep(0.47, 0.6, h));
-  c = mix(c, top, smoothstep(0.6, 0.95, h));
-  // A low red haze wall far behind.
-  float haze = exp(-pow((h - 0.5) * 9.0, 2.0)) * (0.55 + 0.45 * sin(d.x * 7.0 + time * 0.15) * sin(d.z * 5.0 - time * 0.1));
-  c += vec3(0.5, 0.06, 0.04) * haze * 0.45;
-  gl_FragColor = vec4(c, 1.0);
-  #include <colorspace_fragment>
-}`;
+import { buildLobbyBackdrop, lobbySky, LOBBY_SUN } from "./lobby-backdrop.js";
 
 export class LobbyStage {
   constructor(r) {
     this.r = r;
     const mobile = r.mobileDevice;
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog("#1a1512", 9, 26);
-    this.camera = new THREE.PerspectiveCamera(32, 1, 0.1, 80);
+    // Warm sunset haze; far enough that the outpost skyline still reads.
+    this.scene.fog = new THREE.Fog("#5a2c1c", 22, 150);
+    this.camera = new THREE.PerspectiveCamera(32, 1, 0.1, 260);
     this.owned = [];
     const own = (x) => (this.owned.push(x), x);
-    // Backdrop dome.
+    // Backdrop dome: the sunset sky, clouds and mesas of the lobby concept.
     this.skyMaterial = own(
       new THREE.ShaderMaterial({
         vertexShader: "varying vec3 vDir; void main(){ vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }",
-        fragmentShader: sky,
-        uniforms: { time: { value: 0 } },
+        fragmentShader: lobbySky,
+        uniforms: { time: { value: 0 }, sun: { value: LOBBY_SUN } },
         side: THREE.BackSide,
         depthWrite: false,
         fog: false,
       }),
     );
-    this.scene.add(new THREE.Mesh(own(new THREE.SphereGeometry(40, 32, 16)), this.skyMaterial));
-    // Ground: dark wet concrete fading into the fog.
+    this.scene.add(new THREE.Mesh(own(new THREE.SphereGeometry(200, 32, 16)), this.skyMaterial));
+    // Ground: dark wet concrete fading into the haze.
     const ground = new THREE.Mesh(
-      own(new THREE.CircleGeometry(30, 48)),
-      own(new THREE.MeshStandardMaterial({ color: "#14181a", roughness: 0.55, metalness: 0.2 })),
+      own(new THREE.CircleGeometry(160, 48)),
+      // Lambert: the arena's blue sky map must not tint the sunset floor.
+      own(new THREE.MeshLambertMaterial({ color: "#3a261b" })),
     );
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     this.scene.add(ground);
+    buildLobbyBackdrop(this.scene, own, { mobile });
     // Platforms: the centre one for you, two smaller squad pads.
     const steel = own(new THREE.MeshStandardMaterial({ color: "#2b3134", roughness: 0.38, metalness: 0.85 }));
     const top = own(new THREE.MeshStandardMaterial({ color: "#3b4245", roughness: 0.6, metalness: 0.4 }));
@@ -85,7 +72,7 @@ export class LobbyStage {
       this.pads.push(pad);
     }
     // Light: warm key and rim, cool fill, and a spotlight on the operator.
-    this.scene.add(new THREE.HemisphereLight("#9fb4c0", "#2a1d14", 0.55));
+    this.scene.add(new THREE.HemisphereLight("#c79a86", "#2a1d14", 0.55));
     const key = new THREE.SpotLight("#ffe2b8", 60, 14, 0.5, 0.6, 1.4);
     key.position.set(2.2, 5.5, 3.5);
     key.target.position.set(0, 1, 0);
@@ -93,8 +80,9 @@ export class LobbyStage {
     key.shadow.mapSize.set(1024, 1024);
     key.shadow.bias = -0.0004;
     this.scene.add(key, key.target);
-    const rim = new THREE.DirectionalLight("#ff8a4a", 2.4);
-    rim.position.set(-2, 3, -5);
+    // Rim from the low sun behind the stage, on the right.
+    const rim = new THREE.DirectionalLight("#ff8a4a", 2.6);
+    rim.position.copy(LOBBY_SUN).multiplyScalar(6).setY(2.5);
     this.scene.add(rim);
     const fill = new THREE.DirectionalLight("#7fa6c4", 0.6);
     fill.position.set(-4, 2, 3);
