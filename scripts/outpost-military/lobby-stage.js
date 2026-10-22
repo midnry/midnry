@@ -258,17 +258,25 @@ export class LobbyStage {
     renderer.render(this.scene, this.camera);
     return true;
   }
-  /** The menu's stage box on screen, when it is laid out. */
+  /** How far the menu column is scrolled (phones: one scrolling column). */
+  menuScroll() {
+    return this.r.g.$?.(".mf-modal")?.scrollTop || 0;
+  }
+  /** The menu's stage box on screen, when it is laid out, as it sits with
+   * the menu scrolled to the top: the stage (operator and backdrop) stays
+   * still while the menu scrolls over it, instead of chasing the scroll a
+   * frame late (it juddered on phones). */
   stageRect() {
     const box = this.r.g.$?.(".mf-stagebox"),
       rect = box?.getBoundingClientRect();
     if (!rect || rect.width < 40 || rect.height < 40) return null;
+    const scrolled = this.menuScroll();
     // Its padding keeps room for chips laid over the stage's edges.
     const css = getComputedStyle(box),
       top = parseFloat(css.paddingTop) || 0,
       bottom = parseFloat(css.paddingBottom) || 0,
       height = rect.height - top - bottom;
-    return height > 40 ? { left: rect.left, top: rect.top + top, width: rect.width, height } : null;
+    return height > 40 ? { left: rect.left, top: rect.top + scrolled + top, width: rect.width, height } : null;
   }
   /** Pin the menu's squad "+" buttons over the two side pads and each pad's
    * name label on its front edge. The squad layer may scroll with the menu,
@@ -276,6 +284,11 @@ export class LobbyStage {
   placeSquad(w, h) {
     const squad = this.r.g.$?.(".mf-squad");
     if (!squad || squad.hidden) return;
+    // The pads stay still while the menu scrolls; their "+" buttons and
+    // names fade out once the menu moves rather than float over the cards.
+    const away = this.menuScroll() > 12;
+    if (squad.classList.contains("mf-scrolledaway") !== away) squad.classList.toggle("mf-scrolledaway", away);
+    if (away) return;
     const v = new THREE.Vector3(),
       at = this.r.renderer.domElement.getBoundingClientRect(),
       layer = squad.getBoundingClientRect(),

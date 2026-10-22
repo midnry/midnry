@@ -800,3 +800,8 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   strips, red banner, crates), a parked vehicle on the right, lamp glows, and a warm additive sheen on
   the floor towards the sun. Floor is Lambert so the arena's blue environment map doesn't tint it.
   Reference: `public/games/outpost-zero/lobby-concept.webp`. QA: `node scripts/qa/lobby-look.mjs [width]`.
+- Phone portrait (one scrolling menu column): the stage no longer follows the scroll. `LobbyStage.stageRect`
+  adds the menu's `scrollTop` back, so the operator and backdrop stay still while the cards scroll over them
+  (before, the camera's view offset chased the scroll a frame late and juddered). The pad "+" buttons and
+  names fade out (`.mf-squad.mf-scrolledaway`) once the menu scrolls past 12 px.
+  QA: `node scripts/qa/lobby-scroll.mjs [tag]` prints the view offset per scroll position (must stay constant).

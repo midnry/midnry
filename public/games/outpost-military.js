@@ -26948,29 +26948,34 @@ var r_ = class {
 		let u = t.renderer;
 		return u.setRenderTarget(null), u.render(this.scene, this.camera), !0;
 	}
+	menuScroll() {
+		return this.r.g.$?.(".mf-modal")?.scrollTop || 0;
+	}
 	stageRect() {
 		let e = this.r.g.$?.(".mf-stagebox"), t = e?.getBoundingClientRect();
 		if (!t || t.width < 40 || t.height < 40) return null;
-		let n = getComputedStyle(e), r = parseFloat(n.paddingTop) || 0, i = parseFloat(n.paddingBottom) || 0, a = t.height - r - i;
-		return a > 40 ? {
+		let n = this.menuScroll(), r = getComputedStyle(e), i = parseFloat(r.paddingTop) || 0, a = parseFloat(r.paddingBottom) || 0, o = t.height - i - a;
+		return o > 40 ? {
 			left: t.left,
-			top: t.top + r,
+			top: t.top + n + i,
 			width: t.width,
-			height: a
+			height: o
 		} : null;
 	}
 	placeSquad(e, t) {
 		let n = this.r.g.$?.(".mf-squad");
 		if (!n || n.hidden) return;
-		let r = new W(), i = this.r.renderer.domElement.getBoundingClientRect(), a = n.getBoundingClientRect(), o = i.left - a.left, s = i.top - a.top, c = (n, i, a, c) => {
-			r.set(i, a, c).project(this.camera), n.style.setProperty("--x", `${((r.x + 1) / 2 * e + o).toFixed(1)}px`), n.style.setProperty("--y", `${((1 - r.y) / 2 * t + s).toFixed(1)}px`);
+		let r = this.menuScroll() > 12;
+		if (n.classList.contains("mf-scrolledaway") !== r && n.classList.toggle("mf-scrolledaway", r), r) return;
+		let i = new W(), a = this.r.renderer.domElement.getBoundingClientRect(), o = n.getBoundingClientRect(), s = a.left - o.left, c = a.top - o.top, l = (n, r, a, o) => {
+			i.set(r, a, o).project(this.camera), n.style.setProperty("--x", `${((i.x + 1) / 2 * e + s).toFixed(1)}px`), n.style.setProperty("--y", `${((1 - i.y) / 2 * t + c).toFixed(1)}px`);
 		};
 		n.querySelectorAll("[data-invite]").forEach((e, t) => {
 			let n = this.pads[t + 1];
-			n && c(e, n.position.x * .78, .85, n.position.z);
+			n && l(e, n.position.x * .78, .85, n.position.z);
 		}), n.querySelectorAll("[data-pad]").forEach((e) => {
 			let t = this.pads[Number(e.dataset.pad)];
-			t && c(e, t.position.x, .06, t.position.z + 1.04 * t.scale.z);
+			t && l(e, t.position.x, .06, t.position.z + 1.04 * t.scale.z);
 		});
 	}
 	dispose() {

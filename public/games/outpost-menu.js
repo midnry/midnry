@@ -303,6 +303,9 @@ midnry-fps :is(.mf-modeplay, .mf-modechange, .mf-playtoggle button, .mf-squad bu
 /* Squad pads: "+" over an empty pad, each fighter's name under theirs. */
 midnry-fps .mf-squad { position: absolute; left: 0; top: 0; width: 100%; height: 0; z-index: 1; pointer-events: none; }
 midnry-fps .mf-squad[hidden] { display: none; }
+midnry-fps .mf-squad { transition: opacity 0.15s; }
+midnry-fps .mf-squad.mf-scrolledaway { opacity: 0; }
+midnry-fps .mf-squad.mf-scrolledaway :is(button, [data-pad]) { pointer-events: none !important; }
 midnry-fps .mf-squad button { all: unset; pointer-events: auto; cursor: pointer; position: absolute; left: var(--x, 30%); top: var(--y, 55%); transform: translate(-50%, -50%); width: 56px; height: 56px; display: grid; place-items: center; border: 2px solid #ffffffc0; border-radius: 6px; background: #0a0f0db3; color: #fff; font: 600 34px/1 var(--mf-display); box-shadow: 0 6px 20px #0008; }
 midnry-fps .mf-squad button[hidden] { display: none; }
 midnry-fps .mf-squad button:hover { border-color: var(--mf-accent); color: var(--mf-accent); }
