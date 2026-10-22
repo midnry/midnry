@@ -373,12 +373,17 @@ export class Arena {
         side = 1;
       }
       const type = this.level[my]?.[mx] ?? 1;
-      if (type || distance > max) {
+      // Water (a map's `seeThrough` tiles) stops feet, not sight or shots.
+      if ((type && !this.seeThrough(type)) || distance > max) {
         const u = side ? x + dx * distance : y + dy * distance;
         return { distance, type, side, u: u - Math.floor(u), mx, my };
       }
     }
     return { distance: max, type: 1, side: 0, u: 0, mx, my };
+  }
+  /** Tile types you can see and shoot across but not walk on (canal water). */
+  seeThrough(type) {
+    return !!mapOf(this.mapId).seeThrough?.includes(type);
   }
   canMove(x, y, r = 0.2, over = false) {
     return (

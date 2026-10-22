@@ -825,3 +825,16 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   draw calls 85–177) → `screenshots/qa/quay`.
 - Next (owner order): see-through canal water and street lamps, then the art pass (reuse Breakwater room art)
   and phone checks; then add it to the rotation.
+
+### Calder Quay step 2: see-through canal water and street lamps (2026-10-22, not deployed yet)
+
+- MAPS entry field `seeThrough` (quay: `[6]`, `QUAY_WATER`): `Arena.cast` passes over those tiles, so sight,
+  hitscan shots, projectiles and bot spotting cross the canal; `canMove`/`pathTo` still treat them as walls
+  (walk over a bridge). Shared by offline, online (the server runs the same sim) and bots.
+- Renderer: `scripts/outpost-military/canal-water.js` (`CanalWater`): water surface with slow ripples, stone
+  kerbs where quay meets water, plank decks and railings on bridges, lamps on kerbs and bridge ends plus the
+  wall brackets in `QUAY_LAMPS`, painted light pools (stronger at night). `rebuildWalls` skips water tiles;
+  `waterTile()` joins the actor-culling see-through test; `visualLevel()` (water as open ground) feeds
+  `decorateRealisticEnvironment`, so no coping or door frames over the canal. Minimap draws water blue.
+- Tests: `scripts/outpost-quay.test.mjs` adds "see and shoot across it, never walk across it" and "walls
+  still block". Pace sim quay avg 97 s. `quay-look.mjs` adds `across-canal` and `dock-bridge` views.

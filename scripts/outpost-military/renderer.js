@@ -37,7 +37,8 @@ import { buildCarbine, animateCarbine, prepareWeaponKit, buildModelledShotgun, b
 import { PlayerIdentification } from "./realism-identification.js";
 import {buildRiggedHand,disposeRiggedHands} from './realism-hands.js';
 import {bindWeaponGrip,updateWeaponGrip} from './realism-grips.js';
-import { outfitOf, weaponOf } from "../../public/games/outpost-content.js";
+import { outfitOf, weaponOf, mapOf } from "../../public/games/outpost-content.js";
+import { CanalWater } from "./canal-water.js";
 import { skinPattern } from "../../public/games/outpost-skins.js";
 import { VictimTakedown } from "./takedowns.js";
 import { ASSET_CACHE, CHARACTER_CACHE } from "../../public/games/outpost-asset-manifest.js";
@@ -851,6 +852,7 @@ export class MilitaryRenderer {
         for (let x = 0; x < g.level[y].length; x++)
           if (
             g.level[y][x] === type &&
+            !this.waterTile(x, y) &&
             !this.protocolPropTile(x, y) &&
             !this.transportWindowTile(x, y) &&
             !this.transportHiddenWall(x, y)
@@ -901,6 +903,14 @@ export class MilitaryRenderer {
       this.wallMeshes.push(mesh);
       }
     }
+    // Canal water (see-through tiles) is drawn at ground level, never as walls.
+    this.canal?.dispose();
+    this.canal = null;
+    const water = mapOf(g.arena.mapId).seeThrough;
+    if (water?.length) {
+      this.canal = new CanalWater(this, g.level, water, mapOf(g.arena.mapId).lamps);
+      this.world.add(this.canal.group);
+    }
     if (this.worldVisibility) this.worldVisibility.dirty = true;
     this.wallFittings();
     if (!this.buildingWorld) decorateRealisticEnvironment(this, g.arena.mapId, g.level.length);
@@ -930,6 +940,7 @@ export class MilitaryRenderer {
           this.wallMaterials[level[y][x]]?.userData.realismSurface ||
           // Modelled arena kit pieces (hedges, containers…) carry their own detail.
           this.arenaStyle?.owns(this.g.arena.mapId, level[y][x]) ||
+          this.waterTile(x, y) ||
           this.protocolPropTile(x, y) ||
           this.transportWindowTile(x, y) ||
           this.transportHiddenWall(x, y)
@@ -992,6 +1003,19 @@ export class MilitaryRenderer {
     // the cargo console; its wall cell retains the existing collision rule.
     if (windows.some((window) => window.x === 11 && window.y === 15)) return windows;
     return [...windows, { x: 11, y: 15, dx: -1, dy: 0, w: 0.84, h: 0.5, sill: 0.3 }];
+  }
+  /** Canal water: a see-through tile of this arena (outpost-sim.js `seeThrough`). */
+  waterTile(x, y) {
+    const types = mapOf(this.g.arena.mapId).seeThrough;
+    return !!types && types.includes(this.g.level[y]?.[x]);
+  }
+  /** The tile grid as architecture sees it: water counts as open ground, so
+   * trims, door frames and fittings treat the canal like a street. */
+  visualLevel() {
+    const level = this.g.level,
+      types = mapOf(this.g.arena.mapId).seeThrough;
+    if (!types?.length) return level;
+    return level.map((row) => row.map((v) => (types.includes(v) ? 0 : v)));
   }
   transportHiddenWall(x, y) {
     if (this.g.arena.mapId !== "medevac") return false;
@@ -2536,7 +2560,7 @@ export class MilitaryRenderer {
       ),
     );
     const seeThrough = (x, y) =>
-      this.protocolPropTile(x, y) || this.transportWindowTile(x, y) || this.transportHiddenWall(x, y);
+      this.waterTile(x, y) || this.protocolPropTile(x, y) || this.transportWindowTile(x, y) || this.transportHiddenWall(x, y);
     const lodDistance = this.actorLodDistance();
     this.actorStats={visible:0,culled:0,distant:0};
     for (const e of this.g.arena.entities) {
@@ -3485,6 +3509,7 @@ export class MilitaryRenderer {
     const night = (this.night ||= new NightDressing(this)).update(protocolView, g.arena.mapId, t);
     this.updateCinematic(night, t);
     this.clouds.update(t, night, this.motion.matches);
+    this.canal?.update(t, this.motion.matches, night ? 1 : 0);
     if (g.mode === "protocol") (this.events ||= new EventDressing(this)).update(protocolView, t);
     updateNaturalLighting(this, protocolView, p, dt);
     const undim = g.mode !== "protocol" && (this.hazards ||= new HazardDressing(this)).dim();

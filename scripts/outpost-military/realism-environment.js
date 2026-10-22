@@ -29,7 +29,8 @@ function wallKey(level) {
 
 /** Called once after world construction, then after actual cover changes. */
 export function decorateRealisticEnvironment(r, id, n) {
-  const level = r.g.level;
+  // Canal water counts as open ground here (no coping, door frames over bridges).
+  const level = r.visualLevel?.() ?? r.g.level;
   const key = `${id}:${wallKey(level)}:${r.arenaStyle?.readyFor(id) ? 1 : 0}`;
   if (r.realismDecor?.key === key && r.realismDecor.group.parent === r.world) {
     return r.realismDecor;

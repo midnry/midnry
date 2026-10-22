@@ -46,6 +46,8 @@ const VIEWS = [
   ["market-square", 14.5, 16.5, -Math.PI / 2 - 0.4],
   ["avenue-bridge", 15.5, 18.5, Math.PI / 2],
   ["quay-west", 2.5, 18.5, 0],
+  ["across-canal", 10.5, 18.5, Math.PI / 2 - 0.5],
+  ["dock-bridge", 24.5, 17.5, Math.PI / 2],
   ["inside-clinic", 10.5, 24.5, 0],
   ["depot-yard", 27.5, 27.5, -Math.PI * 0.75],
 ];

@@ -1,6 +1,6 @@
 /** Original arena layouts and loadouts. Shared by the renderer and server. */
 import { PROTOCOL_MAP, TRANSPORT_MAP, HOSPITAL_MAP } from "./outpost-protocol-map.js";
-import { QUAY_LEVEL, QUAY_CRATES, QUAY_ZONES, QUAY_UNBREAKABLE } from "./outpost-quay.js";
+import { QUAY_LEVEL, QUAY_CRATES, QUAY_ZONES, QUAY_UNBREAKABLE, QUAY_WATER, QUAY_LAMPS } from "./outpost-quay.js";
 export const LEVEL = [
   "1111111111111111",
   "1000000000000001",
@@ -337,6 +337,9 @@ export const MAPS = {
     crates: QUAY_CRATES,
     // The canal stays a canal: blasts and quakes never open it.
     unbreakable: QUAY_UNBREAKABLE,
+    // … and you can see and shoot across it, but not walk on it.
+    seeThrough: QUAY_WATER,
+    lamps: QUAY_LAMPS,
     theme: {
       ...warm,
       sky: "#e9c39a",

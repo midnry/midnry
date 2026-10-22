@@ -14,10 +14,13 @@
  *
  * Tile types (1 tile = 3 m): 0 floor, 1 building wall, 2 stall / memorial,
  * 3 truck / container, 4 tree / planter, 5 pump / mast, 6 canal.
- * The canal cannot be blasted open (QUAY_UNBREAKABLE).
+ * The canal cannot be blasted open (QUAY_UNBREAKABLE) and you can see and
+ * shoot across it (QUAY_WATER), but only cross it on a bridge.
  */
 export const QUAY_SIZE = 30;
 export const QUAY_UNBREAKABLE = [6];
+/** Canal water: blocks walking and bot routes, not sight or shots. */
+export const QUAY_WATER = [6];
 
 const LEGEND = { "#": 1, ".": 0, ":": 0, '"': 0, "=": 0, _: 0, S: 2, F: 2, V: 3, T: 4, P: 5, M: 5, "~": 6 };
 
@@ -128,4 +131,20 @@ export const QUAY_ZONES = [
   { x: 1, y: 10, w: 6, h: 7, color: "#5f7a4a" }, // Lantern Park
   { x: 1, y: 27, w: 7, h: 2, color: "#5f7a4a" }, // courtyard
   { x: 25, y: 23, w: 4, h: 6, color: "#5d6266" }, // depot yard
+];
+
+/** Wall-bracket street lamps at the junctions: [wall x, wall y, dx, dy]
+ * with (dx, dy) pointing at the street it lights. Kerb and bridge lamps are
+ * placed along the canal by the renderer. */
+export const QUAY_LAMPS = [
+  [8, 4, 1, 0], // Mill Lane by the radio station
+  [11, 7, 0, 1], // Tower Road at the police post
+  [22, 4, -1, 0], // fuel forecourt
+  [8, 10, 0, -1], // Tower Road at the market hall
+  [12, 11, 1, 0], // Market Square, west side
+  [21, 14, -1, 0], // Market Square, east side
+  [22, 15, 0, 1], // Canal Row
+  [7, 24, 1, 0], // Laundry Alley
+  [10, 23, 0, -1], // south quay at the clinic
+  [23, 23, 0, -1], // south quay at the depot
 ];

@@ -85,3 +85,43 @@ test("bots play out full Calder Quay rounds: someone wins, nobody gets stuck", (
   const mean = lengths.reduce((x, y) => x + y) / lengths.length;
   assert.ok(mean > 45 && mean < 240, `mean round ${mean.toFixed(0)} s`);
 });
+
+test("canal water: see and shoot across it, never walk across it", () => {
+  const a = arena(),
+    [me, rival] = a.entities;
+  for (const e of a.entities.slice(2)) e.hp = 0;
+  a.crates = [];
+  a.disaster = null;
+  // Either bank of the west reach (canal rows 19–20), clear of planters.
+  Object.assign(me, { x: 6.5, y: 18.5, a: Math.PI / 2, pitch: 0, hp: me.maxHp, shieldUntil: 0 });
+  Object.assign(rival, { x: 6.5, y: 21.5, hp: rival.maxHp, shieldUntil: 0, bot: false });
+  assert.equal(a.level[18][6], 0);
+  assert.equal(a.level[19][6], 6);
+  assert.equal(a.level[20][6], 6);
+  assert.equal(a.level[21][6], 0);
+  assert.equal(a.visible(me, rival), true, "sight crosses water");
+  assert.equal(a.visible(rival, me), true);
+  assert.ok(a.cast(6.5, 18.5, 0, 1).distance > 3, "a shot is not stopped by water");
+  assert.equal(a.canMove(6.5, 19.5), false, "no wading");
+  const hp = rival.hp;
+  for (let i = 0; i < 20; i++) {
+    me.cooldown = 0;
+    a.shoot(me);
+    a.advance(1 / 30);
+  }
+  assert.ok(rival.hp < hp, "shots land across the canal");
+  // A walk to the far bank goes over a bridge.
+  const path = a.pathTo(me, { x: 6.5, y: 21.5 });
+  assert.ok(path.length > 0);
+  assert.ok(path.some((p) => QUAY_PLAN[Math.floor(p.y)][Math.floor(p.x)] === "="), "route uses a bridge");
+});
+
+test("walls still block sight and shots in the town", () => {
+  const a = arena(),
+    [me, rival] = a.entities;
+  // Either side of the Police Post's west wall (x 10) on row 4.
+  Object.assign(me, { x: 9.5, y: 4.5 });
+  Object.assign(rival, { x: 12.5, y: 4.5 });
+  assert.equal(a.level[4][10], 1);
+  assert.equal(a.visible(me, rival), false);
+});
