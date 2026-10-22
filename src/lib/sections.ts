@@ -8,7 +8,7 @@ export const AUDIENCES = [
 export type AudienceId = (typeof AUDIENCES)[number]["id"];
 
 export const SECTIONS = [
-  { id: "medicine", audience: "students", label: "Medicine & Nursing", blurb: "Dosage arithmetic, anatomy, and case drills." },
+  { id: "medicine", audience: "students", label: "Medicine & Nursing", blurb: "Dosage arithmetic, flashcards, and practice questions." },
   { id: "engineering", audience: "students", label: "Engineering", blurb: "Units, formulas, and circuits." },
   { id: "law", audience: "students", label: "Law", blurb: "Case briefs, citations, and practice questions." },
   { id: "accounting", audience: "students", label: "Business & Accounting", blurb: "Ratios, statements, and break-even." },

@@ -29,10 +29,13 @@ export function accessLabel(tier: AppTier): string {
 /** Pass-only features inside apps that are otherwise free. */
 export const PASS_FEATURES: Record<string, string> = {
   tasks: "shared projects, assigning tasks, file attachments, a calendar link, reminder emails at a task's time, a Board, a Focus timer and Habits",
+  study: "sharing a deck or quiz with a class or study group through a link",
+  // Writing studio Pass extras (D4); the numbers are FREE_HISTORY and PASS_HISTORY in src/lib/studio.ts.
+  write: "up to 500 saved drafts per mode instead of 20, Word (.docx) download, and a saved house style for every draft",
 };
 
 /** One sentence that explains the two plans, with real numbers. */
-export const PLAN_SUMMARY = `${FREE_APPS.length} apps are free with an account. Midnry Pass, ${PASS_PRICE_LINE}, adds ${PASS_APPS.length} more tools, extra features in Remind, and apps other makers add after review.`;
+export const PLAN_SUMMARY = `${FREE_APPS.length} apps are free with an account. Midnry Pass, ${PASS_PRICE_LINE}, adds ${PASS_APPS.length} more tools, extra features in Remind, the Writing studio and the Study space, and apps other makers add after review.`;
 
 /**
  * What the Pass adds outside the apps. Checked against the game:

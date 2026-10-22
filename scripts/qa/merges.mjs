@@ -204,7 +204,10 @@ async function savedOnce(page) {
   ok(await qr.getByText("does not host your menu").isVisible(), "honest wording: encodes an existing link, no hosting");
   await qr.getByLabel("Menu link").fill("https://example.com/menu.pdf");
   await qr.getByRole("button", { name: "Make code" }).click();
-  await qr.locator("img").waitFor({ timeout: 10000 });
+  // Wait for the code, or report the section's own error message.
+  await qr.locator("img, p.text-fail").first().waitFor({ timeout: 30000 });
+  const qrError = await qr.locator("p.text-fail").textContent().catch(() => null);
+  if (qrError) throw new Error(`QR section error: ${qrError}`);
   ok(await page.getByText("Jollof rice").isVisible(), "the dish list is on the same page");
   await savedOnce(page);
   ok((await load(page, "menu")).qrLink === "https://example.com/menu.pdf" && (await load(page, "menu")).rows.length === 1, "the link is saved with the menu, dishes kept");

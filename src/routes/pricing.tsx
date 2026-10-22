@@ -109,6 +109,16 @@ function PricingPage() {
             </p>
           </div>
           <div className="rounded-2xl bg-card p-5 shadow-line sm:p-6">
+            <div className="flex items-center gap-3">
+              <AppMark slug="write" name="Writing studio" className="size-9" />
+              <h3 className="font-display text-xl tracking-tight">Writing studio, with the Pass</h3>
+            </div>
+            <p className="mt-3 text-pretty text-muted">
+              The Writing studio is free, with 5 AI writes a day and Midnry's quick writer after that. The Pass adds 30 AI writes a day,{" "}
+              {PASS_FEATURES.write}.
+            </p>
+          </div>
+          <div className="rounded-2xl bg-card p-5 shadow-line sm:p-6">
             <h3 className="font-display text-xl tracking-tight">Apps by other makers</h3>
             <p className="mt-3 text-pretty text-muted">
               People can add their own apps to Midnry. Each one is reviewed before it appears, and every approved app opens with the

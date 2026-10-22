@@ -129,10 +129,12 @@ function PrivacyPage() {
                   then saves it to your account.
                 </li>
                 <li>
-                  <strong>AI writing.</strong> Some writing apps (such as Outreach, Captions, Letters and Contract) send
-                  the text you type in them to Anthropic, which writes the reply. Their results say “Written by AI”. We
-                  count how many AI writes each account uses per day, for the daily limit. The day runs on GMT, so the
-                  count starts again at 1 am Nigeria time.
+                  <strong>AI writing.</strong> The Writing studio (in modes such as Outreach, Captions, Letters and
+                  Contract) sends the text you type, and any source material you paste, to Anthropic, which writes the
+                  reply. Results say “Written by AI”. Your drafts (what you typed and the text that was written) are saved
+                  to your account until you delete them; in SOAP notes only one note is kept unless you turn the history
+                  on. We count how many AI writes each account uses per day, for the daily limit. The day runs on GMT, so
+                  the count starts again at 1 am Nigeria time.
                 </li>
               </List>
             </Sub>
@@ -277,8 +279,8 @@ function PrivacyPage() {
                 as task titles.
               </li>
               <li>
-                <strong>Anthropic</strong> writes the replies in the AI writing apps. It receives the text you type in
-                those apps.
+                <strong>Anthropic</strong> writes the AI drafts in the Writing studio. It receives the text you type
+                there, and any source material you paste.
               </li>
               <li>
                 <strong>Google</strong>, if you sign in with Google. Pages also load fonts from Google Fonts, and Outpost
@@ -295,7 +297,8 @@ function PrivacyPage() {
               <li>
                 <strong>Other people, where you choose.</strong> Players in your Outpost Zero room. People in a shared
                 Remind project, who see your name, email and photo. Anyone, for names and scores on public leaderboards
-                and the Hall of Fame.
+                and the Hall of Fame. A deck or quiz you share from the Study space can be seen, and copied, by anyone
+                signed in to Midnry who has the link, until you turn the link off; it doesn't show your name or email.
               </li>
             </List>
             <p>Each of these services handles data under its own privacy policy.</p>

@@ -134,6 +134,16 @@ const CAPABILITIES: Record<string, Capability[]> = {
     { title: "Three ways to look at it", text: "The full ledger with a bar for each category, a Budget view of income against costs, and a simple large-type Pocket view." },
     { title: "Keep the record", text: "The log stays with your account and exports as a CSV file. Used Budget or Pocket before? Copy those entries in with one click." },
   ],
+  study: [
+    { title: "Cards that remember", text: "Make your own decks. Say whether you knew each card: the ones you missed come back sooner, the ones you knew come back later." },
+    { title: "Practice with saved scores", text: "Write quizzes with choices and a reason, or start a sample set. Every score is kept, so you can see how you are doing." },
+    { title: "References and notes that stay", text: "One saved reference list for APA, MLA, Chicago and law reports, lab write-ups for each experiment, and a formula sheet you add to." },
+  ],
+  write: [
+    { title: "15 kinds of writing", text: "Emails, ads, captions, product listings, letters, lesson plans, report comments, essay outlines, summaries, code explanations and more." },
+    { title: "Every draft is kept", text: "What you typed, your source material and the text that was written, saved as a draft you can reopen, edit, copy, print or download." },
+    { title: "AI when it is there, always a draft", text: "5 AI writes a day free, 30 with Midnry Pass. Midnry's quick writer still writes every mode, with no limit." },
+  ],
   cycle: [
     { title: "Know what is coming", text: "The date your next period should start, and how many days away it is." },
     { title: "Log each period", text: "The first and last day. Once two periods are logged, Cycle uses your own average." },
@@ -147,12 +157,14 @@ const RELATED: Record<string, string[]> = {
   invoice: ["ledger", "service-terms", "tasks"],
   ledger: ["split", "bill-watch", "statements"],
   cycle: ["symptom-log", "meds", "visits"],
-  apply: ["cold-email", "letters", "tasks"],
+  apply: ["write", "tasks", "invoice"],
+  write: ["apply", "invoice", "tasks"],
+  study: ["tasks", "units", "solver"],
 };
 
 /** Apps that keep your work on your account (they save through useAppDoc or Remind's own store). */
-const SAVES = new Set(["tasks", "invoice", "ledger", "cycle", "apply", "contrast", "glyph", "planner", "scratch", "split"]);
-const SAVING_KITS = new Set(["template", "tracker", "write", "mood"]);
+const SAVES = new Set(["tasks", "invoice", "ledger", "cycle", "apply", "contrast", "glyph", "planner", "scratch", "split", "study", "write"]);
+const SAVING_KITS = new Set(["template", "tracker", "mood"]);
 
 function savesToAccount(slug: string): boolean {
   if (SAVES.has(slug)) return true;
@@ -165,6 +177,11 @@ function notesFor(app: AppDef): string[] {
   const notes: string[] = [];
   if (app.slug === "cycle") notes.push("Your periods and notes are saved on your account. Dates are estimates, not medical advice, and not a form of birth control.");
   if (app.slug === "compressor") notes.push("The video is re-encoded on this device. It is not uploaded.");
+  if (app.slug === "write") {
+    notes.push("Your drafts are saved on your account. AI writing sends what you type to Anthropic to write the draft. Check names, facts and figures before you use a draft.");
+    notes.push("Contract mode is a reading aid that a lawyer has not reviewed yet, and SOAP notes is a formatter, not a record system: leave out patient names and file numbers.");
+  }
+  if (app.slug === "study") notes.push("The sample medical and law sets are study questions that a doctor or lawyer has not reviewed yet. Don't rely on them for real care or advice.");
   const review = reviewNote(app.slug);
   if (review) notes.push(review);
   const kit = KITS.find((item) => item.slug === app.slug);

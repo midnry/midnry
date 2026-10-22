@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { genreLabel, isSection } from "@/lib/sections";
 import { Shell } from "@/components/shell";
-import { AppGroup, DeskViewToggle, isGeneral, useDesk } from "@/components/desk-list";
+import { AppGroup, DeskViewToggle, onShelf, useDesk } from "@/components/desk-list";
 
 export const Route = createFileRoute("/sections/$genre")({
   head: ({ params }) => ({
@@ -15,7 +15,7 @@ function SectionPage() {
   const { items, view, choose, known, signedIn, hasPass, isAdmin } = useDesk();
   const knownGenre = isSection(genre);
   // General tools (Remind, Cycle, Split…) are listed by who they help, not under the subject they were first filed in.
-  const group = knownGenre ? items.filter((item) => item.genre === genre && !isGeneral(item)) : [];
+  const group = knownGenre ? items.filter((item) => onShelf(item, genre)) : [];
 
   return (
     <Shell>

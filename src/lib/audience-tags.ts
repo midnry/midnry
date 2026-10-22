@@ -9,19 +9,17 @@ export const TAG_OVERRIDES: Record<string, readonly TagId[]> = {
   split: ["everyday"],
   ledger: ["business", "professionals", "everyday"],
   invoice: ["business", "professionals"],
+  study: ["students", "professionals"],
   planner: ["business", "professionals"],
   apply: ["professionals", "students"],
   compressor: ["professionals", "everyday"],
   units: ["students", "everyday"],
-  letters: ["professionals", "everyday"],
+  write: ["business", "professionals", "students", "everyday"],
   paye: ["business", "professionals"],
   reconcile: ["business", "professionals"],
   statements: ["business", "students"],
   breakeven: ["business", "students"],
-  "cold-email": ["business", "professionals"],
-  "ad-copy": ["business", "professionals"],
   "service-terms": ["business", "professionals"],
-  digest: ["professionals", "students"],
 };
 
 /**
@@ -40,5 +38,17 @@ export const GENERAL_APPS: ReadonlySet<string> = new Set([
   "apply",
 ]);
 
-// Sub-filters for later (e.g. "law", "retail", "teachers"). Empty for now.
-export const FIELD_TAGS: Record<string, readonly string[]> = {};
+/**
+ * Other subject shelves (section ids in src/lib/sections.ts) an app is listed
+ * on besides its own genre, because it holds that subject's tools. The Study
+ * space (filed under Sciences) took in the anatomy, case and law drills,
+ * citations, lab notes, formulas and the quiz maker, so it shows on those
+ * subjects' shelves too.
+ */
+export const FIELD_TAGS: Record<string, readonly string[]> = {
+  study: ["medicine", "engineering", "law", "arts", "teaching"],
+  // The Writing studio (filed under Sales & Marketing) holds the AI writing modes those shelves had:
+  // Case brief, Explain and Bugs, Outline and Digest, Lesson and Remarks, SOAP notes, README,
+  // Contract and Letters, Captions, and Listing.
+  write: ["law", "computing", "arts", "teaching", "clinic", "developers", "practice", "beauty", "sellers"],
+};

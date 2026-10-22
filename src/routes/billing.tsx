@@ -341,6 +341,8 @@ function BillingPage() {
           <AppChips names={passApps} />
           <p className="mt-5 text-sm font-medium">In Remind</p>
           <p className="mt-1 text-sm text-pretty text-muted">The Pass adds {PASS_FEATURES.tasks}.</p>
+          <p className="mt-5 text-sm font-medium">In the Writing studio</p>
+          <p className="mt-1 text-sm text-pretty text-muted">The Pass adds {PASS_FEATURES.write}.</p>
           <p className="mt-5 text-sm font-medium">Apps by other makers</p>
           <p className="mt-1 text-sm text-pretty text-muted">Every app people add, once it passes review.</p>
           <p className="mt-5 text-sm text-muted">

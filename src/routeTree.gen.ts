@@ -47,6 +47,7 @@ import { Route as ApiGamesOutpostStatsRouteImport } from './routes/api/games/out
 import { Route as ApiGamesOutpostStoreRouteImport } from './routes/api/games/outpost-store'
 import { Route as ApiPaystackWebhookRouteImport } from './routes/api/paystack/webhook'
 import { Route as ApiRemindTickRouteImport } from './routes/api/remind/tick'
+import { Route as StudySharedTokenRouteImport } from './routes/study.shared.$token'
 import { Route as ApiRemindCalendarTokenRouteImport } from './routes/api/remind/calendar/$token'
 import { Route as ApiRemindUnsubscribeTokenRouteImport } from './routes/api/remind/unsubscribe/$token'
 
@@ -241,6 +242,11 @@ const ApiRemindTickRoute = ApiRemindTickRouteImport.update({
   path: '/api/remind/tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StudySharedTokenRoute = StudySharedTokenRouteImport.update({
+  id: '/study/shared/$token',
+  path: '/study/shared/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRemindCalendarTokenRoute = ApiRemindCalendarTokenRouteImport.update({
   id: '/api/remind/calendar/$token',
   path: '/api/remind/calendar/$token',
@@ -292,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/api/games/outpost-store': typeof ApiGamesOutpostStoreRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
   '/api/remind/tick': typeof ApiRemindTickRoute
+  '/study/shared/$token': typeof StudySharedTokenRoute
   '/api/remind/calendar/$token': typeof ApiRemindCalendarTokenRoute
   '/api/remind/unsubscribe/$token': typeof ApiRemindUnsubscribeTokenRoute
 }
@@ -334,6 +341,7 @@ export interface FileRoutesByTo {
   '/api/games/outpost-store': typeof ApiGamesOutpostStoreRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
   '/api/remind/tick': typeof ApiRemindTickRoute
+  '/study/shared/$token': typeof StudySharedTokenRoute
   '/api/remind/calendar/$token': typeof ApiRemindCalendarTokenRoute
   '/api/remind/unsubscribe/$token': typeof ApiRemindUnsubscribeTokenRoute
 }
@@ -377,6 +385,7 @@ export interface FileRoutesById {
   '/api/games/outpost-store': typeof ApiGamesOutpostStoreRoute
   '/api/paystack/webhook': typeof ApiPaystackWebhookRoute
   '/api/remind/tick': typeof ApiRemindTickRoute
+  '/study/shared/$token': typeof StudySharedTokenRoute
   '/api/remind/calendar/$token': typeof ApiRemindCalendarTokenRoute
   '/api/remind/unsubscribe/$token': typeof ApiRemindUnsubscribeTokenRoute
 }
@@ -421,6 +430,7 @@ export interface FileRouteTypes {
     | '/api/games/outpost-store'
     | '/api/paystack/webhook'
     | '/api/remind/tick'
+    | '/study/shared/$token'
     | '/api/remind/calendar/$token'
     | '/api/remind/unsubscribe/$token'
   fileRoutesByTo: FileRoutesByTo
@@ -463,6 +473,7 @@ export interface FileRouteTypes {
     | '/api/games/outpost-store'
     | '/api/paystack/webhook'
     | '/api/remind/tick'
+    | '/study/shared/$token'
     | '/api/remind/calendar/$token'
     | '/api/remind/unsubscribe/$token'
   id:
@@ -505,6 +516,7 @@ export interface FileRouteTypes {
     | '/api/games/outpost-store'
     | '/api/paystack/webhook'
     | '/api/remind/tick'
+    | '/study/shared/$token'
     | '/api/remind/calendar/$token'
     | '/api/remind/unsubscribe/$token'
   fileRoutesById: FileRoutesById
@@ -548,6 +560,7 @@ export interface RootRouteChildren {
   ApiGamesOutpostStoreRoute: typeof ApiGamesOutpostStoreRoute
   ApiPaystackWebhookRoute: typeof ApiPaystackWebhookRoute
   ApiRemindTickRoute: typeof ApiRemindTickRoute
+  StudySharedTokenRoute: typeof StudySharedTokenRoute
   ApiRemindCalendarTokenRoute: typeof ApiRemindCalendarTokenRoute
   ApiRemindUnsubscribeTokenRoute: typeof ApiRemindUnsubscribeTokenRoute
 }
@@ -820,6 +833,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRemindTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/study/shared/$token': {
+      id: '/study/shared/$token'
+      path: '/study/shared/$token'
+      fullPath: '/study/shared/$token'
+      preLoaderRoute: typeof StudySharedTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/remind/calendar/$token': {
       id: '/api/remind/calendar/$token'
       path: '/api/remind/calendar/$token'
@@ -876,6 +896,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGamesOutpostStoreRoute: ApiGamesOutpostStoreRoute,
   ApiPaystackWebhookRoute: ApiPaystackWebhookRoute,
   ApiRemindTickRoute: ApiRemindTickRoute,
+  StudySharedTokenRoute: StudySharedTokenRoute,
   ApiRemindCalendarTokenRoute: ApiRemindCalendarTokenRoute,
   ApiRemindUnsubscribeTokenRoute: ApiRemindUnsubscribeTokenRoute,
 }

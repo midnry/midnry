@@ -7,6 +7,8 @@ export const PITCHES: Record<string, string> = {
   cycle: "A simple period tracker. Know when your next period should start.",
   ledger: "Log what you spend and see where the month went, with Budget and simple Pocket views.",
   invoice: "Invoices, quotes and proposals for client work: numbered, searchable, ready to print.",
+  study: "Flashcards that remember what you knew, practice quizzes with saved scores, and reference lists that stay put.",
+  write: "Emails, ads, captions, letters, lesson plans and summaries in one place, and every draft is saved.",
   split: "Split any bill fairly in seconds, tip included.",
   scratch: "A quick notepad that saves itself to your account.",
   planner: "A year of social media posts, planned around the holidays your customers keep.",

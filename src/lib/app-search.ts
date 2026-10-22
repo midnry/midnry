@@ -38,6 +38,31 @@ export const MERGED_NAMES: Record<string, MergedName> = {
   "price-list": { to: "catalog", terms: ["price list", "prices"], note: "Prices are part of Catalog" },
   produce: { to: "farm-sales", terms: ["crop prices", "produce"], note: "Crop prices are part of Farm sales" },
   "qr-menu": { to: "menu", terms: ["qr menu", "qr"], note: "QR menu is part of Menu" },
+  anatomy: { to: "study", terms: ["anatomy"], note: "The Anatomy deck is part of the Study space" },
+  "clinic-quiz": { to: "study", terms: ["cases", "clinic quiz", "clinical cases"], note: "Cases is part of the Study space" },
+  "law-drill": { to: "study", terms: ["drill", "law drill", "law questions"], note: "Drill is part of the Study space" },
+  "quiz-maker": { to: "study", terms: ["quiz", "quiz maker", "make a quiz"], note: "Quiz is part of the Study space" },
+  "lab-notes": { to: "study", terms: ["lab", "lab notes", "lab report", "lab write-up"], note: "Lab is part of the Study space" },
+  citations: { to: "study", terms: ["citations", "citation", "reference list", "bibliography"], note: "Citations is part of the Study space" },
+  "legal-cite": { to: "study", terms: ["cite", "case citation", "law citation"], note: "Cite is part of the Study space" },
+  "formula-sheet": { to: "study", terms: ["formulas", "formula", "formula sheet"], note: "Formulas is part of the Study space" },
+  // The 15 AI writing apps are modes of the Writing studio.
+  "cold-email": { to: "write", terms: ["outreach", "cold email", "first email", "sales email"], note: "Outreach is part of Writing studio" },
+  "ad-copy": { to: "write", terms: ["ads", "ad copy", "advert", "advertisement"], note: "Ads is part of Writing studio" },
+  captions: { to: "write", terms: ["caption", "captions", "instagram caption"], note: "Captions is part of Writing studio" },
+  listing: { to: "write", terms: ["listing", "product description"], note: "Listing is part of Writing studio" },
+  letters: { to: "write", terms: ["letter", "letters", "formal letter", "complaint letter"], note: "Letters is part of Writing studio" },
+  lesson: { to: "write", terms: ["lesson", "lesson plan", "lesson note"], note: "Lesson is part of Writing studio" },
+  remarks: { to: "write", terms: ["remarks", "report card", "report comment", "report comments"], note: "Remarks is part of Writing studio" },
+  outliner: { to: "write", terms: ["outline", "essay outline", "essay plan"], note: "Outline is part of Writing studio" },
+  digest: { to: "write", terms: ["digest", "summary", "summarise", "summarize"], note: "Digest is part of Writing studio" },
+  explainer: { to: "write", terms: ["explain", "explain code", "explainer"], note: "Explain is part of Writing studio" },
+  "bug-scan": { to: "write", terms: ["bugs", "bug", "debug", "error message"], note: "Bugs is part of Writing studio" },
+  "case-brief": { to: "write", terms: ["case brief", "case briefs"], note: "Case brief is part of Writing studio" },
+  // Contract is not reviewed by a lawyer yet (review-notes.ts): found by its old name, never ahead of Agreement for "contract".
+  "contract-scan": { to: "write", terms: ["contract summary", "contract scan", "contract reader"], note: "Contract is part of Writing studio" },
+  "soap-note": { to: "write", terms: ["soap", "soap note", "soap notes", "patient notes"], note: "SOAP notes are part of Writing studio" },
+  readme: { to: "write", terms: ["readme", "read me"], note: "README is part of Writing studio" },
 };
 
 /**
@@ -58,28 +83,38 @@ export const SYNONYM_GROUPS: readonly SynonymGroup[] = [
   },
   { terms: ["todo", "reminder", "task", "checklist", "agenda", "organise", "organize", "productivity", "routine", "deadline"], apps: ["tasks"] },
   { terms: ["schedule", "calendar", "appointment", "rota", "roster"], apps: ["tasks", "bookings", "visits", "shifts", "planner"] },
-  { terms: ["cv", "resume", "résumé", "job", "application", "career", "linkedin", "cover letter", "hiring"], apps: ["apply", "letters"] },
+  { terms: ["cv", "resume", "résumé", "job", "application", "career", "linkedin", "cover letter", "hiring"], apps: ["apply", "write"] },
   { terms: ["json", "format", "formatter", "beautify", "prettify", "validate", "validator", "minify", "lint"], apps: ["json-fmt", "glyph"] },
   { terms: ["period", "menstrual", "menstruation", "ovulation", "fertility", "pms"], apps: ["cycle"] },
   { terms: ["qr", "qr code", "qrcode", "barcode"], apps: ["menu"] },
   { terms: ["recipe", "cook", "cooking", "food", "meal", "dish", "ingredient"], apps: ["recipes", "recipe-cost", "menu"] },
-  { terms: ["note", "notepad", "memo", "jot"], apps: ["scratch", "soap-note", "lab-notes", "memoir"] },
-  { terms: ["contract", "agreement", "terms", "nda", "legal", "clause"], apps: ["service-terms", "contract-scan", "clauses"] },
+  { terms: ["note", "notepad", "memo", "jot"], apps: ["scratch", "write", "study", "memoir"] },
+  { terms: ["contract", "agreement", "terms", "nda", "legal", "clause"], apps: ["service-terms", "write", "clauses"] },
   { terms: ["tax", "vat", "paye"], apps: ["paye"] },
-  { terms: ["brief", "case brief", "creative brief", "design brief"], apps: ["case-brief", "creative-brief"] },
+  // "case brief" is Case brief's old name (a Writing studio mode, MERGED_NAMES), so it isn't repeated here.
+  { terms: ["brief", "creative brief", "design brief"], apps: ["write", "creative-brief"] },
   { terms: ["price", "pricing", "price list"], apps: ["catalog", "menu", "farm-sales", "margin"] },
   { terms: ["inventory", "stock"], apps: ["stock"] },
-  { terms: ["shop", "store", "sell", "seller", "ecommerce"], apps: ["orders", "listing", "stock", "catalog", "wa-replies"] },
+  { terms: ["shop", "store", "sell", "seller", "ecommerce"], apps: ["orders", "write", "stock", "catalog", "wa-replies"] },
   { terms: ["medicine", "medication", "pill", "drug", "dosage"], apps: ["meds", "dose", "dose-ref"] },
   { terms: ["doctor", "clinic", "hospital"], apps: ["visits", "symptom-log", "meds"] },
   { terms: ["tip", "split bill", "share bill"], apps: ["split"] },
   { terms: ["video", "compress", "mp4", "shrink"], apps: ["compressor"] },
   { terms: ["colour", "color", "accessibility", "wcag", "palette"], apps: ["contrast", "mood"] },
-  { terms: ["social media", "instagram", "tiktok", "content calendar", "post"], apps: ["planner", "captions", "ad-copy"] },
-  { terms: ["email", "outreach", "cold email", "pitch"], apps: ["cold-email", "letters"] },
+  { terms: ["social media", "instagram", "tiktok", "content calendar", "post"], apps: ["planner", "write"] },
+  { terms: ["email", "outreach", "cold email", "pitch"], apps: ["write"] },
+  {
+    terms: ["write", "writer", "writing", "draft", "copywriting", "copy", "ai writer", "ai writing", "essay", "summary", "explain", "letter", "lesson plan", "report card"],
+    apps: ["write"],
+  },
   { terms: ["scam", "fraud", "phishing", "fake"], apps: ["scam-check", "rumor-check"] },
   { terms: ["emergency", "ice", "sos"], apps: ["ice-card"] },
-  { terms: ["flashcard", "revision", "revise", "exam", "study"], apps: ["anatomy", "law-drill", "clinic-quiz", "quiz-maker"] },
+  {
+    terms: ["flashcard", "flash card", "flashcards", "revision", "revise", "exam", "study", "studying", "quiz", "test myself", "practice questions", "spaced repetition", "anki"],
+    apps: ["study"],
+  },
+  { terms: ["citation", "reference", "references", "bibliography", "apa", "mla", "chicago", "harvard", "works cited"], apps: ["study"] },
+  { terms: ["formula", "formulas", "equation sheet", "physics", "engineering"], apps: ["study", "solver", "circuit", "units"] },
   { terms: ["pension", "retire", "retirement", "invest", "interest"], apps: ["pension"] },
   { terms: ["convert", "converter", "conversion"], apps: ["units"] },
   { terms: ["math", "maths", "equation", "graph"], apps: ["solver", "plot"] },
@@ -293,11 +328,16 @@ function matchEntry(entry: Entry, stems: string[], typoOk: boolean[]): AppHit {
   });
 
   // Merged names and synonyms can be phrases ("focus timer", "price list").
+  // The note names the old app whose longest name matched ("contract summary" → Contract, not Digest).
+  let noteWords = 0;
   for (const item of entry.merged) {
     const at = phraseAt(stems, item.phrase, 4);
     if (at < 0) continue;
     for (let k = 0; k < item.phrase.words.length; k++) set(at + k, "merged", item.phrase.text, false);
-    note ??= MERGED_NAMES[item.old].note;
+    if (item.phrase.words.length > noteWords) {
+      note = MERGED_NAMES[item.old].note;
+      noteWords = item.phrase.words.length;
+    }
   }
   for (const item of entry.synonyms) {
     const at = phraseAt(stems, item.phrase, 4);

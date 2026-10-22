@@ -24,6 +24,8 @@ type DeskItem = {
   pitch: string;
   genre: GenreId;
   audiences: readonly TagId[];
+  /** Other subject shelves it is listed on (FIELD_TAGS in src/lib/audience-tags.ts). */
+  fields?: readonly string[];
   tier: "free" | "pass";
   /** A Midnry app with its own product page (community apps don't have one yet). */
   builtIn: boolean;
@@ -55,6 +57,12 @@ const VIEW_KEY = "midnry.desk.view";
 /** Apps that help anyone stay out of subject shelves: see GENERAL_APPS. */
 export function isGeneral(item: { slug: string }): boolean {
   return GENERAL_APPS.has(item.slug);
+}
+
+/** Apps on one subject's shelf: filed under it, or listed there too (FIELD_TAGS). General tools stay off. */
+export function onShelf(item: { slug: string; genre: string; fields?: readonly string[] }, section: string): boolean {
+  if (isGeneral(item)) return false;
+  return item.genre === section || Boolean(item.fields?.includes(section));
 }
 
 export function useDesk() {
@@ -105,6 +113,7 @@ export function useDesk() {
       pitch: pitchFor(app),
       genre: sectionOf(app.genre) ?? app.genre,
       audiences: app.audiences,
+      fields: app.fields,
       tier: app.tier,
       builtIn: true,
     })),

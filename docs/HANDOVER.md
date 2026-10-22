@@ -724,3 +724,16 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
 - Old slugs: redirects in `src/lib/app-aliases.ts`; their saved documents stay readable via
   `src/lib/merged-docs.ts` (tier of the OLD app) — never remove entries there while data may exist.
 - Tests: scripts/{remind-merge,merges,invoice-workflow}.test.mjs; QA scripts/qa/{remind-merge,merges,invoice-workflow}.mjs.
+
+## Writing studio, Study space and Phase 3 fixes (owner, 2026-10-22, not deployed yet)
+
+- Writing studio (`write`, free): 15 AI writing modes in one app with saved drafts (table
+  writing_drafts, migration 0024), source box, copy/print/.txt. Pass extras: 500 drafts per mode (20
+  free), .docx download, house style (server-side). AI allowance unchanged (`src/lib/ai-allowance.ts`).
+- Study space (`study`, free): decks with spaced review, quizzes with scores, saved references,
+  lab notes + formulas. Pass extra: share links (study_shares, migration 0025, /study/shared/$token).
+- Old slugs → aliases + MERGED_DOCS (tier of the old app); old docs copied once, never deleted.
+- Phase 3 fixes: scam warning signs (no verdict), honest app promises, review notes
+  (`src/lib/review-notes.ts`), Add to Remind (`?add=`), Apply job-advert tailoring, smarter search.
+- Dev tip: if a QA script fails on a dynamic import (504 "Outdated Optimize Dep"), stop the dev
+  server, `rm -rf node_modules/.vite`, and start it again with scripts/qa/dev-up.sh.

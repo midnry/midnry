@@ -18,6 +18,11 @@ const { addParam } = await jiti.import("../src/lib/remind/pass-views.ts");
 const { SECTIONS } = await jiti.import("../src/lib/sections.ts");
 const { PASS_FEATURES } = await jiti.import("../src/lib/plans.ts");
 const search = await jiti.import("../src/lib/app-search.ts");
+const STUDY = await jiti.import("../src/lib/study.ts");
+const WRITE = await jiti.import("../src/lib/studio.ts");
+const { getApp } = await jiti.import("../src/lib/catalog.ts");
+/** Medical and legal study sets that moved into the Study space as sample sets (not kits any more). */
+const STARTERS = new Set(["anatomy", "clinic-quiz", "law-drill"]);
 
 const src = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const KIT_UI = src("src/components/tools/kit.tsx");
@@ -68,8 +73,10 @@ test("broken promises are fixed or removed", () => {
     return [kit.blurb, ...kit.features, ...kit.guide].join(" ");
   };
   assert.doesNotMatch(text("circuit"), /series|parallel/i);
-  assert.doesNotMatch(text("quiz-maker"), /draft some|from a topic/i);
-  assert.equal(new Set(getKit("quiz-maker").features).size, getKit("quiz-maker").features.length, "no feature listed twice");
+  // Quiz moved into the Study space ("Make a quiz"), which never promises drafting from a topic.
+  const study = getApp("study");
+  assert.doesNotMatch([study.blurb, ...study.features, ...study.guide].join(" "), /draft some|from a topic/i);
+  assert.equal(new Set(study.features).size, study.features.length, "no feature listed twice");
   assert.doesNotMatch(text("creative-brief"), /generate|tighter version/i);
   assert.doesNotMatch(text("solver"), /the missing value/i);
   assert.match(text("solver"), /one way/i);
@@ -78,13 +85,15 @@ test("broken promises are fixed or removed", () => {
 });
 
 test("the two Brief apps have distinct names, and search finds both", () => {
-  assert.equal(getKit("case-brief").name, "Case brief");
+  // Case brief is a Writing studio mode now (src/lib/studio.ts).
+  assert.equal(WRITE.modeBySlug("case-brief").name, "Case brief");
   assert.equal(getKit("creative-brief").name, "Creative brief");
   const names = KITS.map((kit) => kit.name);
   assert.equal(new Set(names).size, names.length, "every kit name is unique");
   const index = search.createSearchIndex(search.catalogSearchInputs());
   const found = search.searchIndex(index, "brief").hits.map((hit) => hit.slug);
-  for (const slug of ["case-brief", "creative-brief"]) assert.ok(found.includes(slug), `${slug} in ${found.join(", ")}`);
+  for (const slug of ["write", "creative-brief"]) assert.ok(found.includes(slug), `${slug} in ${found.join(", ")}`);
+  assert.equal(search.searchIndex(index, "case brief").hits[0].note, "Case brief is part of Writing studio");
 });
 
 test("Algo counts comparisons", () => {
@@ -103,7 +112,9 @@ test("law Cite: volume, part, page and court boxes, and the year once", () => {
   assert.equal(legalCitation(values), "Ade v Bello (2024) 5 NWLR (Pt. 1925) 1, SC");
   assert.equal(legalCitation({ parties: "Ade v Bello", year: "2024", report: "[2024] 5 NWLR" }), "Ade v Bello [2024] 5 NWLR", "an old-style report keeps one year");
   assert.equal(legalCitation({ parties: "Ade v Bello", year: "2024", part: "Pt. 7" }), "Ade v Bello (2024) (Pt. 7)");
-  for (const word of ["volume", "court"]) assert.ok(KIT_UI.includes(`f("${word}"`), `${word} box exists`);
+  // The law Cite boxes live in the Study space's References now.
+  for (const word of ["volume", "court"]) assert.ok(STUDY.REF_FIELDS.law.some((field) => field.id === word), `${word} box exists`);
+  assert.equal(STUDY.formatReference("Law", values), "Ade v Bello (2024) 5 NWLR (Pt. 1925) 1, SC");
 });
 
 test("section blurbs no longer name apps that moved", () => {
@@ -123,7 +134,9 @@ test("every listed medical, tax and legal tool carries the review note, with the
   assert.deepEqual(Object.keys(UNREVIEWED).sort(), [...LISTED].sort());
   const who = { dose: "a pharmacist or doctor", "dose-ref": "a pharmacist or doctor", "clinic-quiz": "a doctor", anatomy: "a doctor", "symptom-log": "a doctor", paye: "an accountant", clauses: "a lawyer", "contract-scan": "a lawyer", "service-terms": "a lawyer", "law-drill": "a lawyer" };
   for (const slug of LISTED) {
-    assert.ok(getKit(slug), `${slug} is a kit, so KitTool shows the note`);
+    if (STARTERS.has(slug)) assert.ok(STUDY.starterDeck(slug) || STUDY.starterQuiz(slug), `${slug} is a Study space sample set, which shows the note`);
+    else if (WRITE.modeBySlug(slug)) assert.match(src("src/components/tools/studio/index.tsx"), /reviewNote\(mode\.slug\)/, `${slug} is a Writing studio mode, which shows the note`);
+    else assert.ok(getKit(slug), `${slug} is a kit, so KitTool shows the note`);
     assert.equal(reviewNote(slug), `Not professionally reviewed yet. Check with ${who[slug]} before relying on this.`);
   }
   assert.equal(reviewNote("units"), undefined);
@@ -134,7 +147,16 @@ test("every listed medical, tax and legal tool carries the review note, with the
 test("nothing claims these tools were checked or validated", () => {
   for (const slug of LISTED) {
     const kit = getKit(slug);
-    const text = [kit.blurb, kit.note ?? "", ...kit.features, ...kit.guide].join(" ");
+    const starter = STUDY.starterDeck(slug) ?? STUDY.starterQuiz(slug);
+    const mode = WRITE.modeBySlug(slug);
+    if (!kit && !starter && mode) {
+      // Moved into the Writing studio: its mode text must not claim a review either.
+      assert.doesNotMatch([mode.blurb, mode.note ?? "", ...mode.guide].join(" "), /\b(validated|verified|approved|reviewed by|checked by)\b/i, slug);
+      continue;
+    }
+    const text = kit
+      ? [kit.blurb, kit.note ?? "", ...kit.features, ...kit.guide].join(" ")
+      : [starter.title, STUDY.STARTER_NOTES[slug] ?? "", STUDY.SAMPLE_LABEL].join(" ");
     assert.doesNotMatch(text, /\b(validated|verified|approved|reviewed by|checked by)\b/i, slug);
   }
 });
@@ -248,7 +270,9 @@ test("old saved rows load unchanged: legacy boxes stay, new boxes are added", ()
 test("AI allowance wording states the real reset time", () => {
   const server = src("src/lib/ai-write.functions.ts");
   assert.match(server, /new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/, "the day is the GMT date");
-  assert.doesNotMatch(KIT_UI, /resets tomorrow/);
-  assert.match(KIT_UI, /reset at 1 am Nigeria time \(midnight GMT\)/);
+  // The AI writing screen is the Writing studio now.
+  const studio = src("src/components/tools/studio/index.tsx") + src("src/lib/studio.ts");
+  assert.doesNotMatch(studio, /resets tomorrow/);
+  assert.match(studio, /reset at 1 am Nigeria time \(midnight GMT\)/);
   assert.match(src("src/routes/privacy.tsx"), /1 am Nigeria time/);
 });

@@ -59,6 +59,8 @@ export const USER_COLUMNS: Record<string, string[]> = {
   remind_email_prefs: ["user_id"],
   remind_email_sent: ["user_id"],
   ai_writes: ["user_id"],
+  study_shares: ["owner_id"],
+  writing_drafts: ["user_id"],
   abuja_lives: ["user_id"],
   abuja_feedback: ["user_id"],
   outpost_match: ["user_id"],
@@ -167,6 +169,9 @@ export function purgeSteps(userId: string, anonId: string): Step[] {
     step("remind_email_sent", `delete from remind_email_sent where user_id = $1`),
 
     step("app_documents", `delete from app_documents where user_id = $1`),
+    // Study space share links; they already stop opening when the account is closed.
+    step("study_shares", `delete from study_shares where owner_id = $1`),
+    step("writing_drafts", `delete from writing_drafts where user_id = $1`),
     step("app_uses", `delete from app_uses where user_id = $1`),
     step("catalog_uses", `delete from catalog_uses where user_id = $1`),
     step("app_favorites", `delete from app_favorites where user_id = $1`),

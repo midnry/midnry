@@ -7,8 +7,6 @@ import type { SectionId } from "@/lib/sections";
  */
 export type Field = { id: string; label: string; kind?: "text" | "number" | "area" | "date" | "time"; placeholder?: string; legacy?: boolean };
 export type Line = { label: string; value: string };
-export type Card = { front: string; back: string };
-export type Question = { q: string; options: string[]; answer: number; why: string };
 export type Entry = { title: string; body: string };
 /** A second list inside a tracker (Farm sales: Sales · Price log). A view without fields is the main list. */
 export type TrackerView = { id: string; label: string; fields?: Field[]; blurb?: string };
@@ -30,10 +28,6 @@ export type Kit = Base &
     | { kind: "calc"; fields: Field[]; run: (v: Record<string, string>) => Line[] }
     | { kind: "template"; parts: Field[] }
     | { kind: "tracker"; fields: Field[]; views?: TrackerView[]; qr?: QrSection }
-    | { kind: "cards"; deck: Card[] }
-    | { kind: "quiz"; questions: Question[] }
-    | { kind: "write" }
-    | { kind: "cite"; mode: "paper" | "legal" }
     | { kind: "list"; items: Entry[] }
     | { kind: "units" }
     | { kind: "ohm" }
@@ -88,41 +82,7 @@ export const KITS: readonly Kit[] = [
       ];
     },
   },
-  {
-    slug: "anatomy",
-    name: "Anatomy",
-    section: "medicine",
-    blurb: "Flip cards for structures you are learning. A short deck, not a textbook.",
-    features: ["A deck of structures and what they do", "Flip a card, then mark it again or next", "The deck stays in the app"],
-    guide: ["Read the structure.", "Flip it for the note.", "Go to the next card, or shuffle when you finish."],
-    kind: "cards",
-    deck: [
-      { front: "Left ventricle", back: "Pumps blood into the aorta and around the body." },
-      { front: "Right atrium", back: "Receives venous blood from the venae cavae." },
-      { front: "Femur", back: "Thigh bone. The longest bone in the body." },
-      { front: "Diaphragm", back: "The main muscle of quiet breathing. It separates chest and abdomen." },
-      { front: "Nephron", back: "The filtering unit of the kidney." },
-      { front: "Liver", back: "Makes bile, stores glycogen, and processes many drugs." },
-      { front: "Trachea", back: "The airway from larynx to the bronchi." },
-      { front: "Deltoid", back: "Shoulder muscle that abducts the arm." },
-    ],
-  },
-  {
-    slug: "clinic-quiz",
-    name: "Cases",
-    section: "medicine",
-    blurb: "Short clinical drills for study. Not a diagnosis.",
-    note: "Study questions only. Do not use them to treat anyone.",
-    features: ["A short case and four choices", "The reason after you answer", "A score for the set"],
-    guide: ["Read the case.", "Pick one answer.", "Read why, then go on. The score is at the end."],
-    kind: "quiz",
-    questions: [
-      { q: "An adult with crushing chest pain, sweating, and pain into the left arm. What do you do first?", options: ["Send them home with an antacid", "Treat it as a possible heart attack and get emergency care", "Start antibiotics", "Book a routine clinic in a month"], answer: 1, why: "That pattern is an emergency until a clinician says otherwise." },
-      { q: "A child with a fever and a stiff neck. The safer first step is:", options: ["Urgent assessment for meningitis", "Herbal steam only", "Wait three days", "A sleeping tablet"], answer: 0, why: "Fever plus neck stiffness needs urgent clinical review." },
-      { q: "Before giving a drug, which check is the point of the five rights?", options: ["The brand logo", "Patient, drug, dose, route, and time", "The colour of the cup", "The ward nickname"], answer: 1, why: "Those five checks are the usual last look before a dose." },
-      { q: "A wound that is red, hot, and spreading after two days suggests:", options: ["Healing as expected", "Possible infection that needs review", "A need for more sugar", "Dehydration only"], answer: 1, why: "Spreading redness and heat are signs to get the wound seen." },
-    ],
-  },
+  // Anatomy and Cases are sample sets in the Study space now (src/lib/study.ts).
   {
     slug: "units",
     name: "Units",
@@ -132,25 +92,7 @@ export const KITS: readonly Kit[] = [
     guide: ["Pick what you are converting.", "Choose the units and type the value.", "Read the result."],
     kind: "units",
   },
-  {
-    slug: "formula-sheet",
-    name: "Formulas",
-    section: "engineering",
-    blurb: "A short sheet of formulas you can search.",
-    features: ["Search by name", "The formula and what the letters mean", "A handful of core relations, not every course"],
-    guide: ["Type a word, such as stress or ohm.", "Open the line you need.", "Copy it into your own working."],
-    kind: "list",
-    items: [
-      { title: "Ohm's law", body: "V = I R. Voltage in volts, current in amps, resistance in ohms." },
-      { title: "Stress", body: "σ = F / A. Force over area." },
-      { title: "Strain", body: "ε = ΔL / L. Change in length over original length." },
-      { title: "Power", body: "P = V I = I² R." },
-      { title: "Density", body: "ρ = m / V." },
-      { title: "Kinetic energy", body: "KE = ½ m v²." },
-      { title: "Moment", body: "M = F d. Force times the perpendicular distance." },
-      { title: "Efficiency", body: "η = output / input. Often written as a percent." },
-    ],
-  },
+  // Formulas is the formula sheet in the Study space now (src/lib/study.ts).
   {
     slug: "circuit",
     name: "Circuit",
@@ -160,42 +102,8 @@ export const KITS: readonly Kit[] = [
     guide: ["Fill two of voltage, current, and resistance.", "Leave the one you want blank.", "Read the missing value and its unit."],
     kind: "ohm",
   },
-  {
-    slug: "case-brief",
-    name: "Case brief",
-    section: "law",
-    blurb: "Turns a case into facts, issue, holding, and reason. A study aid, not advice.",
-    note: "A draft for study. It is not a legal opinion.",
-    features: ["Facts, issue, holding, and reason", "You paste the case, or fill the boxes", "Written for you instantly, then yours to edit"],
-    guide: ["Fill the case name, the facts, and what the court decided.", "Press Write it to get a brief with Facts, Issue, Holding, and Reasoning.", "Check every line against the judgment before you rely on it."],
-    kind: "write",
-  },
-  {
-    slug: "legal-cite",
-    name: "Cite",
-    section: "law",
-    blurb: "A Nigerian-style case citation from the parties, year, volume, report, part, page, and court.",
-    features: ["Parties, year, volume, report, part, page, and court", "One line you can copy", "You still check the style your school wants"],
-    guide: ["Fill the parties and the year.", "Add the volume, report, part, page, and court if you have them.", "Copy the line and fix it to your school's guide."],
-    kind: "cite",
-    mode: "legal",
-  },
-  {
-    slug: "law-drill",
-    name: "Drill",
-    section: "law",
-    blurb: "Short practice questions on first-year ideas. Not a bar exam.",
-    note: "Practice only. Laws differ, and this is not advice.",
-    features: ["Short questions with one best answer", "A reason after you choose", "A score for the set"],
-    guide: ["Read the question.", "Pick an answer.", "Read the reason. Then try the next one."],
-    kind: "quiz",
-    questions: [
-      { q: "A shop labels a phone at ₦80,000. A customer says 'I accept'. In basic contract study, the label is usually:", options: ["An offer that binds the shop at once", "An invitation to treat", "A deed", "A crime"], answer: 1, why: "A price tag is usually an invitation to treat. The customer's words are the offer." },
-      { q: "Consideration, in simple terms, is:", options: ["A judge's mood", "Something of value each side gives", "The court fee only", "A witness signature"], answer: 1, why: "Each side gives something. A bare promise with nothing in return is the usual problem." },
-      { q: "Which is the safer note in a student brief?", options: ["Quote the holding you actually read", "Invent a page number", "Add a case you have not opened", "Change the year so it looks newer"], answer: 0, why: "Only cite what you have read. Invented pins are misconduct." },
-      { q: "Ratio decidendi means:", options: ["A remark that was not necessary to the result", "The reason that was necessary to the decision", "The court reporter's name", "The losing party's costs"], answer: 1, why: "The ratio is the reason required for the decision. Other comments are obiter." },
-    ],
-  },
+  // Case brief is now a mode of the Writing studio (src/lib/studio.ts); its saved document is copied in there.
+  // Cite (law) is part of References in the Study space, and Drill is a sample set there (src/lib/study.ts).
   {
     slug: "ratios",
     name: "Ratios",
@@ -224,24 +132,7 @@ export const KITS: readonly Kit[] = [
     guide: ["Enter fixed costs for the period.", "Enter the price and the variable cost of one unit.", "Read how many units you need to sell."],
     kind: "even",
   },
-  {
-    slug: "explainer",
-    name: "Explain",
-    section: "computing",
-    blurb: "Says what a snippet does, in plain language.",
-    features: ["A line-by-line reading of code you paste", "No rewrite unless you ask", "Written for you instantly, then yours to edit"],
-    guide: ["Paste a short snippet of code.", "Press Write it for an overview and a line-by-line explanation.", "Copy the explanation, or edit it before you use it."],
-    kind: "write",
-  },
-  {
-    slug: "bug-scan",
-    name: "Bugs",
-    section: "computing",
-    blurb: "Points at likely bugs. You still run the code.",
-    features: ["Likely bugs and why", "It does not claim to compile the code", "Written for you instantly, then yours to edit"],
-    guide: ["Paste the code and, if you have it, the error message.", "Read what the error means and the likely problems, with line numbers.", "Fix one thing at a time and test it yourself."],
-    kind: "write",
-  },
+  // Explain and Bugs are now modes of the Writing studio (src/lib/studio.ts).
   {
     slug: "algo",
     name: "Algo",
@@ -251,44 +142,10 @@ export const KITS: readonly Kit[] = [
     guide: ["Type numbers separated by spaces, then press Start.", "Press Step to see the next swap, and how many comparisons it took.", "Press Start again for a new list."],
     kind: "algo",
   },
-  {
-    slug: "outliner",
-    name: "Outline",
-    section: "arts",
-    blurb: "A thesis and three parts for an essay.",
-    features: ["A question, a thesis, and three parts", "Copy or print the result", "Written for you instantly, then yours to edit"],
-    guide: ["Write the essay question, and your answer if you have one.", "Add your main points, or let Outline suggest a structure.", "Edit the outline, then find the sources yourself."],
-    kind: "write",
-  },
-  {
-    slug: "citations",
-    name: "Citations",
-    section: "arts",
-    blurb: "APA, MLA, or a simple Chicago line from the fields you fill.",
-    features: ["Author, year, title, and source", "APA, MLA, and a notes-style line", "You match it to your department's guide"],
-    guide: ["Enter the author, year, and title.", "Pick a style.", "Copy the line and check the punctuation."],
-    kind: "cite",
-    mode: "paper",
-  },
-  {
-    slug: "digest",
-    name: "Digest",
-    section: "arts",
-    blurb: "A short summary of something you paste.",
-    features: ["A summary in a few sentences", "It uses only the text you paste", "Written for you instantly, then yours to edit"],
-    guide: ["Paste the passage.", "Read the summary, the key points, and the key terms.", "Try another wording for a shorter or longer summary. Check it against the original."],
-    kind: "write",
-  },
-  {
-    slug: "lab-notes",
-    name: "Lab",
-    section: "science",
-    blurb: "Aim, method, results, and a conclusion. Saved with your account.",
-    features: ["Aim, method, results, and conclusion", "Saved on your account", "A page you can copy"],
-    guide: ["Name the experiment.", "Fill each part.", "It saves as you type."],
-    kind: "template",
-    parts: [f("title", "Experiment"), a("aim", "Aim"), a("method", "Method"), a("results", "Results"), a("end", "Conclusion")],
-  },
+  // Outline is now a mode of the Writing studio (src/lib/studio.ts).
+  // Citations is part of References in the Study space now (src/lib/study.ts).
+  // Digest is now a mode of the Writing studio (src/lib/studio.ts).
+  // Lab is the lab write-ups in the Study space now; its saved page is copied in there (src/lib/study.ts).
   {
     slug: "solver",
     name: "Solver",
@@ -307,34 +164,9 @@ export const KITS: readonly Kit[] = [
     guide: ["Type one pair per line, such as 1, 2.", "The line draws as the pairs parse.", "Fix a line if a point is missing."],
     kind: "plot",
   },
-  {
-    slug: "lesson",
-    name: "Lesson",
-    section: "teaching",
-    blurb: "Objective, starter, main task, and a check. For one class.",
-    features: ["Objective, steps, and a check", "Copy or print the result", "Written for you instantly, then yours to edit"],
-    guide: ["Enter the subject, topic, class, and lesson length.", "Press Write it for a timed plan with a starter, main task, and check.", "Try another wording for different activities, then edit it to your class."],
-    kind: "write",
-  },
-  {
-    slug: "quiz-maker",
-    name: "Quiz",
-    section: "teaching",
-    blurb: "Write your questions and answers, saved in one place.",
-    features: ["Questions you type and save", "Copy or print it when it is ready"],
-    guide: ["Add the topic.", "Write each question and its answer.", "Copy or print the quiz when it is ready."],
-    kind: "template",
-    parts: [f("topic", "Topic"), a("questions", "Questions and answers")],
-  },
-  {
-    slug: "remarks",
-    name: "Remarks",
-    section: "teaching",
-    blurb: "A report-card sentence from a name and two notes.",
-    features: ["Name, strength, and next step", "A sentence you can edit", "Written for you instantly, then yours to edit"],
-    guide: ["Enter the learner's first name.", "Add one strength and one next step.", "Pick one of three sentences and edit it so it sounds like you."],
-    kind: "write",
-  },
+  // Lesson is now a mode of the Writing studio (src/lib/studio.ts).
+  // Quiz is "Make a quiz" in the Study space now; its saved quiz is copied in there (src/lib/study.ts).
+  // Remarks is now a mode of the Writing studio (src/lib/studio.ts).
   {
     slug: "shifts",
     name: "Shifts",
@@ -345,16 +177,7 @@ export const KITS: readonly Kit[] = [
     kind: "tracker",
     fields: [d("date", "Date"), t("start", "Start"), t("end", "End"), f("where", "Where", "Ward")],
   },
-  {
-    slug: "soap-note",
-    name: "Notes",
-    section: "clinic",
-    blurb: "Subjective, objective, assessment, plan. A formatter, not a record system.",
-    note: "Do not put a real patient's identifying details in here.",
-    features: ["SOAP headings", "Copy or print the result", "Written for you instantly, then yours to edit"],
-    guide: ["Fill the four parts without names or file numbers.", "Press Write it for a tidy SOAP note.", "Copy it into the real record system yourself."],
-    kind: "write",
-  },
+  // SOAP notes (was Notes) is now a mode of the Writing studio (src/lib/studio.ts).
   {
     slug: "dose-ref",
     name: "Reference",
@@ -381,37 +204,7 @@ export const KITS: readonly Kit[] = [
     guide: ["Paste JSON.", "Press Format, or Check to only validate it.", "If it fails, go to the line and column named in the error. For a tree view, minify, sorted keys and large files, Glyph is included with Midnry Pass."],
     kind: "json",
   },
-  {
-    slug: "readme",
-    name: "README",
-    section: "developers",
-    blurb: "A README from the project name and what it does.",
-    features: ["What it is, how to run it, and a license line", "You edit the draft", "Written for you instantly, then yours to edit"],
-    guide: ["Enter the project name and what it does.", "Add how to install and run it.", "Copy the Markdown and delete anything that is not true."],
-    kind: "write",
-  },
-  {
-    slug: "cold-email",
-    name: "Outreach",
-    section: "marketing",
-    blurb: "A short email from who you are and why you are writing.",
-    features: ["Three short emails with subject lines", "Plain, friendly wording with no fake familiarity", "Written for you instantly, then yours to edit"],
-    guide: [
-      "Add your name, what you do, and who you're writing to (for example: Ruth, event planner).",
-      "Say what you can do for them, and why them if you know. Short phrases are fine.",
-      "Pick one of three emails, or try another wording. Edit it, then send it yourself.",
-    ],
-    kind: "write",
-  },
-  {
-    slug: "ad-copy",
-    name: "Ads",
-    section: "marketing",
-    blurb: "Three short lines for one offer.",
-    features: ["Three variations", "The offer you typed, not a new one", "Written for you instantly, then yours to edit"],
-    guide: ["Describe the product, who it is for, and the main benefit.", "Pick one of three ad lines, or try another wording.", "Edit it so every claim is true."],
-    kind: "write",
-  },
+  // README, Outreach and Ads are now modes of the Writing studio (src/lib/studio.ts).
   // Proposal is now part of Invoice (proposals view); its saved document is copied in there.
   {
     slug: "paye",
@@ -432,16 +225,7 @@ export const KITS: readonly Kit[] = [
     guide: ["Paste one amount per line on each side.", "An amount that appears in both lists is paired once, by amount only.", "Read what is left, and fix any line it could not read."],
     kind: "reconcile",
   },
-  {
-    slug: "contract-scan",
-    name: "Contract",
-    section: "practice",
-    blurb: "A plain summary of a contract you paste. Not an opinion.",
-    note: "A reading aid. It is not legal advice and it can miss a clause.",
-    features: ["Parties, term, money, and ending", "Only what is in the paste", "Written for you instantly, then yours to edit"],
-    guide: ["Paste the contract.", "Read the parties, money, dates, duties, how it ends, and terms to watch.", "Read the whole contract again before you sign anything."],
-    kind: "write",
-  },
+  // Contract is now a mode of the Writing studio (src/lib/studio.ts), with its review note.
   {
     slug: "clauses",
     name: "Clauses",
@@ -459,15 +243,7 @@ export const KITS: readonly Kit[] = [
       { title: "Liability", body: "Neither party excludes liability for death, fraud, or anything else that cannot be excluded. Other liability is capped at the fees paid in the previous three months, unless the parties change that figure." },
     ],
   },
-  {
-    slug: "letters",
-    name: "Letters",
-    section: "practice",
-    blurb: "A formal letter from the points you list.",
-    features: ["Addressee, matter, and the ask", "A draft you edit", "Written for you instantly, then yours to edit"],
-    guide: ["Enter who it is from, who it is to, and the subject.", "Add what happened and what you are asking for.", "Put it on your own letterhead and check the facts."],
-    kind: "write",
-  },
+  // Letters is now a mode of the Writing studio (src/lib/studio.ts).
   {
     slug: "creative-brief",
     name: "Creative brief",
@@ -592,15 +368,7 @@ export const KITS: readonly Kit[] = [
     kind: "tracker",
     fields: [f("name", "Product or item"), n("price", "Price", "0"), f("line", "Line")],
   },
-  {
-    slug: "captions",
-    name: "Captions",
-    section: "beauty",
-    blurb: "A caption from the product and the point of the photo.",
-    features: ["Three short options", "No claims you did not type", "Written for you instantly, then yours to edit"],
-    guide: ["Say the product and what the photo shows.", "Pick one of three captions, with hashtags.", "Post the one that is true."],
-    kind: "write",
-  },
+  // Captions is now a mode of the Writing studio (src/lib/studio.ts).
   // Quote is now part of Invoice (quotes view); its saved document is copied in there.
   {
     slug: "service-terms",
@@ -613,15 +381,7 @@ export const KITS: readonly Kit[] = [
     kind: "template",
     parts: [f("you", "You"), f("client", "Client"), a("work", "Work or job"), f("fee", "Fee"), f("revisions", "Revisions", "2"), f("notice", "Notice", "14 days")],
   },
-  {
-    slug: "listing",
-    name: "Listing",
-    section: "sellers",
-    blurb: "A product description from the facts you have.",
-    features: ["Title and a short description", "No invented specs", "Written for you instantly, then yours to edit"],
-    guide: ["Enter the real facts: material, size, colour, and what is included.", "Copy the title and the description.", "Delete anything that is not true."],
-    kind: "write",
-  },
+  // Listing is now a mode of the Writing studio (src/lib/studio.ts).
   {
     slug: "orders",
     name: "Orders",

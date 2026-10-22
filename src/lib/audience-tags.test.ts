@@ -1,10 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { KITS } from "./kits.ts";
-import { GENERAL_APPS, TAG_OVERRIDES } from "./audience-tags.ts";
-import { defaultTagOf, isTag, parseTags } from "./sections.ts";
+import { FIELD_TAGS, GENERAL_APPS, TAG_OVERRIDES } from "./audience-tags.ts";
+import { defaultTagOf, isSection, isTag, parseTags } from "./sections.ts";
 
-const BUILT_IN = ["scratch","split", "ledger", "invoice", "glyph", "contrast", "compressor", "planner", "apply", "tasks", "cycle"];
+const BUILT_IN = ["scratch","split", "ledger", "invoice", "glyph", "contrast", "compressor", "planner", "apply", "tasks", "cycle", "study", "write"];
 const SLUGS = new Set([...BUILT_IN, ...KITS.map((kit) => kit.slug)]);
 
 test("every override names a real app and real tags", () => {
@@ -48,6 +48,29 @@ test("apps merged into another app carry no tags of their own", () => {
     assert.ok(!SLUGS.has(slug), `${slug} should have left the catalogue`);
     assert.equal(TAG_OVERRIDES[slug], undefined, `${slug} still has tags`);
   }
+});
+
+test("the Study space holds the eight study apps, and is shelved under their subjects", () => {
+  for (const slug of ["anatomy", "clinic-quiz", "law-drill", "quiz-maker", "lab-notes", "citations", "legal-cite", "formula-sheet"]) {
+    assert.ok(!SLUGS.has(slug), `${slug} should have left the catalogue`);
+    assert.equal(TAG_OVERRIDES[slug], undefined, `${slug} still has tags`);
+  }
+  assert.deepEqual(TAG_OVERRIDES.study, ["students", "professionals"]);
+  assert.ok(!GENERAL_APPS.has("study"), "a subject app, not a general one");
+  for (const section of FIELD_TAGS.study) assert.ok(isSection(section), `unknown subject ${section}`);
+  for (const section of ["medicine", "law", "arts", "engineering", "teaching"]) assert.ok(FIELD_TAGS.study.includes(section), section);
+});
+
+test("the Writing studio holds the 15 AI writing apps, for every audience and their subjects", () => {
+  const modes = ["cold-email", "ad-copy", "captions", "listing", "letters", "lesson", "remarks", "outliner", "digest", "explainer", "bug-scan", "case-brief", "contract-scan", "soap-note", "readme"];
+  for (const slug of modes) {
+    assert.ok(!SLUGS.has(slug), `${slug} should have left the catalogue`);
+    assert.equal(TAG_OVERRIDES[slug], undefined, `${slug} still has tags`);
+  }
+  assert.deepEqual(TAG_OVERRIDES.write, ["business", "professionals", "students", "everyday"]);
+  assert.ok(!GENERAL_APPS.has("write"), "listed on the subject shelves its modes came from");
+  for (const section of FIELD_TAGS.write) assert.ok(isSection(section), `unknown subject ${section}`);
+  for (const section of ["law", "computing", "arts", "teaching", "clinic", "developers", "practice"]) assert.ok(FIELD_TAGS.write.includes(section), section);
 });
 
 test("stored tags parse back cleanly", () => {

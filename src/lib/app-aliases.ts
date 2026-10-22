@@ -21,6 +21,31 @@ export const APP_ALIASES: Record<string, AppAlias> = {
   // Quote and Proposal live inside Invoice (free); their saved documents are copied in once (src/lib/client-work.ts).
   quote: { to: "invoice", view: "quotes" },
   proposal: { to: "invoice", view: "proposals" },
+  // Eight study apps live in the Study space (free); Lab and Quiz documents are copied in once (src/lib/study.ts).
+  anatomy: { to: "study", view: "cards" },
+  "clinic-quiz": { to: "study", view: "practice" },
+  "law-drill": { to: "study", view: "practice" },
+  "quiz-maker": { to: "study", view: "practice" },
+  "lab-notes": { to: "study", view: "notes" },
+  citations: { to: "study", view: "references" },
+  "legal-cite": { to: "study", view: "law" },
+  "formula-sheet": { to: "study", view: "formulas" },
+  // The AI writing apps are modes of the Writing studio (free); their saved boxes are copied in once (src/lib/studio.ts).
+  "cold-email": { to: "write", view: "outreach" },
+  "ad-copy": { to: "write", view: "ads" },
+  captions: { to: "write", view: "captions" },
+  listing: { to: "write", view: "listing" },
+  letters: { to: "write", view: "letters" },
+  lesson: { to: "write", view: "lesson" },
+  remarks: { to: "write", view: "remarks" },
+  outliner: { to: "write", view: "outline" },
+  digest: { to: "write", view: "digest" },
+  explainer: { to: "write", view: "explain" },
+  "bug-scan": { to: "write", view: "bugs" },
+  "case-brief": { to: "write", view: "case-brief" },
+  "contract-scan": { to: "write", view: "contract" },
+  "soap-note": { to: "write", view: "soap" },
+  readme: { to: "write", view: "readme" },
 };
 
 export function aliasOf(slug: string): AppAlias | undefined {

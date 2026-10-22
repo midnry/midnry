@@ -12,13 +12,24 @@
  * full document is about 200,000 characters; 300,000 leaves room for JSON
  * escaping and hand edits. (Six tailored copies of a long resume already
  * passed the old 100,000 default before adverts.)
+ * The Writing studio ("write") keeps its drafts one row each in
+ * writing_drafts, each capped at DRAFT_LIMIT (100,000 characters, about the
+ * size of one old app document; src/lib/studio.ts), so a Pass history of 500
+ * drafts per mode never becomes one huge document. Its app document only holds
+ * settings: which old documents were brought in, the house style (four boxes of
+ * up to 300 characters) and the SOAP history switch, about 2,000 characters at
+ * most; 20,000 leaves ample room.
  * Everything else is small.
  */
 export const DOC_LIMITS: Record<string, number> = {
+  write: 20_000,
   apply: 300_000,
   invoice: 1_000_000,
   tasks: 600_000,
   ledger: 1_000_000,
+  // Study space: every deck, quiz, reference, lab write-up and score in one document
+  // (a card is about 150 characters, a quiz question about 400), like Ledger and Invoice.
+  study: 1_000_000,
 };
 
 export const DEFAULT_DOC_LIMIT = 100_000;

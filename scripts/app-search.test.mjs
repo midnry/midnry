@@ -78,10 +78,11 @@ test("ranking: exact name, then name prefix, then synonyms, then pitch, then det
   assert.equal(inv[0].slug, "invoice");
   // Synonyms beat pitch and blurb text; pitch beats features and guide.
   const notes = find("notes").hits;
-  assert.equal(notes[0].slug, "soap-note");
-  const scratch = notes.findIndex((h) => h.slug === "scratch");
-  const fromDetails = notes.findIndex((h) => h.why && !["scratch", "lab-notes", "memoir"].includes(h.slug));
-  assert.ok(scratch > 0 && scratch < fromDetails, "synonym before plain text matches");
+  // Notes (SOAP) is a Writing studio mode now, so Scratch leads the "note" synonyms.
+  assert.equal(notes[0].slug, "scratch");
+  const writing = notes.findIndex((h) => h.slug === "write");
+  const fromDetails = notes.findIndex((h) => !["scratch", "write", "study", "memoir"].includes(h.slug));
+  assert.ok(writing > 0 && writing < fromDetails, "synonym before plain text matches");
   for (let i = 1; i < notes.length; i++) assert.ok(notes[i - 1].points >= notes[i].points, "sorted by points");
   // Deterministic: the same query gives the same order every time.
   assert.deepEqual(slugs("money"), slugs("money"));
@@ -101,7 +102,7 @@ test("typos of 5+ letter words are forgiven", () => {
 });
 
 test("short queries stay precise: no typo matching under 5 letters", () => {
-  assert.deepEqual(slugs("cv"), ["apply", "letters"]);
+  assert.deepEqual(slugs("cv"), ["apply", "write"]);
   assert.deepEqual(slugs("tsk"), [], "3-letter typo finds nothing");
   assert.deepEqual(slugs("ledr"), [], "4-letter typo finds nothing");
   assert.deepEqual(slugs("qr"), ["menu"]);

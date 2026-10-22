@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AUDIENCES, isAudience, sectionsIn } from "@/lib/sections";
 import { Shell } from "@/components/shell";
-import { isGeneral, useDesk } from "@/components/desk-list";
+import { onShelf, useDesk } from "@/components/desk-list";
 import { AppMark } from "@/components/app-mark";
 
 export const Route = createFileRoute("/audiences/$audience")({
@@ -29,7 +29,7 @@ function AudiencePage() {
           <p className="mt-2 max-w-xl text-pretty text-muted">{group.blurb} Pick a subject to see its apps.</p>
           <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {sections.map((section) => {
-              const apps = items.filter((item) => item.genre === section.id && !isGeneral(item));
+              const apps = items.filter((item) => onShelf(item, section.id));
               return (
                 <li key={section.id}>
                   <Link

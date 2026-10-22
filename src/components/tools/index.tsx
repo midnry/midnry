@@ -11,6 +11,8 @@ import { ApplyTool } from "@/components/tools/apply";
 import { RemindTool } from "@/components/tools/remind";
 import { CycleTool } from "@/components/tools/cycle";
 import { MedsTool } from "@/components/tools/meds";
+import { StudioTool } from "@/components/tools/studio";
+import { StudyTool } from "@/components/tools/study";
 import { KitTool } from "@/components/tools/kit";
 import { getKit } from "@/lib/kits";
 
@@ -27,6 +29,8 @@ const TOOLS: Record<string, () => ReactElement> = {
   tasks: RemindTool,
   cycle: CycleTool,
   meds: MedsTool,
+  write: StudioTool,
+  study: StudyTool,
 };
 
 export function ToolView({ slug }: { slug: string }) {

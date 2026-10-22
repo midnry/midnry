@@ -219,6 +219,53 @@ const SOURCES: readonly AppSource[] = [
       "These dates are estimates, not medical advice and not birth control.",
     ],
   },
+  // The 15 AI writing apps, now modes of one free app (src/lib/studio.ts). Old links redirect (app-aliases.ts).
+  {
+    slug: "write",
+    name: "Writing studio",
+    blurb: "Emails, ads, captions, letters, lesson plans, summaries, code explanations and more, in one place. Every draft is saved.",
+    tier: "free",
+    genre: "marketing",
+    features: [
+      "15 modes: Outreach, Ads, Captions, Listing, Letters, Lesson, Remarks, Outline, Digest, Explain, Bugs, Case brief, Contract, SOAP notes and README",
+      "A Source material box for notes, an advert or a passage to work from",
+      "Your drafts are saved: what you typed and what was written, up to 20 per mode",
+      "Edit the text, then copy it, print it or save it as a PDF, or download it as a text file",
+      "AI writing when it is available, 5 a day free or 30 with Midnry Pass, shared across every mode. Midnry's quick writer always works, with no limit",
+      "With Midnry Pass: up to 500 drafts per mode, Word (.docx) download, and a saved house style for every draft",
+    ],
+    guide: [
+      "Pick a mode, such as Outreach for a first email or Digest for a summary.",
+      "Fill the boxes. Paste notes or a passage into Source material if it helps.",
+      "Press Write it. Pick the version you like, or try another wording.",
+      "Edit the text, then copy, print or download it. The draft is saved under Drafts.",
+      "Press New draft for the next one. Open any saved draft from the list to carry on.",
+    ],
+  },
+  // Anatomy, Cases, Drill, Quiz, Lab, Citations, Cite and Formulas, now one free app (src/lib/study.ts).
+  // Old links redirect (app-aliases.ts); sharing a deck or quiz is the one Midnry Pass extra (plans.ts).
+  {
+    slug: "study",
+    name: "Study space",
+    blurb: "Flashcards, practice quizzes, reference lists, lab write-ups and a formula sheet in one place. Your progress and scores are saved.",
+    tier: "free",
+    genre: "science",
+    features: [
+      "Your own flashcard decks. Mark each card I knew it or Again, and missed cards come back sooner",
+      "Your own quizzes with choices and a reason, and every score saved",
+      "Sample study sets to start from: an anatomy deck, and practice questions for medicine and law",
+      "One reference list for APA, MLA, Chicago and Nigerian law reports, saved A to Z, to copy or download",
+      "Several lab write-ups (aim, method, results, conclusion), and a formula sheet you can add to",
+      "With Midnry Pass: share a deck or quiz with a class or study group through a link",
+    ],
+    guide: [
+      "Under Cards, press New deck and add a term on the front and what it means on the back.",
+      "Press Review. Flip each card and say whether you knew it. Your progress is saved.",
+      "Under Practice, make a quiz or start a sample set. Your score is saved each time.",
+      "Under References, pick a style, fill the boxes and add the line to your list.",
+      "Under Notes, start a lab write-up for each experiment, or add a formula to the sheet.",
+    ],
+  },
   ...KITS.map((kit) => ({
     slug: kit.slug,
     name: kit.name,

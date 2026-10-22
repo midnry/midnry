@@ -77,6 +77,8 @@ export function PricingPanel() {
             <strong className="font-medium">{PASS_APPS.length} more tools</strong>, like Ledger, Apply and Planner
           </Point>
           <Point light>Remind’s Pass features: {PASS_FEATURES.tasks}</Point>
+          <Point light>In the Study space: {PASS_FEATURES.study}</Point>
+          <Point light>In the Writing studio: {PASS_FEATURES.write}</Point>
           <Point light>Apps other makers add, once they pass review</Point>
           <Point light>
             <strong className="font-medium">{PASS_EXTRAS.outpostFinish.name}</strong>, a {PASS_EXTRAS.outpostFinish.look} weapon finish in{" "}
