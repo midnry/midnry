@@ -915,3 +915,26 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   on phones. Blackout's offline role is three toggle buttons (`.mf-rolepick`, driving the hidden select). The guide
   button is `.mf-protocol-guideopen` (it was "the first button in the menu"). Top nav tabs larger and brighter.
   `check-outpost-performance.mjs` uses the new "Automatic resolution" label.
+
+## Calder Quay as the Blackout Protocol base (owner item 3, 2026-10-23, not deployed yet)
+
+- `TOWN_MAP` (`outpost-protocol-map.js`, MAPS id `town`, protocolOnly) reuses the 30 × 30 Calder Quay level, water,
+  art, interiors and landmarks, with all Breakwater objective ids/kinds: 16 stations, 15 sites, 6 storm drains
+  (vents), 12 cabinets (same stock), 8 spawns, the town siren (meeting) in Market Square and the medevac landing
+  point in Market Square South (avg 17 tiles from the cabinets, like Breakwater's hangar pad; the depot yard was 25).
+  Rooms: building interiors plus streets cut into Breakwater-sized zones (they feed room names and the security log).
+  `eventSpots` give town fires / casualty / drop places; event texts use the spot's room.
+- Bases: `PROTOCOL_BASES`, `baseOf`, `DEFAULT_BASE = "town"`. `ProtocolArena` takes `base` (its own default stays
+  `breakwater`: tests, practice, old rooms); `protocol.base` is in the snapshot; `arena.base()`. `createArena` maps a
+  base id passed as `mapId`. Client: `protocolBase()` in `outpost-zero.html` — town, or Breakwater with
+  `?base=breakwater` (remembered in `midnry-outpost-base`; `?base=town` undoes it). Practice drills stay on Breakwater.
+- Server: protocol rooms are `town` unless `mapId: "breakwater"`; settings keep the room's base; Last Signal rejects
+  any protocolOnly map (also fixes "hospital" being accepted).
+- Balance (bot rounds, variety on): at Breakwater's rules the town gave 3/30 crew wins vs 12/30. Open streets spread
+  the crew, so `TOWN_MAP.sightScale = 1.4` (rules sight: witnesses, spotting) plus the central landing point bring it
+  to 15/40 vs Breakwater 17/40 on a fresh set of seeds, and crew leave the base in 18/40 rounds on both.
+- Renderer: the town draws as the Last Signal city plus `buildProtocolBase` fixtures (rooms stripped), a painted
+  helipad at the landing point, a mast plinth indoors; street lamps go out when power is sabotaged. `g.protocolMap`
+  follows `arena.base()` on each world build.
+- Tests: `scripts/outpost-town-base.test.mjs` (bases, objectives on reachable open ground, full bot mission, seeded
+  rounds end). QA: `node scripts/qa/town-base.mjs [width]` → `screenshots/qa/town`.

@@ -245,7 +245,8 @@ export class CanalWater {
     this.tiles = tiles.length;
   }
   /** Slow ripples; lamps brighten as the light falls. */
-  update(t, still, night = 0, live = false, flood = 0) {
+  update(t, still, night = 0, live = false, flood = 0, powerOut = false) {
+    if (this.lampMaterial) this.lampMaterial.color.set(powerOut ? "#2a2620" : "#ffd59a");
     // Floodwater spreads out a step at a time and rises a little as it comes.
     for (const { k, mesh } of this.floodRings || []) {
       const depth = Math.max(0, Math.min(1, flood - k + 1));
@@ -259,7 +260,7 @@ export class CanalWater {
       this.waterMaterial.emissive.setRGB(0.35 * flash, 0.75 * flash, 1.0 * flash);
       this.waterMaterial.emissiveIntensity = live ? 1.4 : 0;
     }
-    if (this.poolMaterial) this.poolMaterial.opacity = 0.18 + 0.6 * night;
+    if (this.poolMaterial) this.poolMaterial.opacity = powerOut ? 0 : 0.18 + 0.6 * night;
   }
   dispose() {
     this.group.removeFromParent();

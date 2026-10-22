@@ -320,7 +320,7 @@ export class MilitaryRenderer {
       if (!this.disposed) {
         this.mapKey = "";
         this.updateWeapon();
-        for (const id of ["estate", "skyport", "quay"]) this.loadArenaStyle(id);
+        for (const id of ["estate", "skyport", "quay", "town"]) this.loadArenaStyle(id);
       }
     });
     this.configure();
@@ -681,6 +681,9 @@ export class MilitaryRenderer {
     this.clearWorld();
     this.buildingWorld = true;
     this.mapKey = id;
+    // Room art and fixtures follow the base this round plays (online rooms,
+    // practice on Breakwater, the town by default).
+    if (g.arena.base?.() && g.arena.base().id === id) g.protocolMap = g.arena.base();
     this.wallKeys = "";
     this.scene.fog.color.set(profile.fog);
     this.scene.fog.density = id === "freight" ? 0.021 : 0.012;
@@ -721,7 +724,7 @@ export class MilitaryRenderer {
           ? ["#b7b4a8", "#a29882", "#7c9094", "#9b927d", "#747b73", "#a3aaa1", "#718086"]
           : id === "testblock"
             ? ["#b5b0a3", "#929689", "#78928d", "#7d8881", "#aa8374", "#b8b8ac", "#8f9998"]
-            : id === "quay"
+            : id === "quay" || id === "town"
               ? // Grey box: brick town, painted stalls, trucks, trees, pumps, canal.
                 ["#8e948a", "#9a7c68", "#7f8f7a", "#6f7a80", "#5b7a4a", "#8a8f92", "#2f5d6e"]
             : ["#8e948a", profile.metal, "#707f78", "#b0a489", "#84776b", "#909a9d", "#bcc2bd"];
@@ -776,7 +779,45 @@ export class MilitaryRenderer {
     batchStaticByMaterial(fence);
     if (["breakwater", "medevac", "hospital"].includes(id) && this.protocolMetadata())
       this.buildProtocolBase(this.protocolMetadata());
-    else this.addLandmarks(id, n, rail);
+    else {
+      this.addLandmarks(id, n, rail);
+      // Calder Quay as the Blackout base: the town's own art and interiors,
+      // plus the mission fixtures (tasks, cabinets, sockets, drains, siren,
+      // helipad). Its rooms are buildings and streets: no extra floors or ceilings.
+      if (g.mode === "protocol" && mapOf(id).protocolOnly && this.protocolMetadata()) {
+        const meta = this.protocolMetadata();
+        this.buildProtocolBase({ ...meta, rooms: [], corridors: [] });
+        // A painted helipad where the medevac lands (Market Square).
+        if (meta.loading) {
+          const c = document.createElement("canvas");
+          c.width = c.height = 256;
+          const x2 = c.getContext("2d");
+          x2.strokeStyle = "#f2efe6";
+          x2.lineWidth = 14;
+          x2.beginPath();
+          x2.arc(128, 128, 112, 0, Math.PI * 2);
+          x2.stroke();
+          x2.fillStyle = "#f2efe6";
+          x2.fillRect(78, 64, 26, 128);
+          x2.fillRect(152, 64, 26, 128);
+          x2.fillRect(78, 116, 100, 24);
+          const tex = new THREE.CanvasTexture(c);
+          tex.colorSpace = THREE.SRGBColorSpace;
+          this.textures.add(tex);
+          this.worldTextures.add(tex);
+          const pad = this.mesh(
+            this.world,
+            this.geo("helipad", () => new THREE.PlaneGeometry(1, 1)),
+            this.material({ map: tex, transparent: true, depthWrite: false, roughness: 0.9 }),
+            [meta.loading.x * SCALE, 0.03, meta.loading.y * SCALE],
+            [5.4, 5.4, 1],
+          );
+          pad.rotation.x = -Math.PI / 2;
+          pad.castShadow = false;
+          pad.receiveShadow = true;
+        }
+      }
+    }
     if (styled) this.arenaStyle.dress(id, this.world, g.level);
     // Styled arenas are dry: no standing water on gravel, paving or apron.
     if (id !== "medevac" && !styled) this.makePuddles(id, n);
@@ -1011,7 +1052,8 @@ export class MilitaryRenderer {
   }
   protocolMetadata() {
     const id = this.g.arena.mapId;
-    return id === "medevac" ? this.g.transportMap : id === "hospital" ? HOSPITAL_MAP : this.g.protocolMap;
+    // The base the round actually plays (practice keeps Breakwater).
+    return id === "medevac" ? this.g.transportMap : id === "hospital" ? HOSPITAL_MAP : this.g.arena?.base?.() || this.g.protocolMap;
   }
   transportWindowTile(x, y) {
     if (this.g.arena.mapId !== "medevac") return false;
@@ -3535,7 +3577,8 @@ export class MilitaryRenderer {
     const night = (this.night ||= new NightDressing(this)).update(protocolView, g.arena.mapId, t);
     this.updateCinematic(night, t);
     this.clouds.update(t, night, this.motion.matches);
-    this.canal?.update(t, this.motion.matches, night ? 1 : 0, g.arena.waterShockUntil > g.arena.time, floodLevel(g.arena));
+    // Street lamps go out with the town's power (Blackout Protocol sabotage).
+    this.canal?.update(t, this.motion.matches, night ? 1 : 0, g.arena.waterShockUntil > g.arena.time, floodLevel(g.arena), this.protocolPowerOut);
     this.landmarks?.update(t, this.motion.matches);
     if (g.mode === "protocol") (this.events ||= new EventDressing(this)).update(protocolView, t);
     updateNaturalLighting(this, protocolView, p, dt);

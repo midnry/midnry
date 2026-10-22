@@ -156,6 +156,12 @@ export type MapSpec = {
   theme: Record<string, unknown>;
   props: unknown[];
   zones: unknown[];
+  /** Blackout Protocol maps (bases, aircraft, hospital): never a combat arena. */
+  protocolOnly?: boolean;
+  /** Tile types you can see and shoot across but not walk on (water). */
+  seeThrough?: number[];
+  /** Tile types blasts never open. */
+  unbreakable?: number[];
 };
 export type WeaponSpec = {
   id: string;

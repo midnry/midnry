@@ -7,6 +7,7 @@
  * deliberately separated so a visible fixture never occupies a doorway.
  * All three routes connect without using infiltrator-only maintenance ducts.
  */
+import { QUAY_LEVEL, QUAY_WATER, QUAY_UNBREAKABLE, QUAY_LAMPS, QUAY_CULVERTS, QUAY_BUILDINGS, QUAY_LANDMARKS, quayWallTint } from "./outpost-quay.js";
 const SIZE = 28;
 const level = Array.from({ length: SIZE }, () => Array(SIZE).fill(1));
 
@@ -414,3 +415,172 @@ export const HOSPITAL_MAP = {
     color: room.roofed === false ? "#7d7660" : "#6c7470",
   })),
 };
+
+// ---------------------------------------------------------------------------
+// Calder Quay: the harbour town as the Blackout Protocol base (the default;
+// Breakwater stays as a hidden option: ?base=breakwater). Same 30 × 30 town
+// as the Last Signal arena (outpost-quay.js): same walls, canal, bridges and
+// art. Every Breakwater objective keeps its id and kind, so the rules, bots
+// and tests treat it the same; only the place and wording change.
+
+const townRooms = [
+  // Walk-in buildings (interiors, roofed).
+  { id: "radio", name: "Radio Station", x: 3, y: 4, w: 4, h: 3, roofed: true },
+  { id: "police", name: "Police Post", x: 11, y: 4, w: 3, h: 3, roofed: true },
+  { id: "fuel", name: "Fuel Shop", x: 23, y: 4, w: 4, h: 2, roofed: true },
+  { id: "market", name: "Market Hall", x: 8, y: 11, w: 4, h: 4, roofed: true },
+  { id: "substation", name: "Power Substation", x: 22, y: 10, w: 4, h: 5, roofed: true },
+  { id: "apartments", name: "Harbour Apartments", x: 2, y: 24, w: 5, h: 2, roofed: true },
+  { id: "clinic", name: "Town Clinic", x: 10, y: 24, w: 7, h: 2, roofed: true },
+  { id: "depot", name: "Relief Depot", x: 20, y: 24, w: 4, h: 2, roofed: true },
+  // Streets and open spaces, cut into Breakwater-sized zones: the security
+  // log names everyone "in the room" around a takedown, so a zone must be
+  // small enough for that list to mean something.
+  { id: "ridge-west", name: "Ridge Lane West", x: 1, y: 1, w: 9, h: 2, roofed: false },
+  { id: "ridge-mid", name: "Ridge Lane", x: 10, y: 1, w: 10, h: 2, roofed: false },
+  { id: "ridge-east", name: "Ridge Lane East", x: 20, y: 1, w: 9, h: 2, roofed: false },
+  { id: "mill-lane", name: "Mill Lane", x: 9, y: 3, w: 1, h: 5, roofed: false },
+  { id: "forecourt", name: "Fuel Forecourt", x: 15, y: 3, w: 7, h: 4, roofed: false },
+  { id: "tower-west", name: "Tower Road West", x: 1, y: 7, w: 8, h: 3, roofed: false },
+  { id: "tower-east", name: "Tower Road East", x: 9, y: 7, w: 8, h: 3, roofed: false },
+  { id: "dock-road", name: "Dock Road", x: 17, y: 7, w: 10, h: 2, roofed: false },
+  { id: "seawall-north", name: "Seawall Walk North", x: 27, y: 3, w: 2, h: 7, roofed: false },
+  { id: "seawall-south", name: "Seawall Walk South", x: 27, y: 10, w: 2, h: 8, roofed: false },
+  { id: "park-north", name: "Lantern Park North", x: 1, y: 10, w: 6, h: 4, roofed: false },
+  { id: "park-south", name: "Lantern Park South", x: 1, y: 14, w: 6, h: 3, roofed: false },
+  { id: "square-north", name: "Market Square North", x: 13, y: 10, w: 8, h: 4, roofed: false },
+  { id: "square-south", name: "Market Square South", x: 13, y: 14, w: 8, h: 4, roofed: false },
+  { id: "canal-row", name: "Canal Row", x: 21, y: 16, w: 6, h: 2, roofed: false },
+  { id: "fish-alley", name: "Fish Alley", x: 1, y: 17, w: 12, h: 1, roofed: false },
+  { id: "quay-nw", name: "North Quay West", x: 1, y: 18, w: 10, h: 2, roofed: false },
+  { id: "quay-n", name: "North Quay", x: 11, y: 18, w: 9, h: 2, roofed: false },
+  { id: "quay-ne", name: "North Quay East", x: 20, y: 18, w: 9, h: 2, roofed: false },
+  { id: "quay-sw", name: "South Quay West", x: 1, y: 20, w: 10, h: 3, roofed: false },
+  { id: "quay-s", name: "Avenue Bridge", x: 11, y: 20, w: 9, h: 3, roofed: false },
+  { id: "quay-se", name: "South Quay East", x: 20, y: 20, w: 9, h: 3, roofed: false },
+  { id: "laundry-alley", name: "Laundry Alley", x: 8, y: 23, w: 1, h: 4, roofed: false },
+  { id: "ambulance-lane", name: "Ambulance Lane", x: 18, y: 23, w: 1, h: 4, roofed: false },
+  { id: "courtyard", name: "Apartment Courtyard", x: 1, y: 27, w: 7, h: 2, roofed: false },
+  { id: "hospital-road", name: "Hospital Road", x: 8, y: 27, w: 12, h: 2, roofed: false },
+  { id: "yard", name: "Depot Yard", x: 20, y: 23, w: 9, h: 6, roofed: false },
+];
+
+const townStations = [
+  { id: "intel-upload", name: "Prepare the medical handover", kind: "intel", x: 11.5, y: 24.5, room: "clinic" },
+  { id: "sensor-reset", name: "Check the street cameras", kind: "sensors", x: 13.5, y: 4.5, room: "police" },
+  { id: "armory-restock", name: "Inspect the riot-kit lockers", kind: "armory", x: 11.5, y: 4.5, room: "police" },
+  { id: "ammo-audit", name: "Audit the market food stores", kind: "ammo", x: 8.5, y: 11.5, room: "market" },
+  { id: "radio-link", name: "Restore the radio uplink", kind: "comms", x: 3.5, y: 4.5, room: "radio" },
+  { id: "radar-calibration", name: "Align the mast antenna", kind: "radar", x: 5.5, y: 6.5, room: "radio" },
+  { id: "barracks-supplies", name: "Check the stairwell first-aid point", kind: "supplies", x: 2.5, y: 24.5, room: "apartments" },
+  { id: "mess-restock", name: "Check the clinic fridge", kind: "supplies", x: 16.5, y: 25.5, room: "clinic" },
+  { id: "vehicle-fuel", name: "Fill the medevac fuel bowser", kind: "fuel", x: 19.5, y: 5.5, room: "forecourt" },
+  { id: "drone-check", name: "Confirm the evacuation route", kind: "drone", x: 28.5, y: 27.5, room: "yard" },
+  { id: "generator-reset", name: "Stabilize the substation controls", kind: "power", x: 22.5, y: 10.5, room: "substation" },
+  { id: "coolant-test", name: "Check cold-storage power", kind: "generator", x: 25.5, y: 14.5, room: "substation" },
+  { id: "tunnel-clear", name: "Clear debris from Fish Alley", kind: "route", x: 5.5, y: 17.5, room: "fish-alley" },
+  { id: "pump-service", name: "Run the canal pump", kind: "maintenance", x: 2.5, y: 18.5, room: "quay-nw" },
+  { id: "depot-seal", name: "Seal surgical cargo", kind: "supply", x: 20.5, y: 24.5, room: "depot" },
+  { id: "gate-sensors", name: "Reset the seawall sensors", kind: "perimeter", x: 28.5, y: 10.5, room: "seawall-south" },
+];
+
+const townSites = [
+  { id: "radio-cable-tray", name: "Mast cable tray", x: 6.5, y: 5.5, room: "radio" },
+  { id: "radio-rack", name: "Transmitter rack", x: 3.5, y: 6.5, room: "radio" },
+  { id: "police-evidence", name: "Evidence-room recess", x: 13.5, y: 6.5, room: "police" },
+  { id: "fuel-tank-hatch", name: "Underground tank hatch", x: 21.5, y: 3.5, room: "forecourt" },
+  { id: "fuel-back-office", name: "Shop back office", x: 25.5, y: 5.5, room: "fuel" },
+  { id: "market-cellar", name: "Market cellar hatch", x: 8.5, y: 14.5, room: "market" },
+  { id: "substation-transformer", name: "Transformer housing", x: 25.5, y: 11.5, room: "substation" },
+  { id: "substation-switchgear", name: "Switchgear cabinet", x: 22.5, y: 14.5, room: "substation" },
+  { id: "park-bandstand", name: "Bandstand service panel", x: 5.5, y: 10.5, room: "park-north" },
+  { id: "apartments-boiler", name: "Boiler-room door", x: 6.5, y: 25.5, room: "apartments" },
+  { id: "courtyard-meter", name: "Courtyard meter box", x: 1.5, y: 28.5, room: "courtyard" },
+  { id: "clinic-oxygen", name: "Oxygen manifold", x: 16.5, y: 24.5, room: "clinic" },
+  { id: "depot-crane", name: "Crane control box", x: 28.5, y: 23.5, room: "yard" },
+  { id: "bridge-junction", name: "Bridge junction box", x: 17.5, y: 19.5, room: "quay-n" },
+  { id: "mill-lane-box", name: "Mill Lane fuse box", x: 9.5, y: 6.5, room: "mill-lane" },
+];
+
+// Infiltrator-only storm drains (Breakwater's maintenance ducts), linked both ways.
+const townVents = [
+  { id: "tower-drain", name: "Tower Road drain", x: 5.5, y: 8.5, links: ["dock-drain", "square-drain", "park-drain"] },
+  { id: "dock-drain", name: "Dock Road drain", x: 24.5, y: 7.5, links: ["tower-drain", "yard-drain", "square-drain"] },
+  { id: "square-drain", name: "Market Square drain", x: 19.5, y: 15.5, links: ["tower-drain", "dock-drain", "alley-drain"] },
+  { id: "alley-drain", name: "Laundry Alley drain", x: 8.5, y: 24.5, links: ["square-drain", "yard-drain"] },
+  { id: "yard-drain", name: "Depot yard drain", x: 27.5, y: 26.5, links: ["dock-drain", "alley-drain", "park-drain"] },
+  { id: "park-drain", name: "Lantern Park drain", x: 1.5, y: 14.5, links: ["yard-drain", "tower-drain"] },
+];
+
+// 12 cabinets (8 stocked in the classic deal + 4 empty that variety re-deals).
+const townSupplies = [
+  { id: "trauma-police", supplyId: "trauma", name: "Police first-aid locker", stock: 2, x: 11.5, y: 6.5, room: "police" },
+  { id: "trauma-apartments", supplyId: "trauma", name: "Stairwell medic box", stock: 1, x: 5.5, y: 25.5, room: "apartments" },
+  { id: "surgical-clinic", supplyId: "surgical", name: "Clinic theatre cabinet", stock: 1, x: 14.5, y: 24.5, room: "clinic" },
+  { id: "surgical-depot", supplyId: "surgical", name: "Depot cargo cabinet", stock: 1, x: 22.5, y: 24.5, room: "depot" },
+  { id: "fluids-clinic", supplyId: "fluids", name: "Clinic fluid fridge", stock: 1, x: 10.5, y: 25.5, room: "clinic" },
+  { id: "fluids-depot", supplyId: "fluids", name: "Depot cold box", stock: 1, x: 23.5, y: 25.5, room: "depot" },
+  { id: "nutrition-market", supplyId: "nutrition", name: "Market dry stores", stock: 1, x: 11.5, y: 14.5, room: "market" },
+  { id: "nutrition-fuel", supplyId: "nutrition", name: "Fuel-shop shelves", stock: 1, x: 26.5, y: 4.5, room: "fuel" },
+  { id: "cabinet-radio", supplyId: "trauma", name: "Radio-room cabinet", stock: 0, x: 6.5, y: 4.5, room: "radio" },
+  { id: "cabinet-substation", supplyId: "fluids", name: "Substation crew cabinet", stock: 0, x: 25.5, y: 10.5, room: "substation" },
+  { id: "cabinet-park", supplyId: "nutrition", name: "Park kiosk cabinet", stock: 0, x: 1.5, y: 10.5, room: "park-north" },
+  { id: "cabinet-square", supplyId: "surgical", name: "Market stall cabinet", stock: 0, x: 14.5, y: 16.5, room: "square-south" },
+];
+
+export const TOWN_MAP = {
+  id: "town",
+  name: "Calder Quay",
+  protocolOnly: true,
+  tag: "BLACKOUT PROTOCOL / HARBOUR TOWN",
+  description:
+    "An evacuating harbour town. Gather medical supplies from the police post, clinic, market and depot, and load them at the depot helipad.",
+  level: QUAY_LEVEL,
+  theme: PROTOCOL_MAP.theme,
+  rooms: townRooms,
+  spawns: [
+    [5.5, 5.5], [12.5, 5.5], [17.5, 5.5], [10.5, 12.5],
+    [23.5, 12.5], [3.5, 25.5], [13.5, 25.5], [28.5, 25.5],
+  ],
+  stations: townStations,
+  sites: townSites,
+  vents: townVents,
+  emergency: { id: "operations-console", name: "Town siren", x: 16.5, y: 13.5 },
+  supplies: townSupplies,
+  // The medevac lands in Market Square: as close to every cabinet as
+  // Breakwater's hangar pad (avg 17 tiles; the depot yard was 25).
+  loading: { id: "medevac-loading", name: "Medevac landing point", x: 16.5, y: 15.5, room: "square-south" },
+  crates: [],
+  props: [],
+  // Rules sight in the open town (witnesses, spotting, reports): ×1.4. Bot
+  // rounds measured 3/30 crew wins at ×1 vs Breakwater's 12/30; ×1.4 gives 10/30.
+  sightScale: 1.4,
+  zones: townRooms.map((room) => ({
+    x: room.x, y: room.y, w: room.w, h: room.h,
+    color: room.roofed === false ? "#6d6457" : "#65716c",
+  })),
+  // Mid-match events (outpost-events.js) in the town.
+  eventSpots: {
+    fire: [
+      { x: 10.5, y: 12.5, room: "Market Hall" },
+      { x: 24.5, y: 4.5, room: "Fuel Shop" },
+      { x: 4.5, y: 24.5, room: "Harbour Apartments" },
+      { x: 21.5, y: 25.5, room: "Relief Depot" },
+    ],
+    casualty: [{ x: 15.5, y: 18.5, room: "Avenue Bridge" }],
+    drop: [{ x: 18.5, y: 13.5, room: "Market Square" }],
+  },
+  // The town's water, art and landmarks (shared with the Last Signal arena).
+  seeThrough: QUAY_WATER,
+  unbreakable: QUAY_UNBREAKABLE,
+  lamps: QUAY_LAMPS,
+  culverts: QUAY_CULVERTS,
+  wallTint: quayWallTint,
+  buildings: QUAY_BUILDINGS,
+  landmarks: QUAY_LANDMARKS,
+};
+
+/** Blackout Protocol bases: Calder Quay by default, Breakwater on request. */
+export const PROTOCOL_BASES = { town: TOWN_MAP, breakwater: PROTOCOL_MAP };
+export const DEFAULT_BASE = "town";
+export const baseOf = (id) => PROTOCOL_BASES[id] || PROTOCOL_BASES[DEFAULT_BASE];

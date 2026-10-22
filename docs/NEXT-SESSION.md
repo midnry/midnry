@@ -27,8 +27,8 @@ Read docs/HANDOVER.md first (working rules, deploy procedure, security rule). Th
    - Order: plain playable version + bot rounds, then water and lamps, then art and phone checks.
 2. Familiar game menus for Outpost Zero: DONE 2026-10-22 (Locker with Loadout, side-screen Settings/Practice,
    results screen, plain settings). See HANDOVER "Menu redesign".
-3. The mini city as the Blackout Protocol base, replacing Breakwater, which stays as a hidden option
-   until play-tests are done.
+3. The mini city as the Blackout Protocol base: DONE 2026-10-23 (Breakwater hidden: ?base=breakwater).
+   See HANDOVER "Calder Quay as the Blackout Protocol base".
 
 ## Other open items
 - Medical, tax and legal tools need a qualified reviewer (docs/phase3-plan.md lists exactly what).

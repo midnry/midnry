@@ -1,5 +1,5 @@
 /** Original arena layouts and loadouts. Shared by the renderer and server. */
-import { PROTOCOL_MAP, TRANSPORT_MAP, HOSPITAL_MAP } from "./outpost-protocol-map.js";
+import { PROTOCOL_MAP, TRANSPORT_MAP, HOSPITAL_MAP, TOWN_MAP } from "./outpost-protocol-map.js";
 import { QUAY_LEVEL, QUAY_CRATES, QUAY_ZONES, QUAY_UNBREAKABLE, QUAY_WATER, QUAY_LAMPS, QUAY_CULVERTS, QUAY_BUILDINGS, QUAY_LANDMARKS, quayWallTint } from "./outpost-quay.js";
 export const LEVEL = [
   "1111111111111111",
@@ -95,6 +95,7 @@ const warm = {
 };
 export const MAPS = {
   breakwater: PROTOCOL_MAP,
+  town: TOWN_MAP,
   medevac: TRANSPORT_MAP,
   hospital: HOSPITAL_MAP,
   outpost: {

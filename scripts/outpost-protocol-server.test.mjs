@@ -156,12 +156,18 @@ test("mission transport cannot be chosen from any lobby or classic combat", () =
   }
   for (const mode of ["signal", "duo"]) {
     assert.throws(() => lobbyMapOf(mode, "breakwater"), /valid combat map/);
+    assert.throws(() => lobbyMapOf(mode, "town"), /valid combat map/);
+    assert.throws(() => lobbyMapOf(mode, "hospital"), /valid combat map/);
     assert.throws(() => lobbyMapOf(mode, "__proto__"), /valid combat map/);
     assert.equal(lobbyMapOf(mode, "estate"), "estate");
     assert.equal(lobbyMapOf(mode), "outpost");
   }
-  assert.equal(lobbyMapOf("protocol"), "breakwater");
-  assert.equal(lobbyMapOf("protocol", "estate"), "breakwater");
+  // Blackout Protocol rooms play Calder Quay; Breakwater only by name.
+  assert.equal(lobbyMapOf("protocol"), "town");
+  assert.equal(lobbyMapOf("protocol", "estate"), "town");
+  assert.equal(lobbyMapOf("protocol", "breakwater"), "breakwater");
+  assert.equal(createArena({ mode: "protocol", mapId: "town", humans: [{ id: "h", team: 0 }] }).mapId, "town");
+  assert.equal(createArena({ mode: "protocol", mapId: "breakwater", humans: [{ id: "h", team: 0 }] }).mapId, "breakwater");
 });
 
 test("every room recipient gets only their own protocol role and no roster team", () => {

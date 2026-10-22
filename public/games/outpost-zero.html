@@ -3099,7 +3099,7 @@
       import { characterOf } from "./outpost-characters.js";
       import { createArena, restoreArena, protocolView, PLAYER_COLORS } from "./outpost-protocol.js";
       import { dailyKey, dailyRandom, shiftChoice } from "./outpost-shifts.js";
-      import { PROTOCOL_MAP, TRANSPORT_MAP } from "./outpost-protocol-map.js";
+      import { PROTOCOL_MAP, TRANSPORT_MAP, baseOf } from "./outpost-protocol-map.js";
       import { ProtocolUI } from "./outpost-protocol-ui.js";
       import { SpectatorUI } from "./outpost-spectator.js";
       import { OutpostTheme } from "./outpost-theme.js";
@@ -3168,6 +3168,17 @@
             return 0;
           }
         };
+        /** Blackout Protocol base: Calder Quay, or Breakwater (hidden option:
+         * ?base=breakwater, remembered on this device; ?base=town undoes it). */
+        const protocolBase = () => {
+          const asked = new URLSearchParams(location.search).get("base");
+          try {
+            if (asked === "breakwater" || asked === "town") localStorage.setItem("midnry-outpost-base", asked);
+            return localStorage.getItem("midnry-outpost-base") === "breakwater" ? "breakwater" : "town";
+          } catch {
+            return asked === "breakwater" ? "breakwater" : "town";
+          }
+        };
         const storedSetting = (key) => {
           try {
             return localStorage.getItem(key);
@@ -3219,8 +3230,8 @@
             this.frame = 0;
             this.viewPitch = 0;
             this.mode = "protocol";
-            this.mapId = "breakwater";
-            this.protocolMap = PROTOCOL_MAP;
+            this.mapId = protocolBase();
+            this.protocolMap = baseOf(this.mapId);
             this.transportMap = TRANSPORT_MAP;
             this.rolePreference = "operator";
             this.lookPitch = 0;
@@ -3650,7 +3661,8 @@
             if (this.mode === "protocol") {
               // Blackout Protocol issues the VX-7 to everyone (below); your
               // Locker loadout stays chosen for Last Signal.
-              this.mapId = "breakwater";
+              this.mapId = protocolBase();
+              this.protocolMap = baseOf(this.mapId);
             } else {
               // A Last Signal series plays the arenas in turn and continues
               // until it is decided; a single round picks an arena at random.

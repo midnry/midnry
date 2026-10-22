@@ -123,7 +123,13 @@ export class SceneTransition {
 
   show(map) {
     this.present(
-      map === "hospital" ? SCENES.hospital : map === this.g.transportMap?.id || /medevac|transport/.test(map) ? SCENES.transport : SCENES.base,
+      map === "hospital"
+        ? SCENES.hospital
+        : map === this.g.transportMap?.id || /medevac|transport/.test(map)
+          ? SCENES.transport
+          : map === "town"
+            ? { ...SCENES.base, kicker: "Calder Quay / harbour town", title: "The town is evacuating" }
+            : SCENES.base,
     );
   }
 

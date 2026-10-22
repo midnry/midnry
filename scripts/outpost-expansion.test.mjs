@@ -25,7 +25,7 @@ const advance = (a, seconds) => {
   for (let t = 0; t < seconds; t += 0.025) a.advance(0.025);
 };
 test("six distinct arenas: sealed walls, connected lanes, valid spawns and safe centers", () => {
-  const combatMaps = Object.keys(MAPS).filter((id) => !["breakwater", "medevac", "hospital"].includes(id));
+  const combatMaps = Object.keys(MAPS).filter((id) => !MAPS[id].protocolOnly);
   assert.equal(combatMaps.length, 6);
   const layouts = new Set();
   for (const mapId of combatMaps)

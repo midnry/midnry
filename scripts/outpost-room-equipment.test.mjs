@@ -74,7 +74,8 @@ test("new rooms accept Blackout Protocol and Last Signal; retired modes stay clo
     );
   const host = await create();
   assert.equal(host.mode, "protocol");
-  assert.equal(host.mapId, "breakwater");
+  // Blackout Protocol rooms play Calder Quay by default.
+  assert.equal(host.mapId, "town");
   const before = JSON.stringify(rooms.get(host.code));
   for (const mode of ["training", "duo"])
     await assert.rejects(
@@ -133,7 +134,8 @@ test("Last Signal rooms: own kits and characters, bot-filled field, rematch on t
   assert.equal(rematch.arena.mapId, "estate");
 });
 test("authenticated online votes unlock Last Stand weapons only for opposing public sides", async () => {
-  const host = await create(),
+  // Shot lines below are laid out on Breakwater's floor plan.
+  const host = await roomAction({ op: "create", mode: "protocol", mapId: "breakwater" }, "protocol-room-test"),
     members = [host];
   for (let i = 0; i < 7; i++)
     members.push(await roomAction({ op: "join", code: host.code }, `last-stand-${i}`));

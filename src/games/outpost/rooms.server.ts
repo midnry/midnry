@@ -165,7 +165,7 @@ export function publicRoom(code: string, room: Room, selfId: string) {
     mapId: protocol
       ? room.phase !== "lobby" && room.arena
         ? room.arena.mapId || "breakwater"
-        : "breakwater"
+        : room.mapId === "breakwater" ? "breakwater" : "town"
       : room.mapId || "outpost",
     phase: room.phase,
     host: room.host,
@@ -211,9 +211,10 @@ const PROTOCOL_OPS = new Set([
 export function lobbyMapOf(mode: Room["mode"], value: unknown = undefined): string {
   if (value === "medevac")
     throw new OutpostError("The medevac route opens after loading the mission supplies.");
-  if (mode === "protocol") return "breakwater";
+  // Blackout Protocol: Calder Quay, or Breakwater when asked for by name.
+  if (mode === "protocol") return value === "breakwater" ? "breakwater" : "town";
   const mapId = value === undefined ? "outpost" : value;
-  if (typeof mapId !== "string" || !Object.hasOwn(MAPS, mapId) || mapId === "breakwater")
+  if (typeof mapId !== "string" || !Object.hasOwn(MAPS, mapId) || MAPS[mapId].protocolOnly)
     throw new OutpostError("Choose a valid combat map.");
   return mapId;
 }
@@ -411,7 +412,8 @@ export function applyRoomAction(
       room.mode = playableModeOf(body.mode);
     }
     if (room.mode === "protocol") {
-      room.mapId = lobbyMapOf(room.mode, body.mapId);
+      // Keep the room's base unless the host names another.
+      room.mapId = lobbyMapOf(room.mode, body.mapId ?? room.mapId);
       for (const m of room.members) {
         m.team = 0;
         m.weapon = "carbine";
@@ -490,7 +492,7 @@ export function applyRoomAction(
       throw new OutpostError("Only the room host can start a match.", 403);
     for (const m of room.members) m.ready = false;
     if (room.mode === "protocol") {
-      room.mapId = "breakwater";
+      room.mapId = lobbyMapOf("protocol", room.mapId);
       for (const m of room.members) {
         m.team = 0;
         m.weapon = "carbine";

@@ -149,6 +149,9 @@ export const ARENAS = {
   },
 };
 
+// The Blackout Protocol base is the same town.
+ARENAS.town = ARENAS.quay;
+
 /** One arena's art: kit pieces, surfaces and props. */
 class ArenaStyle {
   constructor(r, id, asset, version) {

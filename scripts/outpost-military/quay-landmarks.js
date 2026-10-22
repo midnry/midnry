@@ -83,6 +83,9 @@ export class QuayLandmarks {
         (Math.floor(h / 4) % 2 ? bands : legs).push(strut(corner(h, i), corner(h, (i + 1) % 4), 0.08));
       }
       add(legs, steel, "Radio mast");
+      // Indoors (the footing is inside the Radio Station) the mast rises from a
+      // concrete plinth up through the roof, rather than girders in the room.
+      add([box(2.6, 3.4, 2.6, cx, 1.7, cz)], own(new THREE.MeshStandardMaterial({ color: "#9b968c", roughness: 0.9 })), "Mast plinth");
       add(bands, white, "Radio mast bands");
       for (const h of [H * 0.5, H]) this.warning = glow("#ff2a1a", 0.22, cx, h + 0.2, cz, "Mast warning light");
       add([box(1.6, 0.9, 0.9, cx + 0.2, H * 0.7, cz)], grey, "Mast dish housing");

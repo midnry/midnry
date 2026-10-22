@@ -22,7 +22,8 @@ import {
   patientNeeds,
 } from "./outpost-hospital.js";
 import {
-  PROTOCOL_MAP,
+  baseOf,
+  PROTOCOL_BASES,
   TRANSPORT_MAP,
   HOSPITAL_MAP,
   MEDICAL_SUPPLIES,
@@ -201,8 +202,12 @@ export class ProtocolArena extends Arena {
     // Super provides the established Entity/renderer shape. Our map, roles,
     // movement and rules replace combat-mode initialization completely.
     super({ ...options, humans, random, mode: "protocol", mapId: "outpost", weapon: "carbine" });
-    this.mapId = PROTOCOL_MAP.id;
-    this.level = PROTOCOL_MAP.level.map((row) => [...row]);
+    // The base: Calder Quay by default, Breakwater on request (and in practice).
+    // (The simulation's own default stays Breakwater: tests and old rooms;
+    // the game and new online rooms ask for Calder Quay.)
+    this.baseId = baseOf(options.base ?? "breakwater").id;
+    this.mapId = this.base().id;
+    this.level = this.base().level.map((row) => [...row]);
     this.crates = [];
     this.cores = [];
     this.projectiles = [];
@@ -258,6 +263,7 @@ export class ProtocolArena extends Arena {
       // Roles are announced when the assembly removes someone (host setting).
       revealRoles: options.revealRoles !== false,
       revealed: {},
+      base: this.baseId,
       match: { ...this.matchRoll, ...(this.shift === "full" ? {} : { shift: this.shift }), ...(rookie ? { rookie: true } : {}) },
       // Everything that happened, secrets included: shown only after the round.
       timeline: [],
@@ -270,11 +276,11 @@ export class ProtocolArena extends Arena {
       bodies: [],
       bombs: [],
       sites: clone(
-        this.varietyRandom ? liveSites(this.varietyRandom, PROTOCOL_MAP.sites) : PROTOCOL_MAP.sites,
+        this.varietyRandom ? liveSites(this.varietyRandom, this.base().sites) : this.base().sites,
       ),
-      stations: clone(PROTOCOL_MAP.stations),
-      vents: clone(PROTOCOL_MAP.vents),
-      emergency: clone(PROTOCOL_MAP.emergency),
+      stations: clone(this.base().stations),
+      vents: clone(this.base().vents),
+      emergency: clone(this.base().emergency),
       meeting: null,
       combat: null,
       log: [],
@@ -299,8 +305,8 @@ export class ProtocolArena extends Arena {
       mission: this.newMedicalMission(),
     };
     const spawnOrder = this.varietyRandom
-      ? shuffled(PROTOCOL_MAP.spawns, this.varietyRandom)
-      : PROTOCOL_MAP.spawns;
+      ? shuffled(this.base().spawns, this.varietyRandom)
+      : this.base().spawns;
     for (let i = 0; i < this.entities.length; i++) {
       const e = this.entities[i];
       const [x, y] = spawnOrder[i % spawnOrder.length];
@@ -327,7 +333,7 @@ export class ProtocolArena extends Arena {
         attack: 0,
         burst: null,
       });
-      const assignments = shuffle(PROTOCOL_MAP.stations, random)
+      const assignments = shuffle(this.base().stations, random)
         .slice(0, 3)
         .map((station, j) => ({
           id: `${e.id}-assignment-${j}`,
@@ -396,6 +402,8 @@ export class ProtocolArena extends Arena {
     if (!data?.protocol || data.mode !== "protocol") return Arena.restore(data);
     const arena = Arena.restore(data);
     Object.setPrototypeOf(arena, ProtocolArena.prototype);
+    // Rooms created before bases existed were all Breakwater.
+    arena.baseId = baseOf(data.protocol.base ?? "breakwater").id;
     arena.shift = ["quick", "daily"].includes(data.protocol.match?.shift) ? data.protocol.match.shift : "full";
     // A public recipient snapshot can render and interpolate, but may never
     // invent teammates' roles or be used as an authoritative server simulation.
@@ -451,8 +459,8 @@ export class ProtocolArena extends Arena {
     }
     const kind = Object.fromEntries(manifest.map((item) => [item.id, item.name]));
     const supplyStock = random
-      ? dealSupplies(random, PROTOCOL_MAP.supplies, manifest, roll.modifier === "short-supplies" ? 0 : 2)
-      : clone(PROTOCOL_MAP.supplies).map((stock) =>
+      ? dealSupplies(random, this.base().supplies, manifest, roll.modifier === "short-supplies" ? 0 : 2)
+      : clone(this.base().supplies).map((stock) =>
           stock.stock > 0 ? { ...stock, name: `${kind[stock.supplyId]} · ${stock.name}` } : stock,
         );
     const fade = roll.modifier === "rush" ? 1.25 : 1;
@@ -474,7 +482,7 @@ export class ProtocolArena extends Arena {
       flightTasks: AIRCRAFT_TASKS.map((task) => ({ ...task, done: false })),
       manifest,
       supplyStock,
-      loading: clone(PROTOCOL_MAP.loading),
+      loading: clone(this.base().loading),
       patients: [70, 82, 94, 100].map((hp, i) => ({
         id: `patient-${i + 1}`,
         name: ["Corporal Mercer", "Sergeant Imani", "Specialist Vega", "Private Solis"][i],
@@ -541,7 +549,9 @@ export class ProtocolArena extends Arena {
     return b && distance(a, b) <= radius && this.visible(a, b);
   }
   sightRange() {
-    return sightRange(this.protocol, this.time);
+    // Open streets see further than base corridors (Calder Quay: ×1.4, which
+    // brings bot rounds back to Breakwater's crew / infiltrator balance).
+    return sightRange(this.protocol, this.time) * (this.base().sightScale ?? 1);
   }
   sees(a, b) {
     return this.active(a) && this.near(a, b, this.sightRange());
@@ -703,7 +713,11 @@ export class ProtocolArena extends Arena {
 
   /** The floor plan in use: base, aircraft or field hospital. */
   currentMap() {
-    return this.mapId === TRANSPORT_MAP.id ? TRANSPORT_MAP : this.mapId === HOSPITAL_MAP.id ? HOSPITAL_MAP : PROTOCOL_MAP;
+    return this.mapId === TRANSPORT_MAP.id ? TRANSPORT_MAP : this.mapId === HOSPITAL_MAP.id ? HOSPITAL_MAP : this.base();
+  }
+  /** This round's base map (where the supplies are gathered). */
+  base() {
+    return baseOf(this.baseId ?? this.protocol?.base ?? "breakwater");
   }
 
   flightTasksComplete() {
@@ -1951,7 +1965,7 @@ export class ProtocolArena extends Arena {
     if (mission.phase !== "base" || this.time < (p.nextEventAt ?? Infinity) || (p.eventCount || 0) >= (this.shift === "full" ? 3 : QUICK.maxEvents)) return;
     p.nextEventAt = this.time + 75 + this.random() * 35;
     p.eventCount = (p.eventCount || 0) + 1;
-    const { kind, spot } = nextEvent(() => this.random(), p.events.at(-1)?.kind);
+    const { kind, spot } = nextEvent(() => this.random(), p.events.at(-1)?.kind, this.base().eventSpots);
     const info = EVENT_KINDS[kind];
     const ev = {
       id: `event-${p.nextId++}`,
@@ -1980,8 +1994,8 @@ export class ProtocolArena extends Arena {
     p.events.push(ev);
     const lines = {
       fire: `Fire in ${ev.room}! Put it out within ${info.duration} seconds or we lose medical stores.`,
-      casualty: `A new casualty has arrived at the south gate. Stabilise them before they fade.`,
-      drop: `A supply delivery is waiting in the atrium. Unpack it to give the patients a boost.`,
+      casualty: `A new casualty has arrived at ${ev.room ?? "the south gate"}. Stabilise them before they fade.`,
+      drop: `A supply delivery is waiting in ${ev.room ?? "the atrium"}. Unpack it to give the patients a boost.`,
       sandstorm: `Sandstorm! Visibility is down for ${info.duration} seconds. Stay with someone.`,
     };
     this.addLog(lines[kind]);
@@ -2212,10 +2226,10 @@ export class ProtocolArena extends Arena {
     )
       return null;
     player.checkedCovers ??= {};
-    for (const cover of PROTOCOL_MAP.sites)
+    for (const cover of this.base().sites)
       if (this.near(entity, cover, 2)) player.checkedCovers[cover.id] = this.time;
     return (
-      PROTOCOL_MAP.sites
+      this.base().sites
         .filter((cover) => this.time - (player.checkedCovers[cover.id] ?? -1e9) > 60)
         .sort((a, b) => distance(entity, a) - distance(entity, b))[0] ?? null
     );
@@ -2645,7 +2659,10 @@ export class ProtocolArena extends Arena {
 }
 
 export function createArena(options = {}) {
-  return options.mode === "protocol" ? new ProtocolArena(options) : new Arena(options);
+  // A Blackout Protocol room's map id names its base (Calder Quay or Breakwater).
+  return options.mode === "protocol"
+    ? new ProtocolArena({ ...options, base: options.base ?? (PROTOCOL_BASES[options.mapId] ? options.mapId : undefined) })
+    : new Arena(options);
 }
 
 export function restoreArena(data) {

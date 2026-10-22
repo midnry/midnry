@@ -83,7 +83,7 @@ export const readDaily = () => {
 const GUIDE = [
   [
     "Lifeline Run / three phases",
-    "Win one of two ways: save the wounded at the field hospital, or find the infiltrators and vote every one of them out before you land. First gather the medical items at Breakwater Forward Base (usually 9: trauma kits, surgical packs, IV fluids and recovery supplements). Cabinets are restocked differently every round, so follow the arrow and the manifest in Info. Carry one item at a time to the hangar loading pad, then board the medevac and fly to Saint Brigid Field Hospital, where the cargo still has to reach the wounded (see Field hospital). Each quarter of the manifest loaded triggers a 25-second base lockdown that holds the infiltrators back, and nobody can be eliminated aboard the medevac: in the air, infiltrators can only sabotage. Every match also has a modifier and a twist, shown in your orders.",
+    "Win one of two ways: save the wounded at the field hospital, or find the infiltrators and vote every one of them out before you land. First gather the medical items around the base (Calder Quay, the harbour town) (usually 9: trauma kits, surgical packs, IV fluids and recovery supplements). Cabinets are restocked differently every round, so follow the arrow and the manifest in Info. Carry one item at a time to the medevac loading point (Market Square in Calder Quay), then board the medevac and fly to Saint Brigid Field Hospital, where the cargo still has to reach the wounded (see Field hospital). Each quarter of the manifest loaded triggers a 25-second base lockdown that holds the infiltrators back, and nobody can be eliminated aboard the medevac: in the air, infiltrators can only sabotage. Every match also has a modifier and a twist, shown in your orders.",
   ],
   [
     "Operators: deliver aid before patients die",
@@ -123,7 +123,7 @@ const GUIDE = [
   ],
   [
     "Emergencies",
-    "With the Variety rules on, the base throws up to three emergencies at you during the gathering phase. A fire must be put out (hold E at it for four seconds) or medical stores burn and every patient loses health. A new casualty at the south gate needs stabilising. A supply delivery in the atrium boosts every patient when unpacked. A sandstorm cuts everyone's visibility for forty seconds, which is a gift to infiltrators. The alert banner shows how long you have.",
+    "With the Variety rules on, the base throws up to three emergencies at you during the gathering phase. A fire must be put out (hold E at it for four seconds) or medical stores burn and every patient loses health. A new casualty needs stabilising where the alert says. A supply delivery boosts every patient when unpacked. A sandstorm cuts everyone's visibility for forty seconds, which is a gift to infiltrators. The alert banner shows how long you have.",
   ],
   [
     "Specialties",
@@ -451,7 +451,7 @@ export class ProtocolUI {
         "Offline menus pause the mission. Online missions continue while this manual is open, including patient vitals and flight safety.",
       ),
     );
-    this.buildBaseGuide(PROTOCOL_MAP);
+    this.buildBaseGuide(this.g.protocolMap || PROTOCOL_MAP);
     this.buildBaseGuide(TRANSPORT_MAP);
     for (const [title, copy] of GUIDE)
       this.guide.append(element("h3", "", title), element("p", "", copy));
@@ -1050,10 +1050,10 @@ export class ProtocolUI {
 
   map() {
     const id = this.g.arena?.mapId;
-    return id === "medevac" ? TRANSPORT_MAP : id === "hospital" ? HOSPITAL_MAP : this.g.protocolMap || PROTOCOL_MAP;
+    return id === "medevac" ? TRANSPORT_MAP : id === "hospital" ? HOSPITAL_MAP : this.g.arena?.base?.() || this.g.protocolMap || PROTOCOL_MAP;
   }
   roomName(id) {
-    return this.map().rooms?.find((room) => room.id === id)?.name || "Breakwater Base";
+    return this.map().rooms?.find((room) => room.id === id)?.name || this.map().name || "the base";
   }
   lineOfSight(x, y) {
     const p = this.g.player;
@@ -2365,7 +2365,7 @@ export class ProtocolUI {
       );
     setText(
       g.$(".mf-kitnote"),
-      "Lifeline Run begins at Breakwater and boards the medevac after the medical manifest is loaded. Both phases use matching uniforms and secret online roles; bots fill empty seats. Offline role preference starts a fresh round.",
+      "Lifeline Run begins in Calder Quay and boards the medevac after the medical manifest is loaded. Both phases use matching uniforms and secret online roles; bots fill empty seats. Offline role preference starts a fresh round.",
     );
     const instructions = g.$(".mf-help");
     if (instructions)

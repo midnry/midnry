@@ -19,9 +19,9 @@ export const EVENT_SPOTS = Object.freeze({
 });
 
 /** Pick the next event without repeating the last kind. */
-export function nextEvent(random, lastKind) {
+export function nextEvent(random, lastKind, where = EVENT_SPOTS) {
   const kinds = Object.keys(EVENT_KINDS).filter((k) => k !== lastKind);
   const kind = kinds[Math.min(kinds.length - 1, Math.floor(random() * kinds.length))];
-  const spots = EVENT_SPOTS[kind] || [null];
+  const spots = (where || EVENT_SPOTS)[kind] || [null];
   return { kind, spot: spots[Math.min(spots.length - 1, Math.floor(random() * spots.length))] };
 }
