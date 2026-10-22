@@ -1,6 +1,6 @@
 /** Shared, DOM-free simulation for offline games and authoritative online rooms. */
 export const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
-import { ADS, applyStanceInput, canAim, airborne, botStance, jumpPhase, JUMP, lowCover, pitchTo, settling, speedOf, spotRange, stanceOf, verticalHit } from "./outpost-stance.js";
+import { ADS, applyStanceInput, canAim, airborne, botStance, jumpPhase, JUMP, lowCover, pitchTo, setStance, settling, speedOf, spotRange, stanceOf, verticalHit } from "./outpost-stance.js";
 import { LEVEL, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf } from "./outpost-content.js";
 // Health recovery: starts this many seconds after the last damage taken,
 // then restores this fraction of maximum health per second.
@@ -22,6 +22,13 @@ export const SIGNAL = Object.freeze({
   lastStand: 1.15,
   lastRegenDelay: 3,
 });
+/** Canal water (Calder Quay): swimming, diving through culverts and
+ * electrified water. Lightning that strikes water, or a fighter still
+ * crackling from a strike who touches it, electrifies every connected
+ * water (culverts link them) for `shock` seconds; anyone in the water takes
+ * `perSecond` damage. Diving takes `dive` seconds, out of sight and out of
+ * reach of shots, and surfaces at the culvert's other mouth. */
+export const WATER = Object.freeze({ shock: 3, perSecond: 14, dive: 1.5, mouth: 0.85 });
 /** How far (tiles) bots can spot a rival when fog limits what a player can
  * see. Must not exceed the player's own view through the renderer's fog
  * (fogVisibility in scripts/outpost-military/telemetry.js, checked by
@@ -321,6 +328,7 @@ export class Arena {
       cores: this.cores,
       disaster: this.disaster,
       terrain: this.terrain,
+      waterShockUntil: this.waterShockUntil || 0,
     };
   }
   emit(id, text) {
@@ -385,12 +393,22 @@ export class Arena {
   seeThrough(type) {
     return !!mapOf(this.mapId).seeThrough?.includes(type);
   }
-  canMove(x, y, r = 0.2, over = false) {
+  /** Solid for movement? Water is solid unless `swim` (players may swim). */
+  blocks(x, y, swim = false) {
+    const type = this.wall(x, y);
+    return !!type && !(swim && this.seeThrough(type));
+  }
+  /** Is this fighter in the water (its centre over a water tile)? */
+  inWater(e) {
+    const type = this.level[Math.floor(e.y)]?.[Math.floor(e.x)];
+    return !!type && this.seeThrough(type);
+  }
+  canMove(x, y, r = 0.2, over = false, swim = false) {
     return (
-      !this.wall(x - r, y - r) &&
-      !this.wall(x + r, y - r) &&
-      !this.wall(x - r, y + r) &&
-      !this.wall(x + r, y + r) &&
+      !this.blocks(x - r, y - r, swim) &&
+      !this.blocks(x + r, y - r, swim) &&
+      !this.blocks(x - r, y + r, swim) &&
+      !this.blocks(x + r, y + r, swim) &&
       !this.crates.some(
         (c) =>
           c.hp > 0 &&
@@ -401,10 +419,69 @@ export class Arena {
     );
   }
   move(e, dx, dy) {
+    if (e.diveUntil > this.time) return;
+    // Players may swim; bots keep to the streets and bridges.
+    const swim = !e.bot;
     // A jump clears low cover; landing on it, you can still step off.
-    const over = airborne(e, this.time) || !this.canMove(e.x, e.y);
-    if (this.canMove(e.x + dx, e.y, 0.2, over)) e.x += dx;
-    if (this.canMove(e.x, e.y + dy, 0.2, over)) e.y += dy;
+    const over = airborne(e, this.time) || !this.canMove(e.x, e.y, 0.2, false, swim);
+    if (this.canMove(e.x + dx, e.y, 0.2, over, swim)) e.x += dx;
+    if (this.canMove(e.x, e.y + dy, 0.2, over, swim)) e.y += dy;
+  }
+  /** Swim stance in water, standing again on the quay; dives through
+   * culverts; the electrified-water rule. Runs every step for everyone. */
+  updateWater(dt) {
+    const map = mapOf(this.mapId);
+    if (!map.seeThrough) return;
+    for (const e of this.entities) {
+      if (e.hp <= 0) continue;
+      if (e.diveUntil && this.time >= e.diveUntil) {
+        Object.assign(e, { x: e.diveTo.x, y: e.diveTo.y, diveUntil: 0, diveTo: null });
+        this.effect(e.x, e.y, "splash", 0.8, 0.6);
+      }
+      const wet = this.inWater(e);
+      if (wet && stanceOf(e) !== "swim") {
+        setStance(e, "swim", this.time);
+        Object.assign(e, { ads: false, sprinting: false, slideUntil: 0, jumpAt: -10 });
+        this.effect(e.x, e.y, "splash", 0.7, 0.5);
+      } else if (!wet && stanceOf(e) === "swim") setStance(e, "stand", this.time);
+      // A fighter still crackling from a lightning strike electrifies the water.
+      if (wet && e.shockUntil > this.time && e.shockFrom !== "water") this.electrifyWater(e.x, e.y);
+    }
+    if (!(this.waterShockUntil > this.time)) return;
+    for (const e of this.entities)
+      if (e.hp > 0 && this.inWater(e)) {
+        this.damage(e, WATER.perSecond * dt, null);
+        if (e.hp > 0 && !(e.shockUntil > this.time)) Object.assign(e, { shockUntil: this.time + 1, shockFrom: "water" });
+      }
+  }
+  electrifyWater(x, y) {
+    if (!(this.waterShockUntil > this.time)) this.effect(x, y, "electric-water", 2, WATER.shock);
+    this.waterShockUntil = this.time + WATER.shock;
+  }
+  /** A swimmer at a culvert mouth dives through to its other end. */
+  dive(e) {
+    if (stanceOf(e) !== "swim" || e.diveUntil > this.time) return false;
+    for (const [ax, ay, bx, by] of mapOf(this.mapId).culverts || [])
+      for (const [from, to] of [
+        [[ax, ay], [bx, by]],
+        [[bx, by], [ax, ay]],
+      ])
+        if (Math.hypot(e.x - (from[0] + 0.5), e.y - (from[1] + 0.5)) < WATER.mouth) {
+          e.diveUntil = this.time + WATER.dive;
+          e.diveTo = { x: to[0] + 0.5, y: to[1] + 0.5 };
+          this.effect(e.x, e.y, "splash", 0.9, 0.6);
+          return true;
+        }
+    return false;
+  }
+  /** Near a culvert mouth (for the HUD's Dive prompt). */
+  atCulvert(e) {
+    return (
+      stanceOf(e) === "swim" &&
+      (mapOf(this.mapId).culverts || []).some(([ax, ay, bx, by]) =>
+        [[ax, ay], [bx, by]].some(([x, y]) => Math.hypot(e.x - (x + 0.5), e.y - (y + 0.5)) < WATER.mouth),
+      )
+    );
   }
   rayTarget(origin, dx, dy, targets) {
     let nearest = this.cast(origin.x, origin.y, dx, dy).distance,
@@ -437,6 +514,8 @@ export class Arena {
     return Math.hypot(e.x - bot.x, e.y - bot.y) < range && this.visible(bot, e);
   }
   visible(a, b) {
+    // A diver is under the water, out of sight.
+    if (b.diveUntil > this.time || a.diveUntil > this.time) return false;
     const dx = b.x - a.x,
       dy = b.y - a.y,
       d = Math.hypot(dx, dy);
@@ -452,6 +531,8 @@ export class Arena {
   }
   damage(target, amount, source = null) {
     if (target.hp <= 0 || !Number.isFinite(amount) || amount <= 0) return;
+    // Underwater in a culvert: no weapon reaches a diver (electricity still does).
+    if (source && target.diveUntil > this.time) return;
     if (this.mode === "duo" && source && source !== target && source.team === target.team) return;
     if (this.mode === "signal" && !target.id.startsWith("crate")) {
       if (target.shieldUntil > this.time) return;
@@ -907,6 +988,8 @@ export class Arena {
     const w = weaponOf(e.weapon);
     if (
       settling(e, this.time) ||
+      stanceOf(e) === "swim" ||
+      e.diveUntil > this.time ||
       e.hp <= 0 ||
       this.state === "ended" ||
       e.reloadUntil ||
@@ -1429,11 +1512,18 @@ export class Arena {
         e.slideDy = (sa * f + ca * s) / direction;
       }
       e.slideHeld = !!input.slide;
-      applyStanceInput(e, input, this.time, Math.hypot(f, s) > 0.1);
+      if (stanceOf(e) === "swim") {
+        // In the water the jump button dives at a culvert mouth.
+        const press = !!input.jump && !e.jumpHeld;
+        e.jumpHeld = !!input.jump;
+        if (press) this.dive(e);
+        e.slideUntil = 0;
+      } else applyStanceInput(e, input, this.time, Math.hypot(f, s) > 0.1);
       const sliding = e.slideUntil > this.time;
       // Sprinting lowers the sights; aiming means walking.
-      e.ads = !!input.ads && canAim(weaponOf(e.weapon)) && !(input.sprint && Math.hypot(f, s) > 0.1) && !sliding;
-      e.sprinting = !sliding && !e.ads && !!input.sprint && Math.hypot(f, s) > 0.1 && stanceOf(e) === "stand";
+      const swimming = stanceOf(e) === "swim";
+      e.ads = !swimming && !!input.ads && canAim(weaponOf(e.weapon)) && !(input.sprint && Math.hypot(f, s) > 0.1) && !sliding;
+      e.sprinting = !swimming && !sliding && !e.ads && !!input.sprint && Math.hypot(f, s) > 0.1 && stanceOf(e) === "stand";
       const speed =
         (sliding ? 3 + 3 * ((e.slideUntil - this.time) / 0.65) : (e.sprinting ? 4 : 2.6) * speedOf(e) * (e.ads ? ADS.speed : 1)) *
         (e.speedUntil > this.time ? 1.4 : 1) *
@@ -1453,6 +1543,7 @@ export class Arena {
     if (this.crates.some((c) => c.until <= this.time))
       this.crates = this.crates.filter((c) => !(c.until <= this.time));
     if (this.disaster) updateDisaster(this, dt);
+    this.updateWater(dt);
     if (this.mode !== "training") this.updateZone();
     for (const e of this.entities) {
       if (e.bot) this.updateRival(e, dt);

@@ -60,7 +60,8 @@ function plan() {
 
   // ---- Middle: Lantern Park, Market Hall, Market Square, Substation -----
   fill(1, 10, 6, 7, '"'); // Lantern Park
-  put([[2, 11], [5, 12], [3, 14], [5, 16]], "T"); // park trees (keep x 1 open for the west spawn)
+  put([[2, 11], [5, 12], [3, 15], [5, 16]], "T"); // park trees (keep x 1 open for the west spawn)
+  fill(3, 12, 2, 2, "~"); // Lantern Park pond (a culvert to the canal)
   building(7, 10, 6, 6, [[9, 10], [12, 13], [7, 12], [10, 15]]); // Market Hall
   fill(13, 10, 8, 8, ":"); // Market Square (the haze closes here)
   put([[15, 11], [16, 11]], "F"); // clock memorial splits the avenue view
@@ -97,6 +98,7 @@ function plan() {
   fill(25, 23, 4, 6, ":"); // depot yard
   fill(20, 27, 5, 2, ":");
   put([[27, 24], [27, 25], [21, 28]], "V"); // parked trucks and a container
+  fill(25, 24, 2, 2, "~"); // flooded slipway in the depot yard (a culvert to the canal)
   put([[12, 27]], "S"); // bus shelter on Hospital Road
   return g;
 }
@@ -112,7 +114,7 @@ export const QUAY_CRATES = [
   [25.5, 4.5],
   [5.5, 8.5],
   [24.5, 7.5],
-  [3.5, 13.5],
+  [1.5, 12.5],
   [9.5, 12.5],
   [14.5, 13.5],
   [18.5, 17.5],
@@ -131,6 +133,14 @@ export const QUAY_ZONES = [
   { x: 1, y: 10, w: 6, h: 7, color: "#5f7a4a" }, // Lantern Park
   { x: 1, y: 27, w: 7, h: 2, color: "#5f7a4a" }, // courtyard
   { x: 25, y: 23, w: 4, h: 6, color: "#5d6266" }, // depot yard
+];
+
+/** Underwater culverts: [x, y] of a mouth in one water, [x, y] in another.
+ * A swimmer at a mouth dives (crouch) and surfaces at the other end; they
+ * also join the waters, so electricity spreads through all of them. */
+export const QUAY_CULVERTS = [
+  [2, 19, 3, 12], // canal (west reach) ↔ Lantern Park pond
+  [27, 20, 26, 24], // canal (east reach) ↔ depot slipway
 ];
 
 /** Wall-bracket street lamps at the junctions: [wall x, wall y, dx, dy]

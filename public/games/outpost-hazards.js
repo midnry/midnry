@@ -236,8 +236,10 @@ export function updateDisaster(arena, dt) {
       const before = new Map(arena.entities.map((e) => [e, e.hp]));
       arena.blast(null, s.x, s.y, 45, 1.3);
       for (const e of arena.entities)
-        if (e.hp > 0 && e.hp < before.get(e)) e.shockUntil = arena.time + SHOCK.seconds;
-      arena.addTerrain(s.x, s.y, "scorch");
+        if (e.hp > 0 && e.hp < before.get(e)) Object.assign(e, { shockUntil: arena.time + SHOCK.seconds, shockFrom: "storm" });
+      // Lightning into water electrifies all of it (Calder Quay's canal).
+      if (arena.inWater?.({ x: s.x, y: s.y })) arena.electrifyWater(s.x, s.y);
+      else arena.addTerrain(s.x, s.y, "scorch");
     } else {
       // The ground splits and buckles; the cover beside it collapses.
       for (const [i, j] of [
@@ -282,7 +284,8 @@ export function updateDisaster(arena, dt) {
       tx = Math.floor(near.x + Math.cos(a) * r),
       ty = Math.floor(near.y + Math.sin(a) * r);
     if (tx < 1 || ty < 1 || tx > n - 2 || ty > n - 2) continue;
-    if (arena.level[ty][tx] !== 0) continue;
+    const water = arena.inWater?.({ x: tx + 0.5, y: ty + 0.5 });
+    if (arena.level[ty][tx] !== 0 && !(water && d.kind === "storm")) continue;
     const beside = [
       [1, 0],
       [-1, 0],

@@ -838,3 +838,23 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   `decorateRealisticEnvironment`, so no coping or door frames over the canal. Minimap draws water blue.
 - Tests: `scripts/outpost-quay.test.mjs` adds "see and shoot across it, never walk across it" and "walls
   still block". Pace sim quay avg 97 s. `quay-look.mjs` adds `across-canal` and `dock-bridge` views.
+
+### Calder Quay: swimming, culverts and electrified water (owner, 2026-10-22, not deployed yet)
+
+- Players (not bots) walk off any quay into water (`Arena.move` passes `swim` to `canMove`/`blocks`; spawns,
+  redeploys and bots still treat water as solid). In water the sim sets stance `swim` (`outpost-stance.js`:
+  speed 0.5, eye −0.42, centre −0.4, window 0.12, spotted within 8): no sprint, slide, jump, aim or fire.
+  Clients cannot request `swim` (`CHOSEN_STANCES`); leaving the water stands you up.
+- Culverts: `QUAY_CULVERTS` (MAPS `culverts`): canal ↔ Lantern Park pond, canal ↔ depot slipway. At a mouth
+  (within `WATER.mouth`) the jump input dives (`Arena.dive`): 1.5 s unseen (`visible` false) and out of reach of
+  weapons (`damage` ignores sourced hits), then surface at the other mouth. HUD: Jump button reads DIVE and a
+  "CULVERT · PRESS SPACE TO DIVE" hint; underwater overlay (`.mf-diving`).
+- Electrified water (`Arena.updateWater`, `WATER`): lightning striking a water tile (storm strikes may now land
+  on water) or a fighter with a storm shock (`shockFrom: "storm"`) entering water electrifies all water (the
+  culverts join it) for 3 s; everyone in water takes 14/s and a short shock (`shockFrom: "water"`, which never
+  re-triggers it). Dry land is safe. Renderer: water flickers blue-white; HUD "WATER ELECTRIFIED · GET OUT" and
+  a blue edge flash (`.mf-electrified`). `waterShockUntil` is in the snapshot for online.
+- Renderer: swimmers sink 1.3 m (head and shoulders above the water), divers are hidden, culvert headwalls with
+  dark openings, water drawn for every see-through tile (pond and slipway too).
+- Tests: `scripts/outpost-quay.test.mjs` (swim, bots never swim, dive, electrified water incl. through a
+  culvert, lightning on water). QA: `node scripts/qa/quay-swim.mjs [width]`. Pace sim quay avg 87 s.

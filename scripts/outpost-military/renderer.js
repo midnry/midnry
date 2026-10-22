@@ -908,7 +908,7 @@ export class MilitaryRenderer {
     this.canal = null;
     const water = mapOf(g.arena.mapId).seeThrough;
     if (water?.length) {
-      this.canal = new CanalWater(this, g.level, water, mapOf(g.arena.mapId).lamps);
+      this.canal = new CanalWater(this, g.level, water, mapOf(g.arena.mapId).lamps, mapOf(g.arena.mapId).culverts);
       this.world.add(this.canal.group);
     }
     if (this.worldVisibility) this.worldVisibility.dirty = true;
@@ -2603,7 +2603,9 @@ export class MilitaryRenderer {
       const fall = alive ? 0 : Math.min(1, (now - a.deadAt) / 0.85);
       a.root.visible =
         (alive || now - a.deadAt < 2.5) &&
-        (!cloaked || Math.hypot(e.x - camera.x, e.y - camera.y) < 1.3);
+        (!cloaked || Math.hypot(e.x - camera.x, e.y - camera.y) < 1.3) &&
+        // A diver is under the water in a culvert.
+        !(e.diveUntil > this.g.time);
       const sliding = alive && e.slideUntil > this.g.time;
       a.root.scale.y = 1;
       if (
@@ -2627,7 +2629,9 @@ export class MilitaryRenderer {
       a.root.position.set(
         e.x * SCALE,
         Math.sin(Math.min(1, Math.max(0, ((e.jumpUntil || 0) - this.g.time) / 0.5)) * Math.PI) *
-          SCALE,
+          SCALE -
+          // Swimming: only head and shoulders above the water (the floor hides the rest).
+          (alive && e.stance === "swim" ? 1.3 : 0),
         e.y * SCALE,
       );
       a.root.rotation.y = -Math.PI / 2 - e.a;
@@ -3509,7 +3513,7 @@ export class MilitaryRenderer {
     const night = (this.night ||= new NightDressing(this)).update(protocolView, g.arena.mapId, t);
     this.updateCinematic(night, t);
     this.clouds.update(t, night, this.motion.matches);
-    this.canal?.update(t, this.motion.matches, night ? 1 : 0);
+    this.canal?.update(t, this.motion.matches, night ? 1 : 0, g.arena.waterShockUntil > g.arena.time);
     if (g.mode === "protocol") (this.events ||= new EventDressing(this)).update(protocolView, t);
     updateNaturalLighting(this, protocolView, p, dt);
     const undim = g.mode !== "protocol" && (this.hazards ||= new HazardDressing(this)).dim();

@@ -12,13 +12,19 @@
  *    a crouched one within 11, unless they have just fired.
  *  - Jumping (0.55 s, about 0.75 m) clears low cover: sandbag barriers and
  *    canisters. Shots fired mid-air wander a little.
+ *  - Swimming (canal water, set by the simulation, never requested): only
+ *    the head shows, so a small, low target; half speed; no sprint, jump,
+ *    aim or fire (the gun is held clear of the water).
  * Units are tiles (one tile is 3 m in the 3D world).
  */
 export const STANCE = Object.freeze({
   stand: { speed: 1, centre: 0, eye: 0, window: 0.48, spot: Infinity },
   crouch: { speed: 0.6, centre: -0.12, eye: -0.13, window: 0.38, spot: 11 },
   prone: { speed: 0.3, centre: -0.42, eye: -0.45, window: 0.22, spot: 6.5 },
+  swim: { speed: 0.5, centre: -0.4, eye: -0.42, window: 0.12, spot: 8 },
 });
+/** Stances a player may ask for (swimming follows from the water). */
+export const CHOSEN_STANCES = Object.freeze(["stand", "crouch", "prone"]);
 /** Aiming down the sights: a zoomed view (client), a slower walk, no
  * sprinting, and a tighter spread for spread weapons. */
 export const ADS = Object.freeze({ speed: 0.55, spread: 0.65 });
@@ -64,7 +70,7 @@ export const pitchTo = (shooter, target, d, time) => (d > 0 ? (centreOf(target, 
 
 /** A player's stance request and jump press (validated here, for any client). */
 export function applyStanceInput(e, input, time, moving) {
-  let want = STANCE[input.stance] ? input.stance : stanceOf(e);
+  let want = CHOSEN_STANCES.includes(input.stance) ? input.stance : stanceOf(e);
   // Sprinting stands you up; so does a jump from the ground.
   if (input.sprint && moving) want = "stand";
   const jump = !!input.jump && !e.jumpHeld;

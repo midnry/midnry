@@ -1159,6 +1159,10 @@
       midnry-fps .mf-stance[data-stance="stand"] { --mf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Ccircle cx='11' cy='7' r='2.3'/%3E%3Cpath d='M8.5 10.2h4.2l2.6 4.3 2.9 1.3-.6 1.4-3.6-1.4-1.6-2-1.2 2.6 2.3 4.6h-1.7L9.6 17l-1.9 4h-1.6l2.4-6.3z'/%3E%3C/svg%3E"); }
       midnry-fps .mf-stance[data-stance="crouch"] { --mf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Ccircle cx='12' cy='4' r='2.3'/%3E%3Cpath d='M10 7.5h4l1 7h-2l-.5 7h-1l-.5-7H9z'/%3E%3C/svg%3E"); border-color: var(--mf-accent, #f2b950); }
       midnry-fps .mf-stance[data-stance="prone"] { --mf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black'%3E%3Ccircle cx='12' cy='4' r='2.3'/%3E%3Cpath d='M10 7.5h4l1 7h-2l-.5 7h-1l-.5-7H9z'/%3E%3C/svg%3E"); border-color: var(--mf-accent, #f2b950); background: #3a2c10d0; }
+      midnry-fps .mf-diving::before { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 3; background: radial-gradient(ellipse at 50% 40%, #1b5a5ccc, #04191ef5 75%); backdrop-filter: blur(4px); }
+      midnry-fps .mf-electrified::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 4; box-shadow: inset 0 0 90px #6fd3ffcc; animation: mf-zap 0.18s steps(2) infinite; }
+      @keyframes mf-zap { 50% { box-shadow: inset 0 0 40px #e9f8ffee; } }
+      @media (prefers-reduced-motion: reduce) { midnry-fps .mf-electrified::after { animation: none; } }
       midnry-fps .mf-jump { --mf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 19V5M6 11l6-6 6 6'/%3E%3Cpath d='M5 21h14'/%3E%3C/svg%3E"); }
       midnry-fps .mf-scope { --mf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='7.5'/%3E%3Cpath d='M12 2v5M12 17v5M2 12h5M17 12h5'/%3E%3Ccircle cx='12' cy='12' r='1' fill='black'/%3E%3C/svg%3E"); }
       /* Holding: a ring fills in 0.35 s, then the stance changes. */
@@ -5208,6 +5212,39 @@
             }
             weather.classList.toggle("mf-flash", performance.now() < (this.flashUntil || 0));
           }
+          /** Calder Quay's water: swimming, the culvert Dive prompt (the Jump
+           * control dives at a mouth), the underwater tint while diving and a
+           * warning while the water is electrified. */
+          updateWaterHud() {
+            const a = this.arena,
+              p = this.player,
+              wet = !!(a && p && mapOf(a.mapId).seeThrough && this.mode !== "protocol"),
+              swimming = wet && p.stance === "swim" && p.hp > 0,
+              diving = swimming && p.diveUntil > a.time,
+              mouth = swimming && !diving && a.atCulvert(p),
+              live = wet && a.waterShockUntil > a.time;
+            this.shell.classList.toggle("mf-swimming", swimming);
+            this.shell.classList.toggle("mf-diving", diving);
+            this.shell.classList.toggle("mf-electrified", live && swimming);
+            const jump = this.$(".mf-jump span");
+            if (jump && jump.textContent !== (mouth ? "DIVE" : "JUMP")) jump.textContent = mouth ? "DIVE" : "JUMP";
+            if (!wet) return;
+            // You come out of the water standing.
+            if (swimming && this.stanceWant !== "stand") this.setStance("stand");
+            const how = this.shell.dataset.input === "pad" ? "PRESS A" : matchMedia("(pointer: coarse)").matches ? "TAP DIVE" : "PRESS SPACE";
+            if (swimming && !this.swimHinted) {
+              this.swimHinted = true;
+              this.message("SWIMMING · NO FIRING FROM THE WATER", 2.5);
+            }
+            if (mouth && !this.mouthHinted) {
+              this.mouthHinted = true;
+              this.message(`CULVERT · ${how} TO DIVE`, 3);
+            }
+            if (live && swimming && this.shockWarnedAt !== a.waterShockUntil) {
+              this.shockWarnedAt = a.waterShockUntil;
+              this.message("WATER ELECTRIFIED · GET OUT", 2);
+            }
+          }
           drawMap() {
             if (this.mode === "protocol") return;
             // A zoomed-in local view, north up, centred on the player.
@@ -5364,6 +5401,7 @@
             this.military.render();
             c.restore();
             this.drawMap();
+            this.updateWaterHud();
             if (this.deathSequence) {
               c.fillStyle = `rgba(12,15,16,${this.deathProgress * 0.88})`;
               c.fillRect(0, 0, this.w, this.h);

@@ -58,7 +58,7 @@ function poolTexture() {
 export class CanalWater {
   /** @param r the MilitaryRenderer; `types` the see-through tile types;
    * `lamps` wall brackets as [x, y, dx, dy] (wall tile, facing the street). */
-  constructor(r, level, types, lamps = []) {
+  constructor(r, level, types, lamps = [], culverts = []) {
     this.r = r;
     this.group = new THREE.Group();
     this.group.name = "Canal water, bridges and street lamps";
@@ -151,6 +151,28 @@ export class CanalWater {
       this.group.add(mesh);
     };
     instanced(kerbs, stone, "Quay kerbs");
+    // Culvert mouths: a dark arch with a steel frame in the quay wall beside
+    // each mouth (swim there and dive to come up in the linked water).
+    const arches = [],
+      frames = [],
+      walls = [];
+    for (const [ax, ay, bx, by] of culverts)
+      for (const [x, y] of [
+        [ax, ay],
+        [bx, by],
+      ]) {
+        const side = SIDES.find(([dx, dy]) => floor(x + dx, y + dy)) || [0, -1];
+        // On the quay edge: a stone headwall, its dark opening facing the water.
+        const ex = (x + 0.5 + side[0] * 0.5) * SCALE,
+          ez = (y + 0.5 + side[1] * 0.5) * SCALE,
+          along = (w, h, d) => (side[0] ? [d, h, w] : [w, h, d]);
+        walls.push({ p: [ex + side[0] * 0.25, 0.45, ez + side[1] * 0.25], s: along(2.2, 0.9, 0.5) });
+        arches.push({ p: [ex - side[0] * 0.02, 0.28, ez - side[1] * 0.02], s: along(1.3, 0.5, 0.06) });
+        frames.push({ p: [ex - side[0] * 0.04, 0.56, ez - side[1] * 0.04], s: along(1.45, 0.07, 0.08) });
+      }
+    instanced(walls, stone, "Culvert headwalls");
+    instanced(arches, own(new THREE.MeshBasicMaterial({ color: "#05080a" })), "Culvert mouths");
+    instanced(frames, rail, "Culvert frames");
     instanced(
       decks.map(([x, y]) => ({ p: [(x + 0.5) * SCALE, 0.05, (y + 0.5) * SCALE], s: [SCALE, 0.06, SCALE] })),
       plank,
@@ -199,8 +221,14 @@ export class CanalWater {
     this.tiles = tiles.length;
   }
   /** Slow ripples; lamps brighten as the light falls. */
-  update(t, still, night = 0) {
+  update(t, still, night = 0, live = false) {
     if (this.ripples && !still) this.ripples.offset.set((t * 0.012) % 1, (t * 0.007) % 1);
+    // Electrified water flickers blue-white.
+    if (this.waterMaterial) {
+      const flash = live ? (still ? 0.6 : 0.35 + 0.65 * Math.abs(Math.sin(t * 37) * Math.sin(t * 11))) : 0;
+      this.waterMaterial.emissive.setRGB(0.35 * flash, 0.75 * flash, 1.0 * flash);
+      this.waterMaterial.emissiveIntensity = live ? 1.4 : 0;
+    }
     if (this.poolMaterial) this.poolMaterial.opacity = 0.18 + 0.6 * night;
   }
   dispose() {
