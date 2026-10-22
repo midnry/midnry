@@ -10,7 +10,7 @@ import {
   DAILY_XP,
   WEEKLY_XP,
 } from "./outpost-progression.js";
-import { weaponOf, OUTFITS, mapOf } from "./outpost-sim.js";
+import { weaponOf, OUTFITS, mapOf, WEAPONS } from "./outpost-sim.js";
 import { standingsHTML } from "./outpost-series.js";
 import { BattleMusic, battleIntensity } from "./outpost-music.js";
 import { spatialSound } from "./outpost-spatial-audio.js";
@@ -18,6 +18,13 @@ import { recordMatch } from "./outpost-account.js";
 import { finishOf, money, drawFinish } from "./outpost-finishes.js";
 import { CHARACTERS } from "./outpost-characters.js";
 import { OutpostStore } from "./outpost-store.js";
+/** Locker sections: what you carry, who you are, how it looks, how you're doing. */
+const LOCKER_TABS = [
+  ["loadout", "Loadout"],
+  ["characters", "Characters"],
+  ["finishes", "Finishes"],
+  ["progress", "Progress"],
+];
 const read = (key) => {
   try {
     return JSON.parse(localStorage.getItem(key));
@@ -313,7 +320,7 @@ export class Retention {
     );
     g.shell.insertAdjacentHTML(
       "beforeend",
-      `<div class="mf-countdown" hidden role="status" aria-live="polite"></div><dialog class="mf-locker" aria-label="Locker"><div class="mf-lockerhead"><b>LOCKER</b><button class="mf-lockerclose">BACK</button></div><div class="mf-lockerbody"></div></dialog>`,
+      `<div class="mf-countdown" hidden role="status" aria-live="polite"></div><dialog class="mf-locker" aria-label="Locker"><div class="mf-lockerhead"><b>LOCKER</b><div class="mf-lockertabs" role="tablist" aria-label="Locker sections">${LOCKER_TABS.map(([id, label]) => `<button type="button" role="tab" data-ltab="${id}">${label}</button>`).join("")}</div><button class="mf-lockerclose" aria-label="Close the locker (Esc)" title="Close (Esc)">✕</button></div><div class="mf-lockerbody" role="tabpanel"></div></dialog>`,
     );
     g.$(".mf-volume").value = String(this.audio.volume * 100);
     g.$(".mf-mute").checked = this.audio.muted;
@@ -434,7 +441,26 @@ export class Retention {
         this.lockerContents();
       }
     });
+    // "Change operator" on the home card opens the Characters tab.
+    g.root.addEventListener("click", (e) => {
+      if (e.target.closest?.(".mf-opchar")) this.lockerTab = "characters";
+      else if (e.target.closest?.('nav [data-go="locker"]')) this.lockerTab = "loadout";
+    }, true);
+    g.on(g.$(".mf-lockertabs"), "click", (e) => {
+      const tab = e.target.closest("[data-ltab]");
+      if (!tab) return;
+      this.lockerTab = tab.dataset.ltab;
+      this.lockerContents();
+      tab.focus({ preventScroll: true });
+    });
     g.on(g.$(".mf-lockerbody"), "click", (e) => {
+      const gun = e.target.closest("[data-weapon]");
+      if (gun) {
+        g.chooseWeapon(gun.dataset.weapon);
+        this.lockerContents();
+        g.$(`[data-weapon="${gun.dataset.weapon}"]`)?.focus({ preventScroll: true });
+        return;
+      }
       const currency = e.target.closest("[data-currency]");
       if (currency) {
         this.store.setCurrency(currency.dataset.currency);
@@ -655,8 +681,21 @@ export class Retention {
     const focused = document.activeElement?.dataset?.outfit;
     const p = this.profile,
       next = FINISHES.find((f) => f.kind === "xp" && f.xp > p.xp);
+    const tab = LOCKER_TABS.some(([id]) => id === this.lockerTab) ? this.lockerTab : "loadout";
+    for (const b of this.g.root.querySelectorAll(".mf-lockertabs [data-ltab]")) {
+      b.setAttribute("aria-selected", String(b.dataset.ltab === tab));
+      b.tabIndex = b.dataset.ltab === tab ? 0 : -1;
+    }
+    const level = `<div class="mf-lockerlevel"><b>Level ${levelOf(p)}</b><span>${p.xp} XP · ${p.matches} rounds · ${p.wins} wins</span><progress max="150" value="${p.xp % 150}" aria-label="Progress to next level"></progress><small>${150 - (p.xp % 150)} XP to the next level${next ? ` · ${Math.max(0, next.xp - p.xp)} XP to ${next.name}` : ""}</small></div>`;
+    if (tab !== "progress") {
+      this.g.$(".mf-lockerbody").innerHTML =
+        level + (tab === "loadout" ? this.loadoutGrid() : tab === "characters" ? this.characterGrid() : this.finishGrid());
+      if (tab === "finishes") this.paintSwatches();
+      if (focused) this.g.$(`[data-outfit="${focused}"]`)?.focus({ preventScroll: true });
+      return;
+    }
     this.g.$(".mf-lockerbody").innerHTML =
-      `<h2>Level ${levelOf(p)} / ${p.xp} XP</h2><p>${p.matches} completed rounds · ${p.wins} victories</p><progress max="150" value="${p.xp % 150}" aria-label="Progress to next level"></progress><p>${150 - (p.xp % 150)} XP to the next level. ${next ? `${Math.max(0, next.xp - p.xp)} XP to ${next.name}.` : "All XP finishes unlocked."}</p>${this.characterGrid()}${this.finishGrid()}<h3>Today's challenges · +${DAILY_XP} XP each</h3>${this.challengeStatus()
+      `${level}<h3>Today's challenges · +${DAILY_XP} XP each</h3>${this.challengeStatus()
           .daily.map(
             (c) =>
               `<p>${c.done ? "✓ " : ""}${c.text} · ${c.progress}/${c.goal}</p><progress max="${c.goal}" value="${c.progress}" aria-label="${c.text}"></progress>`,
@@ -676,6 +715,31 @@ export class Retention {
   weaponFinish() {
     const finish = finishOf(this.profile.skin);
     return this.finishUsable(finish) ? finish.id : "standard";
+  }
+  /** Loadout: every weapon as a card with plain stat bars and its special
+   * move; the chosen one is what you carry into Last Signal. */
+  loadoutGrid() {
+    const g = this.g,
+      mine = weaponOf(g.weapon).id,
+      all = Object.values(WEAPONS),
+      top = (k) => Math.max(...all.map(k));
+    const bar = (label, v) => `<span class="mf-wstat"><em>${label}</em><i style="--v:${Math.round(Math.max(0.06, Math.min(1, v)) * 100)}%"></i></span>`;
+    const KIND = { rifle: "Rifle", shotgun: "Scattergun", burst: "Burst rifle", shard: "Thrown", blades: "Blades", poison: "Darts", melee: "Melee", dash: "Melee", rocket: "Launcher", lob: "Thrown" };
+    const cards = all
+      .map((w) => {
+        const on = w.id === mine,
+          pellets = w.pellets || 1;
+        return `<button type="button" class="mf-weaponcard${on ? " is-on" : ""}" data-weapon="${w.id}" aria-pressed="${on}"><span class="mf-wkind">${KIND[w.kind] || "Weapon"}</span><strong>${escapeText(w.name)}</strong>${bar("Damage", (w.damage * pellets) / top((x) => x.damage * (x.pellets || 1)))}${bar("Fire rate", top((x) => x.cooldown) ? Math.min(...all.map((x) => x.cooldown)) / w.cooldown : 0)}${bar("Range", w.range / top((x) => x.range))}${bar("Magazine", w.mag / top((x) => x.mag))}<small>Special · ${escapeText(w.super || "")}</small><span class="mf-wstate">${on ? "Equipped" : "Equip"}</span></button>`;
+      })
+      .join("");
+    const note =
+      g.mode === "protocol"
+        ? "For Last Signal and Pair Ops. In Blackout Protocol everyone carries the VX–7 Carbine."
+        : g.state === "playing" && g.arena?.time > 0 && g.arena.state === "playing"
+          ? "Applies from your next round."
+          : "What you carry into Last Signal.";
+    const w = weaponOf(mine);
+    return `<h3>Loadout</h3><p>${note}</p><div class="mf-weaponpick"><div class="mf-weapongrid">${cards}</div><aside class="mf-weaponinfo" aria-live="polite"><b>${escapeText(w.name)}</b><p>${escapeText(w.description || w.blurb || "")}</p></aside></div>`;
   }
   /** Characters: numbered portrait cards; the chosen one is in the lobby
    * and is who you play in Last Signal. */
@@ -762,7 +826,8 @@ export class Retention {
     this.menu();
     return 75;
   }
-  locker() {
+  locker(tab) {
+    if (tab) this.lockerTab = tab;
     if (this.g.running) this.g.pause();
     this.store.refresh();
     this.lockerContents();

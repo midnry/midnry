@@ -889,3 +889,16 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   waders). Renderer: one water sheet per flood step (`CanalWater.floodRings`), shown and raised with the flood.
   HUD: "FLOODWATER · WADING IS SLOW". Tests in `outpost-quay.test.mjs`; photos `quay-swim.mjs` (surge-flood,
   surge-electrified). Pace sim quay avg 88 s.
+
+## Menu redesign, step 1: Locker with Loadout (owner, 2026-10-22, not deployed yet)
+
+- Design critique of all menus (screens via `node scripts/qa/menu-tour.mjs [tag]` → `screenshots/qa/menus`):
+  1 Loadout (weapon choice was hidden), 2 top tabs open mismatched pop-ups (BACK/DONE/SKIP), 3 plain
+  results card, 4 settings in engineer language, plus small polish. Steps follow in that order.
+- Locker (`outpost-retention.js` `LOCKER_TABS`, `lockerContents`, `loadoutGrid`): a full-height side screen
+  (lobby character stays visible) with tabs Loadout · Characters · Finishes · Progress, compact ✕ close (Esc).
+  "Change operator" opens Characters; the nav Locker tab opens Loadout.
+- Loadout: all weapons as cards with stat bars (damage incl. pellets, fire rate, range, magazine) and the special.
+  `g.chooseWeapon(id)` remembers `midnry-outpost-weapon`, applies at once in the lobby (reset), from the next
+  round mid-match, and sends `loadout` in an online lobby. Blackout Protocol still issues the VX-7 (`reset()`
+  passes `carbine` for protocol without overwriting `g.weapon`; the server already forces it).
