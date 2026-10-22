@@ -382,6 +382,44 @@
         midnry-fps dialog.mf-practice-chooser.mf-practice-chooser { padding: 0 14px 20px !important; }
         midnry-fps .mf-screenhead { margin: 0 -14px 12px; padding: 10px 14px; }
       }
+      /* Results: a big VICTORY / DEFEAT banner, what the round was, stat
+         tiles, an XP bar that fills, then PLAY AGAIN and LOBBY side by side. */
+      midnry-fps .mf-panel.mf-debrief .mf-results.mf-results { box-sizing: border-box; padding: 0 28px 22px !important; overflow: hidden; border-top: 4px solid var(--mf-accent) !important; }
+      midnry-fps .mf-panel.mf-debrief .mf-results.mf-lost { border-top-color: #ff7a6b !important; }
+      midnry-fps .mf-panel.mf-debrief .mf-results.mf-results > h2 {
+        margin: 0 -28px !important; padding: 26px 28px 4px; font: 800 clamp(56px, 12vw, 96px)/0.9 var(--mf-display) !important; letter-spacing: 0.02em !important;
+        background: linear-gradient(180deg, #ffc8571c, #0000); color: var(--mf-accent) !important;
+      }
+      midnry-fps .mf-panel.mf-debrief .mf-results.mf-lost > h2 { background: linear-gradient(180deg, #ff7a6b1c, #0000); color: #ff8a7a !important; }
+      midnry-fps .mf-results .mf-resultsub { order: 0; margin-top: -2px !important; font: 600 15px var(--mf-display); letter-spacing: 0.14em; text-transform: uppercase; color: #aab5ae; }
+      midnry-fps .mf-results .mf-resultstats { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 8px !important; }
+      midnry-fps .mf-results .mf-resultstats > div { min-width: 0; padding: 10px 12px; border: 1px solid #ffffff17; border-radius: 4px; background: #ffffff06; }
+      midnry-fps .mf-results .mf-resultstats small { display: block; font-size: 12px !important; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      midnry-fps .mf-results .mf-resultstats strong { display: block; font-size: 28px !important; line-height: 1.1; }
+      midnry-fps .mf-results .mf-resultxp { order: 4; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 6px 14px; padding: 12px 14px; border: 1px solid #ffffff17; border-radius: 4px; background: #ffffff06; }
+      midnry-fps .mf-results .mf-rxlevel { font: 800 20px var(--mf-display); letter-spacing: 0.04em; text-transform: uppercase; color: #f1f4ef; }
+      midnry-fps .mf-results .mf-levelup .mf-rxlevel { color: var(--mf-accent); }
+      midnry-fps .mf-results .mf-rxbar { position: relative; height: 10px; border-radius: 5px; background: #ffffff17; overflow: hidden; }
+      midnry-fps .mf-results .mf-rxbar i { position: absolute; inset: 0 auto 0 0; border-radius: 5px; }
+      midnry-fps .mf-results .mf-rxbar .mf-rxnew { width: var(--new); background: var(--mf-accent); box-shadow: 0 0 14px #ffc85799; transition: width 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s; }
+      midnry-fps .mf-results .mf-rxbar .mf-rxold { width: var(--old); background: #ffffff55; z-index: 1; }
+      midnry-fps .mf-results .mf-rxnext { grid-column: 1 / -1; color: #8f9a93; font-size: 13px; }
+      midnry-fps .mf-results .mf-earned { order: 5 !important; }
+      midnry-fps .mf-results.mf-results .mf-again { order: 8; }
+      midnry-fps .mf-results.mf-results .mf-tomenu { order: 9; }
+      midnry-fps .mf-results.mf-results .mf-againnote { order: 10; text-align: center; }
+      @media (min-width: 560px) {
+        midnry-fps .mf-panel.mf-debrief .mf-results.mf-results { display: grid !important; grid-template-columns: 2fr 1fr; column-gap: 10px; }
+        midnry-fps .mf-panel.mf-debrief .mf-results.mf-results > :not(.mf-again, .mf-tomenu) { grid-column: 1 / -1; }
+        midnry-fps .mf-panel.mf-debrief .mf-results.mf-results > .mf-again { grid-column: 1; }
+        midnry-fps .mf-panel.mf-debrief .mf-results.mf-results > .mf-tomenu { grid-column: 2; min-height: 56px; }
+      }
+      @media (max-width: 559px) {
+        midnry-fps .mf-panel.mf-debrief .mf-results.mf-results { padding: 0 16px 18px !important; }
+        midnry-fps .mf-panel.mf-debrief .mf-results.mf-results > h2 { margin: 0 -16px !important; padding: 22px 16px 4px; }
+        midnry-fps .mf-results .mf-resultstats > div { padding: 8px 10px; }
+      }
+      @media (prefers-reduced-motion: reduce) { midnry-fps .mf-results .mf-rxbar .mf-rxnew { transition: none; } }
       /* Characters in the Locker: numbered portrait cards. */
       midnry-fps .mf-locker .mf-chargrid {
         display: grid;

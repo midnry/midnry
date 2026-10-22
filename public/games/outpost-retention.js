@@ -312,7 +312,7 @@ export class Retention {
     this.reset();
     g.$(".mf-modes").insertAdjacentHTML(
       "beforebegin",
-      `<section class="mf-results" hidden aria-label="Match results"><h2>ROUND DEBRIEF</h2><div class="mf-resultstats"></div><div class="mf-seriesboard" hidden></div><p class="mf-earned" role="status"></p><button class="mf-again">PLAY AGAIN →</button><p class="mf-againnote"></p><button class="mf-tomenu">Main menu</button></section>`,
+      `<section class="mf-results" hidden aria-label="Match results"><h2>ROUND DEBRIEF</h2><p class="mf-resultsub"></p><div class="mf-resultstats"></div><div class="mf-seriesboard" hidden></div><div class="mf-resultxp"><b class="mf-rxlevel"></b><span class="mf-rxbar" role="progressbar" aria-label="Progress to next level" aria-valuemin="0" aria-valuemax="150"><i class="mf-rxold"></i><i class="mf-rxnew"></i></span><small class="mf-rxnext"></small></div><p class="mf-earned" role="status"></p><button class="mf-again">PLAY AGAIN</button><button class="mf-tomenu">Lobby</button><p class="mf-againnote"></p></section>`,
     );
     g.$(".mf-network").insertAdjacentHTML(
       "beforebegin",
@@ -553,8 +553,8 @@ export class Retention {
           : `Round ${series.round}${Number.isFinite(series.rule.maxRounds) ? ` of up to ${series.rule.maxRounds}` : ""}. A two-second countdown starts it.`;
       } else {
         again.disabled = false;
-        again.textContent = "REMATCH →";
-        note.textContent = "Same mode, arena, loadout and difficulty. A two-second countdown starts the next round.";
+        again.textContent = "PLAY AGAIN";
+        note.textContent = "Same game, loadout and difficulty. Starts after a two-second countdown.";
       }
     }
   }
@@ -602,7 +602,8 @@ export class Retention {
       placement: summary.placement,
       role: summary.role ?? null,
     });
-    const earned = awardMatch(this.profile, summary);
+    const before = this.profile.xp,
+      earned = awardMatch(this.profile, summary);
     this.profile = earned.profile;
     write("midnry-outpost-profile", this.profile);
     this.summary = summary;
@@ -647,9 +648,9 @@ export class Retention {
           : `${g.mode === "duo" ? "Team " : ""}#${summary.placement}`,
       ],
       ["Eliminations", summary.kills],
-      ["Damage dealt", summary.damage],
+      ["Damage", summary.damage],
       ["Survived", `${summary.seconds}s`],
-      ["Cores collected", summary.cores],
+      ["Cores", summary.cores],
       ["Level", levelOf(this.profile)],
     ];
     g.$(".mf-resultstats").innerHTML = stats
@@ -657,7 +658,31 @@ export class Retention {
       .join("");
     g.$(".mf-earned").textContent = earned.xp
       ? `+${earned.xp} XP · ${earned.bonuses.length ? earned.bonuses.join(" · ") : "Every completed round counts."}`
-      : earned.reason || "Reward already collected for this round.";
+      : /short losses/.test(earned.reason || "")
+        ? "No XP this time: rounds under 15 seconds and practice don't count. Stay in the fight to earn XP."
+        : earned.reason || "Reward already collected for this round.";
+    // What the round was, and the XP bar filling from before to now.
+    const modeName = summary.mode === "protocol" ? "Blackout Protocol" : g.mode === "duo" ? "Pair Ops" : g.mode === "training" ? "Training" : "Last Signal";
+    g.$(".mf-resultsub").textContent = [
+      modeName,
+      mapOf(g.arena.mapId).name,
+      summary.mode === "protocol" ? (summary.role === "infiltrator" ? "Infiltrator" : "Operator") : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    const after = this.profile.xp,
+      levelUp = levelOf(this.profile) > Math.floor(before / 150) + 1,
+      from = levelUp ? 0 : before % 150,
+      to = after % 150;
+    g.$(".mf-rxlevel").textContent = `Level ${levelOf(this.profile)}${levelUp ? " · Level up!" : ""}`;
+    g.$(".mf-rxnext").textContent = `${150 - to} XP to level ${levelOf(this.profile) + 1}`;
+    const bar = g.$(".mf-rxbar");
+    bar.setAttribute("aria-valuenow", String(to));
+    bar.style.setProperty("--old", `${(from / 150) * 100}%`);
+    bar.style.setProperty("--new", `${(from / 150) * 100}%`);
+    g.$(".mf-resultxp").classList.toggle("mf-levelup", levelUp);
+    // Fill after the card appears (instantly with reduced motion).
+    requestAnimationFrame(() => requestAnimationFrame(() => bar.style.setProperty("--new", `${(to / 150) * 100}%`)));
     this.audio.result(won);
     this.menu();
     // Returning from a scrolled mobile deployment menu should reveal the debrief.

@@ -23,7 +23,7 @@ for (let round = 1; round <= 3; round++) {
   await p.screenshot({ path: `${S}/play-r${round}-${W}.png` });
   const btns = await p.evaluate(() => [...document.querySelectorAll("button")].filter(b => b.offsetParent).map(b => b.textContent.trim()).slice(0, 10).join(" / "));
   console.log(" end screen:", btns);
-  if (round < 3) await p.click("text=REMATCH", { timeout: 60000 }).catch(e => console.log(" rematch click failed", e.message.slice(0, 80)));
+  if (round < 3) await p.click(".mf-again", { timeout: 60000 }).catch(e => console.log(" rematch click failed", e.message.slice(0, 80)));
 }
 console.log("errors", errs);
 await b.close();

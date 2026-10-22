@@ -41,7 +41,7 @@ try {
     await page.evaluate(() => { const g = document.querySelector("midnry-fps").engine; g.updateDeath(g.deathSequence.at + g.deathSequence.duration + 1); });
     assert(await page.locator(".mf-results").isVisible());
     assert.equal(await page.evaluate(() => document.querySelector("midnry-fps").engine.state), "ended");
-    await page.getByRole("button", { name: "REMATCH", exact: false }).click();
+    await page.locator(".mf-again").click();
     assert.equal(await page.locator(".mf-results").isVisible(), false);
     assert.equal(await page.evaluate(() => document.querySelector("midnry-fps").engine.deathSequence), null);
     await page.evaluate(() => document.querySelector("midnry-fps").engine.render());

@@ -902,3 +902,11 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   `g.chooseWeapon(id)` remembers `midnry-outpost-weapon`, applies at once in the lobby (reset), from the next
   round mid-match, and sends `loadout` in an online lobby. Blackout Protocol still issues the VX-7 (`reset()`
   passes `carbine` for protocol without overwriting `g.weapon`; the server already forces it).
+- Step 2: Settings (`outpost-ui.js` head ✕) and Practice (`outpost-practice.js` chooser with `.mf-screenhead`)
+  open as left side screens like the Locker (`.mf-screenclose`, Esc closes).
+- Step 3, results (`outpost-retention.js` `finish`, CSS "Results" block in `outpost-zero.html`): VICTORY/DEFEAT
+  banner, subtitle (game · arena, Blackout role), stat tiles, an XP bar that fills from the old to the new XP
+  (`.mf-rxbar`, `--old`/`--new`, Level up), friendlier no-XP text, PLAY AGAIN (primary) beside LOBBY.
+  `signal-rounds.mjs` and `check-outpost-movement.mjs` now click `.mf-again`.
+- Known stale QA script: `scripts/qa/death-new-round.mjs` never starts its match with the lobby menus (same
+  result before these changes); the Play Again / Lobby flow was checked with a separate probe instead.
