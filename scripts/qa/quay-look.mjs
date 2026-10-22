@@ -49,6 +49,9 @@ const VIEWS = [
   ["across-canal", 10.5, 18.5, Math.PI / 2 - 0.5],
   ["dock-bridge", 24.5, 17.5, Math.PI / 2],
   ["inside-clinic", 10.5, 24.5, 0],
+  ["inside-police", 11.5, 6.5, -Math.PI / 2 + 0.4],
+  ["inside-depot", 20.5, 24.5, 0.3],
+  ["inside-radio", 6.5, 4.5, Math.PI - 0.3],
   ["depot-yard", 27.5, 27.5, -Math.PI * 0.75],
 ];
 const shots = [];

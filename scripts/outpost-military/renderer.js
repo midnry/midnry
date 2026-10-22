@@ -40,6 +40,7 @@ import {bindWeaponGrip,updateWeaponGrip} from './realism-grips.js';
 import { outfitOf, weaponOf, mapOf } from "../../public/games/outpost-content.js";
 import { CanalWater } from "./canal-water.js";
 import { QuayLandmarks } from "./quay-landmarks.js";
+import { QuayInteriors } from "./quay-interiors.js";
 import { skinPattern } from "../../public/games/outpost-skins.js";
 import { VictimTakedown } from "./takedowns.js";
 import { ASSET_CACHE, CHARACTER_CACHE } from "../../public/games/outpost-asset-manifest.js";
@@ -907,6 +908,13 @@ export class MilitaryRenderer {
       this.world.add(mesh);
       this.wallMeshes.push(mesh);
       }
+    }
+    // Building interiors (Calder Quay): Breakwater's prop kit once loaded.
+    this.interiors?.dispose();
+    this.interiors = null;
+    if (mapOf(g.arena.mapId).buildings && this.propKit) {
+      this.interiors = new QuayInteriors(this, this.visualLevel(), mapOf(g.arena.mapId).buildings);
+      this.world.add(this.interiors.group);
     }
     this.landmarks?.dispose();
     this.landmarks = null;
@@ -1837,6 +1845,8 @@ export class MilitaryRenderer {
           !this.g.level[y + 1]?.[x] &&
           // Signs go on built walls, not on hedges, pallets or sandbags.
           !this.arenaStyle?.owns(id, this.g.level[y][x]) &&
+          // Calder Quay has its own building signs (and its canal is not a wall).
+          !mapOf(id).buildings &&
           signs.length < 18
         )
           signs.push([x, y]);

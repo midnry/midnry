@@ -875,3 +875,9 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
 - Draw calls (quay-look): laptop up to ~232, phone up to ~186 (budget 520).
 - Still to do in step 3: reuse Breakwater room art inside buildings, optional storm-surge disaster, then
   add quay to the rotation after the owner's play-test.
+- Interiors: `scripts/outpost-military/quay-interiors.js` (`QuayInteriors`, `ROOMS`, `wallSlots`), built in
+  `rebuildWalls` once Breakwater's prop kit (`props-v1.glb`, `r.propKit`) has loaded: per-building floor colour,
+  shelves, medical boxes, crates, jerrycans, drums and cabinets against inside walls (≤ 0.6 m deep, never in or
+  facing a doorway), ceiling light strips, and a sign per building in the world typography. The generic
+  "SECTOR 04" plaques are skipped on maps with `buildings`. Breakwater's per-room decorators stay Breakwater-only
+  (they are tied to its room coordinates).
