@@ -53,6 +53,22 @@ await go(p, "/apps?q=todo");
 ok((await search.inputValue()) === "todo", "?q=todo fills the box on load");
 ok((await p.locator('[data-search-results] a[href="/discover/tasks"]').count()) > 0, "“todo” finds Remind");
 
+// Search understands meaning: related apps, merged app names, and small typos (src/lib/app-search.ts).
+const resultHrefs = (pg) => pg.locator("[data-search-results] li > a").evaluateAll((els) => els.map((el) => el.getAttribute("href")));
+await go(p, "/apps?q=invoice");
+const invoiceHrefs = await resultHrefs(p);
+ok(invoiceHrefs[0] === "/discover/invoice" && invoiceHrefs.includes("/discover/service-terms"), `“invoice” lists Invoice first, then Agreement (${invoiceHrefs.slice(0, 3).join(", ")})`);
+ok((await p.locator('[data-search-results] li:has(a[href="/discover/service-terms"]) [data-match-reason]').textContent()) === "Matches: invoice", "Agreement says why it matched");
+await go(p, "/apps?q=quote");
+const quoteFirst = p.locator("[data-search-results] li").first();
+ok((await quoteFirst.locator("a").first().getAttribute("href")) === "/discover/invoice", "“quote” finds Invoice first");
+ok((await quoteFirst.locator("[data-match-reason]").textContent()) === "Quotes are part of Invoice", "“quote” says quotes are part of Invoice");
+await go(p, "/apps?q=pomodoro");
+ok((await resultHrefs(p))[0] === "/discover/tasks", "“pomodoro” finds Remind");
+await go(p, "/apps?q=invioce");
+ok((await resultHrefs(p))[0] === "/discover/invoice", "the typo “invioce” still finds Invoice first");
+await p.screenshot({ path: `${out}/search-meaning-desktop.png` });
+
 // Clear search restores browsing and focus.
 await p.locator("[data-search-results]").getByRole("button", { name: "Clear search" }).click();
 await p.waitForTimeout(300);
@@ -202,7 +218,9 @@ await p.waitForTimeout(500);
 ok(await p.getByRole("button", { name: "Show fewer" }).isVisible(), "#all opens the full A to Z list");
 await p.locator("#all").getByRole("button", { name: "Midnry Pass", exact: true }).click();
 const passCount = await p.locator("#all li").count();
-ok(passCount >= 11, `Pass filter lists the Pass apps (${passCount})`);
+// The merges (Board, Focus and Habits into Remind) left 8 Pass apps; the count line must agree with the list.
+const passLine = (await p.locator("#all h2 + p").textContent()) || "";
+ok(passCount >= 8 && passLine.startsWith(`${passCount} apps · Midnry Pass`), `Pass filter lists the Pass apps (${passCount}, “${passLine}”)`);
 
 // Remind is listed under Professionals' general tools, not the Developers shelf.
 await go(p, "/for/professionals");

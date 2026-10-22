@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { APPS, genreLabel, getApp } from "@/lib/catalog";
 import { AUDIENCES, SECTIONS, TAGS, defaultTagOf, sectionOf, sectionsIn, tagLabel, type GenreId, type TagId } from "@/lib/sections";
@@ -7,6 +7,7 @@ import { accessLabel } from "@/lib/plans";
 import { pitchFor } from "@/lib/pitches";
 import { GOALS } from "@/lib/goals";
 import { canOpenApp } from "@/lib/access";
+import { catalogSearchInput, createSearchIndex, searchIndex, type SearchInput } from "@/lib/app-search";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useAccount } from "@/components/account";
 import { useRole } from "@/components/role";
@@ -268,56 +269,17 @@ export function EverydayRow({ exclude }: { exclude: TagId }) {
   );
 }
 
-const FEATURES = new Map(APPS.map((app) => [app.slug, app.features.join(" ")]));
-
-// Everyday words people type that the catalogue spells differently.
-const SYNONYMS: Record<string, string> = {
-  todo: "to-do",
-  todos: "to-do",
-  cv: "resume",
-  expenses: "expense",
-  spending: "spend",
-  receipt: "invoice",
-  job: "role",
-  jobs: "role",
-};
-
-function searchWords(query: string): string[] {
-  return query
-    .toLowerCase()
-    .split(/\s+/)
-    .map((word) => word.replace(/[^\p{L}\p{N}-]/gu, ""))
-    .filter((word) => word.length > 0);
-}
-
-/** How well an app matches: how many search words it contains, and a rank that favours names. */
-function score(item: DeskItem, words: string[]): { matched: number; points: number } {
-  const name = item.name.toLowerCase();
-  const goals = GOALS.filter((goal) => goal.target === item.slug).map((goal) => goal.label);
-  const rest = [
-    item.blurb,
-    item.pitch,
-    isGeneral(item) ? "" : genreLabel(item.genre),
-    ...item.audiences.map(tagLabel),
-    ...goals,
-    FEATURES.get(item.slug) ?? "",
-  ]
-    .join(" ")
-    .toLowerCase();
-  let matched = 0;
-  let points = 0;
-  for (const word of words) {
-    const forms = [word, SYNONYMS[word], word.length > 3 && word.endsWith("s") ? word.slice(0, -1) : undefined].filter(
-      (form): form is string => Boolean(form),
-    );
-    if (forms.some((form) => name === form)) points += 100;
-    else if (forms.some((form) => name.startsWith(form))) points += 60;
-    else if (forms.some((form) => name.includes(form))) points += 40;
-    else if (forms.some((form) => rest.includes(form))) points += 10;
-    else continue;
-    matched += 1;
-  }
-  return { matched, points };
+/** What search reads about each item: the full catalogue text for Midnry apps, the listing for community ones. */
+function searchInputOf(item: DeskItem): SearchInput {
+  const app = item.builtIn ? getApp(item.slug) : undefined;
+  if (app) return catalogSearchInput(app);
+  return {
+    slug: item.slug,
+    name: item.name,
+    pitch: item.pitch,
+    blurb: item.blurb,
+    labels: [isGeneral(item) ? "" : genreLabel(item.genre), ...item.audiences.map(tagLabel)].filter(Boolean),
+  };
 }
 
 /** How many results show before "Show all". */
@@ -345,14 +307,21 @@ export function AppSearch({ className, fieldClassName, autoFocus, query: control
   const [showAll, setShowAll] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const statusId = useId();
-  const words = searchWords(query);
-  const scored = words.length ? items.map((item) => ({ item, ...score(item, words) })).filter((entry) => entry.matched > 0) : [];
-  // Apps matching every word; if there are none, the closest matches instead.
-  const exact = scored.filter((entry) => entry.matched === words.length);
-  const partial = exact.length === 0 && scored.length > 0;
-  const results = (partial ? scored : exact)
-    .sort((a, b) => b.matched - a.matched || b.points - a.points || a.item.name.localeCompare(b.item.name))
-    .map((entry) => entry.item);
+  // The index is rebuilt only when the set of apps changes (community apps arrive after the first paint).
+  const itemsKey = items.map((item) => item.slug).join(",");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const index = useMemo(() => createSearchIndex(items.map(searchInputOf)), [itemsKey]);
+  // Apps matching every word; if there are none, the closest matches instead (src/lib/app-search.ts).
+  const outcome = searchIndex(index, query);
+  const words = outcome.words;
+  const partial = outcome.partial;
+  const bySlug = new Map(items.map((item) => [item.slug, item]));
+  const results = outcome.hits.map((hit) => bySlug.get(hit.slug)).filter((item): item is DeskItem => Boolean(item));
+  const reasons = new Map<string, string>();
+  for (const hit of outcome.hits) {
+    const reason = hit.note ?? hit.why;
+    if (reason) reasons.set(hit.slug, reason);
+  }
   const shown = showAll ? results : results.slice(0, FIRST_RESULTS);
   const typed = query.trim();
   const active = words.length > 0;
@@ -459,7 +428,7 @@ export function AppSearch({ className, fieldClassName, autoFocus, query: control
               </button>
             ) : null}
           </div>
-          {shown.length ? <AppGroup apps={shown} view="grid" known={known} signedIn={signedIn} hasPass={hasPass} isAdmin={isAdmin} /> : null}
+          {shown.length ? <AppGroup apps={shown} reasons={reasons} view="grid" known={known} signedIn={signedIn} hasPass={hasPass} isAdmin={isAdmin} /> : null}
           {results.length > shown.length ? (
             <button type="button" onClick={() => setShowAll(true)} className={cn(buttonClass({ tone: "quiet" }), "mt-5")}>
               Show all {results.length} matches
@@ -568,6 +537,7 @@ function actionLabel(app: DeskItem, signedIn: boolean, status: Status): string {
 
 export function AppGroup({
   apps,
+  reasons,
   view,
   known,
   signedIn,
@@ -575,6 +545,8 @@ export function AppGroup({
   isAdmin,
 }: {
   apps: DeskItem[];
+  /** Search only: why an app matched when the name and pitch don't say ("Quotes are part of Invoice"). */
+  reasons?: ReadonlyMap<string, string>;
   view: DeskView;
   known: boolean;
   signedIn: boolean;
@@ -600,6 +572,11 @@ export function AppGroup({
                   </span>
                 </span>
                 <span className="mt-3 line-clamp-3 block text-sm text-pretty text-muted">{app.pitch}</span>
+                {reasons?.get(app.slug) ? (
+                  <span data-match-reason className="mt-2 block text-sm font-medium text-ink-soft">
+                    {reasons.get(app.slug)}
+                  </span>
+                ) : null}
                 <span className="mt-auto flex items-center gap-1 pt-4 text-sm font-medium text-pine">
                   {actionLabel(app, signedIn, status)}
                   <span aria-hidden className="transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none">→</span>
@@ -629,6 +606,11 @@ export function AppGroup({
                   <AccessTag tier={app.tier} className="mt-0" />
                 </span>
                 <span className="mt-1 block text-sm text-pretty text-muted">{app.pitch}</span>
+                {reasons?.get(app.slug) ? (
+                  <span data-match-reason className="mt-1 block text-sm font-medium text-ink-soft">
+                    {reasons.get(app.slug)}
+                  </span>
+                ) : null}
                 <span className="mt-1.5 block text-sm font-medium text-pine">
                   {actionLabel(app, signedIn, status)} <span aria-hidden>→</span>
                 </span>
