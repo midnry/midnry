@@ -48,10 +48,23 @@ midnry-fps .mf-shell:has(.mf-modal.mf-home:not([hidden])) :is(.mf-top, .mf-objec
 midnry-fps .mf-hometop { position: absolute; top: 0; left: 0; right: 0; height: 64px; display: flex; align-items: center; gap: 28px; padding: 0 32px; border-bottom: 1px solid #ffffff12; background: linear-gradient(180deg, #050706e8, #05070600); z-index: 2; }
 midnry-fps .mf-hometop .mf-wordmark { font: 600 15px var(--mf-display); letter-spacing: 0.32em; color: #cfd8d2; padding-left: 12px; border-left: 2px solid var(--mf-accent); white-space: nowrap; }
 midnry-fps .mf-hometop nav { display: flex; gap: 6px; margin-right: auto; }
-midnry-fps .mf-hometop nav button { all: unset; cursor: pointer; position: relative; padding: 22px 12px; font: 600 15px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; color: #b9c4bd; }
+midnry-fps .mf-hometop nav button { all: unset; cursor: pointer; position: relative; padding: 20px 14px; font: 700 17px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; color: #d3dbd5; }
 midnry-fps .mf-hometop nav button:hover, midnry-fps .mf-hometop nav button:focus-visible { color: #fff; }
 midnry-fps .mf-hometop nav button[aria-current="page"] { color: var(--mf-accent); }
-midnry-fps .mf-hometop nav button[aria-current="page"]::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 12px; height: 2px; background: var(--mf-accent); }
+midnry-fps .mf-hometop nav button[aria-current="page"]::after { content: ""; position: absolute; left: 14px; right: 14px; bottom: 10px; height: 3px; background: var(--mf-accent); }
+/* Blackout Protocol's offline role: toggle buttons like BOTS / FRIENDS (the select stays for its handler). */
+midnry-fps .mf-protocol-menu .mf-rolelabel select { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+midnry-fps .mf-rolepick { display: grid; grid-template-columns: repeat(3, 1fr); }
+midnry-fps .mf-rolepick button { all: unset; cursor: pointer; box-sizing: border-box; min-height: 44px; display: grid; place-items: center; padding: 0 8px; border: 1px solid #ffffff24; background: #070a09e6; font: 600 14px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; color: #c9d2cc; text-align: center; }
+midnry-fps .mf-rolepick button:first-child { border-radius: 4px 0 0 4px; }
+midnry-fps .mf-rolepick button:last-child { border-radius: 0 4px 4px 0; }
+midnry-fps .mf-rolepick button[aria-pressed="true"] { border-color: var(--mf-accent); color: var(--mf-accent); background: #ffc8571a; }
+midnry-fps .mf-rolepick button:disabled { opacity: 0.5; cursor: default; }
+midnry-fps .mf-rolepick button:focus-visible { outline: 2px solid var(--mf-accent); outline-offset: 2px; }
+/* Settings: plain hints, technical readouts folded away. */
+midnry-fps .mf-settings .mf-settinghint { color: #aab5ae; font-size: 14px; line-height: 1.5; }
+midnry-fps .mf-settings .mf-techdetails { margin: 10px 0; padding: 8px 12px; border: 1px solid #ffffff17; border-radius: 4px; color: #8f9a93; font-size: 13px; }
+midnry-fps .mf-settings .mf-techdetails summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; font: 600 13px var(--mf-display); letter-spacing: 0.1em; text-transform: uppercase; color: #aab5ae; }
 midnry-fps .mf-profilechip { display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border: 1px solid #ffffff1f; border-radius: 4px; background: #0b100ecc; color: #e9efe9; }
 midnry-fps .mf-avatar { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 3px; background: linear-gradient(160deg, #3a4a3c, #18201b); color: var(--mf-accent); }
 midnry-fps .mf-avatar .mf-ico { width: 24px; height: 24px; }
@@ -215,7 +228,10 @@ midnry-fps .mf-settab .mf-retention label > input[type="range"] { width: min(260
 midnry-fps .mf-settab .mf-retention > :is(p, button) { margin: 12px 0 0; }
 @media (max-width: 760px) {
   midnry-fps .mf-settingsgrid { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-  midnry-fps .mf-settingsnav { flex-direction: row; padding: 0; border-right: 0; border-bottom: 1px solid #ffffff14; overflow-x: auto; }
+  midnry-fps .mf-settingsnav { flex-direction: row; flex-wrap: wrap; padding: 0; border-right: 0; border-bottom: 1px solid #ffffff14; overflow-x: visible; }
+  midnry-fps .mf-settingsnav button { padding: 10px 12px !important; font-size: 15px !important; gap: 8px !important; border-left: 0 !important; border-bottom: 3px solid transparent; }
+  midnry-fps .mf-settingsnav button[aria-selected="true"] { border-bottom-color: var(--mf-accent); background: none !important; }
+  midnry-fps .mf-settingsnav button .mf-ico { width: 18px !important; height: 18px !important; }
   midnry-fps .mf-settingsnav button { flex: none; padding: 12px 14px; border-left: 0; border-bottom: 3px solid transparent; white-space: nowrap; font-size: 15px; }
   midnry-fps .mf-settingsnav button[aria-selected="true"] { border-bottom-color: var(--mf-accent); background: none; }
   midnry-fps .mf-settingsnav button .mf-ico { display: none; }

@@ -910,3 +910,8 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   `signal-rounds.mjs` and `check-outpost-movement.mjs` now click `.mf-again`.
 - Known stale QA script: `scripts/qa/death-new-round.mjs` never starts its match with the lobby menus (same
   result before these changes); the Play Again / Lobby flow was checked with a separate probe instead.
+- Step 4: Graphics settings in plain words (`PRESET_HINTS` in `outpost-academy.js`; labels "Automatic resolution",
+  "Shadows", "Detailed surfaces and lighting"; render-width/FPS readouts under "Technical details"). Settings tabs wrap
+  on phones. Blackout's offline role is three toggle buttons (`.mf-rolepick`, driving the hidden select). The guide
+  button is `.mf-protocol-guideopen` (it was "the first button in the menu"). Top nav tabs larger and brighter.
+  `check-outpost-performance.mjs` uses the new "Automatic resolution" label.

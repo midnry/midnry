@@ -1,5 +1,11 @@
 /** Scoped learning UI and procedural materials. No globals or external assets. */
 import { MAPS, WEAPONS } from "./outpost-content.js";
+/** Plain-language summary of each graphics preset (Settings › Graphics). */
+const PRESET_HINTS = {
+  performance: "Smoothest play. Simpler lighting and fewer effects: best for older phones and laptops, or if your device gets warm.",
+  balanced: "Good looks and smooth play on most devices. Recommended.",
+  high: "Best picture: reflections and extra shadow detail. Needs a recent laptop or gaming PC.",
+};
 export const PRESETS = {
   performance: {
     adaptive: true,
@@ -221,7 +227,7 @@ export class Academy {
   }
   settings(target = this.g.$(".mf-bookbody")) {
     const shadowSize = this.preset === "high" ? 4096 : this.preset === "performance" ? 1024 : 2048;
-    target.innerHTML = `<p class="mf-bookintro">CINEMATIC GRAPHICS</p><p>Realistic materials, dynamic lighting and wet-surface reflections. High increases rendering cost; choose Performance if your device gets warm or play feels slow.</p><label class="mf-setting">Graphics preset<select data-preset aria-label="Graphics preset">${Object.keys(
+    target.innerHTML = `<p class="mf-bookintro">CINEMATIC GRAPHICS</p><p>Pick a quality level. If the game feels slow or your device gets warm, choose Performance.</p><label class="mf-setting">Graphics preset<select data-preset aria-label="Graphics preset">${Object.keys(
       PRESETS,
     )
       .map(
@@ -230,7 +236,7 @@ export class Academy {
       )
       .join(
         "",
-      )}</select></label><p>${this.g.military ? this.options.militaryWidth : this.options.width}px base render width · ${shadowSize}px shadow maps${this.preset === "performance" ? " · streamlined lighting" : " · cinematic finishing"}</p><p class="mf-perfstatus">120 FPS target · 30 FPS animation</p><label class="mf-setting"><span>Automatic resolution for 120 FPS</span><input type="checkbox" data-option="adaptive" ${this.options.adaptive ? "checked" : ""}></label><p>Resolution adapts to rendering cost and can increase when sustained headroom is measured. Actual FPS depends on your device and display refresh rate. Turn this off to keep the selected render resolution.</p><label class="mf-setting"><span>Dynamic and contact shadows</span><input type="checkbox" data-option="shadows" ${this.options.shadows ? "checked" : ""}></label><label class="mf-setting"><span>Cinematic material lighting</span><input type="checkbox" data-option="lighting" ${this.options.lighting ? "checked" : ""}></label><p>Photographic color, normal and roughness maps add surface detail. Anisotropic filtering keeps angled textures clear. High adds mirror reflections in wet ground, screen-space contact shadows and larger shadow maps. Preferences are saved on this device.</p>`;
+      )}</select></label><p class="mf-settinghint">${PRESET_HINTS[this.preset] || ""}</p><label class="mf-setting"><span>Automatic resolution</span><input type="checkbox" data-option="adaptive" ${this.options.adaptive ? "checked" : ""}></label><p class="mf-settinghint">Keeps play smooth: the picture gets a little softer when the game is busy and sharp again when it can. Turn off to keep it fixed.</p><label class="mf-setting"><span>Shadows</span><input type="checkbox" data-option="shadows" ${this.options.shadows ? "checked" : ""}></label><label class="mf-setting"><span>Detailed surfaces and lighting</span><input type="checkbox" data-option="lighting" ${this.options.lighting ? "checked" : ""}></label><details class="mf-techdetails"><summary>Technical details</summary><p>${this.g.military ? this.options.militaryWidth : this.options.width}px base render width · ${shadowSize}px shadow maps${this.preset === "performance" ? " · streamlined lighting" : " · cinematic finishing"}</p><p class="mf-perfstatus">120 FPS target · 30 FPS animation</p><p>Photographic colour, normal and roughness maps add surface detail; anisotropic filtering keeps angled textures clear. High adds wet-ground reflections, contact shadows and larger shadow maps.</p></details><p class="mf-settinghint">Settings are saved on this device.</p>`;
   }
   begin() {
     const g = this.g;

@@ -432,7 +432,7 @@ export class ProtocolUI {
     g.shell.append(this.tactics);
     this.menu = element("section", "mf-protocol-menu");
     this.menu.hidden = true;
-    this.menu.innerHTML = `<label class="mf-protocol-shiftpick">Shift<select class="mf-protocol-shift" aria-label="Shift length">${Object.values(SHIFTS).map((shift) => `<option value="${shift.id}">${shift.name}</option>`).join("")}</select></label><p class="mf-protocol-dailynote"></p><label>Offline role preference<select class="mf-protocol-preference" aria-label="Offline secret role preference"><option value="operator">Operator · learn the base</option><option value="infiltrator">Infiltrator · covert objectives</option><option value="random">Surprise me · random role</option></select></label><p class="mf-protocol-menunote"></p><button>How to play</button>`;
+    this.menu.innerHTML = `<label class="mf-protocol-shiftpick">Shift<select class="mf-protocol-shift" aria-label="Shift length">${Object.values(SHIFTS).map((shift) => `<option value="${shift.id}">${shift.name}</option>`).join("")}</select></label><p class="mf-protocol-dailynote"></p><label class="mf-rolelabel"><span>Your role (offline)</span><select class="mf-protocol-preference" aria-label="Offline secret role preference"><option value="operator">Operator · learn the base</option><option value="infiltrator">Infiltrator · covert objectives</option><option value="random">Surprise me · random role</option></select><span class="mf-rolepick" role="group" aria-label="Your role (offline)"><button type="button" data-role="operator">Operator</button><button type="button" data-role="infiltrator">Infiltrator</button><button type="button" data-role="random">Surprise me</button></span></label><p class="mf-protocol-menunote"></p><button class="mf-protocol-guideopen">How to play</button>`;
     g.$(".mf-start").before(this.menu);
     this.results = element("section", "mf-protocol-results");
     this.results.hidden = true;
@@ -683,13 +683,22 @@ export class ProtocolUI {
       g.reset();
       this.refreshMenu();
     });
+    // Role toggle buttons drive the (hidden) select, so one handler applies it.
+    g.on(this.menu.querySelector(".mf-rolepick"), "click", (event) => {
+      const button = event.target.closest("[data-role]");
+      const select = this.menu.querySelector(".mf-protocol-preference");
+      if (!button || select.disabled || select.value === button.dataset.role) return;
+      event.preventDefault();
+      select.value = button.dataset.role;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
     g.on(this.menu.querySelector(".mf-protocol-preference"), "change", (event) => {
       if (g.online) return;
       g.rolePreference = event.target.value;
       g.reset();
       this.refreshMenu();
     });
-    g.on(this.menu.querySelector("button"), "click", () => this.showGuide());
+    g.on(this.menu.querySelector(".mf-protocol-guideopen"), "click", () => this.showGuide());
     g.on(this.guide.querySelector("button"), "click", () => this.guide.close());
     g.on(this.brief.querySelector("button"), "click", () => this.brief.close());
     g.on(this.brief, "close", () => this.resumeFocus());
@@ -2272,6 +2281,10 @@ export class ProtocolUI {
     const preference = this.menu.querySelector(".mf-protocol-preference");
     preference.value = g.rolePreference || "operator";
     preference.disabled = Boolean(g.online);
+    for (const b of this.menu.querySelectorAll(".mf-rolepick [data-role]")) {
+      b.setAttribute("aria-pressed", String(b.dataset.role === preference.value));
+      b.disabled = preference.disabled;
+    }
     // The daily case always makes you an operator.
     preference.closest("label").hidden = !offline || shift === "daily";
     const best = shift === "daily" ? readDaily()[dailyKey()] : null;

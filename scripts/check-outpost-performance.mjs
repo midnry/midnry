@@ -150,7 +150,7 @@ try {
   const page = await browser.newPage();
   await page.goto(base + "/games/outpost-zero.html");
   await page.getByRole("button", { name: "Settings", exact: true }).click();
-  const checkbox = page.getByLabel("Automatic resolution for 120 FPS");
+  const checkbox = page.getByLabel("Automatic resolution");
   assert.equal(await checkbox.isChecked(), true);
   await checkbox.uncheck();
   assert.ok(

@@ -25,7 +25,8 @@ Read docs/HANDOVER.md first (working rules, deploy procedure, security rule). Th
    - Adapt it for combat: spawns, street cover, Red Haze closing on the market square, a harbour
      disaster (storm surge or lightning).
    - Order: plain playable version + bot rounds, then water and lamps, then art and phone checks.
-2. Familiar game menus for Outpost Zero (big Play, clear tabs, loadout, familiar pause), after the fixes above.
+2. Familiar game menus for Outpost Zero: DONE 2026-10-22 (Locker with Loadout, side-screen Settings/Practice,
+   results screen, plain settings). See HANDOVER "Menu redesign".
 3. The mini city as the Blackout Protocol base, replacing Breakwater, which stays as a hidden option
    until play-tests are done.
 
