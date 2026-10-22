@@ -44,6 +44,9 @@ import {
   burstCanister,
   updateDisaster,
   disasterActive,
+  floodLevel,
+  floodDistance,
+  SURGE,
 } from "./outpost-hazards.js";
 const SPAWNS = [
   [2.5, 2.5],
@@ -444,12 +447,13 @@ export class Arena {
         Object.assign(e, { ads: false, sprinting: false, slideUntil: 0, jumpAt: -10 });
         this.effect(e.x, e.y, "splash", 0.7, 0.5);
       } else if (!wet && stanceOf(e) === "swim") setStance(e, "stand", this.time);
-      // A fighter still crackling from a lightning strike electrifies the water.
-      if (wet && e.shockUntil > this.time && e.shockFrom !== "water") this.electrifyWater(e.x, e.y);
+      // A fighter still crackling from a lightning strike electrifies the water
+      // (floodwater too).
+      if (this.wet(e) && e.shockUntil > this.time && e.shockFrom !== "water") this.electrifyWater(e.x, e.y);
     }
     if (!(this.waterShockUntil > this.time)) return;
     for (const e of this.entities)
-      if (e.hp > 0 && this.inWater(e)) {
+      if (e.hp > 0 && this.wet(e)) {
         this.damage(e, WATER.perSecond * dt, null);
         if (e.hp > 0 && !(e.shockUntil > this.time)) Object.assign(e, { shockUntil: this.time + 1, shockFrom: "water" });
       }
@@ -632,7 +636,27 @@ export class Arena {
   }
   /** Movement multiplier from the weather: sandstorms slow everyone. */
   weather(e) {
-    return (disasterActive(this, "sandstorm") ? 0.85 : 1) * (e ? this.footing(e) : 1);
+    return (
+      (disasterActive(this, "sandstorm") ? 0.85 : 1) *
+      (e ? this.footing(e) : 1) *
+      // Wading through a storm surge's floodwater.
+      (e && this.floodedAt(e.x, e.y) ? SURGE.wade : 1)
+    );
+  }
+  /** Is this floor tile under a storm surge's floodwater right now? */
+  floodedAt(x, y) {
+    const level = floodLevel(this);
+    if (!level) return false;
+    if (this.floodFor !== this.mapId || !this.floodMap) {
+      this.floodFor = this.mapId;
+      this.floodMap = floodDistance(mapOf(this.mapId).level, (t) => this.seeThrough(t));
+    }
+    const d = this.floodMap[Math.floor(y)]?.[Math.floor(x)];
+    return d > 0 && d <= level + 0.001;
+  }
+  /** In the water: swimming, or wading in floodwater. */
+  wet(e) {
+    return this.inWater(e) || this.floodedAt(e.x, e.y);
   }
   /** Last Signal bots under fire sometimes slide sideways out of the line of
    * fire, like a player would (same slide speed, longer cooldown). */

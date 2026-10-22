@@ -75,6 +75,9 @@ results.push(await shot("culvert-mouth", "Object.assign(me,{x:2.5,y:19.6,a:-Math
 results.push(await shot("diving", "Object.assign(me,{x:2.5,y:19.5,a:-Math.PI/2}); g.diveNow=true;"));
 // Electrified water, a swimmer in it.
 results.push(await shot("electrified", "g.diveNow=false; Object.assign(me,{x:10.5,y:18.4,a:Math.PI/2+0.3}); Object.assign(others[0],{x:12.5,y:20.6}); a.electrifyWater(12.5,20.5); g.cameraPitch=-0.2;"));
+// Storm surge: floodwater over the quays, then electrified.
+results.push(await shot("surge-flood", "g.diveNow=false; a.disaster={kind:'storm',surge:true,warnAt:a.time-20,startAt:a.time-10,endAt:a.time+12,strikes:[],nextStrike:1e9,count:0}; Object.assign(me,{x:4.5,y:17.5,a:0.15}); Object.assign(others[0],{x:9.5,y:18.5}); g.cameraPitch=-0.12;"));
+results.push(await shot("surge-electrified", "a.disaster={kind:'storm',surge:true,warnAt:a.time-20,startAt:a.time-10,endAt:a.time+12,strikes:[],nextStrike:1e9,count:0}; Object.assign(me,{x:4.5,y:17.5,a:0.15}); Object.assign(others[0],{x:9.5,y:18.5}); a.electrifyWater(9.5,18.5); g.cameraPitch=-0.12;"));
 console.log(JSON.stringify({ results, errors: errs }, null, 1));
 await b.close();
 process.exitCode = errs.length ? 1 : 0;

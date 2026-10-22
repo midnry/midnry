@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { Arena, MAPS, WATER } from "../public/games/outpost-sim.js";
 import { QUAY_PLAN, QUAY_SIZE } from "../public/games/outpost-quay.js";
-import { DISASTER_OF, placeHazards } from "../public/games/outpost-hazards.js";
+import { DISASTER_OF, DISASTERS, SURGE, floodLevel, placeHazards } from "../public/games/outpost-hazards.js";
 
 const arena = () => new Arena({ mapId: "quay", mode: "signal", random: () => 0.5 });
 const at = (x, y) => QUAY_PLAN[y][x];
@@ -230,4 +230,48 @@ test("lightning can strike the water and electrify it", () => {
   step(a, me, {}, 0.5);
   assert.ok(a.waterShockUntil > a.time);
   assert.ok(me.hp < hp);
+});
+
+// --- Storm surge: the storm floods the quays.
+test("the harbour storm is a storm surge: floodwater rises over the quays, holds, then drains", () => {
+  const a = arena(),
+    d = a.disaster;
+  assert.equal(d.kind, "storm");
+  assert.equal(d.surge, true);
+  assert.equal(d.endAt - d.startAt, DISASTERS.surge.duration);
+  a.time = d.startAt - 1;
+  assert.equal(floodLevel(a), 0, "dry before");
+  a.time = d.startAt + SURGE.rise + 1;
+  assert.equal(floodLevel(a), SURGE.reach, "full flood");
+  // The north quay (beside the canal) and the row behind it flood; Ridge Lane never does.
+  assert.ok(a.floodedAt(10.5, 18.5));
+  assert.ok(a.floodedAt(10.5, 17.5));
+  assert.ok(!a.floodedAt(10.5, 1.5));
+  assert.ok(!a.floodedAt(15.5, 15.5), "Market Square stays dry");
+  a.time = d.endAt - 0.5;
+  assert.ok(floodLevel(a) < SURGE.reach, "draining");
+  a.time = d.endAt + 1;
+  assert.equal(floodLevel(a), 0, "dry after");
+});
+
+test("wading is slow, you can still shoot, and floodwater carries electricity", () => {
+  const { a, me } = swimArena(),
+    d = (a.disaster = { kind: "storm", surge: true, startAt: a.time - 10, endAt: a.time + 10, warnAt: 0, strikes: [], nextStrike: 1e9, count: 0 }),
+    dry = a.entities[2];
+  Object.assign(me, { x: 10.5, y: 18.5, a: Math.PI });
+  Object.assign(dry, { x: 15.5, y: 15.5, hp: dry.maxHp, bot: false });
+  assert.ok(a.floodedAt(me.x, me.y));
+  assert.equal(a.weather(me), SURGE.wade);
+  step(a, me);
+  assert.equal(me.stance, "stand", "wading, not swimming");
+  const ammo = me.ammo;
+  step(a, me, { fire: true }, 0.2);
+  assert.ok(me.ammo < ammo, "you can fire while wading");
+  // A strike on a flooded quay electrifies all the water; the wader is shocked, the square is safe.
+  d.strikes.push({ id: 9, kind: "storm", x: 12.5, y: 18.5, at: a.time });
+  const before = { me: me.hp, dry: dry.hp };
+  step(a, me, {}, 0.6);
+  assert.ok(a.waterShockUntil > a.time);
+  assert.ok(me.hp < before.me);
+  assert.equal(dry.hp, before.dry);
 });

@@ -40,9 +40,53 @@ export const DISASTERS = {
     warn: "Cover collapses where the ground is marked",
     duration: 15,
   },
+  // A lightning storm whose sea floods the quays (Calder Quay). It runs as a
+  // "storm" (its strikes, rain, thunder and look) with `surge: true`.
+  surge: {
+    name: "Storm surge",
+    warn: "The harbour floods: wading is slow, and lightning electrifies the water",
+    duration: 24,
+  },
 };
-// Calder Quay: a harbour thunderstorm (lightning) until its own storm surge.
 export const DISASTER_OF = { outpost: "sandstorm", skyport: "storm", estate: "quake", quay: "storm" };
+/** Arenas whose storm also floods the quays. */
+export const SURGE_OF = { quay: true };
+/** Floodwater reaches `reach` tiles from the canal and pond over `rise` s,
+ * holds, and drains over the last `fall` s. Wading costs `wade` of your speed. */
+export const SURGE = Object.freeze({ reach: 2, rise: 5, fall: 5, wade: 0.6 });
+
+/** How far the floodwater reaches now (tiles from open water; 0 = dry). */
+export function floodLevel(arena) {
+  const d = arena.disaster;
+  if (!d?.surge || arena.time < d.startAt || arena.time >= d.endAt) return 0;
+  const up = (arena.time - d.startAt) / SURGE.rise,
+    down = (d.endAt - arena.time) / SURGE.fall;
+  return SURGE.reach * Math.max(0, Math.min(1, up, down));
+}
+/** Steps from each floor tile to the nearest water tile, over floor
+ * (so floodwater runs along quays and in through doorways, not through walls). */
+export function floodDistance(level, isWater) {
+  const n = level.length,
+    dist = Array.from({ length: n }, () => Array(n).fill(Infinity)),
+    queue = [];
+  for (let y = 0; y < n; y++)
+    for (let x = 0; x < n; x++)
+      if (isWater(level[y][x])) {
+        dist[y][x] = 0;
+        queue.push([x, y]);
+      }
+  for (let i = 0; i < queue.length; i++) {
+    const [x, y] = queue[i];
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx,
+        ny = y + dy;
+      if (level[ny]?.[nx] !== 0 || dist[ny][nx] <= dist[y][x] + 1) continue;
+      dist[ny][nx] = dist[y][x] + 1;
+      queue.push([nx, ny]);
+    }
+  }
+  return dist;
+}
 export const DISASTER_WARNING = 10; // seconds of warning before it starts
 // Lightning leaves anyone it hits electrified: a smaller burn over a few
 // seconds after the strike itself.
@@ -138,12 +182,14 @@ export function placeHazards(level, mapId, spawns, crates) {
 export function scheduleDisaster(mapId, random) {
   const kind = DISASTER_OF[mapId];
   if (!kind) return null;
-  const startAt = Math.round(30 + random() * 25);
+  const startAt = Math.round(30 + random() * 25),
+    surge = !!SURGE_OF[mapId];
   return {
     kind,
+    ...(surge ? { surge: true } : {}),
     warnAt: startAt - DISASTER_WARNING,
     startAt,
-    endAt: startAt + DISASTERS[kind].duration,
+    endAt: startAt + DISASTERS[surge ? "surge" : kind].duration,
     strikes: [],
     nextStrike: startAt,
     count: 0,
@@ -237,8 +283,8 @@ export function updateDisaster(arena, dt) {
       arena.blast(null, s.x, s.y, 45, 1.3);
       for (const e of arena.entities)
         if (e.hp > 0 && e.hp < before.get(e)) Object.assign(e, { shockUntil: arena.time + SHOCK.seconds, shockFrom: "storm" });
-      // Lightning into water electrifies all of it (Calder Quay's canal).
-      if (arena.inWater?.({ x: s.x, y: s.y })) arena.electrifyWater(s.x, s.y);
+      // Lightning into water (or the floodwater of a storm surge) electrifies all of it.
+      if (arena.inWater?.({ x: s.x, y: s.y }) || arena.floodedAt?.(s.x, s.y)) arena.electrifyWater(s.x, s.y);
       else arena.addTerrain(s.x, s.y, "scorch");
     } else {
       // The ground splits and buckles; the cover beside it collapses.

@@ -8,6 +8,7 @@
  * lamps are glowing fittings with painted light pools, not real lights. */
 import * as THREE from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { floodDistance, SURGE } from "../../public/games/outpost-hazards.js";
 
 const SCALE = 3;
 const SIDES = [
@@ -92,6 +93,29 @@ export class CanalWater {
       q.translate((x + 0.5) * SCALE, 0.035, (y + 0.5) * SCALE);
       return q;
     });
+    // Storm surge floodwater: one sheet per step out from the water (shown as
+    // the flood rises); the same water surface, laid over the paving.
+    this.floodRings = [];
+    const reach = floodDistance(level, (t) => types.includes(t));
+    for (let k = 1; k <= SURGE.reach; k++) {
+      const ring = [];
+      for (let y = 0; y < level.length; y++)
+        for (let x = 0; x < level.length; x++)
+          if (reach[y][x] === k) {
+            const q = new THREE.PlaneGeometry(SCALE, SCALE).rotateX(-Math.PI / 2);
+            const uv = q.attributes.uv;
+            for (let i = 0; i < uv.count; i++) uv.setXY(i, (x + uv.getX(i)) / level.length, (y + 1 - uv.getY(i)) / level.length);
+            ring.push(q.translate((x + 0.5) * SCALE, 0, (y + 0.5) * SCALE));
+          }
+      if (!ring.length) continue;
+      const mesh = new THREE.Mesh(own(mergeGeometries(ring)), this.waterMaterial);
+      for (const q of ring) q.dispose();
+      mesh.visible = false;
+      mesh.receiveShadow = true;
+      mesh.name = `Floodwater ${k}`;
+      this.floodRings.push({ k, mesh });
+      this.group.add(mesh);
+    }
     const surface = new THREE.Mesh(own(mergeGeometries(quads)), this.waterMaterial);
     surface.receiveShadow = true;
     surface.name = "Canal surface";
@@ -221,7 +245,13 @@ export class CanalWater {
     this.tiles = tiles.length;
   }
   /** Slow ripples; lamps brighten as the light falls. */
-  update(t, still, night = 0, live = false) {
+  update(t, still, night = 0, live = false, flood = 0) {
+    // Floodwater spreads out a step at a time and rises a little as it comes.
+    for (const { k, mesh } of this.floodRings || []) {
+      const depth = Math.max(0, Math.min(1, flood - k + 1));
+      mesh.visible = depth > 0.05;
+      mesh.position.y = 0.02 + 0.12 * depth;
+    }
     if (this.ripples && !still) this.ripples.offset.set((t * 0.012) % 1, (t * 0.007) % 1);
     // Electrified water flickers blue-white.
     if (this.waterMaterial) {

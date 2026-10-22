@@ -5170,7 +5170,7 @@
               banner = this.$(".mf-disaster"),
               weather = this.$(".mf-weatherfx"),
               t = this.arena.time,
-              info = d && DISASTERS[d.kind];
+              info = d && DISASTERS[d.surge ? "surge" : d.kind];
             const coming = !!d && t >= d.warnAt && t < d.startAt,
               on = !!d && t >= d.startAt && t < d.endAt,
               show = (coming || on) && this.arena.state !== "ended";
@@ -5222,10 +5222,11 @@
               swimming = wet && p.stance === "swim" && p.hp > 0,
               diving = swimming && p.diveUntil > a.time,
               mouth = swimming && !diving && a.atCulvert(p),
+              wading = wet && p.hp > 0 && !swimming && a.floodedAt(p.x, p.y),
               live = wet && a.waterShockUntil > a.time;
             this.shell.classList.toggle("mf-swimming", swimming);
             this.shell.classList.toggle("mf-diving", diving);
-            this.shell.classList.toggle("mf-electrified", live && swimming);
+            this.shell.classList.toggle("mf-electrified", live && (swimming || wading));
             const jump = this.$(".mf-jump span");
             if (jump && jump.textContent !== (mouth ? "DIVE" : "JUMP")) jump.textContent = mouth ? "DIVE" : "JUMP";
             if (!wet) return;
@@ -5240,7 +5241,11 @@
               this.mouthHinted = true;
               this.message(`CULVERT · ${how} TO DIVE`, 3);
             }
-            if (live && swimming && this.shockWarnedAt !== a.waterShockUntil) {
+            if (wading && this.wadeHinted !== a.roundId) {
+              this.wadeHinted = a.roundId;
+              this.message("FLOODWATER · WADING IS SLOW", 2);
+            }
+            if (live && (swimming || wading) && this.shockWarnedAt !== a.waterShockUntil) {
               this.shockWarnedAt = a.waterShockUntil;
               this.message("WATER ELECTRIFIED · GET OUT", 2);
             }

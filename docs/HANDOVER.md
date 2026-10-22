@@ -881,3 +881,11 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   facing a doorway), ceiling light strips, and a sign per building in the world typography. The generic
   "SECTOR 04" plaques are skipped on maps with `buildings`. Breakwater's per-room decorators stay Breakwater-only
   (they are tied to its room coordinates).
+- Storm surge: Calder Quay's disaster is a lightning storm with `surge: true` (`SURGE_OF`, `DISASTERS.surge` for
+  the banner name and 24 s duration), so rain, bolts, thunder and the storm look are reused. `floodLevel(arena)`
+  rises to `SURGE.reach` (2 tiles) over `SURGE.rise` s, holds, drains over `SURGE.fall` s; `floodDistance` is a
+  BFS over floor from water (quays and doorways, never through walls). `Arena.floodedAt` / `wet`: wading is slow
+  (`SURGE.wade` in `weather()`), you can still fire; floodwater conducts like the canal (strikes on it, shocked
+  waders). Renderer: one water sheet per flood step (`CanalWater.floodRings`), shown and raised with the flood.
+  HUD: "FLOODWATER · WADING IS SLOW". Tests in `outpost-quay.test.mjs`; photos `quay-swim.mjs` (surge-flood,
+  surge-electrified). Pace sim quay avg 88 s.

@@ -116,7 +116,9 @@ test("one natural disaster per round, themed to the arena and announced 10 s ahe
     assert.equal(d.kind, kind);
     assert.ok(d.startAt >= 30 && d.startAt <= 55);
     assert.equal(d.startAt - d.warnAt, DISASTER_WARNING);
-    assert.equal(d.endAt - d.startAt, DISASTERS[kind].duration);
+    // Calder Quay's storm is a storm surge (a storm that floods the quays).
+    assert.equal(!!d.surge, mapId === "quay");
+    assert.equal(d.endAt - d.startAt, DISASTERS[d.surge ? "surge" : kind].duration);
     assert.ok(JSON.parse(JSON.stringify(a.snapshot())).disaster.kind === kind, "sent to clients");
   }
   assert.equal(new Arena({ mode: "duo", mapId: "estate", random: () => 0.5 }).disaster, null);

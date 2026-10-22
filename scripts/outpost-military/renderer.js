@@ -39,6 +39,7 @@ import {buildRiggedHand,disposeRiggedHands} from './realism-hands.js';
 import {bindWeaponGrip,updateWeaponGrip} from './realism-grips.js';
 import { outfitOf, weaponOf, mapOf } from "../../public/games/outpost-content.js";
 import { CanalWater } from "./canal-water.js";
+import { floodLevel } from "../../public/games/outpost-hazards.js";
 import { QuayLandmarks } from "./quay-landmarks.js";
 import { QuayInteriors } from "./quay-interiors.js";
 import { skinPattern } from "../../public/games/outpost-skins.js";
@@ -3534,7 +3535,7 @@ export class MilitaryRenderer {
     const night = (this.night ||= new NightDressing(this)).update(protocolView, g.arena.mapId, t);
     this.updateCinematic(night, t);
     this.clouds.update(t, night, this.motion.matches);
-    this.canal?.update(t, this.motion.matches, night ? 1 : 0, g.arena.waterShockUntil > g.arena.time);
+    this.canal?.update(t, this.motion.matches, night ? 1 : 0, g.arena.waterShockUntil > g.arena.time, floodLevel(g.arena));
     this.landmarks?.update(t, this.motion.matches);
     if (g.mode === "protocol") (this.events ||= new EventDressing(this)).update(protocolView, t);
     updateNaturalLighting(this, protocolView, p, dt);
