@@ -7,6 +7,7 @@ import { FREE_APPS } from "@/lib/plans";
 import { PASS_PRICE_LABEL } from "@/lib/access";
 import { useRole } from "@/components/role";
 import { cn } from "@/components/ui";
+import { BrandLogo } from "@/components/brand";
 import { TagLink } from "@/components/desk-list";
 import { TAGS } from "@/lib/sections";
 
@@ -165,11 +166,10 @@ function Footer() {
     <footer className="no-print border-t border-line">
       <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-x-6 gap-y-8 px-5 py-12 sm:grid-cols-3 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div className="col-span-2 max-w-sm sm:col-span-3 md:col-span-1">
-          <Link to="/" className="inline-flex min-h-11 items-center gap-2.5">
-            <img src="/logo.png" alt="" width={28} height={28} className="site-logo size-7" />
-            <span className="font-display text-xl leading-none tracking-tight">{APP_NAME}</span>
+          <Link to="/" className="inline-flex min-h-11 items-center rounded-md" aria-label={`${APP_NAME} home`}>
+            <BrandLogo variant="full" height={60} />
           </Link>
-          <p className="mt-2 text-sm text-pretty text-muted">
+          <p className="mt-4 text-sm text-pretty text-muted">
             Browser apps for school, work, business and home, plus free games. {FREE_APPS.length} apps are free with an account;
             Midnry Pass adds the rest for {PASS_PRICE_LABEL} a month.
           </p>
@@ -242,9 +242,11 @@ export function Shell({ children }: { children: ReactNode }) {
       {/* A slim, translucent bar that stays at the top. */}
       <header className="no-print sticky top-0 z-30 border-b border-line bg-paper/80 backdrop-blur-xl backdrop-saturate-150">
         <div className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-1.5 sm:px-5">
-          <Link to="/" className="inline-flex min-h-11 items-center gap-2.5 rounded-md" aria-label={`${APP_NAME} home`}>
-            <img src="/logo.png" alt="" width={36} height={36} className="site-logo size-8 sm:size-9" />
-            <span className="font-display text-2xl leading-none tracking-tight">{APP_NAME}</span>
+          {/* Symbol and wordmark; on the narrowest phones (under 360 px) the symbol alone. */}
+          <Link to="/" className="inline-flex min-h-11 shrink-0 items-center rounded-md" aria-label={`${APP_NAME} home`}>
+            <BrandLogo variant="compact" height={32} className="hidden lg:block" />
+            <BrandLogo variant="compact" height={25} className="hidden min-[360px]:block lg:hidden" />
+            <BrandLogo variant="symbol" height={28} className="block min-[360px]:hidden" />
           </Link>
           {/* Larger screens: everything in one row. */}
           <div className="hidden items-center gap-x-6 lg:flex">
@@ -278,7 +280,7 @@ export function Shell({ children }: { children: ReactNode }) {
               <Link
                 to="/login"
                 search={{ next: "/apps", intent: "register" }}
-                className="inline-flex min-h-11 items-center rounded-full bg-pine px-4 text-sm font-medium text-paper active:opacity-80"
+                className="inline-flex min-h-11 items-center rounded-full bg-pine px-4 text-sm font-medium whitespace-nowrap text-paper active:opacity-80"
               >
                 Create account
               </Link>

@@ -435,6 +435,12 @@ export function normalizeHeadContext(ctx = {}) {
   };
 }
 
+/** True when the document already has a <link> with this rel (e.g. "manifest", "apple-touch-icon"). */
+export function hasLinkRel(html, rel) {
+  const escaped = rel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`<link\\b[^>]*\\brel\\s*=\\s*["']?${escaped}(?=["'\\s/>])`, "i").test(String(html));
+}
+
 export function injectGrokPwaHead(html, ctx = {}) {
   if (typeof html !== "string") return html;
   const { site, projectId, creator, creatorId, host, cwd } = normalizeHeadContext(ctx);
@@ -448,10 +454,12 @@ export function injectGrokPwaHead(html, ctx = {}) {
   let next = stripShareMetaTags(html);
   if (!readGrokExtensionsEnabled()) next = stripGrokExtensionsScript(next);
 
+  // An app that declares its own manifest or home-screen icon keeps them: the
+  // platform's are only a fallback, and a second apple-touch-icon would compete.
   const missing = grokPwaHeadTags(appName)
     .filter(([key]) => {
-      if (key === "manifest") return !next.includes('href="/__grok/manifest.webmanifest"');
-      if (key === "apple-touch-icon") return !next.includes('href="/__grok/icon-180.png"');
+      if (key === "manifest") return !hasLinkRel(next, "manifest");
+      if (key === "apple-touch-icon") return !hasLinkRel(next, "apple-touch-icon");
       return !next.includes(`name="${key}"`);
     })
     .map(([, tag]) => tag);

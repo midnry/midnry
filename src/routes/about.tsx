@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { Shell } from "@/components/shell";
+import { BrandLogo } from "@/components/brand";
 import { buttonClass } from "@/components/ui";
 import { APPS } from "@/lib/catalog";
 import { BILLING_FACTS, FREE_APPS, PASS_APPS, PASS_PRICE_LINE } from "@/lib/plans";
@@ -34,6 +35,7 @@ function AboutPage() {
   return (
     <Shell>
       <header className="max-w-3xl">
+        <BrandLogo variant="full" height={84} label="Midnry — a desk of web apps" className="mb-8 h-16 w-auto sm:mb-10 sm:h-21" />
         <p className="text-sm font-medium text-pine">About Midnry</p>
         <h1 className="mt-2 font-display text-5xl tracking-tight text-balance sm:text-6xl">Small, useful apps for the things you do every day.</h1>
         <p className="mt-5 max-w-2xl text-lg text-pretty text-muted">

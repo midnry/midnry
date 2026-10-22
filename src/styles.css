@@ -15,6 +15,10 @@
   --color-muted: #5c6e84;
   --color-line: #d5e2f0;
   --color-pine: #1d4ed8;
+  /* The Midnry symbol's blue (logo only; buttons and links stay pine). Same hue as
+     pine, a step brighter, toward the approved board's #1c59f0. Kept in step with
+     scripts/brand/build-logo.mjs, which draws the logo files. */
+  --color-brand: #1d55e4;
   --color-fail: #b42318;
   /* Positive states: "Free with an account", a finished task. */
   --color-ok: #166534;
@@ -48,6 +52,7 @@
 @property --color-muted { syntax: "<color>"; inherits: true; initial-value: #5c6e84; }
 @property --color-line { syntax: "<color>"; inherits: true; initial-value: #d5e2f0; }
 @property --color-pine { syntax: "<color>"; inherits: true; initial-value: #1d4ed8; }
+@property --color-brand { syntax: "<color>"; inherits: true; initial-value: #1d55e4; }
 @property --color-fail { syntax: "<color>"; inherits: true; initial-value: #b42318; }
 @property --color-ok { syntax: "<color>"; inherits: true; initial-value: #166534; }
 @property --mark-a { syntax: "<color>"; inherits: true; initial-value: #3d9bff; }
@@ -78,6 +83,8 @@ html[data-mode="dark"] {
   --color-muted: #93a4bb;
   --color-line: #26354f;
   --color-pine: #5a8dee;
+  /* Lighter on the dark page so the symbol keeps its weight (5.8:1 on paper). */
+  --color-brand: #5a8dee;
   --mark-a: #8cc8ff;
   --mark-b: #5b8cff;
   --color-fail: #e5484d;
@@ -96,6 +103,7 @@ html.mode-ease {
     --color-muted 2s ease,
     --color-line 2s ease,
     --color-pine 2s ease,
+    --color-brand 2s ease,
     --color-fail 2s ease,
     --color-ok 2s ease,
     --mark-a 2s ease,
@@ -103,13 +111,6 @@ html.mode-ease {
     --shadow-tint 2s ease;
 }
 
-/* The header logo is a picture: lift it a little on the dark background. */
-.site-logo {
-  transition: filter 2s ease;
-}
-html[data-mode="dark"] .site-logo {
-  filter: brightness(1.5) saturate(1.15);
-}
 
 /* Phones: body text closer to Apple's reading sizes (17pt body, 15pt and 13pt for smaller text). */
 @media (max-width: 639px) {

@@ -1,12 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <circle cx="32" cy="32" r="32" fill="#ffffff"/>
-  <defs>
-    <linearGradient id="m" x1="12" y1="8" x2="52" y2="58" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#3B82F6"/>
-      <stop offset="1" stop-color="#1D4ED8"/>
-    </linearGradient>
-  </defs>
-  <path d="M50.5 14.2A24 24 0 1 0 55 22" fill="none" stroke="url(#m)" stroke-width="5.2" stroke-linecap="round"/>
-  <circle cx="53.2" cy="15.4" r="3.3" fill="#3B82F6"/>
-  <path fill="url(#m)" d="M20 46V22.5h5.2l6.8 10.2 6.8-10.2H44V46h-4.8V31.2L33.4 41h-2.8l-5.8-9.8V46z"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 104 104"><style>path{fill:#1d55e4}@media (prefers-color-scheme:dark){path{fill:#5a8dee}}</style><path d="M15 0H35A15 15 0 0 1 50 15V39.88A4 4 0 0 1 48.41 43.07A27.5 27.5 0 0 0 43.07 48.41A4 4 0 0 1 39.88 50H15A15 15 0 0 1 0 35V15A15 15 0 0 1 15 0ZM75 0H87.5A12.5 12.5 0 0 1 100 12.5V25A12.5 12.5 0 0 1 87.5 37.5H75A12.5 12.5 0 0 1 62.5 25V12.5A12.5 12.5 0 0 1 75 0ZM12.5 62.5H25A12.5 12.5 0 0 1 37.5 75V87.5A12.5 12.5 0 0 1 25 100H12.5A12.5 12.5 0 0 1 0 87.5V75A12.5 12.5 0 0 1 12.5 62.5ZM65 50H85A15 15 0 0 1 100 65V85A15 15 0 0 1 85 100H65A15 15 0 0 1 50 85V65A15 15 0 0 1 65 50Z"/></svg>

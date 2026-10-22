@@ -29,6 +29,8 @@ export const Route = createRootRoute({
       { name: "twitter:description", content: SITE_DESCRIPTION },
       { name: "twitter:image", content: "/og.jpg" },
       { name: "theme-color", content: "#f4f7fb" },
+      { name: "apple-mobile-web-app-title", content: APP_NAME },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -37,11 +39,15 @@ export const Route = createRootRoute({
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&family=Outfit:wght@400;500;600&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", sizes: "any" },
-      { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon.png?v=2" },
-      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png?v=2" },
+      // Icons (drawn by scripts/brand/build-logo.mjs). Stable paths; bump ?v= only when the art changes.
+      // Search uses the 96 px PNG or the ICO (a multiple of 48 px); browsers that can take the SVG prefer it.
+      // Declaring our own apple-touch-icon and manifest stops the platform PWA injector adding its placeholders.
+      { rel: "icon", href: "/favicon.ico?v=3", sizes: "16x16 32x32 48x48" },
+      { rel: "icon", type: "image/png", sizes: "96x96", href: "/favicon-96x96.png?v=3" },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg?v=3" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png?v=3" },
+      { rel: "manifest", href: "/site.webmanifest?v=3" },
       { rel: "stylesheet", href: appCss },
-      { rel: "manifest", href: "/__grok/manifest.webmanifest" },
     ],
   }),
   component: RootComponent,
