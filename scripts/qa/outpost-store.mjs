@@ -46,6 +46,8 @@ const ready = (p) =>
 
 // 1. Locker, laptop.
 const ctx = await b.newContext({ viewport: { width: 1280, height: 800 } });
+// Skip the first-match How to Play cards: these flows click Play directly.
+await ctx.addInitScript(() => localStorage.setItem("midnry-outpost-quickstart", JSON.stringify({ signal: true, protocol: true })));
 await account(ctx, `buyer-${stamp}@example.test`, `Buyer ${stamp}`);
 const p = await ctx.newPage();
 p.on("pageerror", (e) => errors.push(e.message));

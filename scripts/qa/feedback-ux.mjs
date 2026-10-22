@@ -238,6 +238,9 @@ if (PARTS.includes("laptop")) {
   check("1280: Esc pauses and shows Resume, focused", pc.visible && pc.focused && pc.onScreen, pc);
   check("1280: pause hint names Esc and P", /Esc/.test(pc.hint) && /P\b/.test(pc.hint), pc.hint);
   await p.screenshot({ path: `${OUT}/pause-1280.png` });
+  // The game ignores Esc for 400 ms after pausing (the Esc that paused must
+  // not resume); on a fast machine the steps above can finish sooner.
+  await p.waitForTimeout(600);
   await p.keyboard.press("Escape");
   await waitFor(p, "e.running", 20000).catch(() => {});
   check("1280: Esc resumes", await engine(p, "e.running"));

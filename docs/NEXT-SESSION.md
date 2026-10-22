@@ -4,44 +4,17 @@ Read docs/HANDOVER.md first (working rules, deploy procedure, security rule). Th
 
 ## Branches
 - `game-look`: the working branch. Everything on it up to the last deploy is live on midnry.com.
-- `wip/handover-20261022`: a snapshot of unfinished work on top of `game-look` (see below).
-  It is NOT tested as a whole. Continue from it, finish, test, then merge into `game-look`.
+- `wip/handover-20261022` was finished, tested and merged into `game-look` (2026-10-22, not deployed yet).
 
-## Unfinished work in the snapshot
-
-### A. Outpost Zero sound / pause / right-click / How to play: DONE and tested
-Files:
-- public/games/outpost-retention.js (audio unlock, louder mix, Protocol ambience)
-- public/games/outpost-menu.js (pause card with a big Resume)
-- public/games/outpost-quickstart.js (new 6-card How to Play carousel)
-- parts of public/games/outpost-zero.html
-- src/routes/games/outpost-zero.tsx (v=feedback-20261022)
-- scripts/qa/lobby-helpers.mjs, lobby-look.mjs, feedback-ux.mjs
-
-Still to do:
-- scripts/qa/outpost-signin.mjs and outpost-store.mjs click `.mf-start` directly. Set localStorage
-  `midnry-outpost-quickstart` to `{"signal":true,"protocol":true}` before Play.
-
-### B. Outpost Zero visibility / LOD: IN PROGRESS, not finished
-Player feedback:
-- other players/bots vanish unless directly in front of you;
-- the detail reduction (LOD/draw distance/render scale) is too aggressive, so nearby text is blurry;
-- the player kept dying because bots see you but you can't see them.
-
-Work so far:
-- edits in scripts/outpost-military/* and the rebuilt public/games/outpost-military.js;
-- a new test scripts/outpost-visibility.test.mjs that imports `SIGHT` from outpost-sim.js (may not exist yet);
-- scripts/outpost-performance.test.mjs imports `MIN_BUDGET_SCALE`.
-
-Goals:
-1. Actors whose bounding sphere is in the view frustum are always drawn (renderer.js `updateActors`).
-2. Bots never see further or through more than the player can.
-3. Less aggressive LOD: higher minimum render scale, longer LOD distances, anisotropy, sharp signs/text.
-
-Checks: `npm run build:outpost-military`, `node --test scripts/outpost-*.test.mjs`, browser QA, and
-screenshots in screenshots/qa/visibility/.
-
-Commit A and B together: both touch outpost-zero.html.
+## Finished in that merge (not deployed yet; cache key v=visibility-20261022)
+- A. Outpost Zero sound / pause / right-click / How to Play carousel.
+- B. Outpost Zero visibility: frustum + body-sphere actor culling (renderer.js `updateActors`,
+  telemetry.js `actorInView` / `clearSightLine`), bots limited by the same fog as the player
+  (`SIGHT`, `Arena.spots`), gentler detail (min render scale 0.75 with quick recovery, phone
+  density 1.25, character LOD at 10 / 6.5 tiles, sharp sign text).
+- Checks run: 307/307 `node --test scripts/outpost-*.test.mjs`, `tsc`, `build:render`,
+  `build:outpost-military` (no diff), `scripts/qa/actor-visibility.mjs` at 1280 and 390 (0 hidden of
+  ~1,800 in-view rivals), `sign-sharpness.mjs`, `feedback-ux.mjs` 74/74.
 
 ## Next, in order (owner-approved)
 1. Mini city ("Calder Quay", working name) as a **Last Signal arena first**.

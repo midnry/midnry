@@ -103,9 +103,13 @@ test("rivals behind the camera are skipped; full walls hide, low cover and furni
   assert.equal(actorInView({ level }, me, rival, true), false);
   // ... unless that wall type is see-through furniture (a desk, a window).
   assert.equal(actorInView({ level }, me, rival, true, (x) => x === 13), true);
-  // A single post: a shoulder still shows, so the body is drawn.
+  // One wall tile (3 m, wider than a body) hides a rival straight behind it,
+  // but a rival half a tile aside, centre hidden, still shows a shoulder.
   for (const y of [9, 11, 12]) level[y][13] = 0;
-  assert.equal(actorInView({ level }, me, rival, true), true);
+  assert.equal(actorInView({ level }, me, rival, true), false);
+  const aside = { x: 16.5, y: 11.5 };
+  assert.equal(clearSightLine(level, me.x, me.y, aside.x, aside.y), false, "centre line blocked");
+  assert.equal(actorInView({ level }, me, aside, true), true);
   // Crates and barriers are not in the level grid: they never hide a body.
   assert.equal(actorInView({ level: yard(), crates: [{ x: 13.5, y: 10.5, hp: 50 }] }, me, rival, true), true);
 });

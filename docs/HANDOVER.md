@@ -774,3 +774,20 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
 - QA: `node scripts/qa/feedback-ux.mjs` (→ `screenshots/qa/feedback-ux/`). `lobby-helpers.mjs` `play()`
   skips the quick start if it appears; QA scripts that click `.mf-start` directly with a fresh
   profile should set `midnry-outpost-quickstart` to `{"signal":true,"protocol":true}`.
+
+## Outpost Zero visibility (2026-10-22, merged into game-look, not deployed yet)
+
+- Rivals vanished unless straight ahead: culling used a 2D cone and the simulation's 32-tile sight
+  cast. Now `actorInView` takes the camera frustum against a body sphere (`ACTOR_SPHERE_*`) and only
+  hides a body when every eye-to-body line (centre and both shoulders) crosses a full-height wall
+  (`clearSightLine`, no range cap). Furniture, windows and crates never hide a body.
+- Fairness: `Arena.spots` caps bot spotting by the fog the player sees (`SIGHT`: Red Haze 5 tiles,
+  sandstorm 3.5), checked against `fogVisibility` in `scripts/outpost-visibility.test.mjs`.
+- Detail: render-scale floor 0.5 → 0.75 with recovery in about a second; phones render at 1.25 CSS px;
+  character LOD swap at 10 tiles (laptop) / 6.5 (phone), far bodies animate at 15 Hz; `crispText` for signs.
+- QA: `scripts/qa/actor-visibility.mjs [tag] [width]`, `scripts/qa/sign-sharpness.mjs` →
+  `screenshots/qa/visibility`.
+- Running QA on a Mac: the scripts name the Linux Chromium path. Install Playwright's Chromium
+  (`npx playwright install chromium`) and preload a shim that drops a missing `executablePath` and the
+  SwiftShader flags. On a real GPU steps run much faster than in the sandbox, so fixed waits written for
+  SwiftShader can be too short (e.g. Esc is ignored for 400 ms after pausing).

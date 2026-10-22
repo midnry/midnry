@@ -45,6 +45,8 @@ async function playMatch(p, kills) {
 // 1. Phone: the game is open; after the free match the sign-in screen follows.
 {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  // Skip the first-match How to Play cards: these flows click Play directly.
+  await ctx.addInitScript(() => localStorage.setItem("midnry-outpost-quickstart", JSON.stringify({ signal: true, protocol: true })));
   await ctx.addCookies([signedOut]);
   const p = await ctx.newPage();
   await p.goto(`${BASE}/games/outpost-zero`, { waitUntil: "domcontentloaded", timeout: 90000 });
@@ -61,6 +63,8 @@ async function playMatch(p, kills) {
 // away, and login keeps the room code.
 {
   const ctx = await b.newContext({ viewport: { width: 1280, height: 720 } });
+  // Skip the first-match How to Play cards: these flows click Play directly.
+  await ctx.addInitScript(() => localStorage.setItem("midnry-outpost-quickstart", JSON.stringify({ signal: true, protocol: true })));
   await ctx.addCookies([signedOut]);
   await ctx.addInitScript(() => localStorage.setItem("midnry-outpost-guest", JSON.stringify({ played: 1 })));
   const p = await ctx.newPage();
@@ -79,6 +83,8 @@ async function playMatch(p, kills) {
 const stamp = Date.now().toString(36);
 const player = { name: `Tester ${stamp}`, email: `qa-${stamp}@example.test`, password: "outpost-zero-qa-1" };
 const ctx = await b.newContext({ viewport: { width: 1280, height: 720 } });
+// Skip the first-match How to Play cards: these flows click Play directly.
+await ctx.addInitScript(() => localStorage.setItem("midnry-outpost-quickstart", JSON.stringify({ signal: true, protocol: true })));
 await ctx.addCookies([signedOut]);
 const p = await ctx.newPage();
 p.on("pageerror", (e) => errors.push(e.message));
