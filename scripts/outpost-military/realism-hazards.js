@@ -3,6 +3,7 @@
  * cover), marked ground before a strike, and disaster weather and shake.
  * The rules live in public/games/outpost-hazards.js. */
 import * as THREE from "three";
+import { SANDSTORM_FOG } from "./telemetry.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { DisasterWeather, WIND } from "./realism-weather.js";
 
@@ -852,7 +853,7 @@ export class HazardDressing {
     }
     const k = this.fade();
     if (!k) return null;
-    if (d.kind === "sandstorm") return { fog: "#a6854f", density: 0.075 + 0.035 * this.wx.gust(), k };
+    if (d.kind === "sandstorm") return { fog: "#a6854f", density: SANDSTORM_FOG.base + SANDSTORM_FOG.gust * this.wx.gust(), k };
     const lit = this.lightning(),
       fog = (this.stormFog ||= new THREE.Color()).set("#1b212b").lerp(STORM_LIT, Math.min(1, lit) * 0.6);
     return { fog, density: 0.034 - 0.014 * Math.min(1, lit), k };

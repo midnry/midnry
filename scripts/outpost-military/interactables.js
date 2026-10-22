@@ -126,7 +126,7 @@ function shared(r) {
   color.colorSpace = THREE.SRGBColorSpace;
   response.colorSpace = THREE.NoColorSpace;
   for (const t of [color, response]) {
-    t.anisotropy = r.renderer.capabilities.getMaxAnisotropy();
+    t.anisotropy = Math.min(8, r.renderer.capabilities.getMaxAnisotropy());
     r.textures.add(t);
   }
   color.name = "Original shared interactable trim atlas";

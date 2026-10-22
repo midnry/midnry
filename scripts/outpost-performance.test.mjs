@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { FrameBudget } from "../public/games/outpost-academy.js";
+import { FrameBudget, MIN_BUDGET_SCALE } from "../public/games/outpost-academy.js";
+import { MIN_RENDER_SCALE } from "./outpost-military/compatibility.js";
 import { FrameDiagnostics } from "../public/games/outpost-frame-diagnostics.js";
 test("device diagnostics measure gameplay cadence and retain it through menus", () => {
   const d=new FrameDiagnostics();
@@ -22,12 +23,20 @@ test("120Hz and 60Hz cadence report measured FPS without inventing display frame
     assert.equal(b.scale, 1);
   }
 });
-test("sustained overload lowers resolution gradually and clamps its floor", () => {
+test("sustained overload lowers resolution gradually and clamps its floor at 0.75", () => {
+  assert.equal(MIN_BUDGET_SCALE, 0.75);
+  assert.equal(MIN_BUDGET_SCALE, MIN_RENDER_SCALE, "page budget and 3D buffer share one floor");
   const b = new FrameBudget();
   for (let i = 0; i < 2000; i++) b.sample(12, (i * 1000) / 120, true);
-  assert.equal(b.scale, 0.5);
-  for (let i = 0; i < 2000; i++) b.sample(2, 20000 + (i * 1000) / 120, true);
-  assert.ok(b.scale > 0.5 && b.scale < 1);
+  assert.equal(b.scale, MIN_BUDGET_SCALE);
+  // Comfortable frames (under 5 ms) bring it back to full within ~4 s at 120 Hz.
+  let now = 20000, frames = 0;
+  while (b.scale < 1 && frames < 2000) b.sample(4, (now += 1000 / 120), true), frames++;
+  assert.equal(b.scale, 1);
+  assert.ok(frames <= 4 * 120, `recovered in ${frames} frames (was ~2000+)`);
+  // Recovery never supersamples: extra pixels still need the strict headroom.
+  for (let i = 0; i < 2000; i++) b.sample(4, (now += 1000 / 120), true, true, 4, 1.5);
+  assert.equal(b.scale, 1);
 });
 test("paused games do not lower resolution; disabling adaptation restores it", () => {
   const b = new FrameBudget();

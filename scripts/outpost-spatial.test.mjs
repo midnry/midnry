@@ -35,12 +35,17 @@ test("direction, distance and walls affect sound without consulting roles", () =
   assert.equal(voicePosition(view, "friend", listener).gain, 0);
 });
 test("culling keeps a partly exposed silhouette and rejects solid occlusion/offscreen actors", () => {
-  const camera = { x: 0, y: 0, a: 0 },
-    entity = { x: 4, y: 0 },
-    fov = Math.PI / 2;
-  assert.equal(actorInView({ visible: () => false }, camera, entity, fov), false);
-  assert.equal(actorInView({ visible: (a, b) => b.y > 0.1 }, camera, entity, fov), true);
-  assert.equal(actorInView({ visible: () => true }, camera, { x: -4, y: 0 }, fov), false);
+  const open = () => Array.from({ length: 12 }, () => Array(12).fill(0)),
+    camera = { x: 2.5, y: 5.5, a: 0 },
+    entity = { x: 7.5, y: 5.5 };
+  const wall = open();
+  for (const y of [4, 5, 6, 7]) wall[y][5] = 1;
+  assert.equal(actorInView({ level: wall }, camera, entity, true), false);
+  const post = open();
+  post[5][5] = 1;
+  assert.equal(actorInView({ level: post }, camera, entity, true), false, "a 3 m pillar hides a body behind it");
+  assert.equal(actorInView({ level: post }, camera, { x: 7.5, y: 6.25 }, true), true, "a shoulder past its edge shows");
+  assert.equal(actorInView({ level: open() }, camera, entity, false), false, "outside the frustum");
 });
 test("GPU overload adapts resolution even when CPU submission is cheap", () => {
   const b = new FrameBudget();

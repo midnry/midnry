@@ -62,14 +62,22 @@ export function drawAtlasText(r, c, text, { y, width = 1024, height = 64, aspect
   c.restore();
 }
 
+/** Text and sign filtering: trilinear mipmaps (no shimmer far away, the full
+ * canvas up close) and the device's anisotropy, capped at 8, so lettering
+ * stays sharp on walls seen at an angle. */
+export function crispText(r, t) {
+  t.generateMipmaps = true;
+  t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.magFilter = THREE.LinearFilter;
+  t.anisotropy = Math.min(8, r.renderer?.capabilities?.getMaxAnisotropy?.() || 1);
+  return t;
+}
+
 export function textTexture(r, canvas, name, { world = false, metadata } = {}) {
   const t = new THREE.CanvasTexture(canvas);
   t.name = name;
   t.colorSpace = THREE.SRGBColorSpace;
-  t.generateMipmaps = true;
-  t.minFilter = THREE.LinearMipmapLinearFilter;
-  t.magFilter = THREE.LinearFilter;
-  t.anisotropy = r.renderer.capabilities.getMaxAnisotropy();
+  crispText(r, t);
   if (metadata) t.userData.worldText = metadata;
   r.textures.add(t);
   if (world) r.worldTextures.add(t);

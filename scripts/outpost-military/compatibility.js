@@ -37,15 +37,23 @@ export function renderSize(width, height, profile) {
 
 /** 3D render buffer only. HUD projection/aim and CSS layout retain their
  * existing sizes. Never supersample above the physical display or GPU limits. */
+/** Lowest automatic resolution scale. At the old 0.5 a phone drew the 3D
+ * view at half its CSS width (195 px across on a 390 px phone): signs and
+ * labels a step away were unreadable. Shared with FrameBudget. */
+export const MIN_RENDER_SCALE = 0.75;
+/** Phones render at 1.25 CSS pixels (never above the physical display):
+ * sharper text than the old 1.0 without allocating a full 3× Retina buffer. */
+export const PHONE_DENSITY = 1.25;
+
 export function cinematicRenderSize(cssWidth, cssHeight, dpr, options, profile, scale = 1) {
   const density = Math.max(1, Math.min(2, Number.isFinite(dpr) ? dpr : 1));
   const physicalWidth = cssWidth * density;
-  const adaptiveScale = options.adaptive ? Math.max(0.5, Math.min(1.5, scale)) : 1;
-  // Phones retain the pre-Retina default in either orientation. Extra desktop
-  // pixels must not silently quadruple a phone's fragment work at startup.
+  const adaptiveScale = options.adaptive ? Math.max(MIN_RENDER_SCALE, Math.min(1.5, scale)) : 1;
+  // Extra desktop pixels must not silently quadruple a phone's fragment work
+  // at startup: phones get a modest density, capped by the preset width.
   const phone = Math.min(cssWidth, cssHeight) < 600;
   const baseWidth = phone
-    ? Math.min(cssWidth, options.width)
+    ? Math.min(physicalWidth, cssWidth * PHONE_DENSITY, options.militaryWidth || options.width)
     : options.militaryWidth || options.width;
   const width = Math.max(
     1,

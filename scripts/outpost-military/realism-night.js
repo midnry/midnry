@@ -4,7 +4,7 @@
 import * as THREE from "three";
 import { batchStaticByMaterial } from "./static-batches.js";
 
-import {fitDisplay,textTexture} from "./world-text.js";
+import {crispText,fitDisplay,textTexture} from "./world-text.js";
 
 const SCALE = 3;
 
@@ -104,7 +104,7 @@ function signTexture(text, color, r, sharp = false) {
   g.fillStyle = "#ffffff";
   g.globalAlpha = 0.55;
   g.fillText(text, 256, 66);
-  const texture = new THREE.CanvasTexture(c);
+  const texture = crispText(r, new THREE.CanvasTexture(c));
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
 }

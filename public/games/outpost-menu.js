@@ -11,6 +11,7 @@ import { modifierChoice } from "./outpost-variety.js";
 import { SERIES_KINDS, seriesKindOf } from "./outpost-series.js";
 import { characterOf } from "./outpost-characters.js";
 import { networkQuality } from "./outpost-netmeter.js";
+import { QuickStart } from "./outpost-quickstart.js";
 
 // Step 1 picks the game; step 2 shows only that game's ways to play.
 const GAMES = [
@@ -452,6 +453,32 @@ midnry-fps .mf-modal.mf-picking::after { content: ""; position: absolute; inset:
   midnry-fps .mf-gamepick .mf-ico { right: 8px; }
   midnry-fps .mf-variants { grid-template-columns: 1fr 1fr; }
 }
+/* Paused mid-match: one big way back in, first and focused. */
+midnry-fps .mf-pausecard { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 3; box-sizing: border-box; width: clamp(290px, 30vw, 400px); display: grid; gap: 12px; padding: 20px; border: 1px solid #ffc85766; border-radius: 4px; background: #0a0f0deb; backdrop-filter: blur(8px); color: #eef2ee; text-align: center; box-shadow: 0 20px 60px #000a; }
+midnry-fps .mf-pausecard[hidden] { display: none !important; }
+midnry-fps .mf-pausekicker { margin: 0; font: 800 40px/1 var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; color: #f4f6f2; }
+midnry-fps .mf-pausereason { margin: -4px 0 0; font: 400 15px/1.35 var(--mf-body); color: #c3ccc6; }
+midnry-fps .mf-pausereason:empty { display: none; }
+midnry-fps .mf-pausecard .mf-resume { all: unset; cursor: pointer; box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 68px; padding: 0 18px; border-radius: 4px; background: var(--mf-accent); color: var(--mf-accent-ink); font: 800 34px/1 var(--mf-display); letter-spacing: 0.06em; text-transform: uppercase; box-shadow: 0 12px 34px #ffc85745; }
+midnry-fps .mf-pausecard .mf-resume .mf-ico { width: 26px; height: 26px; stroke-width: 2.4; }
+midnry-fps .mf-pausecard .mf-resume:hover { filter: brightness(1.07); }
+midnry-fps .mf-pausecard .mf-resume:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+midnry-fps .mf-pausehint { margin: 0; font: 400 15px/1.5 var(--mf-body); color: #d6ddd8; }
+midnry-fps .mf-pausehint kbd { display: inline-block; padding: 1px 8px; border: 1px solid #ffffff4d; border-bottom-width: 3px; border-radius: 4px; background: #ffffff0f; font: 700 14px var(--mf-display); letter-spacing: 0.06em; color: #fff; }
+midnry-fps .mf-pauserow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+midnry-fps .mf-pauserow button { all: unset; cursor: pointer; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 58px; padding: 6px 4px; border: 1px solid #ffffff2e; border-radius: 4px; background: #ffffff08; font: 600 13px var(--mf-display); letter-spacing: 0.08em; text-transform: uppercase; color: #e3e9e4; text-align: center; }
+midnry-fps .mf-pauserow button:hover { border-color: #ffffff88; color: #fff; }
+midnry-fps .mf-pauserow button:focus-visible { outline: 2px solid var(--mf-accent); outline-offset: 2px; }
+midnry-fps .mf-pauserow button[hidden] { display: none; }
+midnry-fps .mf-pauserow .mf-ico { width: 20px; height: 20px; }
+midnry-fps .mf-pauserow .mf-soundtoggle[aria-pressed="false"] { border-color: #ff7a6a88; color: #ffb3a8; }
+midnry-fps .mf-modal.mf-paused .mf-stagebox, midnry-fps .mf-modal.mf-paused .mf-newhere { visibility: hidden; }
+@media (max-width: 999px), (max-height: 599px) {
+  midnry-fps .mf-modal.mf-lobby .mf-pausecard { position: relative; left: auto; top: auto; transform: none; width: auto; flex: none; margin: 8px var(--mf-gut) 0 !important; padding: 14px; gap: 10px; }
+  midnry-fps .mf-modal.mf-lobby.mf-paused > .mf-stagebox { height: 0 !important; padding: 0 !important; }
+  midnry-fps .mf-pausekicker { font-size: 32px; }
+  midnry-fps .mf-pausecard .mf-resume { min-height: 60px; font-size: 30px; }
+}
 `;
 
 const el = (tag, cls, html) => {
@@ -473,6 +500,8 @@ export class OutpostMenu {
     g.shell.append(this.style);
     this.build();
     this.tabSettings();
+    // How to play: short quick-start cards; the full manual stays reachable.
+    this.quick = new QuickStart(g, { fullGuide: (mode) => this.fullGuide(mode) });
     // Return to the mode played last time.
     let saved = null;
     try {
@@ -489,6 +518,17 @@ export class OutpostMenu {
     };
     // Capture on the button itself runs before the game's own start handler.
     g.$(".mf-start")?.addEventListener("click", this.guardPlay, true);
+    // A brand-new player's first match of each game opens with the quick
+    // start cards; their Play (or Skip) then starts the match.
+    this.firstRun = (event) => {
+      if (!this.quick || g.online || g.ui?.playChoice === "online" || g.state === "playing" || g.state === "ended") return;
+      if ((g.retention?.profile?.matches ?? 0) > 0 || this.quick.seen(g.mode)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const go = () => g.$(".mf-start")?.click();
+      this.quick.open(g.mode, { onPlay: go, onSkip: go });
+    };
+    g.$(".mf-start")?.addEventListener("click", this.firstRun, true);
     if (saved === "signal" && !g.online && g.state !== "playing") {
       g.mode = "signal";
       g.reset();
@@ -557,6 +597,22 @@ export class OutpostMenu {
     );
     this.matchbar.hidden = true;
     this.summary.after(this.matchbar);
+    // Paused mid-match: a big Resume first (and focused), how to resume
+    // from the keyboard or a controller, sound on/off, help and settings.
+    this.pauseCard = el(
+      "section",
+      "mf-pausecard",
+      `<p class="mf-pausekicker">Paused</p><p class="mf-pausereason" role="status"></p><button type="button" class="mf-resume">${icon("arrow")}<span>Resume</span></button><p class="mf-pausehint"></p><div class="mf-pauserow"><button type="button" class="mf-soundtoggle" aria-pressed="true"></button><button type="button" data-go="guide">${icon("book")}How to play</button><button type="button" data-go="settings">${icon("gear")}Settings</button></div>`,
+    );
+    this.pauseCard.setAttribute("aria-label", "Game paused");
+    this.pauseCard.hidden = true;
+    g.on(this.pauseCard.querySelector(".mf-resume"), "click", () => this.resume());
+    g.on(this.pauseCard.querySelector(".mf-soundtoggle"), "click", () => {
+      const audio = g.retention?.audio;
+      if (!audio) return;
+      audio.setSound(!audio.soundOn());
+      this.syncSound();
+    });
     this.matchbar.after(this.actions);
     g.on(this.matchbar.querySelector(".mf-netcheck"), "click", () => g.netMeter?.open());
     g.on(this.matchbar.querySelector(".mf-restartmatch"), "click", () =>
@@ -723,7 +779,109 @@ export class OutpostMenu {
       const mode = event.target.closest("[data-mode], [data-variant]");
       if (mode && !mode.disabled) this.pick(mode.dataset.mode || mode.dataset.variant);
     };
-    for (const node of [this.top, this.actions, this.foot, this.side, this.cards, this.welcome, this.leftCards]) g.on(node, "click", go);
+    for (const node of [this.top, this.actions, this.foot, this.side, this.cards, this.welcome, this.leftCards, this.pauseCard]) g.on(node, "click", go);
+    // The pause card sits right under the header (first on phones).
+    this.top.after(this.pauseCard);
+    // Paused: a click (not a drag to turn the operator) on empty space
+    // outside the cards resumes, like pressing Resume.
+    let down = null;
+    g.on(this.modal, "pointerdown", (event) => {
+      down = event.target === this.modal || event.target === this.hero ? { x: event.clientX, y: event.clientY } : null;
+    });
+    g.on(this.modal, "click", (event) => {
+      const from = down;
+      down = null;
+      if (!from || !(event.target === this.modal || event.target === this.hero)) return;
+      if (Math.hypot(event.clientX - from.x, event.clientY - from.y) > 8) return;
+      if (this.paused()) this.resume();
+    });
+    // Esc / P resume when focus has left the game (the shell handles the rest).
+    g.on(document, "keydown", (event) => {
+      if (event.target !== document.body && event.target !== document.documentElement) return;
+      const key = event.key.toLowerCase();
+      if ((key === "escape" || key === "p") && this.paused()) {
+        event.preventDefault();
+        this.resume("key");
+      }
+    });
+  }
+
+  /** Mid-match with the pause menu up and nothing else open over it. */
+  paused() {
+    const g = this.g;
+    return (
+      !this.modal.hidden &&
+      g.state === "playing" &&
+      !g.running &&
+      !g.deathSequence &&
+      !this.panel.classList.contains("mf-debrief") &&
+      !this.modal.classList.contains("mf-picking") &&
+      !this.modal.classList.contains("mf-roomopen") &&
+      !g.shell.querySelector("dialog[open]")
+    );
+  }
+
+  /** Back into the match. From a key press the browser may refuse to
+   * capture the mouse again; the next click on the view then does it. */
+  resume(how = "click") {
+    const g = this.g;
+    if (!this.paused()) return false;
+    g.relockOnClick = how === "key" && !matchMedia("(pointer: coarse)").matches;
+    g.start();
+    return !g.running ? false : true;
+  }
+
+  /** Show the pause card while paused mid-match (3D lobby) and focus
+   * Resume when it appears; say why the game paused if it did by itself. */
+  refreshPause(lobby, midMatch) {
+    const g = this.g,
+      card = this.pauseCard;
+    if (!card) return;
+    const show = lobby && midMatch && !this.modal.hidden && !g.running;
+    if (this.modal.classList.contains("mf-paused") !== show) this.modal.classList.toggle("mf-paused", show);
+    if (card.hidden === show) card.hidden = !show;
+    if (!show) {
+      this.pauseShown = false;
+      return;
+    }
+    const touch = matchMedia("(pointer: coarse)").matches,
+      pad = [...(navigator.getGamepads?.() || [])].some(Boolean);
+    const hint = touch && !pad
+      ? "Tap <b>Resume</b> to jump back in."
+      : `Press <kbd>Esc</kbd> or <kbd>P</kbd> to resume${pad ? " · Controller: <kbd>Start</kbd>" : ""}. Or click anywhere outside the menu.`;
+    const hintBox = card.querySelector(".mf-pausehint");
+    if (hintBox.innerHTML !== hint) hintBox.innerHTML = hint;
+    const reasons = {
+      focus: "The game paused because its window lost focus.",
+      hidden: "The game paused while you were away.",
+      pointer: "The game paused because the mouse was released.",
+    };
+    const online = g.online ? "Online matches keep running while this menu is open." : "";
+    const reason = [reasons[g.pauseReason] || "", online].filter(Boolean).join(" ");
+    const reasonBox = card.querySelector(".mf-pausereason");
+    if (reasonBox.textContent !== reason) reasonBox.textContent = reason;
+    this.syncSound();
+    if (!this.pauseShown) {
+      this.pauseShown = true;
+      // Wait a frame so the card is laid out before focusing it.
+      requestAnimationFrame(() => {
+        if (!card.hidden && !g.shell.querySelector("dialog[open]")) card.querySelector(".mf-resume").focus({ preventScroll: true });
+        if (getComputedStyle(card).position !== "absolute") this.modal.scrollTop = 0;
+      });
+    }
+  }
+
+  /** The pause card's sound button mirrors the sound settings. */
+  syncSound() {
+    const audio = this.g.retention?.audio,
+      button = this.pauseCard?.querySelector(".mf-soundtoggle");
+    if (!audio || !button) return;
+    const on = audio.soundOn();
+    const speaker = `<svg class="mf-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/>${on ? '<path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11"/>' : '<path d="M16 9l5 6M21 9l-5 6"/>'}</svg>`;
+    const html = `${speaker}Sound ${on ? "on" : "off"}`;
+    if (button.innerHTML !== html) button.innerHTML = html;
+    if (button.getAttribute("aria-pressed") !== String(on)) button.setAttribute("aria-pressed", String(on));
+    button.setAttribute("aria-label", on ? "Sound is on. Turn sound off" : "Sound is off. Turn sound on");
   }
 
   /** Split the settings dialog into sections with a sidebar. The controls
@@ -802,6 +960,11 @@ export class OutpostMenu {
   /** Run an original control so its behaviour stays the single source of truth. */
   go(where) {
     const g = this.g;
+    // How to play: the short quick-start cards first; "Full guide" inside.
+    if (where === "guide" && this.quick) {
+      this.quick.open(g.mode);
+      return;
+    }
     // First-timers go straight into the operator drills, no track choice.
     if (where === "training") {
       if (g.mode !== "protocol") g.mode = "protocol";
@@ -990,7 +1153,10 @@ export class OutpostMenu {
       this.logoSub.innerHTML = signal ? "Last <span>Signal</span> · Solo showdown" : "Blackout <span>Protocol</span> · Lifeline Run";
     }
     if (!this.modal.hidden) g.shell.classList.remove("mf-hudon");
-    if (!home) return;
+    if (!home) {
+      this.refreshPause(false, false);
+      return;
+    }
     // Newcomers (fewer than two finished rounds) see a simpler home screen.
     const rounds = g.retention?.profile?.matches ?? 0,
       rookie = rounds < 2 && !g.online;
@@ -1159,12 +1325,13 @@ export class OutpostMenu {
     this.summary.hidden = !summary;
     const midMatch = g.state === "playing" && !g.deathSequence;
     if (this.matchbar.hidden !== !midMatch) this.matchbar.hidden = !midMatch;
+    this.refreshPause(lobby, midMatch);
     const restart = this.matchbar.querySelector(".mf-restartmatch");
     if (restart.hidden !== Boolean(g.online)) restart.hidden = Boolean(g.online);
     // Mirror the original buttons' availability.
     for (const proxy of this.modal.querySelectorAll("[data-go]")) {
       const where = proxy.dataset.go;
-      if (where === "home" || where === "training") continue;
+      if (where === "home" || where === "training" || (where === "guide" && this.quick)) continue;
       const original = {
         locker: ".mf-lockeropen",
         settings: ".mf-graphics",
@@ -1200,7 +1367,18 @@ export class OutpostMenu {
     if (stage.style.height !== height) stage.style.height = height;
   }
 
+  /** The full manual for a game: the Blackout Protocol manual, or the
+   * field guide (which covers Last Signal). */
+  fullGuide(mode) {
+    const g = this.g;
+    if (mode === "protocol") g.$(".mf-protocol-menu > button:not(.mf-practice-start)")?.click();
+    else g.academy?.open("guide");
+  }
+
   dispose() {
+    this.quick?.dispose();
+    this.quick = null;
+    this.pauseCard?.remove();
     this.observer?.disconnect();
     this.panelObserver?.disconnect();
     clearInterval(this.pingTimer);

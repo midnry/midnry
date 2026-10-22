@@ -22,6 +22,12 @@ export const SIGNAL = Object.freeze({
   lastStand: 1.15,
   lastRegenDelay: 3,
 });
+/** How far (tiles) bots can spot a rival when fog limits what a player can
+ * see. Must not exceed the player's own view through the renderer's fog
+ * (fogVisibility in scripts/outpost-military/telemetry.js, checked by
+ * scripts/outpost-visibility.test.mjs): Red Haze fog ≈ 5.2 tiles, a sandstorm
+ * at full gust ≈ 3.6 tiles. */
+export const SIGHT = Object.freeze({ haze: 5, sandstorm: 3.5 });
 export { LEVEL, MAPS, WEAPONS, mapOf, weaponOf, OUTFITS, outfitOf };
 import {
   TERRAIN,
@@ -413,6 +419,17 @@ export class Arena {
       }
     }
     return target;
+  }
+  /** Can `bot` spot rival `e`? Never further than a player could see in the
+   * same conditions: awareness by difficulty, the rival's stance, fog (a
+   * sandstorm, or either of them inside the Red Haze), and a clear line past
+   * walls and crates. */
+  spots(bot, e, awareness = DIFFICULTIES[difficultyOf(this.difficulty)].awareness) {
+    let range = Math.min(awareness, spotRange(e, this.time));
+    if (disasterActive(this, "sandstorm")) range = Math.min(range, SIGHT.sandstorm);
+    if (this.mode === "signal" && this.time > this.zone.delay && (this.outsideSafe(bot) || this.outsideSafe(e)))
+      range = Math.min(range, SIGHT.haze);
+    return Math.hypot(e.x - bot.x, e.y - bot.y) < range && this.visible(bot, e);
   }
   visible(a, b) {
     const dx = b.x - a.x,
@@ -1257,10 +1274,8 @@ export class Arena {
       ),
       dist = (e) => Math.hypot(e.x - bot.x, e.y - bot.y),
       nearest = (list) => [...list].sort((a, b) => dist(a) - dist(b))[0];
-    // A sandstorm cuts how far bots can spot rivals.
-    const awareness = disasterActive(this, "sandstorm") ? Math.min(skill.awareness, 3.5) : skill.awareness;
-    // Low stances hide a fighter at range (until they fire).
-    const foe = nearest(rivals.filter((e) => dist(e) < Math.min(awareness, spotRange(e, this.time)) && this.visible(bot, e))),
+    // Spotting: awareness, stance, fog (sandstorm, Red Haze) and walls.
+    const foe = nearest(rivals.filter((e) => this.spots(bot, e, skill.awareness))),
       box = nearest(this.crates.filter((c) => c.hp > 0 && !c.kind && !this.outsideSafe(c))),
       core = nearest(this.cores.filter((c) => !this.outsideSafe(c)));
     let goal;
@@ -1269,7 +1284,7 @@ export class Arena {
       if (bot.hp / bot.maxHp < SIGNAL.retreatAt) bot.retreating = true;
       else if (bot.hp / bot.maxHp > 0.9) bot.retreating = false;
     }
-    const threat = bot.retreating && nearest(rivals.filter((e) => dist(e) < 6 && this.visible(bot, e)));
+    const threat = bot.retreating && nearest(rivals.filter((e) => this.spots(bot, e, 6)));
     if (this.mode === "signal") this.dodge(bot, skill);
     const strike = this.disaster?.strikes.find((s) => Math.hypot(s.x - bot.x, s.y - bot.y) < 1.7);
     if (this.outsideSafe(bot)) goal = { x: this.zone.cx, y: this.zone.cy };

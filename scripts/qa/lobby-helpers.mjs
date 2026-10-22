@@ -12,4 +12,8 @@ export async function pickGame(p, mode, options = {}) {
 export async function play(p, options = {}) {
   if (await p.evaluate(() => document.querySelector(".mf-modal")?.classList.contains("mf-picking"))) await p.click(".mf-pickerclose", options);
   await p.click(".mf-start:visible, .mf-modeplay:visible", options);
+  // A brand-new profile's first match opens the quick start cards: Skip
+  // starts the match (feedback-ux.mjs checks the cards themselves).
+  await p.waitForTimeout(400);
+  if (await p.evaluate(() => !!document.querySelector(".mf-qs")?.open)) await p.click(".mf-qsskip", options);
 }

@@ -748,3 +748,29 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   with a hint) used by Invoice, Ledger, Split, kits, reconcile, imports, payouts.
 - Saving: conflicts keep a browser-only recovery copy (src/lib/doc-recovery.ts) with a choice
   panel; revision-less saves are refused once a row has revision > 0 (refresh_required).
+
+## Player feedback: sound, pause, right-click, quick start (2026-10-22, not deployed yet)
+
+- Sound ("I can't hear anything"): audio was only unlocked by Play, Blackout Protocol made almost
+  no sound (footsteps at ~-38 dB, no music or ambience, measured peak 0 over 15 s of walking) and the
+  default level was quiet. Now `FieldAudio` (`outpost-retention.js`) unlocks on the first click, tap or
+  key anywhere in the game (capture listeners on `document`), plays a silent one-sample buffer in that
+  gesture (Safari/iOS) and sets `navigator.audioSession.type = "playback"` (iPhone silent switch);
+  master level ×1.7 (`LOUDNESS`) through a limiter; louder footsteps; Blackout Protocol base ambience
+  (`ambience()`: air + low hum beds); a short rising cue when a match starts/resumes; a "Sound is off /
+  paused" pill (`.mf-soundhint`) in a match. iframe `allow` now includes `autoplay`.
+- Pause: `.mf-pausecard` in the lobby (`outpost-menu.js`): PAUSED, big focused RESUME, "Press Esc or P
+  to resume" (+ "Controller: Start" with a pad; "Tap Resume" on touch), Sound on/off, How to play,
+  Settings, and why it paused (`pause(reason)`: focus / hidden / pointer). Esc, P, controller Start, or
+  a click on empty space resume (`homeMenu.paused()` / `resume()`); after a key resume the next click
+  only recaptures the mouse (`relockOnClick`).
+- Right-click: `contextmenu` prevented on the whole game shell during a match (all modes), not in
+  inputs, dialogs or the menu. Right-mouse ADS unaffected.
+- How to play: `public/games/outpost-quickstart.js` (`QuickStart`, `CARDS`): 6 cards per game with
+  icon, short text and the controls for Keyboard / Touch / Controller (auto-picked, switchable);
+  Next/Back, dots, arrow keys, swipe, Skip (Esc), Play/Got it; "Full guide" opens the old manual
+  (Blackout manual / field guide). Shown before a brand-new player's first match of each game
+  (profile matches 0, `midnry-outpost-quickstart` not set) and from every "How to play" button.
+- QA: `node scripts/qa/feedback-ux.mjs` (→ `screenshots/qa/feedback-ux/`). `lobby-helpers.mjs` `play()`
+  skips the quick start if it appears; QA scripts that click `.mf-start` directly with a fresh
+  profile should set `midnry-outpost-quickstart` to `{"signal":true,"protocol":true}`.

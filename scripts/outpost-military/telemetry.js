@@ -48,19 +48,94 @@ export class RenderTelemetry {
   }
 }
 
-/** Conservative silhouette test prevents corner-peeking pop-in. Simulation
- * and recipient privacy are never changed by visibility or detail budgets. */
-export function actorInView(arena, camera, entity, horizontalFov) {
+/** Is the line from (x0, y0) to (x1, y1) free of view-blocking wall tiles?
+ * Grid DDA in tile units, with no range cap (the simulation's cast stops at
+ * 32 tiles, which hid rivals across the 36-tile Skyport). */
+export function clearSightLine(level, x0, y0, x1, y1, seeThrough = () => false) {
+  const dx = x1 - x0,
+    dy = y1 - y0,
+    d = Math.hypot(dx, dy);
+  if (d < 1e-6) return true;
+  const ux = dx / d,
+    uy = dy / d;
+  let mx = Math.floor(x0),
+    my = Math.floor(y0);
+  const blocks = (x, y) => {
+    const v = level[y]?.[x];
+    return v === undefined || (!!v && !seeThrough(x, y));
+  };
+  if (blocks(mx, my)) return false;
+  const ddx = Math.abs(1 / (ux || 1e-12)),
+    ddy = Math.abs(1 / (uy || 1e-12)),
+    sx = ux < 0 ? -1 : 1,
+    sy = uy < 0 ? -1 : 1;
+  let tx = (ux < 0 ? x0 - mx : mx + 1 - x0) * ddx,
+    ty = (uy < 0 ? y0 - my : my + 1 - y0) * ddy;
+  for (let i = 0; i < 4096; i++) {
+    let t;
+    if (tx < ty) {
+      mx += sx;
+      t = tx;
+      tx += ddx;
+    } else {
+      my += sy;
+      t = ty;
+      ty += ddy;
+    }
+    if (t >= d) return true;
+    if (blocks(mx, my)) return false;
+  }
+  return true;
+}
+
+/** Actor culling sphere (metres): centred at mid-body, it covers a standing
+ * operator's head and feet, a prone body's length and the rifle muzzle. */
+export const ACTOR_SPHERE_HEIGHT = 0.9,
+  ACTOR_SPHERE_RADIUS = 1.3;
+
+/** Character half-width used for silhouette rays (tiles; 1 tile = 3 m),
+ * generous enough to cover a shoulder, an outstretched rifle and a lean. */
+export const ACTOR_HALF_WIDTH = 0.3;
+
+/** Presentation-only actor culling. An actor is skipped only when its body
+ * sphere is outside the camera frustum (`inFrustum`, from three's
+ * Frustum.intersectsSphere) or every line from the eye (and a small head
+ * offset) to its body (centre and both sides) is blocked by a full-height
+ * wall. Crates, sandbags, canisters and furniture (`seeThrough`) are lower
+ * than eye height and never hide a body: the depth buffer handles them.
+ * Simulation and recipient privacy are never changed by this test. */
+export function actorInView(arena, camera, entity, inFrustum, seeThrough = () => false) {
+  if (!inFrustum) return false;
   const distance = Math.hypot(entity.x - camera.x, entity.y - camera.y);
   if (distance < 0.65) return true;
-  const angle = Math.atan2(entity.y - camera.y, entity.x - camera.x) - camera.a;
-  const wrapped = Math.atan2(Math.sin(angle), Math.cos(angle));
-  if (Math.abs(wrapped) > horizontalFov / 2 + Math.atan2(0.35, distance)) return false;
-  if (arena.visible(camera, entity)) return true;
-  const dx = -Math.sin(camera.a) * 0.22,
-    dy = Math.cos(camera.a) * 0.22;
-  return (
-    arena.visible(camera, { x: entity.x + dx, y: entity.y + dy }) ||
-    arena.visible(camera, { x: entity.x - dx, y: entity.y - dy })
-  );
+  const level = arena.level;
+  if (!level) return true;
+  // Perpendicular to the line of sight.
+  const px = -(entity.y - camera.y) / distance,
+    py = (entity.x - camera.x) / distance;
+  for (const eye of [0, -0.12, 0.12])
+    for (const side of [0, -ACTOR_HALF_WIDTH, ACTOR_HALF_WIDTH])
+      if (
+        clearSightLine(
+          level,
+          camera.x + px * eye,
+          camera.y + py * eye,
+          entity.x + px * side,
+          entity.y + py * side,
+          seeThrough,
+        )
+      )
+        return true;
+  return false;
+}
+
+/** Fog shared by the renderer and the fairness tests (THREE.FogExp2 density,
+ * per metre). Inside the Red Haze; a sandstorm at full gust. */
+export const HAZE_FOG_DENSITY = 0.075;
+export const SANDSTORM_FOG = Object.freeze({ base: 0.075, gust: 0.035 });
+
+/** How far (tiles) a player can still make out a body through FogExp2 of
+ * this density: where the fog covers `cover` (default 75%) of its colour. */
+export function fogVisibility(density, cover = 0.75) {
+  return Math.sqrt(-Math.log(1 - cover)) / density / 3;
 }

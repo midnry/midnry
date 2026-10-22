@@ -30,8 +30,12 @@ const write = (key, value) => {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {}
 };
+/** The procedural sounds are mixed quiet; the master level lifts them so
+ * the default volume is clearly audible on laptop and phone speakers. A
+ * limiter after the master keeps the loudest moments from clipping. */
+const LOUDNESS = 1.7;
 /** Gesture-unlocked procedural audio; each game instance owns and closes its context. */
-class FieldAudio {
+export class FieldAudio {
   constructor() {
     const p = read("midnry-outpost-audio");
     this.volume = Number.isFinite(p?.volume) ? Math.max(0, Math.min(1, p.volume)) : 0.35;
@@ -39,27 +43,64 @@ class FieldAudio {
     this.music = Number.isFinite(p?.music) ? Math.max(0, Math.min(1, p.music)) : 0.6;
     this.voices = 0;
   }
+  /** Create / resume the audio context. Browsers only allow this during a
+   * user gesture (click, tap, key), so every gesture in the game calls it
+   * until sound is running. */
   unlock() {
     if (this.ctx?.state === "closed") return;
     try {
       const Audio = window.AudioContext || window.webkitAudioContext;
       if (!Audio) return;
-      this.ctx ??= new Audio();
+      if (!this.ctx) {
+        // iPhone / iPad: play through the ring/silent switch, like other
+        // games (Safari 16.4+); older versions ignore this.
+        try {
+          if (navigator.audioSession) navigator.audioSession.type = "playback";
+        } catch {}
+        this.ctx = new Audio();
+      }
       if (!this.master) {
         this.master = this.ctx.createGain();
-        this.master.connect(this.ctx.destination);
+        this.limiter = this.ctx.createDynamicsCompressor();
+        this.limiter.threshold.value = -4;
+        this.limiter.knee.value = 2;
+        this.limiter.ratio.value = 16;
+        this.limiter.attack.value = 0.003;
+        this.limiter.release.value = 0.15;
+        this.master.connect(this.limiter);
+        this.limiter.connect(this.ctx.destination);
         this.level();
         const n = this.ctx.sampleRate;
         this.noise = this.ctx.createBuffer(1, n, n);
         const d = this.noise.getChannelData(0);
         for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
       }
-      void this.ctx.resume().catch(() => {});
+      if (this.ctx.state !== "running") {
+        void this.ctx.resume().catch(() => {});
+        // Safari / iOS unlock: start a silent one-sample buffer inside the
+        // same gesture; without it the context can stay silent.
+        const silent = this.ctx.createBufferSource();
+        silent.buffer = this.ctx.createBuffer(1, 1, this.ctx.sampleRate);
+        silent.connect(this.ctx.destination);
+        silent.start(0);
+      }
     } catch {}
+  }
+  /** Sound is on: not muted and the volume above zero. */
+  soundOn() {
+    return !this.muted && this.volume > 0;
+  }
+  /** The sound on/off control: turning on also restores a zero volume. */
+  setSound(on) {
+    this.muted = !on;
+    if (on && this.volume <= 0) this.volume = 0.35;
+    this.unlock();
+    this.level();
+    this.onChange?.();
   }
   level() {
     if (this.master)
-      this.master.gain.setTargetAtTime(this.muted ? 0 : this.volume, this.ctx.currentTime, 0.025);
+      this.master.gain.setTargetAtTime(this.muted ? 0 : this.volume * LOUDNESS, this.ctx.currentTime, 0.025);
     if (this.musicGain) this.musicGain.gain.setTargetAtTime(this.music * 0.55, this.ctx.currentTime, 0.05);
     write("midnry-outpost-audio", { volume: this.volume, muted: this.muted, music: this.music });
   }
@@ -231,7 +272,7 @@ class FieldAudio {
       this.tone(heavy ? 95 : 220, heavy ? 0.2 : 0.09, 0.13 * gain, pan, "square", heavy ? 35 : 70);
   }
   step(pan = 0, gain = 1, metal = false, cutoff = 10000) {
-    this.hiss(0.045, 0.055 * gain, Math.min(cutoff, metal ? 1100 : 420), pan);
+    this.hiss(0.05, 0.075 * gain, Math.min(cutoff, metal ? 1400 : 900), pan);
     this.tone(metal ? 120 : 70, 0.055, 0.045 * gain, pan, "sine", 35);
   }
   result(won) {
@@ -276,6 +317,30 @@ export class Retention {
     );
     g.$(".mf-volume").value = String(this.audio.volume * 100);
     g.$(".mf-mute").checked = this.audio.muted;
+    // The pause menu's sound button changes these too: keep Settings in step.
+    this.audio.onChange = () => {
+      g.$(".mf-volume").value = String(this.audio.volume * 100);
+      g.$(".mf-mute").checked = this.audio.muted;
+    };
+    // Browsers start audio only from a user gesture inside the game: the
+    // first click, tap or key anywhere (not only Play) turns sound on.
+    const wake = () => {
+      if (this.audio.ctx?.state !== "running") this.audio.unlock();
+    };
+    for (const type of ["pointerdown", "touchend", "keydown", "click"]) g.on(document, type, wake, { capture: true });
+    // A visible hint while sound is blocked or switched off in a match.
+    g.shell.insertAdjacentHTML(
+      "beforeend",
+      `<button type="button" class="mf-soundhint" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9l5 6M21 9l-5 6"/></svg><span></span></button><style>midnry-fps .mf-shell .mf-soundhint{all:unset;position:absolute;z-index:7;left:50%;top:calc(104px + var(--mf-safe-top,0px));transform:translateX(-50%);display:flex;align-items:center;gap:10px;min-height:44px;padding:0 18px;border:1px solid #ffc85799;border-radius:22px;background:#0a0f0de6;color:#fff;font:600 15px var(--mf-display,sans-serif);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;box-shadow:0 8px 24px #0008;white-space:nowrap}midnry-fps .mf-shell .mf-soundhint[hidden]{display:none}midnry-fps .mf-shell .mf-soundhint svg{width:22px;height:22px;color:var(--mf-accent,#ffc857)}midnry-fps .mf-shell .mf-soundhint:focus-visible{outline:2px solid var(--mf-accent,#ffc857);outline-offset:2px}</style>`,
+    );
+    g.on(g.$(".mf-soundhint"), "click", (e) => {
+      e.stopPropagation();
+      this.audio.setSound(true);
+      this.offHintUntil = 0;
+      g.$(".mf-soundhint").hidden = true;
+      g.homeMenu?.syncSound?.();
+      if (g.running) g.shell.focus({ preventScroll: true });
+    });
     g.on(g.$(".mf-volume"), "input", (e) => {
       this.audio.volume = Number(e.target.value) / 100;
       this.audio.unlock();
@@ -797,6 +862,45 @@ export class Retention {
     this.lastStand(g, audible);
     this.hazardSounds(g, audible);
     this.battleMusic(g);
+    this.ambience(g, audible);
+    this.soundHint(g);
+  }
+  /** A short rising cue when a match starts or resumes (so you know sound
+   * works), and in Blackout Protocol a quiet base ambience (air handling
+   * and a low generator hum) so the base is never silent. */
+  ambience(g, audible) {
+    const running = Boolean(g.running && g.state === "playing");
+    if (running !== this.wasRunning) {
+      this.wasRunning = running;
+      if (running) {
+        this.audio.tone(520, 0.16, 0.07, 0, "triangle", 880);
+        this.offHintUntil = this.audio.soundOn() ? 0 : performance.now() + 7000;
+      }
+    }
+    if (!audible || g.mode !== "protocol" || !g.running) return;
+    this.audio.bed("base-air", 0.03, 900);
+    this.audio.bed("base-hum", 0.06, 150, { brown: true });
+  }
+  /** "Sound is off" pill in a match: always while the browser still blocks
+   * audio, and for a few seconds at the start when it is switched off. */
+  soundHint(g) {
+    const hint = g.$(".mf-soundhint");
+    if (!hint) return;
+    const a = this.audio,
+      blocked = !a.ctx || a.ctx.state !== "running",
+      off = !a.soundOn(),
+      show = Boolean(g.running) && (blocked || (off && performance.now() < (this.offHintUntil || 0)));
+    if (hint.hidden === show) hint.hidden = !show;
+    if (!show) return;
+    const touch = matchMedia("(pointer: coarse)").matches,
+      // With the mouse captured the pill can't be clicked: point to the menu.
+      text = off
+        ? touch || document.pointerLockElement !== g.canvas
+          ? `Sound is off · ${touch ? "tap" : "click"} to turn on`
+          : "Sound is off · Esc, then Sound on"
+        : `Sound is paused · ${touch ? "tap" : "click or press a key"} to turn on`;
+    const label = hint.querySelector("span");
+    if (label.textContent !== text) label.textContent = text;
   }
   /** Music plays during a Last Signal round you are in, and builds with the
    * tension; it fades out when you pause, die or the round ends. */

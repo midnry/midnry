@@ -510,6 +510,16 @@ export class Academy {
   }
 }
 
+/** Lowest automatic resolution scale (same as MIN_RENDER_SCALE in
+ * scripts/outpost-military/compatibility.js). It was 0.5: under load the 3D
+ * view dropped to half resolution and close signs and labels blurred. */
+export const MIN_BUDGET_SCALE = 0.75;
+/** Below full resolution, recover after ~1 s of comfortable frames (it took
+ * 4 s of near-idle 3.2 ms frames before, so a dip after one busy moment
+ * usually lasted the rest of the round). */
+const RECOVER_MS = 5,
+  RECOVER_FRAMES = 120;
+
 /** Display cadence stays on requestAnimationFrame. Work adapts toward an 8.3ms budget. */
 export class FrameBudget {
   constructor() {
@@ -523,6 +533,7 @@ export class FrameBudget {
     this.cooldown = 0;
     this.slowFrames = 0;
     this.headroomFrames = 0;
+    this.recoverFrames = 0;
   }
   sample(cost, now, active, adaptive = true, gpuMs = null, maxScale = 1) {
     if (!Number.isFinite(cost) || cost < 0 || !Number.isFinite(now)) return false;
@@ -554,12 +565,20 @@ export class FrameBudget {
     // A spike restarts the upward hold even when the EMA still looks cheap.
     this.headroomFrames = Math.max(cost, this.gpu || 0) < 3.2 && renderingCost < 3.2 && this.slowFrames === 0
       ? this.headroomFrames + 1 : 0;
+    this.recoverFrames = Math.max(cost, this.gpu || 0) < RECOVER_MS && renderingCost < RECOVER_MS && this.slowFrames === 0
+      ? this.recoverFrames + 1 : 0;
     if (this.samples < 60) return false;
     const previous = this.scale;
     if ((renderingCost > 6.8 || this.slowFrames >= 3) && this.cooldown >= 60) {
-      this.scale = Math.max(0.5, Math.round(this.scale * 0.9 * 100) / 100);
+      this.scale = Math.max(MIN_BUDGET_SCALE, Math.round(this.scale * 0.9 * 100) / 100);
       this.cooldown = 0;
       this.slowFrames = 0;
+    } else if (this.scale < 1 && this.recoverFrames >= RECOVER_FRAMES && this.cooldown >= RECOVER_FRAMES) {
+      // Back up towards full resolution quickly once frames are comfortable.
+      this.scale = Math.min(1, Math.round((this.scale + 0.1) * 100) / 100);
+      this.cooldown = 0;
+      this.recoverFrames = 0;
+      this.headroomFrames = 0;
     } else if (this.headroomFrames >= 480 && this.cooldown >= 480 &&
       // Above the base cap, cheap CPU submission alone is not GPU headroom.
       // Without timer queries require near-target measured display cadence.

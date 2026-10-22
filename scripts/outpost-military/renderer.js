@@ -45,13 +45,13 @@ import { CHARACTERS, botCharacter } from "../../public/games/outpost-characters.
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { sightRange } from "../../public/games/outpost-variety.js";
 import { isAppleTouchDevice, graphicsProfile, cinematicRenderSize } from "./compatibility.js";
-import { RenderTelemetry, actorInView } from "./telemetry.js";
+import { RenderTelemetry, actorInView, ACTOR_SPHERE_HEIGHT, ACTOR_SPHERE_RADIUS, HAZE_FOG_DENSITY } from "./telemetry.js";
 import { batchStaticByMaterial } from "./static-batches.js";
 import { WorldVisibility } from "./world-visibility.js";
 import { roofLayout } from "./architecture.js";
 import { GroundTrail } from "./ground-trail.js";
 import { NightDressing } from "./realism-night.js";
-import { prepareWorldTypography, makeProtocolSign } from './world-text.js';
+import { prepareWorldTypography, makeProtocolSign, crispText } from './world-text.js';
 import { prepareMedevac, buildMedevac } from "./realism-medevac.js";
 import { buildHospital, updateHospital } from "./realism-hospital.js";
 import { STANCE, stanceOf, jumpLift } from "../../public/games/outpost-stance.js";
@@ -68,6 +68,11 @@ const SCALE = 3,
   TAU = Math.PI * 2;
 /** Field of view while aiming down the sights, as a share of the normal
  * view: long guns zoom most, scatterguns and thrown weapons a little. */
+// Distance (tiles, 1 tile = 3 m) beyond which a character uses its reduced
+// mesh and 15 Hz animation. Was 6 (desktop) / 3.8 (phone): the swap was
+// visible at mid range. The reduced mesh keeps 45% of the triangles and the
+// full textures, so it is still a whole, readable body.
+export const ACTOR_LOD_TILES = { desktop: 10, phone: 6.5 };
 const ADS_ZOOM = { carbine: 0.6, twin: 0.7, rocket: 0.72, scatter: 0.85, breach: 0.88 };
 /** Where the gun sits when aiming: the carbine's optic on the crosshair. */
 const ADS_RIG = { carbine: { x: -0.008, y: 0.08 }, twin: { x: 0.05, y: 0.04 }, other: { x: 0.02, y: 0.05 } };
@@ -180,7 +185,9 @@ export class MilitaryRenderer {
     this.scene.add(this.world);
     this.dynamic = new THREE.Group();
     this.scene.add(this.dynamic);
-    this.camera = new THREE.PerspectiveCamera(60, 1, 0.06, 260);
+    // Far plane past the 36-tile (108 m) arenas' diagonal plus the skyline;
+    // fog, not the far plane, sets how far you can see. Was 260 m.
+    this.camera = new THREE.PerspectiveCamera(60, 1, 0.06, 320);
     this.camera.rotation.order = "YXZ";
     this.hemisphere = new THREE.HemisphereLight("#adbcd0", "#372b20", 0.55);
     this.scene.add(this.hemisphere);
@@ -1778,7 +1785,7 @@ export class MilitaryRenderer {
     c.fillText(id === "skyport" ? "GATE 07" : id === "freight" ? "CARGO 09" : "SECTOR 04", 22, 114);
     c.font = "24px monospace";
     c.fillText("MIDNRY / FIELD OPERATIONS", 22, 170);
-    const tex = new THREE.CanvasTexture(signCanvas);
+    const tex = crispText(this, new THREE.CanvasTexture(signCanvas));
     tex.colorSpace = THREE.SRGBColorSpace;
     this.textures.add(tex);
     this.worldTextures.add(tex);
@@ -2506,11 +2513,28 @@ export class MilitaryRenderer {
         group.matrixWorldNeedsUpdate = true;
       }
   }
+  actorLodDistance() {
+    return this.mobileDevice ? ACTOR_LOD_TILES.phone : ACTOR_LOD_TILES.desktop;
+  }
   updateActors(t) {
     const current = new Set();
     const camera = this.g.camera();
-    const sample = Math.floor(t * 30) / 30;
-    const horizontalFov=2*Math.atan(Math.tan(this.camera.fov*Math.PI/360)*this.camera.aspect);
+    const sample = Math.floor(t * 30) / 30,
+      farSample = Math.floor(t * 15) / 15;
+    // Cull against the real view frustum (after shake, ADS zoom and aspect),
+    // with a bounding sphere around the whole body, rather than a 2D cone.
+    this.camera.updateMatrixWorld();
+    const frustum = (this.actorFrustum ||= new THREE.Frustum()),
+      sphere = (this.actorSphere ||= new THREE.Sphere());
+    frustum.setFromProjectionMatrix(
+      (this.actorFrustumMatrix ||= new THREE.Matrix4()).multiplyMatrices(
+        this.camera.projectionMatrix,
+        this.camera.matrixWorldInverse,
+      ),
+    );
+    const seeThrough = (x, y) =>
+      this.protocolPropTile(x, y) || this.transportWindowTile(x, y) || this.transportHiddenWall(x, y);
+    const lodDistance = this.actorLodDistance();
     this.actorStats={visible:0,culled:0,distant:0};
     for (const e of this.g.arena.entities) {
       current.add(e.id);
@@ -2561,10 +2585,15 @@ export class MilitaryRenderer {
         Math.hypot(e.x - camera.x, e.y - camera.y) > 2.6
       )
         a.root.visible = false;
-      a.root.visible = a.root.visible && actorInView(this.g.arena,camera,e,horizontalFov);
-      const distance=Math.hypot(e.x-camera.x,e.y-camera.y),far=distance>(this.mobileDevice?3.8:6);
+      if (a.root.visible) {
+        // Body sphere: feet to head (and a prone body's length), with the rifle.
+        sphere.center.set(e.x * SCALE, ACTOR_SPHERE_HEIGHT + jumpLift(e, this.g.time) * SCALE, e.y * SCALE);
+        sphere.radius = ACTOR_SPHERE_RADIUS;
+        a.root.visible = actorInView(this.g.arena, camera, e, frustum.intersectsSphere(sphere), seeThrough);
+      }
+      const distance=Math.hypot(e.x-camera.x,e.y-camera.y),far=distance>lodDistance;
       // Small hysteresis avoids switching meshes repeatedly at the boundary.
-      if(a.farDetail===undefined||Math.abs(distance-(this.mobileDevice?3.8:6))>.4)a.farDetail=far;
+      if(a.farDetail===undefined||Math.abs(distance-lodDistance)>.4)a.farDetail=far;
       a.detailMeshes ||= (()=>{const meshes=[];a.model.traverse(o=>{if(o.isSkinnedMesh&&o.userData.operatorLOD!==undefined)meshes.push(o);});return meshes;})();
       for(const mesh of a.detailMeshes)mesh.visible=mesh.userData.operatorLOD===(a.farDetail?1:0);
       if(a.root.visible){this.actorStats.visible++;if(a.farDetail)this.actorStats.distant++;}else this.actorStats.culled++;
@@ -2577,7 +2606,9 @@ export class MilitaryRenderer {
       a.root.rotation.y = -Math.PI / 2 - e.a;
       const poseChanged =
         a.root.visible &&
-        updateActorPresentation(this, a, e, Math.max(0, Math.min(0.1, t - this.lastTime)), sample);
+        // Distant bodies (reduced mesh) animate at 15 Hz instead of 30 Hz:
+        // the saving is in bone updates, never in hiding them.
+        updateActorPresentation(this, a, e, Math.max(0, Math.min(0.1, t - this.lastTime)), a.farDetail ? farSample : sample);
       a.x = e.x;
       a.y = e.y;
       // Short physical recoil and hit flinch layered on skeletal locomotion.
@@ -3556,7 +3587,7 @@ export class MilitaryRenderer {
       : this.night?.active
       ? this.naturalLighting?.inside ? 0.01 : 0.026
       : outside
-        ? 0.075
+        ? HAZE_FOG_DENSITY
         : g.arena.mapId === "medevac" && !protocolView?.protocol?.mission?.vehicle?.arrived
           ? 0.002
           : 0.009;

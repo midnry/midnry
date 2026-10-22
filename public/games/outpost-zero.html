@@ -4599,6 +4599,18 @@
             });
             this.on(this.shell, "keydown", (e) => {
               if (e.target.closest?.("input,select,textarea,dialog")) return;
+              // Paused mid-match: Esc / P (controller Start) resume. The same
+              // Esc that released the mouse and paused must not resume at once.
+              if (
+                !this.running &&
+                ["escape", "p"].includes(e.key.toLowerCase()) &&
+                performance.now() - (this.pausedAt || 0) > 400 &&
+                this.homeMenu?.paused?.()
+              ) {
+                e.preventDefault();
+                this.homeMenu.resume("key");
+                return;
+              }
               if (!this.running && e.target.closest?.("button,summary")) return;
               const k = e.key.toLowerCase();
               if (
@@ -4653,10 +4665,10 @@
               if (k === "c" && this.mode !== "protocol") this.stanceRelease();
             });
             this.on(window, "blur", () => {
-              if (this.running || this.lifeLostLeft) this.pause();
+              if (this.running || this.lifeLostLeft) this.pause("focus");
             });
             this.on(document, "visibilitychange", () => {
-              if (document.hidden && (this.running || this.lifeLostLeft)) this.pause();
+              if (document.hidden && (this.running || this.lifeLostLeft)) this.pause("hidden");
             });
             this.on(document, "pointerlockchange", () => {
               if (document.pointerLockElement === this.canvas) this.hadLock = true;
@@ -4669,7 +4681,7 @@
                 )
               ) {
                 this.hadLock = false;
-                this.pause();
+                this.pause("pointer");
               }
             });
             this.on(document, "mousemove", (e) => {
@@ -4681,6 +4693,11 @@
               if (!this.running) return;
               this.shell.focus({ preventScroll: true });
               if (this.player.hp <= 0 || this.player.departed) return;
+              if (e.pointerType === "mouse" && e.button === 0 && this.relockOnClick) {
+                // Resumed from the keyboard: this click only recaptures the mouse.
+                this.relockOnClick = false;
+                if (document.pointerLockElement !== this.canvas) return this.lockMouse();
+              }
               if (e.pointerType === "mouse" && e.button === 0) {
                 this.firing = true;
                 this.shoot();
@@ -4714,6 +4731,13 @@
               this.firing = false;
             });
             this.on(this.canvas, "contextmenu", (e) => e.preventDefault());
+            // In a match (every mode), no browser right-click / long-press menu
+            // over the view or HUD. Text fields, chat and menus keep theirs.
+            this.on(this.shell, "contextmenu", (e) => {
+              if (this.state !== "playing" && !this.running) return;
+              if (e.target.closest?.("input,textarea,select,[contenteditable],dialog,.mf-modal")) return;
+              e.preventDefault();
+            });
             const stick = this.$(".mf-stick");
             const moveStick = (e) => {
               const r = stick.getBoundingClientRect(),
@@ -4811,9 +4835,12 @@
             if (this.mode === "protocol") this.protocolUI?.update(true);
             else this.lockMouse();
           }
-          pause() {
+          pause(reason = "") {
             this.protocolUI?.focus?.close();
             if (this.deathSequence) return;
+            // Why it paused ("focus", "hidden", "pointer"), shown on the pause card.
+            this.pauseReason = typeof reason === "string" ? reason : "";
+            this.pausedAt = performance.now();
             this.pendingSlide = false;
             this.touchSprint = false;
             this.$(".mf-sprint").setAttribute("aria-pressed", "false");
