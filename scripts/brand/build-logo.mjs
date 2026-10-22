@@ -21,7 +21,7 @@
  * that follows the lower-right tile's rounded corner at the same gap, so the
  * spacing stays even around the centre; small fillets soften the joins.
  *
- * Wordmark: "Midnry" in Newsreader ExtraBold (wght 800) at its display optical
+ * Wordmark: "midnry" (lowercase, owner's choice) in Newsreader ExtraBold (wght 800) at its display optical
  * size (opsz 72), converted to outlines with kerning. Tagline: Outfit Light.
  * Both fonts are SIL OFL 1.1 (licences next to them in scripts/brand/fonts/).
  * Newsreader-ExtraBold-opsz72.ttf is a static instance of the
@@ -152,7 +152,7 @@ const SYMBOL_SMALL = symbolPath(PARAMS.symbolSmall);
 
 function buildLogo() {
   const { gap, capHeight, tracking } = PARAMS.logo;
-  const w = textPath(serif, "Midnry", capHeight, tracking);
+  const w = textPath(serif, "midnry", capHeight, tracking);
   const x0 = 100 + gap - w.bbox.minX;
   const baseline = 50 + capHeight / 2; // cap height centred on the symbol
   const top = Math.min(0, baseline + w.bbox.minY);
@@ -163,11 +163,11 @@ function buildLogo() {
 
 function buildLockup() {
   const L = PARAMS.lockup;
-  const w = textPath(serif, "Midnry", L.capHeight, L.tracking);
+  const w = textPath(serif, "midnry", L.capHeight, L.tracking);
   const t = textPath(sans, L.tagline, L.tagCapHeight, L.tagTracking);
   const x0 = 100 + L.gap - w.bbox.minX;
   const baseline = L.capTop + L.capHeight;
-  const tx = 100 + L.gap - t.bbox.minX + 1.5; // optically under the M's stem
+  const tx = 100 + L.gap - t.bbox.minX + 1.5; // optically under the m's first stem
   // The tagline must clear the y's descender.
   const yIndex = w.glyphs.length - 1;
   const yStart = x0 + w.positions.slice(0, yIndex).reduce((a, p) => a + p.xAdvance * w.scale, 0);
