@@ -17,7 +17,8 @@ Read docs/HANDOVER.md first (working rules, deploy procedure, security rule). Th
   ~1,800 in-view rivals), `sign-sharpness.mjs`, `feedback-ux.mjs` 74/74.
 
 ## Next, in order (owner-approved)
-1. Mini city ("Calder Quay", working name) as a **Last Signal arena first**.
+1. Mini city ("Calder Quay", working name) as a **Last Signal arena first**. Step 1 (grey box, bot rounds)
+   DONE 2026-10-22, see HANDOVER "Calder Quay". Next: water and lamps.
    - Plan: docs/mini-city-plan.md + .png; layout data in scripts/outpost-city/layout.mjs.
    - Approved: 30×30 size, real canal water (needs a "water" tile you can see across but not walk
      through), reuse Breakwater room art.

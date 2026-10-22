@@ -18,7 +18,7 @@ try {
     page.on("pageerror", (e) => errors.push(e.message));
     await page.goto(base + "/games/outpost-zero.html");
     await page.locator('[data-mode="signal"]').click();
-    assert.equal(await page.locator(".mf-mapselect option").count(), 5);
+    assert.equal(await page.locator(".mf-mapselect option").count(), 6);
     assert.equal(await page.locator(".mf-weaponselect option").count(), 11);
     for (const [mapId, weapon] of [
       ["testblock", "scatter"],

@@ -740,7 +740,11 @@ export class Arena {
         i < Math.min(this.level[0].length - 1, x + radius);
         i++
       )
-        if (Math.hypot(i + 0.5 - x, j + 0.5 - y) <= radius && this.level[j][i]) {
+        if (
+          Math.hypot(i + 0.5 - x, j + 0.5 - y) <= radius &&
+          this.level[j][i] &&
+          !mapOf(this.mapId).unbreakable?.includes(this.level[j][i])
+        ) {
           this.level[j][i] = 0;
           // Collapsed walls leave rubble you can cross, slowly.
           this.addTerrain(i + 0.5, j + 0.5, "rubble");

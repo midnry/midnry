@@ -1,5 +1,6 @@
 /** Original arena layouts and loadouts. Shared by the renderer and server. */
 import { PROTOCOL_MAP, TRANSPORT_MAP, HOSPITAL_MAP } from "./outpost-protocol-map.js";
+import { QUAY_LEVEL, QUAY_CRATES, QUAY_ZONES, QUAY_UNBREAKABLE } from "./outpost-quay.js";
 export const LEVEL = [
   "1111111111111111",
   "1000000000000001",
@@ -323,6 +324,27 @@ export const MAPS = {
       { x: 10, y: 10, w: 3, h: 3, color: "#a18d72" },
       { x: 19, y: 10, w: 3, h: 3, color: "#90949e" },
     ],
+  },
+  // Grey box (2026-10-22): layout and rules first; water, lamps and art
+  // follow. Not in the random rotation yet; pick it in the arena list.
+  quay: {
+    id: "quay",
+    name: "Calder Quay",
+    tag: "LARGE / HARBOUR TOWN + CANAL",
+    description:
+      "Streets, alleys and walk-in shops around Market Square; a canal with three bridges splits the town from the clinic and depot.",
+    level: QUAY_LEVEL,
+    crates: QUAY_CRATES,
+    // The canal stays a canal: blasts and quakes never open it.
+    unbreakable: QUAY_UNBREAKABLE,
+    theme: {
+      ...warm,
+      sky: "#e9c39a",
+      floor: "#6f6a62",
+      walls: { ...warm.walls, 4: ["#5f8a4c", "#41643a", "#8fbf6f"], 6: ["#2f6f86", "#22546a", "#5aa7c0"] },
+    },
+    props: [],
+    zones: QUAY_ZONES,
   },
 };
 // Damage is scaled by the combatant's power rating (40 for players). Charge

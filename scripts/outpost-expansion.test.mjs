@@ -24,9 +24,9 @@ const setup = (weapon = "carbine", distance = 2) => {
 const advance = (a, seconds) => {
   for (let t = 0; t < seconds; t += 0.025) a.advance(0.025);
 };
-test("five distinct arenas: sealed walls, connected lanes, valid spawns and safe centers", () => {
+test("six distinct arenas: sealed walls, connected lanes, valid spawns and safe centers", () => {
   const combatMaps = Object.keys(MAPS).filter((id) => !["breakwater", "medevac", "hospital"].includes(id));
-  assert.equal(combatMaps.length, 5);
+  assert.equal(combatMaps.length, 6);
   const layouts = new Set();
   for (const mapId of combatMaps)
     for (const mode of ["training", "signal", "duo"]) {
@@ -74,10 +74,10 @@ test("five distinct arenas: sealed walls, connected lanes, valid spawns and safe
         mapId + " disconnected room",
       );
     }
-  assert.ok(layouts.size >= 5);
+  assert.ok(layouts.size >= 6);
 });
 test("Last Signal arenas are large, spread their spawns and scale supply crates with area", () => {
-  const sizes = { outpost: 28, skyport: 36, estate: 32 };
+  const sizes = { outpost: 28, skyport: 36, estate: 32, quay: 30 };
   for (const [mapId, size] of Object.entries(sizes)) {
     const a = new Arena({ mapId, mode: "signal", random: () => 0.5 }),
       open = a.level.flat().filter((v) => !v).length;

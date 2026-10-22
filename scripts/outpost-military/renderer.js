@@ -717,6 +717,9 @@ export class MilitaryRenderer {
           ? ["#b7b4a8", "#a29882", "#7c9094", "#9b927d", "#747b73", "#a3aaa1", "#718086"]
           : id === "testblock"
             ? ["#b5b0a3", "#929689", "#78928d", "#7d8881", "#aa8374", "#b8b8ac", "#8f9998"]
+            : id === "quay"
+              ? // Grey box: brick town, painted stalls, trucks, trees, pumps, canal.
+                ["#8e948a", "#9a7c68", "#7f8f7a", "#6f7a80", "#5b7a4a", "#8a8f92", "#2f5d6e"]
             : ["#8e948a", profile.metal, "#707f78", "#b0a489", "#84776b", "#909a9d", "#bcc2bd"];
       const substrates =
         id === "freight" || id === "medevac"

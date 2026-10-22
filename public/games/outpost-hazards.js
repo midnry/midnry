@@ -41,7 +41,8 @@ export const DISASTERS = {
     duration: 15,
   },
 };
-export const DISASTER_OF = { outpost: "sandstorm", skyport: "storm", estate: "quake" };
+// Calder Quay: a harbour thunderstorm (lightning) until its own storm surge.
+export const DISASTER_OF = { outpost: "sandstorm", skyport: "storm", estate: "quake", quay: "storm" };
 export const DISASTER_WARNING = 10; // seconds of warning before it starts
 // Lightning leaves anyone it hits electrified: a smaller burn over a few
 // seconds after the strike itself.
@@ -52,6 +53,7 @@ const COUNTS = {
   outpost: { canisters: 14, barriers: 10 },
   skyport: { canisters: 18, barriers: 14 },
   estate: { canisters: 16, barriers: 12 },
+  quay: { canisters: 14, barriers: 8 },
 };
 const KINDS = ["red", "green", "red", "blue", "pink", "red", "green", "blue"];
 

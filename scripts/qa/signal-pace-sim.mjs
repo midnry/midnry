@@ -1,7 +1,7 @@
 import { Arena } from "../../public/games/outpost-sim.js";
 const ends = [], first = [], player = [];
 const per = {};
-for (const mapId of ["outpost", "skyport", "estate"]) for (let n = 0; n < (Number(process.env.ROUNDS) || 25); n++) {
+for (const mapId of (process.env.MAPS || "outpost,skyport,estate,quay").split(",")) for (let n = 0; n < (Number(process.env.ROUNDS) || 25); n++) {
   let seed = 1000 + n * 7919; const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   const a = new Arena({ mode: "signal", mapId, humans: [{ id: "player", team: 0 }], random });
   a.entities.find(e => e.id === "player").bot = true;

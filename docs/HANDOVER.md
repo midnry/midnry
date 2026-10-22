@@ -805,3 +805,23 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   (before, the camera's view offset chased the scroll a frame late and juddered). The pad "+" buttons and
   names fade out (`.mf-squad.mf-scrolledaway`) once the menu scrolls past 12 px.
   QA: `node scripts/qa/lobby-scroll.mjs [tag]` prints the view offset per scroll position (must stay constant).
+
+## Calder Quay: Last Signal arena, step 1 grey box (owner, 2026-10-22, not deployed yet)
+
+- Layout: `public/games/outpost-quay.js` (`QUAY_PLAN` as readable characters, `QUAY_LEVEL`, `QUAY_CRATES`,
+  `QUAY_ZONES`), 30 × 30, trimmed from `scripts/outpost-city/layout.mjs`. Market Square is at the centre, so
+  the Red Haze closes on it with no engine change. The eight edge spawns land on Ridge Lane, the Seawall Walk,
+  Hospital Road, the courtyard and Lantern Park. Walk-in shells: Radio Station, Police Post, fuel shop, Market
+  Hall, Substation, Apartments, Clinic, Relief Depot. Cover: stalls, clock memorial, trees, pumps, trucks.
+- Canal (tile 6) has three bridges (Mill, Avenue, Dock) and is `unbreakable` (MAPS entry field, honoured by
+  `Arena.breakCover`): canisters and quakes never open it. For now it blocks sight and draws as a tall block,
+  like a wall; see-through water is step 2.
+- Disaster: lightning storm (`DISASTER_OF.quay = "storm"`) until a storm surge is made. Canisters 14, barriers 8.
+- Not in the random rotation (`SERIES_MAPS`, single-round list, `SIGNAL_ROTATION`). Play-test link:
+  `/games/outpost-zero.html?arena=quay` pins single rounds to it (any non-protocol MAPS id works).
+- Checks: `scripts/outpost-quay.test.mjs` (size, square at the centre, bridges are the only crossings, canal
+  unbreakable, hazards, 12 bot rounds end), `ROUNDS=25 node scripts/qa/signal-pace-sim.mjs` (quay avg 103 s;
+  outpost 88, skyport 103, estate 92), `node scripts/qa/quay-look.mjs [width]` (views + a bot round in the page,
+  draw calls 85–177) → `screenshots/qa/quay`.
+- Next (owner order): see-through canal water and street lamps, then the art pass (reuse Breakwater room art)
+  and phone checks; then add it to the rotation.
