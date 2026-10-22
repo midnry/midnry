@@ -370,7 +370,7 @@ export class ProtocolPractice {
     this.chooser.className = "mf-practice-chooser";
     this.chooser.setAttribute("aria-label", "Choose a practice track");
     this.chooser.innerHTML =
-      '<h2>Practice</h2><p>Short guided drills on the real rules. Finish a track once for +75 XP.</p><button data-track="operator"></button><button data-track="infiltrator"></button><button class="mf-practice-cancel">Back</button>';
+      '<div class="mf-screenhead"><h2>Practice</h2><button class="mf-practice-cancel mf-screenclose" aria-label="Close practice (Esc)" title="Close (Esc)">✕</button></div><p>Short guided drills for Blackout Protocol on the real rules. Finish a track once for +75 XP.</p><button data-track="operator"></button><button data-track="infiltrator"></button>';
     g.shell.append(this.chooser);
     g.on(this.chooser, "keydown", (e) => e.stopPropagation());
     g.on(this.chooser, "click", (e) => {

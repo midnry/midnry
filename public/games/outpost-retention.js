@@ -320,7 +320,7 @@ export class Retention {
     );
     g.shell.insertAdjacentHTML(
       "beforeend",
-      `<div class="mf-countdown" hidden role="status" aria-live="polite"></div><dialog class="mf-locker" aria-label="Locker"><div class="mf-lockerhead"><b>LOCKER</b><div class="mf-lockertabs" role="tablist" aria-label="Locker sections">${LOCKER_TABS.map(([id, label]) => `<button type="button" role="tab" data-ltab="${id}">${label}</button>`).join("")}</div><button class="mf-lockerclose" aria-label="Close the locker (Esc)" title="Close (Esc)">✕</button></div><div class="mf-lockerbody" role="tabpanel"></div></dialog>`,
+      `<div class="mf-countdown" hidden role="status" aria-live="polite"></div><dialog class="mf-locker" aria-label="Locker"><div class="mf-lockerhead"><b>LOCKER</b><div class="mf-lockertabs" role="tablist" aria-label="Locker sections">${LOCKER_TABS.map(([id, label]) => `<button type="button" role="tab" data-ltab="${id}">${label}</button>`).join("")}</div><button class="mf-lockerclose mf-screenclose" aria-label="Close the locker (Esc)" title="Close (Esc)">✕</button></div><div class="mf-lockerbody" role="tabpanel"></div></dialog>`,
     );
     g.$(".mf-volume").value = String(this.audio.volume * 100);
     g.$(".mf-mute").checked = this.audio.muted;

@@ -352,6 +352,36 @@
       @media (min-width: 761px) and (max-width: 1100px) {
         midnry-fps dialog.mf-locker.mf-locker { width: min(700px, 62vw); }
       }
+      /* Settings and Practice open like the Locker: a full-height screen on
+         the left with its title and one ✕ close (Esc also closes). */
+      midnry-fps dialog.mf-settings.mf-tabbed.mf-tabbed, midnry-fps dialog.mf-practice-chooser.mf-practice-chooser {
+        position: fixed; inset: 0 auto 0 0; height: 100% !important; max-height: none !important; margin: 0;
+        border: 0 !important; border-right: 1px solid #ffc85744 !important; border-radius: 0 !important;
+        background: #070b0af7 !important; box-shadow: 30px 0 90px #000a !important;
+      }
+      midnry-fps dialog.mf-settings.mf-tabbed.mf-tabbed { width: min(960px, 72vw) !important; }
+      midnry-fps dialog.mf-practice-chooser.mf-practice-chooser { width: min(560px, 47vw); padding: 0 24px 24px !important; box-sizing: border-box; overflow-y: auto; }
+      midnry-fps dialog:is(.mf-settings, .mf-practice-chooser)::backdrop { background: linear-gradient(90deg, #000c, #0003 70%, #0000) !important; backdrop-filter: none !important; }
+      midnry-fps .mf-screenhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 -24px 16px; padding: 14px 20px 14px 24px; border-bottom: 1px solid #ffffff17; }
+      midnry-fps dialog .mf-screenhead h2 { margin: 0 !important; font: 800 26px/1 var(--mf-display) !important; letter-spacing: 0.06em !important; }
+      midnry-fps dialog.mf-settings.mf-tabbed .mf-settingshead h2 { font: 800 26px/1 var(--mf-display) !important; letter-spacing: 0.06em !important; }
+      midnry-fps dialog button.mf-screenclose.mf-screenclose.mf-screenclose {
+        flex: none; width: 44px !important; min-width: 44px !important; height: 44px; min-height: 44px; padding: 0 !important; margin: 0 !important; display: grid; place-items: center;
+        background: #ffffff0a !important; color: #eef2ee !important; border: 1px solid #ffffff38 !important; border-radius: 3px !important; font: 400 22px/1 var(--mf-body) !important; text-align: center !important;
+      }
+      midnry-fps dialog button.mf-screenclose.mf-screenclose.mf-screenclose:hover { background: #ffffff18 !important; }
+      midnry-fps dialog.mf-practice-chooser.mf-practice-chooser button[data-track] {
+        display: grid; gap: 4px; min-height: 92px; margin: 10px 0 0; padding: 16px 18px !important; text-align: left;
+        border: 1px solid #ffffff26 !important; border-radius: 4px !important; background: #ffffff07 !important;
+        font: 700 20px var(--mf-display) !important; letter-spacing: 0.06em !important; text-transform: uppercase;
+      }
+      midnry-fps dialog.mf-practice-chooser.mf-practice-chooser button[data-track]:hover { border-color: var(--mf-accent) !important; background: #ffc8570d !important; }
+      midnry-fps dialog.mf-practice-chooser button[data-track] small { font: 400 14px/1.4 var(--mf-body) !important; letter-spacing: 0 !important; text-transform: none; color: #c3ccc6 !important; }
+      @media (max-width: 760px) {
+        midnry-fps dialog.mf-settings.mf-tabbed.mf-tabbed, midnry-fps dialog.mf-practice-chooser.mf-practice-chooser { width: 100% !important; border-right: 0 !important; }
+        midnry-fps dialog.mf-practice-chooser.mf-practice-chooser { padding: 0 14px 20px !important; }
+        midnry-fps .mf-screenhead { margin: 0 -14px 12px; padding: 10px 14px; }
+      }
       /* Characters in the Locker: numbered portrait cards. */
       midnry-fps .mf-locker .mf-chargrid {
         display: grid;
