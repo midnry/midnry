@@ -5,6 +5,7 @@
  * The only objects over clear floor are flush floor marks and ceiling fittings.
  */
 import { HOSPITAL_MAP } from "../../public/games/outpost-protocol-map.js";
+import { mapOf } from "../../public/games/outpost-content.js";
 import * as THREE from "three";
 import { surfaceMaterial } from "./realism-surfaces.js";
 import { roofLayout } from "./architecture.js";
@@ -458,7 +459,7 @@ export function decorateRealisticEnvironment(r, id, n) {
               { id: "terminal", x: 9, y: 9, w: 12, h: 9, pitched: false, color: "#92968f" },
               { id: "aircraft-cabin", x: 24, y: 10, w: 4, h: 14, aircraft: true },
             ]
-          : [];
+          : (mapOf(id).buildings || []).map((b) => ({ id: b.id, x: b.x, y: b.y, w: b.w, h: b.h, pitched: b.pitched, color: b.roof }));
   for (const roof of roofs) {
     // Large cover destruction can remove a building's support. Avoid leaving
     // an entire roof floating after its shell has largely disappeared.

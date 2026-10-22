@@ -1,6 +1,6 @@
 /** Original arena layouts and loadouts. Shared by the renderer and server. */
 import { PROTOCOL_MAP, TRANSPORT_MAP, HOSPITAL_MAP } from "./outpost-protocol-map.js";
-import { QUAY_LEVEL, QUAY_CRATES, QUAY_ZONES, QUAY_UNBREAKABLE, QUAY_WATER, QUAY_LAMPS, QUAY_CULVERTS } from "./outpost-quay.js";
+import { QUAY_LEVEL, QUAY_CRATES, QUAY_ZONES, QUAY_UNBREAKABLE, QUAY_WATER, QUAY_LAMPS, QUAY_CULVERTS, QUAY_BUILDINGS, QUAY_LANDMARKS, quayWallTint } from "./outpost-quay.js";
 export const LEVEL = [
   "1111111111111111",
   "1000000000000001",
@@ -342,6 +342,10 @@ export const MAPS = {
     lamps: QUAY_LAMPS,
     // Swim to a mouth and dive (crouch) to come up in the other water.
     culverts: QUAY_CULVERTS,
+    // Art pass: district wall colours, roofs and landmarks (presentation only).
+    wallTint: quayWallTint,
+    buildings: QUAY_BUILDINGS,
+    landmarks: QUAY_LANDMARKS,
     theme: {
       ...warm,
       sky: "#e9c39a",

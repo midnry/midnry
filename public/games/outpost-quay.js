@@ -158,3 +158,40 @@ export const QUAY_LAMPS = [
   [10, 23, 0, -1], // south quay at the clinic
   [23, 23, 0, -1], // south quay at the depot
 ];
+
+/** The walk-in buildings (wall ring included) by district, for the art
+ * pass: wall tint, roof and landmark. Matches the building() calls above. */
+export const QUAY_BUILDINGS = [
+  { id: "radio", name: "Radio Station", x: 2, y: 3, w: 6, h: 5, district: "old", roof: "#5d4a3f", pitched: true },
+  { id: "police", name: "Police Post", x: 10, y: 3, w: 5, h: 5, district: "old", roof: "#3f4a57", pitched: false },
+  { id: "fuel", name: "Fuel shop", x: 22, y: 3, w: 6, h: 4, district: "harbour", roof: "#c2412f", pitched: false },
+  { id: "market", name: "Market Hall", x: 7, y: 10, w: 6, h: 6, district: "old", roof: "#6d7f86", pitched: true },
+  { id: "substation", name: "Substation", x: 21, y: 9, w: 6, h: 7, district: "harbour", roof: "#5a6064", pitched: false },
+  { id: "apartments", name: "Harbour Apartments", x: 1, y: 23, w: 7, h: 4, district: "south", roof: "#4b4140", pitched: false },
+  { id: "clinic", name: "Town Clinic", x: 9, y: 23, w: 9, h: 4, district: "south", roof: "#e8e4dc", pitched: false },
+  { id: "depot", name: "Relief Depot", x: 19, y: 23, w: 6, h: 4, district: "south", roof: "#55606a", pitched: true },
+];
+/** District wall colours (multiplied over a pale plaster): warm sandstone in
+ * Old Town, concrete grey at the harbour, red brick on the South Bank; the
+ * town's other walls (perimeter, pinch points) in weathered quay stone. */
+export const QUAY_DISTRICTS = { old: "#e6c497", harbour: "#b7c1c4", south: "#b9654e", quay: "#cbc2b2" };
+
+/** Wall type 1 colour at a tile, by the building it belongs to. */
+export function quayWallTint(x, y) {
+  const b = QUAY_BUILDINGS.find((b) => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h);
+  return QUAY_DISTRICTS[b ? b.district : "quay"];
+}
+
+/** Landmarks you can spot from across town (presentation only; every one
+ * stands on a solid tile or above head height). */
+export const QUAY_LANDMARKS = {
+  mast: { x: 4, y: 5, height: 24 }, // on the mast footing in the Radio Station
+  policeLamp: { x: 12, y: 5 }, // blue lamp on the Police Post roof
+  canopy: { x: 17, y: 3, w: 5, h: 4, height: 4.6, sign: "FUEL 1.89" }, // over the forecourt
+  clock: { x: 12, y: 12, dx: 1, dy: 0 }, // Market Hall facade, facing the square
+  crosses: [
+    { x: 13, y: 23, dx: 0, dy: -1 }, // clinic, facing the quay
+    { x: 17, y: 25, dx: 1, dy: 0 }, // clinic, facing Ambulance Lane
+  ],
+  crane: { x: 29, y: 24, height: 15, reach: 6 }, // depot crane on the yard wall, jib over the slipway
+};

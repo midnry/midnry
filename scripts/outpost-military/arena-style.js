@@ -113,6 +113,40 @@ export const ARENAS = {
       ["concrete_road_barrier", 0.64],
     ],
   },
+  // Calder Quay borrows Skyport's kit (cargo containers, street props) and
+  // the estate's paving and plaster. District colours are per-tile tints on
+  // the plaster (renderer.js, MAPS.quay.wallTint).
+  quay: {
+    kit: "arena-skyport-kit-v1",
+    props: "arena-skyport-props-v1",
+    // Market stalls as stacked goods on pallets; parked trucks as containers.
+    pieces: { 2: "pallets", 3: "uld" },
+    materials: {
+      aluminium: { set: "aluminium", color: "#ffffff", metalness: 0.75, normalScale: 0.6 },
+      rail: { color: "#5d6266", metalness: 0.6, roughness: 0.5 },
+      curtain: { color: "#8e2f25", roughness: 0.85 },
+      strap: { color: "#e8b13a", roughness: 0.7 },
+      cardboard: { set: "cardboard", color: "#ffffff" },
+      wood: { set: "crate-wood", color: "#c9b089" },
+      cone: { color: "#ff5a14", roughness: 0.55 },
+      reflect: { color: "#f2f2f2", roughness: 0.35 },
+      rubber: { color: "#1b1b1b", roughness: 0.9 },
+    },
+    ground: { set: "estate-paving", tile: 3, color: "#ebe4d8" },
+    walls: {
+      1: { set: "villa-plaster", color: "#ffffff", repeat: [1, 1] },
+      4: { set: "hedge", color: "#d4e4c4", repeat: [1, 1] },
+      5: { set: "aluminium", color: "#e8ecef", repeat: [1, 1] },
+    },
+    dressing: [
+      ["prop-cone", 0.42],
+      ["metal_trash_can", 0.56],
+      ["utility_box_01", 0.45],
+      ["plastic_crate_02", 0.42],
+      ["cardboard_box_01", 0.5],
+      ["concrete_road_barrier", 0.64],
+    ],
+  },
 };
 
 /** One arena's art: kit pieces, surfaces and props. */

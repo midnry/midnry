@@ -858,3 +858,20 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   dark openings, water drawn for every see-through tile (pond and slipway too).
 - Tests: `scripts/outpost-quay.test.mjs` (swim, bots never swim, dive, electrified water incl. through a
   culvert, lightning on water). QA: `node scripts/qa/quay-swim.mjs [width]`. Pace sim quay avg 87 s.
+
+### Calder Quay step 3, part 1: town look and landmarks (2026-10-22, not deployed yet)
+
+- `ARENAS.quay` (`arena-style.js`) borrows Skyport's kit and props (stalls → `pallets`, trucks → `uld`
+  containers; cones, bins, utility boxes, road barriers along walls) with the estate's paving (ground) and
+  villa plaster (walls); trees are hedge-textured planters, pumps aluminium. Loaded in the background with
+  estate and skyport.
+- District colours: MAPS `wallTint(x, y)` (`quayWallTint`, `QUAY_BUILDINGS`, `QUAY_DISTRICTS`) tints type-1
+  wall instances (`rebuildWalls`, `setColorAt`): Old Town sandstone, harbour concrete grey, South Bank brick.
+- Roofs: `QUAY_BUILDINGS` feed the roof list in `realism-environment.js` (pitched or flat, per building).
+- Landmarks: `scripts/outpost-military/quay-landmarks.js` (`QuayLandmarks`, data `QUAY_LANDMARKS`): radio
+  mast with warning lights, police blue lamp, fuel canopy on the pump islands with a lit price sign, Market
+  Hall clock, clinic red crosses, depot crane on the yard wall over the slipway. All on solid tiles or above
+  head height.
+- Draw calls (quay-look): laptop up to ~232, phone up to ~186 (budget 520).
+- Still to do in step 3: reuse Breakwater room art inside buildings, optional storm-surge disaster, then
+  add quay to the rotation after the owner's play-test.

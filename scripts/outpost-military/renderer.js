@@ -39,6 +39,7 @@ import {buildRiggedHand,disposeRiggedHands} from './realism-hands.js';
 import {bindWeaponGrip,updateWeaponGrip} from './realism-grips.js';
 import { outfitOf, weaponOf, mapOf } from "../../public/games/outpost-content.js";
 import { CanalWater } from "./canal-water.js";
+import { QuayLandmarks } from "./quay-landmarks.js";
 import { skinPattern } from "../../public/games/outpost-skins.js";
 import { VictimTakedown } from "./takedowns.js";
 import { ASSET_CACHE, CHARACTER_CACHE } from "../../public/games/outpost-asset-manifest.js";
@@ -317,7 +318,7 @@ export class MilitaryRenderer {
       if (!this.disposed) {
         this.mapKey = "";
         this.updateWeapon();
-        for (const id of ["estate", "skyport"]) this.loadArenaStyle(id);
+        for (const id of ["estate", "skyport", "quay"]) this.loadArenaStyle(id);
       }
     });
     this.configure();
@@ -890,7 +891,11 @@ export class MilitaryRenderer {
       // A floor-level occlusion ray cannot safely hide the structural shell
       // when looking up or crossing a threshold. Normal frustum culling stays.
       mesh.userData.noRoomCull = true;
+      // Per-tile colour (Calder Quay's districts) over the wall surface.
+      const tint = mapOf(g.arena.mapId).wallTint,
+        tintColor = new THREE.Color();
       tiles.forEach(([x, y], i) => {
+        if (tint && type === 1) mesh.setColorAt(i, tintColor.set(tint(x, y)));
         const height = ["breakwater", "medevac", "hospital"].includes(g.arena.mapId) ? 3.5 : 3;
         dummy.position.set((x + 0.5) * SCALE, height / 2, (y + 0.5) * SCALE);
         dummy.scale.set(SCALE, height, SCALE);
@@ -902,6 +907,12 @@ export class MilitaryRenderer {
       this.world.add(mesh);
       this.wallMeshes.push(mesh);
       }
+    }
+    this.landmarks?.dispose();
+    this.landmarks = null;
+    if (mapOf(g.arena.mapId).landmarks) {
+      this.landmarks = new QuayLandmarks(this, mapOf(g.arena.mapId).landmarks);
+      this.world.add(this.landmarks.group);
     }
     // Canal water (see-through tiles) is drawn at ground level, never as walls.
     this.canal?.dispose();
@@ -3514,6 +3525,7 @@ export class MilitaryRenderer {
     this.updateCinematic(night, t);
     this.clouds.update(t, night, this.motion.matches);
     this.canal?.update(t, this.motion.matches, night ? 1 : 0, g.arena.waterShockUntil > g.arena.time);
+    this.landmarks?.update(t, this.motion.matches);
     if (g.mode === "protocol") (this.events ||= new EventDressing(this)).update(protocolView, t);
     updateNaturalLighting(this, protocolView, p, dt);
     const undim = g.mode !== "protocol" && (this.hazards ||= new HazardDressing(this)).dim();
