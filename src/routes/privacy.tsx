@@ -117,8 +117,9 @@ function PrivacyPage() {
                 </li>
                 <li>
                   <strong>Apply</strong>: if you upload a resume, the file goes to our server only to read its text, and
-                  the file isn't kept. The text, the roles you enter and the tailored versions are saved to your account.
-                  The tailoring runs in your browser and isn't sent to an AI service.
+                  the file isn't kept. The text, the roles you enter, any job adverts you paste, the tailored versions
+                  and your edits to them are saved to your account. The tailoring and the matching against adverts run
+                  in your browser and aren't sent to an AI service.
                 </li>
                 <li>
                   <strong>Compressor</strong> re-encodes videos on your device. Videos are never uploaded.

@@ -7,9 +7,15 @@
  * comments. Invoice keeps every invoice, quote, proposal and client in one
  * document (an invoice with a few lines is about 1,000 characters), so it gets
  * the same room as Ledger: several hundred documents, and it warns first.
+ * Apply keeps one resume (up to 18,000 characters) and, for each of up to six
+ * roles, a tailored copy of it plus the pasted job advert (up to 12,000), so a
+ * full document is about 200,000 characters; 300,000 leaves room for JSON
+ * escaping and hand edits. (Six tailored copies of a long resume already
+ * passed the old 100,000 default before adverts.)
  * Everything else is small.
  */
 export const DOC_LIMITS: Record<string, number> = {
+  apply: 300_000,
   invoice: 1_000_000,
   tasks: 600_000,
   ledger: 1_000_000,

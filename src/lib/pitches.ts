@@ -3,7 +3,7 @@ import type { AppDef } from "@/lib/catalog";
 /** Short, plain-words pitches for the apps people reach for most. Others use their blurb. */
 export const PITCHES: Record<string, string> = {
   tasks: "Reminders in plain words. Type “pay rent every 25th” and it just works.",
-  apply: "Tailor your CV for each job, then apply on LinkedIn.",
+  apply: "Paste a job advert, see what your CV covers and what it’s missing, then apply on LinkedIn.",
   cycle: "A simple period tracker. Know when your next period should start.",
   ledger: "Log what you spend and see where the month went, with Budget and simple Pocket views.",
   invoice: "Invoices, quotes and proposals for client work: numbered, searchable, ready to print.",
