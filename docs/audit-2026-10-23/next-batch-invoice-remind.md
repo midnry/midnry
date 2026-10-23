@@ -46,6 +46,11 @@ Three separate questions, three separate answers:
     invoice layout must be drawn with it.
   - The browser's Web Share API for files, used only when available.
   - No server change, no data change, no cost.
+- **As built for review (branch `next/invoice-pdf-share`).** One change from the plan above:
+  sharing is not taken as sending. The share sheet only reports that the file was handed to
+  another app, so the invoice is **never** marked Sent automatically. After a share, or after the
+  download fallback, the page asks "Did you send it?" with a **Mark as sent** button (with Undo).
+  Cancelling shows only "Not shared." The button is called **Share PDF**.
 
 ### I2. Follow up: a "Needs follow-up" list and a polite reminder message
 

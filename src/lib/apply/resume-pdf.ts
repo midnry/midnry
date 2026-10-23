@@ -7,21 +7,22 @@
  *
  * Kept free of the browser so scripts/apply-pdf.test.mjs can run it in Node.
  * The page loads it, and the font files, only when someone downloads a PDF.
+ * The font helpers are shared with the invoice PDF (src/lib/invoice-pdf.ts).
  */
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 
 export type FontBytes = { regular: Uint8Array[]; bold: Uint8Array[] };
 
-type Face = { pdf: PDFFont; has: (codePoint: number) => boolean };
-type Run = { text: string; face: Face };
+export type Face = { pdf: PDFFont; has: (codePoint: number) => boolean };
+export type Run = { text: string; face: Face };
 
 const PAGE_W = 595.28;
 const PAGE_H = 841.89;
 const MARGIN = 54;
 const INK = rgb(0.1, 0.12, 0.16);
 
-async function embedFaces(doc: PDFDocument, pieces: Uint8Array[]): Promise<Face[]> {
+export async function embedFaces(doc: PDFDocument, pieces: Uint8Array[]): Promise<Face[]> {
   const faces: Face[] = [];
   for (const bytes of pieces) {
     const info = fontkit.create(bytes as unknown as Buffer);
@@ -34,7 +35,7 @@ async function embedFaces(doc: PDFDocument, pieces: Uint8Array[]): Promise<Face[
 const MARK = /\p{M}/u;
 
 /** Split text into runs, each drawn with one font piece. */
-function runsOf(text: string, faces: Face[], missing: Set<string>): Run[] {
+export function runsOf(text: string, faces: Face[], missing: Set<string>): Run[] {
   const runs: Run[] = [];
   for (const char of text) {
     const codePoint = char.codePointAt(0) ?? 32;
@@ -51,7 +52,7 @@ function runsOf(text: string, faces: Face[], missing: Set<string>): Run[] {
   return runs;
 }
 
-function widthOf(runs: Run[], size: number): number {
+export function widthOf(runs: Run[], size: number): number {
   return runs.reduce((sum, run) => sum + run.face.pdf.widthOfTextAtSize(run.text, size), 0);
 }
 
