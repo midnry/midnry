@@ -5,7 +5,24 @@ excluded. The approved branding, favicons and every working feature were left as
 real user records were touched: every check ran on a local copy of the site with an embedded
 database and invented data.
 
-This page is the summary. The detail sits next to it:
+**Second pass (validation, same day).** Before closing the batch the owner asked for a baseline
+comparison of tests and lint, stronger number-input coverage, full recovery workflows including
+account isolation, a "works vs competitive" review of the ready apps with competitor claims
+rechecked, and a deployment checklist. Those are in:
+
+| File | What it holds |
+|---|---|
+| `validation.md` | The 17 failing tests and lint against the unchanged baseline (cause and user impact of each), number-input and recovery coverage, and every command to reproduce the results |
+| `ready-apps-competitiveness.md` | For each of the 32 "ready" apps: intended user, verified workflow, limitations, and whether it is competitive or only works, with the concrete reason to choose it |
+| `competitor-claims-recheck.md` | Each broad competitor claim rechecked on official pages, and which alternatives are browser products, native apps or built into phones |
+| `deployment-checklist.md` | What to verify on the live site after release, and what still needs a real phone or credentials |
+
+The second pass added two fixes (`36024bc` number rules in every kit, `02261d4` a question before
+leaving inside the app when no recovery copy can be kept). Pricing, app removals and mergers were
+**not** changed: an unfinished second batch that started on them was parked, unmerged and untested,
+on branch `wip/batch2-parked-20261023`.
+
+This page is the summary of the first pass. The detail sits next to it:
 
 | File | What it holds |
 |---|---|
@@ -75,28 +92,28 @@ gave a tenfold dose with no warning (**fixed** for every kit, see section 5). Pe
 
 | Kit | Tested | Main weakness | Closest alternative | Essential gap | Priority | Action |
 |---|---|---|---|---|---|---|
-| Dose | arithmetic, invalid input | comma → tenfold dose (**fixed**); "working" not written out | MDCalc, Medscape (free, clinician-only) | cited source and date | P1 (done) | keep "for study" wording; add the working line |
-| Units | conversions, invalid | "1,500" refused with no hint | Google unit converter | none | P3 | keep |
-| Circuit | V/I/R, invalid | generic message for letters/zero | Wolfram Alpha free | none | P3 | better messages |
+| Dose | arithmetic, invalid input | comma → tenfold dose, blank → "0 mg", "lb" read as kg (all **fixed**, `448f476`, `36024bc`); "working" not written out | MDCalc, Medscape (free, clinician-only) | cited source and date | P1 (done) | keep "for study" wording; add the working line |
+| Units | conversions, invalid | "1,500" refused with no hint (**fixed**, `36024bc`) | Google unit converter | none | P3 | keep |
+| Circuit | V/I/R, invalid | generic message for letters/zero (**fixed**, `36024bc`) | Wolfram Alpha free | none | P3 | better messages |
 | Ratios | 2 cases | promised "one-line reading" missing | Sheets | none | P2 | add the reading or drop the promise |
-| Statements | fill, reload, copy | comma (**fixed**); negatives accepted | Sheets | none | P3 | refuse negatives |
-| Break-even | 2 cases | warning shown in the empty state | Sheets | none | P3 | polish |
+| Statements | fill, reload, copy | comma, negatives (**fixed**) | Sheets | none | P3 | refuse negatives |
+| Break-even | 2 cases | warning shown in the empty state (**fixed**, `36024bc`) | Sheets | none | P3 | polish |
 | Algo | steps, counts | >12 numbers truncated silently | VisuAlgo (free) | none | P3 | say the limit |
-| Solver | 4 formulas | values carried over on switch; no units | Wolfram Alpha | none | P3 | clear on switch, show units |
+| Solver | 4 formulas | values carried over on switch (**fixed**, `36024bc`); no units | Wolfram Alpha | none | P3 | clear on switch, show units |
 | Plot | pairs → line | **no grid, axes or labels** despite "a line on a grid"; bad lines dropped silently | Desmos (free, the class standard) | axes and labels | P2 | add axes/ticks/labels or reword and de-list |
 | Shifts | hours, week totals, CSV, Add to Remind | start = end counted as 24 h | Sheets | none | P3 | treat equal times as 0 h |
 | Reference | search | no "nothing found" | Medscape | cited sources | P2 | de-emphasise until reviewed (as in the Phase 3 plan) |
 | Regex | pattern, flags, errors | matches not marked in the sample (promised) | regex101 (free) | highlighted matches | P2 | mark matches |
 | JSON | format, error position | — | browser devtools | none | P3 | keep |
-| Tax | ₦1.8M/₦6M/₦24M recorded, rent relief | letters/blank/negative show "₦0"; annual only | Deloitte calculator (no sign of a 2026 update), PwC summaries | match the gazetted bands (they do), monthly input, minimum-wage note | P2 | add monthly input and cite the Act; keep "not reviewed" wording until a tax adviser signs off |
+| Tax | ₦1.8M/₦6M/₦24M recorded, rent relief | letters/blank/negative showed "₦0" (**fixed**, `36024bc`); annual only | Deloitte calculator (no sign of a 2026 update), PwC summaries | match the gazetted bands (they do), monthly input, minimum-wage note | P2 | add monthly input and cite the Act; keep "not reviewed" wording until a tax adviser signs off |
 | Reconcile | both lists, bad lines | "1 amounts" | Sheets | none | P3 | keep |
 | Clauses | search | promised "Copy a clause" button missing | LawPavilion (lawyer-priced), Rocket Lawyer (not in Nigeria) | non-legal-advice label | P2 | add Copy; keep de-emphasised until reviewed |
 | Creative brief | fill, copy, print | — | Keep/Sheets | none | P3 | keep |
 | Mood | colours, words | bare 50×27 px swatches, no hex/copy | Coolors | none | P3 | show hex, copy |
-| Stock | 300 rows, low flag | blank item / negative qty accepted | Bumpa, Kippa, Sheets | none essential | P3 | validate |
+| Stock | 300 rows, low flag | blank item accepted; negative qty (**fixed**, `36024bc`) | Bumpa, Kippa, Sheets | none essential | P3 | validate |
 | Profit | 2 cases | promised "note if price below cost" missing; comma (**fixed**) | Sheets | none | P2 | add the note |
 | Menu | dishes, QR, copy | blurb promises print, no button; QR not re-shown after reload | WhatsApp Business catalog | none | P2 | add Print; keep the QR |
-| Recipe cost | lines, portions | a letters line silently dropped | Sheets | none | P3 | show the hint |
+| Recipe cost | lines, portions | a letters line silently dropped (**fixed**, `36024bc`) | Sheets | none | P3 | show the hint |
 | Bookings | add/edit/delete, reload | "When" is free text, no ordering | Fresha ($19.95/mo), Booksy ($29.99/mo) | date/time field so the day list sorts | P2 | real date/time |
 | Catalog | rows, copy | "change a price in the same row" not true; comma (**fixed**) | WhatsApp Business catalog (500 items) | none | P3 | reword or inline edit |
 | Agreement | fill, copy, print | output is a label/value list, not an agreement draft | LawPavilion, Rocket Lawyer | a readable draft with a non-legal-advice label | P2 | **too shallow**: render a real draft or reword and de-list |
@@ -112,7 +129,7 @@ gave a tenfold dose with no warning (**fixed** for every kit, see section 5). Pe
 | Voice | record/play/download (fake mic) | .webm file; real mic unverified | Voice Memos, Recorder | none | P3 | keep |
 | Clearer | PNG contrast verified | silent failure on unsupported files | iPhone Magnifier, Lookout | none | P3 | show a message |
 | Call | steps | one paragraph per app | — | none | P3 | keep |
-| Savings | arithmetic | negative rate accepted | Sheets | none | P3 | refuse negatives |
+| Savings | arithmetic | negative rate accepted (**fixed**, `36024bc`) | Sheets | none | P3 | refuse negatives |
 | Bills | add, Add to Remind | comma (**fixed**); no paid state; total counts paid bills | Sheets | paid/overdue state | P2 | add paid tick |
 | Recipes | search | "Open a recipe" does nothing | — | none | P3 | reword |
 | Aloud | large type; speech unverified | silent when no voice | Select to Speak, iPhone Magnifier | none | P3 | message when no voice |
@@ -263,11 +280,17 @@ in the wrong place) and the recovery flow (section 4). Everything is reversible 
 | `6e3f615` | Invoice: **How to pay** block printed on every invoice; per-invoice notes once it is set; **Copy for WhatsApp**; sticky total on phones (invoices and quotes); duplicate-number flag; declined quotes not convertible; proposal dates | Tells Nigerian clients how to pay (the essential gap), stops one client's note printing on another's invoice, and makes the phone flow usable |
 | `448f476` | Kits: number boxes are text with a decimal keypad, calculators show "Check the figures"; Ledger: month summary first on phones, Money in no longer a category, ₦0 and bad budget refused, dated Add button, 44 px buttons; Compressor `fit: "contain"`; Apply headline placement | Removes a tenfold dose error, makes Ledger's main promise visible on phones, makes Compressor work at all, keeps Apply's headline out of Experience |
 | `dbdead3` | `scripts/qa/audit-fixes.mjs` browser check for all of the above, laptop and phone | Repeatable proof |
+| `30ba606` | This report and the audit files | — |
+| `36024bc` | Every kit number box has a rule (`src/lib/kit-numbers.ts`): units, currency, zero, negatives, blanks and unrealistic values are named, never computed; calculator sums moved to `src/lib/kit-calcs.ts`; 13 unit tests and a browser check | The first fix stopped "7,5" → 75, but a blank box still gave "0 mg", Tax letters gave "₦0", "60 lb" was read as kilograms |
+| `02261d4` | Recovery: a storage probe on open; leaving inside the app asks first when a change is unsaved and no copy can be kept; browser checks for network failure after leaving, the question, and two accounts in one browser | Closes the last way an unsaved change could be lost silently (storage blocked + a link clicked mid-save) |
 
-Not changed (needs the owner's decision): pricing or tiers of any app, removing or merging apps,
+Not changed (the owner asked to keep these as they are for now): pricing or tiers of any app, removing or merging apps,
 Remind's notifications, the Writing studio's AI allowance, anything in the games.
 
 ## 6. Test results (local only; the deployed site was not tested)
+
+The figures below are from the first pass. The second pass re-ran everything on the final commit;
+see `validation.md` for the current numbers, the baseline comparison and the commands.
 
 All of these ran on the branch at its final commit, on the session machine, against the local
 dev server (PGLite). **Local results only: the deployed site was not run or tested.**
