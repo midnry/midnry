@@ -16292,7 +16292,7 @@ af.ReflectorShader = {
 };
 //#endregion
 //#region public/games/outpost-asset-manifest.js
-var of = "outpost-assets-e6a6c76e8050ce85", sf = "a86961619e08723a", cf = Object.freeze({
+var of = "outpost-assets-588456f0a5077a33", sf = "a86961619e08723a", cf = Object.freeze({
 	concrete: {
 		roughness: .9,
 		metalness: 0,
