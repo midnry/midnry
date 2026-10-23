@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { prettyDate, prettyTime } from "@/lib/remind/dates";
 import { parseTask } from "@/lib/remind/parse";
-import { RECUR_PRESETS, recurLabel } from "@/lib/remind/recur";
+import { RECUR_PRESETS, recurLabel, repeatPreview, snapToRepeat } from "@/lib/remind/recur";
 import type { Priority } from "@/lib/remind/model";
 import type { FileMeta, Member } from "@/lib/remind.functions";
 import { Button, TextArea, TextInput, cn, fieldClass } from "@/components/ui";
@@ -19,6 +19,9 @@ export type RowContext = {
   files: FileMeta[];
   projectName: (key: string) => string;
 };
+
+/** Shown in an open task's panel after an edit took it out of the current view. */
+export type MovedNote = { text: string; go: string; onGo: () => void };
 
 export type RowActions = {
   toggle: (item: Item) => void;
@@ -97,6 +100,7 @@ export function TaskRow({
   open,
   onOpen,
   showProject,
+  moved,
 }: {
   item: Item;
   kids: Item[];
@@ -105,6 +109,7 @@ export function TaskRow({
   open: boolean;
   onOpen: () => void;
   showProject: boolean;
+  moved?: MovedNote;
 }) {
   const doneKids = kids.filter((kid) => kid.done).length;
   return (
@@ -134,12 +139,12 @@ export function TaskRow({
           ))}
         </ul>
       ) : null}
-      {open ? <Detail item={item} kids={kids} ctx={ctx} actions={actions} onClose={onOpen} /> : null}
+      {open ? <Detail item={item} kids={kids} ctx={ctx} actions={actions} onClose={onOpen} moved={moved} /> : null}
     </li>
   );
 }
 
-function Detail({ item, kids, ctx, actions, onClose }: { item: Item; kids: Item[]; ctx: RowContext; actions: RowActions; onClose: () => void }) {
+function Detail({ item, kids, ctx, actions, onClose, moved }: { item: Item; kids: Item[]; ctx: RowContext; actions: RowActions; onClose: () => void; moved?: MovedNote }) {
   const [title, setTitle] = useState(item.title);
   const [notes, setNotes] = useState(item.notes);
   const [child, setChild] = useState("");
@@ -172,12 +177,14 @@ function Detail({ item, kids, ctx, actions, onClose }: { item: Item; kids: Item[
     event.preventDefault();
     const rule = parseTask(`x ${customRepeat.startsWith("every") ? customRepeat : `every ${customRepeat}`}`, ctx.today).recur;
     if (rule === "none") return;
-    actions.patch(item, { recur: rule, due: item.due || ctx.today });
+    actions.patch(item, { recur: rule, due: snapToRepeat(rule, item.due, ctx.today) });
     setCustomRepeat("");
   }
 
+  const repeatLine = repeatPreview(item.due, item.time, item.recur, ctx.today);
+
   return (
-    <div className="ml-8 mt-3 space-y-4 rounded-2xl bg-paper p-4">
+    <div className="ml-8 mt-3 space-y-4 rounded-2xl bg-paper p-4" data-remind-detail>
       <div className="space-y-2">
         <TextInput value={title} onChange={(event) => setTitle(event.target.value.slice(0, 200))} onBlur={saveText} aria-label="Task name" />
         <TextArea
@@ -190,6 +197,16 @@ function Detail({ item, kids, ctx, actions, onClose }: { item: Item; kids: Item[
         />
       </div>
 
+      {/* Next to the date and project fields, where the edit that moved it was made. */}
+      {moved ? (
+        <div className="flex flex-wrap items-center gap-x-3 rounded-xl bg-pine/10 px-3 py-1 text-sm" role="status" data-remind-moved>
+          <span className="min-w-0 text-pretty">{moved.text}</span>
+          <button type="button" className="min-h-11 font-medium text-pine underline underline-offset-4" onClick={moved.onGo}>
+            {moved.go}
+          </button>
+        </div>
+      ) : null}
+
       <div className="grid gap-2 sm:grid-cols-3">
         <label className="text-sm">
           <span className="mb-1 block text-muted">Date</span>
@@ -201,7 +218,14 @@ function Detail({ item, kids, ctx, actions, onClose }: { item: Item; kids: Item[
         </label>
         <label className="text-sm">
           <span className="mb-1 block text-muted">Repeat</span>
-          <select className={fieldClass} value={item.recur} onChange={(event) => actions.patch(item, { recur: event.target.value, due: item.due || ctx.today })}>
+          <select
+            className={fieldClass}
+            value={item.recur}
+            onChange={(event) => {
+              const recur = event.target.value;
+              actions.patch(item, { recur, due: recur === "none" ? item.due || ctx.today : snapToRepeat(recur, item.due, ctx.today) });
+            }}
+          >
             {repeatOptions.map((option) => (
               <option key={option.spec} value={option.spec}>
                 {option.label}
@@ -210,6 +234,11 @@ function Detail({ item, kids, ctx, actions, onClose }: { item: Item; kids: Item[
           </select>
         </label>
       </div>
+      {repeatLine ? (
+        <p className="-mt-2 text-sm text-muted" data-remind-repeat-line>
+          {repeatLine}
+        </p>
+      ) : null}
       <form onSubmit={applyCustomRepeat} className="flex gap-2">
         <TextInput value={customRepeat} onChange={(event) => setCustomRepeat(event.target.value)} placeholder="Custom repeat, e.g. every Tuesday" aria-label="Custom repeat" />
         <Button type="submit" tone="quiet" disabled={!customRepeat.trim()}>
