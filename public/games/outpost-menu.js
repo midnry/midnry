@@ -205,6 +205,19 @@ midnry-fps dialog.mf-settings.mf-tabbed[open] { display: grid !important; grid-t
 midnry-fps .mf-settings.mf-tabbed .mf-settingshead { display: flex; align-items: center; justify-content: space-between; padding: 14px 22px !important; background: #050807 !important; border-bottom: 1px solid #ffffff17 !important; }
 midnry-fps .mf-settings.mf-tabbed .mf-settingshead h2 { margin: 0; font: 700 24px var(--mf-display) !important; letter-spacing: 0.12em !important; }
 midnry-fps .mf-settings.mf-tabbed .mf-settingshead button { border-radius: 3px !important; min-width: 96px; }
+/* Buttons and links inside Settings (connection test, asset download, device
+   check…): the same dark outlined buttons as the rest of the menus. */
+midnry-fps .mf-settings.mf-settings .mf-settingsbody button:not([role="tab"]) {
+  display: inline-flex !important; align-items: center; justify-content: center; gap: 8px; min-height: 44px; margin: 6px 8px 6px 0 !important; padding: 0 16px !important;
+  border: 1px solid #ffffff3d !important; border-radius: 3px !important; background: #ffffff0a !important; color: #eef2ee !important; box-shadow: none !important; text-shadow: none !important;
+  font: 600 15px var(--mf-display) !important; letter-spacing: 0.08em !important; text-transform: uppercase; cursor: pointer;
+}
+midnry-fps .mf-settings.mf-settings .mf-settingsbody button:not([role="tab"]):hover:not(:disabled) { background: #ffffff18 !important; border-color: #ffffff70 !important; color: #fff !important; }
+midnry-fps .mf-settings.mf-settings .mf-settingsbody button:not([role="tab"]):disabled { opacity: 0.5; cursor: default; }
+midnry-fps .mf-settings.mf-settings .mf-settingsbody button:not([role="tab"]):focus-visible { outline: 2px solid var(--mf-accent) !important; outline-offset: 2px; }
+midnry-fps .mf-settings.mf-settings .mf-settingsbody button .mf-ico { width: 18px; height: 18px; }
+midnry-fps .mf-settings .mf-settingsbody a { color: var(--mf-accent) !important; text-underline-offset: 3px; }
+midnry-fps .mf-settings .mf-settingsbody a:hover { color: #ffe0a0 !important; }
 midnry-fps .mf-settingsgrid { display: grid; grid-template-columns: 230px 1fr; min-height: 0; }
 midnry-fps .mf-settingsnav { display: flex; flex-direction: column; gap: 2px; padding: 14px 0; border-right: 1px solid #ffffff14; background: #070a09; overflow: auto; }
 midnry-fps .mf-settingsnav button { all: unset; cursor: pointer; display: flex; align-items: center; gap: 14px; padding: 14px 22px; font: 600 17px var(--mf-display); letter-spacing: 0.04em; color: #c9d2cc; border-left: 3px solid transparent; }

@@ -962,3 +962,5 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   lobby frame took seconds to set up. Now, when `militaryLoaded` is set, `updateMenu()` and `homeMenu.refresh()` run and
   the first lobby frame is drawn before `finishLoading()`. Checked by capturing every painted frame of a load
   (CDP screencast) as a new and a returning player.
+- Settings body buttons (Test connection, Download / Clear game assets, Run device check, Reset camera & aim) share the
+  dark outlined menu style, and links use the accent colour (they were light grey with near-white text).
