@@ -22,6 +22,9 @@ export const MERGED_DOCS: Record<string, { tier: AppTier; name: string }> = {
   "price-list": { tier: "free", name: "Catalog (was Prices)" },
   produce: { tier: "free", name: "Farm sales: Price log (was Crop prices)" },
   "qr-menu": { tier: "free", name: "Menu: QR code (was QR menu)" },
+  // Neither saved a document; kept so old usage rows keep a name in the stats and old links stay valid.
+  "rumor-check": { tier: "free", name: "Scam check: Claims checklist (was Claims)" },
+  clauses: { tier: "free", name: "Agreement: Starting clauses (was Clauses)" },
   // The study apps, now the Study space (free). Only Lab and Quiz ever saved a document; the Study
   // space copies those in once (src/lib/study.ts) and only reads them. Never remove these.
   anatomy: { tier: "free", name: "Study space: Anatomy deck (was Anatomy)" },

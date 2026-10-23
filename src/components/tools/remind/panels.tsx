@@ -171,7 +171,11 @@ export function PeoplePanel({
       <div className="border-t border-line pt-4">
         {confirm ? (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm">{owner ? "Delete this project for everyone?" : "Leave this project?"}</span>
+            <span className="text-sm">
+              {owner
+                ? "Delete this project for everyone? Its tasks, sections, comments and attached files are deleted too, for you and everyone in it. They don't move to your Inbox. To keep a task, move it to one of your own projects first."
+                : "Leave this project?"}
+            </span>
             <Button
               tone="primary"
               className="bg-fail"

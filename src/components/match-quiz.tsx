@@ -78,7 +78,7 @@ const TASKS: Task[] = [
   { id: "health", group: "everyday", label: "Medicines or appointments", apps: ["meds", "visits"], why: "want to keep track of medicines and appointments" },
   { id: "period", group: "everyday", label: "Tracking my period", apps: ["cycle"], why: "want to track your period" },
   { id: "habits", group: "everyday", label: "Building daily habits", apps: ["tasks"], why: "want to build daily habits" },
-  { id: "scam", group: "everyday", label: "Checking whether a message is a scam", apps: ["scam-check", "rumor-check", "ice-card"], why: "want to check whether a message is a scam" },
+  { id: "scam", group: "everyday", label: "Checking whether a message is a scam", apps: ["scam-check", "ice-card"], why: "want to check whether a message is a scam" },
   { id: "family", group: "everyday", label: "Staying in touch: voice notes, photos, or calls", apps: ["voice-note", "call-guide", "clearer"], why: "want to stay in touch with family" },
   { id: "money", group: "everyday", label: "Household money: bills, savings, or splitting costs", apps: ["ledger", "split", "bill-watch", "pension"], why: "want to manage household money" },
   { id: "hobby", group: "everyday", label: "Cooking, reading aloud, or writing down memories", apps: ["recipes", "read-aloud", "memoir"], why: "want help with cooking, reading, or memories" },

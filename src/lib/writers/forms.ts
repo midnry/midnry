@@ -1,4 +1,5 @@
 import type { Field } from "@/lib/kits";
+import { firstHint, typedNumber } from "../number-input.ts";
 import { bullets, capital, clean, inline, items, list, longDate, pick, sentence, titleCase, topWords } from "./text.ts";
 import {
   ask,
@@ -23,12 +24,24 @@ import {
 export type Piece = { title: string; text: string };
 export type Values = Record<string, string>;
 
+/** A note under one box: a problem that stops writing ("enter a number"), or a plain remark ("Blank uses 40 minutes."). */
+export type FieldNote = { field: string; text: string; problem: boolean };
+
 export type Writer = {
   /** The boxes the person fills. The first `required` ids must have text before writing. */
   fields: Field[];
   required: string[];
+  /**
+   * The box that tells one draft from another, for the draft's automatic title
+   * (src/lib/studio.ts autoTitle): who the email is to, the lesson's topic, the
+   * letter's subject. Never the box that is the same in every draft (the
+   * sender's own name). Falls back to the first filled box when it is empty.
+   */
+  titleField: string;
   /** True when several wordings exist, so "Try another wording" is worth showing. */
   variants: boolean;
+  /** Notes on the typed boxes, checked as the person types; a `problem` note stops "Write it". */
+  check?: (values: Values) => FieldNote[];
   run: (values: Values, variant: number) => Piece[];
 };
 

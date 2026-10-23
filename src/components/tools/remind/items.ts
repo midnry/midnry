@@ -49,10 +49,13 @@ export type View =
 
 export const sharedKey = (id: string) => `shared:${id}`;
 
+/** The screen key of a task: your own, or one in a shared project. */
+export const itemKey = (shared: string | null, id: string) => (shared ? `s:${shared}:${id}` : `p:${id}`);
+
 export function toItems(doc: Doc, shared: SharedProject[]): Item[] {
   const labelName = new Map(doc.labels.map((label) => [label.id, label.name]));
   const mine: Item[] = doc.tasks.map((task) => ({
-    key: `p:${task.id}`,
+    key: itemKey(null, task.id),
     id: task.id,
     shared: null,
     projectKey: task.projectId,
@@ -73,7 +76,7 @@ export function toItems(doc: Doc, shared: SharedProject[]): Item[] {
   }));
   const theirs: Item[] = shared.flatMap((project) =>
     project.doc.tasks.map((task) => ({
-      key: `s:${project.id}:${task.id}`,
+      key: itemKey(project.id, task.id),
       id: task.id,
       shared: project.id,
       projectKey: sharedKey(project.id),

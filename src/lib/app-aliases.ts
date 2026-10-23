@@ -18,6 +18,9 @@ export const APP_ALIASES: Record<string, AppAlias> = {
   "price-list": { to: "catalog" },
   produce: { to: "farm-sales", view: "prices" },
   "qr-menu": { to: "menu", view: "qr" },
+  // Claims is the checklist inside Scam check; Clauses is the starting wording under Agreement (both free, 2026-10-23).
+  "rumor-check": { to: "scam-check" },
+  clauses: { to: "service-terms" },
   // Quote and Proposal live inside Invoice (free); their saved documents are copied in once (src/lib/client-work.ts).
   quote: { to: "invoice", view: "quotes" },
   proposal: { to: "invoice", view: "proposals" },

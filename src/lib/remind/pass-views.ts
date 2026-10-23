@@ -11,9 +11,11 @@ export type PassViewKind = "board" | "focus" | "habits";
 
 export const PASS_VIEWS: Record<PassViewKind, { name: string; doc: string; what: string }> = {
   board: {
-    name: "Board",
+    // Called "Card board" on screen so it isn't mixed up with the List / Board / Month layout of your tasks.
+    // The ?view=board link and the saved "board" document keep their old names.
+    name: "Card board",
     doc: "board",
-    what: "Three columns of cards you move from to do to done. Rename the columns to suit the work.",
+    what: "A separate board of cards, not linked to your tasks: three columns you move cards across, from to do to done. Rename the columns to suit the work.",
   },
   focus: {
     name: "Focus",

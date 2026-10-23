@@ -27,7 +27,14 @@ type Base = {
 export type Kit = Base &
   (
     | { kind: "calc"; fields: Field[]; run: (v: Record<string, string>) => Line[] }
-    | { kind: "template"; parts: Field[] }
+    | {
+        kind: "template";
+        parts: Field[];
+        /** A readable draft composed from the boxes (Agreement); without it the copy is a label/value list. */
+        draft?: (v: Record<string, string>) => string;
+        /** Starting wording shown under the form, each with Copy (Agreement's clauses). */
+        library?: Entry[];
+      }
     | { kind: "tracker"; fields: Field[]; views?: TrackerView[]; qr?: QrSection }
     | { kind: "list"; items: Entry[] }
     | { kind: "units" }
@@ -60,6 +67,40 @@ const old = (id: string, label: string): Field => ({ id, label, legacy: true });
 /** A typed field as a number (src/lib/number-input.ts); blank is 0 and missing NaN, as Number() gave. */
 function num(v: Record<string, string>, id: string): number {
   return typedNumber(v[id]);
+}
+
+/**
+ * The Agreement draft in full sentences. Blanks are left as bracketed prompts
+ * so nothing is invented; the person edits the text before anyone signs.
+ */
+export function agreementDraft(v: Record<string, string>): string {
+  const fill = (id: string, prompt: string) => (v[id]?.trim() ? v[id].trim() : `[${prompt}]`);
+  const revisions = v.revisions?.trim() || "2";
+  const notice = v.notice?.trim() || "14 days";
+  return [
+    "Services agreement",
+    "",
+    `This agreement is between ${fill("you", "your name or business")} (the Provider) and ${fill("client", "the client's name or business")} (the Client).`,
+    "",
+    `1. The work. The Provider will do the following for the Client: ${fill("work", "describe the work or job")}.`,
+    "",
+    `2. Fee. The Client pays ${fill("fee", "the fee, and when it is paid")}. Payment is due within 14 days of a correct invoice unless this agreement says otherwise.`,
+    "",
+    `3. Revisions. The fee includes ${revisions} ${/^1$/.test(revisions) ? "round" : "rounds"} of revisions. Further changes are agreed and priced in writing before they start.`,
+    "",
+    `4. Notice. Either party may end this agreement by written notice of ${notice}. Work done up to the end date is paid for.`,
+    "",
+    "5. Confidentiality. Each party keeps the other's non-public information private and uses it only for this agreement, except where the law requires disclosure.",
+    "",
+    "6. Liability. Neither party excludes liability for anything the law does not allow to be excluded. Other liability is capped at the fees paid under this agreement, unless the parties write another figure here.",
+    "",
+    "7. Governing law. [Write the law and the courts that apply, for example the laws of the Federal Republic of Nigeria.]",
+    "",
+    "Signed for the Provider: ____________________  Date: ________",
+    "Signed for the Client:   ____________________  Date: ________",
+    "",
+    "This is starting wording, not legal advice. Have it read before anyone signs.",
+  ].join("\n");
 }
 
 export const KITS: readonly Kit[] = [
@@ -227,23 +268,7 @@ export const KITS: readonly Kit[] = [
     kind: "reconcile",
   },
   // Contract is now a mode of the Writing studio (src/lib/studio.ts), with its review note.
-  {
-    slug: "clauses",
-    name: "Clauses",
-    section: "practice",
-    blurb: "A small library of plain starting clauses. Edit them to the deal.",
-    note: "Starting points, not a finished contract and not legal advice.",
-    features: ["Search a short library", "Copy a clause", "You edit names, dates, and law"],
-    guide: ["Search, for example payment or notice.", "Copy the clause.", "Have a lawyer read it before anyone signs."],
-    kind: "list",
-    items: [
-      { title: "Payment", body: "The client pays the fee in the schedule within 14 days of a correct invoice. Late amounts may attract interest at the rate the parties write here." },
-      { title: "Scope", body: "The work is only what this agreement lists. Extra work needs a written change before it starts." },
-      { title: "Confidentiality", body: "Each party keeps the other's non-public information private, and uses it only for this agreement, except where the law requires disclosure." },
-      { title: "Termination", body: "Either party may end this agreement by written notice of 14 days. Clauses that should survive, including payment for work done, survive." },
-      { title: "Liability", body: "Neither party excludes liability for death, fraud, or anything else that cannot be excluded. Other liability is capped at the fees paid in the previous three months, unless the parties change that figure." },
-    ],
-  },
+  // Clauses is part of Agreement (service-terms) now: the same starting wording, with Copy, under the draft.
   // Letters is now a mode of the Writing studio (src/lib/studio.ts).
   {
     slug: "creative-brief",
@@ -289,9 +314,11 @@ export const KITS: readonly Kit[] = [
       if (![cost, price].every((item) => Number.isFinite(item))) return [{ label: "Result", value: "Enter both numbers." }];
       const profit = price - cost;
       const margin = price === 0 ? NaN : (profit / price) * 100;
+      const note = price < cost ? "Price is below cost: you lose money on each one." : price === cost ? "Price equals cost: no profit on each one." : null;
       return [
         { label: "Profit", value: round(profit) },
         { label: "Margin", value: Number.isFinite(margin) ? `${round(margin)}%` : "—" },
+        ...(note ? [{ label: "Note", value: note }] : []),
       ];
     },
   },
@@ -350,9 +377,9 @@ export const KITS: readonly Kit[] = [
     section: "beauty",
     blurb: "Name, service, and time. A list, not a public website.",
     features: ["Name, service, and time", "The list stays on your account", "You still confirm with the client"],
-    guide: ["Add the client and the service.", "Set the day and time.", "Message them yourself to confirm."],
+    guide: ["Add the client and the service.", "Pick the date and the time, so the list sorts by day.", "Message them yourself to confirm."],
     kind: "tracker",
-    fields: [f("name", "Name"), f("service", "Service"), f("when", "When", "Fri 14:00")],
+    fields: [f("name", "Name"), f("service", "Service"), d("date", "Date"), t("time", "Time"), old("when", "When")],
   },
   {
     slug: "catalog",
@@ -379,12 +406,31 @@ export const KITS: readonly Kit[] = [
     slug: "service-terms",
     name: "Agreement",
     section: "freelance",
-    blurb: "A short client or services agreement from the job, the fee, revisions and notice. Edit it, then get it read.",
-    note: "A starting draft, not a finished contract. Have it read before anyone signs.",
-    features: ["Parties, the work or job, fee, revisions, and notice", "A one-page draft you can copy or print", "Saved with your account", "You add the governing details"],
-    guide: ["Fill the names, the work or job, and the fee.", "Set how many revisions, and the notice period.", "Read every sentence.", "Get it checked before it is signed."],
+    blurb: "A short services agreement written out from the job, the fee, revisions and notice, plus starting clauses you can copy. Edit it, then get it read.",
+    note: "Starting wording, not a finished contract and not legal advice. Have it read before anyone signs.",
+    features: [
+      "Parties, the work or job, fee, revisions, and notice",
+      "A one-page draft in full sentences, to copy or print",
+      "Starting clauses for payment, scope, confidentiality, termination and liability, each with Copy",
+      "Saved with your account",
+      "You add the governing law and anything the job needs",
+    ],
+    guide: [
+      "Fill the names, the work or job, and the fee.",
+      "Set how many revisions, and the notice period.",
+      "Read every sentence of the draft; copy in any starting clause you need and change its figures.",
+      "Get it checked before it is signed.",
+    ],
     kind: "template",
     parts: [f("you", "You"), f("client", "Client"), a("work", "Work or job"), f("fee", "Fee"), f("revisions", "Revisions", "2"), f("notice", "Notice", "14 days")],
+    draft: agreementDraft,
+    library: [
+      { title: "Payment", body: "The client pays the fee in the schedule within 14 days of a correct invoice. Late amounts may attract interest at the rate the parties write here." },
+      { title: "Scope", body: "The work is only what this agreement lists. Extra work needs a written change before it starts." },
+      { title: "Confidentiality", body: "Each party keeps the other's non-public information private, and uses it only for this agreement, except where the law requires disclosure." },
+      { title: "Termination", body: "Either party may end this agreement by written notice of 14 days. Clauses that should survive, including payment for work done, survive." },
+      { title: "Liability", body: "Neither party excludes liability for death, fraud, or anything else that cannot be excluded. Other liability is capped at the fees paid in the previous three months, unless the parties change that figure." },
+    ],
   },
   // Listing is now a mode of the Writing studio (src/lib/studio.ts).
   {
@@ -485,18 +531,18 @@ export const KITS: readonly Kit[] = [
     blurb: "A diary of how you felt. Not a diagnosis.",
     note: "A diary. If you are worried, or symptoms are severe, seek care.",
     features: ["Day and a short note", "Saved with your account", "Large type"],
-    guide: ["Write the day.", "Write how you felt, in your own words.", "Show the list to a clinician if you want to."],
+    guide: ["Pick the date.", "Write how you felt, in your own words.", "Show the list to a clinician if you want to."],
     kind: "tracker",
-    fields: [f("day", "Day"), a("note", "How you felt")],
+    fields: [d("date", "Date"), a("note", "How you felt"), old("day", "Day")],
   },
   {
     slug: "scam-check",
     name: "Scam check",
     section: "safety",
-    blurb: "Paste a message. It looks for pressure, money, and odd links.",
+    blurb: "Paste a message. It looks for pressure, money, and odd links, and gives you four questions to answer before you forward a claim.",
     note: "A warning list, not proof. When money is involved, stop and ask someone you trust.",
-    features: ["Pressure, payment, and links", "Each warning sign found, what it means, and what to do", "It does not contact the sender"],
-    guide: ["Paste the message.", "Read which signs showed up.", "Do not pay or share a code if you are unsure."],
+    features: ["Pressure, payment, and links", "Each warning sign found, what it means, and what to do", "Before you forward a claim: four questions to tick through", "It does not contact the sender"],
+    guide: ["Paste the message.", "Read which signs showed up.", "Do not pay or share a code if you are unsure.", "For a claim or news you were sent, tick through the four questions first."],
     kind: "scam",
   },
   {
@@ -509,15 +555,7 @@ export const KITS: readonly Kit[] = [
     kind: "template",
     parts: [f("name", "Your name"), f("call", "Call this person"), f("phone", "Their phone"), a("notes", "Allergies or medicines")],
   },
-  {
-    slug: "rumor-check",
-    name: "Claims",
-    section: "safety",
-    blurb: "Questions to ask before you forward a claim.",
-    features: ["Who said it, and whether you can open the source", "A checklist, not a fact-check", "Large type"],
-    guide: ["Read the claim again.", "Answer the questions on the screen.", "Do not forward it if the source will not open."],
-    kind: "scam",
-  },
+  // Claims (rumor-check) is the checklist inside Scam check now; the old link redirects.
   { slug: "voice-note", name: "Voice", section: "family", blurb: "Record a message on this device and play it back.", features: ["A large record button", "Play it back here", "Download the file. It is not sent for you."], guide: ["Press record and speak.", "Press stop.", "Play it, or download it and send it in the app your family uses."], kind: "voice" },
   { slug: "clearer", name: "Clearer", section: "family", blurb: "Raises contrast on a photo. It does not invent missing detail.", features: ["A photo from this device", "Stronger contrast", "A download. The photo is not uploaded."], guide: ["Choose a photo.", "Wait for the clearer copy.", "Download it. Faces and text that were already gone stay gone."], kind: "photo" },
   {
@@ -562,8 +600,8 @@ export const KITS: readonly Kit[] = [
     name: "Bills",
     section: "elder-money",
     blurb: "Bills and the day they are due. The app does not pay them.",
-    features: ["Name, amount, and due date", "Large type", "Saved with your account"],
-    guide: ["Add the bill and the amount.", "Pick the date it is due.", "Open the list. Nothing is paid automatically. Each bill has a button to copy it into your to-do list."],
+    features: ["Name, amount, and due date", "Tick a bill when it is paid; the total shows what is still to pay, and a bill past its date is marked", "Large type", "Saved with your account"],
+    guide: ["Add the bill and the amount.", "Pick the date it is due.", "Press Paid when you have paid it. Nothing is paid automatically. Each bill has a button to copy it into your to-do list."],
     kind: "tracker",
     fields: [f("name", "Bill"), n("amount", "Amount"), d("dueOn", "Due date"), old("due", "Due")],
   },

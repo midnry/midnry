@@ -52,7 +52,8 @@ export function shiftHours(start: string | undefined, end: string | undefined): 
   const from = parseClock(start);
   const to = parseClock(end);
   if (from == null || to == null) return null;
-  const minutes = to > from ? to - from : to + 24 * 60 - from;
+  // Start = end is an empty shift (0 h), not a 24-hour one; an end before the start is a night shift.
+  const minutes = to >= from ? to - from : to + 24 * 60 - from;
   return Math.round((minutes / 60) * 100) / 100;
 }
 

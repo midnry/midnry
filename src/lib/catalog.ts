@@ -34,11 +34,13 @@ function tagged(app: AppSource): AppDef {
 }
 
 const SOURCES: readonly AppSource[] = [
+  // Scratch, Split and Contrast became free on 2026-10-23 (owner decision after the app audit):
+  // each is free elsewhere with more features, so they no longer carry the Pass.
   {
     slug: "scratch",
     name: "Scratch",
     blurb: "A plain notepad. Several notes, saved with your account.",
-    tier: "pass",
+    tier: "free",
     genre: "arts",
     features: ["Several notes on one account", "A title and a body for each note", "Notes stay when you leave"],
     guide: ["Type a title and add the note.", "Select a note in the list to open it.", "Edit the title or the body. It saves on its own."],
@@ -47,7 +49,7 @@ const SOURCES: readonly AppSource[] = [
     slug: "split",
     name: "Split",
     blurb: "Split a bill. Amount, people, tip. The per-person figure is the point.",
-    tier: "pass",
+    tier: "free",
     genre: "books",
     features: ["Bill amount, number of people, and tip", "A per-person figure", "The last split stays with your account"],
     guide: ["Enter the bill amount.", "Set how many people are paying, and the tip percent.", "Read the amount each person pays."],
@@ -125,7 +127,7 @@ const SOURCES: readonly AppSource[] = [
     slug: "contrast",
     name: "Contrast",
     blurb: "Two colors, one ratio, and whether the pair passes WCAG.",
-    tier: "pass",
+    tier: "free",
     genre: "creatives",
     features: ["Two colors, as hex", "The contrast ratio between them", "Whether the pair passes WCAG"],
     guide: ["Enter the text color and the background color.", "Read the ratio.", "Change a color if the pair does not pass."],
