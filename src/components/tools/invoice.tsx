@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
 import { useAppDoc } from "@/components/use-app-doc";
-import { Button, Field, TextArea, TextInput, cn } from "@/components/ui";
+import { Button, Field, TextArea, TextInput, buttonClass, cn } from "@/components/ui";
 import { guessCurrency, formatMoney, type CurrencyCode } from "@/lib/format";
 import { toMajor } from "@/lib/invoice-math";
+import { followUps, lateLabel, longDate, reminderMessage, remindText, type FollowUp } from "@/lib/invoice-follow-up";
 import { DOC_WARN_SHARE, docLimit } from "@/lib/doc-limits";
 import { loadMergedDoc } from "@/lib/merged-docs.functions";
 import { nid, todayISO, ToolFrame, ToolStatus } from "@/components/tools/shared";
@@ -1036,6 +1038,7 @@ function InvoiceList({
   const shown = rows.filter((row) => matchesSearch(row.invoice, query, { clients: doc.clients, currency: row.currency }));
   const unpaid = rows.filter((row) => row.state !== "paid").length;
   const overdue = rows.filter((row) => row.state === "overdue").length;
+  const chase = useMemo(() => followUps(doc, today, guessed), [doc, today, guessed]);
   return (
     <section aria-label="Invoices" className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -1044,6 +1047,7 @@ function InvoiceList({
           New invoice
         </Button>
       </div>
+      {chase.length > 0 && !query.trim() ? <FollowUpList items={chase} doc={doc} today={today} onOpen={onOpen} onPaid={onPaid} /> : null}
       <p className="text-sm text-muted" data-summary>
         {rows.length === 0 ? "No invoices yet." : `${rows.length} invoice${rows.length === 1 ? "" : "s"} · ${unpaid} unpaid${overdue ? ` · ${overdue} overdue` : ""}`}
         {query.trim() ? ` · ${shown.length} match${shown.length === 1 ? "" : "es"} “${query.trim()}”` : ""}
@@ -1089,6 +1093,76 @@ function InvoiceList({
         <summary className="cursor-pointer font-medium">Numbering and your details</summary>
         <NumberingSettings doc={doc} onSettings={onSettings} />
       </details>
+    </section>
+  );
+}
+
+/** Sent invoices that are overdue or due soon, with a ready reminder message and a link to Remind. */
+function FollowUpList({
+  items,
+  doc,
+  today,
+  onOpen,
+  onPaid,
+}: {
+  items: FollowUp[];
+  doc: ClientWorkDoc;
+  today: string;
+  onOpen: (id: string) => void;
+  onPaid: (id: string) => void;
+}) {
+  function copy(item: FollowUp) {
+    const text = reminderMessage(item, { from: doc.from, payment: doc.payment });
+    void navigator.clipboard.writeText(text).then(
+      () => toast.success(`Reminder for ${item.invoice.number || "this invoice"} copied. Paste it into WhatsApp or an email.`),
+      () => toast.error("Could not copy. Open the invoice and copy its details instead."),
+    );
+  }
+  return (
+    <section aria-labelledby="follow-up-title" className="rounded-2xl bg-paper-2 p-4" data-follow-up>
+      <h2 id="follow-up-title" className="font-medium">
+        Needs follow-up ({items.length})
+      </h2>
+      <p className="mt-1 text-sm text-muted">Sent invoices that are overdue or due in the next 3 days. Marking one paid removes it.</p>
+      <ul className="mt-3 space-y-2">
+        {items.map((item) => {
+          const { invoice } = item;
+          const label = invoice.number || "No number";
+          return (
+            <li key={invoice.id} data-follow-up-row={invoice.number} className="flex flex-col gap-3 rounded-xl bg-card p-3 shadow-line sm:flex-row sm:items-center">
+              <button type="button" onClick={() => onOpen(invoice.id)} className="min-w-0 flex-1 text-left" aria-label={`Open invoice ${label}${item.name ? ` for ${item.name}` : ""}`}>
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium">{label}</span>
+                  <span className={cn("text-sm font-medium", item.daysLate > 0 ? "text-fail" : "text-muted")} data-late>
+                    {lateLabel(item.daysLate)}
+                  </span>
+                </span>
+                <span className="mt-1 block break-words text-sm text-muted">
+                  {item.name || "No client yet"} · {money(item.totalMinor, item.currency)} · due {longDate(invoice.due)}
+                </span>
+              </button>
+              <span className="flex flex-wrap gap-2">
+                <Button tone="quiet" onClick={() => copy(item)} aria-label={`Copy a payment reminder for invoice ${label}`} data-copy-reminder>
+                  Copy reminder
+                </Button>
+                <Link
+                  to="/apps/$slug"
+                  params={{ slug: "tasks" }}
+                  search={{ add: remindText(item, today) }}
+                  className={buttonClass({ tone: "quiet" })}
+                  aria-label={`Remind me to follow up invoice ${label}`}
+                  data-remind-me
+                >
+                  Remind me
+                </Link>
+                <Button tone="quiet" onClick={() => onPaid(invoice.id)} aria-label={`Mark invoice ${label} paid`}>
+                  Mark paid
+                </Button>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
     </section>
   );
 }
