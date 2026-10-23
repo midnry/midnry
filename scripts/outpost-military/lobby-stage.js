@@ -12,7 +12,8 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { updateWeaponGrip } from "./realism-grips.js";
 import { lobbyRenderSize } from "./compatibility.js";
 import { CHARACTERS } from "../../public/games/outpost-characters.js";
-import { buildLobbyBackdrop, buildLobbyFloor, lobbySky, LOBBY_SUN } from "./lobby-backdrop.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { buildLobbyBackdrop, buildLobbyFloor, lobbySky, LOBBY_SUN, LOBBY_TRUCK } from "./lobby-backdrop.js";
 
 export class LobbyStage {
   constructor(r) {
@@ -50,7 +51,8 @@ export class LobbyStage {
     }
     // Ground: wet concrete slabs that catch the sunset and the lamps.
     buildLobbyFloor(this.scene, own, { mobile });
-    buildLobbyBackdrop(this.scene, own, { mobile });
+    this.standIns = buildLobbyBackdrop(this.scene, own, { mobile });
+    this.own = own;
     // Platforms: the centre one for you, two smaller squad pads.
     // Heavy dark steel pads with a matte, slightly worn top (the concept's
     // display plinths); the amber rim is the only bright part.
@@ -207,10 +209,111 @@ export class LobbyStage {
   drag(dx) {
     this.spin += dx * 0.01;
   }
+  /** The modelled set (Blender: scripts/assets/lobby-set.py): the hangar
+   * side and the parked truck, with baked contact shading. It replaces the
+   * simple stand-ins once it has loaded; a failed load keeps them. */
+  loadSet() {
+    if (this.setLoading) return;
+    const style = this.r.arenaStyle;
+    if (!style?.asset) return;
+    this.setLoading = new GLTFLoader()
+      .loadAsync(`${style.asset}models/lobby-set-v1.glb?assetVersion=${style.version}`)
+      .then((gltf) => {
+        if (this.disposed) return;
+        const spec = {
+          steel: { color: "#3b3936", roughness: 0.48, metalness: 0.75 },
+          cladding: { color: "#4e4740", roughness: 0.5, metalness: 0.55 },
+          concrete: { color: "#6f6760", roughness: 0.92, metalness: 0 },
+          interior: { color: "#3a2a1c", roughness: 0.9, metalness: 0, emissive: "#ff9a4a", emissiveIntensity: 0.35 },
+          hazard: { color: "#c9952c", roughness: 0.6, metalness: 0.2 },
+          lamp: { color: "#ffd9a8", roughness: 0.4, metalness: 0, emissive: "#ffb062", emissiveIntensity: 3.2 },
+          glass: { color: "#141a1d", roughness: 0.08, metalness: 0.9 },
+          olive: { color: "#4a4b35", roughness: 0.62, metalness: 0.3 },
+          canvas: { color: "#5b5540", roughness: 0.95, metalness: 0 },
+          rubber: { color: "#1b1b1b", roughness: 0.9, metalness: 0 },
+          chrome: { color: "#9a9a96", roughness: 0.25, metalness: 1 },
+          grille: { color: "#2c2c2a", roughness: 0.55, metalness: 0.8 },
+        };
+        const made = new Map();
+        const material = (name) => {
+          if (!made.has(name)) made.set(name, this.own(new THREE.MeshStandardMaterial({ vertexColors: true, ...(spec[name] || spec.steel) })));
+          return made.get(name);
+        };
+        gltf.scene.traverse((o) => {
+          if (!o.isMesh) return;
+          // Baked occlusion kept soft: contact shading, not a dark wash.
+          const ao = o.geometry.getAttribute("color");
+          if (ao) for (let i = 0; i < ao.count; i++) ao.setXYZ(i, 0.45 + 0.55 * ao.getX(i), 0.45 + 0.55 * ao.getY(i), 0.45 + 0.55 * ao.getZ(i));
+          this.own(o.geometry);
+          o.material = material(o.material?.name || "steel");
+          o.castShadow = o.receiveShadow = true;
+        });
+        const truck = gltf.scene.getObjectByName("truck");
+        if (truck) {
+          truck.position.set(LOBBY_TRUCK.x, 0, LOBBY_TRUCK.z);
+          truck.rotation.y = LOBBY_TRUCK.turn;
+        }
+        this.scene.add(gltf.scene);
+        for (const mesh of this.standIns || []) mesh.visible = false;
+      })
+      .catch(() => {
+        /* The simple stand-ins stay. */
+      });
+  }
+  /** Real scanned props (the Dust Outpost set, already cached for the
+   * arena) dressed along the hangar wall and around the vehicle, once they
+   * have loaded. Placed by hand, clear of the stage and the pads. */
+  dress() {
+    if (this.dressed) return;
+    const props = this.r.arenaStyle?.of?.("outpost")?.props;
+    if (!props?.size) return;
+    this.dressed = true;
+    const group = new THREE.Group();
+    group.name = "Lobby props";
+    // [asset, x, z, turn, scale, y] (metres; the stage is at the origin, the
+    // hangar wall at x = -7.2, the vehicle near (8, -17)).
+    for (const [id, x, z, turn = 0, scale = 1, y = 0] of [
+      // Hangar foot, left: a crate stack, ammo boxes, fuel and a compressor.
+      ["old_military_crate", -5.3, -6.6, 0.25],
+      ["old_military_crate", -5.45, -6.75, 0.1, 1, 0.62],
+      ["ammo_box", -4.55, -6.1, 0.9],
+      ["metal_jerrycan_green", -4.2, -7.3, -0.4],
+      ["metal_jerrycan", -4.45, -7.55, 0.3],
+      ["Barrel_01", -5.6, -9.0],
+      ["barrel_03", -4.9, -9.5, 1.2],
+      ["Barrel_01", -5.55, -10.1, 2.1],
+      ["old_military_compressor", -5.0, -12.4, 1.3],
+      ["industrial_pastic_container", -5.3, -15.2, 0.2],
+      ["plastic_crate_03", -4.6, -16.3, 0.6],
+      ["cardboard_box_01", -4.3, -13.7, 0.4],
+      // Right: a barrier line by the yard, fuel by the vehicle, a spare tyre.
+      ["concrete_road_barrier", 4.6, -8.8, -0.35],
+      ["concrete_road_barrier_02", 6.4, -9.6, -0.55],
+      ["barrel_03", 6.2, -13.0, 0.4],
+      ["Barrel_01", 6.9, -12.6, 1.4],
+      ["metal_jerrycan", 5.8, -12.4, 2.4],
+      ["old_tyre", 7.4, -14.2, 0.9],
+      ["ammo_box", 5.2, -10.7, -0.3],
+    ]) {
+      const source = props.get(id);
+      if (!source) continue;
+      const prop = source.clone();
+      prop.position.set(x, y, z);
+      prop.rotation.y = turn;
+      prop.scale.setScalar(scale);
+      prop.traverse((o) => {
+        if (o.isMesh) o.castShadow = o.receiveShadow = true;
+      });
+      group.add(prop);
+    }
+    this.scene.add(group);
+  }
   render(now) {
     const r = this.r,
       t = now / 1000,
       still = r.motion.matches;
+    this.loadSet();
+    this.dress();
     this.operator();
     this.squad();
     // Last Signal dresses the bots as the other characters: fetch them now.
@@ -403,6 +506,7 @@ export class LobbyStage {
     });
   }
   dispose() {
+    this.disposed = true;
     this.composer?.dispose();
     this.bloom?.dispose();
     this.target?.dispose();

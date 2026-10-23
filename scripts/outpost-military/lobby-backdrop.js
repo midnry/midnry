@@ -176,8 +176,15 @@ export function buildLobbyFloor(scene, own, { mobile = false } = {}) {
   return ground;
 }
 
+/** Where the parked truck stands (lobby coordinates) and its heading. */
+export const LOBBY_TRUCK = { x: 8.2, z: -17, turn: -0.5 };
+
+/** Builds the backdrop; returns the simple stand-in meshes (hangar wall,
+ * crates, strips, roof, truck) that the modelled set replaces once loaded. */
 export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
-  const rand = seeded(20261022);
+  const rand = seeded(20261022),
+    standIns = [];
+  const keep = (mesh) => (standIns.push(mesh), mesh);
   // Windows: dark facade with scattered warm lit panes, 4 m per tile.
   const windows = canvasTexture(own, 128, 128, (c, w, h) => {
     c.fillStyle = "#0d0b0c";
@@ -292,9 +299,9 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
   cladding.wrapS = cladding.wrapT = THREE.RepeatWrapping;
   cladding.repeat.set(0.5, 0.25);
   const clad = own(new THREE.MeshStandardMaterial({ map: cladding, color: "#b9a89c", roughness: 0.55, metalness: 0.55 }));
-  scene.add(new THREE.Mesh(own(mergeGeometries(hangar)), clad));
-  scene.add(new THREE.Mesh(own(mergeGeometries(crates)), own(new THREE.MeshStandardMaterial({ color: "#3a3226", roughness: 0.72, metalness: 0.35 }))));
-  scene.add(new THREE.Mesh(own(mergeGeometries(strips)), amber));
+  scene.add(keep(new THREE.Mesh(own(mergeGeometries(hangar)), clad)));
+  scene.add(keep(new THREE.Mesh(own(mergeGeometries(crates)), own(new THREE.MeshStandardMaterial({ color: "#3a3226", roughness: 0.72, metalness: 0.35 })))));
+  scene.add(keep(new THREE.Mesh(own(mergeGeometries(strips)), amber)));
   // The hangar's curved roof edge, high over the stage on the left: it
   // frames the top of the view like the concept's hangar mouth.
   const roof = [];
@@ -313,7 +320,7 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
     own(mergeGeometries(roof.map((g) => (g.index ? g.toNonIndexed() : g)))),
     own(new THREE.MeshStandardMaterial({ color: "#2a2422", roughness: 0.6, metalness: 0.6, side: THREE.DoubleSide })),
   );
-  scene.add(roofMesh);
+  scene.add(keep(roofMesh));
   // Warm work lights inside the hangar mouth: bright panels with a soft glow.
   const workLights = [];
   for (const [y, z] of [
@@ -322,11 +329,16 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
     [6.8, -20],
   ])
     workLights.push(box(0.16, 0.5, 1.6, -6.0, y, z));
-  scene.add(new THREE.Mesh(own(mergeGeometries(workLights)), own(new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.05, 0.38), toneMapped: true }))));
-  // One real warm light by the crates (desktop): it rakes across the cladding.
-  if (!mobile) {
-    const lamp = new THREE.PointLight("#ffb46a", 30, 16, 1.6);
-    lamp.position.set(-4.6, 3.2, -10.5);
+  scene.add(keep(new THREE.Mesh(own(mergeGeometries(workLights)), own(new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.05, 0.38), toneMapped: true })))));
+  // Warm work lights over the prop groups: one raking across the hangar
+  // foot and its crates, one over the barriers and fuel by the vehicle.
+  // Two point lights are cheap here (the lobby is a small scene).
+  for (const [x, y, z, power, reach] of [
+    [-4.2, 3.0, -8.8, 140, 14],
+    [5.6, 2.6, -11.2, 90, 11],
+  ]) {
+    const lamp = new THREE.PointLight("#ffb062", power, reach, 1.4);
+    lamp.position.set(x, y, z);
     scene.add(lamp);
   }
   // Red banner with the outpost mark, hanging from the overhang.
@@ -356,7 +368,8 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
     own(new THREE.PlaneGeometry(1.6, 4)),
     own(new THREE.MeshStandardMaterial({ map: banner, roughness: 0.95, side: THREE.DoubleSide, emissive: "#3a0606", emissiveIntensity: 0.4 })),
   );
-  flag.position.set(-6.0, 4.4, -9.5);
+  // Between two hangar columns, clear of the canopy and the bay door.
+  flag.position.set(-6.75, 3.6, -5.35);
   flag.rotation.y = Math.PI / 2;
   scene.add(flag);
 
@@ -366,10 +379,10 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
   for (const x of [-1.5, 0, 1.5]) for (const z of [-1.15, 1.15]) truck.push(box(0.9, 0.9, 0.35, x, 0.45, z));
   const truckGeo = mergeGeometries(truck);
   truckGeo.scale(0.85, 0.85, 0.85);
-  truckGeo.rotateY(-0.5);
-  truckGeo.translate(8.2, 0, -17);
+  truckGeo.rotateY(LOBBY_TRUCK.turn);
+  truckGeo.translate(LOBBY_TRUCK.x, 0, LOBBY_TRUCK.z);
   const olive = own(new THREE.MeshStandardMaterial({ color: "#2a2b22", roughness: 0.6, metalness: 0.45 }));
-  scene.add(new THREE.Mesh(own(truckGeo), olive));
+  scene.add(keep(new THREE.Mesh(own(truckGeo), olive)));
 
   // A lattice gantry tower on the right, with a red warning light on top
   // and amber deck lights: the concept's industrial silhouette.
@@ -418,7 +431,14 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
   });
   // Gantry, vehicle and hangar lights join the lamp glows.
   lamps.push(gx + 0.6, gh + 1.9, gz, gx - 1, gh * 0.5, gz + 1.2, gx + 1, gh * 0.25, gz + 1.2);
-  lamps.push(6.9, 1.0, -15.3, 7.9, 1.0, -14.7);
+  // The truck's headlights (modelled lamps at x 3.84, height 1.5, ±0.82 across).
+  for (const side of [-0.82, 0.82]) {
+    const c = Math.cos(LOBBY_TRUCK.turn),
+      s = Math.sin(LOBBY_TRUCK.turn),
+      lx = 3.84,
+      lz = -side;
+    lamps.push(LOBBY_TRUCK.x + lx * c + lz * s, 1.5, LOBBY_TRUCK.z - lx * s + lz * c);
+  }
   lamps.push(-5.95, 6.8, -8, -5.95, 6.8, -14);
   const lampPoints = new THREE.BufferGeometry();
   lampPoints.setAttribute("position", new THREE.Float32BufferAttribute(lamps, 3));
@@ -472,4 +492,5 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
     streaks.push(geo);
   }
   if (streaks.length) scene.add(new THREE.Mesh(own(mergeGeometries(streaks)), shine));
+  return standIns;
 }
