@@ -185,9 +185,10 @@ function MonthNav({ month, setMonth, children }: { month: string; setMonth: (mon
 
 /** "25 Sep 2026", for the Add button when the date is not today. */
 function shortDate(iso: string): string {
-  const time = Date.parse(`${iso}T12:00:00`);
-  if (!Number.isFinite(time)) return iso;
-  return new Date(time).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!match) return iso;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${Number(match[3])} ${months[Number(match[2]) - 1] ?? match[2]} ${match[1]}`;
 }
 
 function monthName(month: string): string {
