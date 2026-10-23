@@ -79,6 +79,13 @@ export type ClientWorkDoc = {
   v: 2;
   /** Your details, reused on every new invoice and quote. */
   from: string;
+  /**
+   * How to pay: bank name, account name and number, or a payment link.
+   * Printed on every invoice. While it is empty, new invoices keep copying
+   * the latest invoice's notes (where people kept their bank details before
+   * this field existed); once it is set, notes are per invoice.
+   */
+  payment?: string;
   /** The currency you chose last; new documents start in it. */
   currency?: CurrencyCode;
   numbering: Numbering;
@@ -303,6 +310,7 @@ export function normalizeDoc(raw: unknown): ClientWorkDoc {
   return {
     v: 2,
     from: str(raw.from),
+    payment: optStr(raw.payment),
     currency: isCurrency(raw.currency) ? raw.currency : undefined,
     numbering: readNumbering(raw.numbering, DEFAULT_NUMBERING),
     quoteNumbering: readNumbering(raw.quoteNumbering, DEFAULT_QUOTE_NUMBERING),
@@ -446,7 +454,13 @@ function addDaysIso(iso: string, days: number): string {
   return new Date(time + days * 86_400_000).toISOString().slice(0, 10);
 }
 
-/** A blank invoice with the next number, your details, and the tax and notes of your latest invoice. Not yet added. */
+/**
+ * A blank invoice with the next number, your details, and the tax rate of
+ * your latest invoice. Notes are copied from the latest invoice only while
+ * there is no "How to pay" block (see `payment`); once the bank details have
+ * their own place, one client's wording never lands on another's invoice.
+ * Not yet added.
+ */
 export function draftInvoice(doc: ClientWorkDoc, stamp: Stamp, client?: Client): Invoice {
   const last = latest(doc.invoices);
   const id = stamp.id();
@@ -459,7 +473,7 @@ export function draftInvoice(doc: ClientWorkDoc, stamp: Stamp, client?: Client):
     issued: stamp.today,
     due: "",
     currency: doc.currency,
-    notes: last?.notes ?? "",
+    notes: doc.payment?.trim() ? "" : (last?.notes ?? ""),
     taxPercent: last?.taxPercent ?? "0",
     lines: [emptyLine(stamp.id())],
     status: "draft",
@@ -598,6 +612,8 @@ export function quoteToInvoice(doc: ClientWorkDoc, quoteId: string, stamp: Stamp
   if (!quote) return null;
   const existing = quote.invoiceId ? doc.invoices.find((item) => item.id === quote.invoiceId) : undefined;
   if (existing) return { doc, invoice: existing, created: false };
+  // A declined quote is not work to bill; change its status first.
+  if (quote.status === "declined") return null;
   const invoice: Invoice = {
     id: stamp.id(),
     number: nextNumber(doc.numbering, doc.invoices.map((item) => item.number)),
@@ -615,7 +631,7 @@ export function quoteToInvoice(doc: ClientWorkDoc, quoteId: string, stamp: Stamp
     createdAt: stamp.now,
     updatedAt: stamp.now,
   };
-  const linked: Quote = { ...quote, invoiceId: invoice.id, status: quote.status === "declined" ? quote.status : "accepted", updatedAt: stamp.now };
+  const linked: Quote = { ...quote, invoiceId: invoice.id, status: "accepted", updatedAt: stamp.now };
   return { doc: putQuote(putInvoice(doc, invoice), linked), invoice, created: true };
 }
 
@@ -795,4 +811,26 @@ export function importKitDocs(
 /** Rough size of the saved document, for the warning before the limit. */
 export function docSize(doc: ClientWorkDoc): number {
   return JSON.stringify(doc).length;
+}
+
+/* ── checks and sharing ─────────────────────────────────────────────────── */
+
+/** Another document in `items` already uses this one's number (ignoring case and spaces). */
+export function numberClash(items: readonly { id: string; number: string }[], item: { id: string; number: string }): boolean {
+  const key = item.number.trim().toLowerCase();
+  if (!key) return false;
+  return items.some((other) => other.id !== item.id && other.number.trim().toLowerCase() === key);
+}
+
+/**
+ * A plain-text summary to paste into WhatsApp or an email: who it is from and
+ * to, the total, when it is due, and how to pay. The PDF carries the lines.
+ */
+export function invoiceShareText(input: { number: string; from: string; to: string; total: string; due?: string; payment?: string }): string {
+  const firstLine = (text: string) => text.trim().split(/\r?\n/)[0]?.trim() ?? "";
+  const lines = [`Invoice ${input.number.trim() || "—"}${firstLine(input.from) ? ` from ${firstLine(input.from)}` : ""}`];
+  if (firstLine(input.to)) lines.push(`To: ${firstLine(input.to)}`);
+  lines.push(`Total: ${input.total}${input.due?.trim() ? ` (due ${input.due.trim()})` : ""}`);
+  if (input.payment?.trim()) lines.push("How to pay:", input.payment.trim());
+  return lines.join("\n");
 }

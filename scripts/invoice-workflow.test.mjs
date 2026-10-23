@@ -244,3 +244,49 @@ test("old links and storage: quote and proposal lead to Invoice, their documents
   assert.equal(docTier("proposal"), "free");
   assert.ok(docLimit("invoice") >= 1_000_000, "room for hundreds of invoices");
 });
+
+// ── 2026-10-23 audit fixes: how to pay, notes per invoice, declined quotes, number clashes, sharing ──
+
+test("how to pay prints on every invoice; notes stop carrying over once it exists", () => {
+  const s = stamper();
+  let doc = W.emptyDoc();
+  const first = { ...W.draftInvoice(doc, s), notes: "Reply to confirm and we start Monday.", taxPercent: "7.5", lines: [{ id: "a", description: "Design", qty: "1", rate: "100" }] };
+  doc = W.putInvoice(doc, first);
+  assert.equal(W.draftInvoice(doc, s).notes, "Reply to confirm and we start Monday.", "without a How to pay block the latest notes still carry over (bank details lived there)");
+  doc = { ...doc, payment: "Bank: Example Bank\nAccount: 0123456789" };
+  assert.equal(W.normalizeDoc(JSON.parse(JSON.stringify(doc))).payment, "Bank: Example Bank\nAccount: 0123456789", "saved and read back");
+  const second = W.draftInvoice(doc, s);
+  assert.equal(second.notes, "", "with a How to pay block, a new invoice does not inherit another client's note");
+  assert.equal(second.taxPercent, "7.5", "the tax rate still carries over");
+  assert.equal(W.draftInvoice({ ...doc, payment: "   " }, s).notes, first.notes, "blank counts as not set");
+});
+
+test("a declined quote is not converted; a number already used is flagged", () => {
+  const s = stamper();
+  let doc = W.emptyDoc();
+  const q = { ...W.draftQuote(doc, s), status: "declined", lines: [{ id: "x", description: "Logo", qty: "1", rate: "25000" }] };
+  doc = W.putQuote(doc, q);
+  assert.equal(W.quoteToInvoice(doc, q.id, s), null, "declined quotes stay quotes");
+  doc = W.putQuote(doc, { ...q, status: "sent" });
+  assert.ok(W.quoteToInvoice(doc, q.id, s)?.created, "once the status changes it converts");
+  const a = { ...W.draftInvoice(doc, s), number: "0001" };
+  doc = W.putInvoice(doc, a);
+  const b = { ...W.draftInvoice(doc, s), number: " 0001 " };
+  assert.equal(W.numberClash(doc.invoices, b), true, "same number, ignoring spaces");
+  assert.equal(W.numberClash(doc.invoices, { ...b, number: "0002" }), false);
+  assert.equal(W.numberClash(doc.invoices, a), false, "an invoice never clashes with itself");
+  assert.equal(W.numberClash(doc.invoices, { ...b, number: "" }), false, "no number, no clash");
+});
+
+test("the WhatsApp summary has the number, parties, total, due date and how to pay", () => {
+  const text = W.invoiceShareText({
+    number: "SSL-0102",
+    from: "Synthetic Studio Ltd\n12 Allen Avenue, Ikeja",
+    to: "Amaka Okafor\nOkafor Foods",
+    total: "₦623,500.00",
+    due: "2026-11-15",
+    payment: "Bank: Example Bank\nAccount number: 0123456789",
+  });
+  assert.equal(text, "Invoice SSL-0102 from Synthetic Studio Ltd\nTo: Amaka Okafor\nTotal: ₦623,500.00 (due 2026-11-15)\nHow to pay:\nBank: Example Bank\nAccount number: 0123456789");
+  assert.equal(W.invoiceShareText({ number: "", from: "", to: "", total: "$10.00" }), "Invoice —\nTotal: $10.00");
+});
