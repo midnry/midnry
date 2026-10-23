@@ -957,3 +957,8 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   (toast, disaster banner, weather, haze, shock) runs in the lobby and once the round has ended.
 - Note: `scripts/qa/pause-restart-leave.mjs protocol` and `death-new-round.mjs` never start their Blackout match with
   the lobby menus (stale before these changes); the pause was checked in both games with a direct probe.
+- Opening the game no longer flashes the older photo menu (owner, 2026-10-23): the loader lifted when the renderer was
+  ready, but the menu only switched to the 3D lobby (`mf-lobby`) on its next refresh, up to ~5 s later; then the first
+  lobby frame took seconds to set up. Now, when `militaryLoaded` is set, `updateMenu()` and `homeMenu.refresh()` run and
+  the first lobby frame is drawn before `finishLoading()`. Checked by capturing every painted frame of a load
+  (CDP screencast) as a new and a returning player.

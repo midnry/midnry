@@ -3586,6 +3586,20 @@
               }
               this.refreshCompatibility();
               this.militaryLoaded = true;
+              // Switch the home menu to the 3D lobby before the loading screen
+              // lifts (its own refresh can come seconds later, which briefly
+              // showed the older photo menu).
+              this.updateMenu();
+              this.homeMenu?.refresh?.();
+              // Draw the first lobby frame (its scene, characters and shaders
+              // are set up here, which takes a few seconds) while the loading
+              // screen is still up, so it never lifts onto an empty or stale view.
+              if (this.$(".mf-modal.mf-home.mf-lobby:not([hidden])")) {
+                try {
+                  this.ctx.clearRect(0, 0, this.w, this.h);
+                  this.military?.renderLobby?.(performance.now());
+                } catch {}
+              }
               this.finishLoading();
               this.militaryLoadError = null;
               this.militaryError = null;
