@@ -21,7 +21,7 @@ export function DocRecoveryHost() {
 
 const EMPTY: readonly DocIssue[] = [];
 
-type Mode = "choose" | "confirm-keep" | "confirm-discard" | "review";
+type Mode = "choose" | "confirm-keep" | "confirm-discard" | "review" | "not-stored";
 
 function download(slug: string, payload: string) {
   try {
@@ -90,6 +90,21 @@ function DocRecoveryPanel({ issue }: { issue: DocIssue }) {
     setDownloaded(true);
   };
 
+  /** Refresh only once the copy is kept; otherwise keep the page and offer Copy / Download. */
+  async function refresh() {
+    if (!issue.refresh) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const outcome = await issue.refresh();
+      if (outcome === "not-stored") setMode("not-stored");
+    } catch {
+      setMode("not-stored");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const title =
     issue.kind === "conflict"
       ? `${app} was changed in another tab or device`
@@ -123,8 +138,8 @@ function DocRecoveryPanel({ issue }: { issue: DocIssue }) {
         <div className="mt-4 grid gap-2">
           {issue.kind === "refresh" ? (
             <>
-              <Button tone="primary" disabled={busy} onClick={() => issue.refresh?.()}>
-                Refresh now
+              <Button tone="primary" disabled={busy} onClick={() => void refresh()}>
+                {busy ? "Keeping a copy…" : "Refresh now"}
               </Button>
               <Button tone="quiet" onClick={() => setMode("review")}>
                 Review my version
@@ -149,6 +164,30 @@ function DocRecoveryPanel({ issue }: { issue: DocIssue }) {
           <button type="button" className="min-h-11 text-sm text-muted underline underline-offset-2" onClick={() => docIssues.open(issue.slug, false)}>
             Decide later
           </button>
+        </div>
+      ) : null}
+
+      {mode === "not-stored" ? (
+        <div className="mt-4 grid gap-2" data-doc-recovery-step="not-stored">
+          <p role="alert" className="rounded-xl bg-paper-2 p-3 text-pretty text-sm font-medium text-fail">
+            This browser would not keep a copy of your version, so the page was not refreshed. Copy or download your version
+            first. Refreshing without it loses these changes.
+          </p>
+          <Button tone="primary" onClick={() => copy(issue.mine())}>
+            Copy my version
+          </Button>
+          <Button tone="quiet" onClick={mineDownload}>
+            {downloaded ? "Downloaded. Download again" : "Download my version"}
+          </Button>
+          <Button tone="quiet" onClick={() => setMode("review")}>
+            Review my version
+          </Button>
+          <Button tone="quiet" onClick={() => issue.refreshAnyway?.()}>
+            Refresh anyway (my version will be lost)
+          </Button>
+          <Button tone="quiet" onClick={() => setMode("choose")}>
+            Back
+          </Button>
         </div>
       ) : null}
 

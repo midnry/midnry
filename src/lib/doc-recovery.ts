@@ -16,7 +16,14 @@
  * Kept free of React so it can be tested on its own (scripts/doc-recovery.test.mjs).
  */
 
-export type RecoveryReason = "retrying" | "conflict" | "refresh" | "too-large";
+/**
+ * Why the copy was kept. "pending" means the tool closed (or the page was
+ * leaving) while a save was still waiting or in flight: the copy is kept
+ * before the outcome is known, and dropped on the next open if the save
+ * landed after all (decideOnLoad). "locked" means the server refused the save
+ * because the account no longer opens the app.
+ */
+export type RecoveryReason = "retrying" | "conflict" | "refresh" | "too-large" | "pending" | "locked";
 
 export type RecoveryRecord = {
   v: 1;
@@ -43,7 +50,7 @@ export function recoveryKey(owner: string, slug: string): string {
   return `midnry-recovery:v1:${owner}:${slug}`;
 }
 
-const REASONS: readonly RecoveryReason[] = ["retrying", "conflict", "refresh", "too-large"];
+const REASONS: readonly RecoveryReason[] = ["retrying", "conflict", "refresh", "too-large", "pending", "locked"];
 
 function isRecord(value: unknown, owner: string, slug: string): value is RecoveryRecord {
   if (!value || typeof value !== "object") return false;
@@ -95,6 +102,18 @@ export class RecoveryStore {
     } catch {
       /* nothing to do: the copy expires */
     }
+  }
+
+  /**
+   * Clear the copy only if it still holds `payload` (the version that has
+   * just been saved). A copy kept since by another page of the same app, for
+   * a save that did fail, is left for the next open to offer.
+   */
+  async clearIfPayload(owner: string, slug: string, payload: string): Promise<boolean> {
+    const record = await this.read(owner, slug);
+    if (!record || !samePayload(record.payload, payload)) return false;
+    await this.clear(owner, slug);
+    return true;
   }
 }
 
@@ -278,9 +297,18 @@ export type DocIssue = {
   keepMine?: () => Promise<void>;
   /** Drop mine and use the newest saved version (conflict, recovered). */
   useSaved?: () => Promise<void>;
-  /** Refresh the page; the copy is already kept (refresh). */
-  refresh?: () => void;
+  /**
+   * Keep the copy, then refresh the page (refresh). Resolves "not-stored"
+   * instead of reloading when this browser would not keep the copy: the
+   * page stays open with the unsaved document, and the panel offers Copy and
+   * Download before refreshing on purpose.
+   */
+  refresh?: () => Promise<RefreshOutcome>;
+  /** Refresh without a kept copy, chosen after the warning (refresh). */
+  refreshAnyway?: () => void;
 };
+
+export type RefreshOutcome = "reloading" | "not-stored";
 
 type Listener = () => void;
 let issues: readonly DocIssue[] = [];
