@@ -22,7 +22,7 @@
 // Usage: node scripts/qa/recovery-after-leaving.mjs [outdir] [mobile]
 // Against a production build: QA_TARGET=build (see scripts/qa/target.mjs); the
 // card is then seeded and read through its own form instead of /src imports.
-import { mkdirSync } from "node:fs";
+import { appendFileSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { BASE, BUILD, TARGET, isServerFn } from "./target.mjs";
 
@@ -36,11 +36,15 @@ const ok = (cond, msg) => {
 };
 const errors = [];
 const headers = { origin: BASE };
-const EMAIL = "qa-recovery@example.test";
+// On the live site, fresh timestamped accounts (the fixed ones are closed after each run).
+const STAMP = process.env.QA_LIVE === "1" ? `-${Date.now().toString(36)}${process.argv[3] === "mobile" ? "m" : "d"}` : "";
+const EMAIL = `qa-recovery${STAMP}@example.test`;
 const PASSWORD = "recovery-qa-pass-1";
 const SLUG = "ice-card";
 const FIELD = "Your name";
 
+for (const [email, password] of [[EMAIL, PASSWORD], [`qa-recovery-2${STAMP}@example.test`, "recovery-qa-pass-2"]])
+  appendFileSync("screenshots/qa/test-accounts.jsonl", JSON.stringify({ email, password, base: BASE }) + "\n");
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });
 const ctx = await browser.newContext(
   MOBILE
@@ -417,7 +421,7 @@ ok(await noOffer(other), "G: another app is not offered the copy");
 await other.close();
 // Sign out, sign in as a second account in the same browser.
 await authPost("/api/auth/sign-out", {});
-const SECOND = { email: "qa-recovery-2@example.test", password: "recovery-qa-pass-2", name: "QA Recovery Two", ageConfirmed: true };
+const SECOND = { email: `qa-recovery-2${STAMP}@example.test`, password: "recovery-qa-pass-2", name: "QA Recovery Two", ageConfirmed: true };
 if (!(await authPost("/api/auth/sign-up/email", SECOND)).ok()) {
   const r = await authPost("/api/auth/sign-in/email", SECOND);
   if (!r.ok()) throw new Error("second account sign-in failed");
