@@ -9,6 +9,8 @@
 // real MP4 file), checkout against the local Paystack stand-in (not Paystack),
 // and the AI and email fallbacks when no key is configured.
 // Usage: node scripts/qa/release-check.mjs [outdir] [mobile]
+// QA_LIVE=1 (against the live site): skips anything that would reach real Paystack
+// or send real email, and the Pass apps (a new test account has no Pass).
 import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { chromium } from "playwright";
@@ -16,10 +18,12 @@ import { extractText, getDocumentProxy } from "unpdf";
 import { BASE, TARGET } from "./target.mjs";
 
 const OUT = process.argv[2] || "screenshots/qa/release-check";
+const LIVE = process.env.QA_LIVE === "1";
 const MOBILE = process.argv[3] === "mobile";
 const TAG = MOBILE ? "-mobile" : "";
 mkdirSync(OUT, { recursive: true });
-const COMMIT = execSync("git rev-parse --short HEAD").toString().trim();
+// QA_COMMIT names the commit the target runs (e.g. the deployed one); default: this checkout.
+const COMMIT = process.env.QA_COMMIT || execSync("git rev-parse --short HEAD").toString().trim();
 const VIEW = MOBILE ? "390x844 touch (phone-sized Chromium, not a real phone)" : "1280x900 Chromium";
 const fails = [];
 function ok(cond, check, detail = "") {
@@ -58,6 +62,8 @@ async function newContext(account) {
 }
 const ADMIN = { email: "qa-admin@example.test", password: "payouts-qa-pass-1", name: "QA Admin" };
 const FREE = { email: `qa-release-${stamp}@example.test`, password: "release-pass-1", name: "QA Release" };
+// Every account created here is recorded so scripts/qa/close-test-accounts.mjs can close it later.
+for (const account of [FREE]) appendFileSync("screenshots/qa/test-accounts.jsonl", JSON.stringify({ email: account.email, password: account.password, base: BASE }) + "\n");
 async function open(page, path) {
   await page.goto(`${BASE}${path}`, { waitUntil: "networkidle", timeout: 120000 });
 }
@@ -68,6 +74,26 @@ async function pdfText(bytes) {
 async function downloadBytes(page, click) {
   const [download] = await Promise.all([page.waitForEvent("download", { timeout: 120000 }), click()]);
   return { name: download.suggestedFilename(), bytes: readFileSync(await download.path()) };
+}
+
+/** Writing studio Contract: the written summary is saved and reopens whole (quick writer: 7 parts; the AI may write fewer). */
+async function contractCheck(page) {
+  await open(page, "/apps/write?view=contract");
+  const contract = page.getByLabel("Contract text");
+  await contract.waitFor({ timeout: 60000 });
+  await page.getByRole("button", { name: "New draft" }).click().catch(() => {});
+  await contract.fill("This Agreement is made between Synthetic Studio Ltd and Nwosu Pharmacy (the Client). The Client shall pay a fee of ₦250,000 within 14 days of the invoice. The term starts on 1 November 2026 and runs for 6 months. Either party may terminate with 30 days written notice. The Studio must provide three design revisions.");
+  await page.getByRole("button", { name: "Write it" }).click();
+  const region = page.getByRole("region", { name: "Written text" });
+  await region.getByLabel(/, editable$/).first().waitFor({ timeout: 120000 });
+  await page.locator('[data-save="saved"]').waitFor({ timeout: 60000 });
+  const by = await region.getAttribute("data-output");
+  const before = await region.getByLabel(/, editable$/).count();
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByRole("region", { name: "Written text" }).getByLabel(/, editable$/).first().waitFor({ timeout: 60000 });
+  const after = await page.getByRole("region", { name: "Written text" }).getByLabel(/, editable$/).count();
+  const expected = by === "quick" ? 7 : before;
+  ok(after === before && after === expected && after > 0, "Writing studio: Contract summary saved and reopened whole", `${after} parts, written by ${by === "ai" ? "the AI" : "the quick writer"}`);
 }
 
 // ── Invoice (free account, fresh data) ─────────────────────────────────────
@@ -135,7 +161,11 @@ async function downloadBytes(page, click) {
   await open(page, "/apps/write?view=letters");
   await page.getByLabel("Your name and address").waitFor({ timeout: 60000 });
   const studioText = await page.locator("body").innerText();
-  ok(/AI writing is off right now|AI writes left|AI write/i.test(studioText), "Writing studio: shows the AI status (no key here: the quick-writer message)", (studioText.match(/AI writing is off right now[^.]*\./) ?? ["AI status shown"])[0]);
+  ok(/AI writing is off right now|AI writes left|AI write/i.test(studioText), "Writing studio: shows whether AI writing is on", (studioText.match(/AI writing is off right now[^.]*\./) ?? ["AI status shown"])[0]);
+  if (LIVE) {
+    await contractCheck(page);
+    console.log("SKIP Remind test email and checkout (live: no real email to test addresses, no real Paystack)");
+  } else {
   await open(page, "/apps/tasks?view=settings");
   const testEmail = page.getByRole("button", { name: "Send me a test email" });
   await testEmail.waitFor({ timeout: 60000 }).catch(() => {});
@@ -162,11 +192,13 @@ async function downloadBytes(page, click) {
   await open(page, "/apps/ledger");
   const unlocked = await page.getByLabel("What").first().isVisible({ timeout: 30000 }).catch(() => false);
   ok(unlocked, "Checkout (stand-in, not Paystack): paying opens a Pass app");
+  }
   await ctx.close();
 }
 
 // ── Pass apps (admin account) ─────────────────────────────────────────────
-{
+if (LIVE) console.log("SKIP Pass apps (live: the test account has no Pass)");
+else {
   const ctx = await newContext(ADMIN);
   const page = await ctx.newPage();
   // Ledger
@@ -196,18 +228,7 @@ async function downloadBytes(page, click) {
   const csv = await downloadBytes(page, () => page.getByRole("button", { name: "Export CSV" }).first().click());
   ok(csv.bytes.toString("utf8").includes('"Market: rice, oil"'), "Ledger: CSV export has the entries", csv.name);
 
-  // Writing studio: Contract
-  await open(page, "/apps/write?view=contract");
-  const contract = page.getByLabel("Contract text");
-  await contract.waitFor({ timeout: 60000 });
-  await page.getByRole("button", { name: "New draft" }).click().catch(() => {});
-  await contract.fill("This Agreement is made between Synthetic Studio Ltd and Nwosu Pharmacy (the Client). The Client shall pay a fee of ₦250,000 within 14 days of the invoice. The term starts on 1 November 2026 and runs for 6 months. Either party may terminate with 30 days written notice. The Studio must provide three design revisions.");
-  await page.getByRole("button", { name: "Write it" }).click();
-  await page.getByRole("region", { name: "Written text" }).getByText("Before you sign").waitFor({ timeout: 60000 });
-  await page.locator('[data-save="saved"]').waitFor({ timeout: 30000 });
-  await page.reload({ waitUntil: "networkidle" });
-  await page.getByRole("region", { name: "Written text" }).getByText("Before you sign").waitFor({ timeout: 60000 });
-  ok((await page.getByRole("region", { name: "Written text" }).getByLabel(/, editable$/).count()) === 7, "Writing studio: Contract summary saved and reopened with all 7 parts");
+  if (!LIVE) await contractCheck(page);
 
   // Apply: exports
   await open(page, "/apps/apply");

@@ -3,7 +3,7 @@
 // must never be saved into the second account. Covers the shared app document
 // (Emergency card) and Writing studio drafts. Synthetic accounts only.
 // Usage: node scripts/qa/account-switch.mjs [outdir] [mobile]   (QA_TARGET=build for a production build)
-import { mkdirSync } from "node:fs";
+import { appendFileSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
 import { BASE, TARGET, isServerFn } from "./target.mjs";
 
@@ -22,6 +22,8 @@ const headers = { origin: BASE };
 const stamp = Date.now().toString(36);
 const A = { email: `qa-switch-a-${stamp}@example.test`, password: "switch-pass-a-1", name: "Switch A", ageConfirmed: true };
 const B = { email: `qa-switch-b-${stamp}@example.test`, password: "switch-pass-b-1", name: "Switch B", ageConfirmed: true };
+// Every account created here is recorded so scripts/qa/close-test-accounts.mjs can close it later.
+for (const account of [A, B]) appendFileSync("screenshots/qa/test-accounts.jsonl", JSON.stringify({ email: account.email, password: account.password, base: BASE }) + "\n");
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });
 const ctx = await browser.newContext(MOBILE ? { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } : { viewport: { width: 1280, height: 900 } });
 ctx.on("page", (page) => {

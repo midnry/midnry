@@ -38,7 +38,7 @@ Read docs/HANDOVER.md first (working rules, deploy procedure, security rule). Th
   Writing studio Contract saves, Compressor encodes, Apply headline placement.
 - Owner decisions listed there: pricing of Scratch/Split/Contrast, consolidating Claims/Agreement/Clauses,
   Plot, and whether to build phone notifications for Remind.
-- Release prepared 2026-10-23 (NOT deployed, awaiting the owner's "deploy"): branch `release/2026-10-23`
+- DEPLOYED 2026-10-23 11:44 UTC (owner said "deploy"): main = game-look = `2a2240d`, branch `release/2026-10-23`
   (`2a2240d` = `game-look` + the audit branch; code identical to `19e4d39`, verified on a production build
   against PostgreSQL 16). Status, verification record, owner checks and rollback plan:
   `docs/audit-2026-10-23/release-2026-10-23.md`. Proposed next batch (Invoice and Remind):
@@ -65,6 +65,10 @@ Read docs/HANDOVER.md first (working rules, deploy procedure, security rule). Th
   `rm -rf node_modules/.vite`, then start it again.
 - 17 test failures are pre-existing builder-platform tests (missing `.grok/` folder); ignore them.
 
+
+## Deployed 2026-10-23 (non-game apps)
+main = `2a2240d` (code `19e4d39`): non-game app fixes, recovery and account-isolation fixes. Live checks all passed
+(see docs/audit-2026-10-23/release-2026-10-23.md section 7). Seven synthetic test accounts still to close (same section).
 
 ## Deployed 2026-10-23
 main = game-look at 7ba1c7c (`v=review-fixes-20261023`). Live files verified by hash; a Blackout match (town) and a

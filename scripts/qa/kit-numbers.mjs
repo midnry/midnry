@@ -2,10 +2,11 @@
 // server (sh scripts/qa/dev-up.sh). Synthetic data, own QA account. Checks that
 // a mistyped number is named on screen and never shown as a result, and that
 // a tracker refuses to save it. Usage: node scripts/qa/kit-numbers.mjs [outdir] [mobile]
-import { mkdirSync } from "node:fs";
+import { appendFileSync, mkdirSync } from "node:fs";
 import { chromium } from "playwright";
+import { BASE, TARGET } from "./target.mjs";
 
-const BASE = "http://127.0.0.1:8080";
+console.log(`target: ${TARGET} at ${BASE}`);
 const OUT = process.argv[2] || "screenshots/qa/kit-numbers";
 const MOBILE = process.argv[3] === "mobile";
 const TAG = MOBILE ? "-mobile" : "";
@@ -26,7 +27,9 @@ ctx.on("page", (page) => {
   });
 });
 {
-  const data = { email: "qa-numbers@example.test", password: "kit-numbers-qa-1", name: "QA Numbers", ageConfirmed: true };
+  // A fresh account per run (the live site may already have the old fixed one).
+  const data = { email: `qa-numbers-${Date.now().toString(36)}@example.test`, password: "kit-numbers-qa-1", name: "QA Numbers", ageConfirmed: true };
+  appendFileSync("screenshots/qa/test-accounts.jsonl", JSON.stringify({ email: data.email, password: data.password, base: BASE }) + "\n");
   const up = await ctx.request.post(`${BASE}/api/auth/sign-up/email`, { headers, data });
   if (!up.ok() && !(await ctx.request.post(`${BASE}/api/auth/sign-in/email`, { headers, data })).ok()) throw new Error("sign-in failed");
 }
