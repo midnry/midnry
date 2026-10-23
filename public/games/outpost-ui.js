@@ -101,24 +101,27 @@ export class MenuUI {
   setupAccessibility() {
     const g = this.g;
     // These device-local UI preferences never alter match rules or graphics presets.
-    this.accessibility = { textScale: 1, contrast: false };
+    this.accessibility = { textScale: 1, contrast: false, cameraMotion: "full" };
     try {
       const saved = JSON.parse(localStorage.getItem("midnry-outpost-accessibility"));
       if ([1, 1.5, 2].includes(saved?.textScale)) this.accessibility.textScale = saved.textScale;
       if (typeof saved?.contrast === "boolean") this.accessibility.contrast = saved.contrast;
+      if (["full", "reduced", "off"].includes(saved?.cameraMotion)) this.accessibility.cameraMotion = saved.cameraMotion;
     } catch {
       /* Storage can be unavailable in an embedded/private browser. */
     }
     g.$(".mf-experience").insertAdjacentHTML(
       "afterend",
-      `<h3>Accessibility</h3><label class="mf-setting">Menu text size<select class="mf-textsize" aria-label="Menu text size"><option value="1">Standard · 100%</option><option value="1.5">Large · 150%</option><option value="2">Extra large · 200%</option></select></label><label class="mf-setting"><span>Higher UI contrast</span><input class="mf-contrast" type="checkbox"></label><p>Text size and contrast are saved on this device. System Reduce Motion reduces decorative animation and camera shake. Combat uses visual aiming; menus and match status provide screen-reader text.</p>`,
+      `<h3>Accessibility</h3><label class="mf-setting">Menu text size<select class="mf-textsize" aria-label="Menu text size"><option value="1">Standard · 100%</option><option value="1.5">Large · 150%</option><option value="2">Extra large · 200%</option></select></label><label class="mf-setting"><span>Higher UI contrast</span><input class="mf-contrast" type="checkbox"></label><label class="mf-setting">Camera motion<select class="mf-cameramotion" aria-label="Camera motion"><option value="full">Full</option><option value="reduced">Reduced</option><option value="off">Off: no shake, sway or roll</option></select></label><p>Text size, contrast and camera motion are saved on this device. Camera motion covers earthquake and rough-ground shake, weapon sway and bob, and the camera roll when you fall; it never changes aim or the rules. System Reduce Motion also turns it off. Combat uses visual aiming; menus and match status provide screen-reader text.</p>`,
     );
     g.$(".mf-textsize").value = String(this.accessibility.textScale);
     g.$(".mf-contrast").checked = this.accessibility.contrast;
-    for (const selector of [".mf-textsize", ".mf-contrast"])
+    g.$(".mf-cameramotion").value = this.accessibility.cameraMotion;
+    for (const selector of [".mf-textsize", ".mf-contrast", ".mf-cameramotion"])
       g.on(g.$(selector), "change", () => {
         this.accessibility.textScale = Number(g.$(".mf-textsize").value);
         this.accessibility.contrast = g.$(".mf-contrast").checked;
+        this.accessibility.cameraMotion = g.$(".mf-cameramotion").value;
         this.applyAccessibility();
         try {
           localStorage.setItem("midnry-outpost-accessibility", JSON.stringify(this.accessibility));
@@ -181,6 +184,8 @@ export class MenuUI {
     this.g.root.style.setProperty("--mf-text-scale", this.accessibility.textScale);
     this.g.shell.classList.toggle("mf-large-text", this.accessibility.textScale > 1);
     this.g.shell.classList.toggle("mf-high-contrast", this.accessibility.contrast);
+    // Read by the renderer (cameraMotionScale): shake, sway, bob and roll.
+    this.g.cameraMotion = this.accessibility.cameraMotion;
   }
   syncAccessibility() {
     const g = this.g,

@@ -99,25 +99,33 @@ ${S} .mf-super.mf-super-ready b { color: var(--mf-accent, #ffc857) !important; }
 @keyframes mf-sig-ready { 50% { box-shadow: 0 0 0 3px #ffc85777, 0 0 26px #ffc857dd, 0 2px 12px #0007; } }
 /* Touch controls. */
 ${S} .mf-touch button:is(.mf-fire, .mf-reload, .mf-stance, .mf-jump, .mf-scope) { position: absolute; display: grid !important; place-items: center; align-content: center; gap: 2px; padding: 0 !important; min-width: 0 !important; min-height: 0 !important; border: 2px solid #ffffffc0 !important; border-radius: 50% !important; background: #0b1015a6 !important; color: #fff !important; font: 700 11px/1 var(--mf-display) !important; letter-spacing: 0.06em !important; box-shadow: 0 2px 10px #0006 !important; transform: none; corner-shape: round !important; }
-${S} .mf-touch button:is(.mf-fire, .mf-reload, .mf-stance, .mf-jump, .mf-scope):active { transform: scale(0.94); filter: none; }
+${S} .mf-touch button:is(.mf-fire, .mf-reload, .mf-stance, .mf-jump, .mf-scope):active { transform: scale(0.94); filter: none; opacity: 1; }
+/* Settings → Touch button size / opacity. A pressed control is always fully visible.
+   Bigger than standard only where there is room (tablets); phones (and any
+   short landscape screen) cap at the standard size so nothing overlaps. */
+${S} { --mf-btnk: var(--mf-btn, 1); }
+@media (max-width: 599px), (max-height: 500px) { ${S} { --mf-btnk: min(var(--mf-btn, 1), 1); } }
+${S} .mf-bottom .mf-stat:first-child { bottom: calc(168px + (var(--mf-btnk, 1) - 1) * 154px + var(--mf-safe-bottom)); }
+${S} .mf-touch :is(button, .mf-stick), ${S} .mf-super { opacity: var(--mf-btn-alpha, 1); }
+${S} .mf-touch .mf-stick:active { opacity: 1; }
 ${S} .mf-touch :is(.mf-stance, .mf-jump, .mf-scope) i { width: 24px !important; height: 24px !important; }
 ${S} .mf-touch :is(.mf-fire, .mf-reload)::before { content: ""; width: 24px; height: 24px; background: currentColor; -webkit-mask: var(--mf-glyph) center / contain no-repeat; mask: var(--mf-glyph) center / contain no-repeat; }
-${S} .mf-touch button.mf-fire { right: calc(14px + var(--mf-safe-right)) !important; bottom: calc(128px + var(--mf-safe-bottom)) !important; width: 78px !important; height: 78px !important; border: 3px solid var(--mf-accent, #ffc857) !important; font-size: 15px !important; box-shadow: 0 0 16px #ffc85777, inset 0 0 12px #ffc85733 !important; --mf-glyph: ${mask(ICON.bullet, true)}; }
+${S} .mf-touch button.mf-fire { right: calc(14px * var(--mf-btnk, 1) + var(--mf-safe-right)) !important; bottom: calc(128px * var(--mf-btnk, 1) + var(--mf-safe-bottom)) !important; width: calc(78px * var(--mf-btnk, 1)) !important; height: calc(78px * var(--mf-btnk, 1)) !important; border: 3px solid var(--mf-accent, #ffc857) !important; font-size: 15px !important; box-shadow: 0 0 16px #ffc85777, inset 0 0 12px #ffc85733 !important; --mf-glyph: ${mask(ICON.bullet, true)}; }
 ${S} .mf-touch .mf-fire::before { width: 30px; height: 30px; }
-${S} .mf-touch button.mf-reload { right: calc(14px + var(--mf-safe-right)) !important; bottom: calc(72px + var(--mf-safe-bottom)) !important; width: 52px !important; height: 52px !important; font-size: 0 !important; --mf-glyph: ${mask(ICON.reload)}; }
+${S} .mf-touch button.mf-reload { right: calc(14px * var(--mf-btnk, 1) + var(--mf-safe-right)) !important; bottom: calc(72px * var(--mf-btnk, 1) + var(--mf-safe-bottom)) !important; width: calc(52px * var(--mf-btnk, 1)) !important; height: calc(52px * var(--mf-btnk, 1)) !important; font-size: 0 !important; --mf-glyph: ${mask(ICON.reload)}; }
 ${S} .mf-touch .mf-reload::before { width: 20px; height: 20px; }
 ${S} .mf-touch .mf-reload::after { content: "RELOAD"; font: 700 10px/1 var(--mf-display); letter-spacing: 0.06em; }
-${S} .mf-touch button.mf-stance { right: calc(98px + var(--mf-safe-right)) !important; bottom: calc(102px + var(--mf-safe-bottom)) !important; width: 54px !important; height: 54px !important; }
+${S} .mf-touch button.mf-stance { right: calc(98px * var(--mf-btnk, 1) + var(--mf-safe-right)) !important; bottom: calc(102px * var(--mf-btnk, 1) + var(--mf-safe-bottom)) !important; width: calc(54px * var(--mf-btnk, 1)) !important; height: calc(54px * var(--mf-btnk, 1)) !important; }
 ${S} .mf-touch .mf-stance span { font-size: 10px; }
 ${S} .mf-touch button.mf-stance:is([data-stance="crouch"], [data-stance="prone"]) { border-color: var(--mf-accent, #ffc857) !important; color: var(--mf-accent, #ffc857) !important; }
-${S} .mf-touch button.mf-scope { right: calc(100px + var(--mf-safe-right)) !important; bottom: calc(196px + var(--mf-safe-bottom)) !important; width: 52px !important; height: 52px !important; --mf-glyph: ${mask(ICON.crosshair)}; }
+${S} .mf-touch button.mf-scope { right: calc(100px * var(--mf-btnk, 1) + var(--mf-safe-right)) !important; bottom: calc(196px * var(--mf-btnk, 1) + var(--mf-safe-bottom)) !important; width: calc(52px * var(--mf-btnk, 1)) !important; height: calc(52px * var(--mf-btnk, 1)) !important; --mf-glyph: ${mask(ICON.crosshair)}; }
 ${S} .mf-touch .mf-scope span { font-size: 0; }
 ${S} .mf-touch .mf-scope span::after { content: "ADS"; font-size: 10px; }
 ${S} .mf-touch button.mf-scope[aria-pressed="true"] { border-color: var(--mf-accent, #ffc857) !important; background: #3a2c10d0 !important; color: var(--mf-accent, #ffc857) !important; }
-${S} .mf-touch button.mf-jump { right: calc(16px + var(--mf-safe-right)) !important; bottom: calc(216px + var(--mf-safe-bottom)) !important; width: 52px !important; height: 52px !important; --mf-glyph: ${mask(ICON.chevron)}; }
+${S} .mf-touch button.mf-jump { right: calc(16px * var(--mf-btnk, 1) + var(--mf-safe-right)) !important; bottom: calc(216px * var(--mf-btnk, 1) + var(--mf-safe-bottom)) !important; width: calc(52px * var(--mf-btnk, 1)) !important; height: calc(52px * var(--mf-btnk, 1)) !important; --mf-glyph: ${mask(ICON.chevron)}; }
 ${S} .mf-touch .mf-jump span { font-size: 10px; }
-${S} .mf-touch .mf-stick { left: calc(14px + var(--mf-safe-left)) !important; bottom: calc(30px + var(--mf-safe-bottom)) !important; width: 124px !important; height: 124px !important; border: 2px solid #ffffff59 !important; background: ${TICKS} center / 100% 100% no-repeat, radial-gradient(circle, #0b101540, #0b101580) !important; box-shadow: 0 2px 12px #0004; }
-${S} .mf-touch .mf-stick i { left: 50% !important; top: 50% !important; width: 46px !important; height: 46px !important; margin: -23px 0 0 -23px; border: 0 !important; background: radial-gradient(circle at 40% 35%, #f4f5f2, #c9ccc8) !important; box-shadow: 0 2px 8px #0006; }
+${S} .mf-touch .mf-stick { left: calc(14px * var(--mf-btnk, 1) + var(--mf-safe-left)) !important; bottom: calc(30px * var(--mf-btnk, 1) + var(--mf-safe-bottom)) !important; width: calc(124px * var(--mf-btnk, 1)) !important; height: calc(124px * var(--mf-btnk, 1)) !important; border: 2px solid #ffffff59 !important; background: ${TICKS} center / 100% 100% no-repeat, radial-gradient(circle, #0b101540, #0b101580) !important; box-shadow: 0 2px 12px #0004; }
+${S} .mf-touch .mf-stick i { left: 50% !important; top: 50% !important; width: calc(46px * var(--mf-btnk, 1)) !important; height: calc(46px * var(--mf-btnk, 1)) !important; margin: calc(-23px * var(--mf-btnk, 1)) 0 0 calc(-23px * var(--mf-btnk, 1)); border: 0 !important; background: radial-gradient(circle at 40% 35%, #f4f5f2, #c9ccc8) !important; box-shadow: 0 2px 8px #0006; }
 ${S} .mf-touch .mf-stick::before { content: "" !important; top: -20px !important; }
 ${S} .mf-touch .mf-stick.mf-run { border-color: var(--mf-accent, #ffc857) !important; box-shadow: 0 0 0 3px #ffc85740 !important; }
 ${S} .mf-touch .mf-stick.mf-run i { background: var(--mf-accent, #ffc857) !important; }
@@ -152,6 +160,8 @@ ${S}.mf-sigmode .mf-match { display: none !important; }
   ${S} .mf-super { bottom: calc(64px + var(--mf-safe-bottom)) !important; width: 64px !important; height: 64px !important; }
   ${S} .mf-super .mf-superico { inset: 17px; }
   ${S} .mf-supername { position: absolute; left: 50%; top: calc(100% + 28px); width: auto; height: auto; overflow: visible; clip-path: none; transform: translateX(-50%); color: #e6ebe7; font: 600 12px/1 var(--mf-display); letter-spacing: 0.1em; text-shadow: 0 1px 4px #000; }
+  ${S} .mf-supername { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  ${S} .mf-supername[data-key]::before { content: attr(data-key); display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box; border: 1px solid #ffffff59; border-radius: 4px; background: #0b0d0cb3; color: #ffc857; font: 700 12px/1 var(--mf-display); letter-spacing: 0; }
   ${S}.mf-sigmode .mf-match:not([hidden]) { display: block !important; top: calc(56px + var(--mf-safe-top)) !important; left: calc(14px + var(--mf-safe-left)) !important; max-width: none !important; padding: 7px 12px !important; border-radius: 10px !important; ${PILL} font: 600 14px/1 var(--mf-display) !important; letter-spacing: 0.06em !important; text-shadow: none; }
   ${S}.mf-sigmode.mf-shielded .mf-match { left: calc(84px + var(--mf-safe-left)) !important; }
   ${S}.mf-sigmode .mf-match :is(.mf-teamstat, .mf-zone) { display: none; }
@@ -238,7 +248,7 @@ export class SignalHud {
       const label = ready ? "READY" : Math.floor(charge) + "%";
       const b = button.querySelector("b");
       if (b && b.textContent !== label) b.textContent = label;
-      const name = button.querySelector(".mf-supername")?.textContent.replace(/^Q · /, "").trim().toLowerCase() || "special move";
+      const name = button.querySelector(".mf-supername")?.textContent.replace(/^[QX] · /, "").trim().toLowerCase() || "special move";
       this.set(this, "superLabel", `${ready ? "Use" : "Charging"} ${name}${ready ? ", ready" : `, ${Math.floor(charge)} percent`}`, (v) =>
         button.setAttribute("aria-label", v),
       );

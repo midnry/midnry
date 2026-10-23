@@ -3565,7 +3565,8 @@ export class MilitaryRenderer {
       g.deathSequence ? 1.65 - fall * 1.4 : this.eyeHeight + jumpLift(p, g.time) * SCALE,
       p.y * SCALE + (seatedPilot ? 0.85 : 0),
     );
-    this.camera.rotation.set(pitch - fall * 0.25, -p.a - Math.PI / 2, fall * 0.5, "YXZ");
+    const motionScale = this.cameraMotionScale();
+    this.camera.rotation.set(pitch - fall * 0.25 * motionScale, -p.a - Math.PI / 2, fall * 0.5 * motionScale, "YXZ");
     // Aiming down the sights: zoom in (more for long guns) and bring the gun
     // to the middle of the view. Aim math uses the look angle, not the FOV.
     this.adsBlend ??= 0;
@@ -3589,9 +3590,9 @@ export class MilitaryRenderer {
     if (g.mode === "protocol") (this.events ||= new EventDressing(this)).update(protocolView, t);
     updateNaturalLighting(this, protocolView, p, dt);
     const undim = g.mode !== "protocol" && (this.hazards ||= new HazardDressing(this)).dim();
-    if (g.arena.mapId === "medevac" && !this.motion.matches) {
+    if (g.arena.mapId === "medevac" && motionScale > 0) {
       const heading = Number(protocolView?.protocol?.mission?.vehicle?.heading) || 0;
-      this.camera.rotation.z = THREE.MathUtils.clamp(-heading * 0.055, -0.085, 0.085);
+      this.camera.rotation.z = THREE.MathUtils.clamp(-heading * 0.055, -0.085, 0.085) * motionScale;
     }
     this.updateActors(t);
     const takedown = (this.takedown ||= new VictimTakedown(this)).update(g);
@@ -3641,7 +3642,12 @@ export class MilitaryRenderer {
     this.updateProjectiles(t);
     this.updateWeapon();
     const combat = protocolView?.protocol?.phase === "combat",
-      recoil = g.mode === "protocol" && !combat ? 0 : Math.max(0, 1 - (t - p.shotAt) / 0.16),
+      // Kick: snaps back in the first ~20 ms, then settles with an ease-out
+      // (a straight linear return read as a jolt). Visual only; firing and
+      // aim are untouched.
+      kickAge = (t - p.shotAt) / 0.16,
+      recoil =
+        g.mode === "protocol" && !combat ? 0 : !(kickAge >= 0 && kickAge < 1) ? 0 : kickAge < 0.12 ? kickAge / 0.12 : (1 - (kickAge - 0.12) / 0.88) ** 2,
       reload = Math.max(0, Math.min(1, (p.reloadUntil - t) / 1.4));
     // Reloads tilt the gun towards the camera (magazine well in view) rather
     // than dropping it out of frame, so the magazine change can be seen.
@@ -3651,7 +3657,7 @@ export class MilitaryRenderer {
       (g.mode === "protocol" && !combat ? 0.075 : 0) -
       reloadTilt * 0.06 +
       (this.rigBase?.y || 0) +
-      (this.motion.matches ? 0 : Math.sin(g.step) * 0.005);
+      Math.sin(g.step) * 0.005 * motionScale;
     this.rig.position.y -= fall * 0.65;
     this.rig.position.z = (this.rigBase?.z || 0) + recoil * 0.04 + reloadTilt * 0.03;
     // Sights up: the gun slides toward the middle and rises a little.
@@ -3659,8 +3665,15 @@ export class MilitaryRenderer {
       sights = ADS_RIG[this.weaponId] || ADS_RIG.other;
     if (this.rigBase) this.rig.position.x = this.rigBase.x + (sights.x - this.rigBase.x) * ads;
     this.rig.position.y += ads * sights.y;
+    // Sway: the gun lags a touch behind fast turns and settles (less in
+    // the sights). Purely visual: the shot still goes where the camera looks.
+    const turn = Math.atan2(Math.sin(p.a - (this.lastAim ?? p.a)), Math.cos(p.a - (this.lastAim ?? p.a)));
+    this.lastAim = p.a;
+    const swayTarget = dt > 0 ? THREE.MathUtils.clamp((turn / dt) * 0.012, -0.05, 0.05) * motionScale * (1 - ads * 0.7) : 0;
+    this.sway = (this.sway || 0) + (swayTarget - (this.sway || 0)) * (1 - Math.exp(-dt * 12));
     this.rig.rotation.x = 0.02 - recoil * 0.075 + reloadTilt * 0.16;
-    this.rig.rotation.y = (this.rigBase?.yaw ?? -0.07) * (1 - (this.adsBlend || 0)) + reloadTilt * 0.1;
+    this.rig.rotation.y = (this.rigBase?.yaw ?? -0.07) * (1 - (this.adsBlend || 0)) + reloadTilt * 0.1 + this.sway;
+    this.rig.position.x += this.sway * 0.12;
     this.rig.rotation.z = -0.025 + reloadTilt * 0.5;
     this.flash.intensity = recoil > 0.65 ? 3 : 0;
     animateCarbine(this.rig.userData.carbine,reload,recoil);
@@ -3747,6 +3760,13 @@ export class MilitaryRenderer {
     });
   }
   /** The home lobby (its own small scene) while the home menu is open. */
+  /** Camera motion (Settings → Accessibility): 1 full, 0.4 reduced, 0 off.
+   * System Reduce Motion is always off. Scales shake, sway, bob and roll. */
+  cameraMotionScale() {
+    if (this.motion.matches) return 0;
+    const setting = this.g.cameraMotion;
+    return setting === "off" ? 0 : setting === "reduced" ? 0.4 : 1;
+  }
   renderLobby(now) {
     if (this.disposed || this.contextUnavailable || !this.soldier) return false;
     return (this.lobby ||= new LobbyStage(this)).render(now);

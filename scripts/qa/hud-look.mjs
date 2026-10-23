@@ -6,7 +6,11 @@
 import { chromium } from "playwright";
 import { pickGame, play } from "./lobby-helpers.mjs";
 import { mkdirSync } from "node:fs";
-mkdirSync("screenshots/qa/hud", { recursive: true });
+// HUD_LOOK='{"buttons":1.2,"buttonAlpha":0.6}' tries the touch size/opacity
+// settings; HUD_TAG names the photo folder (screenshots/qa/hud-<tag>).
+const LOOK = process.env.HUD_LOOK ? JSON.parse(process.env.HUD_LOOK) : null;
+const DIR = process.env.HUD_TAG ? `screenshots/qa/hud-${process.env.HUD_TAG}` : "screenshots/qa/hud";
+mkdirSync(DIR, { recursive: true });
 const URL = "http://127.0.0.1:8080/games/outpost-zero.html";
 const b = await chromium.launch({
   executablePath: "/opt/pw-browsers/chromium",
@@ -35,12 +39,17 @@ for (const [name, w, h, touch] of [
   ["portrait", 390, 844, true],
   ["landscape", 844, 390, true],
   ["desktop", 1280, 720, false],
+  // HUD_TABLET=1 adds a tablet in portrait (where bigger buttons apply).
+  ...(process.env.HUD_TABLET ? [["tablet", 820, 1180, true]] : []),
 ]) {
   const ctx = await b.newContext({ viewport: { width: w, height: h }, isMobile: touch, hasTouch: touch });
   const p = await ctx.newPage();
   p.on("pageerror", (e) => errors.push(`${name}: ${e.message}`));
   p.on("console", (m) => m.type() === "error" && errors.push(`${name}: console ${m.text()}`));
-  await p.addInitScript(() => localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 5 })));
+  await p.addInitScript((look) => {
+    localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 5 }));
+    if (look) localStorage.setItem("midnry-outpost-look", JSON.stringify(look));
+  }, LOOK);
   await p.goto(URL, { waitUntil: "domcontentloaded", timeout: 120000 });
   await p.waitForFunction(
     () => document.querySelector(".mf-start") && !document.querySelector(".mf-start").disabled,
@@ -117,7 +126,8 @@ for (const [name, w, h, touch] of [
     const outside = keys.filter((k) => boxes[k][0] < 0 || boxes[k][1] < 0 || boxes[k][2] > w || boxes[k][3] > h);
     const scrollW = await p.evaluate(() => document.documentElement.scrollWidth);
     report[`${name}-${shot}`] = { viewport: [w, h], boxes, overlaps, outside, horizontalOverflow: scrollW > w };
-    await p.screenshot({ path: `screenshots/qa/hud/${name}-${shot}.png` });
+    if (LOOK) report[`${name}-${shot}`].fireOpacity = await p.evaluate(() => getComputedStyle(document.querySelector(".mf-fire")).opacity);
+    await p.screenshot({ path: `${DIR}/${name}-${shot}.png` });
   }
   await ctx.close();
 }

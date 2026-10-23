@@ -991,20 +991,37 @@
       midnry-fps .mf-ads .mf-cross::after {
         display: none;
       }
+      /* Match messages: one restrained panel (charcoal, warm white text, the
+         first line as an amber title), never bare text over the scene. */
       midnry-fps .mf-toast {
         position: absolute;
         left: 50%;
         top: 62%;
         transform: translateX(-50%);
         width: max-content;
-        max-width: min(92%, 620px);
+        max-width: min(88%, 560px);
+        box-sizing: border-box;
         white-space: pre-line;
         text-align: center;
-        color: #ffca49;
-        font-weight: 900;
-        letter-spacing: 2px;
-        text-shadow: 2px 2px #000;
+        color: #ece6dc;
+        font: 500 14px/1.4 var(--mf-body, system-ui, sans-serif);
+        letter-spacing: 0;
+        text-shadow: none;
         pointer-events: none;
+      }
+      midnry-fps .mf-toast:not(:empty) {
+        padding: 9px 16px 10px;
+        border: 1px solid #ffffff1c;
+        border-radius: 8px;
+        background: #0b0d0cd9;
+        box-shadow: 0 8px 24px #0006;
+        backdrop-filter: blur(6px);
+      }
+      midnry-fps .mf-toast::first-line {
+        color: #ffc857;
+        font: 700 15px/1.6 var(--mf-display, system-ui, sans-serif);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
       }
       midnry-fps .mf-modal {
         z-index: 10;
@@ -5188,7 +5205,15 @@
             const weapon = weaponOf(p.weapon);
             this.$(".mf-ammo").firstChild.textContent = weapon.name.toUpperCase() + " ";
             this.$(".mf-super").disabled = p.hp <= 0 || p.charge < 100;
-            this.$(".mf-super").firstChild.textContent = "Q · " + weapon.super.toUpperCase() + " ";
+            // The special move's name; the key to press shows as a keycap
+            // (Q, or X on a controller) where the HUD has split the name out.
+            const superName = this.$(".mf-super").firstChild,
+              superKey = this.shell.dataset.input === "pad" ? "X" : "Q";
+            if (superName.nodeType === Node.TEXT_NODE) superName.textContent = superKey + " · " + weapon.super.toUpperCase() + " ";
+            else {
+              if (superName.textContent !== weapon.super.toUpperCase()) superName.textContent = weapon.super.toUpperCase();
+              if (superName.dataset.key !== superKey) superName.dataset.key = superKey;
+            }
             this.$(".mf-super b").textContent = Math.floor(p.charge || 0) + "%";
             const ready = p.hp > 0 && p.charge >= 100;
             this.$(".mf-super").classList.toggle("mf-super-ready", ready);
@@ -5215,9 +5240,11 @@
               : survival
                 ? `Survivors: ${this.combatants().filter((e) => e.hp > 0).length} / 8`
                 : `Sentries neutralized: ${this.enemies.filter((e) => e.hp <= 0).length} / ${this.enemies.length}`;
-            this.$(".mf-match").hidden = !survival;
+            // Secondary detail only when it means something: in a Last Signal
+            // round the cores chip appears once you have picked a core up.
+            this.$(".mf-match").hidden = !survival || (this.mode === "signal" && !p.cores);
             this.$(".mf-cores").textContent =
-              `CORES ${p.cores} / DMG ${Math.round(p.damage * (this.mode === "signal" ? SIGNAL.damage : 1))} / MAX HP ${p.maxHp}`;
+              `${p.cores} CORE${p.cores === 1 ? "" : "S"} · POWER ${Math.round(p.damage * (this.mode === "signal" ? SIGNAL.damage : 1))} · MAX HP ${p.maxHp}`;
             this.signalIntensity(p);
             this.$(".mf-teamstat").textContent = duo
               ? `REDEPLOYS LEFT ${p.respawns}${p.hp <= 0 ? (p.respawnAt ? " / IN " + Math.ceil(Math.max(0, p.respawnAt - this.time)) + "s" : " / SPECTATING") : ""}`

@@ -864,13 +864,15 @@ export class HazardDressing {
     const a = this.r.g.arena,
       d = a.disaster,
       p = this.r.g.camera();
-    if (this.r.motion.matches) return;
+    // Settings → Camera motion (and system Reduce Motion) scale all shake.
+    const scale = this.r.cameraMotionScale?.() ?? (this.r.motion.matches ? 0 : 1);
+    if (!scale) return;
     const moved = Math.hypot(p.x - (this.lastX ?? p.x), p.y - (this.lastY ?? p.y));
     this.lastX = p.x;
     this.lastY = p.y;
     const footing = a.footing?.(p) ?? 1;
     if (footing < 1 && moved > 0.002 && p.hp > 0) {
-      const k = (1 - footing) * 4;
+      const k = (1 - footing) * 4 * scale;
       camera.position.y += Math.abs(Math.sin(t * 11)) * 0.05 * k - 0.03 * k;
       camera.rotation.z += Math.sin(t * 5.5) * 0.012 * k;
     }
@@ -878,7 +880,7 @@ export class HazardDressing {
     // Ground motion: a few incommensurate frequencies in the 2–16 Hz band
     // so it never loops, scaled by the quake's strength and by jolts from
     // collapses nearby.
-    const amp = 0.08 * this.wx.quakeLevel();
+    const amp = 0.08 * this.wx.quakeLevel() * scale;
     if (!amp) return;
     camera.position.x += (Math.sin(t * 9.1) * 0.5 + Math.sin(t * 15.7 + 1.3) * 0.3 + Math.sin(t * 3.3 + 0.5) * 0.4) * amp;
     camera.position.z += (Math.sin(t * 8.3 + 4) * 0.5 + Math.sin(t * 13.9 + 2.2) * 0.3 + Math.sin(t * 2.6) * 0.3) * amp;

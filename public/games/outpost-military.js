@@ -28241,18 +28241,18 @@ var u_ = class {
 		};
 	}
 	shake(e, t) {
-		let n = this.r.g.arena, r = n.disaster, i = this.r.g.camera();
-		if (this.r.motion.matches) return;
-		let a = Math.hypot(i.x - (this.lastX ?? i.x), i.y - (this.lastY ?? i.y));
+		let n = this.r.g.arena, r = n.disaster, i = this.r.g.camera(), a = this.r.cameraMotionScale?.() ?? +!this.r.motion.matches;
+		if (!a) return;
+		let o = Math.hypot(i.x - (this.lastX ?? i.x), i.y - (this.lastY ?? i.y));
 		this.lastX = i.x, this.lastY = i.y;
-		let o = n.footing?.(i) ?? 1;
-		if (o < 1 && a > .002 && i.hp > 0) {
-			let n = (1 - o) * 4;
+		let s = n.footing?.(i) ?? 1;
+		if (s < 1 && o > .002 && i.hp > 0) {
+			let n = (1 - s) * 4 * a;
 			e.position.y += Math.abs(Math.sin(t * 11)) * .05 * n - .03 * n, e.rotation.z += Math.sin(t * 5.5) * .012 * n;
 		}
 		if (r?.kind !== "quake") return;
-		let s = .08 * this.wx.quakeLevel();
-		s && (e.position.x += (Math.sin(t * 9.1) * .5 + Math.sin(t * 15.7 + 1.3) * .3 + Math.sin(t * 3.3 + .5) * .4) * s, e.position.z += (Math.sin(t * 8.3 + 4) * .5 + Math.sin(t * 13.9 + 2.2) * .3 + Math.sin(t * 2.6) * .3) * s, e.position.y += (Math.sin(t * 11.3 + 2.1) * .5 + Math.sin(t * 6.1) * .3) * s * .5, e.rotation.z += (Math.sin(t * 7.7 + .7) * .6 + Math.sin(t * 2.9) * .4) * s * .22, e.rotation.x += Math.sin(t * 10.3 + 1.1) * s * .1);
+		let c = .08 * this.wx.quakeLevel() * a;
+		c && (e.position.x += (Math.sin(t * 9.1) * .5 + Math.sin(t * 15.7 + 1.3) * .3 + Math.sin(t * 3.3 + .5) * .4) * c, e.position.z += (Math.sin(t * 8.3 + 4) * .5 + Math.sin(t * 13.9 + 2.2) * .3 + Math.sin(t * 2.6) * .3) * c, e.position.y += (Math.sin(t * 11.3 + 2.1) * .5 + Math.sin(t * 6.1) * .3) * c * .5, e.rotation.z += (Math.sin(t * 7.7 + .7) * .6 + Math.sin(t * 2.9) * .4) * c * .22, e.rotation.x += Math.sin(t * 10.3 + 1.1) * c * .1);
 	}
 }, d_ = (e) => (e = Math.max(0, Math.min(1, e)), e * e * (3 - 2 * e)), f_ = new q("#d4ddff"), p_ = new q("#9aa8c4"), m_ = new q("#ff9a52"), h_ = new q("#d6aa70"), g_ = new q("#8a6a44"), __ = 64, v_;
 function y_(e, t, n) {
@@ -33139,27 +33139,29 @@ var av = class {
 		let i = e.camera(), a = e.cameraPitch, o = this.frameProtocolView, s = e.arena.mapId === "medevac" && o?.protocol?.mission?.vehicle?.pilotId === i.id, c = performance.now(), l = Math.min(.1, (c - (this.lastRenderAt || c)) / 1e3), u = i.slideUntil > e.time ? .7 : i.crouching ? 1.17 : 1.65 + Cm[Tm(i)].eye * $;
 		this.lastRenderAt = c, this.eyeHeight ??= 1.65, this.eyeHeight += (u - this.eyeHeight) * (1 - Math.exp(-l * 18));
 		let d = this.motion.matches ? 0 : (e.deathProgress || 0) ** 2;
-		this.camera.position.set(i.x * $, e.deathSequence ? 1.65 - d * 1.4 : this.eyeHeight + Dm(i, e.time) * $, i.y * $ + (s ? .85 : 0)), this.camera.rotation.set(a - d * .25, -i.a - Math.PI / 2, d * .5, "YXZ"), this.adsBlend ??= 0, this.adsBlend += (+!!e.aiming - this.adsBlend) * (this.motion.matches ? 1 : 1 - Math.exp(-l * 14)), this.adsBlend < .001 && (this.adsBlend = 0), this.adsZoom = 1 - this.adsBlend * (1 - (lv[this.weaponId] ?? .85));
-		let f = V.radToDeg(2 * Math.atan(Math.tan(e.verticalFov / 2) * this.adsZoom));
-		Math.abs(this.camera.fov - f) > .001 && (this.camera.fov = f, this.camera.updateProjectionMatrix()), (this.hazards ||= new u_(this)).shake(this.camera, t), this.updateProtocol(o, i), this.updateMedicalMission(o?.protocol?.mission, t);
-		let p = (this.night ||= new jg(this)).update(o, e.arena.mapId, t);
-		this.updateCinematic(p, t), this.clouds.update(t, p, this.motion.matches), this.canal?.update(t, this.motion.matches, +!!p, e.arena.waterShockUntil > e.arena.time, Mh(e.arena), this.protocolPowerOut), this.landmarks?.update(t, this.motion.matches), e.mode === "protocol" && (this.events ||= new Y_(this)).update(o, t), Of(this, o, i, l);
-		let m = e.mode !== "protocol" && (this.hazards ||= new u_(this)).dim();
-		if (e.arena.mapId === "medevac" && !this.motion.matches) {
+		this.camera.position.set(i.x * $, e.deathSequence ? 1.65 - d * 1.4 : this.eyeHeight + Dm(i, e.time) * $, i.y * $ + (s ? .85 : 0));
+		let f = this.cameraMotionScale();
+		this.camera.rotation.set(a - d * .25 * f, -i.a - Math.PI / 2, d * .5 * f, "YXZ"), this.adsBlend ??= 0, this.adsBlend += (+!!e.aiming - this.adsBlend) * (this.motion.matches ? 1 : 1 - Math.exp(-l * 14)), this.adsBlend < .001 && (this.adsBlend = 0), this.adsZoom = 1 - this.adsBlend * (1 - (lv[this.weaponId] ?? .85));
+		let p = V.radToDeg(2 * Math.atan(Math.tan(e.verticalFov / 2) * this.adsZoom));
+		Math.abs(this.camera.fov - p) > .001 && (this.camera.fov = p, this.camera.updateProjectionMatrix()), (this.hazards ||= new u_(this)).shake(this.camera, t), this.updateProtocol(o, i), this.updateMedicalMission(o?.protocol?.mission, t);
+		let m = (this.night ||= new jg(this)).update(o, e.arena.mapId, t);
+		this.updateCinematic(m, t), this.clouds.update(t, m, this.motion.matches), this.canal?.update(t, this.motion.matches, +!!m, e.arena.waterShockUntil > e.arena.time, Mh(e.arena), this.protocolPowerOut), this.landmarks?.update(t, this.motion.matches), e.mode === "protocol" && (this.events ||= new Y_(this)).update(o, t), Of(this, o, i, l);
+		let h = e.mode !== "protocol" && (this.hazards ||= new u_(this)).dim();
+		if (e.arena.mapId === "medevac" && f > 0) {
 			let e = Number(o?.protocol?.mission?.vehicle?.heading) || 0;
-			this.camera.rotation.z = V.clamp(-e * .055, -.085, .085);
+			this.camera.rotation.z = V.clamp(-e * .055, -.085, .085) * f;
 		}
 		this.updateActors(t);
-		let h = (this.takedown ||= new ig(this)).update(e);
-		(this.groundTrail ||= new Cg(this)).update(o, i, h, c), h || this.hideCameraBody(i), this.camera.updateMatrixWorld(!0), (this.worldVisibility ||= new _g(this)).update(i, h ? 1 : a, c), (this.identification ||= new Th(this)).update(o, i, h);
-		let g = e.protocolUI?.combatMarker, _ = o?.protocol?.phase === "combat" && o.protocol.combat, v = _ && e.arena.entities.find((e) => e.id === _.targetId);
-		if (g) {
-			let t = !h && !!v && v.id !== i.id && v.hp > 0 && Math.hypot(v.x - i.x, v.y - i.y) <= wh(o.protocol, o.time) && e.arena.visible(i, v);
+		let g = (this.takedown ||= new ig(this)).update(e);
+		(this.groundTrail ||= new Cg(this)).update(o, i, g, c), g || this.hideCameraBody(i), this.camera.updateMatrixWorld(!0), (this.worldVisibility ||= new _g(this)).update(i, g ? 1 : a, c), (this.identification ||= new Th(this)).update(o, i, g);
+		let _ = e.protocolUI?.combatMarker, v = o?.protocol?.phase === "combat" && o.protocol.combat, y = v && e.arena.entities.find((e) => e.id === v.targetId);
+		if (_) {
+			let t = !g && !!y && y.id !== i.id && y.hp > 0 && Math.hypot(y.x - i.x, y.y - i.y) <= wh(o.protocol, o.time) && e.arena.visible(i, y);
 			if (t) {
-				let e = (this.markerPoint ||= new W()).set(v.x * $, 2.06, v.y * $).project(this.camera);
-				t = e.z >= -1 && e.z <= 1 && Math.abs(e.x) < 1 && Math.abs(e.y) < 1, t && (g.style.left = `${(e.x * .5 + .5) * 100}%`, g.style.top = `${(-e.y * .5 + .5) * 100}%`, g.textContent = v.name);
+				let e = (this.markerPoint ||= new W()).set(y.x * $, 2.06, y.y * $).project(this.camera);
+				t = e.z >= -1 && e.z <= 1 && Math.abs(e.x) < 1 && Math.abs(e.y) < 1, t && (_.style.left = `${(e.x * .5 + .5) * 100}%`, _.style.top = `${(-e.y * .5 + .5) * 100}%`, _.textContent = y.name);
 			}
-			g.hidden = !t || this.identification?.root.hidden === !1 && this.identification.labels.get(v?.id)?.hidden === !1;
+			_.hidden = !t || this.identification?.root.hidden === !1 && this.identification.labels.get(y?.id)?.hidden === !1;
 		}
 		if (this.updatePickups(t), this.updateFields(), (this.hazards ||= new u_(this)).update(t), t < this.lastTime) {
 			this.seenShots.clear();
@@ -33167,25 +33169,29 @@ var av = class {
 			this.tracers = [];
 		}
 		this.updateProjectiles(t), this.updateWeapon();
-		let y = o?.protocol?.phase === "combat", b = e.mode === "protocol" && !y ? 0 : Math.max(0, 1 - (t - i.shotAt) / .16), x = Math.max(0, Math.min(1, (i.reloadUntil - t) / 1.4)), S = x > 0 ? Math.sin(x * Math.PI) : 0;
-		this.rig.position.y = -.185 * Math.max(1, this.g.h / this.g.w) - (e.mode === "protocol" && !y ? .075 : 0) - S * .06 + (this.rigBase?.y || 0) + (this.motion.matches ? 0 : Math.sin(e.step) * .005), this.rig.position.y -= d * .65, this.rig.position.z = (this.rigBase?.z || 0) + b * .04 + S * .03;
-		let C = this.adsBlend || 0, w = uv[this.weaponId] || uv.other;
-		this.rigBase && (this.rig.position.x = this.rigBase.x + (w.x - this.rigBase.x) * C), this.rig.position.y += C * w.y, this.rig.rotation.x = .02 - b * .075 + S * .16, this.rig.rotation.y = (this.rigBase?.yaw ?? -.07) * (1 - (this.adsBlend || 0)) + S * .1, this.rig.rotation.z = -.025 + S * .5, this.flash.intensity = b > .65 ? 3 : 0, Ch(this.rig.userData.carbine, x, b), this.rig.visible = (i.hp > 0 || !!e.deathSequence && e.deathProgress < .65) && !s && !h;
-		let T = !["training", "protocol"].includes(e.mode) && e.time > e.zone.delay && (Math.abs(i.x - e.zone.cx) > e.zone.half || Math.abs(i.y - e.zone.cy) > e.zone.half), E = e.mode === "protocol" && (o?.protocol?.events || []).some((e) => e.kind === "sandstorm"), D = e.mode !== "protocol" && (this.hazards ||= new u_(this)).weather();
-		if (this.scene.fog.color.set(E ? this.night?.active ? "#4a3f30" : "#b39a72" : this.night?.active ? "#121d2e" : T ? "#9a2a22" : e.mode === "protocol" && e.arena.mapId === "breakwater" ? "#cdbb9c" : (dv[e.arena.mapId] || dv.outpost).fog), this.scene.fog.density = E ? this.naturalLighting?.inside ? .05 : .09 : this.night?.active ? this.naturalLighting?.inside ? .01 : .026 : T ? mg : e.arena.mapId === "medevac" && !o?.protocol?.mission?.vehicle?.arrived ? .002 : .009, D) {
-			this.scene.fog.color.lerp((this.weatherFog ||= new q()).set(D.fog), D.k);
-			let e = this.naturalLighting?.inside ? D.density * .55 : D.density;
-			this.scene.fog.density += (e - this.scene.fog.density) * D.k;
+		let b = o?.protocol?.phase === "combat", x = (t - i.shotAt) / .16, S = e.mode === "protocol" && !b ? 0 : x >= 0 && x < 1 ? x < .12 ? x / .12 : (1 - (x - .12) / .88) ** 2 : 0, C = Math.max(0, Math.min(1, (i.reloadUntil - t) / 1.4)), w = C > 0 ? Math.sin(C * Math.PI) : 0;
+		this.rig.position.y = -.185 * Math.max(1, this.g.h / this.g.w) - (e.mode === "protocol" && !b ? .075 : 0) - w * .06 + (this.rigBase?.y || 0) + Math.sin(e.step) * .005 * f, this.rig.position.y -= d * .65, this.rig.position.z = (this.rigBase?.z || 0) + S * .04 + w * .03;
+		let T = this.adsBlend || 0, E = uv[this.weaponId] || uv.other;
+		this.rigBase && (this.rig.position.x = this.rigBase.x + (E.x - this.rigBase.x) * T), this.rig.position.y += T * E.y;
+		let D = Math.atan2(Math.sin(i.a - (this.lastAim ?? i.a)), Math.cos(i.a - (this.lastAim ?? i.a)));
+		this.lastAim = i.a;
+		let O = l > 0 ? V.clamp(D / l * .012, -.05, .05) * f * (1 - T * .7) : 0;
+		this.sway = (this.sway || 0) + (O - (this.sway || 0)) * (1 - Math.exp(-l * 12)), this.rig.rotation.x = .02 - S * .075 + w * .16, this.rig.rotation.y = (this.rigBase?.yaw ?? -.07) * (1 - (this.adsBlend || 0)) + w * .1 + this.sway, this.rig.position.x += this.sway * .12, this.rig.rotation.z = -.025 + w * .5, this.flash.intensity = S > .65 ? 3 : 0, Ch(this.rig.userData.carbine, C, S), this.rig.visible = (i.hp > 0 || !!e.deathSequence && e.deathProgress < .65) && !s && !g;
+		let k = !["training", "protocol"].includes(e.mode) && e.time > e.zone.delay && (Math.abs(i.x - e.zone.cx) > e.zone.half || Math.abs(i.y - e.zone.cy) > e.zone.half), A = e.mode === "protocol" && (o?.protocol?.events || []).some((e) => e.kind === "sandstorm"), j = e.mode !== "protocol" && (this.hazards ||= new u_(this)).weather();
+		if (this.scene.fog.color.set(A ? this.night?.active ? "#4a3f30" : "#b39a72" : this.night?.active ? "#121d2e" : k ? "#9a2a22" : e.mode === "protocol" && e.arena.mapId === "breakwater" ? "#cdbb9c" : (dv[e.arena.mapId] || dv.outpost).fog), this.scene.fog.density = A ? this.naturalLighting?.inside ? .05 : .09 : this.night?.active ? this.naturalLighting?.inside ? .01 : .026 : k ? mg : e.arena.mapId === "medevac" && !o?.protocol?.mission?.vehicle?.arrived ? .002 : .009, j) {
+			this.scene.fog.color.lerp((this.weatherFog ||= new q()).set(j.fog), j.k);
+			let e = this.naturalLighting?.inside ? j.density * .55 : j.density;
+			this.scene.fog.density += (e - this.scene.fog.density) * j.k;
 		}
-		E && (this.scene.background = (this.sandSky ||= new q()).copy(this.scene.fog.color)), this.renderer.shadowMap.enabled && (!this.lastShadowAt || c - this.lastShadowAt >= 1e3 / 30) && (this.renderer.shadowMap.needsUpdate = !0, this.lastShadowAt = c), this.renderer.info.reset(), (this.telemetry ||= new cg(this.renderer)).begin();
-		let O = o?.protocol?.phase === "combat" && o.time < o.protocol.combat?.startsAt, k = O && (this.battlePreparation ||= new av(this)).update(o);
-		return !O && this.battlePreparation && (this.battlePreparation.active = !1), k ? (this.identification.root.hidden = !0, this.renderer.autoClear = !0, this.renderer.render(this.battlePreparation.scene, this.battlePreparation.camera)) : !this.composer || e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), m && m(), this.telemetry.end(), this.metrics = {
+		A && (this.scene.background = (this.sandSky ||= new q()).copy(this.scene.fog.color)), this.renderer.shadowMap.enabled && (!this.lastShadowAt || c - this.lastShadowAt >= 1e3 / 30) && (this.renderer.shadowMap.needsUpdate = !0, this.lastShadowAt = c), this.renderer.info.reset(), (this.telemetry ||= new cg(this.renderer)).begin();
+		let ee = o?.protocol?.phase === "combat" && o.time < o.protocol.combat?.startsAt, M = ee && (this.battlePreparation ||= new av(this)).update(o);
+		return !ee && this.battlePreparation && (this.battlePreparation.active = !1), M ? (this.identification.root.hidden = !0, this.renderer.autoClear = !0, this.renderer.render(this.battlePreparation.scene, this.battlePreparation.camera)) : !this.composer || e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), h && h(), this.telemetry.end(), this.metrics = {
 			gpuMs: this.telemetry.gpuMs,
 			drawCalls: this.renderer.info.render.calls,
 			triangles: this.renderer.info.render.triangles,
 			...this.actorStats,
 			...this.worldStats
-		}, this.takedown.restoreActors(), h || this.hideCameraBody(i), this.lastTime = t, !0;
+		}, this.takedown.restoreActors(), g || this.hideCameraBody(i), this.lastTime = t, !0;
 	}
 	disposeObject(e) {
 		e.traverse((e) => {
@@ -33194,6 +33200,11 @@ var av = class {
 				for (let t of Array.isArray(e.material) ? e.material : [e.material]) t?.dispose();
 			}
 		});
+	}
+	cameraMotionScale() {
+		if (this.motion.matches) return 0;
+		let e = this.g.cameraMotion;
+		return e === "off" ? 0 : e === "reduced" ? .4 : 1;
 	}
 	renderLobby(e) {
 		return this.disposed || this.contextUnavailable || !this.soldier ? !1 : (this.lobby ||= new q_(this)).render(e);
