@@ -59,3 +59,5 @@ Last Signal match (Calder Quay) started on www.midnry.com with no page errors.
 Deployed again 2026-10-23: main = e3802f4 (`v=pause-overlays-20261023`): pause over the match, leftover warnings cleared.
 
 Deployed again 2026-10-23: main = 57a6d99 (`v=boot-lobby-20261023`): no old menu flash on load.
+
+Deployed again 2026-10-23: main = df7e52c (`v=settings-buttons-20261023`): readable Settings buttons.
