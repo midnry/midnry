@@ -980,4 +980,18 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
 - QA: `lobby-shot.mjs` (quick photo; HIDEUI, NOBLOOM, DPR, QA_BASE), `lobby-cost.mjs`, `settings-motion.mjs`,
   `sprint-probe.mjs` (game-time based; `signal-sprint-slide.mjs` is timing-noisy under SwiftShader),
   `hud-look.mjs` now takes HUD_LOOK / HUD_TAG / HUD_TABLET.
-- Bump the iframe `v=` cache key when this ships.
+- Deployed 2026-10-23 22:17 UTC as `4be9e4b` (owner: "deploy and do all 3"); live by 22:19, every game file
+  matched, the live lobby loads the modelled set at 1280 and 390@3x (the 401 is the signed-out stats fetch).
+
+## Polish pass step 2: arena skies, lobby yard and skyline, Dust Outpost dressing (2026-10-23, `outpost/polish-2026`, not deployed)
+
+- Skies: `SKIES` in `renderer.js` (`skyProfile()`); `sky-clouds.js` draws the arena's own sky (zenith /
+  horizonSky / sunGlow, haze band) when the profile has `zenith`, else the photo shows; `realism-lighting.js`
+  applies `sunElevation` from the calibrated `baseDirection`, sun / sky / ground colours and
+  `intensity`; `updateCinematic` applies the per-arena grade by day. Night, storms, sandstorm unchanged.
+- Lobby: `lobby-set.py` adds `yard` and `skyline`; `LobbyStage.loadSet()` materials `mesh`, `facade`,
+  `windows`; the JS skyline / gantry stand-ins hide on load.
+- Dust Outpost: `dust-set.py` → `arena-dust-set-v1.glb`; `ArenaStyle` loads `config.extraKit` (prop-*
+  pieces, named materials incl. `emissive`), dressing entries take a 4th `weight`; `group.userData.placed`
+  records placements for `scripts/qa/prop-closeup.mjs`.
+- Details and images: `docs/outpost-polish-2026/README.md` (step 2).

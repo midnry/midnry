@@ -233,6 +233,9 @@ export class LobbyStage {
           rubber: { color: "#1b1b1b", roughness: 0.9, metalness: 0 },
           chrome: { color: "#9a9a96", roughness: 0.25, metalness: 1 },
           grille: { color: "#2c2c2a", roughness: 0.55, metalness: 0.8 },
+          mesh: { color: "#3a3a38", roughness: 0.6, metalness: 0.7, transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false },
+          facade: { color: "#141114", roughness: 0.9, metalness: 0.1 },
+          windows: { color: "#2a1a0c", roughness: 0.6, metalness: 0, emissive: "#ffb35c", emissiveIntensity: 2.4 },
         };
         const made = new Map();
         const material = (name) => {

@@ -16292,7 +16292,7 @@ af.ReflectorShader = {
 };
 //#endregion
 //#region public/games/outpost-asset-manifest.js
-var of = "outpost-assets-588456f0a5077a33", sf = "a86961619e08723a", cf = Object.freeze({
+var of = "outpost-assets-681d9f89c0373873", sf = "a86961619e08723a", cf = Object.freeze({
 	concrete: {
 		roughness: .9,
 		metalness: 0,
@@ -16492,42 +16492,51 @@ function Df(e, t) {
 	}
 	if (s < 0) return;
 	let d = ((s + .5) / r.width - .5) * Math.PI * 2, p = ((n.flipY ? 1 - (c + .5) / r.height : (c + .5) / r.height) - .5) * Math.PI;
-	t.direction.set(Math.cos(p) * Math.cos(d), Math.sin(p), Math.cos(p) * Math.sin(d));
+	t.direction.set(Math.cos(p) * Math.cos(d), Math.sin(p), Math.cos(p) * Math.sin(d)), t.baseDirection = t.direction.clone(), t.calibratedFor = null;
 }
 function Of(e, t, n, r = 1 / 60) {
 	e.naturalLighting || Ef(e);
 	let i = e.naturalLighting, a = e.g.academy.options, o = t?.protocol, s = e.g.mode === "protocol" ? e.protocolMetadata?.() : null, c = e.realismDecor?.rooms, l = Number(n?.x) * wf, u = Number(n?.y) * wf;
 	if (!Number.isFinite(l) || !Number.isFinite(u)) return;
-	if (Df(e, i), i.metadata !== s || i.decorRooms !== c) {
+	Df(e, i);
+	let d = e.skyProfile?.()?.sunElevation ?? null;
+	if (i.baseDirection && i.calibratedFor !== (e.g.arena?.mapId ?? null)) {
+		i.calibratedFor = e.g.arena?.mapId ?? null;
+		let t = i.baseDirection, n = Math.atan2(t.z, t.x), r = d == null ? Math.asin(t.y) : V.degToRad(d);
+		i.direction.set(Math.cos(r) * Math.cos(n), Math.sin(r), Math.cos(r) * Math.sin(n));
+	}
+	if (i.metadata !== s || i.decorRooms !== c) {
 		i.metadata = s, i.decorRooms = c, i.rooms = [];
 		for (let e of s?.rooms || []) i.rooms.push(e);
 		for (let e of s?.corridors || []) i.rooms.push(e);
 		for (let e of c || []) i.rooms.push(e);
 	}
-	let d = gf(s, n.x, n.y);
+	let f = gf(s, n.x, n.y);
 	for (let e of i.rooms) {
-		if (d) break;
+		if (f) break;
 		if (e.roofed !== !1 && n.x >= e.x && n.x < e.x + e.w && n.y >= e.y && n.y < e.y + e.h) {
-			d = e;
+			f = e;
 			break;
 		}
 	}
-	let f = !!d, p = e.g.mode === "protocol" && Number(o?.sabotage?.powerUntil) > e.g.time, m = !!a.lighting, h = !!o?.mission?.vehicle?.arrived, g = !!e.night?.active;
-	i.inside = f, i.roomId = d?.id || null, i.powerOut = p;
-	let _ = Tf(r, i.initialized), v = (e, t, n) => {
-		e[t] = i.initialized ? e[t] + (n - e[t]) * _ : n;
-	}, y = `${e.g.arena.mapId}:${d?.id || "outside"}`, b = e.bakedRoomProbes.get(y);
-	if (!b) {
-		if (b = new es(), d) {
-			let t = new q(e.g.arena.mapId === "medevac" ? "#b6bebc" : "#b7ad96"), n = .17 / Math.sqrt(Math.max(1, d.w * d.h / 10));
-			b.coefficients[0].set(t.r, t.g, t.b).multiplyScalar(n), b.coefficients[1].copy(b.coefficients[0]).multiplyScalar(.22);
+	let p = !!f, m = e.g.mode === "protocol" && Number(o?.sabotage?.powerUntil) > e.g.time, h = !!a.lighting, g = !!o?.mission?.vehicle?.arrived, _ = !!e.night?.active;
+	i.inside = p, i.roomId = f?.id || null, i.powerOut = m;
+	let v = Tf(r, i.initialized), y = (e, t, n) => {
+		e[t] = i.initialized ? e[t] + (n - e[t]) * v : n;
+	}, b = `${e.g.arena.mapId}:${f?.id || "outside"}`, x = e.bakedRoomProbes.get(b);
+	if (!x) {
+		if (x = new es(), f) {
+			let t = new q(e.g.arena.mapId === "medevac" ? "#b6bebc" : "#b7ad96"), n = .17 / Math.sqrt(Math.max(1, f.w * f.h / 10));
+			x.coefficients[0].set(t.r, t.g, t.b).multiplyScalar(n), x.coefficients[1].copy(x.coefficients[0]).multiplyScalar(.22);
 		}
-		e.bakedRoomProbes.set(y, b);
+		e.bakedRoomProbes.set(b, x);
 	}
-	for (let t = 0; t < 9; t++) e.roomBounce.sh.coefficients[t].lerp(b.coefficients[t], _);
-	v(e.roomBounce, "intensity", p ? .06 : g ? f ? .85 : .2 : 1), e.sun.color.set(g ? "#9fb6e2" : "#ffeccf"), e.hemisphere.color.set(g ? "#2e4468" : "#cad9e1"), e.hemisphere.groundColor.set(g ? "#1d1914" : "#746c5c"), e.rim.visible = !1, e.rim.intensity = 0, v(e.sun, "intensity", g ? f && !a.shadows ? .12 : .32 : f && !a.shadows ? p ? .16 : .42 : m ? 3.1 : 2.05), v(e.hemisphere, "intensity", f ? p ? .09 : g ? .08 : .18 : g ? .12 : m ? .32 : .46), v(e.scene, "environmentIntensity", f ? p ? .065 : g ? .07 : .2 : g ? .07 : .48), e.scene.backgroundIntensity = g ? 1 : .58, v(e.renderer, "toneMappingExposure", g ? 1.08 : f ? .96 : .91);
-	let x = Math.min(e.profile?.maxShadowSize || 2048, e.g.academy.preset === "high" ? 2048 : 1024);
-	e.renderer.shadowMap.enabled = !!a.shadows, e.sun.castShadow = !!a.shadows, e.sun.shadow.mapSize.x !== x && (e.sun.shadow.mapSize.set(x, x), e.sun.shadow.map?.dispose(), e.sun.shadow.map = null), (i.span !== 26 || e.sun.shadow.camera.right !== 26) && (i.span = 26, Object.assign(e.sun.shadow.camera, {
+	for (let t = 0; t < 9; t++) e.roomBounce.sh.coefficients[t].lerp(x.coefficients[t], v);
+	y(e.roomBounce, "intensity", m ? .06 : _ ? p ? .85 : .2 : 1);
+	let S = e.skyProfile?.();
+	e.sun.color.set(_ ? "#9fb6e2" : S?.sun || "#ffeccf"), e.hemisphere.color.set(_ ? "#2e4468" : S?.skyLight || "#cad9e1"), e.hemisphere.groundColor.set(_ ? "#1d1914" : S?.groundLight || "#746c5c"), e.rim.visible = !1, e.rim.intensity = 0, y(e.sun, "intensity", _ ? p && !a.shadows ? .12 : .32 : p && !a.shadows ? m ? .16 : .42 : h ? 3.1 : 2.05), y(e.hemisphere, "intensity", p ? m ? .09 : _ ? .08 : .18 : _ ? .12 : h ? .32 : .46), y(e.scene, "environmentIntensity", p ? m ? .065 : _ ? .07 : .2 : _ ? .07 : .48), e.scene.backgroundIntensity = _ ? 1 : S?.intensity ?? .58, y(e.renderer, "toneMappingExposure", _ ? 1.08 : p ? .96 : .91);
+	let C = Math.min(e.profile?.maxShadowSize || 2048, e.g.academy.preset === "high" ? 2048 : 1024);
+	e.renderer.shadowMap.enabled = !!a.shadows, e.sun.castShadow = !!a.shadows, e.sun.shadow.mapSize.x !== C && (e.sun.shadow.mapSize.set(C, C), e.sun.shadow.map?.dispose(), e.sun.shadow.map = null), (i.span !== 26 || e.sun.shadow.camera.right !== 26) && (i.span = 26, Object.assign(e.sun.shadow.camera, {
 		left: -26,
 		right: 26,
 		top: 26,
@@ -16535,16 +16544,16 @@ function Of(e, t, n, r = 1 / 60) {
 		near: .1,
 		far: 145
 	}), e.sun.shadow.camera.updateProjectionMatrix()), i.focus.set(l, .65, u), i.right.set(i.direction.z, 0, -i.direction.x).normalize(), i.up.crossVectors(i.direction, i.right).normalize();
-	let S = 52 / x, C = i.focus.dot(i.right), w = i.focus.dot(i.up);
-	i.focus.addScaledVector(i.right, Math.round(C / S) * S - C), i.focus.addScaledVector(i.up, Math.round(w / S) * S - w), e.sun.target.position.copy(i.focus), e.sun.position.copy(i.focus).addScaledVector(i.direction, 72), e.sun.target.updateMatrixWorld(), i.fixtureIndices.fill(-1), i.fixtureDistances.fill(Infinity);
-	let T = g && e.night?.root.visible ? e.night.lamps : null;
-	(i.fixtureSource !== e.protocolFixtures || i.fixtureLamps !== T) && (i.fixtureSource = e.protocolFixtures, i.fixtureLamps = T, i.fixtures = T?.length ? e.protocolFixtures.concat(T) : e.protocolFixtures);
-	let E = i.fixtures;
-	if (!p) for (let e = 0; e < E.length; e++) {
-		let t = E[e];
-		if (t.arrivalOnly && !h) continue;
-		let n = d && t.x >= d.x * wf && t.x < (d.x + d.w) * wf && t.z >= d.y * wf && t.z < (d.y + d.h) * wf;
-		if (!n && !(h && t.arrivalOnly) && (!t.outdoor || d)) continue;
+	let w = 52 / C, T = i.focus.dot(i.right), E = i.focus.dot(i.up);
+	i.focus.addScaledVector(i.right, Math.round(T / w) * w - T), i.focus.addScaledVector(i.up, Math.round(E / w) * w - E), e.sun.target.position.copy(i.focus), e.sun.position.copy(i.focus).addScaledVector(i.direction, 72), e.sun.target.updateMatrixWorld(), i.fixtureIndices.fill(-1), i.fixtureDistances.fill(Infinity);
+	let D = _ && e.night?.root.visible ? e.night.lamps : null;
+	(i.fixtureSource !== e.protocolFixtures || i.fixtureLamps !== D) && (i.fixtureSource = e.protocolFixtures, i.fixtureLamps = D, i.fixtures = D?.length ? e.protocolFixtures.concat(D) : e.protocolFixtures);
+	let O = i.fixtures;
+	if (!m) for (let e = 0; e < O.length; e++) {
+		let t = O[e];
+		if (t.arrivalOnly && !g) continue;
+		let n = f && t.x >= f.x * wf && t.x < (f.x + f.w) * wf && t.z >= f.y * wf && t.z < (f.y + f.h) * wf;
+		if (!n && !(g && t.arrivalOnly) && (!t.outdoor || f)) continue;
 		let r = t.x - l, a = t.z - u, o = r * r + a * a + (n ? 0 : 80);
 		if (!(o > 360)) {
 			for (let t = 0; t < i.fixtureIndices.length; t++) if (o < i.fixtureDistances[t]) {
@@ -16568,12 +16577,12 @@ function Of(e, t, n, r = 1 / 60) {
 	for (let t = 0; t < e.protocolLights.length; t++) {
 		let n = e.protocolLights[t], r = i.desiredFixtures[t];
 		(!i.initialized || i.activeFixtures[t] !== r && n.intensity < .15) && (i.activeFixtures[t] = r, n.intensity = 0);
-		let a = E[i.activeFixtures[t]];
-		n.visible = !0, v(n, "intensity", a && i.activeFixtures[t] === r && !p ? a.intensity ?? (a.outdoor ? 34 : g ? m ? 26 : 21 : m ? 22 : 18) : 0), n.color.set(a?.color || (a?.outdoor ? "#ffbf7a" : g ? "#ffd6a6" : "#e2ebdf")), n.distance = a?.distance || (a?.outdoor ? 16 : 13), a && n.position.set(a.x, a.y, a.z);
+		let a = O[i.activeFixtures[t]];
+		n.visible = !0, y(n, "intensity", a && i.activeFixtures[t] === r && !m ? a.intensity ?? (a.outdoor ? 34 : _ ? h ? 26 : 21 : h ? 22 : 18) : 0), n.color.set(a?.color || (a?.outdoor ? "#ffbf7a" : _ ? "#ffd6a6" : "#e2ebdf")), n.distance = a?.distance || (a?.outdoor ? 16 : 13), a && n.position.set(a.x, a.y, a.z);
 	}
-	if (v(e.weaponScene, "environmentIntensity", f ? p ? .065 : g ? .08 : .22 : g ? .08 : .48), i.weaponSky && (i.weaponSky.color.copy(e.hemisphere.color), i.weaponSky.groundColor.copy(e.hemisphere.groundColor), v(i.weaponSky, "intensity", f ? p ? .12 : g ? .14 : .28 : g ? .14 : .58)), i.weaponKey) {
-		let t = E[i.fixtureIndices[0]];
-		t && f ? i.localDirection.set(t.x - l, t.y - 1.65, t.z - u).normalize() : i.localDirection.copy(i.direction), e.camera.updateMatrixWorld(), i.localDirection.transformDirection(e.camera.matrixWorldInverse), i.weaponKey.position.lerp(i.localDirection.multiplyScalar(5), _), i.weaponKey.color.lerp(t && f ? e.protocolLights[0].color : e.sun.color, _), v(i.weaponKey, "intensity", f ? p ? .35 : 1.1 : g ? .45 : m ? 2.65 : 2.05);
+	if (y(e.weaponScene, "environmentIntensity", p ? m ? .065 : _ ? .08 : .22 : _ ? .08 : .48), i.weaponSky && (i.weaponSky.color.copy(e.hemisphere.color), i.weaponSky.groundColor.copy(e.hemisphere.groundColor), y(i.weaponSky, "intensity", p ? m ? .12 : _ ? .14 : .28 : _ ? .14 : .58)), i.weaponKey) {
+		let t = O[i.fixtureIndices[0]];
+		t && p ? i.localDirection.set(t.x - l, t.y - 1.65, t.z - u).normalize() : i.localDirection.copy(i.direction), e.camera.updateMatrixWorld(), i.localDirection.transformDirection(e.camera.matrixWorldInverse), i.weaponKey.position.lerp(i.localDirection.multiplyScalar(5), v), i.weaponKey.color.lerp(t && p ? e.protocolLights[0].color : e.sun.color, v), y(i.weaponKey, "intensity", p ? m ? .35 : 1.1 : _ ? .45 : h ? 2.65 : 2.05);
 	}
 	i.initialized = !0;
 }
@@ -28431,8 +28440,36 @@ var b_ = (e, t, n) => {
 				color: "#3c4236",
 				metalness: .5,
 				roughness: .55
+			},
+			olive: {
+				color: "#868a62",
+				metalness: .3,
+				roughness: .6
+			},
+			rubber: {
+				color: "#2a2a27",
+				metalness: 0,
+				roughness: .9
+			},
+			tarp: {
+				color: "#b9a476",
+				metalness: 0,
+				roughness: .95
+			},
+			net: {
+				color: "#6f7d52",
+				metalness: 0,
+				roughness: 1
+			},
+			lamp: {
+				color: "#fff0d0",
+				metalness: 0,
+				roughness: .4,
+				emissive: "#ffd9a0",
+				emissiveIntensity: 1.6
 			}
 		},
+		extraKit: "arena-dust-set-v1",
 		ground: {
 			set: "desert-ground",
 			tile: 2.5,
@@ -28440,6 +28477,36 @@ var b_ = (e, t, n) => {
 		},
 		walls: {},
 		dressing: [
+			[
+				"prop-power",
+				.7,
+				1,
+				.5
+			],
+			[
+				"prop-tank",
+				.75,
+				1,
+				.5
+			],
+			[
+				"prop-radio",
+				.6,
+				1,
+				.4
+			],
+			[
+				"prop-lean",
+				.8,
+				1,
+				.5
+			],
+			[
+				"prop-stack",
+				.7,
+				1,
+				.5
+			],
 			["metal_jerrycan", .35],
 			["metal_jerrycan_green", .35],
 			["plastic_jerrycan", .35],
@@ -28700,43 +28767,50 @@ var F_ = class {
 			n.ground
 		].map((e) => e.set).filter(Boolean));
 		return this.loading = (async () => {
-			let [e, o] = await Promise.all([
+			let [e, o, s] = await Promise.all([
 				a.loadAsync(i(`models/${n.kit}.glb`)),
 				a.loadAsync(i(`models/${n.props}.glb`)),
+				n.extraKit ? a.loadAsync(i(`models/${n.extraKit}.glb`)).catch(() => null) : null,
 				...[...l].map(c)
-			]), s = (e) => {
+			]), u = (e) => {
 				let n = new $a({
 					vertexColors: !0,
 					metalness: e.metalness ?? 0,
 					roughness: e.roughness ?? 1,
-					color: e.color
+					color: e.color,
+					...e.emissive ? {
+						emissive: e.emissive,
+						emissiveIntensity: e.emissiveIntensity ?? 1
+					} : {}
 				});
 				return e.normalScale != null && n.normalScale.set(e.normalScale, e.normalScale), n.userData.world = !0, t.materials.add(n), n;
 			};
 			this.materials = {};
 			for (let [e, t] of Object.entries(n.materials)) {
-				let n = s(t);
+				let n = u(t);
 				t.set && Object.assign(n, await c(t.set)), this.materials[e] = n;
 			}
-			this.pieces = {}, this.props = /* @__PURE__ */ new Map(), e.scene.updateMatrixWorld(!0), e.scene.traverse((t) => {
-				if (!t.isMesh) return;
-				let n = t;
-				for (; n.parent && n.parent !== e.scene;) n = n.parent;
-				let i = t.geometry.clone().applyMatrix4(t.matrixWorld), a = i.getAttribute("color");
+			this.pieces = {}, this.props = /* @__PURE__ */ new Map();
+			for (let t of [e, s]) t && (t.scene.updateMatrixWorld(!0), t.scene.traverse((e) => {
+				if (!e.isMesh) return;
+				let n = e;
+				for (; n.parent && n.parent !== t.scene;) n = n.parent;
+				let i = e.geometry.clone().applyMatrix4(e.matrixWorld), a = i.getAttribute("color");
 				if (a) for (let e = 0; e < a.count; e++) {
 					let t = .55 + .45 * a.getX(e);
 					a.setXYZ(e, t, t, t);
 				}
 				let o = {
 					geometry: i,
-					material: this.materials[t.material.name] || this.materials[Object.keys(this.materials)[0]]
+					material: this.materials[e.material.name] || this.materials[Object.keys(this.materials)[0]]
 				};
 				if (n.name.startsWith("prop-")) {
 					this.props.has(n.name) || this.props.set(n.name, new X());
 					let e = new Y(i, o.material);
 					e.castShadow = r, this.props.get(n.name).add(e);
 				} else (this.pieces[n.name] ||= []).push(o);
-			}), o.scene.traverse((e) => {
+			}));
+			o.scene.traverse((e) => {
 				e.isMesh && (e.castShadow = r, e.receiveShadow = !0, e.material.userData.world = !0);
 			});
 			for (let e of o.scene.children) {
@@ -28765,7 +28839,13 @@ var F_ = class {
 			console.warn(`Arena art unavailable (${this.id})`, e), this.failed = !0;
 		}), this.loading;
 	}
-}, I_ = class {
+};
+function I_(e, t) {
+	let n = t * e.reduce((e, t) => e + (t[3] ?? 1), 0);
+	for (let t of e) if (n -= t[3] ?? 1, n < 0) return t;
+	return e[e.length - 1];
+}
+var L_ = class {
 	constructor(e, t, n) {
 		this.r = e, this.asset = t, this.version = n, this.styles = new Map(Object.keys(P_).map((r) => [r, new F_(e, r, t, n)]));
 	}
@@ -28849,6 +28929,7 @@ var F_ = class {
 		if (!r?.props?.size) return;
 		let i = r.config.dressing, a = n.length, o = (e, t) => n[t]?.[e] === 0, s = 1234, c = () => (s = s * 16807 % 2147483647) / 2147483647, l = new X();
 		l.name = "Arena props";
+		let u = l.userData.placed = [];
 		for (let e = 1; e < a - 1; e++) for (let t = 1; t < a - 1; t++) {
 			if (!o(t, e) || c() > .13) continue;
 			let n = [
@@ -28860,20 +28941,27 @@ var F_ = class {
 			if (n.length !== 1) continue;
 			let [a, s] = n[0];
 			if (!o(t - a, e - s)) continue;
-			let [u, d, f = 1] = i[Math.floor(c() * i.length)], p = r.props.get(u);
-			if (!p) continue;
-			let m = p.clone();
-			m.scale.setScalar(f);
-			let h = (c() - .5) * .6, g = t + .5 + a * (.5 - d / N_ / 2 - .02) + (s ? h : 0), _ = e + .5 + s * (.5 - d / N_ / 2 - .02) + (a ? h : 0);
-			m.position.set(g * N_, 0, _ * N_), m.rotation.y = Math.atan2(a, s) + (c() - .5) * .6, l.add(m);
+			let [d, f, p = 1] = I_(i, c()), m = r.props.get(d);
+			if (!m) continue;
+			let h = m.clone();
+			h.scale.setScalar(p);
+			let g = (c() - .5) * .6, _ = t + .5 + a * (.5 - f / N_ / 2 - .02) + (s ? g : 0), v = e + .5 + s * (.5 - f / N_ / 2 - .02) + (a ? g : 0);
+			h.position.set(_ * N_, 0, v * N_), h.rotation.y = Math.atan2(a, s) + (c() - .5) * .6, l.add(h), u.push({
+				asset: d,
+				tile: [t, e],
+				x: _ * N_,
+				z: v * N_,
+				dx: a,
+				dy: s
+			});
 		}
 		return t.add(l), Tp(l), l;
 	}
-}, L_ = "\nvarying vec3 vDir;\nvoid main() {\n  vDir = position;\n  vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n  gl_Position = p;\n}", R_ = "\nuniform float time;\nuniform float coverage;\nuniform float opacity;\nuniform vec3 sunDir;\nuniform vec3 lit;\nuniform vec3 shade;\nvarying vec3 vDir;\nfloat hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\nfloat noise(vec2 p) {\n  vec2 i = floor(p), f = fract(p);\n  vec2 u = f * f * (3.0 - 2.0 * f);\n  return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);\n}\nfloat fbm(vec2 p) {\n  float v = 0.0, a = 0.5;\n  for (int i = 0; i < OCTAVES; i++) { v += a * noise(p); p = p * 2.03 + vec2(1.7, 9.2); a *= 0.5; }\n  return v;\n}\nfloat density(vec2 uv) {\n  // Large shapes drift with the wind; detail boils a little faster.\n  float n = fbm(uv + vec2(time * 0.012, time * 0.004));\n  n += 0.35 * (fbm(uv * 3.1 - vec2(time * 0.03, 0.0)) - 0.5);\n  return smoothstep(coverage, coverage + 0.32, n);\n}\nvoid main() {\n  vec3 d = normalize(vDir);\n  if (d.y < 0.015) discard;\n  // Project onto a flat cloud deck: distant clouds bunch towards the horizon.\n  vec2 uv = d.xz / (d.y + 0.12) * 1.6;\n  float c = density(uv);\n  if (c < 0.004) discard;\n  // Self-shadow: how much cloud lies between this point and the sun.\n  float towardSun = density(uv + normalize(sunDir.xz + 1e-4) * 0.09);\n  float light = clamp(1.0 - towardSun * 0.75 + (1.0 - c) * 0.35, 0.0, 1.0);\n  float rim = pow(max(dot(d, normalize(sunDir)), 0.0), 6.0) * (1.0 - c) * 1.4;\n  vec3 color = mix(shade, lit, light) + lit * rim;\n  float horizon = smoothstep(0.015, 0.22, d.y);\n  gl_FragColor = vec4(color, c * horizon * opacity);\n  #include <colorspace_fragment>\n}", z_ = class {
+}, R_ = "\nvarying vec3 vDir;\nvoid main() {\n  vDir = position;\n  vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0);\n  gl_Position = p;\n}", z_ = "\nuniform float time;\nuniform float coverage;\nuniform float opacity;\nuniform vec3 sunDir;\nuniform vec3 lit;\nuniform vec3 shade;\nuniform vec3 haze;\nuniform float hazeAlpha;\nuniform float hazeHeight;\nuniform vec3 zenith;\nuniform vec3 horizonSky;\nuniform vec3 sunGlow;\nuniform float skyAlpha;\nvarying vec3 vDir;\nfloat hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\nfloat noise(vec2 p) {\n  vec2 i = floor(p), f = fract(p);\n  vec2 u = f * f * (3.0 - 2.0 * f);\n  return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);\n}\nfloat fbm(vec2 p) {\n  float v = 0.0, a = 0.5;\n  for (int i = 0; i < OCTAVES; i++) { v += a * noise(p); p = p * 2.03 + vec2(1.7, 9.2); a *= 0.5; }\n  return v;\n}\nfloat density(vec2 uv) {\n  // Large shapes drift with the wind; detail boils a little faster.\n  float n = fbm(uv + vec2(time * 0.012, time * 0.004));\n  n += 0.35 * (fbm(uv * 3.1 - vec2(time * 0.03, 0.0)) - 0.5);\n  return smoothstep(coverage, coverage + 0.32, n);\n}\nvoid main() {\n  vec3 d = normalize(vDir);\n  if (d.y < 0.0) discard;\n  // The arena's own haze: a warm (or cool) band over the photograph's\n  // grey horizon, fading out with height. It gives each map its colour.\n  float band = (1.0 - smoothstep(0.0, hazeHeight, d.y)) * hazeAlpha;\n  // Project onto a flat cloud deck: distant clouds bunch towards the horizon.\n  vec2 uv = d.xz / (d.y + 0.12) * 1.6;\n  float c = d.y < 0.015 ? 0.0 : density(uv);\n  if (c < 0.004 && band < 0.004) discard;\n  // Self-shadow: how much cloud lies between this point and the sun.\n  float towardSun = density(uv + normalize(sunDir.xz + 1e-4) * 0.09);\n  float light = clamp(1.0 - towardSun * 0.75 + (1.0 - c) * 0.35, 0.0, 1.0);\n  float rim = pow(max(dot(d, normalize(sunDir)), 0.0), 6.0) * (1.0 - c) * 1.4;\n  vec3 color = mix(shade, lit, light) + lit * rim;\n  float horizon = smoothstep(0.015, 0.22, d.y);\n  float cloud = c * horizon * opacity;\n  // The arena's own sky (skyAlpha 1): a gradient from the horizon colour to\n  // the zenith, the sun's glow, then the clouds and the haze band over it.\n  // With skyAlpha 0 the photographed sky shows through as before.\n  float s = max(dot(d, normalize(sunDir)), 0.0);\n  vec3 base = mix(horizonSky, zenith, smoothstep(0.0, 0.55, d.y));\n  base += sunGlow * (pow(s, 24.0) * 0.9 + pow(s, 6.0) * 0.18);\n  vec3 over = mix(base, color, cloud);\n  over = mix(over, haze, band);\n  float a = max(skyAlpha, cloud + band * (1.0 - cloud));\n  vec3 mixed = skyAlpha > 0.5 ? over : (a > 0.0 ? (color * cloud + haze * band * (1.0 - cloud)) / a : color);\n  gl_FragColor = vec4(mixed, a);\n  #include <colorspace_fragment>\n}", B_ = class {
 	constructor(e, { mobile: t = !1 } = {}) {
 		this.r = e, this.material = new rr({
-			vertexShader: L_,
-			fragmentShader: R_,
+			vertexShader: R_,
+			fragmentShader: z_,
 			defines: { OCTAVES: t ? 4 : 5 },
 			uniforms: {
 				time: { value: 0 },
@@ -28881,7 +28969,14 @@ var F_ = class {
 				opacity: { value: 1 },
 				sunDir: { value: new W(-.5, .6, -.4) },
 				lit: { value: new q("#fff6e8") },
-				shade: { value: new q("#7a8494") }
+				shade: { value: new q("#7a8494") },
+				haze: { value: new q("#d4c8ad") },
+				hazeAlpha: { value: 0 },
+				hazeHeight: { value: .25 },
+				zenith: { value: new q("#7fa3c4") },
+				horizonSky: { value: new q("#e9c9a0") },
+				sunGlow: { value: new q("#ffd9a0") },
+				skyAlpha: { value: 0 }
 			},
 			transparent: !0,
 			depthWrite: !1,
@@ -28891,19 +28986,27 @@ var F_ = class {
 	}
 	update(e, t, n) {
 		let r = this.r, i = this.material.uniforms;
-		this.mesh.position.copy(r.camera.position), i.time.value = n ? 0 : e, this.sun.copy(r.sun.position).sub(r.sun.target.position).normalize(), i.sunDir.value.copy(this.sun), t ? i.lit.value.set("#5d6a84") : i.lit.value.setRGB(1.3, 1.26, 1.18), i.shade.value.set(t ? "#1b2130" : "#bcc4cf"), i.opacity.value = t ? .45 : .7, r.scene.backgroundRotation.y = n ? 0 : e * .0035;
+		this.mesh.position.copy(r.camera.position), i.time.value = n ? 0 : e, this.sun.copy(r.sun.position).sub(r.sun.target.position).normalize(), i.sunDir.value.copy(this.sun);
+		let a = r.skyProfile?.();
+		t ? i.lit.value.set("#5d6a84") : i.lit.value.setRGB(...a?.lit || [
+			1.3,
+			1.26,
+			1.18
+		]), i.shade.value.set(t ? "#1b2130" : a?.shade || "#bcc4cf"), i.opacity.value = t ? .45 : .7, i.coverage.value = a?.coverage ?? .46, i.haze.value.set(a?.horizon || "#d4c8ad"), i.hazeAlpha.value = t ? 0 : a?.hazeAlpha ?? 0, i.hazeHeight.value = a?.hazeHeight ?? .25;
+		let o = !t && !!a?.zenith;
+		i.skyAlpha.value = +!!o, o && (i.zenith.value.set(a.zenith), i.horizonSky.value.set(a.horizonSky), i.sunGlow.value.set(a.sunGlow || "#ffd9a0")), r.scene.backgroundRotation.y = n ? 0 : e * .0035;
 	}
 	dispose() {
 		this.r.scene.remove(this.mesh), this.mesh.geometry.dispose(), this.material.dispose();
 	}
-}, B_ = new W(.24, .045, -1).normalize(), V_ = "\nvarying vec3 vDir;\nuniform float time;\nuniform vec3 sun;\nfloat hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\nfloat noise(vec2 p) {\n  vec2 i = floor(p), f = fract(p);\n  f = f * f * (3.0 - 2.0 * f);\n  return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);\n}\nfloat fbm(vec2 p) {\n  float v = 0.0, a = 0.5;\n  for (int i = 0; i < 5; i++) { v += a * noise(p); p = p * 2.03 + 7.1; a *= 0.5; }\n  return v;\n}\nvoid main() {\n  vec3 d = normalize(vDir);\n  float s = max(dot(d, sun), 0.0);\n  float y = d.y;\n  // Sunset: violet-blue overhead, rose, then orange and gold at the horizon,\n  // brightest under the sun.\n  vec3 top = vec3(0.10, 0.10, 0.20), rose = vec3(0.42, 0.18, 0.20), orange = vec3(0.95, 0.42, 0.14), gold = vec3(1.0, 0.70, 0.32);\n  // The colour climbs quickly to dusk: the view's upper half is dusky\n  // rose and violet, the hot band stays low on the horizon (as in the concept).\n  // The lobby camera sees only ~8° above the horizon, so the whole\n  // gradient lives low: gold at the horizon, rose by 3°, dusk by 9°.\n  vec3 c = mix(orange, rose, smoothstep(0.0, 0.055, y));\n  c = mix(c, top, smoothstep(0.035, 0.17, y));\n  c = mix(c, gold, pow(s, 8.0) * smoothstep(0.3, 0.0, y) * 0.8);\n  // Clouds: broken streaks lit orange from below, darker away from the sun.\n  if (y > 0.0) {\n    vec2 uv = d.xz / (y + 0.1) * 0.9 + vec2(time * 0.004, 0.0);\n    float n = fbm(uv * vec2(0.8, 2.4));\n    float cloud = smoothstep(0.42, 0.66, n) * smoothstep(0.01, 0.07, y) * (1.0 - smoothstep(0.5, 0.85, y));\n    // Dark plum undersides; only the edges facing the low sun burn orange.\n    vec3 lit = mix(vec3(0.22, 0.08, 0.11), vec3(1.0, 0.48, 0.16), 0.06 + 0.94 * pow(s, 6.0));\n    lit = mix(lit, vec3(0.13, 0.05, 0.09), smoothstep(0.58, 0.85, n) * 0.75);\n    c = mix(c, lit, cloud * 0.95);\n  }\n  // Sun disc and glow.\n  c += vec3(0.6, 0.22, 0.05) * pow(s, 40.0) + vec3(0.25, 0.07, 0.02) * pow(s, 8.0);\n  c = mix(c, vec3(1.0, 0.82, 0.55), smoothstep(0.9990, 0.9995, s));\n  // Keep the glow orange where it saturates (never yellow-green).\n  c = min(c, vec3(1.0, 0.86, 0.62));\n  // Mesas: flat-topped cliffs on the horizon, hazier towards the sun.\n  float az = atan(d.x, -d.z);\n  float shelf = smoothstep(0.42, 0.5, noise(vec2(az * 3.2, 1.7))) * 0.75 + smoothstep(0.55, 0.62, noise(vec2(az * 7.0, 4.2))) * 0.35;\n  float ridge = 0.012 + 0.07 * shelf + 0.006 * noise(vec2(az * 40.0, 0.0));\n  if (y < ridge) {\n    vec3 rock = mix(vec3(0.17, 0.08, 0.10), vec3(0.50, 0.22, 0.12), pow(s, 4.0));\n    // Haze thickens towards the foot of the cliffs.\n    c = mix(rock, c, 0.12 + 0.35 * smoothstep(ridge, 0.0, y));\n  }\n  // Below the horizon: warm haze where the floor fades out.\n  if (y < 0.0) c = mix(c, vec3(0.30, 0.15, 0.10), smoothstep(0.0, -0.08, y));\n  // The palette above is authored in sRGB; the output stage expects linear.\n  gl_FragColor = vec4(pow(c, vec3(2.2)), 1.0);\n  #include <colorspace_fragment>\n}";
-function H_(e, t, n, r) {
+}, V_ = new W(.24, .045, -1).normalize(), H_ = "\nvarying vec3 vDir;\nuniform float time;\nuniform vec3 sun;\nfloat hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\nfloat noise(vec2 p) {\n  vec2 i = floor(p), f = fract(p);\n  f = f * f * (3.0 - 2.0 * f);\n  return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);\n}\nfloat fbm(vec2 p) {\n  float v = 0.0, a = 0.5;\n  for (int i = 0; i < 5; i++) { v += a * noise(p); p = p * 2.03 + 7.1; a *= 0.5; }\n  return v;\n}\nvoid main() {\n  vec3 d = normalize(vDir);\n  float s = max(dot(d, sun), 0.0);\n  float y = d.y;\n  // Sunset: violet-blue overhead, rose, then orange and gold at the horizon,\n  // brightest under the sun.\n  vec3 top = vec3(0.10, 0.10, 0.20), rose = vec3(0.42, 0.18, 0.20), orange = vec3(0.95, 0.42, 0.14), gold = vec3(1.0, 0.70, 0.32);\n  // The colour climbs quickly to dusk: the view's upper half is dusky\n  // rose and violet, the hot band stays low on the horizon (as in the concept).\n  // The lobby camera sees only ~8° above the horizon, so the whole\n  // gradient lives low: gold at the horizon, rose by 3°, dusk by 9°.\n  vec3 c = mix(orange, rose, smoothstep(0.0, 0.055, y));\n  c = mix(c, top, smoothstep(0.035, 0.17, y));\n  c = mix(c, gold, pow(s, 8.0) * smoothstep(0.3, 0.0, y) * 0.8);\n  // Clouds: broken streaks lit orange from below, darker away from the sun.\n  if (y > 0.0) {\n    vec2 uv = d.xz / (y + 0.1) * 0.9 + vec2(time * 0.004, 0.0);\n    float n = fbm(uv * vec2(0.8, 2.4));\n    float cloud = smoothstep(0.42, 0.66, n) * smoothstep(0.01, 0.07, y) * (1.0 - smoothstep(0.5, 0.85, y));\n    // Dark plum undersides; only the edges facing the low sun burn orange.\n    vec3 lit = mix(vec3(0.22, 0.08, 0.11), vec3(1.0, 0.48, 0.16), 0.06 + 0.94 * pow(s, 6.0));\n    lit = mix(lit, vec3(0.13, 0.05, 0.09), smoothstep(0.58, 0.85, n) * 0.75);\n    c = mix(c, lit, cloud * 0.95);\n  }\n  // Sun disc and glow.\n  c += vec3(0.6, 0.22, 0.05) * pow(s, 40.0) + vec3(0.25, 0.07, 0.02) * pow(s, 8.0);\n  c = mix(c, vec3(1.0, 0.82, 0.55), smoothstep(0.9990, 0.9995, s));\n  // Keep the glow orange where it saturates (never yellow-green).\n  c = min(c, vec3(1.0, 0.86, 0.62));\n  // Mesas: flat-topped cliffs on the horizon, hazier towards the sun.\n  float az = atan(d.x, -d.z);\n  float shelf = smoothstep(0.42, 0.5, noise(vec2(az * 3.2, 1.7))) * 0.75 + smoothstep(0.55, 0.62, noise(vec2(az * 7.0, 4.2))) * 0.35;\n  float ridge = 0.012 + 0.07 * shelf + 0.006 * noise(vec2(az * 40.0, 0.0));\n  if (y < ridge) {\n    vec3 rock = mix(vec3(0.17, 0.08, 0.10), vec3(0.50, 0.22, 0.12), pow(s, 4.0));\n    // Haze thickens towards the foot of the cliffs.\n    c = mix(rock, c, 0.12 + 0.35 * smoothstep(ridge, 0.0, y));\n  }\n  // Below the horizon: warm haze where the floor fades out.\n  if (y < 0.0) c = mix(c, vec3(0.30, 0.15, 0.10), smoothstep(0.0, -0.08, y));\n  // The palette above is authored in sRGB; the output stage expects linear.\n  gl_FragColor = vec4(pow(c, vec3(2.2)), 1.0);\n  #include <colorspace_fragment>\n}";
+function U_(e, t, n, r) {
 	let i = document.createElement("canvas");
 	i.width = t, i.height = n, r(i.getContext("2d"), t, n);
 	let a = e(new xi(i));
 	return a.colorSpace = E, a;
 }
-function U_(e, t, n, r, i, a, o = 0) {
+function W_(e, t, n, r, i, a, o = 0) {
 	let s = new Yn(e, t, n), c = s.attributes.uv, l = s.attributes.normal;
 	for (let r = 0; r < c.count; r++) {
 		let i = Math.abs(l.getX(r)) > .5 ? n : e, a = Math.abs(l.getY(r)) > .5 ? n : t;
@@ -28911,11 +29014,11 @@ function U_(e, t, n, r, i, a, o = 0) {
 	}
 	return s.rotateY(o), s.translate(r, i, a), s;
 }
-function W_(e) {
+function G_(e) {
 	return () => ((e = e * 16807 % 2147483647) - 1) / 2147483646;
 }
-function G_(t, n, { mobile: r = !1 } = {}) {
-	let i = r ? 256 : 512, a = W_(4211), o = H_(n, i, i, (e, t, n) => {
+function K_(t, n, { mobile: r = !1 } = {}) {
+	let i = r ? 256 : 512, a = G_(4211), o = U_(n, i, i, (e, t, n) => {
 		e.fillStyle = "#2c2724", e.fillRect(0, 0, t, n);
 		for (let r = 0; r < 900; r++) {
 			let r = a() * t, i = a() * n, o = 2 + a() * (t / 18);
@@ -28923,7 +29026,7 @@ function G_(t, n, { mobile: r = !1 } = {}) {
 		}
 		for (let r = 0; r < i * 6; r++) e.fillStyle = a() < .5 ? "rgba(0,0,0,0.18)" : "rgba(150,135,120,0.12)", e.fillRect(a() * t, a() * n, 1, 1);
 		e.fillStyle = "rgba(0,0,0,0.25)", e.fillRect(0, 0, t, 6), e.fillRect(0, 0, 6, n), e.fillStyle = "#141110", e.fillRect(0, 0, t, 2), e.fillRect(0, 0, 2, n);
-	}), s = H_(n, i, i, (e, t, n) => {
+	}), s = U_(n, i, i, (e, t, n) => {
 		e.fillStyle = "rgb(205,205,205)", e.fillRect(0, 0, t, n), e.globalAlpha = .35;
 		for (let r = 0; r < 6; r++) {
 			let r = a() * t, i = a() * n, o = t * (.08 + a() * .22), s = e.createRadialGradient(r, i, 0, r, i, o);
@@ -28942,15 +29045,15 @@ function G_(t, n, { mobile: r = !1 } = {}) {
 	})));
 	return c.rotation.x = -Math.PI / 2, c.receiveShadow = !0, t.add(c), c;
 }
-var K_ = {
+var q_ = {
 	x: 8.2,
 	z: -17,
 	turn: -.5
 };
-function q_(t, n, { mobile: r = !1 } = {}) {
-	let i = W_(20261022), a = [], o = (e) => (a.push(e), e), s = H_(n, 128, 128, (e, t, n) => {
+function J_(t, n, { mobile: r = !1 } = {}) {
+	let i = G_(20261022), a = [], o = (e) => (a.push(e), e), s = U_(n, 128, 128, (e, t, n) => {
 		e.fillStyle = "#0d0b0c", e.fillRect(0, 0, t, n);
-		let r = W_(7);
+		let r = G_(7);
 		for (let i = 8; i < n; i += 32) for (let n = 6; n < t; n += 22) e.fillStyle = r() < .22 ? r() < .5 ? "#ffb35c" : "#ff8a3a" : "#161214", e.fillRect(n, i, 12, 14);
 	});
 	s.wrapS = s.wrapT = e, s.repeat.set(.9, .9);
@@ -28973,11 +29076,11 @@ function q_(t, n, { mobile: r = !1 } = {}) {
 		let e = -70 + i() * 140, t = -60 - i() * 30;
 		if (Math.abs(e - 44) < 10 && i() < .7) continue;
 		let n = 3 + i() * 6, r = 1.5 + i() * (i() < .25 ? 6 : 2.5), a = 3 + i() * 5, o = i() * .4 - .2;
-		if (d.push(U_(n, r, a, e, r / 2, t, o)), i() < .55) {
+		if (d.push(W_(n, r, a, e, r / 2, t, o)), i() < .55) {
 			let s = n * (.4 + i() * .3), c = r * (.3 + i() * .5), l = e + (i() - .5) * (n - s) * .8;
-			d.push(U_(s, c, a * .7, l, r + c / 2, t, o)), i() < .5 && f.push(U_(.12, 2 + i() * 3, .12, l, r + c + 1.5, t));
+			d.push(W_(s, c, a * .7, l, r + c / 2, t, o)), i() < .5 && f.push(W_(.12, 2 + i() * 3, .12, l, r + c + 1.5, t));
 		}
-		for (let s = 0, c = i() * 3 | 0; s < c; s++) f.push(U_(.8 + i(), .5 + i() * .5, .8, e + (i() - .5) * n * .7, r + .3, t + (i() - .5) * a * .5, o));
+		for (let s = 0, c = i() * 3 | 0; s < c; s++) f.push(W_(.8 + i(), .5 + i() * .5, .8, e + (i() - .5) * n * .7, r + .3, t + (i() - .5) * a * .5, o));
 	}
 	for (let [e, t, n] of [
 		[
@@ -28995,7 +29098,7 @@ function q_(t, n, { mobile: r = !1 } = {}) {
 			-80,
 			13
 		]
-	]) f.push(U_(.9, n, .9, e, n / 2, t), U_(1.2, .35, 1.2, e, n - 1.2, t));
+	]) f.push(W_(.9, n, .9, e, n / 2, t), W_(1.2, .35, 1.2, e, n - 1.2, t));
 	for (let [e, t, n] of [
 		[
 			-22,
@@ -29023,13 +29126,13 @@ function q_(t, n, { mobile: r = !1 } = {}) {
 			5.5
 		]
 	]) {
-		f.push(U_(.6, n, .6, e, n / 2, t), U_(1.6, .5, 1.6, e, n, t), U_(1, 1.6, 1, e, n + 1.05, t));
-		for (let r = 1.6; r < n; r += 1.8) f.push(U_(1.3, .14, 1.3, e, r, t));
+		f.push(W_(.6, n, .6, e, n / 2, t), W_(1.6, .5, 1.6, e, n, t), W_(1, 1.6, 1, e, n + 1.05, t));
+		for (let r = 1.6; r < n; r += 1.8) f.push(W_(1.3, .14, 1.3, e, r, t));
 	}
-	t.add(new Y(n(ku(d)), c)), t.add(new Y(n(ku(f)), l));
+	t.add(o(new Y(n(ku(d)), c))), t.add(o(new Y(n(ku(f)), l)));
 	let p = [], m = [];
-	p.push(U_(1.2, 11, 18, -7.2, 5.5, -13)), p.push(U_(6, .8, 20, -5.2, 10.6, -12.5));
-	for (let e = -21; e <= -5; e += 3) p.push(U_(.5, 10.2, .6, -6.4, 5.1, e)), m.push(U_(.08, 1.4, .16, -6.1, 4.4 + Math.abs(e) % 2 * 1.2, e + .9)), m.push(U_(.08, .6, .16, -6.1, 1.6, e + .9));
+	p.push(W_(1.2, 11, 18, -7.2, 5.5, -13)), p.push(W_(6, .8, 20, -5.2, 10.6, -12.5));
+	for (let e = -21; e <= -5; e += 3) p.push(W_(.5, 10.2, .6, -6.4, 5.1, e)), m.push(W_(.08, 1.4, .16, -6.1, 4.4 + Math.abs(e) % 2 * 1.2, e + .9)), m.push(W_(.08, .6, .16, -6.1, 1.6, e + .9));
 	let h = [];
 	for (let [e, t, n, r] of [
 		[
@@ -29062,14 +29165,14 @@ function q_(t, n, { mobile: r = !1 } = {}) {
 			.65,
 			2
 		]
-	]) for (let i = 0; i < r; i++) h.push(U_(n * 1.4, n * .9, n, e, n * .45 + i * n * .9, t, .1 * i));
-	let g = H_(n, 128, 128, (e, t, n) => {
+	]) for (let i = 0; i < r; i++) h.push(W_(n * 1.4, n * .9, n, e, n * .45 + i * n * .9, t, .1 * i));
+	let g = U_(n, 128, 128, (e, t, n) => {
 		e.fillStyle = "#2b2522", e.fillRect(0, 0, t, n);
 		for (let r = 0; r < t; r += 16) {
 			let t = e.createLinearGradient(r, 0, r + 16, 0);
 			t.addColorStop(0, "#1a1614"), t.addColorStop(.35, "#4a3f38"), t.addColorStop(.6, "#2b2522"), t.addColorStop(1, "#1a1614"), e.fillStyle = t, e.fillRect(r, 0, 16, n);
 		}
-		let r = W_(91);
+		let r = G_(91);
 		for (let i = 0; i < 40; i++) e.fillStyle = `rgba(0,0,0,${.08 + r() * .12})`, e.fillRect(r() * t, r() * n * .5, 2 + r() * 4, n);
 	});
 	g.wrapS = g.wrapT = e, g.repeat.set(.5, .25);
@@ -29102,7 +29205,7 @@ function q_(t, n, { mobile: r = !1 } = {}) {
 		[6.8, -8],
 		[6.8, -14],
 		[6.8, -20]
-	]) x.push(U_(.16, .5, 1.6, -6, e, t));
+	]) x.push(W_(.16, .5, 1.6, -6, e, t));
 	t.add(o(new Y(n(ku(x)), n(new gn({
 		color: new q(2.2, 1.05, .38),
 		toneMapped: !0
@@ -29123,7 +29226,7 @@ function q_(t, n, { mobile: r = !1 } = {}) {
 		let o = new Xo("#ffb062", i, a, 1.4);
 		o.position.set(e, n, r), t.add(o);
 	}
-	let S = H_(n, 128, 320, (e, t, n) => {
+	let S = U_(n, 128, 320, (e, t, n) => {
 		let r = e.createLinearGradient(0, 0, 0, n);
 		r.addColorStop(0, "#7c1316"), r.addColorStop(1, "#4a0a0d"), e.fillStyle = r, e.fillRect(0, 0, t, n), e.strokeStyle = "#c9b48a", e.lineWidth = 6, e.beginPath(), e.arc(t / 2, n * .42, 38, 0, Math.PI * 2), e.stroke(), e.fillStyle = "#c9b48a", e.beginPath();
 		for (let r = 0; r < 8; r++) {
@@ -29141,14 +29244,14 @@ function q_(t, n, { mobile: r = !1 } = {}) {
 	})));
 	C.position.set(-6.75, 3.6, -5.35), C.rotation.y = Math.PI / 2, t.add(C);
 	let w = [];
-	w.push(U_(4.6, 1.3, 2.2, 0, 1.15, 0), U_(2.2, 1, 2, -.9, 2.2, 0), U_(1.6, .25, .25, 1.2, 2.5, 0));
+	w.push(W_(4.6, 1.3, 2.2, 0, 1.15, 0), W_(2.2, 1, 2, -.9, 2.2, 0), W_(1.6, .25, .25, 1.2, 2.5, 0));
 	for (let e of [
 		-1.5,
 		0,
 		1.5
-	]) for (let t of [-1.15, 1.15]) w.push(U_(.9, .9, .35, e, .45, t));
+	]) for (let t of [-1.15, 1.15]) w.push(W_(.9, .9, .35, e, .45, t));
 	let T = ku(w);
-	T.scale(.85, .85, .85), T.rotateY(K_.turn), T.translate(K_.x, 0, K_.z);
+	T.scale(.85, .85, .85), T.rotateY(q_.turn), T.translate(q_.x, 0, q_.z);
 	let E = n(new $a({
 		color: "#2a2b22",
 		roughness: .6,
@@ -29161,27 +29264,27 @@ function q_(t, n, { mobile: r = !1 } = {}) {
 		[1, -1],
 		[-1, 1],
 		[1, 1]
-	]) D.push(U_(.22, 13, .22, O + e, 13 / 2, -22 + t));
+	]) D.push(W_(.22, 13, .22, O + e, 13 / 2, -22 + t));
 	for (let e = 1.5; e < 13; e += 2.2) {
-		D.push(U_(2.2, .14, .14, O, e, -23), U_(2.2, .14, .14, O, e, -21)), D.push(U_(.14, .14, 2.2, 10.5, e, -22), U_(.14, .14, 2.2, 12.5, e, -22));
+		D.push(W_(2.2, .14, .14, O, e, -23), W_(2.2, .14, .14, O, e, -21)), D.push(W_(.14, .14, 2.2, 10.5, e, -22), W_(.14, .14, 2.2, 12.5, e, -22));
 		let t = new Yn(.1, 2.95, .1);
 		t.rotateZ((e / 2.2 | 0) % 2 ? .75 : -.75), t.translate(O, e + 1.1, -21), D.push(t);
 	}
-	D.push(U_(3.4, .25, 3.4, O, 13, -22), U_(1.4, 1.6, 1.4, 12.1, 13.9, -22)), D.push(U_(4.2, .18, .18, 8.7, 12.4, -22)), t.add(new Y(n(ku(D.map((e) => e.index ? e.toNonIndexed() : e))), l));
+	D.push(W_(3.4, .25, 3.4, O, 13, -22), W_(1.4, 1.6, 1.4, 12.1, 13.9, -22)), D.push(W_(4.2, .18, .18, 8.7, 12.4, -22)), t.add(o(new Y(n(ku(D.map((e) => e.index ? e.toNonIndexed() : e))), l)));
 	let k = [], A = [];
 	for (let e = 0; e < (r ? 10 : 18); e++) {
 		let e = -30 + i() * 60, t = -22 - i() * 30, n = .8 + i() * 1.8;
-		k.push(e, n, t), A.push(U_(.1, n, .1, e, n / 2, t));
+		k.push(e, n, t), A.push(W_(.1, n, .1, e, n / 2, t));
 	}
 	t.add(new Y(n(ku(A)), l));
-	let j = H_(n, 64, 64, (e, t, n) => {
+	let j = U_(n, 64, 64, (e, t, n) => {
 		let r = e.createRadialGradient(t / 2, n / 2, 0, t / 2, n / 2, t / 2);
 		r.addColorStop(0, "#ffffffff"), r.addColorStop(.25, "#ffd08a99"), r.addColorStop(1, "#ff8a3a00"), e.fillStyle = r, e.fillRect(0, 0, t, n);
 	});
-	k.push(12.1, 14.9, -22, 10.5, 6.5, -20.8, 12.5, 3.25, -20.8);
+	k.push(20, 14.2, -25.5, 23.4, 11.5, -20.7, 24, 11.5, -20.7, 24.6, 11.5, -20.7, 12.1, 14.9, -22);
 	for (let e of [-.82, .82]) {
-		let t = Math.cos(K_.turn), n = Math.sin(K_.turn), r = 3.84, i = -e;
-		k.push(K_.x + r * t + i * n, 1.5, K_.z - r * n + i * t);
+		let t = Math.cos(q_.turn), n = Math.sin(q_.turn), r = 3.84, i = -e;
+		k.push(q_.x + r * t + i * n, 1.5, q_.z - r * n + i * t);
 	}
 	k.push(-5.95, 6.8, -8, -5.95, 6.8, -14);
 	let ee = new Fn();
@@ -29194,7 +29297,7 @@ function q_(t, n, { mobile: r = !1 } = {}) {
 		blending: 2,
 		fog: !1
 	}))));
-	let M = H_(n, 64, 256, (e, t, n) => {
+	let M = U_(n, 64, 256, (e, t, n) => {
 		let r = e.createLinearGradient(0, 0, 0, n);
 		r.addColorStop(0, "#ffb05a00"), r.addColorStop(.35, "#ff9a4a88"), r.addColorStop(1, "#ff7a3a00"), e.fillStyle = r, e.fillRect(0, 0, t, n);
 		let i = e.createLinearGradient(0, 0, t, 0);
@@ -29207,7 +29310,7 @@ function q_(t, n, { mobile: r = !1 } = {}) {
 		fog: !1,
 		opacity: .9
 	})));
-	N.rotation.x = -Math.PI / 2, N.rotation.z = -Math.atan2(B_.x, -B_.z), N.position.set(B_.x * 30, .01, B_.z * 30), t.add(N);
+	N.rotation.x = -Math.PI / 2, N.rotation.z = -Math.atan2(V_.x, -V_.z), N.position.set(V_.x * 30, .01, V_.z * 30), t.add(N);
 	let P = n(new gn({
 		map: M,
 		color: "#ffb36a",
@@ -29227,7 +29330,7 @@ function q_(t, n, { mobile: r = !1 } = {}) {
 }
 //#endregion
 //#region scripts/outpost-military/lobby-stage.js
-var J_ = class {
+var Y_ = class {
 	constructor(e) {
 		this.r = e;
 		let t = e.mobileDevice;
@@ -29235,10 +29338,10 @@ var J_ = class {
 		let n = (e) => (this.owned.push(e), e);
 		this.skyMaterial = n(new rr({
 			vertexShader: "varying vec3 vDir; void main(){ vDir = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }",
-			fragmentShader: V_,
+			fragmentShader: H_,
 			uniforms: {
 				time: { value: 0 },
-				sun: { value: B_ }
+				sun: { value: V_ }
 			},
 			side: 1,
 			depthWrite: !1,
@@ -29250,7 +29353,7 @@ var J_ = class {
 		} catch {
 			this.environment = null;
 		}
-		G_(this.scene, n, { mobile: t }), this.standIns = q_(this.scene, n, { mobile: t }), this.own = n;
+		K_(this.scene, n, { mobile: t }), this.standIns = J_(this.scene, n, { mobile: t }), this.own = n;
 		let r = n(new $a({
 			color: "#1e2326",
 			roughness: .34,
@@ -29297,7 +29400,7 @@ var J_ = class {
 		let c = new Go("#ffe2b8", 60, 14, .5, .6, 1.4);
 		c.position.set(2.2, 5.5, 3.5), c.target.position.set(0, 1, 0), c.castShadow = !0, c.shadow.mapSize.set(1024, 1024), c.shadow.radius = 3, c.shadow.bias = -4e-4, this.scene.add(c, c.target);
 		let l = new $o("#ff8a4a", 2.6);
-		l.position.copy(B_).multiplyScalar(6).setY(2.5), this.scene.add(l);
+		l.position.copy(V_).multiplyScalar(6).setY(2.5), this.scene.add(l);
 		let u = new $o("#7fa6c4", .6);
 		u.position.set(-4, 2, 3), this.scene.add(u);
 		let d = t ? 120 : 260, f = new Float32Array(d * 3);
@@ -29438,6 +29541,27 @@ var J_ = class {
 					color: "#2c2c2a",
 					roughness: .55,
 					metalness: .8
+				},
+				mesh: {
+					color: "#3a3a38",
+					roughness: .6,
+					metalness: .7,
+					transparent: !0,
+					opacity: .5,
+					side: 2,
+					depthWrite: !1
+				},
+				facade: {
+					color: "#141114",
+					roughness: .9,
+					metalness: .1
+				},
+				windows: {
+					color: "#2a1a0c",
+					roughness: .6,
+					metalness: 0,
+					emissive: "#ffb35c",
+					emissiveIntensity: 2.4
 				}
 			}, n = /* @__PURE__ */ new Map(), r = (e) => (n.has(e) || n.set(e, this.own(new $a({
 				vertexColors: !0,
@@ -29450,7 +29574,7 @@ var J_ = class {
 				this.own(e.geometry), e.material = r(e.material?.name || "steel"), e.castShadow = e.receiveShadow = !0;
 			});
 			let i = e.scene.getObjectByName("truck");
-			i && (i.position.set(K_.x, 0, K_.z), i.rotation.y = K_.turn), this.scene.add(e.scene);
+			i && (i.position.set(q_.x, 0, q_.z), i.rotation.y = q_.turn), this.scene.add(e.scene);
 			for (let e of this.standIns || []) e.visible = !1;
 		}).catch(() => {}));
 	}
@@ -29673,7 +29797,7 @@ var J_ = class {
 		for (let e of this.owned) e.dispose();
 		this.scene.clear();
 	}
-}, Y_ = 3, X_ = class {
+}, X_ = 3, Z_ = class {
 	constructor(e) {
 		this.r = e, this.root = new X(), this.root.name = "match-events", e.scene.add(this.root), this.items = /* @__PURE__ */ new Map(), this.materials = [], this.geometries = [], this.fireLight = new Xo("#ff8a3c", 0, 9, 2), this.fireLight.visible = !0, e.scene.add(this.fireLight);
 	}
@@ -29733,7 +29857,7 @@ var J_ = class {
 	}
 	build(e) {
 		let t = this.shared(), n = new X();
-		n.position.set(e.x * Y_, 0, e.y * Y_);
+		n.position.set(e.x * X_, 0, e.y * X_);
 		let r = (e, t, r, i = [
 			1,
 			1,
@@ -29854,13 +29978,13 @@ var J_ = class {
 			}), e.kind === "fire" && (i = e);
 		}
 		for (let [e, t] of this.items) r.has(e) || (this.root.remove(t.group), this.items.delete(e));
-		this.fireLight.intensity = i ? 26 + Math.sin(t * 17) * 5 + Math.sin(t * 41) * 3 : 0, i && this.fireLight.position.set(i.x * Y_, 1.3, i.y * Y_);
+		this.fireLight.intensity = i ? 26 + Math.sin(t * 17) * 5 + Math.sin(t * 41) * 3 : 0, i && this.fireLight.position.set(i.x * X_, 1.3, i.y * X_);
 	}
 	dispose() {
 		this.r.scene.remove(this.root, this.fireLight);
 		for (let e of [...this.materials, ...this.geometries]) e.dispose();
 	}
-}, Z_ = 3, Q_ = {
+}, Q_ = 3, $_ = {
 	crate: /^old_military_crate(_lid)?_a$/,
 	crateOpen: /^old_military_crate(_lid|_cloth)?_b$/,
 	jerrycan: /^metal_jerrycan_green_(body|cap)$/,
@@ -29871,12 +29995,12 @@ var J_ = class {
 	shelf: /^steel_frame_shelves_01$/,
 	ammo: /^ammo_box$/,
 	cabinet: /^utility_box_01/
-}, $_ = { shelf: .1 };
-function ev(e) {
+}, ev = { shelf: .1 };
+function tv(e) {
 	let t = e.scene;
 	t.updateMatrixWorld(!0);
 	let n = {};
-	for (let [e, r] of Object.entries(Q_)) {
+	for (let [e, r] of Object.entries($_)) {
 		let i = [];
 		if (t.traverse((e) => {
 			e.isMesh && r.test(e.name) && i.push(e);
@@ -29885,7 +30009,7 @@ function ev(e) {
 			,
 			,
 			,
-		].fill($_[e] || 1)), o = new Je();
+		].fill(ev[e] || 1)), o = new Je();
 		for (let e of i) e.geometry.computeBoundingBox(), o.union(e.geometry.boundingBox.clone().applyMatrix4(a.clone().multiply(e.matrixWorld)));
 		let s = o.getCenter(new W()), c = new K().makeTranslation(-s.x, -o.min.y, -s.z);
 		n[e] = {
@@ -29899,11 +30023,11 @@ function ev(e) {
 	}
 	return n;
 }
-function tv(e, t) {
+function nv(e, t) {
 	let n = e * 73856093 ^ t * 19349663 ^ 1540483477;
 	return () => (n = Math.imul(n ^ n >>> 15, 2246822507) + 2654435769 | 0, (n >>> 0) % 1e4 / 1e4);
 }
-function nv(e, t, n, r) {
+function rv(e, t, n, r) {
 	let i = e.propKit;
 	if (!i) return 0;
 	let a = e.protocolMaterial({
@@ -29934,7 +30058,7 @@ function nv(e, t, n, r) {
 	for (let e = 0; e < n.length; e++) for (let t = 0; t < n[e].length; t++) {
 		if (!r(t, e)) continue;
 		f++;
-		let i = n[e][t], c = tv(t, e), l = (t + .5) * Z_, p = (e + .5) * Z_, m = (r, i) => n[e + i]?.[t + r] === 0, h = (e, t) => m(e, t) ? .95 : 1.5, g = l - h(-1, 0), _ = l + h(1, 0), v = p - h(0, -1), y = p + h(0, 1);
+		let i = n[e][t], c = nv(t, e), l = (t + .5) * Q_, p = (e + .5) * Q_, m = (r, i) => n[e + i]?.[t + r] === 0, h = (e, t) => m(e, t) ? .95 : 1.5, g = l - h(-1, 0), _ = l + h(1, 0), v = p - h(0, -1), y = p + h(0, 1);
 		d(s, (g + _) / 2, 0, (v + y) / 2, _ - g, .14, y - v), d(a, (g + _) / 2, .14, (v + y) / 2, _ - g - .04, 2.15, y - v - .04);
 		for (let e of [-.45, .45]) d(o, (g + _) / 2 + e * (_ - g) * .6, .14, (v + y) / 2, .06, 2.17, y - v);
 		for (let [e, t] of [
@@ -29981,7 +30105,7 @@ function nv(e, t, n, r) {
 }
 //#endregion
 //#region public/games/outpost-battle-presentation.js
-function rv(e, t) {
+function iv(e, t) {
 	let n = e?.protocol?.combat;
 	if (e?.state !== "playing" || e.protocol.phase !== "combat" || !n || e.time >= n.startsAt) return null;
 	let r = e.entities.filter((e) => n.participants.includes(e.id) && e.hp > 0 && !e.departed), i = r.find((e) => e.id === t), a = r.find((e) => e.id === n.targetId), o = r.filter((e) => e.id !== n.targetId);
@@ -29996,14 +30120,14 @@ function rv(e, t) {
 }
 //#endregion
 //#region scripts/outpost-military/battle-preparation.js
-var iv = (e) => (e = V.clamp(e, 0, 1), e * e * (3 - 2 * e));
-function av(e, t, n, r) {
+var av = (e) => (e = V.clamp(e, 0, 1), e * e * (3 - 2 * e));
+function ov(e, t, n, r) {
 	if (!t || !r) return;
 	e.root.updateMatrixWorld(!0);
 	let i = n.clone().applyQuaternion(e.root.getWorldQuaternion(new U())), a = t.getWorldQuaternion(new U()).premultiply(new U().setFromAxisAngle(i, r));
 	t.quaternion.copy(t.parent.getWorldQuaternion(new U()).invert()).multiply(a), e.root.updateMatrixWorld(!0);
 }
-var ov = class {
+var sv = class {
 	constructor(e) {
 		this.r = e, this.scene = new vr(), this.scene.background = new q("#10191e"), this.camera = new cr(45, 1, .1, 30), this.scene.add(new zo("#c8d8de", "#514a3c", .9));
 		let t = new $o("#ffedcf", 3.2);
@@ -30056,7 +30180,7 @@ var ov = class {
 		this.actors = [];
 	}
 	update(e) {
-		let t = this.r, n = rv(e, t.g.selfId);
+		let t = this.r, n = iv(e, t.g.selfId);
 		if (this.active = !!n && t.g.protocolUI?.visibleGameplay() && !t.g.protocolUI.hasDialogOpen() && !t.g.deathSequence, !this.active || !t.soldier) return !1;
 		let r = `${e.roundId}:${n.id}:${n.target.id}:${n.patrol.id}`;
 		this.id !== r && (this.clearActors(), this.id = r, this.lastSample = null, this.actors = [this.makeOperator(n.target, 0), this.makeOperator(n.patrol, 1)]), this.scene.environment = t.scene.environment, this.scene.environmentIntensity = .3;
@@ -30066,8 +30190,8 @@ var ov = class {
 		return s === this.lastSample || (this.lastSample = s, this.actors.forEach((e, n) => {
 			let r = Math.max(0, o - n * .15), i = e.actions.Idle;
 			i.play().setEffectiveWeight(1).setEffectiveTimeScale(0), i.time = t.motion.matches ? 0 : r % i.getClip().duration, e.mixer.update(0), e.model.position.y = e.baseY, e.root.updateMatrixWorld(!0);
-			let a = iv((r - .35) / 3.55), s = t.motion.matches ? 0 : Math.sin(Math.PI * iv(r / 3.9));
-			av(e, e.readyBones.RightArm, new W(1, 0, 0), t.motion.matches ? 0 : -.32 * (1 - a)), av(e, e.readyBones.RightForeArm, new W(0, 0, 1), s * .055), av(e, e.readyBones.Head, new W(1, 0, 0), -s * .1), kh(e, 0, !1), Ch(e.equipment.userData.carbine, 0, 0);
+			let a = av((r - .35) / 3.55), s = t.motion.matches ? 0 : Math.sin(Math.PI * av(r / 3.9));
+			ov(e, e.readyBones.RightArm, new W(1, 0, 0), t.motion.matches ? 0 : -.32 * (1 - a)), ov(e, e.readyBones.RightForeArm, new W(0, 0, 1), s * .055), ov(e, e.readyBones.Head, new W(1, 0, 0), -s * .1), kh(e, 0, !1), Ch(e.equipment.userData.carbine, 0, 0);
 			let c = e.equipment.localToWorld(new W(-.035, -.056, -.312));
 			Ah(e, c, e.equipment.getWorldQuaternion(new U()).multiply(e.supportGrip)), e.supportTarget = c;
 		}), !0);
@@ -30075,16 +30199,16 @@ var ov = class {
 	dispose() {
 		this.clearActors(), this.floorMaterial.dispose(), this.floorGeometry.dispose(), this.scene.clear();
 	}
-}, $ = 3, sv = "/games/military/", cv = Math.PI * 2, lv = {
+}, $ = 3, cv = "/games/military/", lv = Math.PI * 2, uv = {
 	desktop: 10,
 	phone: 6.5
-}, uv = {
+}, dv = {
 	carbine: .6,
 	twin: .7,
 	rocket: .72,
 	scatter: .85,
 	breach: .88
-}, dv = {
+}, fv = {
 	carbine: {
 		x: -.008,
 		y: .08
@@ -30097,10 +30221,163 @@ var ov = class {
 		x: .02,
 		y: .05
 	}
-}, fv = {
+}, pv = {
+	horizon: "#d4c8ad",
+	hazeAlpha: 0,
+	hazeHeight: .25,
+	intensity: .58,
+	coverage: .46,
+	lit: [
+		1.3,
+		1.26,
+		1.18
+	],
+	shade: "#bcc4cf",
+	sun: "#ffeccf",
+	skyLight: "#cad9e1",
+	groundLight: "#746c5c",
+	highlight: [
+		1.025,
+		1.01,
+		.98
+	],
+	shadow: [
+		.97,
+		1,
+		1.025
+	],
+	saturation: 1
+}, mv = {
+	outpost: {
+		zenith: "#6f93b6",
+		horizonSky: "#eacba0",
+		sunGlow: "#ffd29a",
+		horizon: "#e0b985",
+		hazeAlpha: .62,
+		hazeHeight: .3,
+		sunElevation: 30,
+		intensity: .6,
+		coverage: .3,
+		lit: [
+			1.36,
+			1.25,
+			1.06
+		],
+		shade: "#c4b7a6",
+		sun: "#ffe4b8",
+		skyLight: "#d6d0c2",
+		groundLight: "#8a7558",
+		highlight: [
+			1.06,
+			1.01,
+			.92
+		],
+		shadow: [
+			.96,
+			.985,
+			1.02
+		],
+		saturation: 1.1
+	},
+	skyport: {
+		zenith: "#5f8fc0",
+		horizonSky: "#d6e1ea",
+		sunGlow: "#fff1dc",
+		horizon: "#cfdde8",
+		hazeAlpha: .35,
+		hazeHeight: .2,
+		sunElevation: 48,
+		intensity: .62,
+		coverage: .52,
+		lit: [
+			1.3,
+			1.29,
+			1.26
+		],
+		shade: "#aab6c6",
+		sun: "#fff3e0",
+		skyLight: "#c6d8e6",
+		groundLight: "#6f7072",
+		highlight: [
+			1,
+			1.01,
+			1.04
+		],
+		shadow: [
+			.97,
+			.995,
+			1.03
+		],
+		saturation: 1.04
+	},
+	estate: {
+		zenith: "#8aa3b8",
+		horizonSky: "#dcd7cb",
+		sunGlow: "#ffe9cc",
+		horizon: "#d9d3c4",
+		hazeAlpha: .5,
+		hazeHeight: .28,
+		sunElevation: 40,
+		intensity: .56,
+		coverage: .58,
+		lit: [
+			1.26,
+			1.25,
+			1.2
+		],
+		shade: "#b4b8bc",
+		sun: "#fff0d8",
+		skyLight: "#cdd6d6",
+		groundLight: "#6b7558",
+		highlight: [
+			1.03,
+			1.015,
+			.97
+		],
+		shadow: [
+			.975,
+			1,
+			1.01
+		],
+		saturation: 1
+	},
+	quay: {
+		zenith: "#6a88aa",
+		horizonSky: "#edc394",
+		sunGlow: "#ffc98a",
+		horizon: "#e2b98e",
+		hazeAlpha: .6,
+		hazeHeight: .32,
+		sunElevation: 24,
+		intensity: .58,
+		coverage: .42,
+		lit: [
+			1.34,
+			1.22,
+			1.08
+		],
+		shade: "#b9aea6",
+		sun: "#ffdfae",
+		skyLight: "#d4cfc4",
+		groundLight: "#7a6c5a",
+		highlight: [
+			1.05,
+			.995,
+			.93
+		],
+		shadow: [
+			.965,
+			.99,
+			1.02
+		],
+		saturation: 1.06
+	}
+};
+mv.town = mv.quay;
+var hv = {
 	outpost: {
 		floor: "#a69980",
-		fog: "#d4c8ad",
+		fog: "#d9c6a0",
 		metal: "#788178"
 	},
 	testblock: {
@@ -30120,7 +30397,7 @@ var ov = class {
 	},
 	estate: {
 		floor: "#c6bca5",
-		fog: "#c4c1ba",
+		fog: "#cfc8b8",
 		metal: "#81867b"
 	},
 	breakwater: {
@@ -30137,8 +30414,13 @@ var ov = class {
 		floor: "#8f8466",
 		fog: "#b9b8ac",
 		metal: "#7d8580"
+	},
+	quay: {
+		floor: "#a69980",
+		fog: "#d2bda4",
+		metal: "#788178"
 	}
-}, pv = class {
+}, gv = class {
 	constructor(e, t = () => {}, { safeMode: n = !1 } = {}) {
 		this.g = e, this.onProgress = t, this.disposed = !1, this.actors = /* @__PURE__ */ new Map(), this.crates = /* @__PURE__ */ new Map(), this.cores = /* @__PURE__ */ new Map(), this.projectiles = /* @__PURE__ */ new Map(), this.fields = /* @__PURE__ */ new Map(), this.protocolCharges = /* @__PURE__ */ new Map(), this.protocolBodies = /* @__PURE__ */ new Map(), this.protocolFixtures = [], this.interactableInstances = [], this.protocolScreens = /* @__PURE__ */ new Map(), this.protocolLights = [], this.protocolLightMaterials = [], this.protocolPowerOut = !1, this.medicalStocks = /* @__PURE__ */ new Map(), this.transportCargo = [], this.transportTerrain = null, this.transportInstrument = null, this.transportInstrumentKey = "", this.transportAlarm = null, this.medevacRotor = null, this.arrivalClinic = null, this.arrivalPatients = /* @__PURE__ */ new Map(), this.materials = /* @__PURE__ */ new Set(), this.geometries = /* @__PURE__ */ new Map(), this.textures = /* @__PURE__ */ new Set(), this.worldTextures = /* @__PURE__ */ new Set(), this.weaponTextures = /* @__PURE__ */ new Set(), this.lastTime = 0, this.lastPose = -1, this.mapKey = "", this.wallKeys = "", this.seenShots = /* @__PURE__ */ new Map(), this.tracers = [], this.lastPreset = "", this.assetErrors = [], this.motion = matchMedia("(prefers-reduced-motion: reduce)"), this.mobileDevice = matchMedia("(pointer: coarse)").matches;
 		let r = _f(navigator), i, a;
@@ -30165,7 +30447,7 @@ var ov = class {
 			t.preventDefault(), !this.disposed && (this.contextUnavailable = !0, e.handleMilitaryFailure?.("context-lost"));
 		}, this.contextRestored = () => {
 			this.disposed || (this.contextUnavailable = !1, e.retryMilitary?.());
-		}, this.renderer.domElement.addEventListener("webglcontextlost", this.contextLost), this.renderer.domElement.addEventListener("webglcontextrestored", this.contextRestored), this.renderer.domElement.className = "mf-webgl", this.renderer.domElement.setAttribute("aria-hidden", "true"), this.renderer.domElement.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:0;width:100%;height:100%;", e.shell.insertBefore(this.renderer.domElement, e.canvas), e.canvas.style.cssText = "position:relative;z-index:1;background:transparent", this.scene = new vr(), this.scene.background = new q("#b8c6d0"), this.scene.fog = new gr("#b8c6d0", .018), this.world = new X(), this.scene.add(this.world), this.dynamic = new X(), this.scene.add(this.dynamic), this.camera = new cr(60, 1, .06, 320), this.camera.rotation.order = "YXZ", this.hemisphere = new zo("#adbcd0", "#372b20", .55), this.scene.add(this.hemisphere), this.sun = new $o("#ffddb0", 4.2), this.sun.position.set(-25, 38, -22), this.clouds = new z_(this, { mobile: this.mobileDevice }), this.sun.castShadow = !0, this.sun.shadow.mapSize.set(1024, 1024), Object.assign(this.sun.shadow.camera, {
+		}, this.renderer.domElement.addEventListener("webglcontextlost", this.contextLost), this.renderer.domElement.addEventListener("webglcontextrestored", this.contextRestored), this.renderer.domElement.className = "mf-webgl", this.renderer.domElement.setAttribute("aria-hidden", "true"), this.renderer.domElement.style.cssText = "position:absolute;inset:0;pointer-events:none;z-index:0;width:100%;height:100%;", e.shell.insertBefore(this.renderer.domElement, e.canvas), e.canvas.style.cssText = "position:relative;z-index:1;background:transparent", this.scene = new vr(), this.scene.background = new q("#b8c6d0"), this.scene.fog = new gr("#b8c6d0", .018), this.world = new X(), this.scene.add(this.world), this.dynamic = new X(), this.scene.add(this.dynamic), this.camera = new cr(60, 1, .06, 320), this.camera.rotation.order = "YXZ", this.hemisphere = new zo("#adbcd0", "#372b20", .55), this.scene.add(this.hemisphere), this.sun = new $o("#ffddb0", 4.2), this.sun.position.set(-25, 38, -22), this.clouds = new B_(this, { mobile: this.mobileDevice }), this.sun.castShadow = !0, this.sun.shadow.mapSize.set(1024, 1024), Object.assign(this.sun.shadow.camera, {
 			left: -35,
 			right: 35,
 			top: 35,
@@ -30208,7 +30490,7 @@ var ov = class {
 				fragmentShader: "uniform sampler2D tDiffuse; uniform vec3 highlight; uniform vec3 shadow; uniform float saturation; uniform float vignette; uniform float grain; uniform float time; varying vec2 vUv;\n          float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)) + time) * 43758.5453); }\n          void main(){\n            vec4 source = texture2D(tDiffuse, vUv);\n            vec3 c = source.rgb;\n            float l = dot(c, vec3(.2126,.7152,.0722));\n            float lift = smoothstep(0.0, 0.6, l);\n            c *= mix(shadow, highlight, lift);\n            c = mix(vec3(l), c, saturation);\n            vec2 d = vUv - .5;\n            c *= 1.0 - vignette * smoothstep(.25, .85, dot(d, d) * 2.2);\n            c += (hash(vUv * 731.0) - .5) * grain * (0.15 + sqrt(max(l, 0.0)));\n            gl_FragColor = vec4(max(c, 0.0), source.a);\n          }"
 			}), this.composer.addPass(this.grade), this.composer.addPass(new tf());
 		}
-		this.arenaStyle = new I_(this, sv, of), this.ready = Promise.all([
+		this.arenaStyle = new L_(this, cv, of), this.ready = Promise.all([
 			this.loadAssets(),
 			Ep(this),
 			this.arenaStyle.load("outpost")
@@ -30257,7 +30539,7 @@ var ov = class {
 	async loadAssets() {
 		let t = 0, n = () => this.onProgress(++t, 14), r = new Lo(), i = async (t) => {
 			try {
-				let n = await r.loadAsync(sv + t + "?assetVersion=" + of);
+				let n = await r.loadAsync(cv + t + "?assetVersion=" + of);
 				return this.disposed ? (n.dispose(), null) : (n.wrapS = n.wrapT = e, n.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy()), this.textures.add(n), n);
 			} catch {
 				return this.assetErrors.push(t), null;
@@ -30283,7 +30565,7 @@ var ov = class {
 			Fm(this),
 			(async () => {
 				try {
-					let e = await new Mu().loadAsync(sv + "models/medevac-v1.glb?assetVersion=" + of);
+					let e = await new Mu().loadAsync(cv + "models/medevac-v1.glb?assetVersion=" + of);
 					if (this.disposed) return;
 					this.medevacKit = Pg(e);
 					for (let e of this.medevacKit.parts) this.geometries.set(`medevac:${e.geometry.uuid}`, e.geometry);
@@ -30294,7 +30576,7 @@ var ov = class {
 			})(),
 			(async () => {
 				try {
-					let e = await new Mu().loadAsync(sv + "models/weapons-v2.glb?assetVersion=" + of);
+					let e = await new Mu().loadAsync(cv + "models/weapons-v2.glb?assetVersion=" + of);
 					if (this.disposed) return;
 					this.weaponKit = hh(e);
 					for (let e of Object.values(this.weaponKit)) for (let t of Object.values(e)) for (let { geometry: e } of t) this.geometries.set(`weapon-kit:${e.uuid}`, e);
@@ -30305,7 +30587,7 @@ var ov = class {
 			})(),
 			(async () => {
 				try {
-					let e = await new Mu().loadAsync(sv + "models/props-v1.glb?assetVersion=" + of);
+					let e = await new Mu().loadAsync(cv + "models/props-v1.glb?assetVersion=" + of);
 					if (this.disposed) {
 						this.disposeObject(e.scene);
 						return;
@@ -30322,14 +30604,14 @@ var ov = class {
 							]) e.material[t] && this.textures.add(e.material[t]);
 							this.materials.add(e.material);
 						}
-					}), this.propKit = ev(e), this.wallKeys = null;
+					}), this.propKit = tv(e), this.wallKeys = null;
 				} catch {
 					this.assetErrors.push("props");
 				}
 			})(),
 			(async () => {
 				try {
-					let e = await new Mu().loadAsync(sv + "models/operator-v1.glb?assetVersion=" + of);
+					let e = await new Mu().loadAsync(cv + "models/operator-v1.glb?assetVersion=" + of);
 					if (this.disposed) {
 						this.disposeObject(e.scene);
 						return;
@@ -30346,7 +30628,7 @@ var ov = class {
 			(async () => {
 				try {
 					if (!this.profile.halfFloat) return;
-					let e = await new Md().loadAsync(sv + "sky.hdr?assetVersion=" + of);
+					let e = await new Md().loadAsync(cv + "sky.hdr?assetVersion=" + of);
 					if (this.disposed) {
 						e.dispose();
 						return;
@@ -30411,7 +30693,7 @@ var ov = class {
 	}
 	buildWorld() {
 		this.lastShadowAt = 0;
-		let e = this.g, t = e.arena.mapId, n = fv[t] || fv.outpost, r = e.level.length;
+		let e = this.g, t = e.arena.mapId, n = hv[t] || hv.outpost, r = e.level.length;
 		this.clearWorld(), this.buildingWorld = !0, this.mapKey = t, e.arena.base?.() && e.arena.base().id === t && (e.protocolMap = e.arena.base()), this.wallKeys = "", this.scene.fog.color.set(n.fog), this.scene.fog.density = t === "freight" ? .021 : .012;
 		let i = this.material({
 			color: "#d7d4cd",
@@ -31192,7 +31474,7 @@ var ov = class {
 				.11,
 				.11
 			]);
-			let o = this.mesh(t, this.geo("radar-dish", () => new Xa(1.25, 24, 12, 0, cv, 0, Math.PI / 2)), r, [
+			let o = this.mesh(t, this.geo("radar-dish", () => new Xa(1.25, 24, 12, 0, lv, 0, Math.PI / 2)), r, [
 				e,
 				8.8,
 				i
@@ -31209,7 +31491,7 @@ var ov = class {
 			rubber: i,
 			amber: a,
 			lamp: o
-		}), e.id === "breakwater" && nv(this, t, this.g.level, (e, t) => this.furnitureTile(e, t) && !Bp(e, t) && !Yp(e, t) && !$p(e, t)), e.id === "medevac" && this.buildTransportInterior(e, t, {
+		}), e.id === "breakwater" && rv(this, t, this.g.level, (e, t) => this.furnitureTile(e, t) && !Bp(e, t) && !Yp(e, t) && !$p(e, t)), e.id === "medevac" && this.buildTransportInterior(e, t, {
 			steel: n,
 			paint: r,
 			rubber: i,
@@ -31862,7 +32144,7 @@ var ov = class {
 		};
 	}
 	loadCharacter(e) {
-		return !e || e === "operator" || !ag.some((t) => t.id === e) ? Promise.resolve(null) : (this.characterAssets ||= /* @__PURE__ */ new Map(), this.characterLoads ||= /* @__PURE__ */ new Map(), this.characterAssets.has(e) ? Promise.resolve(this.characterAssets.get(e)) : (this.characterLoads.has(e) || this.characterLoads.set(e, new Mu().setMeshoptDecoder(sg).loadAsync(`${sv}models/characters/${e}.glb?v=${sf}`).then((t) => this.disposed ? (this.disposeObject(t.scene), null) : (Lm(this, t), this.characterAssets.set(e, t), t)).catch((t) => (console.warn("[Outpost] Character unavailable:", e, t), null))), this.characterLoads.get(e)));
+		return !e || e === "operator" || !ag.some((t) => t.id === e) ? Promise.resolve(null) : (this.characterAssets ||= /* @__PURE__ */ new Map(), this.characterLoads ||= /* @__PURE__ */ new Map(), this.characterAssets.has(e) ? Promise.resolve(this.characterAssets.get(e)) : (this.characterLoads.has(e) || this.characterLoads.set(e, new Mu().setMeshoptDecoder(sg).loadAsync(`${cv}models/characters/${e}.glb?v=${sf}`).then((t) => this.disposed ? (this.disposeObject(t.scene), null) : (Lm(this, t), this.characterAssets.set(e, t), t)).catch((t) => (console.warn("[Outpost] Character unavailable:", e, t), null))), this.characterLoads.get(e)));
 	}
 	characterFor(e) {
 		let t = e.character;
@@ -32204,7 +32486,7 @@ var ov = class {
 				.04
 			]);
 		} else {
-			this.mesh(m, this.geo("combatHelmet", () => new Xa(1, 24, 16, 0, cv, 0, Math.PI * .6)), i, [
+			this.mesh(m, this.geo("combatHelmet", () => new Xa(1, 24, 16, 0, lv, 0, Math.PI * .6)), i, [
 				0,
 				2.09,
 				.025
@@ -32568,7 +32850,7 @@ var ov = class {
 		for (let n of e.skinParts) n.userData.inverseBind && (n.matrix.multiplyMatrices(t, n.userData.anchor.matrixWorld).multiply(n.userData.inverseBind), n.matrixWorldNeedsUpdate = !0);
 	}
 	actorLodDistance() {
-		return this.mobileDevice ? lv.phone : lv.desktop;
+		return this.mobileDevice ? uv.phone : uv.desktop;
 	}
 	updateActors(e) {
 		let t = /* @__PURE__ */ new Set(), n = this.g.camera(), r = Math.floor(e * 30) / 30, i = Math.floor(e * 15) / 15;
@@ -33347,6 +33629,9 @@ var ov = class {
 		t && (t.root.visible = !1);
 		for (let t of this.protocolBodies.values()) t.victimId === e.id && (t.root.visible = !1);
 	}
+	skyProfile() {
+		return mv[this.g.arena?.mapId] || pv;
+	}
 	updateCinematic(e, t) {
 		if (this.daySky) {
 			let t = e ? this.night.sky : this.daySky;
@@ -33354,7 +33639,9 @@ var ov = class {
 		}
 		if (!this.grade) return;
 		let n = this.grade.uniforms;
-		n.time.value = t % 100, n.highlight.value.set(1.025, 1.01, .98), n.shadow.value.set(.97, 1, 1.025), n.saturation.value = 1, n.vignette.value = .08, n.grain.value = .002, this.bloom.enabled = this.g.academy.preset === "high", this.bloom.strength = .12, this.bloom.threshold = 1.35, this.bloom.radius = .35;
+		n.time.value = t % 100;
+		let r = e ? pv : this.skyProfile();
+		n.highlight.value.set(...r.highlight), n.shadow.value.set(...r.shadow), n.saturation.value = r.saturation, n.vignette.value = .08, n.grain.value = .002, this.bloom.enabled = this.g.academy.preset === "high", this.bloom.strength = .12, this.bloom.threshold = 1.35, this.bloom.radius = .35;
 	}
 	ensureWorld() {
 		let e = this.g;
@@ -33382,11 +33669,11 @@ var ov = class {
 		let d = this.motion.matches ? 0 : (e.deathProgress || 0) ** 2;
 		this.camera.position.set(i.x * $, e.deathSequence ? 1.65 - d * 1.4 : this.eyeHeight + Dm(i, e.time) * $, i.y * $ + (s ? .85 : 0));
 		let f = this.cameraMotionScale();
-		this.camera.rotation.set(a - d * .25 * f, -i.a - Math.PI / 2, d * .5 * f, "YXZ"), this.adsBlend ??= 0, this.adsBlend += (+!!e.aiming - this.adsBlend) * (this.motion.matches ? 1 : 1 - Math.exp(-l * 14)), this.adsBlend < .001 && (this.adsBlend = 0), this.adsZoom = 1 - this.adsBlend * (1 - (uv[this.weaponId] ?? .85));
+		this.camera.rotation.set(a - d * .25 * f, -i.a - Math.PI / 2, d * .5 * f, "YXZ"), this.adsBlend ??= 0, this.adsBlend += (+!!e.aiming - this.adsBlend) * (this.motion.matches ? 1 : 1 - Math.exp(-l * 14)), this.adsBlend < .001 && (this.adsBlend = 0), this.adsZoom = 1 - this.adsBlend * (1 - (dv[this.weaponId] ?? .85));
 		let p = V.radToDeg(2 * Math.atan(Math.tan(e.verticalFov / 2) * this.adsZoom));
 		Math.abs(this.camera.fov - p) > .001 && (this.camera.fov = p, this.camera.updateProjectionMatrix()), (this.hazards ||= new u_(this)).shake(this.camera, t), this.updateProtocol(o, i), this.updateMedicalMission(o?.protocol?.mission, t);
 		let m = (this.night ||= new jg(this)).update(o, e.arena.mapId, t);
-		this.updateCinematic(m, t), this.clouds.update(t, m, this.motion.matches), this.canal?.update(t, this.motion.matches, +!!m, e.arena.waterShockUntil > e.arena.time, Mh(e.arena), this.protocolPowerOut), this.landmarks?.update(t, this.motion.matches), e.mode === "protocol" && (this.events ||= new X_(this)).update(o, t), Of(this, o, i, l);
+		this.updateCinematic(m, t), this.clouds.update(t, m, this.motion.matches), this.canal?.update(t, this.motion.matches, +!!m, e.arena.waterShockUntil > e.arena.time, Mh(e.arena), this.protocolPowerOut), this.landmarks?.update(t, this.motion.matches), e.mode === "protocol" && (this.events ||= new Z_(this)).update(o, t), Of(this, o, i, l);
 		let h = e.mode !== "protocol" && (this.hazards ||= new u_(this)).dim();
 		if (e.arena.mapId === "medevac" && f > 0) {
 			let e = Number(o?.protocol?.mission?.vehicle?.heading) || 0;
@@ -33412,20 +33699,20 @@ var ov = class {
 		this.updateProjectiles(t), this.updateWeapon();
 		let b = o?.protocol?.phase === "combat", x = (t - i.shotAt) / .16, S = e.mode === "protocol" && !b ? 0 : x >= 0 && x < 1 ? x < .12 ? x / .12 : (1 - (x - .12) / .88) ** 2 : 0, C = Math.max(0, Math.min(1, (i.reloadUntil - t) / 1.4)), w = C > 0 ? Math.sin(C * Math.PI) : 0;
 		this.rig.position.y = -.185 * Math.max(1, this.g.h / this.g.w) - (e.mode === "protocol" && !b ? .075 : 0) - w * .06 + (this.rigBase?.y || 0) + Math.sin(e.step) * .005 * f, this.rig.position.y -= d * .65, this.rig.position.z = (this.rigBase?.z || 0) + S * .04 + w * .03;
-		let T = this.adsBlend || 0, E = dv[this.weaponId] || dv.other;
+		let T = this.adsBlend || 0, E = fv[this.weaponId] || fv.other;
 		this.rigBase && (this.rig.position.x = this.rigBase.x + (E.x - this.rigBase.x) * T), this.rig.position.y += T * E.y;
 		let D = Math.atan2(Math.sin(i.a - (this.lastAim ?? i.a)), Math.cos(i.a - (this.lastAim ?? i.a)));
 		this.lastAim = i.a;
 		let O = l > 0 ? V.clamp(D / l * .012, -.05, .05) * f * (1 - T * .7) : 0;
 		this.sway = (this.sway || 0) + (O - (this.sway || 0)) * (1 - Math.exp(-l * 12)), this.rig.rotation.x = .02 - S * .075 + w * .16, this.rig.rotation.y = (this.rigBase?.yaw ?? -.07) * (1 - (this.adsBlend || 0)) + w * .1 + this.sway, this.rig.position.x += this.sway * .12, this.rig.rotation.z = -.025 + w * .5, this.flash.intensity = S > .65 ? 3 : 0, Ch(this.rig.userData.carbine, C, S), this.rig.visible = (i.hp > 0 || !!e.deathSequence && e.deathProgress < .65) && !s && !g;
 		let k = !["training", "protocol"].includes(e.mode) && e.time > e.zone.delay && (Math.abs(i.x - e.zone.cx) > e.zone.half || Math.abs(i.y - e.zone.cy) > e.zone.half), A = e.mode === "protocol" && (o?.protocol?.events || []).some((e) => e.kind === "sandstorm"), j = e.mode !== "protocol" && (this.hazards ||= new u_(this)).weather();
-		if (this.scene.fog.color.set(A ? this.night?.active ? "#4a3f30" : "#b39a72" : this.night?.active ? "#121d2e" : k ? "#9a2a22" : e.mode === "protocol" && e.arena.mapId === "breakwater" ? "#cdbb9c" : (fv[e.arena.mapId] || fv.outpost).fog), this.scene.fog.density = A ? this.naturalLighting?.inside ? .05 : .09 : this.night?.active ? this.naturalLighting?.inside ? .01 : .026 : k ? mg : e.arena.mapId === "medevac" && !o?.protocol?.mission?.vehicle?.arrived ? .002 : .009, j) {
+		if (this.scene.fog.color.set(A ? this.night?.active ? "#4a3f30" : "#b39a72" : this.night?.active ? "#121d2e" : k ? "#9a2a22" : e.mode === "protocol" && e.arena.mapId === "breakwater" ? "#cdbb9c" : (hv[e.arena.mapId] || hv.outpost).fog), this.scene.fog.density = A ? this.naturalLighting?.inside ? .05 : .09 : this.night?.active ? this.naturalLighting?.inside ? .01 : .026 : k ? mg : e.arena.mapId === "medevac" && !o?.protocol?.mission?.vehicle?.arrived ? .002 : .009, j) {
 			this.scene.fog.color.lerp((this.weatherFog ||= new q()).set(j.fog), j.k);
 			let e = this.naturalLighting?.inside ? j.density * .55 : j.density;
 			this.scene.fog.density += (e - this.scene.fog.density) * j.k;
 		}
 		A && (this.scene.background = (this.sandSky ||= new q()).copy(this.scene.fog.color)), this.renderer.shadowMap.enabled && (!this.lastShadowAt || c - this.lastShadowAt >= 1e3 / 30) && (this.renderer.shadowMap.needsUpdate = !0, this.lastShadowAt = c), this.renderer.info.reset(), (this.telemetry ||= new cg(this.renderer)).begin();
-		let ee = o?.protocol?.phase === "combat" && o.time < o.protocol.combat?.startsAt, M = ee && (this.battlePreparation ||= new ov(this)).update(o);
+		let ee = o?.protocol?.phase === "combat" && o.time < o.protocol.combat?.startsAt, M = ee && (this.battlePreparation ||= new sv(this)).update(o);
 		return !ee && this.battlePreparation && (this.battlePreparation.active = !1), M ? (this.identification.root.hidden = !0, this.renderer.autoClear = !0, this.renderer.render(this.battlePreparation.scene, this.battlePreparation.camera)) : !this.composer || e.academy.preset === "performance" ? (this.renderer.autoClear = !0, this.renderer.render(this.scene, this.camera), this.renderer.autoClear = !1, this.renderer.clearDepth(), this.renderer.render(this.weaponScene, this.weaponCamera), this.renderer.autoClear = !0) : this.composer.render(), h && h(), this.telemetry.end(), this.metrics = {
 			gpuMs: this.telemetry.gpuMs,
 			drawCalls: this.renderer.info.render.calls,
@@ -33448,7 +33735,7 @@ var ov = class {
 		return e === "off" ? 0 : e === "reduced" ? .4 : 1;
 	}
 	renderLobby(e) {
-		return this.disposed || this.contextUnavailable || !this.soldier ? !1 : (this.lobby ||= new J_(this)).render(e);
+		return this.disposed || this.contextUnavailable || !this.soldier ? !1 : (this.lobby ||= new Y_(this)).render(e);
 	}
 	dispose() {
 		if (this.lobby?.dispose(), this.clouds?.dispose(), !this.disposed) {
@@ -33467,4 +33754,4 @@ var ov = class {
 	}
 };
 //#endregion
-export { lv as ACTOR_LOD_TILES, pv as MilitaryRenderer };
+export { uv as ACTOR_LOD_TILES, gv as MilitaryRenderer };

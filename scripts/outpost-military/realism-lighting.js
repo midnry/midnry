@@ -107,6 +107,9 @@ function calibrateEnvironment(r, state) {
     Math.sin(elevation),
     Math.cos(elevation) * Math.sin(azimuth),
   );
+  // The photographed sun, kept so an arena's own sun height starts from it.
+  state.baseDirection = state.direction.clone();
+  state.calibratedFor = null;
 }
 
 export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
@@ -120,6 +123,16 @@ export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
     z = Number(camera?.y) * SCALE;
   if (!Number.isFinite(x) || !Number.isFinite(z)) return;
   calibrateEnvironment(r, state);
+  // The arena's sky profile may set the sun's height (late afternoon: a low
+  // sun, long shadows); the azimuth stays the photographed one.
+  const wantedElevation = r.skyProfile?.()?.sunElevation ?? null;
+  if (state.baseDirection && state.calibratedFor !== (r.g.arena?.mapId ?? null)) {
+    state.calibratedFor = r.g.arena?.mapId ?? null;
+    const base = state.baseDirection,
+      azimuth = Math.atan2(base.z, base.x),
+      elevation = wantedElevation == null ? Math.asin(base.y) : THREE.MathUtils.degToRad(wantedElevation);
+    state.direction.set(Math.cos(elevation) * Math.cos(azimuth), Math.sin(elevation), Math.cos(elevation) * Math.sin(azimuth));
+  }
   if (state.metadata !== metadata || state.decorRooms !== decorRooms) {
     state.metadata = metadata;
     state.decorRooms = decorRooms;
@@ -171,9 +184,11 @@ export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
   }
   for (let i = 0; i < 9; i++) r.roomBounce.sh.coefficients[i].lerp(probe.coefficients[i], blend);
   adapt(r.roomBounce, "intensity", powerOut ? 0.06 : night ? (inside ? 0.85 : 0.2) : 1);
-  r.sun.color.set(night ? "#9fb6e2" : "#ffeccf");
-  r.hemisphere.color.set(night ? "#2e4468" : "#cad9e1");
-  r.hemisphere.groundColor.set(night ? "#1d1914" : "#746c5c");
+  // By day the arena's sky profile colours the sun and the sky/ground light.
+  const sky = r.skyProfile?.();
+  r.sun.color.set(night ? "#9fb6e2" : sky?.sun || "#ffeccf");
+  r.hemisphere.color.set(night ? "#2e4468" : sky?.skyLight || "#cad9e1");
+  r.hemisphere.groundColor.set(night ? "#1d1914" : sky?.groundLight || "#746c5c");
   r.rim.visible = false;
   r.rim.intensity = 0;
   // The sun remains outside a roofed room. Roofs and walls occlude it rather
@@ -193,7 +208,7 @@ export function updateNaturalLighting(r, protocolView, camera, dt = 1 / 60) {
   // torch hotspot; fixtures still go dark and limited sight still applies.
   adapt(r.hemisphere, "intensity", inside ? (powerOut ? 0.09 : night ? 0.08 : 0.18) : night ? 0.12 : lighting ? 0.32 : 0.46);
   adapt(r.scene, "environmentIntensity", inside ? (powerOut ? 0.065 : night ? 0.07 : 0.2) : night ? 0.07 : 0.48);
-  r.scene.backgroundIntensity = night ? 1 : 0.58;
+  r.scene.backgroundIntensity = night ? 1 : sky?.intensity ?? 0.58;
   // Keep exposure independent of electrical state, including sky seen through
   // a window. Only walking between shelter and open air changes adaptation.
   adapt(r.renderer, "toneMappingExposure", night ? 1.08 : inside ? 0.96 : 0.91);

@@ -80,15 +80,133 @@ export const ACTOR_LOD_TILES = { desktop: 10, phone: 6.5 };
 const ADS_ZOOM = { carbine: 0.6, twin: 0.7, rocket: 0.72, scatter: 0.85, breach: 0.88 };
 /** Where the gun sits when aiming: the carbine's optic on the crosshair. */
 const ADS_RIG = { carbine: { x: -0.008, y: 0.08 }, twin: { x: 0.05, y: 0.04 }, other: { x: 0.02, y: 0.05 } };
+/** Each arena's daytime sky and light, over the one photographed sky:
+ * how bright the photo shows (`intensity`), the drifting cloud layer
+ * (`coverage`, `lit`, `shade`), the sun and sky-light colours, and a
+ * subtle grade (`highlight` / `shadow` tints, `saturation`). Night, storms
+ * and sandstorms override these as before. Fog density is unchanged, so
+ * rivals stay as visible as they were. */
+const DEFAULT_SKY = {
+  // horizon / hazeAlpha / hazeHeight: the haze band the cloud layer draws
+  // over the photograph's grey horizon (0 = none). sunElevation (degrees)
+  // lowers or raises the photographed sun: long or short shadows.
+  horizon: "#d4c8ad",
+  hazeAlpha: 0,
+  hazeHeight: 0.25,
+  intensity: 0.58,
+  coverage: 0.46,
+  lit: [1.3, 1.26, 1.18],
+  shade: "#bcc4cf",
+  sun: "#ffeccf",
+  skyLight: "#cad9e1",
+  groundLight: "#746c5c",
+  highlight: [1.025, 1.01, 0.98],
+  shadow: [0.97, 1.0, 1.025],
+  saturation: 1.0,
+};
+const SKIES = {
+  // Dust Outpost: late-afternoon desert. Warm sun, a thinner, higher cloud
+  // layer, sand-coloured haze and bounce light, a touch more saturation.
+  outpost: {
+    // zenith / horizonSky / sunGlow: the arena's own daytime sky, drawn over
+    // the photograph (which still lights and reflects).
+    zenith: "#6f93b6",
+    horizonSky: "#eacba0",
+    sunGlow: "#ffd29a",
+    horizon: "#e0b985",
+    hazeAlpha: 0.62,
+    hazeHeight: 0.3,
+    sunElevation: 30,
+    intensity: 0.6,
+    coverage: 0.3,
+    lit: [1.36, 1.25, 1.06],
+    shade: "#c4b7a6",
+    sun: "#ffe4b8",
+    skyLight: "#d6d0c2",
+    groundLight: "#8a7558",
+    highlight: [1.06, 1.01, 0.92],
+    shadow: [0.96, 0.985, 1.02],
+    saturation: 1.1,
+  },
+  // Skyport: clear coastal light, cooler and crisper, bigger clouds.
+  skyport: {
+    // zenith / horizonSky / sunGlow: the arena's own daytime sky, drawn over
+    // the photograph (which still lights and reflects).
+    zenith: "#5f8fc0",
+    horizonSky: "#d6e1ea",
+    sunGlow: "#fff1dc",
+    horizon: "#cfdde8",
+    hazeAlpha: 0.35,
+    hazeHeight: 0.2,
+    sunElevation: 48,
+    intensity: 0.62,
+    coverage: 0.52,
+    lit: [1.3, 1.29, 1.26],
+    shade: "#aab6c6",
+    sun: "#fff3e0",
+    skyLight: "#c6d8e6",
+    groundLight: "#6f7072",
+    highlight: [1.0, 1.01, 1.04],
+    shadow: [0.97, 0.995, 1.03],
+    saturation: 1.04,
+  },
+  // Wreck Estate: humid, hazy and soft; greener bounce from the gardens.
+  estate: {
+    // zenith / horizonSky / sunGlow: the arena's own daytime sky, drawn over
+    // the photograph (which still lights and reflects).
+    zenith: "#8aa3b8",
+    horizonSky: "#dcd7cb",
+    sunGlow: "#ffe9cc",
+    horizon: "#d9d3c4",
+    hazeAlpha: 0.5,
+    hazeHeight: 0.28,
+    sunElevation: 40,
+    intensity: 0.56,
+    coverage: 0.58,
+    lit: [1.26, 1.25, 1.2],
+    shade: "#b4b8bc",
+    sun: "#fff0d8",
+    skyLight: "#cdd6d6",
+    groundLight: "#6b7558",
+    highlight: [1.03, 1.015, 0.97],
+    shadow: [0.975, 1.0, 1.01],
+    saturation: 1.0,
+  },
+  // Calder Quay (Last Signal and the Blackout base): harbour evening,
+  // amber light low on the water.
+  quay: {
+    // zenith / horizonSky / sunGlow: the arena's own daytime sky, drawn over
+    // the photograph (which still lights and reflects).
+    zenith: "#6a88aa",
+    horizonSky: "#edc394",
+    sunGlow: "#ffc98a",
+    horizon: "#e2b98e",
+    hazeAlpha: 0.6,
+    hazeHeight: 0.32,
+    sunElevation: 24,
+    intensity: 0.58,
+    coverage: 0.42,
+    lit: [1.34, 1.22, 1.08],
+    shade: "#b9aea6",
+    sun: "#ffdfae",
+    skyLight: "#d4cfc4",
+    groundLight: "#7a6c5a",
+    highlight: [1.05, 0.995, 0.93],
+    shadow: [0.965, 0.99, 1.02],
+    saturation: 1.06,
+  },
+};
+SKIES.town = SKIES.quay;
 const PROFILES = {
-  outpost: { floor: "#a69980", fog: "#d4c8ad", metal: "#788178" },
+  outpost: { floor: "#a69980", fog: "#d9c6a0", metal: "#788178" },
   testblock: { floor: "#8e958c", fog: "#b8c1c5", metal: "#75806e" },
   skyport: { floor: "#bbc0bf", fog: "#bccbd0", metal: "#8e999b" },
   freight: { floor: "#747d7d", fog: "#a5b3bd", metal: "#647269" },
-  estate: { floor: "#c6bca5", fog: "#c4c1ba", metal: "#81867b" },
+  estate: { floor: "#c6bca5", fog: "#cfc8b8", metal: "#81867b" },
   breakwater: { floor: "#b2a38c", fog: "#a8bdc4", metal: "#77858b" },
   medevac: { floor: "#7c888a", fog: "#b8c9d0", metal: "#92a1a3" },
   hospital: { floor: "#8f8466", fog: "#b9b8ac", metal: "#7d8580" },
+  quay: { floor: "#a69980", fog: "#d2bda4", metal: "#788178" },
 };
 export class MilitaryRenderer {
   constructor(g, onProgress = () => {}, { safeMode = false } = {}) {
@@ -3461,6 +3579,10 @@ export class MilitaryRenderer {
     for (const body of this.protocolBodies.values())
       if (body.victimId === camera.id) body.root.visible = false;
   }
+  /** The arena's daytime sky profile (SKIES), the default where none is set. */
+  skyProfile() {
+    return SKIES[this.g.arena?.mapId] || DEFAULT_SKY;
+  }
   /** Day reads like late-afternoon sun; night swaps in a starry sky and
    * stronger glow so lamps and signs bloom. */
   updateCinematic(night, time) {
@@ -3474,11 +3596,12 @@ export class MilitaryRenderer {
     if (!this.grade) return;
     const u = this.grade.uniforms;
     u.time.value = time % 100;
-    // One material-assessment grade across every room and map. Night/day
-    // differences come from their actual lighting, not location-based filters.
-    u.highlight.value.set(1.025, 1.01, .98);
-    u.shadow.value.set(.97, 1.0, 1.025);
-    u.saturation.value = 1.0;
+    // A subtle grade per arena (its sky profile) by day; one neutral grade
+    // at night, where the lighting itself carries the difference.
+    const sky = night ? DEFAULT_SKY : this.skyProfile();
+    u.highlight.value.set(...sky.highlight);
+    u.shadow.value.set(...sky.shadow);
+    u.saturation.value = sky.saturation;
     u.vignette.value = .08;
     u.grain.value = .002;
     this.bloom.enabled = this.g.academy.preset === 'high';

@@ -107,3 +107,62 @@ Branch `outpost/polish-2026` (`4b5d81d`, `02e6f13`, this doc). **Not deployed**:
    - iPhone Safari and an Android phone, portrait and landscape: lobby sharpness, frame pacing,
      touch reliability with moving, aiming and firing at once.
    - Plus a controller check.
+
+## Step 2 (23 Oct 2026, later): arena skies, the rest of the lobby, Dust Outpost dressing
+
+Branch `outpost/polish-2026` on top of the deployed `4be9e4b`. **Not deployed** until the owner says
+"deploy".
+
+### Arena skies (`compare-arena-sky.jpg`)
+
+- **Cause of the washed-out look:** every arena used one photographed sky whose horizon is white
+  haze, shown at 58% brightness, with white shader clouds on top, under a high sun. Warming the
+  grade alone changed almost nothing (tried first; the shots were nearly identical).
+- **What changed:** each Last Signal arena now has its own daytime sky profile (`SKIES` in
+  `renderer.js`):
+  - the sky itself is drawn per arena (horizon colour, zenith colour, sun glow, cloud cover and
+    cloud colours, a haze band at the horizon) over the photograph, which still provides the
+    lighting and reflections, so materials look as before;
+  - the sun's height per arena (Dust Outpost 30°, Calder Quay 24°, Wreck Estate 40°, Skyport 48°),
+    so Dust Outpost has long late-afternoon shadows;
+  - sun, sky-light and bounce-light colours, and a subtle grade (warm for Dust Outpost and the
+    Quay, cool for Skyport, soft for the Estate).
+  - Fog density is unchanged. Night, storms and sandstorms override all of this as before.
+    Blackout Protocol's Breakwater and the hospital keep the photographed sky.
+- **Visibility:** `actor-visibility.mjs` on Dust Outpost after the change: 0 hidden rivals, laptop and
+  phone, hip-fire and sights.
+
+### The rest of the lobby (`compare-lobby-step2.jpg`)
+
+- `scripts/assets/lobby-set.py` now also models the **yard** on the right (two fuel tanks on
+  cradles with a walkway, pipes and valves, a bund wall, a comms cabin with a dish mast and a red
+  warning light, a chain-link fence, a floodlight mast) and the **skyline** (stepped blocks with
+  lit windows, a water tower, two cooling towers, two cranes, chimneys), all with baked contact
+  shading. `models/lobby-set-v1.glb` is 1.3 MB, about 7k faces.
+- The simple box skyline, gantry and hangar stand-ins hide once the model loads.
+
+### Dust Outpost dressing (`dust-outpost-dressing.jpg`)
+
+- `scripts/assets/dust-set.py` models five vignettes with baked shading
+  (`models/arena-dust-set-v1.glb`, 0.25 MB): a floodlight mast with its generator and cable drum,
+  a water tank on a stand, a radio mast with guy wires and a field telephone, a tarp lean-to over
+  crates, and oil drums under a camo net.
+- They join the existing scanned props in the arena's dressing list, placed by the same rule as
+  before: only on an open tile that touches exactly one wall, never in a lane. **Routes, cover
+  and collision are unchanged** (dressing has never had collision). `prop-closeup.mjs` checks that
+  rule on every placed prop and photographs each vignette.
+- Dressing entries now carry a weight, so the big vignettes stay rarer than small props.
+
+### Checks
+
+| Check | Result |
+|---|---|
+| Outpost unit tests | 327/327 |
+| Typecheck | clean |
+| Dust Outpost views (`arena-look.mjs`), draw calls | spawn 178 (was 152), gate 126 (107), court 104 (85), wide 164 (143), budget 520 |
+| Blackout base draw calls (`draw-calls.mjs`) | worst view 326 (was 327), budget 520 |
+| Rival visibility (`actor-visibility.mjs`) | 0 hidden, laptop and phone |
+| Props on single-wall open tiles (`prop-closeup.mjs`) | PASS, 28 placed |
+| Lobby cost | unchanged draw-call count class (one more mesh group) |
+
+Real phones still untested.

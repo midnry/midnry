@@ -253,8 +253,8 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
     towers.push(box(0.6, h, 0.6, x, h / 2, z), box(1.6, 0.5, 1.6, x, h, z), box(1, 1.6, 1, x, h + 1.05, z));
     for (let y = 1.6; y < h; y += 1.8) towers.push(box(1.3, 0.14, 1.3, x, y, z));
   }
-  scene.add(new THREE.Mesh(own(mergeGeometries(far)), facade));
-  scene.add(new THREE.Mesh(own(mergeGeometries(towers)), dark));
+  scene.add(keep(new THREE.Mesh(own(mergeGeometries(far)), facade)));
+  scene.add(keep(new THREE.Mesh(own(mergeGeometries(towers)), dark)));
 
   // The hangar on the left: a tall dark wall with an overhang, ribs and
   // amber light strips, and crates stacked in front.
@@ -408,7 +408,7 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
   }
   gantry.push(box(3.4, 0.25, 3.4, gx, gh, gz), box(1.4, 1.6, 1.4, gx + 0.6, gh + 0.9, gz));
   gantry.push(box(4.2, 0.18, 0.18, gx - 2.8, gh - 0.6, gz)); // jib arm
-  scene.add(new THREE.Mesh(own(mergeGeometries(gantry.map((g) => (g.index ? g.toNonIndexed() : g)))), dark));
+  scene.add(keep(new THREE.Mesh(own(mergeGeometries(gantry.map((g) => (g.index ? g.toNonIndexed() : g)))), dark)));
 
   // Lamps: amber points across the yard (the concept's warm specks).
   const lamps = [],
@@ -430,7 +430,9 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
     c.fillRect(0, 0, w, h);
   });
   // Gantry, vehicle and hangar lights join the lamp glows.
-  lamps.push(gx + 0.6, gh + 1.9, gz, gx - 1, gh * 0.5, gz + 1.2, gx + 1, gh * 0.25, gz + 1.2);
+  // The modelled set's comms mast warning light and floodlight mast
+  // (scripts/assets/lobby-set.py `yard`); the gantry stand-in shares them.
+  lamps.push(20, 14.2, -25.5, 23.4, 11.5, -20.7, 24, 11.5, -20.7, 24.6, 11.5, -20.7, gx + 0.6, gh + 1.9, gz);
   // The truck's headlights (modelled lamps at x 3.84, height 1.5, ±0.82 across).
   for (const side of [-0.82, 0.82]) {
     const c = Math.cos(LOBBY_TRUCK.turn),

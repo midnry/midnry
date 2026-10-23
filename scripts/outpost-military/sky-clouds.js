@@ -20,6 +20,13 @@ uniform float opacity;
 uniform vec3 sunDir;
 uniform vec3 lit;
 uniform vec3 shade;
+uniform vec3 haze;
+uniform float hazeAlpha;
+uniform float hazeHeight;
+uniform vec3 zenith;
+uniform vec3 horizonSky;
+uniform vec3 sunGlow;
+uniform float skyAlpha;
 varying vec3 vDir;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float noise(vec2 p) {
@@ -40,18 +47,32 @@ float density(vec2 uv) {
 }
 void main() {
   vec3 d = normalize(vDir);
-  if (d.y < 0.015) discard;
+  if (d.y < 0.0) discard;
+  // The arena's own haze: a warm (or cool) band over the photograph's
+  // grey horizon, fading out with height. It gives each map its colour.
+  float band = (1.0 - smoothstep(0.0, hazeHeight, d.y)) * hazeAlpha;
   // Project onto a flat cloud deck: distant clouds bunch towards the horizon.
   vec2 uv = d.xz / (d.y + 0.12) * 1.6;
-  float c = density(uv);
-  if (c < 0.004) discard;
+  float c = d.y < 0.015 ? 0.0 : density(uv);
+  if (c < 0.004 && band < 0.004) discard;
   // Self-shadow: how much cloud lies between this point and the sun.
   float towardSun = density(uv + normalize(sunDir.xz + 1e-4) * 0.09);
   float light = clamp(1.0 - towardSun * 0.75 + (1.0 - c) * 0.35, 0.0, 1.0);
   float rim = pow(max(dot(d, normalize(sunDir)), 0.0), 6.0) * (1.0 - c) * 1.4;
   vec3 color = mix(shade, lit, light) + lit * rim;
   float horizon = smoothstep(0.015, 0.22, d.y);
-  gl_FragColor = vec4(color, c * horizon * opacity);
+  float cloud = c * horizon * opacity;
+  // The arena's own sky (skyAlpha 1): a gradient from the horizon colour to
+  // the zenith, the sun's glow, then the clouds and the haze band over it.
+  // With skyAlpha 0 the photographed sky shows through as before.
+  float s = max(dot(d, normalize(sunDir)), 0.0);
+  vec3 base = mix(horizonSky, zenith, smoothstep(0.0, 0.55, d.y));
+  base += sunGlow * (pow(s, 24.0) * 0.9 + pow(s, 6.0) * 0.18);
+  vec3 over = mix(base, color, cloud);
+  over = mix(over, haze, band);
+  float a = max(skyAlpha, cloud + band * (1.0 - cloud));
+  vec3 mixed = skyAlpha > 0.5 ? over : (a > 0.0 ? (color * cloud + haze * band * (1.0 - cloud)) / a : color);
+  gl_FragColor = vec4(mixed, a);
   #include <colorspace_fragment>
 }`;
 
@@ -69,6 +90,13 @@ export class SkyClouds {
         sunDir: { value: new THREE.Vector3(-0.5, 0.6, -0.4) },
         lit: { value: new THREE.Color("#fff6e8") },
         shade: { value: new THREE.Color("#7a8494") },
+        haze: { value: new THREE.Color("#d4c8ad") },
+        hazeAlpha: { value: 0 },
+        hazeHeight: { value: 0.25 },
+        zenith: { value: new THREE.Color("#7fa3c4") },
+        horizonSky: { value: new THREE.Color("#e9c9a0") },
+        sunGlow: { value: new THREE.Color("#ffd9a0") },
+        skyAlpha: { value: 0 },
       },
       transparent: true,
       depthWrite: false,
@@ -94,10 +122,24 @@ export class SkyClouds {
     u.sunDir.value.copy(this.sun);
     // Day clouds are brighter than the dimmed sky photograph behind them,
     // with soft blue-grey undersides; night clouds are faint and dark.
+    const sky = r.skyProfile?.();
     if (night) u.lit.value.set("#5d6a84");
-    else u.lit.value.setRGB(1.3, 1.26, 1.18);
-    u.shade.value.set(night ? "#1b2130" : "#bcc4cf");
+    else u.lit.value.setRGB(...(sky?.lit || [1.3, 1.26, 1.18]));
+    u.shade.value.set(night ? "#1b2130" : sky?.shade || "#bcc4cf");
     u.opacity.value = night ? 0.45 : 0.7;
+    u.coverage.value = sky?.coverage ?? 0.46;
+    // The haze band is the arena's by day; at night the starry sky shows.
+    u.haze.value.set(sky?.horizon || "#d4c8ad");
+    u.hazeAlpha.value = night ? 0 : sky?.hazeAlpha ?? 0;
+    u.hazeHeight.value = sky?.hazeHeight ?? 0.25;
+    // Arenas with their own palette replace the photographed sky by day.
+    const own = !night && !!sky?.zenith;
+    u.skyAlpha.value = own ? 1 : 0;
+    if (own) {
+      u.zenith.value.set(sky.zenith);
+      u.horizonSky.value.set(sky.horizonSky);
+      u.sunGlow.value.set(sky.sunGlow || "#ffd9a0");
+    }
     // The photographed sky drifts too (its own clouds), slower than the
     // shader layer, so the two read as separate heights. Lighting
     // reflections (the environment map) stay fixed.

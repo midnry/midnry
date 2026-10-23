@@ -35,11 +35,25 @@ export const ARENAS = {
       concrete: { set: "blast-concrete", color: "#fff4e2", normalScale: 0.8 },
       wood: { set: "crate-wood", color: "#b49a74" },
       bracket: { color: "#3c4236", metalness: 0.5, roughness: 0.55 },
+      // The modelled dressing set (scripts/assets/dust-set.py).
+      olive: { color: "#868a62", metalness: 0.3, roughness: 0.6 },
+      rubber: { color: "#2a2a27", metalness: 0, roughness: 0.9 },
+      tarp: { color: "#b9a476", metalness: 0, roughness: 0.95 },
+      net: { color: "#6f7d52", metalness: 0, roughness: 1 },
+      lamp: { color: "#fff0d0", metalness: 0, roughness: 0.4, emissive: "#ffd9a0", emissiveIntensity: 1.6 },
     },
+    extraKit: "arena-dust-set-v1",
     ground: { set: "desert-ground", tile: 2.5, color: "#efe3cb" },
     walls: {},
-    // [asset, depth against the wall (m), scale]
+    // [asset, depth against the wall (m), scale, weight (default 1)]
     dressing: [
+      // Modelled vignettes: a floodlight mast with its generator, a water
+      // tank, a radio mast, a tarp lean-to, drums under a camo net.
+      ["prop-power", 0.7, 1, 0.5],
+      ["prop-tank", 0.75, 1, 0.5],
+      ["prop-radio", 0.6, 1, 0.4],
+      ["prop-lean", 0.8, 1, 0.5],
+      ["prop-stack", 0.7, 1, 0.5],
       ["metal_jerrycan", 0.35],
       ["metal_jerrycan_green", 0.35],
       ["plastic_jerrycan", 0.35],
@@ -204,9 +218,12 @@ class ArenaStyle {
         .filter(Boolean),
     );
     this.loading = (async () => {
-      const [kit, props] = await Promise.all([
+      const [kit, props, extra] = await Promise.all([
         loader.loadAsync(url(`models/${config.kit}.glb`)),
         loader.loadAsync(url(`models/${config.props}.glb`)),
+        // A second modelled set of prop-* vignettes (optional; its failure
+        // is not fatal: the arena simply has fewer kinds of dressing).
+        config.extraKit ? loader.loadAsync(url(`models/${config.extraKit}.glb`)).catch(() => null) : null,
         ...[...names].map(set),
       ]);
       const material = (spec) => {
@@ -215,6 +232,7 @@ class ArenaStyle {
           metalness: spec.metalness ?? 0,
           roughness: spec.roughness ?? 1,
           color: spec.color,
+          ...(spec.emissive ? { emissive: spec.emissive, emissiveIntensity: spec.emissiveIntensity ?? 1 } : {}),
         });
         if (spec.normalScale != null) m.normalScale.set(spec.normalScale, spec.normalScale);
         m.userData.world = true;
@@ -231,11 +249,13 @@ class ArenaStyle {
       // top-level node). Pieces named prop-* are small props, not walls.
       this.pieces = {};
       this.props = new Map();
-      kit.scene.updateMatrixWorld(true);
-      kit.scene.traverse((o) => {
+      for (const file of [kit, extra]) {
+        if (!file) continue;
+        file.scene.updateMatrixWorld(true);
+        file.scene.traverse((o) => {
         if (!o.isMesh) return;
         let top = o;
-        while (top.parent && top.parent !== kit.scene) top = top.parent;
+        while (top.parent && top.parent !== file.scene) top = top.parent;
         const g = o.geometry.clone().applyMatrix4(o.matrixWorld);
         // Baked occlusion is kept soft: contact shading, not a dark wash.
         const ao = g.getAttribute("color");
@@ -251,7 +271,8 @@ class ArenaStyle {
           mesh.castShadow = hd;
           this.props.get(top.name).add(mesh);
         } else (this.pieces[top.name] ||= []).push(part);
-      });
+        });
+      }
       // Props: one group per asset, merged parts kept as separate meshes.
       // Their shadows cost a second pass of every triangle; only High pays it.
       props.scene.traverse((o) => {
@@ -296,6 +317,17 @@ class ArenaStyle {
 }
 
 /** All arena art passes; the renderer asks it by arena id. */
+/** One dressing entry by weight (the optional 4th element, default 1). */
+function weightedPick(list, roll) {
+  const total = list.reduce((sum, entry) => sum + (entry[3] ?? 1), 0);
+  let at = roll * total;
+  for (const entry of list) {
+    at -= entry[3] ?? 1;
+    if (at < 0) return entry;
+  }
+  return list[list.length - 1];
+}
+
 export class ArenaStyles {
   constructor(r, asset, version) {
     this.r = r;
@@ -410,6 +442,8 @@ export class ArenaStyles {
     const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
     const group = new THREE.Group();
     group.name = "Arena props";
+    // Where each prop went (QA: scripts/qa/prop-closeup.mjs).
+    const placed = (group.userData.placed = []);
     for (let y = 1; y < n - 1; y++)
       for (let x = 1; x < n - 1; x++) {
         if (!open(x, y) || rand() > 0.13) continue;
@@ -418,7 +452,7 @@ export class ArenaStyles {
         if (walls.length !== 1) continue;
         const [dx, dy] = walls[0];
         if (!open(x - dx, y - dy)) continue;
-        const [asset, depth, scale = 1] = list[Math.floor(rand() * list.length)];
+        const [asset, depth, scale = 1] = weightedPick(list, rand());
         const source = style.props.get(asset);
         if (!source) continue;
         const prop = source.clone();
@@ -429,6 +463,7 @@ export class ArenaStyles {
         prop.position.set(px * SCALE, 0, py * SCALE);
         prop.rotation.y = Math.atan2(dx, dy) + (rand() - 0.5) * 0.6;
         group.add(prop);
+        placed.push({ asset, tile: [x, y], x: px * SCALE, z: py * SCALE, dx, dy });
       }
     root.add(group);
     // Repeated props share geometry: draw each kind as one instanced batch.

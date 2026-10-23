@@ -7,9 +7,13 @@ baked into vertex colours (kit_common.bake_and_export):
            pipes, wall lamps and hazard striping.
   truck  - an armoured six-wheel truck, centred on its own origin (the game
            places it): cab, canvas-covered bed, bumper, grille, lights.
+  yard   - the right side: fuel tanks on cradles with a walkway and pipes,
+           a comms cabin with a mast, a chain-link fence, a floodlight mast.
+  skyline - the far skyline: lit blocks, a water tower, cooling towers,
+           cranes and chimneys (in lobby coordinates).
 Materials (the game assigns colour, roughness and glow by name): steel,
 cladding, concrete, interior, hazard, lamp, glass, olive, canvas, rubber,
-chrome, grille.
+chrome, grille, mesh, facade, windows.
 Usage: <blender-python> scripts/assets/lobby-set.py out.glb"""
 import sys
 import math
@@ -272,5 +276,135 @@ def truck():
     return o
 
 
-pieces = [hangar(), truck()]
+def yard():
+    """The right side of the stage: a fuel depot (two horizontal tanks on
+    cradles with a pipe gantry and bund wall), a comms cabin with a mast,
+    a chain-link fence on concrete posts, and a floodlight mast. Everything
+    sits behind the truck (x 6..16, z -14..-30) so the stage stays clear."""
+    parts = []
+    # Bund wall around the tanks.
+    for (sx, sz, x, z) in ((9.0, 0.3, 11.0, -22.0), (9.0, 0.3, 11.0, -29.0), (0.3, 7.3, 6.5, -25.5), (0.3, 7.3, 15.5, -25.5)):
+        parts.append(bx((sx, 0.9, sz), (x, 0.45, z), "concrete", bevel=0.03, uv=1.5))
+    # Two tanks on saddle cradles, a walkway on top, a ladder.
+    for z in (-24.0, -27.2):
+        for x in (8.5, 13.5):
+            parts.append(bx((0.5, 0.9, 2.0), (x, 0.45, z), "concrete", uv=1.0))
+        parts.append(cylinder(1.05, 7.0, P(11.0, z, 1.75), "x", "olive", verts=24, bevel=0.0))
+        for x in (7.55, 14.45):
+            parts.append(cylinder(1.0, 0.1, P(x, z, 1.75), "x", "olive", verts=24))
+        for x in (8.2, 11.0, 13.8):
+            parts.append(cylinder(1.09, 0.12, P(x, z, 1.75), "x", "steel", verts=24))
+    parts.append(bx((7.2, 0.06, 0.8), (11.0, 2.85, -25.6), "grille", uv=1.0))
+    for x in (7.6, 9.3, 11.0, 12.7, 14.4):
+        parts.append(bx((0.05, 1.0, 0.05), (x, 3.35, -25.2), "steel", uv=0))
+        parts.append(bx((0.05, 1.0, 0.05), (x, 3.35, -26.0), "steel", uv=0))
+    for z in (-25.2, -26.0):
+        parts.append(bx((6.9, 0.05, 0.05), (11.0, 3.85, z), "steel", uv=0))
+    # Pipe gantry from the tanks to the hangar side, with valves.
+    parts.append(cylinder(0.12, 9.0, P(11.0, -21.6, 1.1), "x", "steel", verts=12))
+    parts.append(cylinder(0.08, 9.0, P(11.0, -21.4, 1.35), "x", "chrome", verts=10))
+    for x in (8.0, 11.0, 14.0):
+        parts.append(cylinder(0.16, 0.35, P(x, -21.6, 1.1), "y", "hazard", verts=12))
+        parts.append(bx((0.12, 1.1, 0.12), (x, 0.55, -21.6), "steel", uv=0))
+    # Ladder up the near tank.
+    for y in (0.5, 0.9, 1.3, 1.7, 2.1, 2.5):
+        parts.append(bx((0.5, 0.04, 0.04), (7.2, y, -23.0), "steel", uv=0))
+    for x in (6.95, 7.45):
+        parts.append(bx((0.05, 2.7, 0.05), (x, 1.35, -23.0), "steel", uv=0))
+    # Comms cabin: a container with a door, an AC unit, a mast with dishes.
+    parts.append(bx((6.0, 2.6, 2.5), (18.5, 1.3, -24.0), "cladding", bevel=0.03, uv=1.0))
+    parts.append(bx((6.1, 0.12, 2.6), (18.5, 2.66, -24.0), "steel", uv=1.0))
+    parts.append(bx((0.06, 2.0, 0.9), (15.47, 1.0, -23.4), "steel", uv=0))  # door
+    parts.append(bx((0.5, 0.6, 0.6), (15.3, 2.0, -24.9), "steel", bevel=0.02, uv=0))  # AC
+    parts.append(bx((0.06, 0.9, 1.4), (15.47, 1.6, -22.5), "glass", uv=0))
+    parts.append(bx((0.18, 0.5, 1.2), (15.6, 0.4, -24.0), "hazard", uv=0.4))
+    mx, mz = 20.0, -25.5
+    parts.append(cylinder(0.14, 14.0, P(mx, mz, 7.0), "z", "steel", verts=10))
+    for y in (4.0, 8.0, 12.0):
+        parts.append(bx((1.2, 0.08, 1.2), (mx, y, mz), "steel", uv=0))
+    parts.append(cylinder(0.9, 0.2, P(mx + 0.6, mz + 0.4, 9.5), "x", "steel", verts=20))
+    parts.append(cylinder(0.65, 0.2, P(mx - 0.6, mz - 0.3, 11.2), "x", "steel", verts=20))
+    parts.append(bx((0.1, 0.1, 0.1), (mx, 14.2, mz), "lamp", uv=0))
+    for k in range(3):
+        parts.append(beam(P(mx, mz, 13.0), P(mx + 2.5 * math.cos(k * 2.09), mz + 2.5 * math.sin(k * 2.09), 0.0), 0.03, "steel"))
+    # Chain-link fence on concrete posts across the yard front, with a gap
+    # by the truck.
+    for x in (5.5, 8.0, 10.5, 13.0, 15.5, 18.0, 20.5, 23.0):
+        parts.append(bx((0.2, 2.4, 0.2), (x, 1.2, -20.0), "concrete", bevel=0.02, uv=0))
+        parts.append(bx((0.05, 0.3, 0.05), (x, 2.55, -20.0), "steel", uv=0))
+    parts.append(bx((18.0, 0.04, 0.03), (14.5, 2.35, -20.0), "steel", uv=0))
+    parts.append(bx((18.0, 0.04, 0.03), (14.5, 0.3, -20.0), "steel", uv=0))
+    parts.append(bx((18.0, 1.95, 0.01), (14.5, 1.3, -20.0), "mesh", uv=0.5))
+    # Floodlight mast at the yard corner.
+    fx, fz = 24.0, -21.0
+    parts.append(cylinder(0.18, 12.0, P(fx, fz, 6.0), "z", "steel", verts=10))
+    parts.append(bx((1.6, 0.14, 0.14), (fx, 11.8, fz), "steel", uv=0))
+    for dx in (-0.6, 0.0, 0.6):
+        parts.append(bx((0.45, 0.35, 0.2), (fx + dx, 11.5, fz + 0.15), "steel", bevel=0.02, uv=0))
+        parts.append(bx((0.38, 0.28, 0.04), (fx + dx, 11.5, fz + 0.27), "lamp", uv=0))
+    o = join(parts, "yard")
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    return o
+
+
+def skyline():
+    """The far skyline (60-90 m out): stepped blocks with lit windows (a
+    separate "windows" material the game makes glow), a water tower, cooling
+    towers, cranes and chimneys, in silhouette against the sunset."""
+    import random
+    random.seed(20261024)
+    parts = []
+    def block(x, z, w, h, d, ry=0.0):
+        parts.append(box((w, d, h), P(x, z, h / 2), "facade", uv=0, rotation=(0, 0, ry)))
+        # Lit panes on the face towards the stage (+z side), a few per floor.
+        for fy in range(int(h / 1.2)):
+            for k in range(int(w / 1.4)):
+                if random.random() < 0.22:
+                    px = x - w / 2 + 0.7 + k * 1.4
+                    py = 0.9 + fy * 1.2
+                    parts.append(box((0.6, 0.06, 0.5), P(px, z + d / 2 + 0.03, py), "windows", uv=0, rotation=(0, 0, ry)))
+    for i in range(30):
+        x = -70 + random.random() * 140
+        z = -60 - random.random() * 30
+        if abs(x - 44) < 10 and random.random() < 0.7:
+            continue  # keep the sun clear
+        w = 3 + random.random() * 6
+        h = 1.5 + random.random() * (6 if random.random() < 0.25 else 2.5)
+        d = 3 + random.random() * 5
+        ry = random.random() * 0.4 - 0.2
+        block(x, z, w, h, d, ry)
+        if random.random() < 0.55:
+            uw = w * (0.4 + random.random() * 0.3)
+            uh = h * (0.3 + random.random() * 0.5)
+            ux = x + (random.random() - 0.5) * (w - uw) * 0.8
+            parts.append(box((uw, d * 0.7, uh), P(ux, z, h + uh / 2), "facade", uv=0))
+            if random.random() < 0.5:
+                parts.append(box((0.12, 0.12, 2 + random.random() * 3), P(ux, z, h + uh + 1.5), "facade", uv=0))
+    # Water tower, two cooling towers, two cranes, chimneys.
+    wx, wz = -30, -64
+    for k in range(4):
+        a = k * math.pi / 2 + math.pi / 4
+        parts.append(beam(P(wx + math.cos(a) * 1.8, wz + math.sin(a) * 1.8, 0), P(wx + math.cos(a) * 1.1, wz + math.sin(a) * 1.1, 9.0), 0.16, "facade"))
+    parts.append(cylinder(2.2, 2.6, P(wx, wz, 10.3), "z", "facade", verts=16))
+    parts.append(cylinder(2.3, 0.3, P(wx, wz, 11.7), "z", "facade", verts=16))
+    for cx, cz in ((50, -82), (56, -84)):
+        bpy.ops.mesh.primitive_cone_add(radius1=4.0, radius2=2.6, depth=11.0, vertices=18, location=P(cx, cz, 5.5))
+        o = active()
+        o.data.materials.append(mat("facade"))
+        parts.append(o)
+    for cx, cz, h, jib in ((-12, -72, 11, 11), (30, -70, 10, 9)):
+        parts.append(box((0.9, 0.9, h), P(cx, cz, h / 2), "facade", uv=0))
+        parts.append(box((jib, 0.6, 0.6), P(cx + jib / 2 - 1.5, cz, h + 0.3), "facade", uv=0))
+        parts.append(box((3.0, 0.6, 0.6), P(cx - 2.5, cz, h + 0.3), "facade", uv=0))
+        parts.append(box((0.08, 0.08, 4.0), P(cx + jib - 2.5, cz, h - 2.0), "facade", uv=0))
+    for cx, cz, h in ((-38, -74, 14), (-33, -76, 11), (24, -80, 13)):
+        parts.append(cylinder(0.5, h, P(cx, cz, h / 2), "z", "facade", verts=10))
+        parts.append(cylinder(0.62, 0.4, P(cx, cz, h - 1.2), "z", "facade", verts=10))
+        parts.append(box((0.3, 0.3, 0.3), P(cx, cz, h + 0.2), "windows", uv=0))
+    o = join(parts, "skyline")
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    return o
+
+
+pieces = [hangar(), truck(), yard(), skyline()]
 bake_and_export(pieces, out, smooth=())
