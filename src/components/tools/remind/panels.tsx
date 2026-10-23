@@ -48,6 +48,8 @@ export function PeoplePanel({
   onGone: () => void;
 }) {
   const owner = project.role === "owner";
+  // Deleting a shared project removes it with every task in it (deleteShared in remind.functions.ts).
+  const taskCount = project.doc.tasks.length;
   const [email, setEmail] = useState("");
   const [name, setName] = useState(project.name);
   const [busy, setBusy] = useState(false);
@@ -170,8 +172,22 @@ export function PeoplePanel({
 
       <div className="border-t border-line pt-4">
         {confirm ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm">{owner ? "Delete this project for everyone?" : "Leave this project?"}</span>
+          <div className="flex flex-wrap items-center gap-2" data-remind-delete-confirm>
+            <p className="basis-full text-sm text-pretty">
+              {owner ? (
+                <>
+                  <strong className="font-medium">Delete this project for everyone?</strong>{" "}
+                  {taskCount === 0
+                    ? "It has no tasks. This can't be undone."
+                    : `${taskCount === 1 ? "Its task is" : `All ${taskCount} of its tasks are`} deleted for everyone in it, not moved to your Inbox. This can't be undone. To keep a task, open it and move it to one of your own projects first.`}
+                </>
+              ) : (
+                <>
+                  <strong className="font-medium">Leave this project?</strong> Its tasks stay with the others, and tasks assigned to you become unassigned. To come
+                  back, you'll need a new invite.
+                </>
+              )}
+            </p>
             <Button
               tone="primary"
               className="bg-fail"
