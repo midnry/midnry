@@ -202,7 +202,7 @@ await page.getByLabel("mg per mL").fill("24");
 ok(await page.getByText("Use a dot for decimals, e.g. 7.5").isVisible(), "“7,5” asks for a dot instead of computing a tenfold dose");
 ok((await page.getByText("750 mg").count()) === 0, "no 750 mg result");
 await page.getByLabel("Weight (kg)").fill("abc");
-ok(await page.getByText(/Weight \(kg\): enter a number/).isVisible(), "letters are named");
+ok(await page.getByText(/Weight \(kg\) must be a number/).isVisible(), "letters are named");
 await page.getByLabel("Weight (kg)").fill("7.5");
 ok(await page.getByText("75 mg").isVisible() && (await page.getByText("3.13 mL").isVisible()), "7.5 kg × 10 mg/kg = 75 mg, 3.13 mL");
 await page.screenshot({ path: `${OUT}/dose${TAG}.png`, fullPage: MOBILE });
