@@ -2,7 +2,7 @@
 // (3D) and the pad "+" buttons land on screen.
 import { chromium } from "playwright";
 const TAG = process.argv[2] || "before";
-const b = await chromium.launch({});
+const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium", args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 3 });
 const p = await ctx.newPage();
 await p.addInitScript(() => { localStorage.setItem("midnry-outpost-mode", "signal"); localStorage.setItem("midnry-outpost-profile", JSON.stringify({ matches: 5 })); localStorage.setItem("midnry-outpost-quickstart", JSON.stringify({ signal: true, protocol: true })); });

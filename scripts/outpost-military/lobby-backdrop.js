@@ -33,17 +33,21 @@ void main() {
   // Sunset: violet-blue overhead, rose, then orange and gold at the horizon,
   // brightest under the sun.
   vec3 top = vec3(0.10, 0.10, 0.20), rose = vec3(0.42, 0.18, 0.20), orange = vec3(0.95, 0.42, 0.14), gold = vec3(1.0, 0.70, 0.32);
-  vec3 c = mix(orange, rose, smoothstep(0.02, 0.2, y));
-  c = mix(c, top, smoothstep(0.18, 0.55, y));
+  // The colour climbs quickly to dusk: the view's upper half is dusky
+  // rose and violet, the hot band stays low on the horizon (as in the concept).
+  // The lobby camera sees only ~8° above the horizon, so the whole
+  // gradient lives low: gold at the horizon, rose by 3°, dusk by 9°.
+  vec3 c = mix(orange, rose, smoothstep(0.0, 0.055, y));
+  c = mix(c, top, smoothstep(0.035, 0.17, y));
   c = mix(c, gold, pow(s, 8.0) * smoothstep(0.3, 0.0, y) * 0.8);
   // Clouds: broken streaks lit orange from below, darker away from the sun.
   if (y > 0.0) {
     vec2 uv = d.xz / (y + 0.1) * 0.9 + vec2(time * 0.004, 0.0);
     float n = fbm(uv * vec2(0.8, 2.4));
-    float cloud = smoothstep(0.38, 0.62, n) * smoothstep(0.01, 0.07, y) * (1.0 - smoothstep(0.5, 0.85, y));
-    // Undersides mauve, edges facing the sun bright orange.
-    vec3 lit = mix(vec3(0.34, 0.13, 0.16), vec3(1.0, 0.5, 0.18), 0.25 + 0.75 * pow(s, 3.0));
-    lit = mix(lit, vec3(0.20, 0.09, 0.14), smoothstep(0.6, 0.85, n) * 0.7);
+    float cloud = smoothstep(0.42, 0.66, n) * smoothstep(0.01, 0.07, y) * (1.0 - smoothstep(0.5, 0.85, y));
+    // Dark plum undersides; only the edges facing the low sun burn orange.
+    vec3 lit = mix(vec3(0.22, 0.08, 0.11), vec3(1.0, 0.48, 0.16), 0.06 + 0.94 * pow(s, 6.0));
+    lit = mix(lit, vec3(0.13, 0.05, 0.09), smoothstep(0.58, 0.85, n) * 0.75);
     c = mix(c, lit, cloud * 0.95);
   }
   // Sun disc and glow.
@@ -98,6 +102,80 @@ function seeded(seed) {
   return () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
 }
 
+
+/** The stage floor: big poured-concrete slabs, dark and wet. Damp patches
+ * are glossy (low roughness) so they mirror the sunset sky from the stage's
+ * own sky light; dry ones stay matte. One slab per 4 m texture tile. */
+export function buildLobbyFloor(scene, own, { mobile = false } = {}) {
+  const size = mobile ? 256 : 512,
+    rand = seeded(4211);
+  const albedo = canvasTexture(own, size, size, (c, w, h) => {
+    c.fillStyle = "#2c2724";
+    c.fillRect(0, 0, w, h);
+    // Mottled concrete: soft blotches, a little lighter and darker.
+    for (let i = 0; i < 900; i++) {
+      const x = rand() * w,
+        y = rand() * h,
+        r = 2 + rand() * (w / 18),
+        light = rand() < 0.5;
+      c.fillStyle = light ? "rgba(120,104,92,0.05)" : "rgba(10,8,8,0.07)";
+      c.beginPath();
+      c.arc(x, y, r, 0, Math.PI * 2);
+      c.fill();
+    }
+    // Fine aggregate speckle.
+    for (let i = 0; i < size * 6; i++) {
+      c.fillStyle = rand() < 0.5 ? "rgba(0,0,0,0.18)" : "rgba(150,135,120,0.12)";
+      c.fillRect(rand() * w, rand() * h, 1, 1);
+    }
+    // Saw-cut joints between slabs, slightly dirty along both sides.
+    c.fillStyle = "rgba(0,0,0,0.25)";
+    c.fillRect(0, 0, w, 6);
+    c.fillRect(0, 0, 6, h);
+    c.fillStyle = "#141110";
+    c.fillRect(0, 0, w, 2);
+    c.fillRect(0, 0, 2, h);
+  });
+  const rough = canvasTexture(own, size, size, (c, w, h) => {
+    c.fillStyle = "rgb(205,205,205)";
+    c.fillRect(0, 0, w, h);
+    // Damp patches: a little glossier, soft-edged and faint, so the
+    // 4 m repeat never reads as a pattern.
+    c.globalAlpha = 0.35;
+    for (let i = 0; i < 6; i++) {
+      const x = rand() * w,
+        y = rand() * h,
+        r = w * (0.08 + rand() * 0.22),
+        g = c.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, "rgba(80,80,80,0.9)");
+      g.addColorStop(0.6, "rgba(120,120,120,0.55)");
+      g.addColorStop(1, "rgba(205,205,205,0)");
+      c.fillStyle = g;
+      c.fillRect(0, 0, w, h);
+    }
+    c.globalAlpha = 1;
+    // Joints hold water.
+    c.fillStyle = "rgb(90,90,90)";
+    c.fillRect(0, 0, w, 3);
+    c.fillRect(0, 0, 3, h);
+  });
+  rough.colorSpace = THREE.NoColorSpace;
+  for (const t of [albedo, rough]) {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    // CircleGeometry maps its 320 m diameter to 0..1: one slab per 4 m.
+    t.repeat.set(80, 80);
+    t.anisotropy = 8;
+  }
+  const ground = new THREE.Mesh(
+    own(new THREE.CircleGeometry(160, 64)),
+    own(new THREE.MeshStandardMaterial({ map: albedo, roughnessMap: rough, roughness: 1, metalness: 0, envMapIntensity: 0.2 })),
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+  return ground;
+}
+
 export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
   const rand = seeded(20261022);
   // Windows: dark facade with scattered warm lit panes, 4 m per tile.
@@ -107,13 +185,14 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
     const r = seeded(7);
     for (let y = 8; y < h; y += 32)
       for (let x = 6; x < w; x += 22) {
-        const on = r() < 0.32;
+        const on = r() < 0.22;
         c.fillStyle = on ? (r() < 0.5 ? "#ffb35c" : "#ff8a3a") : "#161214";
         c.fillRect(x, y, 12, 14);
       }
   });
   windows.wrapS = windows.wrapT = THREE.RepeatWrapping;
-  windows.repeat.set(0.45, 0.45);
+  // Smaller panes: about 1.1 m windows, so distant blocks read as buildings.
+  windows.repeat.set(0.9, 0.9);
   const facade = own(
     new THREE.MeshStandardMaterial({
       color: "#1a1416",
@@ -121,7 +200,7 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
       metalness: 0.1,
       emissive: "#ffffff",
       emissiveMap: windows,
-      emissiveIntensity: 0.9,
+      emissiveIntensity: 0.6,
     }),
   );
   const dark = own(new THREE.MeshStandardMaterial({ color: "#151214", roughness: 0.85, metalness: 0.25 }));
@@ -135,9 +214,27 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
       z = -60 - rand() * 30;
     if (Math.abs(x - 44) < 10 && rand() < 0.7) continue; // keep the sun clear
     const w = 3 + rand() * 6,
-      h = 1.5 + rand() * (rand() < 0.2 ? 5 : 2.5),
-      d = 3 + rand() * 5;
-    far.push(box(w, h, d, x, h / 2, z, rand() * 0.4 - 0.2));
+      h = 1.5 + rand() * (rand() < 0.25 ? 6 : 2.5),
+      d = 3 + rand() * 5,
+      ry = rand() * 0.4 - 0.2;
+    far.push(box(w, h, d, x, h / 2, z, ry));
+    // Stepped upper floors and rooftop plant break up the box silhouettes.
+    if (rand() < 0.55) {
+      const uw = w * (0.4 + rand() * 0.3),
+        uh = h * (0.3 + rand() * 0.5),
+        ux = x + (rand() - 0.5) * (w - uw) * 0.8;
+      far.push(box(uw, uh, d * 0.7, ux, h + uh / 2, z, ry));
+      if (rand() < 0.5) towers.push(box(0.12, 2 + rand() * 3, 0.12, ux, h + uh + 1.5, z)); // antenna
+    }
+    for (let k = 0, n = (rand() * 3) | 0; k < n; k++) towers.push(box(0.8 + rand(), 0.5 + rand() * 0.5, 0.8, x + (rand() - 0.5) * w * 0.7, h + 0.3, z + (rand() - 0.5) * d * 0.5, ry));
+  }
+  // Tall chimney stacks with a band near the top (an industrial outpost).
+  for (const [x, z, h] of [
+    [-38, -74, 14],
+    [-33, -76, 11],
+    [24, -80, 13],
+  ]) {
+    towers.push(box(0.9, h, 0.9, x, h / 2, z), box(1.2, 0.35, 1.2, x, h - 1.2, z));
   }
   for (const [x, z, h] of [
     [-22, -66, 8],
@@ -172,9 +269,66 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
     [-5.6, -16, 0.65, 2],
   ])
     for (let k = 0; k < stack; k++) crates.push(box(s * 1.4, s * 0.9, s, x, s * 0.45 + k * s * 0.9, z, 0.1 * k));
-  scene.add(new THREE.Mesh(own(mergeGeometries(hangar)), dark));
-  scene.add(new THREE.Mesh(own(mergeGeometries(crates)), own(new THREE.MeshStandardMaterial({ color: "#1d1c1c", roughness: 0.7, metalness: 0.5 }))));
+  // Corrugated cladding: vertical ribs that catch the warm light.
+  const cladding = canvasTexture(own, 128, 128, (c, w, h) => {
+    c.fillStyle = "#2b2522";
+    c.fillRect(0, 0, w, h);
+    for (let x = 0; x < w; x += 16) {
+      const g = c.createLinearGradient(x, 0, x + 16, 0);
+      g.addColorStop(0, "#1a1614");
+      g.addColorStop(0.35, "#4a3f38");
+      g.addColorStop(0.6, "#2b2522");
+      g.addColorStop(1, "#1a1614");
+      c.fillStyle = g;
+      c.fillRect(x, 0, 16, h);
+    }
+    // Streaks of grime running down.
+    const r = seeded(91);
+    for (let i = 0; i < 40; i++) {
+      c.fillStyle = `rgba(0,0,0,${0.08 + r() * 0.12})`;
+      c.fillRect(r() * w, r() * h * 0.5, 2 + r() * 4, h);
+    }
+  });
+  cladding.wrapS = cladding.wrapT = THREE.RepeatWrapping;
+  cladding.repeat.set(0.5, 0.25);
+  const clad = own(new THREE.MeshStandardMaterial({ map: cladding, color: "#b9a89c", roughness: 0.55, metalness: 0.55 }));
+  scene.add(new THREE.Mesh(own(mergeGeometries(hangar)), clad));
+  scene.add(new THREE.Mesh(own(mergeGeometries(crates)), own(new THREE.MeshStandardMaterial({ color: "#3a3226", roughness: 0.72, metalness: 0.35 }))));
   scene.add(new THREE.Mesh(own(mergeGeometries(strips)), amber));
+  // The hangar's curved roof edge, high over the stage on the left: it
+  // frames the top of the view like the concept's hangar mouth.
+  const roof = [];
+  const arc = new THREE.CylinderGeometry(14, 14, 22, 24, 1, true, Math.PI * 1.02, Math.PI * 0.32);
+  arc.rotateX(Math.PI / 2);
+  arc.translate(-9.5, -5.2, -12);
+  roof.push(arc);
+  // Ribs under the roof edge, catching the sunset.
+  for (let z = -22; z <= -3; z += 3.2) {
+    const rib = new THREE.TorusGeometry(14, 0.12, 6, 24, Math.PI * 0.32);
+    rib.rotateZ(Math.PI * 1.02);
+    rib.translate(-9.5, -5.2, z);
+    roof.push(rib);
+  }
+  const roofMesh = new THREE.Mesh(
+    own(mergeGeometries(roof.map((g) => (g.index ? g.toNonIndexed() : g)))),
+    own(new THREE.MeshStandardMaterial({ color: "#2a2422", roughness: 0.6, metalness: 0.6, side: THREE.DoubleSide })),
+  );
+  scene.add(roofMesh);
+  // Warm work lights inside the hangar mouth: bright panels with a soft glow.
+  const workLights = [];
+  for (const [y, z] of [
+    [6.8, -8],
+    [6.8, -14],
+    [6.8, -20],
+  ])
+    workLights.push(box(0.16, 0.5, 1.6, -6.0, y, z));
+  scene.add(new THREE.Mesh(own(mergeGeometries(workLights)), own(new THREE.MeshBasicMaterial({ color: new THREE.Color(2.2, 1.05, 0.38), toneMapped: true }))));
+  // One real warm light by the crates (desktop): it rakes across the cladding.
+  if (!mobile) {
+    const lamp = new THREE.PointLight("#ffb46a", 30, 16, 1.6);
+    lamp.position.set(-4.6, 3.2, -10.5);
+    scene.add(lamp);
+  }
   // Red banner with the outpost mark, hanging from the overhang.
   const banner = canvasTexture(own, 128, 320, (c, w, h) => {
     const grad = c.createLinearGradient(0, 0, 0, h);
@@ -211,10 +365,37 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
   truck.push(box(4.6, 1.3, 2.2, 0, 1.15, 0), box(2.2, 1.0, 2.0, -0.9, 2.2, 0), box(1.6, 0.25, 0.25, 1.2, 2.5, 0));
   for (const x of [-1.5, 0, 1.5]) for (const z of [-1.15, 1.15]) truck.push(box(0.9, 0.9, 0.35, x, 0.45, z));
   const truckGeo = mergeGeometries(truck);
-  truckGeo.scale(0.8, 0.8, 0.8);
+  truckGeo.scale(0.85, 0.85, 0.85);
   truckGeo.rotateY(-0.5);
-  truckGeo.translate(9, 0, -24);
-  scene.add(new THREE.Mesh(own(truckGeo), dark));
+  truckGeo.translate(8.2, 0, -17);
+  const olive = own(new THREE.MeshStandardMaterial({ color: "#2a2b22", roughness: 0.6, metalness: 0.45 }));
+  scene.add(new THREE.Mesh(own(truckGeo), olive));
+
+  // A lattice gantry tower on the right, with a red warning light on top
+  // and amber deck lights: the concept's industrial silhouette.
+  const gantry = [];
+  const gx = 11.5,
+    gz = -22,
+    gh = 13;
+  for (const [dx, dz] of [
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+    [1, 1],
+  ])
+    gantry.push(box(0.22, gh, 0.22, gx + dx, gh / 2, gz + dz));
+  for (let y = 1.5; y < gh; y += 2.2) {
+    gantry.push(box(2.2, 0.14, 0.14, gx, y, gz - 1), box(2.2, 0.14, 0.14, gx, y, gz + 1));
+    gantry.push(box(0.14, 0.14, 2.2, gx - 1, y, gz), box(0.14, 0.14, 2.2, gx + 1, y, gz));
+    // Diagonal braces on the visible face.
+    const brace = new THREE.BoxGeometry(0.1, 2.95, 0.1);
+    brace.rotateZ(((y / 2.2) | 0) % 2 ? 0.75 : -0.75);
+    brace.translate(gx, y + 1.1, gz + 1);
+    gantry.push(brace);
+  }
+  gantry.push(box(3.4, 0.25, 3.4, gx, gh, gz), box(1.4, 1.6, 1.4, gx + 0.6, gh + 0.9, gz));
+  gantry.push(box(4.2, 0.18, 0.18, gx - 2.8, gh - 0.6, gz)); // jib arm
+  scene.add(new THREE.Mesh(own(mergeGeometries(gantry.map((g) => (g.index ? g.toNonIndexed() : g)))), dark));
 
   // Lamps: amber points across the yard (the concept's warm specks).
   const lamps = [],
@@ -235,6 +416,10 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
     c.fillStyle = g;
     c.fillRect(0, 0, w, h);
   });
+  // Gantry, vehicle and hangar lights join the lamp glows.
+  lamps.push(gx + 0.6, gh + 1.9, gz, gx - 1, gh * 0.5, gz + 1.2, gx + 1, gh * 0.25, gz + 1.2);
+  lamps.push(6.9, 1.0, -15.3, 7.9, 1.0, -14.7);
+  lamps.push(-5.95, 6.8, -8, -5.95, 6.8, -14);
   const lampPoints = new THREE.BufferGeometry();
   lampPoints.setAttribute("position", new THREE.Float32BufferAttribute(lamps, 3));
   scene.add(
@@ -269,4 +454,22 @@ export function buildLobbyBackdrop(scene, own, { mobile = false } = {}) {
   reflection.rotation.z = -Math.atan2(LOBBY_SUN.x, -LOBBY_SUN.z);
   reflection.position.set(LOBBY_SUN.x * 30, 0.01, LOBBY_SUN.z * 30);
   scene.add(reflection);
+  // Each nearby light leaves a soft vertical streak on the wet concrete,
+  // pointing back at the stage (a cheap stand-in for a mirror reflection).
+  const shine = own(new THREE.MeshBasicMaterial({ map: streak, color: "#ffb36a", transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+  const streaks = [];
+  for (let i = 0; i < lamps.length; i += 3) {
+    const x = lamps[i],
+      y = lamps[i + 1],
+      z = lamps[i + 2];
+    if (z < -32 || Math.hypot(x, z) < 6) continue;
+    const len = Math.min(9, 2 + y * 1.1),
+      geo = new THREE.PlaneGeometry(0.7 + y * 0.12, len);
+    geo.rotateX(-Math.PI / 2);
+    // Face the stage: the streak runs from under the lamp towards the camera.
+    geo.rotateY(Math.atan2(x, z) + Math.PI);
+    geo.translate(x * (1 - len / 2 / Math.hypot(x, z)), 0.012, z * (1 - len / 2 / Math.hypot(x, z)));
+    streaks.push(geo);
+  }
+  if (streaks.length) scene.add(new THREE.Mesh(own(mergeGeometries(streaks)), shine));
 }

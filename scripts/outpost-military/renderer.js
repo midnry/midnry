@@ -3517,6 +3517,12 @@ export class MilitaryRenderer {
   }
   render() {
     if (this.disposed || this.contextUnavailable) return false;
+    // The home lobby draws at a higher density (LobbyStage.present): put the
+    // match's own render size back before the first match frame.
+    if (this.lobbySized) {
+      this.lobbySized = false;
+      this.resize();
+    }
     this.configure();
     const g = this.g,
       t = g.animationTime;

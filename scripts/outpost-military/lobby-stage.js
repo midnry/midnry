@@ -5,9 +5,14 @@
  * Two empty squad pads flank the operator (the menu draws their "+").
  * Drag sideways to turn the operator; it eases back to a three-quarter view. */
 import * as THREE from "three";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { updateWeaponGrip } from "./realism-grips.js";
+import { lobbyRenderSize } from "./compatibility.js";
 import { CHARACTERS } from "../../public/games/outpost-characters.js";
-import { buildLobbyBackdrop, lobbySky, LOBBY_SUN } from "./lobby-backdrop.js";
+import { buildLobbyBackdrop, buildLobbyFloor, lobbySky, LOBBY_SUN } from "./lobby-backdrop.js";
 
 export class LobbyStage {
   constructor(r) {
@@ -15,7 +20,7 @@ export class LobbyStage {
     const mobile = r.mobileDevice;
     this.scene = new THREE.Scene();
     // Warm sunset haze; far enough that the outpost skyline still reads.
-    this.scene.fog = new THREE.Fog("#5a2c1c", 22, 150);
+    this.scene.fog = new THREE.Fog("#6a321e", 16, 115);
     this.camera = new THREE.PerspectiveCamera(32, 1, 0.1, 260);
     this.owned = [];
     const own = (x) => (this.owned.push(x), x);
@@ -31,19 +36,26 @@ export class LobbyStage {
       }),
     );
     this.scene.add(new THREE.Mesh(own(new THREE.SphereGeometry(200, 32, 16)), this.skyMaterial));
-    // Ground: dark wet concrete fading into the haze.
-    const ground = new THREE.Mesh(
-      own(new THREE.CircleGeometry(160, 48)),
-      // Lambert: the arena's blue sky map must not tint the sunset floor.
-      own(new THREE.MeshLambertMaterial({ color: "#3a261b" })),
-    );
-    ground.rotation.x = -Math.PI / 2;
-    ground.receiveShadow = true;
-    this.scene.add(ground);
+    // Reflections and soft light come from this sunset sky, not the arena's
+    // blue daylight map (which made the operator look cold and grey here).
+    try {
+      const pmrem = new THREE.PMREMGenerator(r.renderer),
+        skyOnly = new THREE.Scene();
+      skyOnly.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), this.skyMaterial));
+      this.environment = own(pmrem.fromScene(skyOnly, 0.035).texture);
+      skyOnly.children[0].geometry.dispose();
+      pmrem.dispose();
+    } catch {
+      this.environment = null;
+    }
+    // Ground: wet concrete slabs that catch the sunset and the lamps.
+    buildLobbyFloor(this.scene, own, { mobile });
     buildLobbyBackdrop(this.scene, own, { mobile });
     // Platforms: the centre one for you, two smaller squad pads.
-    const steel = own(new THREE.MeshStandardMaterial({ color: "#2b3134", roughness: 0.38, metalness: 0.85 }));
-    const top = own(new THREE.MeshStandardMaterial({ color: "#3b4245", roughness: 0.6, metalness: 0.4 }));
+    // Heavy dark steel pads with a matte, slightly worn top (the concept's
+    // display plinths); the amber rim is the only bright part.
+    const steel = own(new THREE.MeshStandardMaterial({ color: "#1e2326", roughness: 0.34, metalness: 0.9 }));
+    const top = own(new THREE.MeshStandardMaterial({ color: "#2a2f32", roughness: 0.72, metalness: 0.25 }));
     this.ringMaterial = own(new THREE.MeshBasicMaterial({ color: "#ffc857", toneMapped: false, fog: false }));
     const padGeo = own(new THREE.CylinderGeometry(1, 1.06, 0.16, 64)),
       capGeo = own(new THREE.CylinderGeometry(0.94, 0.94, 0.02, 64)),
@@ -72,12 +84,15 @@ export class LobbyStage {
       this.pads.push(pad);
     }
     // Light: warm key and rim, cool fill, and a spotlight on the operator.
-    this.scene.add(new THREE.HemisphereLight("#c79a86", "#2a1d14", 0.55));
+    this.scene.add(new THREE.HemisphereLight("#c79a86", "#2a1d14", 0.35));
     const key = new THREE.SpotLight("#ffe2b8", 60, 14, 0.5, 0.6, 1.4);
     key.position.set(2.2, 5.5, 3.5);
     key.target.position.set(0, 1, 0);
-    key.castShadow = !mobile;
+    // One character on stage: a real shadow is affordable on phones too
+    // (it still follows the Shadows setting).
+    key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
+    key.shadow.radius = 3;
     key.shadow.bias = -0.0004;
     this.scene.add(key, key.target);
     // Rim from the low sun behind the stage, on the right.
@@ -98,6 +113,21 @@ export class LobbyStage {
       own(new THREE.PointsMaterial({ color: "#ffd9a0", size: 0.025, transparent: true, opacity: 0.55, depthWrite: false })),
     );
     this.scene.add(this.dust);
+    // Contact shadow: a soft dark pool where the boots meet the pad, so a
+    // figure sits on it even with shadows off or on the cheapest setting.
+    const pool = document.createElement("canvas");
+    pool.width = pool.height = 128;
+    const pc = pool.getContext("2d"),
+      pg = pc.createRadialGradient(64, 64, 0, 64, 64, 64);
+    pg.addColorStop(0, "rgba(0,0,0,0.85)");
+    pg.addColorStop(0.45, "rgba(0,0,0,0.5)");
+    pg.addColorStop(1, "rgba(0,0,0,0)");
+    pc.fillStyle = pg;
+    pc.fillRect(0, 0, 128, 128);
+    this.contactMaterial = own(
+      new THREE.MeshBasicMaterial({ map: own(new THREE.CanvasTexture(pool)), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }),
+    );
+    this.contactGeometry = own(new THREE.PlaneGeometry(1, 1));
     this.turn = 0;
     this.spin = 0;
     this.key = "";
@@ -134,6 +164,14 @@ export class LobbyStage {
       if (o.isMesh) o.castShadow = true;
     });
     this.scene.add(actor.root);
+    // The contact shadow lies on the pad's top, under the boots.
+    const contact = new THREE.Mesh(this.contactGeometry, this.contactMaterial);
+    contact.rotation.x = -Math.PI / 2;
+    contact.position.set(at.position.x, 0.175 * at.scale.y, at.position.z + 0.04);
+    contact.scale.set(0.95, 0.75, 1).multiplyScalar(pad ? 0.92 : 1);
+    contact.renderOrder = 1;
+    this.scene.add(contact);
+    actor.contact = contact;
     return actor;
   }
   /** Friends in your online room stand on the squad pads, in their characters. */
@@ -158,6 +196,7 @@ export class LobbyStage {
       if (o.isSkinnedMesh) o.skeleton.dispose();
     });
     a.root.removeFromParent();
+    a.contact?.removeFromParent();
     for (const m of [...(a.ownedMaterials || []), ...(a.equipmentMaterials || [])]) {
       m.dispose();
       this.r.materials.delete(m);
@@ -195,10 +234,16 @@ export class LobbyStage {
         // The pads span about 4 m across (their outer edges may crop);
         // pads to head about 2.4 m.
         visible = Math.max((2.4 * h) / box.height, (3.6 * h) / box.width),
-        fov = 30,
+        // A tall screen (phone portrait) gets a wider lens so the camera
+        // comes closer: the hangar and gantry stay in frame and the far skyline
+        // isn't magnified behind the operator.
+        fov = portrait ? 44 : 30,
         distance = visible / 2 / Math.tan((fov * Math.PI) / 360);
       this.camera.fov = fov;
-      this.camera.position.set(0, 1.1 + distance * 0.12, distance);
+      // Nearly level, at chest height (the concept's framing): the horizon
+      // falls about the operator's hips and the sky fills the upper half,
+      // instead of a high camera that showed mostly bare floor.
+      this.camera.position.set(0, 1.1 + distance * 0.035, distance);
       this.camera.lookAt(0, 1.1, 0);
       this.camera.setViewOffset(w, h, w / 2 - (bx + box.width / 2), h / 2 - (by + box.height / 2), w, h);
     } else {
@@ -250,13 +295,61 @@ export class LobbyStage {
       p.needsUpdate = true;
       this.ringMaterial.color.setRGB(1, 0.78 + Math.sin(t * 1.6) * 0.06, 0.34);
     }
-    this.scene.environment = r.scene.environment;
-    this.scene.environmentIntensity = 0.35;
+    // Through the lobby's finishing pass (linear light), the rings are
+    // brighter than white so they glow like the concept's pad rims.
+    const glow = !!this.composer;
+    if (glow) this.ringMaterial.color.multiplyScalar(2.4);
+    this.scene.environment = this.environment || r.scene.environment;
+    this.scene.environmentIntensity = this.environment ? 0.85 : 0.35;
     this.placeSquad(w, h);
-    const renderer = r.renderer;
-    renderer.setRenderTarget(null);
-    renderer.render(this.scene, this.camera);
+    this.present(w, h);
+    if (glow) this.ringMaterial.color.multiplyScalar(1 / 2.4);
     return true;
+  }
+  /** Draw the stage: at the screen's density (up to 2×), multisampled, with
+   * a little glow on the lamps and rims, tone mapped like a match. The
+   * Performance preset and safe mode keep the plain, cheaper path. */
+  present(w, h) {
+    const r = this.r,
+      renderer = r.renderer,
+      size = r.composer && lobbyRenderSize(w, h, window.devicePixelRatio, r.profile, r.g.academy?.preset);
+    if (!size) {
+      if (r.lobbySized) {
+        r.lobbySized = false;
+        r.resize();
+      }
+      renderer.setRenderTarget(null);
+      renderer.render(this.scene, this.camera);
+      return;
+    }
+    const [bw, bh] = size,
+      canvas = renderer.domElement;
+    if (canvas.width !== bw || canvas.height !== bh) renderer.setSize(bw, bh, false);
+    // The match puts its own (smaller) buffer back before it next draws.
+    r.lobbySized = true;
+    if (!this.composer) {
+      const samples = Math.min(r.offscreenSamples || 0, renderer.capabilities.maxSamples || 0, 4);
+      this.target = new THREE.WebGLRenderTarget(1, 1, { type: r.profile.halfFloat ? THREE.HalfFloatType : THREE.UnsignedByteType, samples });
+      this.composer = new EffectComposer(renderer, this.target);
+      this.composer.addPass(new RenderPass(this.scene, this.camera));
+      // Glow is a desktop and High-preset extra; phones keep their battery.
+      if (!r.mobileDevice || r.g.academy?.preset === "high") {
+        // Threshold above the sky's brightest part: only lamps, rims and the sun glow.
+        this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.28, 0.45, 1.05);
+        this.composer.addPass(this.bloom);
+      }
+      this.composer.addPass(new OutputPass());
+    }
+    if (this.composerSize !== bw + "x" + bh) {
+      this.composerSize = bw + "x" + bh;
+      this.composer.setSize(bw, bh);
+    }
+    // Neutral tone mapping keeps the authored sunset hues (filmic curves
+    // turned its oranges a washed-out yellow).
+    const curve = renderer.toneMapping;
+    renderer.toneMapping = THREE.NeutralToneMapping;
+    this.composer.render();
+    renderer.toneMapping = curve;
   }
   /** How far the menu column is scrolled (phones: one scrolling column). */
   menuScroll() {
@@ -310,6 +403,13 @@ export class LobbyStage {
     });
   }
   dispose() {
+    this.composer?.dispose();
+    this.bloom?.dispose();
+    this.target?.dispose();
+    if (this.r.lobbySized) {
+      this.r.lobbySized = false;
+      this.r.resize();
+    }
     this.clearActor();
     for (const a of this.mates || []) this.clearActor(a);
     for (const x of this.owned) x.dispose();

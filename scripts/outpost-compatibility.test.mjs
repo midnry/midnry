@@ -34,6 +34,7 @@ import {
   graphicsProfile,
   renderSize,
   cinematicRenderSize,
+  lobbyRenderSize,
 } from "./outpost-military/compatibility.js";
 
 test("iPad desktop browsing mode receives the Apple touch budget", () => {
@@ -94,4 +95,18 @@ test("recovery removes expensive passes while retaining the 3D scene pipeline", 
   assert.equal(recovery.maxShadowSize, 512);
   assert.equal(recovery.ambientOcclusion, false);
   assert.equal(graphicsProfile({ halfFloat: false }).ambientOcclusion, false);
+});
+
+test("the lobby renders at the screen's density, within its own budget", () => {
+  const iphone = graphicsProfile({ appleTouch: true });
+  // iPhone portrait, 3× screen: 2× density (780 × 1688), not the match's 1.25×.
+  assert.deepEqual(lobbyRenderSize(390, 844, 3, iphone, "balanced"), [780, 1688]);
+  // iPad at 2×: held to the Apple lobby budget of 2 million pixels.
+  const [w, h] = lobbyRenderSize(1024, 1366, 2, iphone, "high");
+  assert(w * h <= 2000000 && w * h > 1900000 && Math.abs(w / h - 1024 / 1366) < 0.01);
+  // A plain laptop screen at 1×: exactly its size.
+  assert.deepEqual(lobbyRenderSize(1280, 720, 1, graphicsProfile(), "balanced"), [1280, 720]);
+  // Performance and safe mode keep the cheaper match buffer.
+  assert.equal(lobbyRenderSize(390, 844, 3, iphone, "performance"), null);
+  assert.equal(lobbyRenderSize(390, 844, 3, graphicsProfile({ safeMode: true }), "high"), null);
 });

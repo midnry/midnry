@@ -22,6 +22,9 @@ export function graphicsProfile({
     headroomPixels: safeMode ? 600000 : appleTouch ? 1600000 : 2400000,
     maxShadowSize: Math.min(maxTextureSize, safeMode ? 512 : appleTouch ? 1024 : 4096),
     ambientOcclusion: !safeMode && !appleTouch && halfFloat,
+    // The home lobby draws one character on a small stage, so it can afford
+    // the screen's own density (up to 2×) where a match cannot.
+    lobbyPixels: safeMode ? 600000 : appleTouch ? 2000000 : 2600000,
     reflections: !safeMode,
   };
 }
@@ -65,4 +68,14 @@ export function cinematicRenderSize(cssWidth, cssHeight, dpr, options, profile, 
     profile.maxPixels * Math.max(1, adaptiveScale) ** 2,
   );
   return renderSize(width, height, { ...profile, maxPixels });
+}
+
+/** Render buffer for the home lobby: the screen's density up to 2×, within
+ * the profile's lobby pixel budget. A match is far heavier, so it keeps
+ * cinematicRenderSize. Returns null where the lobby should simply use the
+ * match buffer (Performance preset, safe mode). */
+export function lobbyRenderSize(cssWidth, cssHeight, dpr, profile, preset) {
+  if (preset === "performance" || profile.safeMode || !(cssWidth > 0 && cssHeight > 0)) return null;
+  const density = Math.max(1, Math.min(2, Number.isFinite(dpr) ? dpr : 1));
+  return renderSize(cssWidth * density, cssHeight * density, { ...profile, maxPixels: profile.lobbyPixels || profile.maxPixels });
 }
