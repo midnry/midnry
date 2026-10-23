@@ -14,6 +14,7 @@ Policy: only official vendor or standards sources were used (MDN, MDN browser-co
 - **Sending pushes costs nothing, but the scheduler cannot live inside the free Render service.** FCM is "No-cost". Apple requires no Developer Program membership. Mozilla autopush has no published price (UNVERIFIED). The `web-push` npm package is widely used (about 6.6 M downloads/week) but has had **no release since 3.6.7 (16 Jan 2024)**. Render free services spin down after **15 min** without traffic and "might restart … at any time", so an in-process timer is not reliable.
 - **Cheapest reliable setup: about $7–13/month.**
   - A Render Cron Job (Starter, $0.00016/min, $1 minimum) that sends due reminders every 1–5 min costs about **$1–7/mo**.
+  - *Update 23 Oct 2026: the live database is already on the paid `0.5c-1g` plan (owner's dashboard), so the free-database expiry below does not apply to Midnry.*
   - Upgrading Postgres to Basic-256mb costs **$6/mo**. The **free Render Postgres expires 30 days after creation** (14-day grace, no backups), which is a bigger reliability risk than the scheduler.
   - A $0 option exists: cron-job.org (free, every 1 min) pinging an endpoint on the free service. It keeps the service awake (about 744 of the 750 free hours) but stays fragile.
   - GitHub Actions is a poor fit: 5-min minimum interval, and runs can be delayed or dropped.

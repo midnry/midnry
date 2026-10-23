@@ -32,6 +32,8 @@ services:
 
 databases:
   - name: midnry-db
-    plan: free
+    # The live database is on this paid plan (seen in the dashboard, 23 Oct 2026).
+    # Keep it in step with the dashboard so a Blueprint sync never asks for "free".
+    plan: 0.5c-1g
     databaseName: midnry
     user: midnry
