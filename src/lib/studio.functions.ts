@@ -12,6 +12,7 @@ import {
   EMPTY_STYLE,
   TITLE_MAX,
   PIECE_MAX,
+  PIECES_MAX,
   type Allowance,
   type Draft,
   type DraftSummary,
@@ -52,6 +53,8 @@ export type StudioState = {
   /** Pass extras open: longer history, Word download, house style. */
   extras: boolean;
   allowance: Allowance;
+  /** The signed-in account this studio was opened for; every save names it (see saveDraft). */
+  owner: string;
 };
 
 /** Opens the studio: brings old documents in (once), then lists the drafts. */
@@ -72,6 +75,7 @@ export const openStudio = createServerFn({ method: "POST" })
       isAdmin: person.isAdmin,
       extras: person.extras,
       allowance: await allowance(context.userId, person),
+      owner: context.userId,
     };
   });
 
@@ -93,18 +97,22 @@ export const loadDraft = createServerFn({ method: "GET" })
     return found ? { ok: true, ...found } : { ok: false };
   });
 
-export type SaveResult = SaveDraftResult | { ok: false; error: "too_large" | "invalid" };
+export type SaveResult = SaveDraftResult | { ok: false; error: "too_large" | "invalid" | "wrong_account" };
 
 export const saveDraft = createServerFn({ method: "POST" })
-  .validator((input: { draft: unknown; baseRevision: number }) => {
+  .validator((input: { draft: unknown; baseRevision: number; owner?: string }) => {
     const base = input?.baseRevision;
     if (typeof base !== "number" || !Number.isInteger(base) || base < 0) throw new Error("Invalid revision");
     // Refuse anything far past one draft's limit before parsing it further.
     if (JSON.stringify(input?.draft ?? null).length > 400_000) throw new Error("Draft is too large");
-    return { draft: input.draft, baseRevision: base };
+    if (input.owner !== undefined && typeof input.owner !== "string") throw new Error("Invalid owner");
+    return { draft: input.draft, baseRevision: base, owner: input.owner };
   })
   .middleware([authMiddleware])
   .handler(async ({ context, data }): Promise<SaveResult> => {
+    // A page opened for another account (someone else signed in on this browser since) never
+    // saves into this one. Pages from before this check send no owner.
+    if (data.owner !== undefined && data.owner !== context.userId) return { ok: false, error: "wrong_account" };
     const cleaned = cleanDraft(data.draft);
     if (!cleaned.ok) return cleaned;
     const store = await import("@/lib/studio.server");
@@ -152,7 +160,7 @@ export const draftDocx = createServerFn({ method: "POST" })
     const title = typeof input?.title === "string" ? input.title.slice(0, TITLE_MAX) : "";
     const pieces = Array.isArray(input?.pieces)
       ? input.pieces
-          .slice(0, 6)
+          .slice(0, PIECES_MAX)
           .filter((piece): piece is { title: string; text: string } => !!piece && typeof piece.title === "string" && typeof piece.text === "string")
           .map((piece) => ({ title: piece.title.slice(0, 60), text: piece.text.slice(0, PIECE_MAX) }))
       : [];

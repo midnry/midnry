@@ -30,6 +30,16 @@ Read docs/HANDOVER.md first (working rules, deploy procedure, security rule). Th
 3. The mini city as the Blackout Protocol base: DONE 2026-10-23 (Breakwater hidden: ?base=breakwater).
    See HANDOVER "Calder Quay as the Blackout Protocol base".
 
+## Non-game app audit (2026-10-23, branch `audit/non-game-apps-20261023`, NOT deployed)
+- Read `docs/audit-2026-10-23/README.md`: every non-game app tested in the browser (laptop + phone) with
+  invented data, competitor comparison from official pages, a priority table, and the fixes made on that
+  branch: the two save-recovery risks (Refresh now, leaving mid-save; `src/lib/doc-session.ts` + tests),
+  Invoice (How to pay, WhatsApp copy, phone total), Ledger on phones, kit number boxes ("7,5" → 75),
+  Writing studio Contract saves, Compressor encodes, Apply headline placement.
+- Owner decisions listed there: pricing of Scratch/Split/Contrast, consolidating Claims/Agreement/Clauses,
+  Plot, and whether to build phone notifications for Remind.
+- To release: review the branch, merge into the working branch, then deploy as usual.
+
 ## Other open items
 - Medical, tax and legal tools need a qualified reviewer (docs/phase3-plan.md lists exactly what).
 - Owner to try live: a real AI draft in the Writing studio; Study space share links; Pass checkout.

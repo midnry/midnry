@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useAppDoc } from "@/components/use-app-doc";
 import { Button, Field, TextArea, TextInput, cn } from "@/components/ui";
 import { guessCurrency, formatMoney, type CurrencyCode } from "@/lib/format";
@@ -13,6 +14,7 @@ import {
   BillTo,
   CurrencyPicker,
   LineEditor,
+  MobileTotal,
   StateBadge,
   TaxField,
   printBlockOf,
@@ -28,10 +30,12 @@ import {
   duplicateInvoice,
   duplicateQuote,
   importKitDocs,
+  invoiceShareText,
   invoiceState,
   matchesSearch,
   nextNumber,
   normalizeDoc,
+  numberClash,
   parseClientText,
   proposalToQuote,
   putInvoice,
@@ -581,6 +585,23 @@ function InvoiceEditor({
   const printBlock = printBlockOf(check);
   const state = invoiceState(invoice, today);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const clash = numberClash(doc.invoices, invoice);
+  const payment = doc.payment ?? "";
+  function share() {
+    if (!check.valid || check.totalMinor == null) return;
+    const text = invoiceShareText({
+      number: invoice.number,
+      from: invoice.from,
+      to: invoice.to,
+      total: formatMoney(toMajor(check.totalMinor, currency), currency),
+      due: invoice.due,
+      payment,
+    });
+    void navigator.clipboard.writeText(text).then(
+      () => toast.success("Copied. Paste it into WhatsApp or an email, and attach the PDF."),
+      () => toast.error("Could not copy. Select the invoice text instead."),
+    );
+  }
   return (
     <div>
       {doc.invoices.length > 0 ? <BackLink label="All invoices" onClick={onBack} /> : null}
@@ -633,7 +654,18 @@ function InvoiceEditor({
           />
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Invoice number">
-              <TextInput value={invoice.number} onChange={(event) => onPatch({ number: event.target.value })} maxLength={24} />
+              <TextInput
+                value={invoice.number}
+                onChange={(event) => onPatch({ number: event.target.value })}
+                maxLength={24}
+                aria-invalid={clash || undefined}
+                aria-describedby={clash ? "invoice-number-clash" : undefined}
+              />
+              {clash ? (
+                <span id="invoice-number-clash" role="status" className="mt-1 block text-sm text-fail">
+                  Another invoice already uses this number.
+                </span>
+              ) : null}
             </Field>
             <Field label="Issued">
               <TextInput type="date" value={invoice.issued} onChange={(event) => onPatch({ issued: event.target.value })} />
@@ -645,12 +677,21 @@ function InvoiceEditor({
           </div>
           <TaxField idBase="invoice" value={invoice.taxPercent} check={check} onChange={(taxPercent) => onPatch({ taxPercent })} />
           <LineEditor idBase="invoice" lines={invoice.lines} check={check} onChange={(lines) => onPatch({ lines })} />
-          <Field label="Notes">
-            <TextArea value={invoice.notes} onChange={(event) => onPatch({ notes: event.target.value })} className="min-h-20" maxLength={2000} placeholder="Payment details, thanks, terms" />
+          <Field label="Notes" hint={payment.trim() ? "For this invoice only. Your bank details print on every invoice from Numbering and your details." : undefined}>
+            <TextArea value={invoice.notes} onChange={(event) => onPatch({ notes: event.target.value })} className="min-h-20" maxLength={2000} placeholder="Thanks, terms, anything for this client" />
           </Field>
+          {!payment.trim() ? (
+            <p className="text-sm text-muted" data-payment-hint>
+              Tell clients how to pay: add your bank details once under <strong>Numbering and your details</strong> (in the Invoices list) and they print on every invoice.
+            </p>
+          ) : null}
+          <MobileTotal label="Invoice" check={check} currency={currency} />
           <div className="flex flex-wrap gap-2">
             <Button tone="primary" disabled={printBlock != null} aria-describedby={printBlock ? "invoice-print-block" : undefined} onClick={() => window.print()}>
               Print or save as PDF
+            </Button>
+            <Button tone="quiet" disabled={printBlock != null} onClick={share}>
+              Copy for WhatsApp
             </Button>
             <Button tone="quiet" onClick={onNew}>
               New invoice
@@ -682,7 +723,7 @@ function InvoiceEditor({
               {printBlock}
             </p>
           ) : null}
-          <p className="text-xs text-muted">In the print window, choose “Save as PDF” to send it by email or WhatsApp. New invoice keeps this one and moves the number on.</p>
+          <p className="text-xs text-muted">In the print window, choose “Save as PDF” to send it by email or WhatsApp. Copy for WhatsApp gives a short message with the total and how to pay. New invoice keeps this one and moves the number on.</p>
         </form>
         <BillSheet
           title="Invoice"
@@ -697,6 +738,7 @@ function InvoiceEditor({
           check={check}
           currency={currency}
           notes={invoice.notes}
+          payment={payment}
           printBlock={printBlock}
           stamp={
             invoice.status === "paid" ? (
@@ -791,8 +833,9 @@ function QuoteEditor({
           <Field label="Notes">
             <TextArea value={quote.notes} onChange={(event) => onPatch({ notes: event.target.value })} className="min-h-20" maxLength={4000} placeholder="What is included, timing, terms" />
           </Field>
+          <MobileTotal label="Quote" check={check} currency={currency} />
           <div className="flex flex-wrap gap-2">
-            <Button tone="primary" onClick={onConvert} disabled={!invoice && printBlock != null}>
+            <Button tone="primary" onClick={onConvert} disabled={!invoice && (printBlock != null || quote.status === "declined")}>
               {invoice ? `Open invoice ${invoice.number}` : "Convert to invoice"}
             </Button>
             <Button tone="quiet" disabled={printBlock != null} onClick={() => window.print()}>
@@ -819,6 +862,11 @@ function QuoteEditor({
           {printBlock ? (
             <p role="status" className="text-sm font-medium text-fail">
               {printBlock}
+            </p>
+          ) : null}
+          {!invoice && quote.status === "declined" ? (
+            <p role="status" className="text-sm text-muted" data-declined-note>
+              A declined quote is not converted. Change its status if the client agrees after all.
             </p>
           ) : null}
           <p className="text-xs text-muted">Convert to invoice copies the client, lines, tax and notes into a new numbered invoice. The quote stays here, linked to it.</p>
@@ -1069,6 +1117,15 @@ function NumberingSettings({ doc, onSettings }: { doc: ClientWorkDoc; onSettings
       <Field label="Your details (From)" hint="Used on every new invoice, quote and proposal.">
         <TextArea value={doc.from} className="min-h-20" maxLength={400} onChange={(event) => onSettings({ from: event.target.value })} />
       </Field>
+      <Field label="How to pay" hint="Bank name, account name and number, or a payment link. Printed on every invoice.">
+        <TextArea
+          value={doc.payment ?? ""}
+          className="min-h-20"
+          maxLength={400}
+          placeholder={"Bank: Example Bank\nAccount name: Synthetic Studio Ltd\nAccount number: 0123456789"}
+          onChange={(event) => onSettings({ payment: event.target.value })}
+        />
+      </Field>
     </div>
   );
 }
@@ -1132,7 +1189,7 @@ function QuoteList({
                   Invoice {invoice.number}
                 </Button>
               ) : (
-                <Button tone="quiet" disabled={!check.valid} onClick={() => onConvert(quote.id)} aria-label={`Convert quote ${quote.number} to an invoice`}>
+                <Button tone="quiet" disabled={!check.valid || quote.status === "declined"} onClick={() => onConvert(quote.id)} aria-label={`Convert quote ${quote.number} to an invoice`}>
                   Convert to invoice
                 </Button>
               )}
@@ -1187,7 +1244,9 @@ function ProposalList({
             <li key={proposal.id} data-proposal-row={proposal.title} className="flex flex-col gap-3 rounded-2xl bg-card p-4 shadow-line sm:flex-row sm:items-center">
               <button type="button" onClick={() => onOpen(proposal.id)} className="min-w-0 flex-1 text-left" aria-label={`Open proposal ${proposal.title || "Untitled"}`}>
                 <span className="block font-medium">{proposal.title || "Untitled proposal"}</span>
-                <span className="mt-1 block truncate text-sm text-muted">{name || "No client yet"}</span>
+                <span className="mt-1 block truncate text-sm text-muted">
+                  {name || "No client yet"} · {proposal.createdAt.slice(0, 10)}
+                </span>
               </button>
               <span className="flex flex-wrap gap-2">
                 <Button tone="quiet" onClick={() => onQuote(proposal.id)}>

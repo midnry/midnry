@@ -183,6 +183,14 @@ function MonthNav({ month, setMonth, children }: { month: string; setMonth: (mon
   );
 }
 
+/** "25 Sep 2026", for the Add button when the date is not today. */
+function shortDate(iso: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!match) return iso;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${Number(match[3])} ${months[Number(match[2]) - 1] ?? match[2]} ${match[1]}`;
+}
+
 function monthName(month: string): string {
   return new Date(`${month}-01T12:00:00`).toLocaleDateString("en", { month: "long", year: "numeric" });
 }
@@ -204,7 +212,7 @@ function RemoveButton({ entry, entries, save, className }: { entry: Entry; entri
   return (
     <button
       type="button"
-      className={cn("min-h-9 rounded-full px-2 text-sm text-fail hover:bg-paper-2", className)}
+      className={cn("min-h-11 rounded-full px-2 text-sm text-fail hover:bg-paper-2", className)}
       onClick={() => {
         const before = entries;
         save({ entries: entries.filter((item) => item.id !== entry.id) });
@@ -231,7 +239,8 @@ type ViewProps = {
 function FullLedger({ entries, data, save, money, currency, month, setMonth, exportCsv }: ViewProps & { currency: CurrencyCode }) {
   const budgetCents = parseCents(data.budget ?? "");
   const budgetCheck = checkCents(data.budget ?? "");
-  const budgetHint = budgetCheck.ok ? null : budgetCheck.hint;
+  // A typed budget that cannot be read says so, instead of quietly showing no bar.
+  const budgetHint = budgetCheck.ok || !data.budget?.trim() ? null : (budgetCheck.hint ?? "Enter a budget like 150000.");
   const [editing, setEditing] = useState<string | null>(null);
   const [label, setLabel] = useState("");
   const [amount, setAmount] = useState("");
@@ -263,12 +272,17 @@ function FullLedger({ entries, data, save, money, currency, month, setMonth, exp
       return;
     }
     const cents = checked.cents;
+    if (cents === 0) {
+      setError("Enter an amount above zero.");
+      return;
+    }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       setError("Pick a date.");
       return;
     }
     setError(null);
-    const fields = { label: label.trim(), cents, category, date, ...(flow === "in" ? { flow: "in" as const } : {}) };
+    // Money in is its own kind of entry, not a spending category.
+    const fields = { label: label.trim(), cents, category: flow === "in" ? "Income" : category, date, ...(flow === "in" ? { flow: "in" as const } : {}) };
     if (editing) {
       const next = entries.map((entry) => {
         if (entry.id !== editing) return entry;
@@ -294,8 +308,58 @@ function FullLedger({ entries, data, save, money, currency, month, setMonth, exp
     setMonth(date.slice(0, 7));
   }
 
+  const today = todayISO();
+  const dateLabel = date && date !== today ? ` on ${shortDate(date)}` : "";
+  const summary = (
+    <>
+      <p className="text-sm text-muted">{thisMonth ? "Spent this month" : `Spent in ${monthLabel}`}</p>
+      <p className="mt-2 font-display text-5xl tabular-nums tracking-tight">{money(totals.spent)}</p>
+      {totals.income > 0 ? <p className="mt-2 text-sm text-muted">Money in: {money(totals.income)}</p> : null}
+      {budgetCents ? <BudgetBar spent={totals.spent} budgetCents={budgetCents} money={money} /> : null}
+    </>
+  );
+  const breakdown = (
+    <>
+      {bars.length === 0 ? (
+        <p className="mt-6 text-sm text-muted">Categories show up once this month has an expense.</p>
+      ) : (
+        <ul className="mt-6 space-y-4">
+          {bars.map((row) => (
+            <li key={row.name}>
+              <div className="mb-1.5 flex justify-between gap-3 text-sm">
+                <span>{row.name}</span>
+                <span className="tabular-nums text-muted">{money(row.cents)}</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-paper-2">
+                <div className="h-full rounded-full bg-pine" style={{ width: `${Math.max(4, (row.cents / max) * 100)}%` }} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-6 grid gap-3 border-t border-line pt-4">
+        <Field label="Monthly budget (optional)">
+          <TextInput inputMode="decimal" value={data.budget ?? ""} placeholder="e.g. 150000" onChange={(event) => save({ budget: event.target.value })} />
+        </Field>
+        {budgetHint ? (
+          <p className="text-sm text-fail" role="alert">
+            {budgetHint}
+          </p>
+        ) : null}
+        <CurrencyPicker value={currency} onChange={(code) => save({ currency: code })} />
+      </div>
+    </>
+  );
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+      {/* On a phone the month's total and bars come first, above the form, instead of under every entry. */}
+      <section aria-label="This month" className="rounded-3xl bg-card p-5 shadow-line lg:hidden" data-month-summary="phone">
+        {summary}
+        <details className="mt-4">
+          <summary className="min-h-11 cursor-pointer content-center text-sm font-medium">Where the month went, budget and currency</summary>
+          {breakdown}
+        </details>
+      </section>
       <div className="min-w-0">
         <form onSubmit={add} className="grid gap-4 sm:grid-cols-2">
           <Field label="What">
@@ -305,8 +369,8 @@ function FullLedger({ entries, data, save, money, currency, month, setMonth, exp
             <TextInput inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="12.50" />
           </Field>
           <Field label="Category">
-            <select className={fieldClass} value={category} onChange={(event) => setCategory(event.target.value)}>
-              {CATEGORIES.map((name) => (
+            <select className={fieldClass} value={flow === "in" ? "Income" : category} disabled={flow === "in"} onChange={(event) => setCategory(event.target.value)}>
+              {CATEGORIES.filter((name) => (flow === "in" ? name === "Income" : name !== "Income")).map((name) => (
                 <option key={name}>{name}</option>
               ))}
             </select>
@@ -328,7 +392,7 @@ function FullLedger({ entries, data, save, money, currency, month, setMonth, exp
             ) : null}
             <div className="flex flex-wrap gap-2">
               <Button type="submit" tone="primary">
-                {editing ? "Save changes" : flow === "in" ? "Add income" : "Add expense"}
+                {editing ? "Save changes" : `${flow === "in" ? "Add income" : "Add expense"}${dateLabel}`}
               </Button>
               {editing ? (
                 <Button
@@ -387,7 +451,7 @@ function FullLedger({ entries, data, save, money, currency, month, setMonth, exp
                     <span className="-mr-2 flex sm:mr-0 sm:gap-3">
                       <button
                         type="button"
-                        className="min-h-9 rounded-full px-2 text-sm text-muted hover:bg-paper-2"
+                        className="min-h-11 rounded-full px-2 text-sm text-muted hover:bg-paper-2"
                         onClick={() => {
                           setEditing(entry.id);
                           setLabel(entry.label);
@@ -407,39 +471,9 @@ function FullLedger({ entries, data, save, money, currency, month, setMonth, exp
           </ul>
         )}
       </div>
-      <aside className="h-fit rounded-3xl bg-card p-6 shadow-line">
-        <p className="text-sm text-muted">{thisMonth ? "Spent this month" : `Spent in ${monthLabel}`}</p>
-        <p className="mt-2 font-display text-5xl tabular-nums tracking-tight">{money(totals.spent)}</p>
-        {totals.income > 0 ? <p className="mt-2 text-sm text-muted">Money in: {money(totals.income)}</p> : null}
-        {budgetCents ? <BudgetBar spent={totals.spent} budgetCents={budgetCents} money={money} /> : null}
-        {bars.length === 0 ? (
-          <p className="mt-6 text-sm text-muted">Categories show up once this month has an expense.</p>
-        ) : (
-          <ul className="mt-6 space-y-4">
-            {bars.map((row) => (
-              <li key={row.name}>
-                <div className="mb-1.5 flex justify-between gap-3 text-sm">
-                  <span>{row.name}</span>
-                  <span className="tabular-nums text-muted">{money(row.cents)}</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-paper-2">
-                  <div className="h-full rounded-full bg-pine" style={{ width: `${Math.max(4, (row.cents / max) * 100)}%` }} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="mt-6 grid gap-3 border-t border-line pt-4">
-          <Field label="Monthly budget (optional)">
-            <TextInput inputMode="decimal" value={data.budget ?? ""} placeholder="e.g. 150000" onChange={(event) => save({ budget: event.target.value })} />
-          </Field>
-          {budgetHint ? (
-            <p className="text-sm text-fail" role="alert">
-              {budgetHint}
-            </p>
-          ) : null}
-          <CurrencyPicker value={currency} onChange={(code) => save({ currency: code })} />
-        </div>
+      <aside className="hidden h-fit rounded-3xl bg-card p-6 shadow-line lg:block" data-month-summary="laptop">
+        {summary}
+        {breakdown}
       </aside>
     </div>
   );

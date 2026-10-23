@@ -9,19 +9,32 @@
  *   version over the newer one, adopt(latestRevision) drops this version.
  * - "refresh_required" (the server no longer accepts this client's saves)
  *   stops saving for good; the page must be refreshed.
+ * - "wrong_account" (another account signed in on this browser since the page
+ *   opened) stops saving for good, so nothing lands in the wrong account.
  * - A document over the size limit is not sent; the change stays local.
  */
 
-export type SaveState = "idle" | "saving" | "saved" | "error" | "retrying" | "conflict" | "too-large" | "refresh";
+export type SaveState = "idle" | "saving" | "saved" | "error" | "retrying" | "conflict" | "too-large" | "refresh" | "account";
 
 export type SaveResult =
   | { ok: true; revision: number }
   | { ok: false; error: "locked" }
+  | { ok: false; error: "wrong_account" }
   | { ok: false; error: "conflict"; revision: number }
   | { ok: false; error: "refresh_required"; revision: number }
   | { ok: false; error: "too_large"; limit: number };
 
-export type SaverEvent = "retrying" | "saved-after-retry" | "conflict" | "too-large" | "locked" | "refresh-required";
+export type SaverEvent = "retrying" | "saved-after-retry" | "conflict" | "too-large" | "locked" | "refresh-required" | "account-changed";
+
+/**
+ * What became of a save that was still pending or in flight when the tool
+ * closed. The page no longer shows states, but whoever keeps the recovery
+ * copy still needs to know: "saved" clears the copy kept at close, "failed"
+ * keeps it (with why) so it is offered back next time.
+ */
+export type AfterCloseEvent =
+  | { kind: "saved"; payload: string }
+  | { kind: "failed"; reason: "retrying" | "conflict" | "refresh" | "too-large" | "locked" | "account" };
 
 export type SaverDeps = {
   limit: number;
@@ -30,6 +43,8 @@ export type SaverDeps = {
   save: (payload: string, baseRevision: number, keepalive: boolean) => Promise<SaveResult>;
   onState: (state: SaveState) => void;
   onEvent?: (event: SaverEvent) => void;
+  /** Called instead of onState/onEvent once the tool has closed. */
+  onAfterClose?: (event: AfterCloseEvent) => void;
   setTimer?: (fn: () => void, ms: number) => unknown;
   clearTimer?: (handle: unknown) => void;
 };
@@ -49,11 +64,11 @@ export class DocSaver<T> {
   pending: T | null = null;
   inFlight = false;
   attempt = 0;
-  stopped: "conflict" | "locked" | "refresh" | null = null;
+  stopped: "conflict" | "locked" | "refresh" | "account" | null = null;
   closed = false;
   private timer: unknown = null;
   private retryTimer: unknown = null;
-  private readonly deps: Required<Omit<SaverDeps, "onEvent">> & Pick<SaverDeps, "onEvent">;
+  private readonly deps: Required<Omit<SaverDeps, "onEvent" | "onAfterClose">> & Pick<SaverDeps, "onEvent" | "onAfterClose">;
 
   constructor(deps: SaverDeps) {
     this.deps = {
@@ -120,7 +135,7 @@ export class DocSaver<T> {
    * version and continue from `latestRevision`.
    */
   adopt(latestRevision: number) {
-    if (this.stopped === "refresh" || this.stopped === "locked") return;
+    if (this.stopped === "refresh" || this.stopped === "locked" || this.stopped === "account") return;
     this.clearTimers();
     this.pending = null;
     this.revision = latestRevision;
@@ -129,7 +144,11 @@ export class DocSaver<T> {
     if (!this.inFlight) this.state("saved");
   }
 
-  /** The tool closed. Sends what is left; later state changes are not shown. */
+  /**
+   * The tool closed. Sends what is left; later state changes are not shown,
+   * but each outcome still reaches onAfterClose so the recovery copy kept at
+   * close is cleared on success and kept (with the reason) on failure.
+   */
   close() {
     this.send();
     this.closed = true;
@@ -141,6 +160,10 @@ export class DocSaver<T> {
 
   private event(next: SaverEvent) {
     if (!this.closed) this.deps.onEvent?.(next);
+  }
+
+  private afterClose(next: AfterCloseEvent) {
+    if (this.closed) this.deps.onAfterClose?.(next);
   }
 
   private clearTimers() {
@@ -158,6 +181,7 @@ export class DocSaver<T> {
     if (payload.length > this.deps.limit) {
       this.state("too-large");
       this.event("too-large");
+      this.afterClose({ kind: "failed", reason: "too-large" });
       return;
     }
     this.pending = null;
@@ -176,7 +200,10 @@ export class DocSaver<T> {
           if (this.attempt > 0) this.event("saved-after-retry");
           this.attempt = 0;
           if (this.pending != null) this.send();
-          else this.state("saved");
+          else {
+            this.state("saved");
+            this.afterClose({ kind: "saved", payload });
+          }
           return;
         }
         keep();
@@ -184,23 +211,34 @@ export class DocSaver<T> {
           this.stopped = "conflict";
           this.state("conflict");
           this.event("conflict");
+          this.afterClose({ kind: "failed", reason: "conflict" });
         } else if (res.error === "refresh_required") {
           this.stopped = "refresh";
           this.state("refresh");
           this.event("refresh-required");
+          this.afterClose({ kind: "failed", reason: "refresh" });
+        } else if (res.error === "wrong_account") {
+          // Another account signed in on this browser: stop for good; the change is kept.
+          this.stopped = "account";
+          this.state("account");
+          this.event("account-changed");
+          this.afterClose({ kind: "failed", reason: "account" });
         } else if (res.error === "too_large") {
           this.state("too-large");
           this.event("too-large");
+          this.afterClose({ kind: "failed", reason: "too-large" });
         } else {
           this.stopped = "locked";
           this.state("error");
           this.event("locked");
+          this.afterClose({ kind: "failed", reason: "locked" });
         }
       })
       .catch(() => {
         this.inFlight = false;
         keep();
         this.attempt += 1;
+        this.afterClose({ kind: "failed", reason: "retrying" });
         if (this.closed && this.attempt > RETRIES_AFTER_CLOSE) return;
         this.state("retrying");
         if (this.attempt === 1) this.event("retrying");

@@ -228,6 +228,7 @@ export function BillSheet({
   check,
   currency,
   notes,
+  payment,
   stamp,
   printBlock,
 }: {
@@ -240,12 +241,14 @@ export function BillSheet({
   check: InvoiceCheck;
   currency: CurrencyCode;
   notes: string;
+  /** How to pay (bank details or a payment link), printed on invoices. */
+  payment?: string;
   stamp?: ReactNode;
   printBlock: string | null;
 }) {
   const fmtMinor = (minor: number | null) => (minor == null ? "—" : formatMoney(toMajor(minor, currency), currency));
   return (
-    <article aria-label={`${title} ${number || ""} page`.replace(/\s+/g, " ").trim()} className="invoice-sheet min-w-0 rounded-3xl bg-card p-5 shadow-line sm:p-8">
+    <article id="bill-sheet" aria-label={`${title} ${number || ""} page`.replace(/\s+/g, " ").trim()} className="invoice-sheet min-w-0 scroll-mt-4 rounded-3xl bg-card p-5 shadow-line sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm text-muted">{title}</p>
@@ -322,10 +325,45 @@ export function BillSheet({
           No total yet. {printBlock}
         </p>
       )}
+      {payment?.trim() ? (
+        <div className="mt-6 text-sm" data-payment>
+          <p className="font-medium">How to pay</p>
+          <p className="mt-1 whitespace-pre-wrap break-words">{payment.trim()}</p>
+        </div>
+      ) : null}
       {notes.trim() ? <p className="mt-6 whitespace-pre-wrap break-words text-sm text-muted">{notes.trim()}</p> : null}
       <p className="mt-6 text-xs text-muted">
         Amounts in {currencyName(currency)} ({currency}). {roundingNote(currency)}
       </p>
     </article>
+  );
+}
+
+/**
+ * The running total, kept in view on phones while the lines are typed. On a
+ * laptop the sheet sits beside the form, so this is hidden there. It sticks
+ * to the bottom of the screen only while the form is in view.
+ */
+export function MobileTotal({ label, check, currency }: { label: "Invoice" | "Quote"; check: InvoiceCheck; currency: CurrencyCode }) {
+  return (
+    <div
+      className="no-print sticky bottom-3 z-20 flex items-center justify-between gap-3 rounded-2xl bg-card px-4 py-3 text-sm shadow-line ring-1 ring-line lg:hidden"
+      data-mobile-total={check.valid ? "ready" : "none"}
+      aria-live="polite"
+    >
+      {check.valid && check.totalMinor != null ? (
+        <span>
+          Total{" "}
+          <strong className="tabular-nums" data-mobile-total-value>
+            {formatMoney(toMajor(check.totalMinor, currency), currency)}
+          </strong>
+        </span>
+      ) : (
+        <span className="text-muted">No total yet</span>
+      )}
+      <a href="#bill-sheet" className="min-h-11 shrink-0 content-center underline underline-offset-2">
+        See the {label.toLowerCase()}
+      </a>
+    </div>
   );
 }

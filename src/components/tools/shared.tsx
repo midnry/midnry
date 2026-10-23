@@ -59,13 +59,15 @@ export function saveStateLabel(state: SaveState): string {
       return SAVE_MESSAGES.refresh;
     case "too-large":
       return SAVE_MESSAGES.tooLarge;
+    case "account":
+      return SAVE_MESSAGES.account;
     default:
       return "Saved with your account";
   }
 }
 
 export function SaveMark({ state, slug }: { state: SaveState; slug?: string }) {
-  const problem = state === "retrying" || state === "conflict" || state === "refresh" || state === "too-large" || state === "error";
+  const problem = state === "retrying" || state === "conflict" || state === "refresh" || state === "too-large" || state === "error" || state === "account";
   return (
     <p className={cn("text-sm", problem ? "max-w-xs font-medium text-fail" : "text-muted")} aria-live="polite">
       {saveStateLabel(state)} <ResolveButton slug={slug} />

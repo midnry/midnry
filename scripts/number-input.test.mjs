@@ -187,7 +187,8 @@ test("Kit calculators (kits.ts num, recipe cost, typedNumber/firstHint in kit.ts
   assert.equal(margin.run({ cost: "7,5", price: "10" })[0].value, "Enter both numbers.", "a comma decimal is not misread");
   const recipe = K.getKit("recipe-cost");
   assert.equal(recipe.run({ costs: "500\n200", portions: "4" })[1].value, "175");
-  assert.deepEqual(recipe.run({ costs: "500\n7,5", portions: "4" }), [{ label: "Check the costs", value: "Use a dot for decimals, e.g. 7.5" }]);
+  // The bad line is named (2026-10-23: every cost line is read under the money rule, src/lib/kit-numbers.ts).
+  assert.deepEqual(recipe.run({ costs: "500\n7,5", portions: "4" }), [{ label: "Check the costs", value: "Cost line 2: Use a dot for decimals, e.g. 7.5" }]);
   assert.equal(N.typedNumber(undefined), NaN);
   assert.equal(N.typedNumber(""), 0, "blank is 0, as Number('') was");
   assert.equal(N.typedNumber("3000000"), 3000000);

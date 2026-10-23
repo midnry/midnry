@@ -55,12 +55,13 @@ export const loadDoc = createServerFn({ method: "GET" })
 export type SaveDocResult =
   | { ok: true; revision: number }
   | { ok: false; error: "locked" }
+  | { ok: false; error: "wrong_account" }
   | { ok: false; error: "conflict"; revision: number }
   | { ok: false; error: "refresh_required"; revision: number }
   | { ok: false; error: "too_large"; limit: number };
 
 export const saveDoc = createServerFn({ method: "POST" })
-  .validator((input: { slug: string; payload: string; baseRevision?: number }) => {
+  .validator((input: { slug: string; payload: string; baseRevision?: number; owner?: string }) => {
     if (!input || typeof input.slug !== "string" || typeof input.payload !== "string") {
       throw new Error("Invalid document");
     }
@@ -75,10 +76,15 @@ export const saveDoc = createServerFn({ method: "POST" })
     } catch {
       throw new Error("Invalid document");
     }
-    return { slug: input.slug, payload: input.payload, baseRevision: base };
+    if (input.owner !== undefined && typeof input.owner !== "string") throw new Error("Invalid owner");
+    return { slug: input.slug, payload: input.payload, baseRevision: base, owner: input.owner };
   })
   .middleware([authMiddleware])
   .handler(async ({ context, data }): Promise<SaveDocResult> => {
+    // The page names the account it was opened for (loadDoc's `owner`). If someone else has
+    // signed in on this browser since, the save must not land in their document. Pages from
+    // before this check send no owner and keep the old behaviour until they are refreshed.
+    if (data.owner !== undefined && data.owner !== context.userId) return { ok: false, error: "wrong_account" };
     const allowed = await gate(context.userId, data.slug);
     if (!allowed.ok) return allowed;
     const limit = docLimit(data.slug);

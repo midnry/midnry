@@ -1,12 +1,21 @@
 import type { SectionId } from "@/lib/sections";
-import { firstHint, typedNumber } from "@/lib/number-input";
+import { typedNumber } from "@/lib/number-input";
+import { readNumber, type NumberRule } from "@/lib/kit-numbers";
 
 /**
  * A form box. `legacy` marks a box that only older saved rows use: it shows on a
  * row (and in its edit form) when that row has a value, and is not offered for
  * new entries, so old rows keep loading exactly as they were saved.
  */
-export type Field = { id: string; label: string; kind?: "text" | "number" | "area" | "date" | "time"; placeholder?: string; legacy?: boolean };
+export type Field = {
+  id: string;
+  label: string;
+  kind?: "text" | "number" | "area" | "date" | "time";
+  placeholder?: string;
+  legacy?: boolean;
+  /** For number boxes: what this box accepts (src/lib/kit-numbers.ts). Default: 0 or more, no units. */
+  rule?: NumberRule;
+};
 export type Line = { label: string; value: string };
 export type Entry = { title: string; body: string };
 /** A second list inside a tracker (Farm sales: Sales · Price log). A view without fields is the main list. */
@@ -51,7 +60,9 @@ export type Kit = Base &
   );
 
 const f = (id: string, label: string, placeholder?: string): Field => ({ id, label, placeholder });
-const n = (id: string, label: string, placeholder?: string): Field => ({ id, label, kind: "number", placeholder });
+const n = (id: string, label: string, placeholder?: string, rule?: NumberRule): Field => ({ id, label, kind: "number", placeholder, ...(rule ? { rule } : {}) });
+/** A money box: a currency sign is fine, negatives are not. */
+const MONEY: NumberRule = { money: true };
 const a = (id: string, label: string, placeholder?: string): Field => ({ id, label, kind: "area", placeholder });
 const d = (id: string, label: string): Field => ({ id, label, kind: "date" });
 const t = (id: string, label: string): Field => ({ id, label, kind: "time" });
@@ -72,7 +83,12 @@ export const KITS: readonly Kit[] = [
     features: ["mg from weight and mg/kg", "mL from a concentration", "The working shown in plain figures"],
     guide: ["Enter weight in kilograms.", "Enter the ordered mg per kg and the mg in each mL.", "Read the mg and the mL. Confirm it with a prescriber."],
     kind: "calc",
-    fields: [n("kg", "Weight (kg)", "60"), n("mgkg", "mg per kg", "15"), n("mgml", "mg per mL", "50")],
+    // A weight over 350 kg or a strength over 1,000 mg per mL is a typing mistake, not a patient or a medicine.
+    fields: [
+      n("kg", "Weight (kg)", "60", { aboveMin: true, max: 350, units: ["kg"] }),
+      n("mgkg", "mg per kg", "15", { aboveMin: true, max: 1000, units: ["mg/kg"], warnAbove: { value: 100, note: "Over 100 mg per kg is unusual. Check the order before using this figure." } }),
+      n("mgml", "mg per mL", "50", { aboveMin: true, max: 1000, units: ["mg/mL"] }),
+    ],
     run: (v) => {
       const mg = num(v, "kg") * num(v, "mgkg");
       const ml = mg / num(v, "mgml");
@@ -122,7 +138,7 @@ export const KITS: readonly Kit[] = [
     features: ["Revenue, cost of sales, and expenses", "Gross profit and net profit", "Saved with your account"],
     guide: ["Name the period.", "Enter revenue and the costs.", "Read gross profit and what remains."],
     kind: "template",
-    parts: [f("period", "Period", "October 2026"), n("revenue", "Revenue"), n("cogs", "Cost of sales"), n("expenses", "Other expenses")],
+    parts: [f("period", "Period", "October 2026"), n("revenue", "Revenue", undefined, MONEY), n("cogs", "Cost of sales", undefined, MONEY), n("expenses", "Other expenses", undefined, MONEY)],
   },
   {
     slug: "breakeven",
@@ -282,7 +298,7 @@ export const KITS: readonly Kit[] = [
     features: ["Cost and selling price", "Profit and margin percent", "A note if the price is below cost"],
     guide: ["Enter what you paid and what you charge.", "Read the profit on one unit.", "Margin is profit divided by the price."],
     kind: "calc",
-    fields: [n("cost", "Cost", "0"), n("price", "Price", "0")],
+    fields: [n("cost", "Cost", "0", MONEY), n("price", "Price", "0", MONEY)],
     run: (v) => {
       const cost = num(v, "cost");
       const price = num(v, "price");
@@ -314,7 +330,7 @@ export const KITS: readonly Kit[] = [
       "Under QR code, paste the link where your menu already lives, make the code, and save the image where people can scan it.",
     ],
     kind: "tracker",
-    fields: [f("dish", "Dish"), n("price", "Price"), f("note", "Note")],
+    fields: [f("dish", "Dish"), n("price", "Price", undefined, MONEY), f("note", "Note")],
     qr: {
       title: "QR code",
       blurb: "Paste the link where your menu already lives, such as a website, a PDF link or a WhatsApp catalogue. The code only opens that link: Midnry does not host your menu and does not check the link.",
@@ -328,13 +344,16 @@ export const KITS: readonly Kit[] = [
     features: ["Lines of cost", "Portions", "Cost of one portion"],
     guide: ["Add each ingredient cost.", "Set how many portions the recipe makes.", "Read the cost of one."],
     kind: "calc",
-    fields: [a("costs", "Costs, one per line", "500\n200"), n("portions", "Portions", "4")],
+    fields: [a("costs", "Costs, one per line", "500\n200"), n("portions", "Portions", "4", { aboveMin: true, max: 100000 })],
     run: (v) => {
       const typed = (v.costs || "").split(/\n/);
-      // "7,5" is named instead of being dropped from the total.
-      const hint = firstHint(typed);
-      if (hint) return [{ label: "Check the costs", value: hint }];
-      const lines = typed.map((line) => typedNumber(line.trim())).filter((item) => Number.isFinite(item));
+      // Every cost line is read under the money rule; one that can't be read is named, never dropped from the total.
+      const lines: number[] = [];
+      for (const [index, line] of typed.entries()) {
+        const read = readNumber(line, `Cost line ${index + 1}`, MONEY);
+        if (read.state === "bad") return [{ label: "Check the costs", value: read.message }];
+        if (read.state === "ok") lines.push(read.value);
+      }
       const portions = num(v, "portions");
       const total = lines.reduce((sum, item) => sum + item, 0);
       if (lines.length === 0 || !(portions > 0)) return [{ label: "Result", value: "Add costs and a portion count." }];
@@ -371,7 +390,7 @@ export const KITS: readonly Kit[] = [
       "Copy the list into your shop, your status or a message. Change a price in the same row.",
     ],
     kind: "tracker",
-    fields: [f("name", "Product or item"), n("price", "Price", "0"), f("line", "Line")],
+    fields: [f("name", "Product or item"), n("price", "Price", "0", MONEY), f("line", "Line")],
   },
   // Captions is now a mode of the Writing studio (src/lib/studio.ts).
   // Quote is now part of Invoice (quotes view); its saved document is copied in there.
@@ -421,7 +440,7 @@ export const KITS: readonly Kit[] = [
     features: ["Quantity and hectares", "Cost of the season", "Yield and cost per unit"],
     guide: ["Enter how much you harvested and the land size.", "Enter the season's cost.", "Read yield per hectare and cost per unit."],
     kind: "calc",
-    fields: [n("qty", "Harvest", "0"), n("land", "Hectares", "1"), n("cost", "Season cost", "0")],
+    fields: [n("qty", "Harvest", "0"), n("land", "Hectares", "1", { aboveMin: true, max: 1000000, units: ["ha", "hectares"] }), n("cost", "Season cost", "0", MONEY)],
     run: (v) => {
       const qty = num(v, "qty");
       const land = num(v, "land");
@@ -450,10 +469,10 @@ export const KITS: readonly Kit[] = [
       "This is your book. It does not fetch market prices.",
     ],
     kind: "tracker",
-    fields: [f("buyer", "Buyer"), f("crop", "Crop"), n("amount", "Amount")],
+    fields: [f("buyer", "Buyer"), f("crop", "Crop"), n("amount", "Amount", undefined, MONEY)],
     views: [
       { id: "sales", label: "Sales" },
-      { id: "prices", label: "Price log", fields: [f("crop", "Crop"), n("price", "Price"), f("when", "Date")], blurb: "What a crop sold for, and when. Your own prices, not a market feed." },
+      { id: "prices", label: "Price log", fields: [f("crop", "Crop"), n("price", "Price", undefined, MONEY), f("when", "Date")], blurb: "What a crop sold for, and when. Your own prices, not a market feed." },
     ],
   },
   {
@@ -543,7 +562,11 @@ export const KITS: readonly Kit[] = [
     features: ["Monthly amount, years, and a yearly rate", "A future figure", "Large type"],
     guide: ["Enter how much you could put away each month.", "Enter the years and a yearly rate.", "Read the figure as a sum, not a promise."],
     kind: "calc",
-    fields: [n("monthly", "Each month", "20000"), n("years", "Years", "10"), n("rate", "Yearly rate %", "8")],
+    fields: [
+      n("monthly", "Each month", "20000", MONEY),
+      n("years", "Years", "10", { aboveMin: true, max: 80, units: ["years", "yrs"] }),
+      n("rate", "Yearly rate %", "8", { max: 100, units: ["%"], warnAbove: { value: 30, note: "Over 30% a year is unusual for savings. Check the rate." } }),
+    ],
     run: (v) => {
       const monthly = num(v, "monthly");
       const years = num(v, "years");
@@ -565,7 +588,7 @@ export const KITS: readonly Kit[] = [
     features: ["Name, amount, and due date", "Large type", "Saved with your account"],
     guide: ["Add the bill and the amount.", "Pick the date it is due.", "Open the list. Nothing is paid automatically. Each bill has a button to copy it into your to-do list."],
     kind: "tracker",
-    fields: [f("name", "Bill"), n("amount", "Amount"), d("dueOn", "Due date"), old("due", "Due")],
+    fields: [f("name", "Bill"), n("amount", "Amount", undefined, MONEY), d("dueOn", "Due date"), old("due", "Due")],
   },
   {
     slug: "recipes",

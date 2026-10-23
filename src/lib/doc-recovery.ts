@@ -16,7 +16,14 @@
  * Kept free of React so it can be tested on its own (scripts/doc-recovery.test.mjs).
  */
 
-export type RecoveryReason = "retrying" | "conflict" | "refresh" | "too-large";
+/**
+ * Why the copy was kept. "pending" means the tool closed (or the page was
+ * leaving) while a save was still waiting or in flight: the copy is kept
+ * before the outcome is known, and dropped on the next open if the save
+ * landed after all (decideOnLoad). "locked" means the server refused the save
+ * because the account no longer opens the app.
+ */
+export type RecoveryReason = "retrying" | "conflict" | "refresh" | "too-large" | "pending" | "locked" | "account";
 
 export type RecoveryRecord = {
   v: 1;
@@ -39,11 +46,14 @@ export interface RecoveryBackend {
 /** Copies older than this are dropped instead of offered. */
 export const MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 
+/** The slug of the storage probe record (never an app slug: apps use lowercase letters and dashes). */
+const PROBE_SLUG = "__probe__";
+
 export function recoveryKey(owner: string, slug: string): string {
   return `midnry-recovery:v1:${owner}:${slug}`;
 }
 
-const REASONS: readonly RecoveryReason[] = ["retrying", "conflict", "refresh", "too-large"];
+const REASONS: readonly RecoveryReason[] = ["retrying", "conflict", "refresh", "too-large", "pending", "locked", "account"];
 
 function isRecord(value: unknown, owner: string, slug: string): value is RecoveryRecord {
   if (!value || typeof value !== "object") return false;
@@ -95,6 +105,36 @@ export class RecoveryStore {
     } catch {
       /* nothing to do: the copy expires */
     }
+  }
+
+  /**
+   * Whether this browser keeps a copy for this account: a probe record is
+   * written, read back and removed. False when storage is blocked or full,
+   * so the app can ask before letting someone leave with unsaved changes.
+   */
+  async canKeep(owner: string): Promise<boolean> {
+    if (!this.backend || !owner) return false;
+    const key = recoveryKey(owner, PROBE_SLUG);
+    try {
+      await this.backend.put(key, { v: 1, owner, slug: PROBE_SLUG, payload: "{}", baseRevision: 0, reason: "pending", savedAt: this.now() });
+      const back = await this.backend.get(key);
+      await this.backend.delete(key);
+      return isRecord(back, owner, PROBE_SLUG);
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Clear the copy only if it still holds `payload` (the version that has
+   * just been saved). A copy kept since by another page of the same app, for
+   * a save that did fail, is left for the next open to offer.
+   */
+  async clearIfPayload(owner: string, slug: string, payload: string): Promise<boolean> {
+    const record = await this.read(owner, slug);
+    if (!record || !samePayload(record.payload, payload)) return false;
+    await this.clear(owner, slug);
+    return true;
   }
 }
 
@@ -261,7 +301,8 @@ export function browserRecoveryStore(): RecoveryStore {
 
 /* ── open save problems, for the resolution panel ───────────────────────── */
 
-export type DocIssueKind = "conflict" | "refresh" | "recovered";
+/** "account": another account signed in on this browser while this page had unsaved changes. */
+export type DocIssueKind = "conflict" | "refresh" | "recovered" | "account";
 
 export type DocIssue = {
   slug: string;
@@ -278,9 +319,18 @@ export type DocIssue = {
   keepMine?: () => Promise<void>;
   /** Drop mine and use the newest saved version (conflict, recovered). */
   useSaved?: () => Promise<void>;
-  /** Refresh the page; the copy is already kept (refresh). */
-  refresh?: () => void;
+  /**
+   * Keep the copy, then refresh the page (refresh). Resolves "not-stored"
+   * instead of reloading when this browser would not keep the copy: the
+   * page stays open with the unsaved document, and the panel offers Copy and
+   * Download before refreshing on purpose.
+   */
+  refresh?: () => Promise<RefreshOutcome>;
+  /** Refresh without a kept copy, chosen after the warning (refresh). */
+  refreshAnyway?: () => void;
 };
+
+export type RefreshOutcome = "reloading" | "not-stored";
 
 type Listener = () => void;
 let issues: readonly DocIssue[] = [];

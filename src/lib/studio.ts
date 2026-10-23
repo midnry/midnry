@@ -276,6 +276,11 @@ export const SOURCE_MAX = 20_000;
 /** What goes to the AI from the source box (the same cap as the long reader modes). */
 export const SOURCE_TO_AI = 14_000;
 export const PIECE_MAX = 30_000;
+/**
+ * The most pieces one draft keeps. The widest writer is Contract, whose quick
+ * writer returns seven (parties, four parts, watch-for, before you sign).
+ */
+export const PIECES_MAX = 8;
 export const TITLE_MAX = 120;
 
 export function blankDraft(mode: string, id: string, now: string): Draft {
@@ -334,7 +339,7 @@ export function cleanDraft(input: unknown): CleanResult {
   if (source.length > SOURCE_MAX) return { ok: false, error: "too_large" };
   const pieces: Piece[] = [];
   if (Array.isArray(raw.pieces)) {
-    if (raw.pieces.length > 6) return { ok: false, error: "invalid" };
+    if (raw.pieces.length > PIECES_MAX) return { ok: false, error: "invalid" };
     for (const piece of raw.pieces) {
       if (!piece || typeof piece.title !== "string" || typeof piece.text !== "string") return { ok: false, error: "invalid" };
       if (piece.text.length > PIECE_MAX) return { ok: false, error: "too_large" };

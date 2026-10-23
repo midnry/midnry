@@ -75,7 +75,7 @@ export function StudioTool() {
   );
 }
 
-type SaveStatus = "idle" | "waiting" | "saving" | "saved" | "error" | "conflict" | "full" | "too-large" | "gone";
+type SaveStatus = "idle" | "waiting" | "saving" | "saved" | "error" | "conflict" | "full" | "too-large" | "gone" | "account";
 
 type Fallback = { reason: "limit" | "busy" | "error" | "off"; limit?: number; hasPass?: boolean } | null;
 
@@ -162,7 +162,7 @@ function Studio({ initial }: { initial: StudioState }) {
     const run = (async () => {
       let result: SaveResult;
       try {
-        const payload = { draft: next, baseRevision: base };
+        const payload = { draft: next, baseRevision: base, owner: initial.owner };
         const small = JSON.stringify(payload).length <= KEEPALIVE_MAX;
         result = await saveDraft({ data: payload, ...(keepalive && small ? { fetch: keepaliveFetch } : {}) });
       } catch {
@@ -186,6 +186,10 @@ function Studio({ initial }: { initial: StudioState }) {
       } else if (result.error === "gone") {
         revisions.current.delete(next.id);
         setStatus("gone");
+      } else if (result.error === "wrong_account") {
+        // Another account signed in on this browser: stop; the text stays on this page to copy.
+        pending.current = null;
+        setStatus("account");
       } else {
         setStatus("too-large");
       }
@@ -197,7 +201,7 @@ function Studio({ initial }: { initial: StudioState }) {
       inFlight.current = null;
     }
     if (pending.current && timer.current === null) await flush(keepalive);
-  }, [extras, soapHistory]);
+  }, [extras, soapHistory, initial.owner]);
 
   const schedule = useCallback(
     (next: Draft) => {
@@ -705,8 +709,9 @@ function SaveLine({ status, onReload, onRetry }: { status: SaveStatus; onReload:
     full: "Not saved: this mode is full.",
     "too-large": "Too large to save. Shorten the source or the boxes.",
     gone: "This draft was deleted elsewhere.",
+    account: "Another account is signed in now, so this draft was not saved to it. Copy your text, then refresh.",
   };
-  const problem = status === "error" || status === "conflict" || status === "full" || status === "too-large" || status === "gone";
+  const problem = status === "error" || status === "conflict" || status === "full" || status === "too-large" || status === "gone" || status === "account";
   return (
     <span className={cn("text-sm", problem ? "font-medium text-fail" : "text-muted")} aria-live="polite" data-save={status}>
       {text[status]}

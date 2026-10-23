@@ -6,7 +6,9 @@ import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { getKit, type Field, type Kit, type Line, type QrSection as QrSpec } from "@/lib/kits";
 import { compareLists, type BadLine } from "@/lib/reconcile";
-import { firstHint, typedNumber } from "@/lib/number-input";
+import { typedNumber } from "@/lib/number-input";
+import { readNumber, readNumbers } from "@/lib/kit-numbers";
+import { breakEvenLines, calcLines, ohmLine, ratioLines, solverLine, taxLines } from "@/lib/kit-calcs";
 import type { SectionId } from "@/lib/sections";
 import { rowsCsv, type TemplateDoc, type TrackerDoc } from "@/lib/merges";
 import { downloadText, setViewParam, viewParam } from "@/components/use-merged-docs";
@@ -109,6 +111,12 @@ function Lines({ lines, copy = true }: { lines: Line[]; copy?: boolean }) {
   );
 }
 
+/** Result lines with Copy only when there is a result: a "check the figures" message is never copied as one. */
+function ResultLines({ lines }: { lines: Line[] }) {
+  const result = lines.some((line) => !["Check the figures", "Check the costs", "Result"].includes(line.label));
+  return <Lines lines={lines} copy={result} />;
+}
+
 function CopyButton({ text, label = "Copy", className }: { text: string; label?: string; className?: string }) {
   const [done, setDone] = useState(false);
   return (
@@ -136,7 +144,7 @@ function Calc({ kit }: { kit: Extract<Kit, { kind: "calc" }> }) {
   return (
     <div>
       <Fields fields={kit.fields} values={values} onChange={setValues} />
-      <Lines lines={kit.run(values)} />
+      <ResultLines lines={calcLines(kit, values)} />
     </div>
   );
 }
@@ -174,7 +182,10 @@ function Fields({
             />
           ) : (
             <TextInput
-              type={field.kind === "number" || field.kind === "date" || field.kind === "time" ? field.kind : "text"}
+              // Numbers are typed into a text box: a number input silently drops the
+              // comma in "7,5" (making it 75) and blanks letters, so the dot hint from
+              // src/lib/number-input.ts could never show. Every reader uses typedNumber.
+              type={field.kind === "date" || field.kind === "time" ? field.kind : "text"}
               inputMode={field.kind === "number" ? "decimal" : undefined}
               value={values[field.id] ?? ""}
               placeholder={field.placeholder}
@@ -190,12 +201,15 @@ function Fields({
 function Template({ kit }: { kit: Extract<Kit, { kind: "template" }> }) {
   const { data, setData, ready, loadError, blocked, saveState } = useAppDoc<TemplateDoc & { values: Record<string, string> }>(kit.slug, { values: {} });
   const values = data.values ?? {};
-  // Typed numbers follow src/lib/number-input.ts: "1,500" is 1500, "7,5" is refused with a hint.
-  const revenue = typedNumber(values.revenue);
-  const cogs = typedNumber(values.cogs);
-  const expenses = typedNumber(values.expenses);
-  const statementHint = kit.slug === "statements" ? firstHint([values.revenue, values.cogs, values.expenses]) : null;
-  const showStatement = kit.slug === "statements" && (statementHint != null || [revenue, cogs, expenses].every((item) => Number.isFinite(item)));
+  // Typed numbers follow src/lib/kit-numbers.ts: "1,500" is 1500; "7,5", letters and negatives are named, not computed.
+  const numberParts = kit.parts.filter((part) => part.kind === "number");
+  const anyNumber = numberParts.some((part) => values[part.id]?.trim());
+  const read = readNumbers(numberParts, values);
+  const revenue = read.values.revenue ?? NaN;
+  const cogs = read.values.cogs ?? NaN;
+  const expenses = read.values.expenses ?? NaN;
+  const statementHint = kit.slug === "statements" && anyNumber ? read.problem : null;
+  const showStatement = kit.slug === "statements" && anyNumber;
   const statement: Line[] = statementHint
     ? [{ label: "Check the figures", value: statementHint }]
     : showStatement
@@ -361,6 +375,7 @@ function TrackerList({
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState<number | null>(null);
   const [query, setQuery] = useState("");
+  const [problem, setProblem] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const hasSide = fields.some((field) => field.id === "side");
   const hasAmount = fields.some((field) => field.id === "amount");
@@ -377,12 +392,16 @@ function TrackerList({
 
   function save() {
     if (!canSave) return;
-    // An amount the totals can't read ("7,5") is named, not silently counted as 0.
-    const amountHint = hasAmount ? firstHint([draft.amount]) : null;
-    if (amountHint) {
-      toast.error(amountHint);
-      return;
+    // A number the totals or the low flag can't read ("7,5", "abc", "-3") is named, not saved and counted as 0.
+    for (const field of fields.filter((item) => item.kind === "number")) {
+      const read = readNumber(draft[field.id], field.label, field.rule);
+      if (read.state === "bad") {
+        setProblem(read.message);
+        toast.error(read.message);
+        return;
+      }
     }
+    setProblem(null);
     // Keep fields the form does not show (an old copy may carry more), so an edit never drops data.
     const clean = { ...(editing != null ? rows[editing] : {}), ...Object.fromEntries(fields.map((field) => [field.id, (draft[field.id] ?? "").trim()])) };
     if (editing != null) setRows(rows.map((row, index) => (index === editing ? clean : row)));
@@ -428,6 +447,11 @@ function TrackerList({
       >
         <p className="mb-3 font-medium">{editing != null ? "Edit entry" : "New entry"}</p>
         <Fields fields={fields} values={draft} onChange={setDraft} />
+        {problem ? (
+          <p role="alert" className="mt-3 text-sm text-fail" data-number-problem>
+            {problem}
+          </p>
+        ) : null}
         <div className="mt-3 flex flex-wrap gap-2">
           <Button tone="primary" type="submit" disabled={!canSave}>
             {editing != null ? "Save changes" : "Add"}
@@ -607,9 +631,10 @@ function Units() {
   const [from, setFrom] = useState("m");
   const [to, setTo] = useState("cm");
   const [value, setValue] = useState("1");
+  const read = readNumber(value, "Value", group === "temperature" ? { min: from === "K" ? 0 : from === "F" ? -459.67 : -273.15, units: [from] } : { units: [from] });
   const result = useMemo(() => {
-    const input = Number(value);
-    if (!value.trim() || !Number.isFinite(input)) return "";
+    if (read.state !== "ok") return "";
+    const input = read.value;
     let out: number;
     if (group === "temperature") {
       const c = from === "C" ? input : from === "F" ? ((input - 32) * 5) / 9 : input - 273.15;
@@ -620,7 +645,7 @@ function Units() {
       out = (input * table[from]) / table[to];
     }
     return Number(out.toPrecision(8)).toLocaleString("en", { maximumFractionDigits: 6 });
-  }, [from, group, to, value]);
+  }, [from, group, to, read]);
   const choices = group === "temperature" ? ["C", "F", "K"] : Object.keys(UNIT_TABLES[group] ?? {});
   return (
     <div className="grid gap-3 sm:grid-cols-2">
@@ -652,7 +677,7 @@ function Units() {
       <Select label="To" value={to} options={choices} onChange={setTo} />
       <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-card p-4 shadow-line sm:col-span-2">
         <p className="mr-auto text-lg font-medium tabular-nums">
-          {result ? `${value} ${from} = ${result} ${to}` : "Enter a number to convert."}
+          {result && read.state === "ok" ? `${read.value.toLocaleString("en", { maximumFractionDigits: 6 })} ${from} = ${result} ${to}` : read.state === "bad" ? read.message : "Enter a number to convert."}
         </p>
         <Button
           tone="quiet"
@@ -686,16 +711,7 @@ function Ohm() {
   const [v, setV] = useState("");
   const [i, setI] = useState("");
   const [r, setR] = useState("");
-  const blank = [v, i, r].filter((item) => item.trim() === "").length;
-  let line = "Leave exactly one of V, I, or R blank.";
-  if (blank === 1) {
-    const voltage = Number(v);
-    const current = Number(i);
-    const resistance = Number(r);
-    if (!v.trim() && Number.isFinite(current) && Number.isFinite(resistance)) line = `${Math.round(current * resistance * 100) / 100} V`;
-    if (!i.trim() && resistance !== 0 && Number.isFinite(voltage) && Number.isFinite(resistance)) line = `${Math.round((voltage / resistance) * 100) / 100} A`;
-    if (!r.trim() && current !== 0 && Number.isFinite(voltage) && Number.isFinite(current)) line = `${Math.round((voltage / current) * 100) / 100} Ω`;
-  }
+  const line = ohmLine(v, i, r);
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       <FieldBox label="Voltage (V)" value={v} onChange={setV} />
@@ -870,18 +886,20 @@ function Solver() {
   const [which, setWhich] = useState("speed");
   const [a, setA] = useState("");
   const [b, setB] = useState("");
-  const left = Number(a);
-  const right = Number(b);
-  let line = "Enter both numbers.";
-  if (Number.isFinite(left) && Number.isFinite(right) && right !== 0) {
-    if (which === "speed") line = `${Math.round((left / right) * 100) / 100} (distance ÷ time)`;
-    if (which === "density") line = `${Math.round((left / right) * 100) / 100} (mass ÷ volume)`;
-    if (which === "molarity") line = `${Math.round((left / right) * 100) / 100} mol/L`;
-  }
-  if (which === "force" && Number.isFinite(left) && Number.isFinite(right)) line = `${Math.round(left * right * 100) / 100} (mass × acceleration)`;
+  const line = solverLine(which, a, b);
   return (
     <div className="grid gap-3">
-      <Select label="Formula" value={which} options={["speed", "density", "force", "molarity"]} onChange={setWhich} />
+      <Select
+        label="Formula"
+        value={which}
+        options={["speed", "density", "force", "molarity"]}
+        onChange={(next) => {
+          // The boxes mean different things in each formula: start them empty.
+          setWhich(next);
+          setA("");
+          setB("");
+        }}
+      />
       <FieldBox label={which === "force" ? "Mass" : which === "speed" ? "Distance" : which === "density" ? "Mass" : "Moles"} value={a} onChange={setA} />
       <FieldBox label={which === "force" ? "Acceleration" : which === "molarity" ? "Litres" : which === "speed" ? "Time" : "Volume"} value={b} onChange={setB} />
       <p className="font-medium">{line}</p>
@@ -974,30 +992,6 @@ function Tax() {
   const [pay, setPay] = useState("3000000");
   const [rent, setRent] = useState("0");
   const [sale, setSale] = useState("100000");
-  const income = typedNumber(pay);
-  const relief = Math.min(Math.max(typedNumber(rent) || 0, 0) * 0.2, 500000);
-  const hint = firstHint([pay, rent, sale]);
-  const chargeable = Math.max(0, (Number.isFinite(income) ? income : 0) - relief);
-  const bands: [number, number][] = [
-    [800000, 0],
-    [2200000, 0.15],
-    [9000000, 0.18],
-    [13000000, 0.21],
-    [25000000, 0.23],
-    [Number.POSITIVE_INFINITY, 0.25],
-  ];
-  let left = chargeable;
-  let tax = 0;
-  if (Number.isFinite(income) && income <= 70000 * 12) tax = 0;
-  else {
-    for (const [width, rate] of bands) {
-      const slice = Math.min(left, width);
-      tax += slice * rate;
-      left -= slice;
-      if (left <= 0) break;
-    }
-  }
-  const vat = (typedNumber(sale) || 0) * 0.075;
   return (
     <div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -1005,7 +999,7 @@ function Tax() {
         <FieldBox label="Annual rent, optional (₦)" value={rent} onChange={setRent} />
         <FieldBox label="Amount for VAT (₦)" value={sale} onChange={setSale} />
       </div>
-      <Lines lines={hint ? [{ label: "Check the figures", value: hint }] : [{ label: "PAYE estimate", value: `₦${Math.round(tax).toLocaleString("en")}` }, { label: "VAT at 7.5%", value: `₦${Math.round(vat).toLocaleString("en")}` }]} />
+      <ResultLines lines={taxLines({ pay, rent, sale })} />
     </div>
   );
 }
@@ -1263,16 +1257,6 @@ function Ratios() {
   const [stock, setStock] = useState("");
   const [debt, setDebt] = useState("");
   const [equity, setEquity] = useState("");
-  const assets = typedNumber(current);
-  const owed = typedNumber(liability);
-  const inventory = typedNumber(stock);
-  const d = typedNumber(debt);
-  const e = typedNumber(equity);
-  const hint = firstHint([current, liability, stock, debt, equity]);
-  const lines: Line[] = hint ? [{ label: "Check the figures", value: hint }] : [];
-  if (!hint && owed > 0 && Number.isFinite(assets)) lines.push({ label: "Current", value: String(Math.round((assets / owed) * 100) / 100) });
-  if (!hint && owed > 0 && Number.isFinite(assets) && Number.isFinite(inventory)) lines.push({ label: "Quick", value: String(Math.round(((assets - inventory) / owed) * 100) / 100) });
-  if (!hint && e > 0 && Number.isFinite(d)) lines.push({ label: "Debt / equity", value: String(Math.round((d / e) * 100) / 100) });
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <FieldBox label="Current assets" value={current} onChange={setCurrent} />
@@ -1280,7 +1264,7 @@ function Ratios() {
       <FieldBox label="Stock" value={stock} onChange={setStock} />
       <FieldBox label="Debt" value={debt} onChange={setDebt} />
       <FieldBox label="Equity" value={equity} onChange={setEquity} />
-      <Lines lines={lines.length ? lines : [{ label: "Result", value: "Enter assets and liabilities." }]} />
+      <ResultLines lines={ratioLines({ current, liability, stock, debt, equity })} />
     </div>
   );
 }
@@ -1289,22 +1273,12 @@ function BreakEven() {
   const [fixed, setFixed] = useState("");
   const [price, setPrice] = useState("");
   const [variable, setVariable] = useState("");
-  const fCost = typedNumber(fixed);
-  const p = typedNumber(price);
-  const v = typedNumber(variable);
-  const gap = p - v;
-  const hint = firstHint([fixed, price, variable]);
-  const lines: Line[] = hint
-    ? [{ label: "Check the figures", value: hint }]
-    : gap > 0 && fCost >= 0
-    ? [{ label: "Units to sell", value: Math.ceil(fCost / gap).toLocaleString("en") }, { label: "Sales needed", value: money(Math.ceil(fCost / gap) * p) }, { label: "Profit per unit", value: money(gap) }]
-    : [{ label: "Result", value: "Price has to be above the cost of one unit." }];
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       <FieldBox label="Fixed costs" value={fixed} onChange={setFixed} />
       <FieldBox label="Price" value={price} onChange={setPrice} />
       <FieldBox label="Cost per unit" value={variable} onChange={setVariable} />
-      <Lines lines={lines} />
+      <ResultLines lines={breakEvenLines({ fixed, price, variable })} />
     </div>
   );
 }
@@ -1385,5 +1359,6 @@ function saveLabel(state: SaveState): string {
   if (state === "conflict") return SAVE_MESSAGES.conflict;
   if (state === "refresh") return SAVE_MESSAGES.refresh;
   if (state === "too-large") return SAVE_MESSAGES.tooLarge;
+  if (state === "account") return SAVE_MESSAGES.account;
   return "";
 }
