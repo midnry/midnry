@@ -38,7 +38,11 @@ Read docs/HANDOVER.md first (working rules, deploy procedure, security rule). Th
   Writing studio Contract saves, Compressor encodes, Apply headline placement.
 - Owner decisions listed there: pricing of Scratch/Split/Contrast, consolidating Claims/Agreement/Clauses,
   Plot, and whether to build phone notifications for Remind.
-- To release: review the branch, merge into the working branch, then deploy as usual.
+- Release prepared 2026-10-23 (NOT deployed, awaiting the owner's "deploy"): branch `release/2026-10-23`
+  (`2a2240d` = `game-look` + the audit branch; code identical to `19e4d39`, verified on a production build
+  against PostgreSQL 16). Status, verification record, owner checks and rollback plan:
+  `docs/audit-2026-10-23/release-2026-10-23.md`. Proposed next batch (Invoice and Remind):
+  `docs/audit-2026-10-23/next-batch-invoice-remind.md`. Parked, unmerged: `wip/batch2-parked-20261023`.
 
 ## Other open items
 - Medical, tax and legal tools need a qualified reviewer (docs/phase3-plan.md lists exactly what).
