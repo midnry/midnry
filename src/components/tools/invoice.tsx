@@ -54,6 +54,7 @@ import {
   type QuoteStatus,
   type Stamp,
 } from "@/lib/client-work";
+import { invoicePdfName, markSentPatch, sendInvoicePdf, undoMarkSentPatch, type ShareNavigator } from "@/lib/invoice-share";
 
 /**
  * Invoice: client work in one place. Invoices (the default), quotes,
@@ -550,6 +551,34 @@ function BackLink({ label, onClick }: { label: string; onClick: () => void }) {
 
 /* ── editors ─────────────────────────────────────────────────────────────── */
 
+type PdfTools = { build: typeof import("@/lib/invoice-pdf").buildInvoicePdf; fonts: import("@/lib/apply/resume-pdf").FontBytes };
+let pdfTools: Promise<PdfTools> | null = null;
+
+/** The PDF maker and its fonts, loaded only when needed (not part of the page). */
+function loadPdfTools(): Promise<PdfTools> {
+  pdfTools ??= Promise.all([import("@/lib/invoice-pdf"), import("@/lib/apply/resume-fonts").then((m) => m.loadResumeFonts())])
+    .then(([pdf, fonts]) => ({ build: pdf.buildInvoicePdf, fonts }))
+    .catch((error: unknown) => {
+      pdfTools = null;
+      throw error;
+    });
+  return pdfTools;
+}
+
+function downloadFile(file: File) {
+  const url = URL.createObjectURL(file);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = file.name;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+/** What Share PDF reported, for the invoice it was pressed on. */
+type SendNote = { invoiceId: string; message: string; tone: "ok" | "quiet" | "fail"; offer: boolean; marked?: Pick<Invoice, "status" | "sentOn"> };
+
 function InvoiceEditor({
   invoice,
   isNew,
@@ -587,9 +616,20 @@ function InvoiceEditor({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const clash = numberClash(doc.invoices, invoice);
   const payment = doc.payment ?? "";
-  function share() {
-    if (!check.valid || check.totalMinor == null) return;
-    const text = invoiceShareText({
+  const [sending, setSending] = useState(false);
+  const [sendNote, setSendNote] = useState<SendNote | null>(null);
+  const note = sendNote?.invoiceId === invoice.id ? sendNote : null;
+  const canSharePdf = typeof navigator !== "undefined" && typeof navigator.canShare === "function";
+  // On devices that can share files, get the PDF maker ready while the invoice
+  // is on screen, so the share sheet opens straight after the press.
+  useEffect(() => {
+    if (!canSharePdf || printBlock) return;
+    const timer = window.setTimeout(() => void loadPdfTools().catch(() => undefined), 1500);
+    return () => window.clearTimeout(timer);
+  }, [canSharePdf, printBlock]);
+  function shareText(): string | null {
+    if (!check.valid || check.totalMinor == null) return null;
+    return invoiceShareText({
       number: invoice.number,
       from: invoice.from,
       to: invoice.to,
@@ -597,6 +637,65 @@ function InvoiceEditor({
       due: invoice.due,
       payment,
     });
+  }
+  async function sharePdf() {
+    const text = shareText();
+    if (text == null || sending) return;
+    setSending(true);
+    setSendNote(null);
+    const id = invoice.id;
+    const snapshot = { ...invoice, lines: [...invoice.lines] };
+    try {
+      const result = await sendInvoicePdf({
+        nav: navigator as unknown as ShareNavigator,
+        title: `Invoice ${snapshot.number}`.trim(),
+        text,
+        status: snapshot.status,
+        makeFile: async () => {
+          const { build, fonts } = await loadPdfTools();
+          const { bytes } = await build(
+            {
+              number: snapshot.number,
+              issued: snapshot.issued,
+              due: snapshot.due,
+              from: snapshot.from,
+              to: snapshot.to,
+              lines: snapshot.lines,
+              check,
+              currency,
+              payment,
+              notes: snapshot.notes,
+              status: snapshot.status,
+              paidOn: snapshot.paidOn,
+            },
+            fonts,
+          );
+          return new File([new Uint8Array(bytes)], invoicePdfName(snapshot.number, snapshot.to), { type: "application/pdf" });
+        },
+        download: downloadFile,
+        copy: (value) => navigator.clipboard.writeText(value),
+      });
+      setSendNote({ invoiceId: id, message: result.message, tone: result.route === "cancelled" ? "quiet" : "ok", offer: result.offerMarkSent });
+    } catch {
+      setSendNote({ invoiceId: id, message: "Could not make the PDF. Check your connection and try again.", tone: "fail", offer: false });
+    } finally {
+      setSending(false);
+    }
+  }
+  function markSent() {
+    const patch = markSentPatch(invoice, today);
+    if (!patch || !note) return;
+    onPatch(patch);
+    setSendNote({ ...note, message: `Marked as sent ${today}.`, offer: false, marked: { status: invoice.status, sentOn: invoice.sentOn } });
+  }
+  function undoMarkSent() {
+    if (!note?.marked) return;
+    onPatch(undoMarkSentPatch(note.marked));
+    setSendNote(null);
+  }
+  function share() {
+    const text = shareText();
+    if (text == null) return;
     void navigator.clipboard.writeText(text).then(
       () => toast.success("Copied. Paste it into WhatsApp or an email, and attach the PDF."),
       () => toast.error("Could not copy. Select the invoice text instead."),
@@ -690,6 +789,16 @@ function InvoiceEditor({
             <Button tone="primary" disabled={printBlock != null} aria-describedby={printBlock ? "invoice-print-block" : undefined} onClick={() => window.print()}>
               Print or save as PDF
             </Button>
+            <Button
+              tone="quiet"
+              disabled={printBlock != null || sending}
+              aria-describedby={printBlock ? "invoice-print-block" : undefined}
+              onPointerEnter={() => void loadPdfTools().catch(() => undefined)}
+              onClick={() => void sharePdf()}
+              data-share-pdf
+            >
+              {sending ? "Making the PDF…" : "Share PDF"}
+            </Button>
             <Button tone="quiet" disabled={printBlock != null} onClick={share}>
               Copy for WhatsApp
             </Button>
@@ -723,7 +832,30 @@ function InvoiceEditor({
               {printBlock}
             </p>
           ) : null}
-          <p className="text-xs text-muted">In the print window, choose “Save as PDF” to send it by email or WhatsApp. Copy for WhatsApp gives a short message with the total and how to pay. New invoice keeps this one and moves the number on.</p>
+          <div aria-live="polite" data-share-note={note ? (note.marked ? "marked" : note.offer && invoice.status === "draft" ? "offer" : note.tone) : undefined}>
+            {note ? (
+              <div className={cn("flex flex-wrap items-center gap-3 rounded-2xl px-4 py-3 text-sm", note.tone === "fail" ? "bg-fail/10 text-fail" : note.tone === "quiet" ? "text-muted" : "bg-paper-2")}>
+                <span>{note.message}</span>
+                {note.offer && invoice.status === "draft" ? (
+                  <>
+                    <span>Did you send it?</span>
+                    <Button tone="quiet" onClick={markSent}>
+                      Mark as sent
+                    </Button>
+                  </>
+                ) : null}
+                {note.marked ? (
+                  <Button tone="quiet" onClick={undoMarkSent}>
+                    Undo
+                  </Button>
+                ) : null}
+                <button type="button" className="text-muted underline underline-offset-2" onClick={() => setSendNote(null)}>
+                  {note.offer && invoice.status === "draft" ? "Not yet" : "OK"}
+                </button>
+              </div>
+            ) : null}
+          </div>
+          <p className="text-xs text-muted">Share PDF sends the invoice file and a short message to WhatsApp, email or another app. Where that is not possible, it downloads the PDF and copies the message. Copy for WhatsApp copies the message only. New invoice keeps this one and moves the number on.</p>
         </form>
         <BillSheet
           title="Invoice"
