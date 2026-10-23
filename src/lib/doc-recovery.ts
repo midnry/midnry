@@ -23,7 +23,7 @@
  * landed after all (decideOnLoad). "locked" means the server refused the save
  * because the account no longer opens the app.
  */
-export type RecoveryReason = "retrying" | "conflict" | "refresh" | "too-large" | "pending" | "locked";
+export type RecoveryReason = "retrying" | "conflict" | "refresh" | "too-large" | "pending" | "locked" | "account";
 
 export type RecoveryRecord = {
   v: 1;
@@ -53,7 +53,7 @@ export function recoveryKey(owner: string, slug: string): string {
   return `midnry-recovery:v1:${owner}:${slug}`;
 }
 
-const REASONS: readonly RecoveryReason[] = ["retrying", "conflict", "refresh", "too-large", "pending", "locked"];
+const REASONS: readonly RecoveryReason[] = ["retrying", "conflict", "refresh", "too-large", "pending", "locked", "account"];
 
 function isRecord(value: unknown, owner: string, slug: string): value is RecoveryRecord {
   if (!value || typeof value !== "object") return false;
@@ -301,7 +301,8 @@ export function browserRecoveryStore(): RecoveryStore {
 
 /* ── open save problems, for the resolution panel ───────────────────────── */
 
-export type DocIssueKind = "conflict" | "refresh" | "recovered";
+/** "account": another account signed in on this browser while this page had unsaved changes. */
+export type DocIssueKind = "conflict" | "refresh" | "recovered" | "account";
 
 export type DocIssue = {
   slug: string;

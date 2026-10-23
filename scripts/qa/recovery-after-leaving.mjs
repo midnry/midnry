@@ -20,10 +20,12 @@
 //     another app; the first account gets it back after signing in again;
 //  H. no page errors.
 // Usage: node scripts/qa/recovery-after-leaving.mjs [outdir] [mobile]
+// Against a production build: QA_TARGET=build (see scripts/qa/target.mjs); the
+// card is then seeded and read through its own form instead of /src imports.
 import { mkdirSync } from "node:fs";
 import { chromium } from "playwright";
+import { BASE, BUILD, TARGET, isServerFn } from "./target.mjs";
 
-const BASE = "http://127.0.0.1:8080";
 const OUT = process.argv[2] || "screenshots/qa/recovery";
 const MOBILE = process.argv[3] === "mobile";
 mkdirSync(OUT, { recursive: true });
@@ -60,21 +62,51 @@ ctx.on("page", (page) => {
   }
 }
 
-const isSave = (req) => {
-  if (req.method() !== "POST") return false;
-  try {
-    return Buffer.from(new URL(req.url()).pathname.split("/").pop(), "base64url").toString("utf8").includes("saveDoc");
-  } catch {
-    return false;
-  }
-};
+const isSave = (req) => req.method() === "POST" && isServerFn(req, "saveDoc");
+console.log(`target: ${TARGET} at ${BASE}`);
+const CARD = [
+  ["name", "Your name"],
+  ["call", "Call this person"],
+  ["phone", "Their phone"],
+  ["notes", "Allergies or medicines"],
+];
 async function open(page) {
   await page.goto(`${BASE}/apps/${SLUG}`, { waitUntil: "networkidle", timeout: 120000 });
   await page.getByLabel(FIELD).waitFor({ timeout: 60000 });
 }
 const savedText = (page) => page.getByText("Saved", { exact: true }).first().waitFor({ timeout: 30000 });
 const panel = (page, kind) => page.locator(`[data-doc-recovery="${kind}"]`);
+/** Read the saved card as a fresh visitor would (production build: through the form). */
+async function readCard(page) {
+  const view = await page.context().newPage();
+  try {
+    await view.goto(`${BASE}/apps/${SLUG}`, { waitUntil: "networkidle", timeout: 120000 });
+    await view.getByLabel(FIELD).waitFor({ timeout: 60000 });
+    await view.waitForTimeout(500);
+    const values = {};
+    for (const [id, label] of CARD) values[id] = await view.getByLabel(label).inputValue();
+    return { doc: { values } };
+  } finally {
+    await view.close({ runBeforeUnload: false });
+  }
+}
+/** Save the card through its form, the way a person (or another device) would. */
+async function writeCard(page, doc) {
+  const edit = await page.context().newPage();
+  try {
+    await edit.goto(`${BASE}/apps/${SLUG}`, { waitUntil: "networkidle", timeout: 120000 });
+    await edit.getByLabel(FIELD).waitFor({ timeout: 60000 });
+    await edit.waitForTimeout(500);
+    const saved = edit.waitForResponse((res) => isSave(res.request()) && res.ok(), { timeout: 8000 }).catch(() => null);
+    for (const [id, label] of CARD) await edit.getByLabel(label).fill(doc.values?.[id] ?? "");
+    await saved;
+    await edit.waitForTimeout(300);
+  } finally {
+    await edit.close({ runBeforeUnload: false });
+  }
+}
 async function load(page) {
+  if (BUILD) return readCard(page);
   const res = await page.evaluate(async (slug) => {
     const m = await import("/src/lib/cove.functions.ts");
     return m.loadDoc({ data: slug });
@@ -82,6 +114,7 @@ async function load(page) {
   return res.ok ? { doc: res.payload ? JSON.parse(res.payload) : null, revision: res.revision } : null;
 }
 async function seed(page, doc) {
+  if (BUILD) return writeCard(page, doc);
   const res = await page.evaluate(async ({ slug, payload }) => {
     const m = await import("/src/lib/cove.functions.ts");
     const current = await m.loadDoc({ data: slug });
@@ -361,8 +394,8 @@ await tabG.getByText("Not saved, retrying").first().waitFor({ timeout: 15000 });
 await tabG.waitForTimeout(800);
 const ownerOne = (await copies(tabG)).find((c) => c.slug === SLUG)?.owner;
 ok(Boolean(ownerOne), "G: account one has a kept copy in this browser");
-await tabG.unroute("**/_serverFn/**", block);
-await tabG.close({ runBeforeUnload: false });
+// Account one's tab stays open and offline while the others check (closing it would let the
+// tab's last keep-alive save deliver the change, which is correct but leaves nothing to offer).
 // Another app, same account: not offered.
 const other = await ctx.newPage();
 await other.goto(`${BASE}/apps/memoir`, { waitUntil: "networkidle", timeout: 120000 });
@@ -397,6 +430,7 @@ await offerG.getByRole("button", { name: "Discard it and keep what’s saved" })
 await offerG.getByRole("button", { name: "Discard mine, use the saved version" }).click();
 await offerG.waitFor({ state: "detached", timeout: 15000 });
 await one.close();
+await tabG.close({ runBeforeUnload: false });
 
 ok(errors.length === 0, `no page errors (${errors.slice(0, 5).join(" | ")})`);
 await browser.close();

@@ -110,13 +110,17 @@ function DocRecoveryPanel({ issue }: { issue: DocIssue }) {
       ? `${app} was changed in another tab or device`
       : issue.kind === "refresh"
         ? "Midnry was updated, refresh to keep saving"
-        : `You have unsaved changes in ${app}`;
+        : issue.kind === "account"
+          ? "Another account is signed in now"
+          : `You have unsaved changes in ${app}`;
   const body =
     issue.kind === "conflict"
       ? "A newer version was saved somewhere else, so your latest changes were not saved over it. They are kept on this page and in this browser until you choose."
       : issue.kind === "refresh"
         ? "This page is out of date and can’t save any more. Your unsaved changes are kept in this browser, and Midnry offers them back after you refresh. You can also download a copy now."
-        : `These changes from ${when(issue.savedAt)} were not saved to your account before the page closed. They were kept only in this browser.`;
+        : issue.kind === "account"
+          ? `This page was opened by a different account. Its unsaved changes in ${app} were not saved to the account signed in now. They are kept in this browser and offered back when that account signs in again. Refresh to continue as the account signed in now.`
+          : `These changes from ${when(issue.savedAt)} were not saved to your account before the page closed. They were kept only in this browser.`;
 
   return (
     <div
@@ -136,7 +140,7 @@ function DocRecoveryPanel({ issue }: { issue: DocIssue }) {
 
       {mode === "choose" ? (
         <div className="mt-4 grid gap-2">
-          {issue.kind === "refresh" ? (
+          {issue.kind === "refresh" || issue.kind === "account" ? (
             <>
               <Button tone="primary" disabled={busy} onClick={() => void refresh()}>
                 {busy ? "Keeping a copy…" : "Refresh now"}
@@ -228,7 +232,7 @@ function DocRecoveryPanel({ issue }: { issue: DocIssue }) {
         <div className="mt-4 grid gap-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <Version label="Your version (not saved)" text={prettyPayload(issue.mine())} />
-            {issue.kind === "refresh" ? null : (
+            {issue.kind === "refresh" || issue.kind === "account" ? null : (
               <Version label="Saved version" text={saved === undefined ? "Loading…" : saved == null ? "Nothing saved yet." : prettyPayload(saved)} />
             )}
           </div>

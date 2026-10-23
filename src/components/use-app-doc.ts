@@ -18,6 +18,7 @@ export const SAVE_MESSAGES = {
   conflict: "This was changed in another tab. Your changes are kept until you choose.",
   refresh: "Midnry was updated, refresh to keep saving.",
   tooLarge: "Too large to save. Nothing was deleted: export or remove some entries.",
+  account: "Another account is signed in now. These changes were not saved to it.",
 } as const;
 
 /** Browsers cap keepalive request bodies at 64 KiB in total. */
@@ -31,6 +32,8 @@ function notify(slug: string, event: SaverEvent) {
     toast.dismiss(`retry-${slug}`);
   } else if (event === "conflict" || event === "refresh-required") {
     // The resolution panel (src/components/doc-recovery-panel.tsx) takes over.
+    toast.dismiss(`retry-${slug}`);
+  } else if (event === "account-changed") {
     toast.dismiss(`retry-${slug}`);
   } else if (event === "too-large") {
     toast.error(SAVE_MESSAGES.tooLarge, { id: `too-large-${slug}` });
@@ -80,9 +83,9 @@ export function useAppDoc<T extends object>(slug: string, fallback: T) {
           owner: typeof res.owner === "string" ? res.owner : "",
         };
       },
-      save: (payload, baseRevision, keepalive) =>
+      save: (payload, baseRevision, keepalive, owner) =>
         saveDoc({
-          data: { slug, payload, baseRevision },
+          data: { slug, payload, baseRevision, ...(owner ? { owner } : {}) },
           ...(keepalive && payload.length <= KEEPALIVE_MAX ? { fetch: keepaliveFetch } : {}),
         }),
       onData: (value) => {

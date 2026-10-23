@@ -1359,5 +1359,6 @@ function saveLabel(state: SaveState): string {
   if (state === "conflict") return SAVE_MESSAGES.conflict;
   if (state === "refresh") return SAVE_MESSAGES.refresh;
   if (state === "too-large") return SAVE_MESSAGES.tooLarge;
+  if (state === "account") return SAVE_MESSAGES.account;
   return "";
 }

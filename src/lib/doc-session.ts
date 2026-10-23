@@ -24,6 +24,10 @@
  *    already does.
  *  - Copies are keyed by the signed-in account and the app, so one account
  *    is never offered another's changes, nor one app another app's.
+ *  - Every save names the account the page was opened for. If another account
+ *    has signed in on this browser since, the server refuses it ("wrong_account"):
+ *    saving stops, the change is kept under the original account, and the
+ *    panel explains it. Nothing is written into the other account.
  */
 import { DocSaver, type SaveResult, type SaveState, type SaverEvent } from "@/lib/doc-saver";
 import { decideOnLoad, docIssues as sharedIssues, type RecoveryReason, type RecoveryStore, type RefreshOutcome } from "@/lib/doc-recovery";
@@ -40,7 +44,8 @@ export type SessionDeps<T extends object> = {
   /** The document when nothing is saved yet; saved keys are laid over it. */
   fallback: () => T;
   load: () => Promise<LoadResult>;
-  save: (payload: string, baseRevision: number, keepalive: boolean) => Promise<SaveResult>;
+  /** Sends one save; `owner` is the account this page was opened for (the server refuses another). */
+  save: (payload: string, baseRevision: number, keepalive: boolean, owner: string) => Promise<SaveResult>;
   /** The document to show changed (a load, a restore, "use the saved version"). */
   onData: (value: T) => void;
   onLoaded: (status: { loadError: boolean; blocked: boolean }) => void;
@@ -65,6 +70,7 @@ const PROBLEM_STATES: Partial<Record<SaveState, RecoveryReason>> = {
   refresh: "refresh",
   "too-large": "too-large",
   error: "locked",
+  account: "account",
 };
 
 export class DocSession<T extends object> {
@@ -93,7 +99,7 @@ export class DocSession<T extends object> {
     this.saver = new DocSaver<T>({
       limit: deps.limit,
       debounceMs: deps.debounceMs,
-      save: deps.save,
+      save: (payload, baseRevision, keepalive) => deps.save(payload, baseRevision, keepalive, this.owner),
       setTimer: deps.setTimer,
       clearTimer: deps.clearTimer,
       onState: (state) => {
@@ -116,6 +122,10 @@ export class DocSession<T extends object> {
         } else if (event === "refresh-required") {
           void this.keepCopy("refresh");
           this.showRefresh();
+        } else if (event === "account-changed") {
+          // Kept under the account this page was opened for, so only that account is offered it.
+          void this.keepCopy("account");
+          this.showRefresh("account");
         }
       },
       // The tool has closed: nothing is shown, but the copy kept at close is
@@ -322,16 +332,16 @@ export class DocSession<T extends object> {
     });
   }
 
-  private showRefresh() {
+  private showRefresh(kind: "refresh" | "account" = "refresh") {
     const { slug } = this.deps;
     this.issues.set({
       slug,
-      kind: "refresh",
+      kind,
       open: true,
       mine: () => JSON.stringify(this.mine()),
       loadSaved: this.loadSaved,
       refresh: async (): Promise<RefreshOutcome> => {
-        const stored = await this.keepCopy("refresh");
+        const stored = await this.keepCopy(kind);
         // Confirm the copy can be read back before the page goes.
         const kept = stored && (await this.deps.store.read(this.owner, slug)) != null;
         if (!kept) return "not-stored";

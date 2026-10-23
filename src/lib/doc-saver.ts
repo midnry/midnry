@@ -9,19 +9,22 @@
  *   version over the newer one, adopt(latestRevision) drops this version.
  * - "refresh_required" (the server no longer accepts this client's saves)
  *   stops saving for good; the page must be refreshed.
+ * - "wrong_account" (another account signed in on this browser since the page
+ *   opened) stops saving for good, so nothing lands in the wrong account.
  * - A document over the size limit is not sent; the change stays local.
  */
 
-export type SaveState = "idle" | "saving" | "saved" | "error" | "retrying" | "conflict" | "too-large" | "refresh";
+export type SaveState = "idle" | "saving" | "saved" | "error" | "retrying" | "conflict" | "too-large" | "refresh" | "account";
 
 export type SaveResult =
   | { ok: true; revision: number }
   | { ok: false; error: "locked" }
+  | { ok: false; error: "wrong_account" }
   | { ok: false; error: "conflict"; revision: number }
   | { ok: false; error: "refresh_required"; revision: number }
   | { ok: false; error: "too_large"; limit: number };
 
-export type SaverEvent = "retrying" | "saved-after-retry" | "conflict" | "too-large" | "locked" | "refresh-required";
+export type SaverEvent = "retrying" | "saved-after-retry" | "conflict" | "too-large" | "locked" | "refresh-required" | "account-changed";
 
 /**
  * What became of a save that was still pending or in flight when the tool
@@ -31,7 +34,7 @@ export type SaverEvent = "retrying" | "saved-after-retry" | "conflict" | "too-la
  */
 export type AfterCloseEvent =
   | { kind: "saved"; payload: string }
-  | { kind: "failed"; reason: "retrying" | "conflict" | "refresh" | "too-large" | "locked" };
+  | { kind: "failed"; reason: "retrying" | "conflict" | "refresh" | "too-large" | "locked" | "account" };
 
 export type SaverDeps = {
   limit: number;
@@ -61,7 +64,7 @@ export class DocSaver<T> {
   pending: T | null = null;
   inFlight = false;
   attempt = 0;
-  stopped: "conflict" | "locked" | "refresh" | null = null;
+  stopped: "conflict" | "locked" | "refresh" | "account" | null = null;
   closed = false;
   private timer: unknown = null;
   private retryTimer: unknown = null;
@@ -132,7 +135,7 @@ export class DocSaver<T> {
    * version and continue from `latestRevision`.
    */
   adopt(latestRevision: number) {
-    if (this.stopped === "refresh" || this.stopped === "locked") return;
+    if (this.stopped === "refresh" || this.stopped === "locked" || this.stopped === "account") return;
     this.clearTimers();
     this.pending = null;
     this.revision = latestRevision;
@@ -214,6 +217,12 @@ export class DocSaver<T> {
           this.state("refresh");
           this.event("refresh-required");
           this.afterClose({ kind: "failed", reason: "refresh" });
+        } else if (res.error === "wrong_account") {
+          // Another account signed in on this browser: stop for good; the change is kept.
+          this.stopped = "account";
+          this.state("account");
+          this.event("account-changed");
+          this.afterClose({ kind: "failed", reason: "account" });
         } else if (res.error === "too_large") {
           this.state("too-large");
           this.event("too-large");

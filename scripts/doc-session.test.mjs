@@ -502,3 +502,78 @@ test("the storage probe is per account and never offered as an app's copy", asyn
   const readBackFails = { get: async () => undefined, put: backend.put, delete: backend.delete };
   assert.equal(await new R.RecoveryStore(readBackFails).canKeep("user-a"), false, "a write that can't be read back doesn't count");
 });
+
+// ── 7. Another account signs in on this browser while a save is waiting ─────
+
+test("a page opened for one account never saves into another: the server refuses, the copy stays with the first account", async () => {
+  const srv = server();
+  srv.seed("user-a", "ice-card", '{"values":{"name":"A saved"}}', 1);
+  srv.seed("user-b", "ice-card", '{"values":{"name":"B saved"}}', 1);
+  let signedIn = "user-a";
+  let offline = true;
+  const sent = [];
+  // Like saveDoc: the session decides where it lands; a named owner that differs is refused.
+  const save = async (payload, baseRevision, keepalive, owner) => {
+    sent.push(owner);
+    if (offline) throw new Error("offline");
+    if (owner !== signedIn) return { ok: false, error: "wrong_account" };
+    return srv.save(signedIn, "ice-card")(payload, baseRevision);
+  };
+  const backend = memoryBackend();
+  const timers = [];
+  const log = { states: [], events: [] };
+  const session = new DocSession({
+    slug: "ice-card",
+    limit: 10_000,
+    store: new R.RecoveryStore(backend),
+    fallback: () => ({ values: {} }),
+    load: srv.load("user-a", "ice-card"),
+    save,
+    onData: () => {},
+    onLoaded: () => {},
+    onSaveState: (state) => log.states.push(state),
+    notify: (event) => log.events.push(event),
+    reload: () => {},
+    setTimer: (fn) => {
+      const timer = { fn, live: true };
+      timers.push(timer);
+      return timer;
+    },
+    clearTimer: (timer) => timer && (timer.live = false),
+  });
+  const run = () => {
+    for (const timer of timers.splice(0)) if (timer.live) timer.fn();
+  };
+  await session.open();
+  session.change({ values: { name: "A's private note" } });
+  run();
+  await settle();
+  assert.equal(log.states.at(-1), "retrying");
+  // B signs in on the same browser; A's tab is still open and the network comes back.
+  signedIn = "user-b";
+  offline = false;
+  run();
+  await settle();
+  assert.ok(sent.every((owner) => owner === "user-a"), "every save names the account the page was opened for");
+  assert.equal(log.states.at(-1), "account");
+  assert.ok(log.events.includes("account-changed"));
+  assert.equal(srv.get("user-b", "ice-card").payload, '{"values":{"name":"B saved"}}', "nothing was written into B's card");
+  assert.equal(srv.get("user-a", "ice-card").payload, '{"values":{"name":"A saved"}}', "nor into A's while B is signed in");
+  const copy = backend.map.get(R.recoveryKey("user-a", "ice-card"));
+  assert.equal(copy?.reason, "account");
+  assert.ok(copy.payload.includes("A's private note"), "kept for A");
+  assert.equal(backend.map.has(R.recoveryKey("user-b", "ice-card")), false, "never kept for B");
+  const issue = R.docIssues.get().find((item) => item.slug === "ice-card");
+  assert.equal(issue?.kind, "account", "the panel explains it");
+  // Saving stops for good on this page: further typing is kept, never sent.
+  const before = sent.length;
+  session.change({ values: { name: "more" } });
+  run();
+  await settle();
+  assert.equal(sent.length, before, "no further saves from this page");
+  // A signs in again later: offered back.
+  signedIn = "user-a";
+  const again = harness({ srv, backend, slug: "ice-card" });
+  await again.session.open();
+  assert.equal(again.issue("recovered")?.kind, "recovered");
+});
