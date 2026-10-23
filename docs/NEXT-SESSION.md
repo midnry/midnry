@@ -47,6 +47,13 @@ Read docs/HANDOVER.md first (working rules, deploy procedure, security rule). Th
   owner: DB plan + reminder scheduler (dashboard steps listed), email inbox, Pass test account, Paystack
   `sk_test` key as env var, 7 leftover live test accounts (emails from admin Stats), iPhone checklist
   (`iphone-safari-checklist.md`); Android pending until a device exists.
+- Paystack end-to-end test (owner added `PAYSTACK_TEST_SECRET_KEY` to the Claude environment on 23 Oct; it
+  reaches new sessions only). Plan: local production build + local PostgreSQL, started with
+  `PAYSTACK_SECRET_KEY=$PAYSTACK_TEST_SECRET_KEY` and WITHOUT `OUTPOST_QA_PAYSTACK_URL` (so it talks to real
+  Paystack in test mode); a synthetic account buys Pass on /billing with Paystack's documented test card;
+  the return to `/billing?checkout=success` runs `confirmCheckout` (verifies via `/transaction/verify`), so
+  no webhook is needed; check Pass turns on, then one cancelled checkout leaves Pass off. Never touch
+  Render's `PAYSTACK_SECRET_KEY`. Label results "real Paystack test mode" (not the simulated stand-in).
 - Next batch prepared, NOT released (needs a new "deploy"): `next/invoice-follow-up`,
   `next/remind-repeats-and-editing`, `next/invoice-pdf-share` (separate), combined test branch
   `next/batch-combined-check`. Results: `docs/audit-2026-10-23/next-batch-review.md`.
