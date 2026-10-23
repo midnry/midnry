@@ -1,0 +1,97 @@
+# Outpost Zero polish pass, step 1 (23 Oct 2026): lobby, match messages, camera and touch settings
+
+Branch `outpost/polish-2026` (`4b5d81d`, `02e6f13`, this doc). **Not deployed**: it needs the owner's
+"deploy". Game rules, modes, accounts, progress and online play are unchanged.
+
+## Audit: what was actually wrong (and why)
+
+| Problem players see | Cause found in the code | Status |
+|---|---|---|
+| Blurry operator in the lobby on phones, jagged edges on iPhone | The lobby drew straight to the canvas at the *match* render size (phones about 1.25 px per point, down to 0.94 with automatic resolution; an iPhone screen has 3). It also skipped the composer, and iPhones have canvas antialiasing switched off, so there was no smoothing at all. | Fixed |
+| Cold, grey operator in a sunset lobby | The lobby's reflections came from the arenas' blue daylight sky map. | Fixed: built from the lobby's own sunset sky |
+| Flat floor, thin sky, hard horizon | The camera looked down from above head height, so most of the frame was bare floor and the sky was a 4° band. | Fixed: nearly level, chest-height camera (horizon at the hips, as in the concept); wider lens in portrait |
+| Empty, placeholder set | The backdrop was a few dark boxes: the hangar was unlit and almost off screen. | Improved: see below |
+| Text over the aiming area on phones | Match messages were bare yellow capitals with a drop shadow. | Fixed: one panel style |
+| "CORES 0 / DMG 24 / MAX HP 100" always on screen | Shown even with no cores. | Shown only after the first core, in plain words |
+| "0 · OVERDRIVE" under the special move | "Q · OVERDRIVE" in a condensed font: the Q read as 0. | Q is a keycap (X on a controller) |
+| Camera shake only followed the system Reduce Motion | No in-game setting. | Settings → Accessibility → Camera motion: Full / Reduced / Off |
+| Touch buttons not adjustable | No setting. | Settings → Controls → Touch button size and opacity |
+| Weapon kick jolted | A linear 0.16 s return. | Snap back, then an ease-out; slight sway on fast turns. Visual only. |
+| Loading progress | Checked: it counts real completed steps ("Loading game files 6 / 14"). | Honest, left as is |
+
+## What changed
+
+- **Lobby rendering.**
+  - Resolution: the screen's density up to 2×, within a pixel budget (2.0 MP on Apple devices,
+    2.6 MP elsewhere; `lobbyRenderSize`, tested).
+  - 4× multisampling on every device that supports it, including iPhones.
+  - Subtle bloom on desktop and the High preset, and neutral tone mapping, which keeps the sunset's
+    hues.
+  - The Performance preset and safe mode keep the old, cheaper path. A match puts its own render
+    size back on its first frame.
+- **Lobby set.**
+  - Floor and architecture: wet concrete slabs, a corrugated hangar lit by warm work lights with a
+    roof edge framing the top, a lattice gantry tower with warning lights, an olive vehicle.
+  - Light: lamp reflections on the wet ground.
+  - Distance: a stepped skyline with rooftop plant, antennas and chimney stacks, darker cloud
+    undersides and warmer haze.
+  - Pads: heavy dark steel with glowing rims, a contact shadow under each figure, and real shadows
+    on phones too.
+- **Match HUD.** Message panel, cores chip, keycap (above).
+- **Settings.** Camera motion; touch button size (0.8–1.25×). Sizes above standard apply only where
+  there is room (tablets): phones cap at the standard size so nothing overlaps. Opacity runs from 40
+  to 100%, and a pressed control is always fully visible.
+
+## Before / after (same viewport sizes, headless Chromium)
+
+- `compare-lobby-desktop.jpg`: concept, before, after at 1280×720.
+- `compare-lobby-phone.jpg`: 390×844.
+- `compare-hud-phone.jpg`: 390×844.
+- `compare-hud-desktop.jpg`: 1280×720.
+
+## Checks run (automated, headless Chromium with a software GPU)
+
+| Check | Result |
+|---|---|
+| Outpost unit tests (`node --test scripts/outpost-*.test.mjs`) | 327/327 (326 before, plus one new lobby-size test) |
+| Typecheck, `build:render` | pass; the built game loads the new lobby without errors (laptop, phone 3×) |
+| Lobby (`lobby-look.mjs` 1280 and 390): picker, drag to turn, Friends room, Start match | pass, no errors |
+| Phone lobby scroll (`lobby-scroll.mjs`): stage stays still | pass (view offset constant) |
+| HUD (`hud-look.mjs`) portrait, landscape, desktop, tablet, also at 1.25× and 60% buttons | no overlaps, nothing off screen, no errors |
+| Settings (`settings-motion.mjs`) | 8/8: shown, saved, applied |
+| Three Last Signal rounds + Play again (`signal-rounds.mjs`) | no page errors |
+| Pause, Restart, Leave match (`pause-restart-leave.mjs`) | pass |
+| Movement (`sprint-probe.mjs`, measured in game time) | walk, sprint and slide work, as in the unchanged game |
+| Match draw calls (`draw-calls.mjs`, Balanced) | worst view 327, budget 520 |
+| Lobby cost (`lobby-cost.mjs`) | 38–53 draw calls, about 37k triangles; the phone buffer is now 780×1688 with 4× MSAA (was about 487×1054 with none) |
+
+**Not tested.**
+
+- Nothing was tested on a real phone, tablet or controller.
+- Frame rate and battery on devices are unmeasured. Timings from the software GPU mean nothing,
+  only the counts above are meaningful.
+- The extra pixels in the lobby (30 fps cap on phones) are the one new cost to watch on older
+  phones. If it struggles, the Performance preset turns it off.
+
+## Remaining limitations, and what would move it furthest next
+
+1. **Real assets for the lobby.**
+   - The concept's look (a detailed hangar interior, a believable vehicle, props with wear) is
+     beyond procedural boxes.
+   - Needed: one glTF hangar or bay kit (about 30–60k triangles, 2K PBR textures, KTX2 or meshopt
+     compressed, metres, Y-up), one military truck (about 15k triangles), and 4–6 props (crates,
+     barrels, light stands).
+   - The Blender pipeline in `docs/HANDOVER.md` (`scripts/assets/arena-kit.py`) can integrate them.
+2. **Arena skies.**
+   - All arenas share one overcast sky photograph, so every map reads the same and slightly washed.
+   - Needed: one HDR sky per arena (for example a clear late-afternoon HDRI for Dust Outpost),
+     loaded per map.
+   - Enemy visibility must be re-checked with each sky.
+3. **Character finish.** The default Field Operator reads well but plain next to the concept's
+   characters; a costume and material pass belongs with the Locker art.
+4. **Touch layout editor.** Size and opacity exist now; dragging buttons to new places is the next
+   step (it needs saved positions per orientation and an overlap guard).
+5. **Real-device pass.**
+   - iPhone Safari and an Android phone, portrait and landscape: lobby sharpness, frame pacing,
+     touch reliability with moving, aiming and firing at once.
+   - Plus a controller check.

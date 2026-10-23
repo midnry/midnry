@@ -17,7 +17,7 @@ await p.addInitScript(() => localStorage.setItem("midnry-outpost-quickstart", JS
 const errs = [];
 p.on("pageerror", (e) => errs.push(e.message));
 p.on("console", (m) => m.type() === "error" && errs.push(m.text()));
-await p.goto("http://127.0.0.1:8080/games/outpost-zero.html", { waitUntil: "domcontentloaded", timeout: 90000 });
+await p.goto(`${process.env.QA_BASE || "http://127.0.0.1:8080"}/games/outpost-zero.html`, { waitUntil: "domcontentloaded", timeout: 90000 });
 await p.waitForFunction(() => document.querySelector(".mf-modal.mf-lobby") && document.querySelector("midnry-fps").engine.military?.lobby?.actor, null, { timeout: 240000 });
 await p.evaluate(({ noBloom, hideUi }) => {
   const r = document.querySelector("midnry-fps").engine.military;

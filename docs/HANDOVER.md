@@ -964,3 +964,20 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   (CDP screencast) as a new and a returning player.
 - Settings body buttons (Test connection, Download / Clear game assets, Run device check, Reset camera & aim) share the
   dark outlined menu style, and links use the accent colour (they were light grey with near-white text).
+
+## Polish pass step 1: lobby, match messages, camera and touch settings (owner brief, 2026-10-23, branch `outpost/polish-2026`, not deployed)
+
+- Details, causes, checks and next steps: `docs/outpost-polish-2026/README.md` (before/after images there).
+- Lobby: `LobbyStage.present()` renders through its own composer (MSAA, desktop bloom, OutputPass with
+  Neutral tone mapping) at `lobbyRenderSize()` (compatibility.js); `renderer.render()` restores the match
+  size via `lobbySized`. Own PMREM environment from the lobby sky. Camera nearly level (0.035 slope); fov 44
+  in portrait. Set in `lobby-backdrop.js` (`buildLobbyFloor`, hangar roof/work lights, gantry, skyline).
+- HUD: `.mf-toast` is a panel (first line = title); `.mf-match` hidden in Last Signal until `p.cores`;
+  `.mf-supername[data-key]` keycap.
+- Settings: `accessibility.cameraMotion` → `g.cameraMotion` → `renderer.cameraMotionScale()` (shake in
+  realism-hazards, fall roll, medevac roll, weapon bob, new sway). Look settings `buttons` / `buttonAlpha` →
+  `--mf-btn` / `--mf-btn-alpha`; signal-hud uses `--mf-btnk` (capped at 1 on phones and short landscape).
+- QA: `lobby-shot.mjs` (quick photo; HIDEUI, NOBLOOM, DPR, QA_BASE), `lobby-cost.mjs`, `settings-motion.mjs`,
+  `sprint-probe.mjs` (game-time based; `signal-sprint-slide.mjs` is timing-noisy under SwiftShader),
+  `hud-look.mjs` now takes HUD_LOOK / HUD_TAG / HUD_TABLET.
+- Bump the iframe `v=` cache key when this ships.
