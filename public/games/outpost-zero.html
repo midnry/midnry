@@ -5329,6 +5329,18 @@
           }
           /** Natural disaster banner: a countdown while it is coming, then how
            * long it lasts; a sand haze or a lightning flash over the view. */
+          clearMatchOverlays() {
+            const banner = this.$(".mf-disaster");
+            if (banner && !banner.hidden) banner.hidden = true;
+            banner?.classList.remove("mf-on", "mf-soon");
+            for (const fx of [".mf-hazefx", ".mf-shockfx"]) this.$(fx)?.classList.remove("mf-on");
+            const weather = this.$(".mf-weatherfx");
+            if (weather && weather.className !== "mf-weatherfx") weather.className = "mf-weatherfx";
+            // Pop-ups clear on the match clock, which stops when the round ends:
+            // a warning raised just before the end would otherwise stay up.
+            const toast = this.$(".mf-toast");
+            if (toast?.textContent) toast.textContent = "";
+          }
           disasterHUD() {
             const d = this.arena.disaster,
               banner = this.$(".mf-disaster"),
@@ -5642,10 +5654,19 @@
             // The home menu is opaque: drawing (and, after a mode switch,
             // rebuilding) the hidden 3D arena behind it only costs memory and
             // freezes phones. The arena is built when Play starts.
+            // Paused mid-match shows the frozen match behind the pause menu,
+            // not the lobby (redrawn a few times a second: it barely changes
+            // offline, and online rounds keep going).
+            const pausedMatch = !this.running && this.state === "playing" && !!this.homeMenu?.paused?.();
             const homeCovers =
+              !pausedMatch &&
               !this.running &&
               (!this.online || this.online.phase === "lobby") &&
               this.$(".mf-modal.mf-home:not([hidden])") !== null;
+            // Match overlays (disaster warning, pop-ups, weather, haze, shock)
+            // only update while a match runs: clear them once the round is
+            // over (results) and in the lobby.
+            if (homeCovers || (this.arena?.state === "ended" && !this.running)) this.clearMatchOverlays();
             if (homeCovers) {
               // The lobby: your operator on its platform (its own small scene),
               // at most 30 frames a second on phones.
@@ -5654,7 +5675,7 @@
                 this.ctx.clearRect(0, 0, this.w, this.h);
                 this.military?.renderLobby?.(now);
               }
-            } else if (!quietProtocol || now - (this.lastSceneRenderAt || 0) >= quietInterval) {
+            } else if (pausedMatch ? now - (this.lastSceneRenderAt || 0) >= (this.online ? 1000 / 30 : 250) : !quietProtocol || now - (this.lastSceneRenderAt || 0) >= quietInterval) {
               this.render();
               this.lastSceneRenderAt = now;
             }

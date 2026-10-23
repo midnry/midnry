@@ -946,3 +946,14 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   restored Breakwater fixtures inside the town); Blackout Protocol has no swimming (`Arena.move` swim only outside
   protocol mode; humans walked across the canal there); water shock no longer stacks with the storm's shock damage;
   `Arena.seeThrough` caches the map's water types. Skipped: replacing the quay/town id checks with a `style` field.
+
+## Pause over the match; no leftover warnings (owner, 2026-10-23)
+
+- Pause is a game pause, not the lobby: `.mf-modal.mf-paused` shows only `.mf-pausecard` over the frozen, dimmed match
+  (the frame loop's `pausedMatch` renders the match a few times a second instead of the 3D lobby). Restart / Leave
+  match / Network check (`.mf-matchbar`) moved into the pause card.
+- Match overlays only update while a match runs, so a warning raised just before a round ended stayed on the
+  results screen and lobby ("⚠ EARTHQUAKE INCOMING" toast, which clears on the stopped match clock). `clearMatchOverlays()`
+  (toast, disaster banner, weather, haze, shock) runs in the lobby and once the round has ended.
+- Note: `scripts/qa/pause-restart-leave.mjs protocol` and `death-new-round.mjs` never start their Blackout match with
+  the lobby menus (stale before these changes); the pause was checked in both games with a direct probe.

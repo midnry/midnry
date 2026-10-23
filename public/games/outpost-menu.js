@@ -492,6 +492,15 @@ midnry-fps .mf-pauserow button[hidden] { display: none; }
 midnry-fps .mf-pauserow .mf-ico { width: 20px; height: 20px; }
 midnry-fps .mf-pauserow .mf-soundtoggle[aria-pressed="false"] { border-color: #ff7a6a88; color: #ffb3a8; }
 midnry-fps .mf-modal.mf-paused .mf-stagebox, midnry-fps .mf-modal.mf-paused .mf-newhere { visibility: hidden; }
+/* A game pause, not the lobby: only the pause menu, over the frozen match. */
+midnry-fps .mf-modal.mf-paused.mf-paused { background: radial-gradient(ellipse at center, #050807a6, #050807e0) !important; backdrop-filter: blur(3px); overflow: hidden !important; }
+midnry-fps .mf-modal.mf-paused.mf-paused > :not(.mf-pausecard) { display: none !important; }
+midnry-fps .mf-modal.mf-paused .mf-pausecard.mf-pausecard { position: absolute !important; left: 50% !important; top: 50% !important; transform: translate(-50%, -50%) !important; width: min(420px, calc(100vw - 32px)) !important; max-height: calc(100% - 24px); overflow-y: auto; margin: 0 !important; }
+midnry-fps .mf-modal.mf-lobby .mf-pausecard .mf-matchbar.mf-matchbar, midnry-fps .mf-pausecard .mf-matchbar { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px; width: auto; margin: 2px 0 0 !important; padding-top: 12px; border-top: 1px solid #ffffff1c; }
+midnry-fps .mf-pausecard .mf-matchbar[hidden] { display: none !important; }
+midnry-fps .mf-pausecard .mf-matchbar button { min-height: 46px; margin: 0 !important; }
+midnry-fps .mf-pausecard .mf-matchbar .mf-netcheck { grid-column: 1 / -1; }
+midnry-fps .mf-pausecard .mf-matchbar .mf-restartmatch[hidden] + .mf-leavematch { grid-column: 1 / -1; }
 @media (max-width: 999px), (max-height: 599px) {
   midnry-fps .mf-modal.mf-lobby .mf-pausecard { position: relative; left: auto; top: auto; transform: none; width: auto; flex: none; margin: 8px var(--mf-gut) 0 !important; padding: 14px; gap: 10px; }
   midnry-fps .mf-modal.mf-lobby.mf-paused > .mf-stagebox { height: 0 !important; padding: 0 !important; }
@@ -633,6 +642,8 @@ export class OutpostMenu {
       this.syncSound();
     });
     this.matchbar.after(this.actions);
+    // Restart / Leave match / Network check live in the pause menu itself.
+    this.pauseCard.append(this.matchbar);
     g.on(this.matchbar.querySelector(".mf-netcheck"), "click", () => g.netMeter?.open());
     g.on(this.matchbar.querySelector(".mf-restartmatch"), "click", () =>
       g.ui.confirm("Restart match?", "This round ends and a fresh one starts with the same mode.", "Restart", (yes) => {
