@@ -21,6 +21,17 @@ Branch `outpost/polish-2026` (`4b5d81d`, `02e6f13`, this doc). **Not deployed**:
 
 ## What changed
 
+- **Step 1b, Blender set (23 Oct, later).**
+  - `scripts/assets/lobby-set.py` (Blender 5.2, run headless as the `bpy` Python module) models
+    the hangar side: corrugated cladding, I-beam columns, a canopy truss framing the top-left of
+    the view, a lit bay door, a catwalk with stair, pipes and lamps.
+  - It also models an armoured six-wheel truck. Both have baked contact shading and export to
+    `models/lobby-set-v1.glb` (0.86 MB, about 4.5k faces), now in the asset cache.
+  - Real scanned Poly Haven props (crates, barrels, jerry cans, a compressor, concrete barriers,
+    a tyre: the Dust Outpost set, already cached) are dressed around the hangar foot and the
+    truck. Two warm work lights make them read.
+  - If the model fails to load, the simple stand-ins stay.
+
 - **Lobby rendering.**
   - Resolution: the screen's density up to 2×, within a pixel budget (2.0 MP on Apple devices,
     2.6 MP elsewhere; `lobbyRenderSize`, tested).
@@ -75,7 +86,8 @@ Branch `outpost/polish-2026` (`4b5d81d`, `02e6f13`, this doc). **Not deployed**:
 
 ## Remaining limitations, and what would move it furthest next
 
-1. **Real assets for the lobby.**
+1. **More real assets for the lobby (partly done in step 1b: a modelled hangar side, a truck and
+   scanned props).**
    - The concept's look (a detailed hangar interior, a believable vehicle, props with wear) is
      beyond procedural boxes.
    - Needed: one glTF hangar or bay kit (about 30–60k triangles, 2K PBR textures, KTX2 or meshopt
