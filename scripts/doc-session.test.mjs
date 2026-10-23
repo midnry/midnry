@@ -458,3 +458,47 @@ test("no copy is ever written before the account is known, or when the app is lo
   await locked.open();
   assert.equal(backend.map.size, 0);
 });
+
+// ── 6. Leaving inside the app when this browser cannot keep a copy ──────────
+
+test("leaving with an unsaved change asks first only when no copy can be kept", async () => {
+  const srv = server();
+  srv.seed("user-a", "ledger", '{"entries":["saved"]}', 1);
+  // Storage works: a pending change never blocks navigation (the copy is kept instead).
+  const fine = harness({ srv, gate: () => new Promise(() => {}) });
+  await fine.session.open();
+  await settle();
+  fine.session.change({ entries: ["saved", "pending"] });
+  assert.equal(fine.session.mustConfirmLeave(), false, "storage works: no question, a copy is kept");
+  assert.equal(fine.backend.map.has(R.recoveryKey("user-a", "__probe__")), false, "the probe record is removed");
+
+  // Storage blocked (private mode, full disk): ask before leaving with an unsaved change.
+  const throwing = { get: async () => undefined, put: async () => { throw new Error("QuotaExceededError"); }, delete: async () => {} };
+  let fail = true;
+  const blocked = harness({ srv, store: new R.RecoveryStore(throwing), gate: async () => (fail ? new Error("offline") : null) });
+  await blocked.session.open();
+  await settle();
+  assert.equal(blocked.session.mustConfirmLeave(), false, "nothing unsaved: no question");
+  blocked.session.change({ entries: ["saved", "typed with storage blocked"] });
+  assert.equal(blocked.session.mustConfirmLeave(), true, "unsaved during the pause: ask");
+  blocked.runTimers();
+  await settle();
+  assert.equal(blocked.log.states.at(-1), "retrying");
+  assert.equal(blocked.session.mustConfirmLeave(), true, "still unsaved while retrying: ask");
+  fail = false;
+  blocked.runTimers();
+  await settle();
+  assert.equal(blocked.log.states.at(-1), "saved");
+  assert.equal(blocked.session.mustConfirmLeave(), false, "saved: no question");
+});
+
+test("the storage probe is per account and never offered as an app's copy", async () => {
+  const backend = memoryBackend();
+  const store = new R.RecoveryStore(backend);
+  assert.equal(await store.canKeep("user-a"), true);
+  assert.equal(await store.canKeep(""), false, "no account, no probe");
+  assert.equal(backend.map.size, 0, "nothing is left behind");
+  assert.equal(await new R.RecoveryStore(null).canKeep("user-a"), false);
+  const readBackFails = { get: async () => undefined, put: backend.put, delete: backend.delete };
+  assert.equal(await new R.RecoveryStore(readBackFails).canKeep("user-a"), false, "a write that can't be read back doesn't count");
+});

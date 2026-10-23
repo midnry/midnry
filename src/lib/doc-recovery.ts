@@ -46,6 +46,9 @@ export interface RecoveryBackend {
 /** Copies older than this are dropped instead of offered. */
 export const MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 
+/** The slug of the storage probe record (never an app slug: apps use lowercase letters and dashes). */
+const PROBE_SLUG = "__probe__";
+
 export function recoveryKey(owner: string, slug: string): string {
   return `midnry-recovery:v1:${owner}:${slug}`;
 }
@@ -101,6 +104,24 @@ export class RecoveryStore {
       await this.backend.delete(recoveryKey(owner, slug));
     } catch {
       /* nothing to do: the copy expires */
+    }
+  }
+
+  /**
+   * Whether this browser keeps a copy for this account: a probe record is
+   * written, read back and removed. False when storage is blocked or full,
+   * so the app can ask before letting someone leave with unsaved changes.
+   */
+  async canKeep(owner: string): Promise<boolean> {
+    if (!this.backend || !owner) return false;
+    const key = recoveryKey(owner, PROBE_SLUG);
+    try {
+      await this.backend.put(key, { v: 1, owner, slug: PROBE_SLUG, payload: "{}", baseRevision: 0, reason: "pending", savedAt: this.now() });
+      const back = await this.backend.get(key);
+      await this.backend.delete(key);
+      return isRecord(back, owner, PROBE_SLUG);
+    } catch {
+      return false;
     }
   }
 

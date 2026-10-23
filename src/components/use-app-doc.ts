@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useBlocker } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { loadDoc, saveDoc } from "@/lib/cove.functions";
 import { docLimit } from "@/lib/doc-limits";
@@ -7,6 +8,10 @@ import { browserRecoveryStore } from "@/lib/doc-recovery";
 import { DocSession } from "@/lib/doc-session";
 
 export type { SaveState };
+
+/** Asked before in-app navigation when a change is unsaved and this browser can't keep a copy. */
+export const LEAVE_UNSAVED =
+  "Your latest change isn't saved yet, and this browser can't keep a copy to offer back. Leave anyway and lose it?";
 
 export const SAVE_MESSAGES = {
   retrying: "Not saved, retrying…",
@@ -128,6 +133,13 @@ export function useAppDoc<T extends object>(slug: string, fallback: T) {
       s.close();
     };
   }, [slug]);
+
+  // Leaving inside the app (a link, Back) while a change is unsaved and no copy can be kept: ask first.
+  // Closing or reloading the tab is covered by beforeunload above.
+  useBlocker({
+    shouldBlockFn: () => Boolean(session.current?.mustConfirmLeave()) && !window.confirm(LEAVE_UNSAVED),
+    enableBeforeUnload: false,
+  });
 
   const setData = useCallback((next: T | ((prev: T) => T)) => {
     const value = typeof next === "function" ? (next as (p: T) => T)(latest.current) : next;

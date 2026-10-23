@@ -18,6 +18,10 @@
  *    stays active until the request settles: a late failure (network, a
  *    conflict, a refresh) keeps the copy with its reason; a late success
  *    clears the copy it had kept, and only that copy.
+ *  - When this browser cannot keep a copy (storage blocked or full, found by
+ *    a probe when the app opens or by a failed copy), leaving inside the app
+ *    with an unsaved change asks first (mustConfirmLeave), as closing the tab
+ *    already does.
  *  - Copies are keyed by the signed-in account and the app, so one account
  *    is never offered another's changes, nor one app another app's.
  */
@@ -78,6 +82,8 @@ export class DocSession<T extends object> {
   private copyTimer: unknown = null;
   /** Leaving on purpose (Refresh in the panel): no "leave page?" prompt. */
   private leaving = false;
+  /** Whether this browser can keep a recovery copy: unknown until probed or a copy is attempted. */
+  private storage: "unknown" | "ok" | "broken" = "unknown";
   closed = false;
 
   constructor(deps: SessionDeps<T>) {
@@ -143,6 +149,9 @@ export class DocSession<T extends object> {
         this.apply(res.payload);
         this.deps.onLoaded({ blocked: false, loadError: false });
         this.saver.start(res.revision);
+        void this.deps.store.canKeep(this.owner).then((kept) => {
+          if (this.storage === "unknown") this.storage = kept ? "ok" : "broken";
+        });
         return this.offerRecovered(res.payload);
       },
       () => {
@@ -197,6 +206,16 @@ export class DocSession<T extends object> {
   }
 
   /**
+   * In-app navigation is about to close the tool: true when the person should
+   * be asked first. That is only when a change is still unsaved and this
+   * browser cannot keep a copy, because then a request that fails after
+   * leaving would lose the change with nothing to offer back.
+   */
+  mustConfirmLeave(): boolean {
+    return this.saver.dirty && this.storage !== "ok" && Boolean(this.owner);
+  }
+
+  /**
    * The tool closed (in-app navigation or a change of app). Anything still
    * pending or in flight is copied first, then sent; the outcome settles the
    * copy through onAfterClose.
@@ -220,6 +239,7 @@ export class DocSession<T extends object> {
     const payload = JSON.stringify(this.mine());
     const stored = await this.deps.store.save(this.owner, this.deps.slug, payload, this.saver.revision, reason);
     if (stored) this.copied = payload;
+    this.storage = stored ? "ok" : "broken";
     return stored;
   }
 
