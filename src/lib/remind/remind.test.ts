@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseTask } from "./parse.ts";
-import { cleanRecur, nextDue, occurrences, recurLabel, toRRule } from "./recur.ts";
+import { cleanRecur, nextDue, occurrences, recurLabel, repeatPhrase, repeatPreview, snapToRepeat, toRRule } from "./recur.ts";
+import { dayMonth, shortDate } from "./dates.ts";
 import { EMPTY_STATS, dailyStreak, levelOf, recordCompletion, weeklyStreak } from "./stats.ts";
 
 // 2026-10-05 is a Monday.
@@ -95,4 +96,120 @@ test("points, goal bonus and streaks", () => {
   assert.equal(undone.stats.days[TODAY], 1);
   assert.equal(levelOf(0).name, "Starter");
   assert.equal(levelOf(160).name, "Steady");
+});
+
+// ── Realistic phrases (R2) ───────────────────────────────────────────────────
+// Friday 23 October 2026, the day of the audit.
+const FRI = "2026-10-23";
+
+type Extra = { priority?: number; labels?: string[]; project?: string; nextYear?: boolean };
+type Row = [input: string, title: string, due: string, time: string, recur: string, extra?: Extra];
+const PHRASES: Row[] = [
+  ["Pay rent every 25th", "Pay rent", "2026-10-25", "", "monthday:25"],
+  ["Pay rent every 25th p1", "Pay rent", "2026-10-25", "", "monthday:25", { priority: 1 }],
+  ["Pay DSTV every 15th", "Pay DSTV", "2026-11-15", "", "monthday:15"],
+  ["Pay salaries month end", "Pay salaries", "2026-10-31", "", "none"],
+  ["Remit pension by end of the month", "Remit pension", "2026-10-31", "", "none"],
+  ["Recharge MTN data every month end", "Recharge MTN data", "2026-10-31", "", "monthday:31"],
+  ["Submit report Friday by 5", "Submit report", "2026-10-23", "17:00", "none"],
+  ["Meet Tunde at 4 tomorrow", "Meet Tunde", "2026-10-24", "16:00", "none"],
+  ["Meet at 3 Allen Avenue", "Meet at 3 Allen Avenue", "", "", "none"],
+  ["Pick kids from school by 3pm", "Pick kids from school", "2026-10-23", "15:00", "none"],
+  ["Weekend market shopping this weekend", "Weekend market shopping", "2026-10-24", "", "none"],
+  ["Weekend market shopping", "Weekend market shopping", "", "", "none"],
+  ["Clean the car weekend", "Clean the car", "2026-10-24", "", "none"],
+  ["Monday meeting prep on thursday", "Monday meeting prep", "2026-10-29", "", "none"],
+  ["Pay school fees 30/9", "Pay school fees", "2027-09-30", "", "none", { nextYear: true }],
+  ["Pay school fees 30/9/2026", "Pay school fees", "2026-09-30", "", "none"],
+  ["Renew passport 12/11", "Renew passport", "2026-11-12", "", "none"],
+  ["Dentist 3 Nov at 10:30", "Dentist", "2026-11-03", "10:30", "none"],
+  ["Visit mama in the village 24 Dec", "Visit mama in the village", "2026-12-24", "", "none"],
+  ["Pay NEPA bill monthly p3", "Pay NEPA bill", "2026-10-23", "", "month", { priority: 3 }],
+  ["Gym every tue and fri", "Gym", "2026-10-23", "", "on:2,5"],
+  ["Gym monday every tue and fri 7am", "Gym", "2026-10-27", "07:00", "on:2,5"],
+  ["Gym every mon and thu 7am", "Gym", "2026-10-26", "07:00", "on:1,4"],
+  ["Team standup every weekday 9am", "Team standup", "2026-10-23", "09:00", "weekdays"],
+  ["Weekly review every sunday 7pm", "Weekly review", "2026-10-25", "19:00", "on:7"],
+  ["Pay house help every friday", "Pay house help", "2026-10-23", "", "on:5"],
+  ["Water the plants every 3 days", "Water the plants", "2026-10-23", "", "every:3:d"],
+  ["Backup laptop every 2 weeks", "Backup laptop", "2026-10-23", "", "every:2:w"],
+  ["Call mum tomorrow 6pm @home", "Call mum", "2026-10-24", "18:00", "none", { labels: ["home"] }],
+  ["Call Amaka tonight", "Call Amaka", "2026-10-23", "20:00", "none"],
+  ["Yoga sat morning", "Yoga", "2026-10-24", "09:00", "none"],
+  ["Buy fuel tomorrow morning", "Buy fuel", "2026-10-24", "09:00", "none"],
+  ["Church harvest sunday 8am", "Church harvest", "2026-10-25", "08:00", "none"],
+  ["Collect ankara from tailor saturday", "Collect ankara from tailor", "2026-10-24", "", "none"],
+  ["Send invoice to Chidi next friday", "Send invoice to Chidi", "2026-10-30", "", "none"],
+  ["Book flight to Lagos in 2 weeks", "Book flight to Lagos", "2026-11-06", "", "none"],
+  ["Finish tax return next month p1 @finance", "Finish tax return", "2026-11-01", "", "none", { priority: 1, labels: ["finance"] }],
+  ["Reply to landlord email !2 #Home", "Reply to landlord email", "", "", "none", { priority: 2, project: "Home" }],
+  ["Renew car insurance 2026-12-01 p2", "Renew car insurance", "2026-12-01", "", "none", { priority: 2 }],
+  ["Lunch at 13pm", "Lunch at 13pm", "", "", "none"],
+];
+
+test(`parses ${PHRASES.length} everyday phrases`, () => {
+  assert.ok(PHRASES.length >= 30);
+  for (const [input, title, due, time, recur, extra = {}] of PHRASES) {
+    const p = parseTask(input, FRI);
+    assert.deepEqual({ title: p.title, due: p.due, time: p.time, recur: p.recur }, { title, due, time, recur }, `"${input}"`);
+    if (extra.priority !== undefined) assert.equal(p.priority, extra.priority, `"${input}" priority`);
+    if (extra.labels) assert.deepEqual(p.labels, extra.labels, `"${input}" labels`);
+    if (extra.project !== undefined) assert.equal(p.project, extra.project, `"${input}" project`);
+    assert.equal(p.nextYear ?? false, extra.nextYear ?? false, `"${input}" nextYear`);
+  }
+});
+
+test("a past day and month moves to next year and says so", () => {
+  const p = parseTask("Pay school fees 30/9", FRI);
+  assert.equal(p.due, "2027-09-30");
+  assert.equal(p.nextYear, true);
+  assert.equal(parseTask("Pay school fees 30 Sep", FRI).nextYear, true);
+  assert.equal(parseTask("Pay school fees Sep 30", FRI).nextYear, true);
+  // Today and later this year stay this year, with no flag.
+  assert.equal(parseTask("Pay school fees 23/10", FRI).due, FRI);
+  assert.equal("nextYear" in parseTask("Pay school fees 23/10", FRI), false);
+  assert.equal("nextYear" in parseTask("Pay school fees 31/12", FRI), false);
+  // A typed year is used as typed, even in the past.
+  assert.equal("nextYear" in parseTask("Pay school fees 30/9/26", FRI), false);
+  assert.equal(parseTask("Pay school fees 30/9/26", FRI).due, "2026-09-30");
+  // The add box's hint ("add the year: 30 Sep 2026") parses back to this year.
+  assert.equal(parseTask("Pay school fees 30 Sep 2026", FRI).due, "2026-09-30");
+  assert.equal("nextYear" in parseTask("Pay school fees 30 Sep 2026", FRI), false);
+});
+
+test("a custom weekly repeat lands on its first matching day", () => {
+  // Sunday 25 Oct → Tuesday 27 Oct for "every Tue and Fri".
+  assert.equal(snapToRepeat("on:2,5", "2026-10-25", FRI), "2026-10-27");
+  assert.equal(snapToRepeat("on:2,5", "2026-10-24", FRI), "2026-10-27");
+  assert.equal(snapToRepeat("on:2,5", "2026-10-27", FRI), "2026-10-27");
+  assert.equal(snapToRepeat("on:2,5", "", FRI), FRI);
+  assert.equal(snapToRepeat("weekdays", "2026-10-24", FRI), "2026-10-26");
+  assert.equal(snapToRepeat("monthday:25", "2026-10-26", FRI), "2026-11-25");
+  // Interval repeats keep the date they were given.
+  assert.equal(snapToRepeat("every:2:w", "2026-10-25", FRI), "2026-10-25");
+  assert.equal(parseTask("Gym sunday every tue and fri", FRI).due, "2026-10-27");
+});
+
+test("the repeat preview reads plainly and matches the saved date", () => {
+  assert.equal(repeatPreview("2026-10-27", "", "on:2,5", FRI), "Next: Tue 27 Oct, then every Tue and Fri");
+  assert.equal(repeatPreview("2026-10-26", "07:00", "on:1,3,5", FRI), "Next: Mon 26 Oct, 7am, then every Mon, Wed and Fri");
+  assert.equal(repeatPreview("2026-10-25", "", "monthday:25", FRI), "Next: Sun 25 Oct, then every month on the 25th");
+  assert.equal(repeatPreview("2026-10-31", "", "monthday:31", FRI), "Next: Sat 31 Oct, then every month on the last day");
+  assert.equal(repeatPreview("2027-01-04", "", "weekdays", FRI), "Next: Mon 4 Jan 2027, then every weekday");
+  assert.equal(repeatPreview("2026-10-23", "", "every:3:d", FRI), "Next: Fri 23 Oct, then every 3 days");
+  assert.equal(repeatPreview("2026-10-23", "", "none", FRI), "");
+  const p = parseTask("Gym every tue and fri", "2026-10-24");
+  assert.equal(repeatPreview(p.due, p.time, p.recur, "2026-10-24"), "Next: Tue 27 Oct, then every Tue and Fri");
+  assert.equal(repeatPhrase("on:2"), "every Tue");
+  assert.equal(recurLabel("on:2,5"), "Every Tuesday and Friday");
+});
+
+test("finishing a repeat moves it to the date the preview promised", () => {
+  assert.equal(nextDue("2026-10-23", "on:2,5", FRI), "2026-10-27");
+  assert.equal(shortDate(nextDue("2026-10-27", "on:2,5", "2026-10-27"), FRI), "Fri 30 Oct");
+  assert.equal(nextDue("2026-10-31", "monthday:31", "2026-10-31"), "2026-11-30");
+  assert.equal(toRRule("monthday:31", "2026-10-31"), "FREQ=MONTHLY;BYMONTHDAY=-1");
+  assert.equal(toRRule("monthday:25", "2026-10-25"), "FREQ=MONTHLY;BYMONTHDAY=25");
+  assert.equal(shortDate("2027-09-30", FRI), "Thu 30 Sep 2027");
+  assert.equal(dayMonth("2026-09-30"), "30 Sep");
 });

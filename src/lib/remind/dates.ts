@@ -65,3 +65,21 @@ export function prettyDate(iso: string, today: string): string {
   if (iso > today && iso <= addDays(today, 6)) return date.toLocaleDateString("en", { weekday: "long" });
   return date.toLocaleDateString("en", sameYear ? { weekday: "short", month: "short", day: "numeric" } : { month: "short", day: "numeric", year: "numeric" });
 }
+
+const SHORT_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "Tue 27 Oct", with the year when it isn't this year ("Thu 30 Sep 2027"). */
+export function shortDate(iso: string, today: string): string {
+  if (!isIsoDate(iso)) return "";
+  const date = parseIso(iso);
+  const base = `${SHORT_DAYS[date.getDay()]} ${date.getDate()} ${SHORT_MONTHS[date.getMonth()]}`;
+  return iso.slice(0, 4) === today.slice(0, 4) ? base : `${base} ${date.getFullYear()}`;
+}
+
+/** "30 Sep" (day and month only). */
+export function dayMonth(iso: string): string {
+  if (!isIsoDate(iso)) return "";
+  const date = parseIso(iso);
+  return `${date.getDate()} ${SHORT_MONTHS[date.getMonth()]}`;
+}
