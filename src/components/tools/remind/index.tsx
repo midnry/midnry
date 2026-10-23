@@ -5,7 +5,7 @@ import { useAppDoc } from "@/components/use-app-doc";
 import { ToolFrame, ToolStatus, nid } from "@/components/tools/shared";
 import { Button, Skeleton, TextInput, buttonClass, cn } from "@/components/ui";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
-import { addDays, isoOf, prettyDate } from "@/lib/remind/dates";
+import { addDays, isoOf, prettyDate, shortDate } from "@/lib/remind/dates";
 import { cleanDoc, EMPTY_DOC, INBOX, withDescendants, type Doc, type Filter, type Task } from "@/lib/remind/model";
 import type { Parsed } from "@/lib/remind/parse";
 import { nextDue } from "@/lib/remind/recur";
@@ -27,7 +27,7 @@ import {
 } from "@/lib/remind.functions";
 import { byWhen, isMineToDo, matchesFilter, projectLabel, sameLabel, sharedKey, toItems, type Item, type ItemPatch, type View } from "./items";
 import { QuickAdd } from "./quick-add";
-import { TaskRow, type RowActions, type RowContext } from "./task-row";
+import { TaskRow, type MovedNote, type RowActions, type RowContext } from "./task-row";
 import { Productivity } from "./productivity";
 import { CalendarLink, EmailSettings, FilterEditor, PeoplePanel } from "./panels";
 import { Board, Month } from "./layouts";
@@ -41,6 +41,12 @@ import { isPassView, linkableView, PASS_VIEW_KINDS, PASS_VIEWS, passViewsOpen, t
 
 type Layout = "list" | "board" | "month";
 type SharedState = { canShare: boolean; projects: SharedProject[]; invitations: Invitation[] };
+/**
+ * Where the open task sat when it was opened. While its panel is open, an edit that
+ * takes it out of the current view (a new date, another project) leaves it in this
+ * place, so the panel doesn't close mid-edit.
+ */
+type Anchor = Pick<Item, "key" | "due" | "time" | "projectKey" | "sectionId" | "priority" | "labels" | "assigneeId">;
 
 const today0 = () => isoOf(new Date());
 
@@ -134,6 +140,9 @@ export function RemindTool() {
   const [layout, setLayout] = useState<Layout>("list");
   const [query, setQuery] = useState("");
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [anchor, setAnchor] = useState<Anchor | null>(null);
+  const [confirmShare, setConfirmShare] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [editingFilter, setEditingFilter] = useState<Filter | null>(null);
   const [showPeople, setShowPeople] = useState(false);
@@ -246,18 +255,35 @@ export function RemindTool() {
       change = { done: false, doneAt: "" };
       delta = -1;
     } else if (item.recur !== "none") {
-      change = { due: nextDue(item.due, item.recur, today) };
+      const was = item.due;
+      const next = nextDue(item.due, item.recur, today);
+      change = { due: next };
       delta = 1;
-      toast(`Next: ${prettyDate(change.due as string, today)}`, { duration: 1500 });
+      toast(`Next one: ${shortDate(next, today)}`, {
+        duration: 6000,
+        action: { label: "Undo", onClick: () => undoRepeat(item, was) },
+      });
     } else {
       change = { done: true, doneAt: nowIso };
       delta = 1;
     }
+    // Finishing the open task closes its panel; it has done its job.
+    if (delta === 1 && openKey === item.key) setOpenKey(null);
     if (item.shared) {
       commit(award(docRef.current, item.priority, delta));
       patch(item, change);
     } else {
       commit(award(patchPersonal(docRef.current, item.id, change), item.priority, delta));
+    }
+  }
+
+  /** Undo finishing a repeating task: back to the date it had, and the points taken back. */
+  function undoRepeat(item: Item, due: string) {
+    if (item.shared) {
+      commit(award(docRef.current, item.priority, -1));
+      patch(item, { due });
+    } else {
+      commit(award(patchPersonal(docRef.current, item.id, { due }), item.priority, -1));
     }
   }
 
@@ -438,6 +464,10 @@ export function RemindTool() {
       if (item.shared) await sharedChange({ data: { projectId: item.shared, op: { type: "removeTask", id: item.id } } });
       else commit({ ...docRef.current, tasks: docRef.current.tasks.filter((task) => !ids.has(task.id)) });
       await refreshShared();
+      // A task that crosses between your list and a shared project gets a new key; keep its panel open.
+      const movedKey = toKey.startsWith("shared:") ? `s:${toKey.slice("shared:".length)}:${item.id}` : `p:${item.id}`;
+      setOpenKey((current) => (current === item.key ? movedKey : current));
+      setAnchor((current) => (current?.key === item.key ? { ...current, key: movedKey } : current));
       toast.success(`Moved to ${projectLabel(doc, shared.projects, toKey)}.`);
     } catch (error) {
       toast.error(errorText(error, "Couldn't move that task."));
@@ -481,7 +511,8 @@ export function RemindTool() {
         }),
       ],
     });
-    if (parsed.due && view.kind === "today" && parsed.due > today) toast(`Added for ${prettyDate(parsed.due, today)}.`);
+    if (parsed.due && parsed.nextYear) toast(`Added for ${shortDate(parsed.due, today)}, next year.`);
+    else if (parsed.due && view.kind === "today" && parsed.due > today) toast(`Added for ${prettyDate(parsed.due, today)}.`);
   }
 
   // ── Projects ───────────────────────────────────────────────────────────────
@@ -517,6 +548,7 @@ export function RemindTool() {
     if (!project) return;
     const tasks = items.filter((item) => !item.shared && item.projectKey === projectId);
     const sections = doc.sections.filter((section) => section.projectId === projectId);
+    setSharing(true);
     try {
       const { id } = await createShared({
         data: {
@@ -540,6 +572,9 @@ export function RemindTool() {
       toast.success("Project shared. Invite people below.");
     } catch (error) {
       toast.error(errorText(error, "Couldn't share it."));
+    } finally {
+      setSharing(false);
+      setConfirmShare(null);
     }
   }
 
@@ -580,6 +615,7 @@ export function RemindTool() {
     setMenuOpen(false);
     setEditingFilter(null);
     setShowPeople(false);
+    setConfirmShare(null);
     // Keep ?view= in the address for views a link can open, so a reload lands in the same place.
     const linked = linkableView(next.kind);
     const wanted = linked && linked !== "today" ? linked : undefined;
@@ -615,31 +651,52 @@ export function RemindTool() {
   const currentFilter = view.kind === "filter" ? doc.filters.find((filter) => filter.id === view.id) : undefined;
 
   const needle = query.trim().toLowerCase();
-  const visible = items
-    .filter((item) => {
-      if (needle && !`${item.title} ${item.notes}`.toLowerCase().includes(needle)) return false;
-      switch (view.kind) {
-        case "inbox":
-          return !item.done && !item.shared && item.projectKey === INBOX;
-        case "today":
-          return !item.done && Boolean(item.due) && item.due <= today && isMineToDo(item, me);
-        case "upcoming":
-          return !item.done && Boolean(item.due) && item.due <= addDays(today, 13) && isMineToDo(item, me);
-        case "assigned":
-          return !item.done && Boolean(item.shared) && item.assigneeId === me;
-        case "done":
-          return item.done;
-        case "project":
-          return !item.done && item.projectKey === view.id;
-        case "label":
-          return !item.done && item.labels.some((label) => sameLabel(label, view.name));
-        case "filter":
-          return currentFilter ? matchesFilter(item, currentFilter, today, me) : false;
-        default:
-          return false;
-      }
-    })
-    .sort(view.kind === "done" ? (a, b) => b.doneAt.localeCompare(a.doneAt) : byWhen);
+  const fitsView = (item: Item) => {
+    switch (view.kind) {
+      case "inbox":
+        return !item.done && !item.shared && item.projectKey === INBOX;
+      case "today":
+        return !item.done && Boolean(item.due) && item.due <= today && isMineToDo(item, me);
+      case "upcoming":
+        return !item.done && Boolean(item.due) && item.due <= addDays(today, 13) && isMineToDo(item, me);
+      case "assigned":
+        return !item.done && Boolean(item.shared) && item.assigneeId === me;
+      case "done":
+        return item.done;
+      case "project":
+        return !item.done && item.projectKey === view.id;
+      case "label":
+        return !item.done && item.labels.some((label) => sameLabel(label, view.name));
+      case "filter":
+        return currentFilter ? matchesFilter(item, currentFilter, today, me) : false;
+      default:
+        return false;
+    }
+  };
+  const inView = (item: Item) => {
+    if (needle && !`${item.title} ${item.notes}`.toLowerCase().includes(needle)) return false;
+    return fitsView(item);
+  };
+  // The open task stays where it was, even after an edit takes it out of this view,
+  // until its panel is closed.
+  const liveOpen = openKey ? items.find((item) => item.key === openKey) : undefined;
+  const keptOpen = liveOpen && anchor?.key === liveOpen.key && !inView(liveOpen) ? liveOpen : undefined;
+  const keptPlace = keptOpen && anchor ? { ...keptOpen, ...anchor } : undefined;
+  const visible = [...items.filter(inView), ...(keptPlace && inView(keptPlace) ? [keptPlace] : [])].sort(
+    view.kind === "done" ? (a, b) => b.doneAt.localeCompare(a.doneAt) : byWhen,
+  );
+  /** The live task for a row (the open task may be shown in its old place). */
+  const live = (item: Item) => (keptOpen && item.key === keptOpen.key ? keptOpen : item);
+
+  function openTask(key: string | null) {
+    setOpenKey(key);
+    const item = key ? items.find((entry) => entry.key === key) : undefined;
+    setAnchor(
+      item
+        ? { key: item.key, due: item.due, time: item.time, projectKey: item.projectKey, sectionId: item.sectionId, priority: item.priority, labels: item.labels, assigneeId: item.assigneeId }
+        : null,
+    );
+  }
   const shownKeys = new Set(visible.map((item) => `${item.shared ?? ""}:${item.id}`));
   const topLevel = visible.filter((item) => !item.parentId || !shownKeys.has(`${item.shared ?? ""}:${item.parentId}`)).slice(0, view.kind === "done" ? 150 : 1000);
   const kidsOf = (item: Item) => items.filter((entry) => entry.shared === item.shared && entry.parentId === item.id).sort(byWhen);
@@ -689,20 +746,48 @@ export function RemindTool() {
   const defaultProject = view.kind === "project" ? view.id : INBOX;
   const defaultDue = view.kind === "today" ? today : "";
 
+  /** Where an open task went after an edit took it out of this view, with a way to go there. */
+  function movedNote(item: Item): MovedNote | undefined {
+    if (!listView || openKey !== item.key || fitsView(item)) return undefined;
+    const name = projectLabel(doc, shared.projects, item.projectKey);
+    const toProject = () => {
+      go(item.projectKey === INBOX ? { kind: "inbox" } : { kind: "project", id: item.projectKey });
+      openTask(item.key);
+    };
+    if (anchor?.key === item.key && anchor.projectKey !== item.projectKey) {
+      return { text: `Moved to ${name}.`, go: `Go to ${name}`, onGo: toProject };
+    }
+    if (!item.done && item.due > today && item.due <= addDays(today, 13) && isMineToDo(item, me) && view.kind !== "upcoming") {
+      return {
+        text: "Moved to Upcoming.",
+        go: "Go to Upcoming",
+        onGo: () => {
+          go({ kind: "upcoming" });
+          openTask(item.key);
+        },
+      };
+    }
+    return { text: `Moved out of ${title}. Find it in ${name}.`, go: `Go to ${name}`, onGo: toProject };
+  }
+
   const renderRows = (rows: Item[]) => (
     <ul className="divide-y divide-line">
-      {rows.map((item) => (
-        <TaskRow
-          key={item.key}
-          item={item}
-          kids={kidsOf(item)}
-          ctx={ctx}
-          actions={actions}
-          open={openKey === item.key}
-          onOpen={() => setOpenKey(openKey === item.key ? null : item.key)}
-          showProject={showProject}
-        />
-      ))}
+      {rows.map((row) => {
+        const item = live(row);
+        return (
+          <TaskRow
+            key={item.key}
+            item={item}
+            kids={kidsOf(item)}
+            ctx={ctx}
+            actions={actions}
+            open={openKey === item.key}
+            onOpen={() => openTask(openKey === item.key ? null : item.key)}
+            showProject={showProject}
+            moved={movedNote(item)}
+          />
+        );
+      })}
     </ul>
   );
 
@@ -932,7 +1017,12 @@ export function RemindTool() {
                   </>
                 ) : view.id !== INBOX ? (
                   <>
-                    <Button tone="quiet" className="min-h-9" onClick={() => (shared.canShare ? void shareProject(view.id) : toast("Sharing projects needs Midnry Pass."))}>
+                    <Button
+                      tone="quiet"
+                      className="min-h-9"
+                      aria-expanded={confirmShare === view.id}
+                      onClick={() => (shared.canShare ? setConfirmShare(view.id) : toast("Sharing projects needs Midnry Pass."))}
+                    >
                       Share
                     </Button>
                     <Button tone="quiet" className="min-h-9" onClick={() => deletePersonalProject(view.id)}>
@@ -941,6 +1031,16 @@ export function RemindTool() {
                   </>
                 ) : null}
               </div>
+            ) : null}
+
+            {view.kind === "project" && confirmShare === view.id && !currentShared ? (
+              <ShareConfirm
+                name={title}
+                tasks={doc.tasks.filter((task) => task.projectId === view.id).length}
+                busy={sharing}
+                onShare={() => void shareProject(view.id)}
+                onCancel={() => setConfirmShare(null)}
+              />
             ) : null}
 
             {currentShared && showPeople ? (
@@ -1063,18 +1163,18 @@ export function RemindTool() {
                 {layout === "board" ? (
                   <>
                     <Board
-                      items={topLevel}
+                      items={topLevel.map(live)}
                       sections={view.kind === "project" ? sectionsOf(view.id) : null}
                       today={today}
                       onToggle={toggle}
-                      onOpen={setOpenKey}
+                      onOpen={openTask}
                       onMove={patch}
                     />
                     {openItem ? <div className="mt-4 rounded-2xl bg-card px-4 shadow-line">{renderRows([openItem])}</div> : null}
                   </>
                 ) : layout === "month" ? (
                   <>
-                    <Month items={view.kind === "today" || view.kind === "upcoming" ? items.filter((item) => isMineToDo(item, me)) : visible} today={today} onOpen={setOpenKey} />
+                    <Month items={view.kind === "today" || view.kind === "upcoming" ? items.filter((item) => isMineToDo(item, me)) : visible.map(live)} today={today} onOpen={openTask} />
                     {openItem ? <div className="mt-4 rounded-2xl bg-card px-4 shadow-line">{renderRows([openItem])}</div> : null}
                   </>
                 ) : (
@@ -1086,6 +1186,38 @@ export function RemindTool() {
         </div>
       </ToolStatus>
     </ToolFrame>
+  );
+}
+
+/**
+ * "Share" asks first. What it says matches what sharing does (createShared in
+ * remind.functions.ts): the personal project is replaced by a shared one holding
+ * its tasks and sections; there is no "unshare", only moving tasks back one by
+ * one; and deleting a shared project deletes its tasks for everyone.
+ */
+function ShareConfirm({ name, tasks, busy, onShare, onCancel }: { name: string; tasks: number; busy: boolean; onShare: () => void; onCancel: () => void }) {
+  return (
+    <section className="mt-3 max-w-2xl rounded-2xl bg-card p-4 shadow-line sm:p-5" role="group" aria-labelledby="remind-share-title" data-remind-share-confirm>
+      <h3 id="remind-share-title" className="font-medium">
+        Share “{name}”?
+      </h3>
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-pretty">
+        <li>
+          It becomes a shared project. {tasks === 1 ? "Its task" : tasks ? `All ${tasks} of its tasks` : "Its tasks"} and any sections move into it.
+        </li>
+        <li>Nobody else sees it until they accept your invite. Then they can see, change, finish and delete its tasks.</li>
+        <li>You can't turn it back into a personal project. To take a task back, open it and choose one of your own projects.</li>
+        <li>If you delete a shared project, its tasks are deleted for everyone.</li>
+      </ul>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button tone="primary" disabled={busy} onClick={onShare}>
+          {busy ? "Sharing…" : "Yes, share it"}
+        </Button>
+        <Button tone="quiet" disabled={busy} onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </section>
   );
 }
 

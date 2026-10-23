@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { parseTask, type Parsed } from "@/lib/remind/parse";
-import { prettyDate, prettyTime } from "@/lib/remind/dates";
-import { recurLabel } from "@/lib/remind/recur";
+import { dayMonth, prettyDate, prettyTime, shortDate } from "@/lib/remind/dates";
+import { repeatPreview } from "@/lib/remind/recur";
 import { Button, cn } from "@/components/ui";
 import { PRIORITY_STYLE } from "./items";
 
@@ -54,10 +54,13 @@ export function QuickAdd({
     if (prefill) onPrefillUsed?.();
   }
 
-  const chips: { label: string; tone?: string }[] = [];
-  if (due) chips.push({ label: `${prettyDate(due, today)}${parsed.time ? `, ${prettyTime(parsed.time)}` : ""}` });
+  const chips: { label: string; tone?: string; data?: string }[] = [];
+  const repeat = repeatPreview(due, parsed.time, parsed.recur, today);
+  if (repeat) chips.push({ label: repeat, data: "repeat" });
+  else if (due && parsed.nextYear) {
+    chips.push({ label: `${shortDate(due, today)}${parsed.time ? `, ${prettyTime(parsed.time)}` : ""} — next year`, tone: "font-medium text-orange-800", data: "next-year" });
+  } else if (due) chips.push({ label: `${prettyDate(due, today)}${parsed.time ? `, ${prettyTime(parsed.time)}` : ""}`, data: "date" });
   else if (parsed.time) chips.push({ label: prettyTime(parsed.time) });
-  if (parsed.recur !== "none") chips.push({ label: recurLabel(parsed.recur) });
   if (parsed.priority) chips.push({ label: `P${parsed.priority}`, tone: PRIORITY_STYLE[parsed.priority].text });
   for (const label of parsed.labels) chips.push({ label: `@${label}` });
   if (parsed.project) chips.push({ label: match ? `#${match.name}` : `New project: ${parsed.project}` });
@@ -90,10 +93,15 @@ export function QuickAdd({
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-sm" aria-live="polite">
           <span className="text-muted">{parsed.title ? `“${parsed.title}”` : "Add a few words for the task"}</span>
           {chips.map((chip) => (
-            <span key={chip.label} className={cn("rounded-full bg-paper-2 px-2.5 py-0.5", chip.tone)}>
+            <span key={chip.label} className={cn("rounded-full bg-paper-2 px-2.5 py-0.5", chip.tone)} data-remind-chip={chip.data}>
               {chip.label}
             </span>
           ))}
+          {due && parsed.nextYear ? (
+            <span className="basis-full text-xs text-pretty text-muted" data-remind-next-year>
+              {dayMonth(due)} has already passed this year, so it’s set for next year. For this year, add the year: {dayMonth(due)} {today.slice(0, 4)}.
+            </span>
+          ) : null}
         </div>
       ) : (
         <p className="mt-2 text-xs text-muted">

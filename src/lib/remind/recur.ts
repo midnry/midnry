@@ -1,4 +1,4 @@
-import { addDays, addMonths, isIsoDate, parseIso, weekdayOf } from "./dates.ts";
+import { addDays, addMonths, isIsoDate, parseIso, prettyTime, shortDate, weekdayOf } from "./dates.ts";
 
 // A repeat rule stored as a short string so old Tasks data keeps working:
 //   "none" | "day" | "week" | "month" | "year"   (every 1 of each)
@@ -17,6 +17,7 @@ type Rule =
   | { kind: "monthday"; day: number };
 
 const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const SHORT_DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const UNIT_NAMES: Record<Unit, [string, string]> = {
   d: ["day", "days"],
   w: ["week", "weeks"],
@@ -78,12 +79,45 @@ export function recurLabel(spec: Recur): string {
       if (rule.days.length === 7) return "Every day";
       return `Every ${rule.days.map((day) => DAY_NAMES[day - 1]).join(" and ")}`;
     case "monthday":
-      return `Every month on the ${ordinal(rule.day)}`;
+      // Day 31 lands on the last day of shorter months, so say so.
+      return rule.day === 31 ? "Every month on the last day" : `Every month on the ${ordinal(rule.day)}`;
     case "every": {
       const [one, many] = UNIT_NAMES[rule.unit];
       return rule.n === 1 ? `Every ${one}` : `Every ${rule.n} ${many}`;
     }
   }
+}
+
+/** A short repeat phrase for running text: "every Tue and Fri", "every 2 weeks". */
+export function repeatPhrase(spec: Recur): string {
+  const rule = parseRule(spec);
+  if (rule.kind === "none") return "";
+  if (rule.kind === "on" && rule.days.length < 7) {
+    const names = rule.days.map((day) => SHORT_DAY_NAMES[day - 1]);
+    const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0];
+    return `every ${list}`;
+  }
+  const label = recurLabel(spec);
+  return label.charAt(0).toLowerCase() + label.slice(1);
+}
+
+/**
+ * What the add box and the task panel say about a repeating task:
+ * "Next: Tue 27 Oct, then every Tue and Fri". Empty when it doesn't repeat.
+ */
+export function repeatPreview(due: string, time: string, spec: Recur, today: string): string {
+  if (parseRule(spec).kind === "none" || !isIsoDate(due)) return "";
+  const when = `${shortDate(due, today)}${time ? `, ${prettyTime(time)}` : ""}`;
+  return `Next: ${when}, then ${repeatPhrase(spec)}`;
+}
+
+/**
+ * The due date to save when a repeat is set or changed: the first day on or
+ * after the current date (or today) that the repeat lands on, so a task
+ * "every Tuesday and Friday" is never due on a Sunday.
+ */
+export function snapToRepeat(spec: Recur, due: string, today: string): string {
+  return firstOnOrAfter(spec, isIsoDate(due) ? due : today);
 }
 
 function ordinal(n: number): string {
@@ -171,7 +205,8 @@ export function toRRule(spec: Recur, due: string): string {
     case "on":
       return `FREQ=WEEKLY;BYDAY=${rule.days.map((day) => codes[day - 1]).join(",")}`;
     case "monthday":
-      return `FREQ=MONTHLY;BYMONTHDAY=${rule.day}`;
+      // BYMONTHDAY=31 would skip shorter months; -1 means "the last day".
+      return `FREQ=MONTHLY;BYMONTHDAY=${rule.day === 31 ? -1 : rule.day}`;
     case "every": {
       const freq = { d: "DAILY", w: "WEEKLY", m: "MONTHLY", y: "YEARLY" }[rule.unit];
       const anchor = rule.unit === "m" && isIsoDate(due) ? `;BYMONTHDAY=${parseIso(due).getDate()}` : "";

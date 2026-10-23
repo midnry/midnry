@@ -12,6 +12,11 @@ export type Parsed = {
   labels: string[];
   project: string;
   recur: Recur;
+  /**
+   * Set (true) only when a typed day and month without a year had already
+   * passed this year, so the date was put in next year. The add box says so.
+   */
+  nextYear?: boolean;
 };
 
 const WEEKDAYS: Record<string, number> = {
@@ -55,13 +60,24 @@ export function parseTask(input: string, today: string): Parsed {
   let text = ` ${input.replace(/\s+/g, " ").trim()} `;
   const out: Parsed = { title: "", due: "", time: "", priority: null, labels: [], project: "", recur: "none" };
 
-  const take = (pattern: RegExp, handle: (match: RegExpExecArray) => boolean | void) => {
-    const re = new RegExp(pattern.source, pattern.flags.includes("i") ? pattern.flags : `${pattern.flags}i`);
-    const match = re.exec(text);
-    if (!match) return false;
-    if (handle(match) === false) return false;
-    text = `${text.slice(0, match.index)} ${text.slice(match.index + match[0].length)}`;
-    return true;
+  // Finds a pattern in what's left of the text, lets `handle` accept or refuse it,
+  // and removes the accepted words. With `last`, the last match is tried first,
+  // so "Weekend market shopping this weekend" keeps its first word as title.
+  const take = (pattern: RegExp, handle: (match: RegExpExecArray) => boolean | void, last = false) => {
+    const flags = pattern.flags.includes("i") ? pattern.flags : `${pattern.flags}i`;
+    let candidates: RegExpExecArray[];
+    if (last) {
+      candidates = [...text.matchAll(new RegExp(pattern.source, `${flags}g`))].reverse();
+    } else {
+      const first = new RegExp(pattern.source, flags).exec(text);
+      candidates = first ? [first] : [];
+    }
+    for (const match of candidates) {
+      if (handle(match) === false) continue;
+      text = `${text.slice(0, match.index)} ${text.slice(match.index + match[0].length)}`;
+      return true;
+    }
+    return false;
   };
 
   // Priority: p1 … p4, or "!1" … "!4".
@@ -88,6 +104,10 @@ export function parseTask(input: string, today: string): Parsed {
   void (take(/\s(?:every\s+weekday|every\s+work\s?day|weekdays)(?=\s)/, () => {
     out.recur = "weekdays";
   }) ||
+    // "every month end": the last day of every month (day 31 is clamped to the month's last day).
+    take(/\s(?:every|each)\s+(?:month[\s-]?end|end\s+of\s+(?:the\s+)?month)(?=\s)/, () => {
+      out.recur = "monthday:31";
+    }) ||
     take(new RegExp(`\\s(?:every|each)\\s+${DAY}(?:\\s*(?:,|and|&)\\s*${DAY})?(?:\\s*(?:,|and|&)\\s*${DAY})?(?=\\s)`, "i"), (m) => {
       const days = [m[1], m[2], m[3]].filter(Boolean).map((name) => WEEKDAYS[name.toLowerCase()]);
       out.recur = `on:${[...new Set(days)].sort().join(",")}`;
@@ -128,6 +148,13 @@ export function parseTask(input: string, today: string): Parsed {
     take(/\s(?:at\s+)?([01]?\d|2[0-3]):([0-5]\d)(?=\s)/, (m) => {
       out.time = to24(Number(m[1]), Number(m[2]), undefined);
     }) ||
+    // A bare hour after "at" or "by" ("Friday by 5", "at 4 tomorrow"), only at the end or
+    // before a date word, so "Meet at 3 Allen Avenue" keeps its address. 1–7 means afternoon.
+    take(new RegExp(`\\s(?:at|by)\\s+(\\d{1,2})(?=\\s$|\\s(?:on|this|next|today|tod|tonight|tomorrow|tmrw?|tmr|day|weekend|month|end|in|every|${DAY}|${MONTH})\\s|\\s\\d)`, "i"), (m) => {
+      const hour = Number(m[1]);
+      if (hour < 1 || hour > 23) return false;
+      out.time = to24(hour >= 1 && hour <= 7 ? hour + 12 : hour, 0, undefined);
+    }) ||
     take(/\s(?:at\s+)?noon(?=\s)/, () => {
       out.time = "12:00";
     }) ||
@@ -141,17 +168,27 @@ export function parseTask(input: string, today: string): Parsed {
     out.due = iso;
     return true;
   };
+  const setDayMonth = (found: { iso: string; nextYear: boolean }) => {
+    if (!setDue(found.iso)) return false;
+    if (found.nextYear) out.nextYear = true;
+    return true;
+  };
   void (take(/\s(\d{4})-(\d{2})-(\d{2})(?=\s)/, (m) => setDue(safeDate(Number(m[1]), Number(m[2]), Number(m[3])))) ||
     take(new RegExp(`\\s(?:on\\s+)?(?:the\\s+)?(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?${MONTH}(?:\\s+(\\d{4}))?(?=\\s)`, "i"), (m) =>
-      setDue(dateFor(today, Number(m[1]), MONTHS[m[2].toLowerCase()], m[3])),
+      setDayMonth(dateFor(today, Number(m[1]), MONTHS[m[2].toLowerCase()], m[3])),
     ) ||
     take(new RegExp(`\\s(?:on\\s+)?${MONTH}\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?(?=\\s)`, "i"), (m) =>
-      setDue(dateFor(today, Number(m[2]), MONTHS[m[1].toLowerCase()], m[3])),
+      setDayMonth(dateFor(today, Number(m[2]), MONTHS[m[1].toLowerCase()], m[3])),
     ) ||
     // Day/month as written in Nigeria and the UK: 12/10 is 12 October.
     take(/\s(?:on\s+)?(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?(?=\s)/, (m) => {
       const year = m[3] ? (m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3])) : undefined;
-      return setDue(dateFor(today, Number(m[1]), Number(m[2]), year === undefined ? undefined : String(year)));
+      return setDayMonth(dateFor(today, Number(m[1]), Number(m[2]), year === undefined ? undefined : String(year)));
+    }) ||
+    // "month end", "by month-end", "end of the month": the last day of this month.
+    take(/\s(?:(?:by|on|at)\s+)?(?:the\s+)?(?:month[\s-]?end|end\s+of\s+(?:the\s+|this\s+)?month)(?=\s)/, () => {
+      const [year, month] = today.split("-").map(Number);
+      return setDue(safeDate(year, month, new Date(year, month, 0).getDate()));
     }) ||
     take(/\s(?:today|tod)(?=\s)/, () => setDue(today)) ||
     take(/\s(?:tonight|this\s+evening)(?=\s)/, () => {
@@ -170,11 +207,26 @@ export function parseTask(input: string, today: string): Parsed {
     }) ||
     take(/\snext\s+week(?=\s)/, () => setDue(nextWeekday(today, 1, true))) ||
     take(/\snext\s+month(?=\s)/, () => setDue(`${addMonths(`${today.slice(0, 7)}-01`, 1)}`)) ||
-    take(/\s(?:this\s+)?weekend(?=\s)/, () => setDue(nextWeekday(today, 6))) ||
-    take(new RegExp(`\\s(next\\s+|this\\s+|on\\s+)?${DAY}(?=\\s)`, "i"), (m) => {
-      const weekday = WEEKDAYS[m[2].toLowerCase()];
-      return setDue(nextWeekday(today, weekday, m[1]?.trim().toLowerCase() === "next"));
-    }));
+    // Weekday and weekend words can also be part of the title ("Weekend market",
+    // "Monday meeting prep on thursday"), so the last one is taken as the date, and a
+    // bare "weekend" that starts the task and is followed by more words stays in the title.
+    take(
+      /\s(this\s+)?weekend(?=\s)/,
+      (m) => {
+        const first = !text.slice(0, m.index).trim();
+        if (first && !m[1] && text.slice(m.index + m[0].length).trim()) return false;
+        return setDue(nextWeekday(today, 6));
+      },
+      true,
+    ) ||
+    take(
+      new RegExp(`\\s(next\\s+|this\\s+|on\\s+)?${DAY}(?=\\s)`, "i"),
+      (m) => {
+        const weekday = WEEKDAYS[m[2].toLowerCase()];
+        return setDue(nextWeekday(today, weekday, m[1]?.trim().toLowerCase() === "next"));
+      },
+      true,
+    ));
 
   // Part-of-day words set a time when none was given.
   if (!out.time) {
@@ -197,14 +249,18 @@ export function parseTask(input: string, today: string): Parsed {
   return out;
 }
 
-/** Day + month (+ optional year). Without a year, the next time that date comes round. */
-function dateFor(today: string, day: number, month: number, year?: string): string {
-  if (!month) return "";
-  if (year) return safeDate(Number(year), month, day);
+/**
+ * Day + month (+ optional year). Without a year, the next time that date comes
+ * round; `nextYear` says when that meant moving it into next year.
+ */
+function dateFor(today: string, day: number, month: number, year?: string): { iso: string; nextYear: boolean } {
+  if (!month) return { iso: "", nextYear: false };
+  if (year) return { iso: safeDate(Number(year), month, day), nextYear: false };
   const thisYear = Number(today.slice(0, 4));
   const candidate = safeDate(thisYear, month, day);
-  if (candidate && candidate >= today) return candidate;
-  return safeDate(thisYear + 1, month, day);
+  if (candidate && candidate >= today) return { iso: candidate, nextYear: false };
+  const later = safeDate(thisYear + 1, month, day);
+  return { iso: later, nextYear: Boolean(later) };
 }
 
 /** Today in the browser's own time zone. */
