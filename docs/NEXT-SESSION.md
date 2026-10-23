@@ -50,3 +50,8 @@ Read docs/HANDOVER.md first (working rules, deploy procedure, security rule). Th
   with `ps -eo pid,args | grep "[v]ite dev"`; never pkill -f a pattern that matches your shell),
   `rm -rf node_modules/.vite`, then start it again.
 - 17 test failures are pre-existing builder-platform tests (missing `.grok/` folder); ignore them.
+
+
+## Deployed 2026-10-23
+main = game-look at 7ba1c7c (`v=review-fixes-20261023`). Live files verified by hash; a Blackout match (town) and a
+Last Signal match (Calder Quay) started on www.midnry.com with no page errors.

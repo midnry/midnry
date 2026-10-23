@@ -15,7 +15,7 @@ wasn't verified.
   `git hash-object public/games/outpost-sim.js`, and the cache key:
   `curl -s --compressed https://www.midnry.com/games/outpost-zero | grep -ao "v=[a-z][a-z0-9-]*" | head -1`.
 - Bump the iframe cache key `v=…` in `src/routes/games/outpost-zero.tsx` with every release.
-  Current live value: `v=store-loading-20261020` (store in NGN/USD, loading screens deployed 2026-10-20).
+  Current live value: `v=review-fixes-20261023` (deployed 2026-10-23: everything through the Calder Quay base and review fixes).
 - Commit trailers:
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and the session link line.
 - Before every push: `node --test scripts/outpost-*.test.mjs` (268 pass),
@@ -712,7 +712,7 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   Rollback: old code ignores the `revision` column.
 - Tests: scripts/apps-phase1.test.mjs, app-docs.test.mjs, apply-pdf.test.mjs; QA scripts/qa/apps-phase1.mjs.
 
-## App merges + Invoice workflow (owner, 2026-10-22, not deployed yet)
+## App merges + Invoice workflow (owner, 2026-10-22, deployed 2026-10-23)
 
 - Rule: a merge that includes a Pass app is Pass; all-free stays free. Exception approved: Remind stays
   free and gains Board, Focus (Pulse) and Habits as Pass views (`src/lib/remind/pass-views.ts`).
@@ -725,7 +725,7 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   `src/lib/merged-docs.ts` (tier of the OLD app) — never remove entries there while data may exist.
 - Tests: scripts/{remind-merge,merges,invoice-workflow}.test.mjs; QA scripts/qa/{remind-merge,merges,invoice-workflow}.mjs.
 
-## Writing studio, Study space and Phase 3 fixes (owner, 2026-10-22, not deployed yet)
+## Writing studio, Study space and Phase 3 fixes (owner, 2026-10-22, deployed 2026-10-23)
 
 - Writing studio (`write`, free): 15 AI writing modes in one app with saved drafts (table
   writing_drafts, migration 0024), source box, copy/print/.txt. Pass extras: 500 drafts per mode (20
@@ -738,7 +738,7 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
 - Dev tip: if a QA script fails on a dynamic import (504 "Outdated Optimize Dep"), stop the dev
   server, `rm -rf node_modules/.vite`, and start it again with scripts/qa/dev-up.sh.
 
-## Brand, favicons and reliability (owner, 2026-10-22, not deployed yet)
+## Brand, favicons and reliability (owner, 2026-10-22, deployed 2026-10-23)
 
 - Brand: four-tile symbol + outlined Newsreader 800 wordmark (`scripts/brand/build-logo.mjs`
   regenerates everything into public/brand and the favicons); `<BrandLogo>` in src/components/brand.tsx;
@@ -749,7 +749,7 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
 - Saving: conflicts keep a browser-only recovery copy (src/lib/doc-recovery.ts) with a choice
   panel; revision-less saves are refused once a row has revision > 0 (refresh_required).
 
-## Player feedback: sound, pause, right-click, quick start (2026-10-22, not deployed yet)
+## Player feedback: sound, pause, right-click, quick start (2026-10-22, deployed 2026-10-23)
 
 - Sound ("I can't hear anything"): audio was only unlocked by Play, Blackout Protocol made almost
   no sound (footsteps at ~-38 dB, no music or ambience, measured peak 0 over 15 s of walking) and the
@@ -792,7 +792,7 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   SwiftShader flags. On a real GPU steps run much faster than in the sandbox, so fixed waits written for
   SwiftShader can be too short (e.g. Esc is ignored for 400 ms after pausing).
 
-## Lobby backdrop to the lobby concept (owner, 2026-10-22, not deployed yet)
+## Lobby backdrop to the lobby concept (owner, 2026-10-22, deployed 2026-10-23)
 
 - `scripts/outpost-military/lobby-backdrop.js` (`buildLobbyBackdrop`, `lobbySky`, `LOBBY_SUN`), used by
   `LobbyStage`: sunset sky shader (palette in sRGB, converted to linear), lit clouds, flat-topped
@@ -806,7 +806,7 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   names fade out (`.mf-squad.mf-scrolledaway`) once the menu scrolls past 12 px.
   QA: `node scripts/qa/lobby-scroll.mjs [tag]` prints the view offset per scroll position (must stay constant).
 
-## Calder Quay: Last Signal arena, step 1 grey box (owner, 2026-10-22, not deployed yet)
+## Calder Quay: Last Signal arena, step 1 grey box (owner, 2026-10-22, deployed 2026-10-23)
 
 - Layout: `public/games/outpost-quay.js` (`QUAY_PLAN` as readable characters, `QUAY_LEVEL`, `QUAY_CRATES`,
   `QUAY_ZONES`), 30 × 30, trimmed from `scripts/outpost-city/layout.mjs`. Market Square is at the centre, so
@@ -826,7 +826,7 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
 - Next (owner order): see-through canal water and street lamps, then the art pass (reuse Breakwater room art)
   and phone checks; then add it to the rotation.
 
-### Calder Quay step 2: see-through canal water and street lamps (2026-10-22, not deployed yet)
+### Calder Quay step 2: see-through canal water and street lamps (2026-10-22, deployed 2026-10-23)
 
 - MAPS entry field `seeThrough` (quay: `[6]`, `QUAY_WATER`): `Arena.cast` passes over those tiles, so sight,
   hitscan shots, projectiles and bot spotting cross the canal; `canMove`/`pathTo` still treat them as walls
@@ -839,7 +839,7 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
 - Tests: `scripts/outpost-quay.test.mjs` adds "see and shoot across it, never walk across it" and "walls
   still block". Pace sim quay avg 97 s. `quay-look.mjs` adds `across-canal` and `dock-bridge` views.
 
-### Calder Quay: swimming, culverts and electrified water (owner, 2026-10-22, not deployed yet)
+### Calder Quay: swimming, culverts and electrified water (owner, 2026-10-22, deployed 2026-10-23)
 
 - Players (not bots) walk off any quay into water (`Arena.move` passes `swim` to `canMove`/`blocks`; spawns,
   redeploys and bots still treat water as solid). In water the sim sets stance `swim` (`outpost-stance.js`:
@@ -859,7 +859,7 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
 - Tests: `scripts/outpost-quay.test.mjs` (swim, bots never swim, dive, electrified water incl. through a
   culvert, lightning on water). QA: `node scripts/qa/quay-swim.mjs [width]`. Pace sim quay avg 87 s.
 
-### Calder Quay step 3, part 1: town look and landmarks (2026-10-22, not deployed yet)
+### Calder Quay step 3, part 1: town look and landmarks (2026-10-22, deployed 2026-10-23)
 
 - `ARENAS.quay` (`arena-style.js`) borrows Skyport's kit and props (stalls → `pallets`, trucks → `uld`
   containers; cones, bins, utility boxes, road barriers along walls) with the estate's paving (ground) and
@@ -890,7 +890,7 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   HUD: "FLOODWATER · WADING IS SLOW". Tests in `outpost-quay.test.mjs`; photos `quay-swim.mjs` (surge-flood,
   surge-electrified). Pace sim quay avg 88 s.
 
-## Menu redesign, step 1: Locker with Loadout (owner, 2026-10-22, not deployed yet)
+## Menu redesign, step 1: Locker with Loadout (owner, 2026-10-22, deployed 2026-10-23)
 
 - Design critique of all menus (screens via `node scripts/qa/menu-tour.mjs [tag]` → `screenshots/qa/menus`):
   1 Loadout (weapon choice was hidden), 2 top tabs open mismatched pop-ups (BACK/DONE/SKIP), 3 plain
@@ -916,7 +916,7 @@ Owner: "go with your defaults" (premium cosmetics ₦1,500–3,000 via Paystack,
   button is `.mf-protocol-guideopen` (it was "the first button in the menu"). Top nav tabs larger and brighter.
   `check-outpost-performance.mjs` uses the new "Automatic resolution" label.
 
-## Calder Quay as the Blackout Protocol base (owner item 3, 2026-10-23, not deployed yet)
+## Calder Quay as the Blackout Protocol base (owner item 3, deployed 2026-10-23)
 
 - `TOWN_MAP` (`outpost-protocol-map.js`, MAPS id `town`, protocolOnly) reuses the 30 × 30 Calder Quay level, water,
   art, interiors and landmarks, with all Breakwater objective ids/kinds: 16 stations, 15 sites, 6 storm drains
