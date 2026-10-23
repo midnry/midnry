@@ -43,6 +43,13 @@ Read docs/HANDOVER.md first (working rules, deploy procedure, security rule). Th
   against PostgreSQL 16). Status, verification record, owner checks and rollback plan:
   `docs/audit-2026-10-23/release-2026-10-23.md`. Proposed next batch (Invoice and Remind):
   `docs/audit-2026-10-23/next-batch-invoice-remind.md`. Parked, unmerged: `wip/batch2-parked-20261023`.
+- After deploy (section 8 of the release doc): live AI allowance check PASS. Still open and waiting on the
+  owner: DB plan + reminder scheduler (dashboard steps listed), email inbox, Pass test account, Paystack
+  `sk_test` key as env var, 7 leftover live test accounts (emails from admin Stats), iPhone checklist
+  (`iphone-safari-checklist.md`); Android pending until a device exists.
+- Next batch prepared, NOT released (needs a new "deploy"): `next/invoice-follow-up`,
+  `next/remind-repeats-and-editing`, `next/invoice-pdf-share` (separate), combined test branch
+  `next/batch-combined-check`. Results: `docs/audit-2026-10-23/next-batch-review.md`.
 
 ## Other open items
 - Medical, tax and legal tools need a qualified reviewer (docs/phase3-plan.md lists exactly what).
