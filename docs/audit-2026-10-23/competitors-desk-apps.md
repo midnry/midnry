@@ -1,5 +1,13 @@
 # Midnry desk — competitor comparison (official sources only)
 
+> **Rechecked 23 October 2026** (`competitor-claims-recheck.md`). Corrections to this file: Wave
+> still lets existing accounts outside the US/Canada create invoices and share a PDF or link, but not
+> send them or take payments; Google AI Plus has no published fixed price ("varies by country"), so
+> the US$4.99 figure is dropped; Todoist's web app is not supported in phone browsers; Splitwise's free
+> tier has a daily expense limit; Bumpa has no free plan (₦15,000 a quarter, 14-day trial); Medisafe
+> also has a web patient portal. Everything else checked was confirmed.
+
+
 All pages were read on **2026-10-23**. Only vendor-owned pages (pricing, help centres, feature pages, the vendor's own App Store listing) were used. Where a vendor page could not be fetched (HTTP 403/404/503), that is stated and the comparison is marked **INCOMPLETE**; no figures were filled in from third-party sites. "Midnry claim" columns restate what Midnry says about itself; nothing here is hands-on testing.
 
 General pricing caveat: most vendors list USD and say prices vary by country/app store. None of the fetched pages mention Naira or Paystack except Todoist's note on localized pricing (Nigeria not in its named list). Midnry's US$5/month Pass via Paystack is cheaper than or equal to every paid tier below except Coolors Pro ($3/mo), Quizlet/Flo/Clue annual plans when averaged per month, and Medisafe's $4.99.

@@ -1,5 +1,13 @@
 # Midnry kit apps vs established alternatives
 
+> **Rechecked 23 October 2026** (`competitor-claims-recheck.md`). Corrections to this file: Wave
+> still lets existing accounts outside the US/Canada create invoices and share a PDF or link, but not
+> send them or take payments; Google AI Plus has no published fixed price ("varies by country"), so
+> the US$4.99 figure is dropped; Todoist's web app is not supported in phone browsers; Splitwise's free
+> tier has a daily expense limit; Bumpa has no free plan (₦15,000 a quarter, 14-day trial); Medisafe
+> also has a web patient portal. Everything else checked was confirmed.
+
+
 Research date: all pages read on **23 October 2026** unless a different date is stated. Sources are vendor/official pages only; where a page could not be fetched the comparison is marked **INCOMPLETE**. Nothing here was tested hands-on; "what it does" is what the vendor page says. Naira figures are quoted as published; no exchange-rate conversion is asserted.
 
 Midnry baseline (from the brief): free with an account; "Midnry Pass" US$5/month; browser apps aimed at phone users in Nigeria/West Africa.
