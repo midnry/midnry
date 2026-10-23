@@ -154,6 +154,26 @@ test("two tabs: a stale save is refused, not overwritten; a deleted draft says s
   assert.deepEqual(await store.saveDraft(sql, "u1", draftOf("lesson", "lesson-1"), { cap: 20, baseRevision: 2 }), { ok: false, error: "gone" });
 });
 
+test("contract: the quick writer's seven pieces are saved whole, and the docx keeps them all", () => {
+  const text = [
+    "This Agreement is made between Synthetic Studio Ltd and Nwosu Pharmacy (the Client).",
+    "The Client shall pay a fee of ₦250,000 within 14 days of the invoice.",
+    "The term starts on 1 November 2026 and runs for 6 months.",
+    "Either party may terminate with 30 days written notice.",
+    "The Studio must provide three design revisions.",
+    "This Agreement renews automatically unless notice is given, and is governed by the laws of Nigeria.",
+  ].join(" ");
+  const pieces = WRITERS["contract-scan"].run({ text });
+  assert.equal(pieces.length, 7, "parties, four parts, watch for, before you sign");
+  assert.ok(pieces.length <= S.PIECES_MAX);
+  const kept = S.cleanDraft({ ...draftOf("contract-scan", "contract-1", { text }), pieces, by: "quick", writtenAt: NOW });
+  assert.equal(kept.ok, true, "a contract summary is a valid draft");
+  assert.equal(kept.draft.pieces.length, 7, "no piece is dropped");
+  assert.deepEqual(S.cleanDraft({ ...draftOf("contract-scan", "contract-2"), pieces: Array.from({ length: S.PIECES_MAX + 1 }, (_, i) => ({ title: `P${i}`, text: "x" })) }), { ok: false, error: "invalid" });
+  const bytes = docx.buildDocx({ title: "Contract", pieces });
+  assert.ok(bytes.length > 1000);
+});
+
 test("drafts are checked and kept to their limits", () => {
   const ok = S.cleanDraft({ ...draftOf("readme", "readme-1"), pieces: [{ title: "README.md", text: "# Hi" }], by: "ai", writtenAt: NOW });
   assert.equal(ok.ok, true);

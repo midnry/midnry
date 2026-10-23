@@ -12,6 +12,7 @@ import {
   EMPTY_STYLE,
   TITLE_MAX,
   PIECE_MAX,
+  PIECES_MAX,
   type Allowance,
   type Draft,
   type DraftSummary,
@@ -152,7 +153,7 @@ export const draftDocx = createServerFn({ method: "POST" })
     const title = typeof input?.title === "string" ? input.title.slice(0, TITLE_MAX) : "";
     const pieces = Array.isArray(input?.pieces)
       ? input.pieces
-          .slice(0, 6)
+          .slice(0, PIECES_MAX)
           .filter((piece): piece is { title: string; text: string } => !!piece && typeof piece.title === "string" && typeof piece.text === "string")
           .map((piece) => ({ title: piece.title.slice(0, 60), text: piece.text.slice(0, PIECE_MAX) }))
       : [];
