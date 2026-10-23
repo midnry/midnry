@@ -72,7 +72,9 @@ export function CompressorTool() {
         file: clip.file,
         kind: "mp4",
         filename: `${stemName(clip.file.name)}.mp4`,
-        video: { ...size, bitrate: preset.videoBps, codec: "avc", keyFrameInterval: 2 },
+        // mediabunny needs `fit` whenever both width and height are given; the
+        // size already keeps the aspect ratio, so "contain" never crops or pads.
+        video: { ...size, fit: "contain", bitrate: preset.videoBps, codec: "avc", keyFrameInterval: 2 },
         audio: clip.probe.hasAudio ? { codec: "aac", bitrate: preset.audioBps } : undefined,
         onProgress: (value) => {
           if (token.current === my) setProgress(value);

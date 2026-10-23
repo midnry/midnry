@@ -150,12 +150,34 @@ function orderRun(run: Run, reverted: ReadonlySet<string>): { index: number; pro
 }
 
 /** The line after the name and contact details, where the headline goes. */
+/** A section heading such as "Experience" or "WORK EXPERIENCE": the contact block has ended. */
+const SECTION_HEADING = /^\s*(work\s+|professional\s+)?(experience|employment|education|skills|summary|profile|objective|projects|certifications?)\b/i;
+/** A year or a date range ("2021 - Present", "Jan 2019 – Mar 2022"): a job line, not a phone number. */
+const DATE_RANGE = /\b(19|20)\d{2}\b\s*(–|-|to)\s*((19|20)\d{2}\b|present|now|date)/i;
+
+/** The line a contact-style phone number, email or link sits on, or -1. */
+function isContactLine(line: string): boolean {
+  if (/@|linkedin|github|\.com\b|\.ng\b|www\./i.test(line)) return true;
+  if (DATE_RANGE.test(line)) return false;
+  // A phone number: seven or more digits, allowing spaces, brackets and dashes between them.
+  return (line.match(/\d/g) ?? []).length >= 7 && /\+?\d[\d\s()-]{6,}/.test(line);
+}
+
+/**
+ * Where the headline goes: after the name and the contact lines at the top,
+ * and never inside the first section. Resumes pasted from a PDF often have
+ * no blank lines, so a job's date range ("2021 - Present") must not be
+ * mistaken for a phone number.
+ */
 function headlineAfter(lines: string[]): number {
   const nameLine = lines.findIndex((line) => line.trim().length > 0);
-  return Math.max(
-    nameLine,
-    ...lines.slice(0, 6).map((line, index) => (/@|\+?\d[\d\s()-]{6,}|linkedin|github|\.com/i.test(line) ? index : -1)),
-  );
+  let after = nameLine;
+  for (let index = nameLine + 1; index < Math.min(lines.length, 8); index += 1) {
+    const line = lines[index]!;
+    if (SECTION_HEADING.test(line)) break;
+    if (isContactLine(line)) after = index;
+  }
+  return after;
 }
 
 function asWritten(found: string): string {

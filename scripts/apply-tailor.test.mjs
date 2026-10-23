@@ -351,3 +351,29 @@ test("size: six long adverts and a long resume fit Apply's limit", () => {
   assert.ok(size < docLimit("apply"), `${size} < ${docLimit("apply")}`);
   assert.equal(docLimit("apply"), 300_000);
 });
+
+
+test("headline: a PDF-extracted resume without blank lines keeps the headline above Experience", () => {
+  const resume = [
+    "Amaka Okafor",
+    "Lagos, Nigeria · +234 803 000 0000 · amaka@example.test",
+    "Experience",
+    "Senior Developer, Synthetic Studio Ltd (2021 - Present)",
+    "Built booking tools in React and TypeScript for clinics.",
+    "Developer, Other Co (Jan 2018 – Dec 2020)",
+    "Education",
+    "B.Sc. Computer Science, University of Lagos (2017)",
+  ].join("\n");
+  const plan = T.planTailoring("Frontend Engineer", resume, "", NOW);
+  const headline = plan.changes.find((change) => change.kind === "headline");
+  assert.equal(headline.after, 1, "after the contact line, before Experience");
+  const lines = T.composeResume(plan, []).split("\n");
+  const at = lines.findIndex((line) => line.startsWith("Frontend Engineer"));
+  assert.ok(at > lines.findIndex((line) => line.includes("amaka@example.test")), "below the contact line");
+  assert.ok(at < lines.indexOf("Experience"), "and above the Experience heading");
+  // The contact block can run over several lines; a date range never counts as a phone number.
+  const twoLine = T.planTailoring("Frontend Engineer", ["Amaka Okafor", "amaka@example.test", "0803 000 0000", "Senior Developer (2021 - Present)"].join("\n"), "", NOW);
+  assert.equal(twoLine.changes.find((change) => change.kind === "headline").after, 2);
+  const noContact = T.planTailoring("Frontend Engineer", ["Amaka Okafor", "Senior Developer, Synthetic Studio Ltd (2021 - Present)", "Built things."].join("\n"), "", NOW);
+  assert.equal(noContact.changes.find((change) => change.kind === "headline").after, 0, "straight after the name");
+});

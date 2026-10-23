@@ -133,10 +133,14 @@ function CopyButton({ text, label = "Copy", className }: { text: string; label?:
 
 function Calc({ kit }: { kit: Extract<Kit, { kind: "calc" }> }) {
   const [values, setValues] = useState<Record<string, string>>({});
+  // "7,5", "abc" or "1,50": say what is wrong instead of showing a figure from a misread number.
+  const hint = firstHint(kit.fields.filter((field) => field.kind === "number").map((field) => values[field.id]));
+  const letters = kit.fields.find((field) => field.kind === "number" && values[field.id]?.trim() && !Number.isFinite(typedNumber(values[field.id])));
+  const problem = hint ?? (letters ? `${letters.label}: enter a number, like ${letters.placeholder ?? "12.5"}.` : null);
   return (
     <div>
       <Fields fields={kit.fields} values={values} onChange={setValues} />
-      <Lines lines={kit.run(values)} />
+      <Lines lines={problem ? [{ label: "Check the figures", value: problem }] : kit.run(values)} />
     </div>
   );
 }
@@ -174,7 +178,10 @@ function Fields({
             />
           ) : (
             <TextInput
-              type={field.kind === "number" || field.kind === "date" || field.kind === "time" ? field.kind : "text"}
+              // Numbers are typed into a text box: a number input silently drops the
+              // comma in "7,5" (making it 75) and blanks letters, so the dot hint from
+              // src/lib/number-input.ts could never show. Every reader uses typedNumber.
+              type={field.kind === "date" || field.kind === "time" ? field.kind : "text"}
               inputMode={field.kind === "number" ? "decimal" : undefined}
               value={values[field.id] ?? ""}
               placeholder={field.placeholder}
