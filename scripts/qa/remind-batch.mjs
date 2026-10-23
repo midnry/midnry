@@ -28,10 +28,30 @@ const headers = { origin: BASE };
 const ADMIN = "qa-admin@example.test";
 const STAMP = Date.now().toString(36);
 const NOW = new Date("2026-10-24T10:00:00+01:00");
+// QA_LIVE=1 (the live site): a new synthetic free account instead of the local admin,
+// and no Share step (shared projects need Midnry Pass).
+const LIVE = process.env.QA_LIVE === "1";
+const LIVE_ACCOUNT = { email: `qa-remind-live-${STAMP}@example.test`, password: "remind-live-pass-1", name: "QA Remind Live", ageConfirmed: true };
+let liveCreated = false;
 
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });
 
 async function signInAdmin(ctx) {
+  if (LIVE) {
+    if (!liveCreated) {
+      liveCreated = true;
+      appendFileSync("screenshots/qa/test-accounts.jsonl", JSON.stringify({ email: LIVE_ACCOUNT.email, password: LIVE_ACCOUNT.password, base: BASE }) + "\n");
+      const up = await ctx.request.post(`${BASE}/api/auth/sign-up/email`, { headers, data: LIVE_ACCOUNT });
+      if (up.ok()) return;
+    }
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const r = await ctx.request.post(`${BASE}/api/auth/sign-in/email`, { headers, data: LIVE_ACCOUNT });
+      if (r.ok()) return;
+      if (r.status() !== 429) throw new Error(`sign-in: ${r.status()}`);
+      await new Promise((resolve) => setTimeout(resolve, 12000));
+    }
+    throw new Error("sign-in: still rate limited");
+  }
   for (const password of ["payouts-qa-pass-1", "outpost-zero-qa-1"]) {
     const up = await ctx.request.post(`${BASE}/api/auth/sign-up/email`, { headers, data: { email: ADMIN, password, name: "QA Admin", ageConfirmed: true } });
     if (up.ok()) {
@@ -213,28 +233,32 @@ async function run(mobile) {
   await page.waitForTimeout(300);
   ok((await rowButton(errand).count()) === 0, "after Close it leaves the Inbox");
 
-  // 7. Share asks first; shared delete is honest.
-  await nav(new RegExp(`^${work}$`));
-  ok((await rowButton(`${errand} edited`).count()) === 1, "the moved task is in the project");
-  await page.getByRole("button", { name: "Share", exact: true }).click();
-  const confirm = page.locator("[data-remind-share-confirm]");
-  ok(await confirm.isVisible(), "Share opens a confirmation instead of sharing at once");
-  const confirmText = (await confirm.textContent()) ?? "";
-  ok(/becomes a shared project/.test(confirmText) && /can't turn it back/.test(confirmText) && /deleted for everyone/.test(confirmText), "it says what sharing does, that it can't be turned back, and what delete does");
-  await snap("share-confirm");
-  await confirm.getByRole("button", { name: "Cancel" }).click();
-  ok((await confirm.count()) === 0 && (await page.getByRole("button", { name: /^People/ }).count()) === 0, "Cancel leaves it a personal project");
-  await page.getByRole("button", { name: "Share", exact: true }).click();
-  await confirm.getByRole("button", { name: "Yes, share it" }).click();
-  await page.getByRole("button", { name: /Hide people|People/ }).first().waitFor({ timeout: 15000 });
-  ok((await page.locator("aside button", { hasText: `👥 ${work}` }).count()) === 1, "Yes, share it makes it a shared project");
-  await page.getByRole("button", { name: "Delete project" }).click();
-  const del = page.locator("[data-remind-delete-confirm]");
-  const delText = (await del.textContent()) ?? "";
-  ok(/Its task is deleted for everyone in it, not moved to your Inbox/.test(delText) && /can't be undone/.test(delText), `the shared delete warning is accurate ("${delText.slice(0, 90)}…")`);
-  await snap("shared-delete-confirm");
-  await del.getByRole("button", { name: "Delete", exact: true }).click();
-  ok(await seen(toast("Project deleted.")), "deleting the shared project works after confirming");
+  if (LIVE) console.log("(live: Share step skipped, it needs Midnry Pass)");
+  else {
+    // 7. Share asks first; shared delete is honest.
+    await nav(new RegExp(`^${work}$`));
+    ok((await rowButton(`${errand} edited`).count()) === 1, "the moved task is in the project");
+    await page.getByRole("button", { name: "Share", exact: true }).click();
+    const confirm = page.locator("[data-remind-share-confirm]");
+    ok(await confirm.isVisible(), "Share opens a confirmation instead of sharing at once");
+    const confirmText = (await confirm.textContent()) ?? "";
+    ok(/becomes a shared project/.test(confirmText) && /can't turn it back/.test(confirmText) && /deleted for everyone/.test(confirmText), "it says what sharing does, that it can't be turned back, and what delete does");
+    await snap("share-confirm");
+    await confirm.getByRole("button", { name: "Cancel" }).click();
+    ok((await confirm.count()) === 0 && (await page.getByRole("button", { name: /^People/ }).count()) === 0, "Cancel leaves it a personal project");
+    await page.getByRole("button", { name: "Share", exact: true }).click();
+    await confirm.getByRole("button", { name: "Yes, share it" }).click();
+    await page.getByRole("button", { name: /Hide people|People/ }).first().waitFor({ timeout: 15000 });
+    ok((await page.locator("aside button", { hasText: `👥 ${work}` }).count()) === 1, "Yes, share it makes it a shared project");
+    await page.getByRole("button", { name: "Delete project" }).click();
+    const del = page.locator("[data-remind-delete-confirm]");
+    const delText = (await del.textContent()) ?? "";
+    ok(/Its task is deleted for everyone in it, not moved to your Inbox/.test(delText) && /can't be undone/.test(delText), `the shared delete warning is accurate ("${delText.slice(0, 90)}…")`);
+    await snap("shared-delete-confirm");
+    await del.getByRole("button", { name: "Delete", exact: true }).click();
+    ok(await seen(toast("Project deleted.")), "deleting the shared project works after confirming");
+
+  }
 
   if (mobile) {
     const width = await page.evaluate(() => document.documentElement.scrollWidth);
