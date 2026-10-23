@@ -55,14 +55,23 @@ ctx.on("page", (page) => {
   });
 });
 {
-  const up = await ctx.request.post(`${BASE}/api/auth/sign-up/email`, { headers, data: { email: EMAIL, password: PASSWORD, name: "QA Recovery", ageConfirmed: true } });
+  const up = await authPost("/api/auth/sign-up/email", { email: EMAIL, password: PASSWORD, name: "QA Recovery", ageConfirmed: true });
   if (!up.ok()) {
-    const r = await ctx.request.post(`${BASE}/api/auth/sign-in/email`, { headers, data: { email: EMAIL, password: PASSWORD } });
+    const r = await authPost("/api/auth/sign-in/email", { email: EMAIL, password: PASSWORD });
     if (!r.ok()) throw new Error("Could not sign in as the recovery QA account");
   }
 }
 
 const isSave = (req) => req.method() === "POST" && isServerFn(req, "saveDoc");
+/** Sign-in calls, waiting out the live site's rate limit (HTTP 429) instead of failing. */
+async function authPost(path, data) {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const res = await ctx.request.post(`${BASE}${path}`, { headers, data });
+    if (res.status() !== 429) return res;
+    await new Promise((resolve) => setTimeout(resolve, 12000));
+  }
+  return ctx.request.post(`${BASE}${path}`, { headers, data });
+}
 console.log(`target: ${TARGET} at ${BASE}`);
 const CARD = [
   ["name", "Your name"],
@@ -247,7 +256,7 @@ const heldC = new Promise((resolve) => (releaseC = resolve));
 const hold = async (route) => {
   if (!isSave(route.request())) return route.continue();
   await heldC;
-  return route.continue();
+  return route.continue().catch(() => {});
 };
 await tabC.route("**/_serverFn/**", hold);
 await tabC.getByLabel(FIELD).fill("Typed then left; my phone saved first");
@@ -289,7 +298,7 @@ await open(tabD);
 const slow = async (route) => {
   if (!isSave(route.request())) return route.continue();
   await new Promise((resolve) => setTimeout(resolve, 1500));
-  return route.continue();
+  return route.continue().catch(() => {});
 };
 await tabD.route("**/_serverFn/**", slow);
 await tabD.getByLabel(FIELD).fill("Typed then left; saved late");
@@ -316,7 +325,8 @@ await tabE.getByLabel(FIELD).waitFor({ timeout: 60000 });
 const failLate = async (route) => {
   if (!isSave(route.request())) return route.continue();
   await new Promise((resolve) => setTimeout(resolve, 1500));
-  return route.abort("failed");
+  // The interceptor may have been removed while waiting: then the request is already handled.
+  return route.abort("failed").catch(() => {});
 };
 await tabE.route("**/_serverFn/**", failLate);
 await tabE.getByLabel(FIELD).fill("Typed then left; the network dropped");
@@ -330,13 +340,17 @@ ok(kept?.reason === "retrying" && kept.payload.includes("the network dropped"), 
 ok((await name(tabE)) === "Base E", "E: the server still has the old value");
 await tabE.unroute("**/_serverFn/**", failLate);
 await tabE.goto(`${BASE}/apps/${SLUG}`, { waitUntil: "networkidle", timeout: 120000 });
+// Two correct outcomes, depending on timing: a retry left over from the closed tab saves it once the
+// network is back (nothing to offer), or the retries ran out first and reopening offers it back.
 const offerE2 = panel(tabE, "recovered");
-await offerE2.waitFor({ timeout: 15000 });
-await offerE2.getByRole("button", { name: "Keep my version" }).click();
-await offerE2.getByRole("button", { name: "Replace it with my version" }).click();
-await offerE2.waitFor({ state: "detached", timeout: 15000 });
-await savedText(tabE);
-ok((await name(tabE)) === "Typed then left; the network dropped", "E: restored and saved");
+const offeredE = await offerE2.waitFor({ timeout: 15000 }).then(() => true, () => false);
+if (offeredE) {
+  await offerE2.getByRole("button", { name: "Keep my version" }).click();
+  await offerE2.getByRole("button", { name: "Replace it with my version" }).click();
+  await offerE2.waitFor({ state: "detached", timeout: 15000 });
+  await savedText(tabE);
+}
+ok((await name(tabE)) === "Typed then left; the network dropped", `E: never lost (${offeredE ? "offered back, restored and saved" : "saved by the retry once the network was back"})`);
 await tabE.waitForTimeout(800);
 ok(!(await copies(tabE)).some((c) => c.slug === SLUG), "E: the copy is cleared once saved");
 await tabE.close();
@@ -354,7 +368,7 @@ let heldF = new Promise((resolve) => (releaseF = resolve));
 const holdF = async (route) => {
   if (!isSave(route.request())) return route.continue();
   await heldF;
-  return route.continue();
+  return route.continue().catch(() => {});
 };
 await tabF.route("**/_serverFn/**", holdF);
 await tabF.getByLabel(FIELD).fill("Typed with storage blocked");
@@ -402,10 +416,10 @@ await other.goto(`${BASE}/apps/memoir`, { waitUntil: "networkidle", timeout: 120
 ok(await noOffer(other), "G: another app is not offered the copy");
 await other.close();
 // Sign out, sign in as a second account in the same browser.
-await ctx.request.post(`${BASE}/api/auth/sign-out`, { headers, data: {} });
+await authPost("/api/auth/sign-out", {});
 const SECOND = { email: "qa-recovery-2@example.test", password: "recovery-qa-pass-2", name: "QA Recovery Two", ageConfirmed: true };
-if (!(await ctx.request.post(`${BASE}/api/auth/sign-up/email`, { headers, data: SECOND })).ok()) {
-  const r = await ctx.request.post(`${BASE}/api/auth/sign-in/email`, { headers, data: SECOND });
+if (!(await authPost("/api/auth/sign-up/email", SECOND)).ok()) {
+  const r = await authPost("/api/auth/sign-in/email", SECOND);
   if (!r.ok()) throw new Error("second account sign-in failed");
 }
 const two = await ctx.newPage();
@@ -419,8 +433,8 @@ ok((await copies(two)).some((c) => c.owner === ownerOne && c.slug === SLUG), "G:
 await two.screenshot({ path: `${OUT}/G1-second-account${MOBILE ? "-mobile" : ""}.png` });
 await two.close();
 // Back to the first account: offered again.
-await ctx.request.post(`${BASE}/api/auth/sign-out`, { headers, data: {} });
-if (!(await ctx.request.post(`${BASE}/api/auth/sign-in/email`, { headers, data: { email: EMAIL, password: PASSWORD } })).ok()) throw new Error("sign back in failed");
+await authPost("/api/auth/sign-out", {});
+if (!(await authPost("/api/auth/sign-in/email", { email: EMAIL, password: PASSWORD })).ok()) throw new Error("sign back in failed");
 const one = await ctx.newPage();
 await open(one);
 const offerG = panel(one, "recovered");
