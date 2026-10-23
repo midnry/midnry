@@ -57,3 +57,5 @@ main = game-look at 7ba1c7c (`v=review-fixes-20261023`). Live files verified by 
 Last Signal match (Calder Quay) started on www.midnry.com with no page errors.
 
 Deployed again 2026-10-23: main = e3802f4 (`v=pause-overlays-20261023`): pause over the match, leftover warnings cleared.
+
+Deployed again 2026-10-23: main = 57a6d99 (`v=boot-lobby-20261023`): no old menu flash on load.
