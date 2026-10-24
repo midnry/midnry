@@ -130,5 +130,6 @@ docs/outpost-polish-2026/before-after-*.jpg.
 - Signed-out visitors: `{ op: "me" }` answers 200 `{ signedOut: true }` instead of a 401 in every
   visitor's console; `record` still answers 401 when signed out. Checked on a local production
   build (`node .output/server/index.mjs` on :8090).
-- Cache key `v=effects-warm-20261024`. Checks: outpost tests 327/327, tsc clean, build:render pass,
+- Cache key `v=effects-warm-20261024`. DEPLOYED 2026-10-24 (owner said "deploy"): main = 1c8fb8c, live
+  page key, bundle and account script hashes verified; live `me` answers 200. Checks: outpost tests 327/327, tsc clean, build:render pass,
   `signal-hitches.mjs 640 3000 45 performance 360` errors [], 7/7 bots dressed.
