@@ -1851,15 +1851,118 @@
         color: #ff675c;
         font-weight: 900;
       }
+      /* Combat feedback (outpost-hit-feedback.js). Hit marker: four ticks
+         around the crosshair, the damage dealt beside them; a kill turns it
+         gold and larger with an ELIMINATED / DOWN tag above. Opacity and the
+         pop scale are set per frame by the module, so the camera-motion
+         setting and system Reduce Motion can make it instant: nothing here
+         animates. */
       midnry-fps .mf-hitmark {
         position: absolute;
-        top: 46%;
+        top: 50%;
         left: 50%;
-        transform: translateX(-50%);
-        font: 900 20px var(--mf-body);
+        width: 0;
+        height: 0;
         color: #ffe0a0;
-        text-shadow: 2px 2px #101720;
         pointer-events: none;
+      }
+      midnry-fps .mf-hitmark svg {
+        position: absolute;
+        left: -24px;
+        top: -24px;
+        width: 48px;
+        height: 48px;
+        overflow: visible;
+        filter: drop-shadow(0 1px 1px #000d);
+      }
+      midnry-fps .mf-hitmark .mf-hm-ring {
+        opacity: 0;
+      }
+      midnry-fps .mf-hitmark b {
+        position: absolute;
+        left: 30px;
+        top: 0;
+        transform: translateY(-50%);
+        font: 700 18px/1 var(--mf-display);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.02em;
+        text-shadow: 0 1px 2px #000, 0 0 6px #0009;
+        white-space: nowrap;
+      }
+      midnry-fps .mf-hitmark span {
+        display: none;
+        position: absolute;
+        left: 0;
+        bottom: 34px;
+        transform: translateX(-50%);
+        padding: 4px 10px 5px;
+        border: 1px solid #ffc85766;
+        border-radius: 6px;
+        background: #0b0d0cd9;
+        color: var(--mf-accent, #ffc857);
+        font: 700 12px/1 var(--mf-display);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        box-shadow: 0 4px 14px #0006;
+      }
+      midnry-fps .mf-hitmark.mf-kill {
+        color: var(--mf-accent, #ffc857);
+      }
+      midnry-fps .mf-hitmark.mf-kill .mf-hm-ring {
+        opacity: 1;
+      }
+      midnry-fps .mf-hitmark.mf-kill b {
+        left: 38px;
+        font-size: 22px;
+      }
+      midnry-fps .mf-hitmark.mf-kill span {
+        display: block;
+      }
+      /* Damage ring: a red arc toward each attacker, fading over 0.7 s; a
+         dashed neutral ring when a hazard (haze, water) hurts you instead.
+         Sized to sit inside the free centre of a phone screen, clear of the
+         crosshair ticks, the "−HP" line below and the joystick/fire cluster. */
+      midnry-fps .mf-dmgring {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: clamp(96px, 30vmin, 112px);
+        height: clamp(96px, 30vmin, 112px);
+        transform: translate(-50%, -50%);
+        overflow: visible;
+        pointer-events: none;
+        filter: drop-shadow(0 0 2px #000c);
+      }
+      midnry-fps .mf-dmgring circle {
+        fill: none;
+        stroke-linecap: round;
+        transform-origin: 0 0;
+      }
+      midnry-fps .mf-dmgring .mf-dmgarc {
+        stroke: #ff5b48;
+        stroke-width: 3.8;
+      }
+      midnry-fps .mf-dmgring .mf-dmgpulse {
+        stroke: #e8dcc4;
+        stroke-width: 2.2;
+        stroke-dasharray: 9 7;
+      }
+      midnry-fps .mf-shell[data-death-stage="takedown"] .mf-dmgring,
+      midnry-fps .mf-lifelosing :is(.mf-dmgring, .mf-hitmark) {
+        display: none;
+      }
+      /* Kill confirmation: the health and ammo cards flash gold for 0.6 s. */
+      midnry-fps .mf-shell .mf-bottom .mf-stat strong {
+        transition: color 0.25s, text-shadow 0.25s;
+      }
+      midnry-fps .mf-shell .mf-bottom.mf-killflash .mf-stat strong {
+        color: var(--mf-accent, #ffc857) !important;
+        text-shadow: 0 0 14px #ffc857aa;
+      }
+      midnry-fps .mf-shell .mf-bottom.mf-killflash .mf-stat {
+        border-color: var(--mf-accent, #ffc857) !important;
+        box-shadow: 0 0 0 1px #ffc85766, 0 0 18px #ffc85755 !important;
       }
       midnry-fps .mf-super {
         position: absolute;
@@ -3123,6 +3226,7 @@
       import { OutpostMenu } from "./outpost-menu.js";
       import { OutpostHud } from "./outpost-hud.js";
       import { SignalHud } from "./outpost-signal-hud.js";
+      import { HitFeedback } from "./outpost-hit-feedback.js";
       import { OutpostSkin } from "./outpost-skin.js";
       import { SceneTransition } from "./outpost-transition.js";
       import { OutpostGamepad } from "./outpost-gamepad.js";
@@ -3154,6 +3258,7 @@
         requestAimLock,
       } from "./outpost-look.js";
       import { MenuUI } from "./outpost-ui.js";
+      import { TouchLayout } from "./outpost-touch-layout.js";
       import { requireSignIn } from "./outpost-account.js";
       (() => {
         "use strict";
@@ -3308,6 +3413,9 @@
             this.budget = new FrameBudget();
             this.academy = new Academy(this);
             this.retention = new Retention(this);
+            // Draggable touch controls; the Settings button that opens it is in MenuUI.
+            this.touchLayout = new TouchLayout();
+            this.touchLayout.attach(this);
             this.ui = new MenuUI(this);
             this.protocolUI = new ProtocolUI(this);
             this.spectator = new SpectatorUI(this);
@@ -3946,7 +4054,7 @@
               how = input === "pad" ? "PRESS X" : matchMedia("(pointer: coarse)").matches ? "TAP THE BUTTON" : "PRESS Q",
               what = SUPER_HINTS[weapon.id] || "your weapon's special move";
             this.message(seen < 3 ? `${weapon.super.toUpperCase()} READY · ${how}\n${what}` : `${weapon.super.toUpperCase()} READY · ${how}`, seen < 3 ? 4.5 : 2.5);
-            this.retention?.audio.tone(880, 0.12, 0.12, 0, "triangle", 1320);
+            this.retention?.audio.tone(880, 0.12, 0.12, 0, "triangle", 1320, "ui");
           }
           /** Last Signal stances. One stance control everywhere: tap to crouch or
            * stand, hold to lie down (hold again to get up), and while sprinting
@@ -4121,7 +4229,7 @@
             void el.offsetWidth;
             el.classList.add("mf-on");
             this.shell.classList.add("mf-lifelosing");
-            this.retention?.audio.tone(140, 0.5, 0.2, 0, "sawtooth", 40);
+            this.retention?.audio.tone(140, 0.5, 0.2, 0, "sawtooth", 40, "alerts");
             navigator.vibrate?.(reduced ? 0 : [60, 40, 120]);
             // Hold the round still and drop held input, as a death does.
             // Counted in frame time (each frame at most 100 ms), so a hitch while
@@ -4269,16 +4377,11 @@
                 this.$(".mf-damage").textContent = "−" + Math.ceil(amount) + " HP";
               }
             }
-            if (p.hitSeq !== this.hitSeen) {
-              const total = Math.max(0, (p.hitTotal || 0) - (this.hitTotalSeen || 0));
-              this.hitTotalSeen = p.hitTotal;
-              this.hitSeen = p.hitSeq;
-              this.hitUntil = now + 240;
-              this.$(".mf-hitmark").textContent = "✕ " + Math.ceil(total || p.hitDamage || 0);
-            }
+            // Hit markers, damage-direction arcs and kill confirmation live in
+            // outpost-hit-feedback.js; it reads the same counters once a frame.
+            (this.hitFeedback ||= new HitFeedback(this)).observe(now);
             const hurt = now < this.damageUntil;
             this.$(".mf-damage").hidden = !hurt;
-            this.$(".mf-hitmark").hidden = now > this.hitUntil;
             this.$(".mf-hp").classList.toggle("mf-hp-hit", hurt);
           }
           flushEvents() {
@@ -5652,23 +5755,8 @@
               c.fillStyle = g;
               c.fillRect(0, 0, this.w, this.h);
             }
-            if (hurt > 0 && this.player.damageAngle !== null) {
-              const a = this.player.damageAngle - this.player.a - Math.PI / 2;
-              c.save();
-              c.translate(this.w / 2, this.h / 2);
-              c.rotate(a);
-              c.fillStyle = "#ff5b48";
-              c.strokeStyle = "#171d24";
-              c.lineWidth = 3;
-              c.beginPath();
-              c.moveTo(70, -12);
-              c.lineTo(88, 0);
-              c.lineTo(70, 12);
-              c.closePath();
-              c.fill();
-              c.stroke();
-              c.restore();
-            }
+            // Damage direction is the HUD ring (outpost-hit-feedback.js), so
+            // the view itself draws no arrow.
           }
           loop(now) {
             if (this.loading) {

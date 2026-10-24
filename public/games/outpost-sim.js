@@ -203,6 +203,10 @@ export class Arena {
         damageSeq: 0,
         damageTotal: 0,
         damageAngle: null,
+        // Where recent damage came from, for the HUD's direction arcs: the
+        // last few hits as {x, y, at, seq}; x/y are null for haze, water and
+        // other hazards with no attacker. Presentation only; no rule reads it.
+        damageFrom: [],
         hitSeq: 0,
         hitDamage: 0,
         hitTotal: 0,
@@ -555,6 +559,17 @@ export class Arena {
       target.damageSeq = (target.damageSeq || 0) + 1;
       target.damageTotal = (target.damageTotal || 0) + actual;
       target.damageAngle = source ? Math.atan2(source.y - target.y, source.x - target.x) : null;
+      // Remember each hit's origin (not only the last one, so two attackers
+      // in one tick both show on the HUD). Capped so snapshots stay small.
+      // Self-inflicted damage (own field, own blast) has no direction either.
+      const own = !source || source === target;
+      (target.damageFrom ||= []).push({
+        x: own ? null : source.x,
+        y: own ? null : source.y,
+        at: this.time,
+        seq: target.damageSeq,
+      });
+      if (target.damageFrom.length > 6) target.damageFrom.splice(0, target.damageFrom.length - 6);
       target.cloakedUntil = 0;
       target.hurtAt = this.time;
     }
@@ -585,6 +600,14 @@ export class Arena {
     }
     if (source && source !== target) {
       source.kills++;
+      // Who went down, for the attacker's kill confirmation on the HUD. In
+      // Last Signal a victim with lives left is only downed, not eliminated.
+      source.lastKill = {
+        seq: source.kills,
+        name: target.name || "Rival",
+        down: this.mode === "signal" && target.lives > 0 && !target.departed,
+        at: this.time,
+      };
       this.emit(source.id, "RIVAL ELIMINATED");
     }
     if (this.mode !== "training")

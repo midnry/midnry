@@ -14,6 +14,21 @@ import { weaponOf, OUTFITS, mapOf, WEAPONS } from "./outpost-sim.js";
 import { standingsHTML } from "./outpost-series.js";
 import { BattleMusic, battleIntensity } from "./outpost-music.js";
 import { spatialSound } from "./outpost-spatial-audio.js";
+import {
+  BUSES,
+  TRIGGERS,
+  DUCK_HOLD,
+  DUCK_ATTACK,
+  DUCK_RELEASE,
+  normalizeSettings,
+  levelFor,
+  masterLevel,
+  activeTriggers,
+  duckGainFor,
+  duckDepthDb,
+  rampTimeConstant,
+  shotPresence,
+} from "./outpost-mix.js";
 import { recordMatch } from "./outpost-account.js";
 import { finishOf, money, drawFinish } from "./outpost-finishes.js";
 import { CHARACTERS } from "./outpost-characters.js";
@@ -37,18 +52,36 @@ const write = (key, value) => {
     localStorage.setItem(key, JSON.stringify(value));
   } catch {}
 };
-/** The procedural sounds are mixed quiet; the master level lifts them so
- * the default volume is clearly audible on laptop and phone speakers. A
- * limiter after the master keeps the loudest moments from clipping. */
-const LOUDNESS = 1.7;
-/** Gesture-unlocked procedural audio; each game instance owns and closes its context. */
+/** Gesture-unlocked procedural audio; each game instance owns and closes its
+ * context. Every sound goes to a named bus (see outpost-mix.js for the table,
+ * the levels and the ducking rules); the buses meet at `master`, and a
+ * limiter after that keeps stacked gunfire from clipping. */
 export class FieldAudio {
   constructor() {
-    const p = read("midnry-outpost-audio");
-    this.volume = Number.isFinite(p?.volume) ? Math.max(0, Math.min(1, p.volume)) : 0.35;
-    this.muted = Boolean(p?.muted);
-    this.music = Number.isFinite(p?.music) ? Math.max(0, Math.min(1, p.music)) : 0.6;
+    const p = normalizeSettings(read("midnry-outpost-audio"));
+    // Kept as plain properties (not one settings object) because the pause
+    // menu, Settings and the QA checks read and write them directly.
+    this.volume = p.volume;
+    this.muted = p.muted;
+    this.music = p.music;
+    this.effects = p.effects;
+    this.alerts = p.alerts;
+    this.combat = p.combat;
     this.voices = 0;
+    // Context time until which each trigger bus counts as busy (ducking).
+    this.holds = { weapons: 0, alerts: 0, voice: 0 };
+    this.duckTimer = 0;
+  }
+  /** The sliders and choices as the mix module wants them. */
+  settingsOf() {
+    return {
+      volume: this.volume,
+      muted: this.muted,
+      effects: this.effects,
+      music: this.music,
+      alerts: this.alerts,
+      combat: this.combat,
+    };
   }
   /** Create / resume the audio context. Browsers only allow this during a
    * user gesture (click, tap, key), so every gesture in the game calls it
@@ -68,6 +101,8 @@ export class FieldAudio {
       }
       if (!this.master) {
         this.master = this.ctx.createGain();
+        // A gentle brick-wall stage: it only works on the loudest moments
+        // (several shots plus a siren), so the mix below it is what you hear.
         this.limiter = this.ctx.createDynamicsCompressor();
         this.limiter.threshold.value = -4;
         this.limiter.knee.value = 2;
@@ -76,6 +111,28 @@ export class FieldAudio {
         this.limiter.release.value = 0.15;
         this.master.connect(this.limiter);
         this.limiter.connect(this.ctx.destination);
+        // One GainNode per bus into master. Each starts at its settings
+        // level so the first sound is already at the right volume.
+        this.buses = {};
+        this.keepAlive = [];
+        const s = this.settingsOf();
+        for (const bus of BUSES) {
+          const g = this.ctx.createGain();
+          g.gain.value = levelFor(bus, s);
+          g.connect(this.master);
+          this.buses[bus] = g;
+          // A silent source keeps the bus processed. Chrome stops running a
+          // GainNode's automation once nothing is connected to it (a bus
+          // between shots), so a ducking or settings ramp would only start
+          // when the next sound arrived. Zero offset: it adds no signal.
+          if (this.ctx.createConstantSource) {
+            const keep = this.ctx.createConstantSource();
+            keep.offset.value = 0;
+            keep.connect(g);
+            keep.start();
+            this.keepAlive.push(keep);
+          }
+        }
         this.level();
         const n = this.ctx.sampleRate;
         this.noise = this.ctx.createBuffer(1, n, n);
@@ -105,44 +162,128 @@ export class FieldAudio {
     this.level();
     this.onChange?.();
   }
+  /** Apply the sliders: master (with mute) and every bus, then save. Bus
+   * levels go through the ducker so a change mid-fight lands on the dipped
+   * value rather than jumping over it. */
   level() {
     if (this.master)
-      this.master.gain.setTargetAtTime(this.muted ? 0 : this.volume * LOUDNESS, this.ctx.currentTime, 0.025);
-    if (this.musicGain) this.musicGain.gain.setTargetAtTime(this.music * 0.55, this.ctx.currentTime, 0.05);
-    write("midnry-outpost-audio", { volume: this.volume, muted: this.muted, music: this.music });
+      this.master.gain.setTargetAtTime(masterLevel(this.settingsOf()), this.ctx.currentTime, 0.025);
+    this.applyDucks(0.05);
+    write("midnry-outpost-audio", {
+      volume: this.volume,
+      muted: this.muted,
+      music: this.music,
+      effects: this.effects,
+      alerts: this.alerts,
+      combat: this.combat,
+    });
   }
-  /** Last Signal battle music, through the master volume and its own level. */
+  /** The output node for a bus (falls back to master before unlock). */
+  out(bus) {
+    return this.buses?.[bus] || this.master;
+  }
+  /** Mark a trigger bus busy: ducking starts now (fast attack) and lets go
+   * `DUCK_HOLD` after the last sound (slow release). One timer re-evaluates
+   * at the next hold end, so bursts and sirens read as a single dip. */
+  duck(bus) {
+    if (!TRIGGERS.includes(bus) || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    this.holds[bus] = Math.max(this.holds[bus], now + DUCK_HOLD[bus]);
+    this.applyDucks(DUCK_ATTACK);
+  }
+  /** Hold the voice trigger while someone is speaking (called every frame). */
+  voiceActive(on) {
+    if (on) this.duck("voice");
+  }
+  /** Ramp every bus to (settings level × duck gain) over `seconds`, and
+   * arm the release timer for the earliest hold still running. */
+  applyDucks(seconds) {
+    if (!this.buses || !this.ctx || this.ctx.state === "closed") return;
+    const s = this.settingsOf(),
+      now = this.ctx.currentTime,
+      active = activeTriggers(this.holds, now),
+      constant = rampTimeConstant(seconds);
+    for (const bus of BUSES) {
+      const g = this.buses[bus].gain,
+        target = levelFor(bus, s) * duckGainFor(bus, active, s);
+      g.cancelScheduledValues(now);
+      g.setTargetAtTime(Math.max(0, target), now, constant);
+    }
+    clearTimeout(this.duckTimer);
+    this.duckTimer = 0;
+    const ends = TRIGGERS.map((t) => this.holds[t]).filter((end) => end > now);
+    if (ends.length)
+      this.duckTimer = setTimeout(() => {
+        this.duckTimer = 0;
+        this.applyDucks(DUCK_RELEASE);
+      }, (Math.min(...ends) - now) * 1000 + 5);
+  }
+  /** Debug / QA view of the graph: live bus gains, their settings levels,
+   * the dip each one is under and which triggers are active. */
+  mixState() {
+    const s = this.settingsOf(),
+      now = this.ctx?.currentTime ?? 0,
+      active = activeTriggers(this.holds, now);
+    return {
+      running: this.ctx?.state === "running",
+      master: this.master ? this.master.gain.value : null,
+      masterLevel: masterLevel(s),
+      buses: Object.fromEntries(
+        BUSES.map((bus) => [
+          bus,
+          {
+            gain: this.buses?.[bus] ? this.buses[bus].gain.value : null,
+            level: levelFor(bus, s),
+            duckDb: duckDepthDb(bus, active, s),
+          },
+        ]),
+      ),
+      ducking: active,
+      voices: this.voices,
+      settings: s,
+    };
+  }
+  /** Can a new sound on `bus` start: context running, sound on, the bus not
+   * switched off (combat Off, a zero slider) and a free voice. Skipping a
+   * silent bus's sounds entirely keeps voices for the ones you can hear. */
+  audible(bus, gain) {
+    const a = this.ctx;
+    return Boolean(
+      a &&
+        a.state === "running" &&
+        !this.muted &&
+        this.volume &&
+        gain > 0 &&
+        this.voices < 16 &&
+        levelFor(bus, this.settingsOf()) > 0,
+    );
+  }
+  /** Last Signal battle music, through its own bus (ducked under gunfire,
+   * alerts and voice) and the master volume. */
   battle() {
     if (!this.master || this.ctx.state !== "running") return null;
-    if (!this.score) {
-      this.musicGain = this.ctx.createGain();
-      this.musicGain.gain.value = this.music * 0.55;
-      this.musicGain.connect(this.master);
-      this.score = new BattleMusic(this.ctx, this.musicGain);
-    }
+    if (!this.score) this.score = new BattleMusic(this.ctx, this.out("music"));
     return this.score;
   }
-  tone(frequency, duration = 0.1, gain = 0.12, pan = 0, type = "triangle", end = frequency) {
-    const a = this.ctx;
-    if (!a || a.state !== "running" || this.muted || !this.volume || gain <= 0 || this.voices >= 16)
-      return;
-    const source = a.createOscillator();
+  tone(frequency, duration = 0.1, gain = 0.12, pan = 0, type = "triangle", end = frequency, bus = "world") {
+    if (!this.audible(bus, gain)) return;
+    const a = this.ctx,
+      source = a.createOscillator();
     source.type = type;
     source.frequency.setValueAtTime(frequency, a.currentTime);
     source.frequency.exponentialRampToValueAtTime(Math.max(20, end), a.currentTime + duration);
-    this.play(source, duration, gain, pan);
+    this.play(source, duration, gain, pan, source, bus);
   }
-  hiss(duration = 0.12, gain = 0.12, frequency = 1800, pan = 0) {
-    const a = this.ctx;
-    if (!a || a.state !== "running" || this.muted || !this.volume || gain <= 0 || this.voices >= 16)
-      return;
-    const source = a.createBufferSource();
+  hiss(duration = 0.12, gain = 0.12, frequency = 1800, pan = 0, bus = "world") {
+    if (!this.audible(bus, gain)) return;
+    const a = this.ctx,
+      source = a.createBufferSource();
     source.buffer = this.noise;
     const filter = a.createBiquadFilter();
     filter.type = "lowpass";
     filter.frequency.value = frequency;
     source.connect(filter);
-    this.play(source, duration, gain, pan, filter);
+    this.play(source, duration, gain, pan, filter, bus);
   }
   /** Four seconds of white or brown (deep, rumbling) noise, made once: long
    * enough that looped weather never audibly repeats. */
@@ -164,11 +305,10 @@ export class FieldAudio {
   }
   /** A filtered noise swell (gust, thunder, rumble, crumbling), optionally
    * starting `delay` seconds from now (thunder arrives after its flash). */
-  swell({ delay = 0, attack = 0.2, duration = 1.5, gain = 0.1, frequency = 800, end = frequency, type = "lowpass", q = 0.7, pan = 0, brown = false }) {
-    const a = this.ctx;
-    if (!a || a.state !== "running" || this.muted || !this.volume || gain <= 0 || this.voices >= 16)
-      return;
-    const at = a.currentTime + Math.max(0, delay),
+  swell({ delay = 0, attack = 0.2, duration = 1.5, gain = 0.1, frequency = 800, end = frequency, type = "lowpass", q = 0.7, pan = 0, brown = false, bus = "world" }) {
+    if (!this.audible(bus, gain)) return;
+    const a = this.ctx,
+      at = a.currentTime + Math.max(0, delay),
       source = a.createBufferSource(),
       filter = a.createBiquadFilter(),
       envelope = a.createGain(),
@@ -185,7 +325,8 @@ export class FieldAudio {
     source.connect(filter);
     filter.connect(envelope);
     envelope.connect(panner);
-    panner.connect(this.master);
+    panner.connect(this.out(bus));
+    this.duck(bus);
     this.voices++;
     source.onended = () => {
       for (const node of [source, filter, envelope, panner]) node.disconnect();
@@ -196,8 +337,9 @@ export class FieldAudio {
   }
   /** A looping weather sound (rain, wind, rumble) held at `gain` while it
    * keeps being asked for; it fades out by itself once it stops being asked
-   * for (paused, round over, game closed), so it can never get stuck on. */
-  bed(name, gain, frequency, { type = "lowpass", q = 0.7, brown = false } = {}) {
+   * for (paused, round over, game closed), so it can never get stuck on.
+   * Beds live on the world bus, so they dip under gunfire and alerts. */
+  bed(name, gain, frequency, { type = "lowpass", q = 0.7, brown = false, bus = "world" } = {}) {
     const a = this.ctx;
     if (!a || a.state !== "running" || !this.master) return;
     this.beds ||= new Map();
@@ -215,7 +357,7 @@ export class FieldAudio {
       level.gain.value = 0.0001;
       source.connect(filter);
       filter.connect(level);
-      level.connect(this.master);
+      level.connect(this.out(bus));
       source.start(0, Math.random() * 3);
       b = { source, filter, level };
       this.beds.set(name, b);
@@ -244,7 +386,7 @@ export class FieldAudio {
       this.bedWatch = 0;
     }
   }
-  play(source, duration, gain, pan, out = source) {
+  play(source, duration, gain, pan, out = source, bus = "world") {
     const a = this.ctx,
       envelope = a.createGain(),
       panner = a.createStereoPanner();
@@ -254,7 +396,8 @@ export class FieldAudio {
     envelope.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + duration);
     out.connect(envelope);
     envelope.connect(panner);
-    panner.connect(this.master);
+    panner.connect(this.out(bus));
+    this.duck(bus);
     this.voices++;
     source.onended = () => {
       source.disconnect();
@@ -266,29 +409,49 @@ export class FieldAudio {
     source.start();
     source.stop(a.currentTime + duration + 0.01);
   }
-  shot(kind, pan = 0, gain = 1, cutoff = 10000) {
+  /** Gunfire on the weapons bus. `own` is your gun: a little louder than the
+   * same weapon fired by someone else (whose shot the caller has already
+   * faded for distance), so you always know which shots are yours. */
+  shot(kind, pan = 0, gain = 1, cutoff = 10000, own = false) {
     const heavy = ["rocket", "lob", "shotgun"].includes(kind),
-      melee = ["melee", "dash"].includes(kind);
+      melee = ["melee", "dash"].includes(kind),
+      level = gain * shotPresence(own);
     this.hiss(
       heavy ? 0.22 : 0.085,
-      0.16 * gain,
+      0.16 * level,
       Math.min(cutoff, melee ? 700 : heavy ? 1300 : 3500),
       pan,
+      "weapons",
     );
     if (!melee)
-      this.tone(heavy ? 95 : 220, heavy ? 0.2 : 0.09, 0.13 * gain, pan, "square", heavy ? 35 : 70);
+      this.tone(heavy ? 95 : 220, heavy ? 0.2 : 0.09, 0.13 * level, pan, "square", heavy ? 35 : 70, "weapons");
   }
   step(pan = 0, gain = 1, metal = false, cutoff = 10000) {
-    this.hiss(0.05, 0.075 * gain, Math.min(cutoff, metal ? 1400 : 900), pan);
-    this.tone(metal ? 120 : 70, 0.055, 0.045 * gain, pan, "sine", 35);
+    this.hiss(0.05, 0.075 * gain, Math.min(cutoff, metal ? 1400 : 900), pan, "world");
+    this.tone(metal ? 120 : 70, 0.055, 0.045 * gain, pan, "sine", 35, "world");
   }
   result(won) {
     for (const [i, n] of (won ? [440, 554, 659] : [220, 165]).entries())
-      this.tone(n, 0.25, 0.13, 0, "triangle", n * (1 + i * 0.04));
+      this.tone(n, 0.25, 0.13, 0, "triangle", n * (1 + i * 0.04), "ui");
   }
+  /** Tear down: stop timers, disconnect every bus and the master chain so
+   * nothing holds the graph, then close the context. */
   destroy() {
     clearInterval(this.bedWatch);
     this.bedWatch = 0;
+    clearTimeout(this.duckTimer);
+    this.duckTimer = 0;
+    try {
+      for (const keep of this.keepAlive || []) {
+        keep.stop();
+        keep.disconnect();
+      }
+      for (const g of Object.values(this.buses || {})) g.disconnect();
+      this.master?.disconnect();
+      this.limiter?.disconnect();
+    } catch {}
+    this.keepAlive = [];
+    this.buses = null;
     if (this.ctx) void this.ctx.close().catch(() => {});
   }
 }
@@ -885,7 +1048,7 @@ export class Retention {
     if (countdown > 0) {
       const beat = Math.ceil(countdown);
       if (beat !== this.countBeat && g.running) {
-        this.audio.tone(beat === 1 ? 660 : 440, 0.1, 0.12);
+        this.audio.tone(beat === 1 ? 660 : 440, 0.1, 0.12, 0, "triangle", beat === 1 ? 660 : 440, "alerts");
         this.countBeat = beat;
       }
     } else this.countBeat = 0;
@@ -919,6 +1082,7 @@ export class Retention {
           e.id === p.id ? 0 : v.pan,
           e.id === p.id ? 1 : v.gain * 0.7,
           v.cutoff,
+          e.id === p.id,
         );
       }
       const entry = this.seen.get(e.id),
@@ -943,13 +1107,15 @@ export class Retention {
         }
       }
       if (e.id === g.selfId) {
-        if (e.reloadUntil !== old.reload) this.audio.hiss(0.07, 0.12, 600);
-        if (e.hp < old.hp) this.audio.tone(90, 0.12, 0.18, 0, "sawtooth", 45);
-        if (e.hitSeq !== old.hit) this.audio.tone(1100, 0.035, 0.045);
-        if (e.coresCollected > old.cores) this.audio.tone(740, 0.17, 0.1, 0, "sine", 980);
+        if (e.reloadUntil !== old.reload) this.audio.hiss(0.07, 0.12, 600, 0, "weapons");
+        if (e.hp < old.hp) this.audio.tone(90, 0.12, 0.18, 0, "sawtooth", 45, "hits");
+        if (e.hitSeq !== old.hit) this.audio.tone(1100, 0.035, 0.045, 0, "triangle", 1100, "hits");
+        if (e.coresCollected > old.cores) this.audio.tone(740, 0.17, 0.1, 0, "sine", 980, "ui");
       }
     }
     this.lastStand(g, audible);
+    // Your own push-to-talk ducks the music while you speak (voice bus).
+    this.audio.voiceActive(g.voice?.speaking === true);
     this.hazardSounds(g, audible);
     this.battleMusic(g);
     this.ambience(g, audible);
@@ -963,7 +1129,7 @@ export class Retention {
     if (running !== this.wasRunning) {
       this.wasRunning = running;
       if (running) {
-        this.audio.tone(520, 0.16, 0.07, 0, "triangle", 880);
+        this.audio.tone(520, 0.16, 0.07, 0, "triangle", 880, "ui");
         this.offHintUntil = this.audio.soundOn() ? 0 : performance.now() + 7000;
       }
     }
@@ -1023,7 +1189,7 @@ export class Retention {
       if (stage !== this.disasterStage) {
         if (stage === 1 || stage === 2)
           for (let i = 0; i < 3; i++)
-            setTimeout(() => this.audio.tone(i % 2 ? 520 : 760, 0.32, 0.12, 0, "square", i % 2 ? 760 : 520), i * 340);
+            setTimeout(() => this.audio.tone(i % 2 ? 520 : 760, 0.32, 0.12, 0, "square", i % 2 ? 760 : 520, "alerts"), i * 340);
         this.disasterStage = stage;
       }
       this.weatherSounds(g, d);
@@ -1032,8 +1198,8 @@ export class Retention {
     const self = g.player;
     if (self?.hp > 0 && self.shockUntil > a.time && performance.now() - (this.crackleAt || 0) > 140) {
       this.crackleAt = performance.now();
-      this.audio.hiss(0.06, 0.1, 5200);
-      if (Math.random() < 0.4) this.audio.tone(1800, 0.03, 0.04, 0, "square", 600);
+      this.audio.hiss(0.06, 0.1, 5200, 0, "hits");
+      if (Math.random() < 0.4) this.audio.tone(1800, 0.03, 0.04, 0, "square", 600, "hits");
     }
     this.fxHeard ||= new Set();
     // A disaster's own blast (damage at a strike) sounds as thunder or a
@@ -1066,9 +1232,9 @@ export class Retention {
         continue;
       } else if (dist < 14 && f.kind === "blast") {
         const v = Math.max(0.15, 1 - dist / 14);
-        this.audio.hiss(0.45, 0.2 * v, f.kind === "blast" ? 1200 : 600);
-        this.audio.tone(80, 0.35, 0.18 * v, 0, "sawtooth", 35);
-      } else if (dist < 10 && f.kind === "heal") this.audio.tone(520, 0.3, 0.08, 0, "sine", 880);
+        this.audio.hiss(0.45, 0.2 * v, f.kind === "blast" ? 1200 : 600, 0, "weapons");
+        this.audio.tone(80, 0.35, 0.18 * v, 0, "sawtooth", 35, "weapons");
+      } else if (dist < 10 && f.kind === "heal") this.audio.tone(520, 0.3, 0.08, 0, "sine", 880, "ui");
       else if (dist < 10 && f.kind === "toxic") this.audio.hiss(0.6, 0.1, 2600);
     }
     if (this.fxHeard.size > 400) this.fxHeard = new Set(a.fx.map((f) => f.id));
@@ -1133,16 +1299,16 @@ export class Retention {
     if (p.adrenalineUntil !== this.rushSeen) {
       this.rushSeen = p.adrenalineUntil;
       if (p.adrenalineUntil > g.time) {
-        this.audio.hiss(0.6, 0.16, 2400);
-        this.audio.tone(180, 0.45, 0.1, 0, "sawtooth", 720);
+        this.audio.hiss(0.6, 0.16, 2400, 0, "hits");
+        this.audio.tone(180, 0.45, 0.1, 0, "sawtooth", 720, "hits");
       }
     }
     const now = performance.now(),
       gap = p.hp / p.maxHp < 0.3 ? 650 : 1000;
     if (now - (this.beatAt || 0) < gap) return;
     this.beatAt = now;
-    this.audio.tone(62, 0.11, 0.22, 0, "sine", 40);
-    setTimeout(() => this.audio.tone(55, 0.1, 0.15, 0, "sine", 38), 170);
+    this.audio.tone(62, 0.11, 0.22, 0, "sine", 40, "hits");
+    setTimeout(() => this.audio.tone(55, 0.1, 0.15, 0, "sine", 38, "hits"), 170);
   }
   destroy() {
     this.audio.destroy();
