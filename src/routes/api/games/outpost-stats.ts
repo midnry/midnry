@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// Outpost Zero accounts: { op: "me" } tells the game who is signed in (401 when
-// nobody is, so it shows its sign-in screen); { op: "record", match } stores a
-// finished match for the signed-in player.
+// Outpost Zero accounts: { op: "me" } tells the game who is signed in
+// ({ signedOut: true } when nobody is, so it shows its sign-in screen without
+// a 401 in every visitor's console); { op: "record", match } stores a finished
+// match for the signed-in player (401 when signed out).
 export const Route = createFileRoute("/api/games/outpost-stats")({
   server: {
     handlers: {
@@ -49,6 +50,7 @@ export const Route = createFileRoute("/api/games/outpost-stats")({
             !process.env.RENDER &&
             !/(?:^|;\s*)outpost-qa-signed-out=1/.test(request.headers.get("cookie") ?? "");
           if (qa) return Response.json(body.op === "me" ? { name: "QA Player" } : { ok: true }, { headers });
+          if (body.op === "me") return Response.json({ signedOut: true }, { headers });
           return Response.json({ error: "Sign in to play." }, { status: 401, headers });
         }
         const stats = await import("@/games/outpost/stats.server");

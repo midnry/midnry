@@ -92,8 +92,24 @@ export function buildRiggedHand(r,parent,x,y,z,source=r.soldier){
  finishActor(r,model,{x:0,y:0});
  const group=new THREE.Group();group.name=side+' captured glove';group.userData.weaponMoving=true;group.position.set(x,y,z);group.add(model);parent.add(group);
  const hand=find(model,side+'Hand'),knuckle=find(model,side+'HandMiddle1')||hand;
- group.userData.handRig={r,model,mixer,actions,hand,knuckle,palm:new THREE.Vector3(),point:new THREE.Vector3(),sample:null};
+ group.userData.handRig={r,model,mixer,actions,hand,knuckle,side,character:source!==r.soldier,palm:new THREE.Vector3(),point:new THREE.Vector3(),sample:null};
  updateRiggedHand(group,0,0);return group;
+}
+/** Locker characters' idle clips leave the fingers straight; wrap them
+ * round the grip. Joint curls from the knuckle out. */
+const GRIP_CURL={axis:'x',sign:-1,amount:1};
+function curlFingers(model,side,{axis,sign,amount}){
+ const joints=[.8,.95,.6],thumb=[.25,.35];
+ model.traverse(o=>{
+  if(!o.isBone)return;
+  const name=key(o.name);
+  if(!name.startsWith(side+'Hand')||name===side+'Hand')return;
+  const m=/^(Thumb|Index|Middle|Ring|Pinky)(\d)$/.exec(name.slice(side.length+4));
+  if(!m)return;
+  const i=Number(m[2])-1,amt=(m[1]==='Thumb'?thumb[i]:joints[i]);
+  if(amt===undefined)return;
+  o.rotation[axis]+=sign*amt*amount;
+ });
 }
 export function updateRiggedHand(group,reload,time){
  const h=group?.userData.handRig;if(!h)return;
@@ -102,7 +118,9 @@ export function updateRiggedHand(group,reload,time){
  const action=reload>0&&h.actions.Reload?h.actions.Reload:h.actions.Idle;
  action.reset().setEffectiveWeight(1).setEffectiveTimeScale(0).play();
  action.time=h.r.motion.matches?0:reload>0?(1-reload)*action.getClip().duration:time%action.getClip().duration;
- h.mixer.update(0);h.model.position.set(0,0,0);group.updateWorldMatrix(true,true);
+ h.mixer.update(0);
+ if(h.character)curlFingers(h.model,h.side,GRIP_CURL);
+ h.model.position.set(0,0,0);group.updateWorldMatrix(true,true);
  h.hand.getWorldPosition(h.palm);h.knuckle.getWorldPosition(h.point);h.palm.lerp(h.point,.5);group.worldToLocal(h.palm);
  h.model.position.copy(h.palm).negate();group.updateWorldMatrix(true,true);
 }

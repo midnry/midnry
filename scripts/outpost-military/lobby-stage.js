@@ -11,7 +11,6 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { updateWeaponGrip } from "./realism-grips.js";
 import { lobbyRenderSize } from "./compatibility.js";
-import { CHARACTERS } from "../../public/games/outpost-characters.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { buildLobbyBackdrop, buildLobbyFloor, lobbySky, LOBBY_SUN, LOBBY_TRUCK } from "./lobby-backdrop.js";
 
@@ -319,10 +318,12 @@ export class LobbyStage {
     this.dress();
     this.operator();
     this.squad();
-    // Last Signal dresses the bots as the other characters: fetch them now.
-    if (r.g.mode === "signal" && !this.fetched) {
+    // Last Signal dresses the bots as other characters: fetch the ones this
+    // round will show (offline, the same stable picks the match makes), not
+    // all eleven. Online, each player's pick arrives with them.
+    if (r.g.mode === "signal" && !this.fetched && !r.g.online) {
       this.fetched = true;
-      for (const c of CHARACTERS) r.loadCharacter(c.id);
+      for (const id of r.roundCharacters()) r.loadCharacter(id);
     }
     const w = r.renderer.domElement.clientWidth || 1,
       h = r.renderer.domElement.clientHeight || 1,

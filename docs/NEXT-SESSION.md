@@ -114,4 +114,21 @@ docs/outpost-polish-2026/before-after-*.jpg.
   cut + cap was tried and dropped), and the arms wear the Locker character you chose (weapons
   already carried over). Check: `node scripts/qa/view-arms.mjs ronin scatter 390` (also
   `operator carbine 390` and `operator carbine 1280`).
-- Cache key now `v=signal-smooth-20261024`.
+- Cache key `v=signal-smooth-20261024`. DEPLOYED 2026-10-24 (owner said "deploy"): main = 70fa0bb,
+  live bundle hash verified.
+
+## Ready, NOT deployed (2026-10-24, second batch, branch `outpost/polish-2026`)
+- Character hands: Locker characters' idle clips leave the fingers straight, so the first-person
+  hand lay flat beside the gun. `curlFingers` in realism-hands.js wraps the finger joints round the
+  grip (axis x, negative; the other axes splay or twist, see screenshots/qa/arms/curl-*.png).
+- Data use: the Last Signal lobby fetches only the characters this round shows (yours + the 7
+  bots' picks via `roundCharacters()`), not all 11 (~14 MB); online, picks arrive with players.
+- First-use hitches: `warmEffects()` builds the first tracer, the takedown props, haze, storm,
+  terrain, embers, one shock arc, dust/sand puffs, sparks, trickle, rain, grit, debris, and
+  prepareWorld compiles them with the world (HazardDressing.warm / DisasterWeather.warm; the
+  inline `||= new` pieces became make* factories).
+- Signed-out visitors: `{ op: "me" }` answers 200 `{ signedOut: true }` instead of a 401 in every
+  visitor's console; `record` still answers 401 when signed out. Checked on a local production
+  build (`node .output/server/index.mjs` on :8090).
+- Cache key `v=effects-warm-20261024`. Checks: outpost tests 327/327, tsc clean, build:render pass,
+  `signal-hitches.mjs 640 3000 45 performance 360` errors [], 7/7 bots dressed.

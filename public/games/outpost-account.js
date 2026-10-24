@@ -40,7 +40,8 @@ async function whoAmI() {
   });
   if (response.status === 401) return null;
   if (!response.ok) throw new Error(`status ${response.status}`);
-  return response.json();
+  const me = await response.json();
+  return me?.signedOut ? null : me;
 }
 
 /** Where login returns to: the game page, with its room code. (The desktop

@@ -24,8 +24,10 @@ await pickGame(p, "signal", { timeout: 60000 });
 await p.waitForTimeout(1000);
 await play(p, { timeout: 90000 });
 await p.waitForFunction(() => document.querySelector("midnry-fps")?.engine?.running, null, { timeout: 120000 });
+// Keep the player alive while the character loads (the headless renderer is slow).
+await p.evaluate(() => { const g = document.querySelector("midnry-fps").engine; g.player.shieldUntil = 1e9; for (const e of g.arena.entities) if (e !== g.player) Object.assign(e, { bot: false, x: 1.5, y: 1.5 }); });
 // Give the chosen character time to load and reach the arms.
-await p.waitForFunction((id) => { const r = document.querySelector("midnry-fps").engine.military; return id === "operator" || r.characterAssets?.has(id); }, character, { timeout: 120000 }).catch(() => {});
+await p.waitForFunction((id) => { const r = document.querySelector("midnry-fps").engine.military; return id === "operator" || (r.characterAssets?.has(id) && r.weaponHands !== r.soldier); }, character, { timeout: 300000 }).catch(() => {});
 await p.waitForTimeout(2000);
 await p.addStyleTag({ content: ".mf-touch, .mf-top, .mf-bottom, .mf-cross, .mf-toast, .mf-sig-status, .mf-sig-shield, .mf-sig-haze, .mf-super { visibility: hidden !important }" });
 const info = await p.evaluate(() => {

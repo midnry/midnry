@@ -2185,6 +2185,16 @@ export class MilitaryRenderer {
       await this.renderer.compileAsync(gltf.scene, this.camera, this.scene);
     } catch {}
   }
+  /** The characters an offline Last Signal round shows: yours and each
+   * bot's pick (the same stable picks characterFor makes). */
+  roundCharacters() {
+    const mine = this.g.character || "operator";
+    this.characterSalt ??= Math.random().toString(36).slice(2, 8);
+    const bots = this.g.arena?.entities?.filter((e) => e.bot).length || 7;
+    const ids = new Set(mine === "operator" ? [] : [mine]);
+    for (let i = 0; i < bots; i++) ids.add(botCharacter(this.characterSalt, i, mine));
+    return [...ids];
+  }
   /** Which Locker character an entity wears (null: the operator). In Last
    * Signal you wear yours and each bot a stable pick of the others. */
   characterFor(e) {
@@ -3672,13 +3682,40 @@ export class MilitaryRenderer {
     this.ensureWorld();
     this.rebuildWalls();
     if (!this.renderer.compileAsync) return;
-    // Hidden overlays (the objective trail) are compiled too.
+    // Hidden overlays (the objective trail) and the effects that otherwise
+    // first appear mid-match are compiled too.
     const trail = (this.groundTrail ||= new GroundTrail(this)).root,
-      shown = trail.visible;
+      shown = trail.visible,
+      warm = this.warmEffects(),
+      shownWarm = warm.map((o) => o.visible);
     trail.visible = true;
+    for (const o of warm) o.visible = true;
     const compiling = this.renderer.compileAsync(this.scene, this.camera);
     trail.visible = shown;
+    warm.forEach((o, i) => (o.visible = shownWarm[i]));
     await compiling;
+  }
+  /** Pieces whose first draw used to compile shaders in the frame they
+   * appeared (the first tracer, a takedown, haze, storms, dust, sparks):
+   * built now, hidden, and returned for prepareWorld to compile. */
+  warmEffects() {
+    const pieces = [];
+    try {
+      this.tracerMaterial ||= this.material({ color: "#e9c995", emissive: "#c9a56e", emissiveIntensity: 2 });
+      if (!this.warmTracer) {
+        this.warmTracer = this.mesh(this.dynamic, this.geo("tracer", () => new THREE.CylinderGeometry(0.007, 0.007, 1, 6)), this.tracerMaterial, [0, -50, 0]);
+        this.warmTracer.castShadow = false;
+        this.warmTracer.visible = false;
+      } else if (!this.warmTracer.parent) this.dynamic.add(this.warmTracer);
+      pieces.push(this.warmTracer);
+      const takedown = (this.takedown ||= new VictimTakedown(this));
+      if (!takedown.victim) takedown.build();
+      pieces.push(takedown.root);
+      pieces.push(...(this.hazards ||= new HazardDressing(this)).warm());
+    } catch (error) {
+      console.warn("[Outpost] Effect warm-up skipped:", error);
+    }
+    return pieces.filter((o) => o?.isObject3D);
   }
   render() {
     if (this.disposed || this.contextUnavailable) return false;

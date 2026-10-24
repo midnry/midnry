@@ -411,6 +411,70 @@ export class HazardDressing {
   }
   /** Inside the Red Haze: glowing red embers drift around you, so it reads
    * as a space you are standing in, not a line you crossed. */
+  makeEmbers() {
+    const r = this.r;
+    const count = 260,
+      pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++)
+      pos.set([(Math.random() - 0.5) * 24, Math.random() * 6, (Math.random() - 0.5) * 24], i * 3);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    this.embers = new THREE.Points(
+      geo,
+      new THREE.PointsMaterial({
+        color: "#ff5a3a",
+        map: emberTexture(),
+        alphaTest: 0.01,
+        size: 0.12,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        fog: false,
+        toneMapped: false,
+      }),
+    );
+    this.embers.frustumCulled = false;
+    r.scene.add(this.embers);
+    return this.embers;
+  }
+  makeArc() {
+    const r = this.r;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(3 * 2 * 30), 3));
+    const lines = new THREE.LineSegments(
+      geo,
+      new THREE.LineBasicMaterial({
+        color: "#9fd8ff",
+        transparent: true,
+        opacity: 0.95,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        toneMapped: false,
+      }),
+    );
+    lines.frustumCulled = false;
+    const root = new THREE.Group();
+    root.add(lines);
+    r.dynamic.add(root);
+    return root;
+  }
+  /** Build every piece that otherwise appears mid-match (its first draw
+   * would compile shaders in that frame) and return the objects to show
+   * while the renderer compiles. */
+  warm() {
+    const haze = (this.haze ||= this.makeHaze()),
+      storm = (this.storm ||= this.makeStorm()),
+      kinds = (this.terrain ||= this.makeTerrain()),
+      pieces = [haze.isObject3D ? haze : haze.root, storm.root, this.embers || this.makeEmbers()];
+    if (!this.warmArc) {
+      this.warmArc = this.makeArc();
+      this.warmArc.visible = false;
+    }
+    pieces.push(this.warmArc);
+    for (const kind of Object.values(kinds)) pieces.push(kind?.isObject3D ? kind : kind?.mesh);
+    pieces.push(...(this.weatherFx ||= new DisasterWeather(this.r)).warm());
+    return pieces.filter((o) => o?.isObject3D);
+  }
   updateEmbers(t, z, a) {
     const r = this.r,
       p = r.g.camera(),
@@ -420,30 +484,7 @@ export class HazardDressing {
       if (this.embers) this.embers.visible = false;
       return;
     }
-    if (!this.embers) {
-      const count = 260,
-        pos = new Float32Array(count * 3);
-      for (let i = 0; i < count; i++)
-        pos.set([(Math.random() - 0.5) * 24, Math.random() * 6, (Math.random() - 0.5) * 24], i * 3);
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-      this.embers = new THREE.Points(
-        geo,
-        new THREE.PointsMaterial({
-          color: "#ff5a3a",
-          map: emberTexture(),
-          alphaTest: 0.01,
-          size: 0.12,
-          transparent: true,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending,
-          fog: false,
-          toneMapped: false,
-        }),
-      );
-      this.embers.frustumCulled = false;
-      r.scene.add(this.embers);
-    }
+    if (!this.embers) this.makeEmbers();
     const e = this.embers;
     e.visible = true;
     e.position.set(p.x * SCALE, 0, p.y * SCALE);
@@ -472,26 +513,7 @@ export class HazardDressing {
     this.sync(
       (this.arcs ||= new Map()),
       shocked.map((e) => ({ id: e.id, e })),
-      () => {
-        const geo = new THREE.BufferGeometry();
-        geo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(3 * 2 * 30), 3));
-        const lines = new THREE.LineSegments(
-          geo,
-          new THREE.LineBasicMaterial({
-            color: "#9fd8ff",
-            transparent: true,
-            opacity: 0.95,
-            depthWrite: false,
-            blending: THREE.AdditiveBlending,
-            toneMapped: false,
-          }),
-        );
-        lines.frustumCulled = false;
-        const root = new THREE.Group();
-        root.add(lines);
-        r.dynamic.add(root);
-        return root;
-      },
+      () => this.makeArc(),
       (root, { e }) => {
         root.position.set(e.x * SCALE, 0, e.y * SCALE);
         if (!redraw && root.userData.drawn) return;

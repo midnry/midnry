@@ -385,6 +385,48 @@ export class DisasterWeather {
     this.chunks = [];
     this.rubbleSeen = null;
   }
+  makeSand() {
+    return new Puffs(this.r, this.mobile ? 28 : 70, { lit: "#e4c08a", shadow: "#6a4e31", near: 0.9 });
+  }
+  makeDust() {
+    return new Puffs(this.r, this.mobile ? 90 : 180, { lit: "#b3a690", shadow: "#4a4238", near: 0.5, order: 2, density: 1.8 });
+  }
+  makeSparks() {
+    return new Specks(this.r, this.mobile ? 90 : 220, { color: "#d8ecff", size: 0.16, additive: true });
+  }
+  makeTrickle() {
+    return new Specks(this.r, this.mobile ? 160 : 360, { color: "#8c7f6b", size: 0.28, opacity: 0.85 });
+  }
+  makeChunks() {
+    const m = new THREE.InstancedMesh(
+      new THREE.DodecahedronGeometry(1, 0),
+      new THREE.MeshStandardMaterial({ color: "#8f8577", roughness: 1, flatShading: true }),
+      140,
+    );
+    m.frustumCulled = false;
+    m.castShadow = false;
+    m.receiveShadow = true;
+    this.r.materials.add(m.material);
+    this.r.scene.add(m);
+    return m;
+  }
+  /** Build every piece that otherwise appears mid-match (its first draw
+   * would compile shaders in that frame) and return the objects to show
+   * while the renderer compiles. */
+  warm() {
+    const pieces = [
+      (this.dustWall ||= this.makeDustWall()),
+      (this.grit ||= this.makeGrit()),
+      (this.sand ||= this.makeSand()).mesh,
+      (this.dust ||= this.makeDust()).mesh,
+      (this.sparks ||= this.makeSparks()).points,
+      (this.trickle ||= this.makeTrickle()).points,
+      (this.chunkMesh ||= this.makeChunks()),
+    ];
+    if (!this.rain) this.makeRain();
+    pieces.push(this.rain, this.splash);
+    return pieces.filter(Boolean);
+  }
   /** Per frame, before rendering: `k` is how far the disaster's weather has
    * rolled in (HazardDressing.fade). */
   update(t, k) {
@@ -442,11 +484,7 @@ export class DisasterWeather {
       if (this.grit) this.grit.visible = false;
       return;
     }
-    const sand = (this.sand ||= new Puffs(r, this.mobile ? 28 : 70, {
-      lit: "#e4c08a",
-      shadow: "#6a4e31",
-      near: 0.9,
-    }));
+    const sand = (this.sand ||= this.makeSand());
     if (!this.sheets) {
       let s = 17;
       const rand = () => (s = (s * 16807) % 2147483647) / 2147483647;
@@ -799,11 +837,7 @@ export class DisasterWeather {
       b.glow.scale.setScalar(SCALE * (age < 0.3 ? 1.5 : 0.7 + 0.8 * (1 - cool)));
       if (!b.smoked && age > 0.05) {
         b.smoked = true;
-        const sparks = (this.sparks ||= new Specks(r, this.mobile ? 90 : 220, {
-          color: "#d8ecff",
-          size: 0.16,
-          additive: true,
-        }));
+        const sparks = (this.sparks ||= this.makeSparks());
         for (let i = 0; i < (this.mobile ? 30 : 60); i++) {
           const ang = Math.random() * Math.PI * 2,
             sp = 2 + Math.random() * 7;
@@ -876,11 +910,7 @@ export class DisasterWeather {
       cam = r.camera.position,
       level = d ? this.quakeLevel() : 0;
     // Dust trickling off the tops of walls near you while it shakes.
-    const trickle = (this.trickle ||= new Specks(r, this.mobile ? 160 : 360, {
-      color: "#8c7f6b",
-      size: 0.28,
-      opacity: 0.85,
-    }));
+    const trickle = (this.trickle ||= this.makeTrickle());
     if (level > 0.05 && !r.naturalLighting?.inside) {
       if (!this.emitters || this.emitAt < a.time - 0.6 || this.emitAt > a.time) this.findEmitters();
       const rate = level * (this.mobile ? 110 : 240) * dt;
@@ -1050,13 +1080,7 @@ export class DisasterWeather {
     const r = this.r;
     // Dust clouds and smoke.
     if (this.bursts.length) {
-      const dust = (this.dust ||= new Puffs(r, this.mobile ? 90 : 180, {
-        lit: "#b3a690",
-        shadow: "#4a4238",
-        near: 0.5,
-        order: 2,
-        density: 1.8,
-      }));
+      const dust = (this.dust ||= this.makeDust());
       dust.begin();
       for (let i = this.bursts.length - 1; i >= 0; i--) {
         const b = this.bursts[i];
@@ -1078,19 +1102,7 @@ export class DisasterWeather {
     } else if (this.dust) this.dust.mesh.visible = false;
     // Debris chunks: thrown, tumbling, bouncing once and settling.
     if (!this.chunks.length && !this.chunkMesh) return;
-    const mesh = (this.chunkMesh ||= (() => {
-      const m = new THREE.InstancedMesh(
-        new THREE.DodecahedronGeometry(1, 0),
-        new THREE.MeshStandardMaterial({ color: "#8f8577", roughness: 1, flatShading: true }),
-        140,
-      );
-      m.frustumCulled = false;
-      m.castShadow = false;
-      m.receiveShadow = true;
-      r.materials.add(m.material);
-      r.scene.add(m);
-      return m;
-    })());
+    const mesh = (this.chunkMesh ||= this.makeChunks());
     const mat = (this.chunkMatrix ||= new THREE.Matrix4()),
       q = (this.chunkQ ||= new THREE.Quaternion()),
       e = (this.chunkE ||= new THREE.Euler()),
