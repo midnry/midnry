@@ -42,7 +42,10 @@ export const Route = createFileRoute("/api/games/outpost-daily")({
           if (error instanceof OutpostError)
             return Response.json({ error: error.message }, { status: error.status, headers });
           console.error("[outpost] Daily board failed", error instanceof Error ? error.message : "Unknown error");
-          return Response.json({ error: "Leaderboard unavailable. Try again shortly." }, { status: 503, headers });
+          // A normal answer, not a 503: the board is optional (the local best
+          // score still shows) and a 503 is logged as an error in every
+          // visitor's browser console while the database is unreachable.
+          return Response.json({ unavailable: true, error: "Leaderboard unavailable. Try again shortly." }, { headers });
         }
       },
     },
