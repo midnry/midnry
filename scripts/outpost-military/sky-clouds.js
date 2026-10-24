@@ -28,7 +28,13 @@ uniform vec3 horizonSky;
 uniform vec3 sunGlow;
 uniform float skyAlpha;
 varying vec3 vDir;
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+// No sin() here: phone GPUs lose precision on sin of large numbers, and the
+// usual fract(sin(x) * 43758) hash then breaks the clouds into streaks.
+float hash(vec2 p) {
+  vec3 q = fract(vec3(p.xyx) * vec3(0.1031, 0.1030, 0.0973));
+  q += dot(q, q.yzx + 33.33);
+  return fract((q.x + q.y) * q.z);
+}
 float noise(vec2 p) {
   vec2 i = floor(p), f = fract(p);
   vec2 u = f * f * (3.0 - 2.0 * f);
@@ -40,10 +46,15 @@ float fbm(vec2 p) {
   return v;
 }
 float density(vec2 uv) {
-  // Large shapes drift with the wind; detail boils a little faster.
+  // Large shapes drift with the wind; detail boils a little faster. The
+  // wide ramp keeps the edges soft: a narrow one cut the clouds out like paper.
   float n = fbm(uv + vec2(time * 0.012, time * 0.004));
   n += 0.35 * (fbm(uv * 3.1 - vec2(time * 0.03, 0.0)) - 0.5);
-  return smoothstep(coverage, coverage + 0.32, n);
+  return smoothstep(coverage, coverage + 0.5, n);
+}
+// The large shapes alone, for the shadow the cloud casts on itself.
+float bulk(vec2 uv) {
+  return smoothstep(coverage, coverage + 0.5, fbm(uv + vec2(time * 0.012, time * 0.004)));
 }
 void main() {
   vec3 d = normalize(vDir);
@@ -55,9 +66,11 @@ void main() {
   vec2 uv = d.xz / (d.y + 0.12) * 1.6;
   float c = d.y < 0.015 ? 0.0 : density(uv);
   if (c < 0.004 && band < 0.004) discard;
-  // Self-shadow: how much cloud lies between this point and the sun.
-  float towardSun = density(uv + normalize(sunDir.xz + 1e-4) * 0.09);
-  float light = clamp(1.0 - towardSun * 0.75 + (1.0 - c) * 0.35, 0.0, 1.0);
+  // Thin edges stay bright; a thick core darkens, more so where more cloud
+  // lies between it and the sun.
+  float towardSun = bulk(uv + normalize(sunDir.xz + 1e-4) * 0.35);
+  float thick = c * (0.55 + 0.45 * towardSun);
+  float light = clamp(1.0 - thick * 0.7, 0.3, 1.0);
   float rim = pow(max(dot(d, normalize(sunDir)), 0.0), 6.0) * (1.0 - c) * 1.4;
   vec3 color = mix(shade, lit, light) + lit * rim;
   float horizon = smoothstep(0.015, 0.22, d.y);
@@ -72,6 +85,9 @@ void main() {
   over = mix(over, haze, band);
   float a = max(skyAlpha, cloud + band * (1.0 - cloud));
   vec3 mixed = skyAlpha > 0.5 ? over : (a > 0.0 ? (color * cloud + haze * band * (1.0 - cloud)) / a : color);
+  // A touch of noise breaks the gradient's 8-bit steps, which phone screens
+  // show as bands across the sky.
+  mixed += (hash(gl_FragCoord.xy) - 0.5) * (1.5 / 255.0);
   gl_FragColor = vec4(mixed, a);
   #include <colorspace_fragment>
 }`;
@@ -82,7 +98,9 @@ export class SkyClouds {
     this.material = new THREE.ShaderMaterial({
       vertexShader: vertex,
       fragmentShader: fragment,
-      defines: { OCTAVES: mobile ? 4 : 5 },
+      // Phones draw the same five noise layers: with four the clouds turned
+      // into hard-edged blobs, and the sky only covers part of the screen.
+      defines: { OCTAVES: 5 },
       uniforms: {
         time: { value: 0 },
         coverage: { value: 0.46 },

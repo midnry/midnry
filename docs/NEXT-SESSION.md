@@ -97,3 +97,21 @@ Deployed again 2026-10-23: main = df7e52c (`v=settings-buttons-20261023`): reada
 Deployed 2026-10-24 (owner said "deploy"): Outpost Zero step 2 (per-arena skies, lobby yard and skyline
 in Blender, Dust Outpost dressing), cache key `v=skies-dressing-20261024`. Before/after pictures in
 docs/outpost-polish-2026/before-after-*.jpg.
+
+## Ready, NOT deployed (2026-10-24, branch `outpost/polish-2026`, needs a new "deploy")
+- Site shell: a page whose stylesheet failed to load reloads itself once (`src/lib/style-guard.ts`,
+  check: `node scripts/qa/style-guard.mjs <base>` against a built server). Owner saw an unstyled
+  Outpost Zero page on iPhone after the step 2 release.
+- Last Signal stutter: a bot swapping its stand-in for a Locker character uploaded textures and
+  compiled shaders in one frame. Now `uploadCharacter` sends them to the GPU one per frame, compiles
+  off the frame, and at most one bot swaps per frame. Probe: `node scripts/qa/signal-hitches.mjs
+  640 3000 60 performance 360` (before: 4 hitches on character arrivals; after: none on swaps).
+- Sky on phones: the cloud hash no longer uses sin() (streaks on phone GPUs), a dither hides
+  gradient banding, phones get the same 5 noise layers, cloud edges are softer and shading follows
+  thickness. Shots: screenshots/qa/look/outpost-*-skyfix3-{390,1280}.png.
+- First-person arms: they now include the upper arm, so the sleeve runs off the bottom of the
+  screen instead of ending at the elbow (a dark sliver showed past the cuff on phones; an elbow
+  cut + cap was tried and dropped), and the arms wear the Locker character you chose (weapons
+  already carried over). Check: `node scripts/qa/view-arms.mjs ronin scatter 390` (also
+  `operator carbine 390` and `operator carbine 1280`).
+- Cache key now `v=signal-smooth-20261024`.

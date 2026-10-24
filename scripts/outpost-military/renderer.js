@@ -2138,12 +2138,20 @@ export class MilitaryRenderer {
         new GLTFLoader()
           .setMeshoptDecoder(MeshoptDecoder)
           .loadAsync(`${ASSET}models/characters/${id}.glb?v=${CHARACTER_CACHE}`)
-          .then((gltf) => {
+          .then(async (gltf) => {
             if (this.disposed) {
               this.disposeObject(gltf.scene);
               return null;
             }
             prepareLockerCharacter(this, gltf);
+            // Ready only once the GPU has it: a bot swapping its stand-in for
+            // a character mid-match must not freeze the frame on texture
+            // uploads and shader compiles.
+            await this.uploadCharacter(gltf);
+            if (this.disposed) {
+              this.disposeObject(gltf.scene);
+              return null;
+            }
             this.characterAssets.set(id, gltf);
             return gltf;
           })
@@ -2154,6 +2162,28 @@ export class MilitaryRenderer {
           }),
       );
     return this.characterLoads.get(id);
+  }
+  /** Send a character's textures to the GPU one per frame, then compile
+   * its shaders off the frame, so its first draw costs a normal frame. */
+  async uploadCharacter(gltf) {
+    const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+    const textures = new Set();
+    gltf.scene.traverse((o) => {
+      const m = o.material;
+      if (!m) return;
+      for (const key of ["map", "normalMap", "emissiveMap", "roughnessMap", "metalnessMap", "aoMap"]) if (m[key]) textures.add(m[key]);
+    });
+    for (const texture of textures) {
+      await frame();
+      if (this.disposed || this.contextUnavailable) return;
+      try {
+        this.renderer.initTexture(texture);
+      } catch {}
+    }
+    if (!this.renderer.compileAsync || this.disposed) return;
+    try {
+      await this.renderer.compileAsync(gltf.scene, this.camera, this.scene);
+    } catch {}
   }
   /** Which Locker character an entity wears (null: the operator). In Last
    * Signal you wear yours and each bot a stable pick of the others. */
@@ -2745,6 +2775,8 @@ export class MilitaryRenderer {
       this.waterTile(x, y) || this.protocolPropTile(x, y) || this.transportWindowTile(x, y) || this.transportHiddenWall(x, y);
     const lodDistance = this.actorLodDistance();
     this.actorStats={visible:0,culled:0,distant:0};
+    // One stand-in-to-character swap per frame: each rebuilds a skeleton.
+    let swapped = false;
     for (const e of this.g.arena.entities) {
       current.add(e.id);
       if (e.id === camera.id) {
@@ -2762,7 +2794,7 @@ export class MilitaryRenderer {
           a.weapon !== e.weapon ||
           a.wantedCharacter !== wanted ||
           // The character finished loading: swap the stand-in sculpt.
-          (wanted && !a.character && this.characterAssets?.has(wanted)) ||
+          (wanted && !a.character && !swapped && this.characterAssets?.has(wanted) && (swapped = true)) ||
           (this.soldierLook() && !a.character && a.dye !== (e.color || null)))
       ) {
         this.disposeActor(a);
@@ -2864,7 +2896,15 @@ export class MilitaryRenderer {
     return materials;
   }
   hand(parent, x, y, z, m) {
-    return buildRiggedHand(this,parent,x,y,z)||buildRealisticHand(this, parent, x, y, z, m);
+    return buildRiggedHand(this,parent,x,y,z,this.viewHandSource())||buildRealisticHand(this, parent, x, y, z, m);
+  }
+  /** The sculpt your first-person arms wear: the Locker character you chose
+   * once it has loaded (the operator until then, and for the operator). */
+  viewHandSource() {
+    const want = this.characterFor(this.g.camera());
+    const asset = want ? this.characterAssets?.get(want) : null;
+    if (want && !asset) this.loadCharacter(want);
+    return asset || this.soldier;
   }
   firearm(parent, m, kind = "rifle", offset = 0, hands = true) {
     const gun = new THREE.Group();
@@ -2928,9 +2968,11 @@ export class MilitaryRenderer {
     // Only your own gun wears your Locker finish (not one you spectate).
     const finish =
       this.g.camera() === this.g.player ? this.g.retention?.weaponFinish?.() || "standard" : "standard";
-    if (id === this.weaponId && this.weaponOutfit === this.g.camera().outfit && finish === this.weaponFinish)
+    const hands = this.viewHandSource();
+    if (id === this.weaponId && this.weaponOutfit === this.g.camera().outfit && finish === this.weaponFinish && hands === this.weaponHands)
       return;
     this.weaponFinish = finish;
+    this.weaponHands = hands;
     disposeRiggedHands(this.rig);
     this.rig.traverse((o) => {
       if (o.isMesh) {
