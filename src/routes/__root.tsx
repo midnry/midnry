@@ -11,6 +11,7 @@ import { Link } from "@tanstack/react-router";
 import appCss from "../styles.css?url";
 import { DayModeSync } from "@/components/day-mode";
 import { MODE_SCRIPT } from "@/lib/day-mode";
+import { STYLE_GUARD_SCRIPT } from "@/lib/style-guard";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -60,6 +61,7 @@ function RootComponent() {
       <head>
         <script dangerouslySetInnerHTML={{ __html: MODE_SCRIPT }} />
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: STYLE_GUARD_SCRIPT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
