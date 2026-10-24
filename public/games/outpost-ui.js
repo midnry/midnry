@@ -64,9 +64,28 @@ export class MenuUI {
     g.on(network, "toggle", () => this.refresh());
     g.shell.insertAdjacentHTML(
       "beforeend",
-      '<dialog class="mf-settings" aria-label="Settings"><div class="mf-settingshead"><h2>Settings</h2><button class="mf-settingsclose mf-screenclose" aria-label="Close settings (Esc)" title="Close (Esc)">✕</button></div><div class="mf-settingsbody"><h3>Camera & aim</h3><div class="mf-aimsettings"></div><h3>Gameplay & sound</h3><div class="mf-experience"></div><h3>Graphics</h3><div class="mf-graphicsettings"></div><p class="mf-settingsnotice"></p></div></dialog>',
+      '<dialog class="mf-settings" aria-label="Settings"><div class="mf-settingshead"><h2>Settings</h2><button class="mf-settingsclose mf-screenclose" aria-label="Close settings (Esc)" title="Close (Esc)">✕</button></div><div class="mf-settingsbody"><h3>Camera & aim</h3><div class="mf-aimsettings"></div><h3>Gameplay</h3><div class="mf-experience"></div><h3>Graphics</h3><div class="mf-graphicsettings"></div><p class="mf-settingsnotice"></p></div></dialog>',
     );
     g.aimSettings.mount(g.$(".mf-aimsettings"));
+    // Controls → "Edit touch layout" (outpost-touch-layout.js): drag the touch
+    // buttons where your thumbs rest. It sits under the touch size and opacity
+    // sliders and, like them, only matters where the touch controls are shown.
+    if (g.touchLayout) {
+      const aim = g.$(".mf-aimsettings"),
+        touchNote = aim.querySelector('[data-look="buttonAlpha"]')?.closest("label")?.nextElementSibling,
+        edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "mf-layoutopen";
+      edit.textContent = "Edit touch layout";
+      if (touchNote) touchNote.after(edit);
+      else aim.append(edit);
+      g.on(edit, "click", () => g.touchLayout.enter());
+      const syncLayoutButton = () => (edit.hidden = !g.touchLayout.available());
+      syncLayoutButton();
+      // The dialog has no open event; watch its `open` attribute instead, so a
+      // phone that gained or lost touch controls (or changed mode) is reflected.
+      new MutationObserver(syncLayoutButton).observe(g.$(".mf-settings"), { attributes: true, attributeFilter: ["open"] });
+    }
     const controls = document.createElement("div");
     controls.className = "mf-retention";
     const old = g.$("details.mf-retention");
@@ -96,6 +115,7 @@ export class MenuUI {
       pending?.(g.$(".mf-confirm").returnValue === "apply");
     });
     this.setupAccessibility();
+    this.setupSound();
     this.refresh();
   }
   setupAccessibility() {
@@ -179,6 +199,63 @@ export class MenuUI {
         first.focus();
       }
     });
+  }
+  /** Settings → Sound. The existing master / music / mute controls move
+   * here from the gameplay block (moved, not copied, so their handlers keep
+   * working), joined by Effects and Alerts sliders and the Combat sound
+   * intensity choice. Levels and ducking live in outpost-mix.js; this only
+   * reads and writes FieldAudio's settings, which it saves itself under the
+   * existing `midnry-outpost-audio` record. */
+  setupSound() {
+    const g = this.g,
+      audio = g.retention?.audio;
+    if (!audio) return;
+    const section = document.createElement("div");
+    section.className = "mf-soundsettings mf-retention";
+    g.$(".mf-experience").insertAdjacentHTML("afterend", "<h3>Sound</h3>");
+    g.$(".mf-experience").nextElementSibling.after(section);
+    const row = (selector) => g.$(selector).closest("label");
+    // The sound volume is the master: everything, voice included, hangs off it.
+    row(".mf-volume").firstChild.textContent = "Master sound volume";
+    g.$(".mf-volume").setAttribute("aria-label", "Master sound volume");
+    section.append(row(".mf-volume"));
+    section.insertAdjacentHTML(
+      "beforeend",
+      '<label>Effects volume<input class="mf-effects" aria-label="Effects volume" type="range" min="0" max="100" value="100"></label>',
+    );
+    section.append(row(".mf-music"));
+    section.insertAdjacentHTML(
+      "beforeend",
+      '<label>Alerts volume<input class="mf-alerts" aria-label="Alerts volume" type="range" min="0" max="100" value="100"></label><label>Combat sound intensity<select class="mf-combatsound" aria-label="Combat sound intensity"><option value="full">Full</option><option value="reduced">Reduced: quieter gunfire and hits</option><option value="off">Off: no gunfire or hit sounds</option></select></label>',
+    );
+    section.append(row(".mf-mute"));
+    section.insertAdjacentHTML(
+      "beforeend",
+      "<p>Master covers everything, including nearby voice. Effects covers gunfire, hits, footsteps, weather and menu chimes; Alerts covers zone and haze warnings, the countdown and lost lives. Music and footsteps dip briefly under gunfire and alerts so warnings stay clear. Combat sound intensity lowers or removes gunfire and hit sounds while alerts and voice stay. Saved on this device.</p>",
+    );
+    const sync = () => {
+      g.$(".mf-effects").value = String(Math.round(audio.effects * 100));
+      g.$(".mf-alerts").value = String(Math.round(audio.alerts * 100));
+      g.$(".mf-combatsound").value = audio.combat;
+    };
+    sync();
+    // The pause menu's sound button and Settings share one state: chain
+    // onto the existing sync so both sets of controls stay in step.
+    const previous = audio.onChange;
+    audio.onChange = () => {
+      previous?.();
+      sync();
+    };
+    const apply = () => {
+      audio.effects = Number(g.$(".mf-effects").value) / 100;
+      audio.alerts = Number(g.$(".mf-alerts").value) / 100;
+      audio.combat = g.$(".mf-combatsound").value;
+      audio.unlock();
+      audio.level();
+    };
+    g.on(g.$(".mf-effects"), "input", apply);
+    g.on(g.$(".mf-alerts"), "input", apply);
+    g.on(g.$(".mf-combatsound"), "change", apply);
   }
   applyAccessibility() {
     this.g.root.style.setProperty("--mf-text-scale", this.accessibility.textScale);

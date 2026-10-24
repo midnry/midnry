@@ -29,7 +29,10 @@ async function call(body) {
     body: JSON.stringify({ ...body, token: deviceToken() }),
   });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "Leaderboard unavailable.");
+  // The server answers { unavailable: true } (not an error status) while
+  // the board's database is unreachable: nothing to cache, callers keep
+  // the local best score.
+  if (!response.ok || data.unavailable) throw new Error(data.error || "Leaderboard unavailable.");
   cached = { day: data.day, at: Date.now(), board: data };
   return data;
 }
