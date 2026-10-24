@@ -93,3 +93,7 @@ Deployed again 2026-10-23: main = e3802f4 (`v=pause-overlays-20261023`): pause o
 Deployed again 2026-10-23: main = 57a6d99 (`v=boot-lobby-20261023`): no old menu flash on load.
 
 Deployed again 2026-10-23: main = df7e52c (`v=settings-buttons-20261023`): readable Settings buttons.
+
+Deployed 2026-10-24 (owner said "deploy"): Outpost Zero step 2 (per-arena skies, lobby yard and skyline
+in Blender, Dust Outpost dressing), cache key `v=skies-dressing-20261024`. Before/after pictures in
+docs/outpost-polish-2026/before-after-*.jpg.
